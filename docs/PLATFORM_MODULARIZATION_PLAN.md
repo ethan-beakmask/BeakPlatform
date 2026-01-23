@@ -260,7 +260,7 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 1 完成，準備進入 Step 2
+**目前階段**: Step 2 進行中
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -269,13 +269,25 @@ systemctl restart beakplatform
 - 清理資料庫選單項目
 - 建立資料庫初始化腳本
 - 驗證平台可獨立運行
+- Git tag: v0.1.0
+
+**Step 2 進行中** (2026-01-24):
+- [x] 2.1 模組目錄結構 - 建立 `modules/` 目錄
+- [x] 2.2 模組元資料 - MODULE_INFO 規範和讀取機制
+- [x] 2.3 認證接口 - `app/platform/auth.py`
+- [x] 2.4 資料接口 - `app/platform/data.py`
+- [x] 2.7 路由掛載 - 自動註冊 Blueprint (ModuleLoader)
+- [x] 範例模組 - `modules/sample_module/` 驗證機制
+- [ ] 2.5 權限接口 - 權限定義註冊到平台
+- [ ] 2.6 選單整合 - 動態載入模組選單
+- [ ] 2.9 安裝流程 - `manage.py module` 命令
 
 **服務配置**:
 - 主服務: http://192.168.0.16:7000 (Nginx port 80)
 - DevTools: http://192.168.0.16:7001
 - 資料庫: beakplatform_dev
 
-**下一步**: Step 2 - 建立模組化標準
+**下一步**: 完成 Step 2 剩餘項目（權限註冊、選單整合）
 
 ---
 

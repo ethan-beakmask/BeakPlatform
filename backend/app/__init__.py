@@ -66,6 +66,10 @@ def create_app(config_name: str = None) -> Flask:
     # Register context processors
     register_context_processors(app)
 
+    # Load modules (after blueprints and before returning)
+    from .module_loader import init_module_loader
+    init_module_loader(app)
+
     # Health check endpoint (public)
     from .security.decorators import public_route
 

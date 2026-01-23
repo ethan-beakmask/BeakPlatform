@@ -1,0 +1,2 @@
+# Sample Module Dependencies
+# 此模組無額外依賴
