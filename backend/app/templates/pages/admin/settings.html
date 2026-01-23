@@ -192,6 +192,18 @@
                 設定密碼複雜度要求、歷史限制和登入失敗鎖定
             </p>
 
+            <!-- 啟用開關 -->
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox"
+                           x-model="policy.enabled"
+                           @change="savePolicy()"
+                           style="width: 18px; height: 18px;">
+                    <span style="font-weight: 500;">啟用密碼政策</span>
+                    <span style="color: #666; font-size: 13px;">（啟用後，所有密碼欄位將檢查複雜度要求）</span>
+                </label>
+            </div>
+
             <!-- SMTP 未設定警告 -->
             <div x-show="!hasSmtp && policy.enabled"
                  style="padding: 12px 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
@@ -202,23 +214,9 @@
                 </span>
             </div>
 
-            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
-                <!-- 啟用開關 -->
-                <tr>
-                    <th style="text-align: left; width: 180px;">啟用密碼政策</th>
-                    <td>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox"
-                                   x-model="policy.enabled"
-                                   @change="savePolicy()"
-                                   style="width: 18px; height: 18px;">
-                            <span>啟用後，所有密碼欄位將檢查複雜度要求</span>
-                        </label>
-                    </td>
-                </tr>
-
-                <!-- 以下設定只在啟用時顯示 -->
-                <template x-if="policy.enabled">
+            <!-- 以下設定只在啟用時顯示 -->
+            <template x-if="policy.enabled">
+                <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
                     <tbody>
                         <!-- 密碼長度 -->
                         <tr>
@@ -299,236 +297,14 @@
                             </td>
                         </tr>
                     </tbody>
-                </template>
-            </table>
+                </table>
+            </template>
 
             <p x-show="saveMessage" x-text="saveMessage"
                style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
                x-transition></p>
         </section>
 
-            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">
-                載入中...
-            </div>
-
-            <!-- 空狀態 -->
-            <div x-show="!loading && categories.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
-                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無分類</p>
-                <p style="color: #999;">點擊「新增分類」開始建立</p>
-            </div>
-
-            <!-- 分類列表 -->
-            <div x-show="!loading && categories.length > 0" style="background: white; border: 1px solid #ddd;">
-                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-                    <thead style="background: #f5f5f5;">
-                        <tr>
-                            <th style="padding: 10px; text-align: left; width: 60px;">顏色</th>
-                            <th style="padding: 10px; text-align: left; width: 100px;">代碼</th>
-                            <th style="padding: 10px; text-align: left;">名稱</th>
-                            <th style="padding: 10px; text-align: center; width: 70px;">表單設計</th>
-                            <th style="padding: 10px; text-align: center; width: 70px;">流程設計</th>
-                            <th style="padding: 10px; text-align: center; width: 70px;">表單中心</th>
-                            <th style="padding: 10px; text-align: left; width: 120px;">可見部門</th>
-                            <th style="padding: 10px; text-align: center; width: 80px;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="(cat, index) in categories" :key="cat.id">
-                            <tr class="category-row" style="border-top: 1px solid #eee;">
-                                <td style="padding: 10px;">
-                                    <span class="color-dot" :style="'background-color: ' + (cat.color || '#6b7280')"></span>
-                                </td>
-                                <td style="padding: 10px; font-family: monospace;" x-text="cat.code"></td>
-                                <td style="padding: 10px;">
-                                    <span x-text="cat.name"></span>
-                                    <span x-show="!cat.is_active" style="margin-left: 6px; padding: 2px 6px; background: #fee2e2; color: #991b1b; font-size: 11px;">已停用</span>
-                                </td>
-                                <td style="padding: 10px; text-align: center;">
-                                    <span x-show="cat.visible_in_form_design" style="color: #059669;">V</span>
-                                    <span x-show="!cat.visible_in_form_design" style="color: #dc2626;">-</span>
-                                </td>
-                                <td style="padding: 10px; text-align: center;">
-                                    <span x-show="cat.visible_in_workflow_design" style="color: #059669;">V</span>
-                                    <span x-show="!cat.visible_in_workflow_design" style="color: #dc2626;">-</span>
-                                </td>
-                                <td style="padding: 10px; text-align: center;">
-                                    <span x-show="cat.visible_in_form_center" style="color: #059669;">V</span>
-                                    <span x-show="!cat.visible_in_form_center" style="color: #dc2626;">-</span>
-                                </td>
-                                <td style="padding: 10px; font-size: 12px; color: #666;">
-                                    <span x-text="getUnitsDisplay(cat)"></span>
-                                </td>
-                                <td style="padding: 10px; text-align: center;">
-                                    <button @click="openEditModal(cat)" title="編輯"
-                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
-                                        編輯
-                                    </button>
-                                    <button @click="confirmDelete(cat)" title="刪除"
-                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
-                                        刪除
-                                    </button>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 說明 -->
-            <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; font-size: 13px;">
-                <p style="margin: 0 0 8px; font-weight: 500;">說明</p>
-                <ul style="margin: 0; padding-left: 20px; color: #0369a1;">
-                    <li>表單設計：在表單設計頁面的分類篩選中顯示</li>
-                    <li>流程設計：在流程設計頁面的分類篩選中顯示</li>
-                    <li>表單中心：在表單中心（填寫表單）頁面中顯示</li>
-                    <li>可見部門：設定哪些部門的用戶可在表單中心看到此分類的表單</li>
-                </ul>
-            </div>
-
-            <!-- 新增/編輯 Modal -->
-            <div x-show="showModal" x-cloak
-                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯分類' : '新增分類'"></h3>
-                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-                    </div>
-
-                    <form @submit.prevent="saveCategory()">
-                        <!-- 名稱（放在代碼前面，輸入名稱時自動生成代碼）-->
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">顯示名稱 *</label>
-                            <input type="text" x-model="formData.name" required
-                                   @input.debounce.500ms="generateCode()"
-                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
-                                   placeholder="例如: 人事">
-                        </div>
-
-                        <!-- 代碼 -->
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">分類代碼 *</label>
-                            <input type="text" x-model="formData.code" :disabled="isEditing" required
-                                   @input="onCodeInput()"
-                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
-                                   :style="isEditing ? 'background: #f5f5f5; cursor: not-allowed;' : ''"
-                                   placeholder="自動生成或手動輸入">
-                            <p x-show="isEditing" style="margin: 4px 0 0; font-size: 11px; color: #999;">代碼建立後無法修改</p>
-                            <p x-show="!isEditing" style="margin: 4px 0 0; font-size: 11px; color: #666;">輸入名稱後自動生成，可手動修改</p>
-                        </div>
-
-                        <!-- 描述 -->
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">描述</label>
-                            <textarea x-model="formData.description" rows="2"
-                                      style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
-                                      placeholder="選填"></textarea>
-                        </div>
-
-                        <!-- 顏色 -->
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">顏色</label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <template x-for="color in colorOptions" :key="color">
-                                    <button type="button" @click="formData.color = color"
-                                            :style="'width: 32px; height: 32px; border-radius: 50%; border: 2px solid ' + (formData.color === color ? '#000' : 'transparent') + '; background-color: ' + color + '; cursor: pointer;'">
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- 模組顯示 -->
-                        <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
-                            <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px;">模組顯示</label>
-                            <div class="checkbox-group" style="display: flex; gap: 24px; flex-wrap: wrap;">
-                                <label>
-                                    <input type="checkbox" x-model="formData.visible_in_form_design">
-                                    表單設計
-                                </label>
-                                <label>
-                                    <input type="checkbox" x-model="formData.visible_in_workflow_design">
-                                    流程設計
-                                </label>
-                                <label>
-                                    <input type="checkbox" x-model="formData.visible_in_form_center">
-                                    表單中心
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- 部門權限 -->
-                        <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
-                            <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px;">
-                                表單中心可見部門/群組
-                            </label>
-                            <div style="margin-bottom: 8px;">
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                    <input type="radio" name="unit_mode" value="all" x-model="unitMode">
-                                    全企業可見
-                                </label>
-                            </div>
-                            <div style="margin-bottom: 8px;">
-                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                    <input type="radio" name="unit_mode" value="specific" x-model="unitMode">
-                                    指定部門/群組
-                                </label>
-                            </div>
-                            <div x-show="unitMode === 'specific'" class="unit-tree" style="margin-top: 8px;">
-                                <template x-if="units.length === 0">
-                                    <p style="color: #999; font-size: 12px;">尚無部門/群組資料</p>
-                                </template>
-                                <template x-for="unit in units" :key="unit.id">
-                                    <div class="unit-item" :style="'padding-left: ' + ((unit.level - 1) * 16) + 'px'">
-                                        <label>
-                                            <input type="checkbox" :value="unit.id" x-model="formData.allowed_units">
-                                            <span x-text="unit.name"></span>
-                                            <span style="color: #999; font-size: 11px;" x-text="'(' + unit.unit_type + ')'"></span>
-                                        </label>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- 啟用狀態 -->
-                        <div x-show="isEditing" style="margin-bottom: 16px;">
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                <input type="checkbox" x-model="formData.is_active">
-                                啟用此分類
-                            </label>
-                        </div>
-
-                        <!-- 按鈕 -->
-                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
-                            <button type="button" @click="closeModal()"
-                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
-                            <button type="submit"
-                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
-                                <span x-text="isEditing ? '儲存' : '建立'"></span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 刪除確認 Modal -->
-            <div x-show="showDeleteModal" x-cloak
-                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
-                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
-                    <p style="margin: 0 0 16px;">
-                        確定要刪除分類「<span style="font-weight: 600;" x-text="categoryToDelete?.name"></span>」嗎？
-                    </p>
-                    <p style="margin: 0 0 16px; font-size: 13px; color: #666;">
-                        已使用此分類的表單不受影響，但之後無法再選擇此分類。
-                    </p>
-                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                        <button @click="showDeleteModal = false"
-                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
-                        <button @click="deleteCategory()"
-                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- 收件人群組設定 -->
         <section id="recipients" class="settings-section" x-data="recipientGroupManager()" x-init="init()">
@@ -1362,7 +1138,7 @@ function generalSettings() {
 function passwordPolicySettings() {
     return {
         policy: {
-            enabled: false,
+            enabled: true,
             min_length: 12,
             require_uppercase: true,
             require_lowercase: true,
