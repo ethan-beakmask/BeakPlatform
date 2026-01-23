@@ -181,7 +181,7 @@
 <p>
     <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">[編輯]</a>
     {% if can_reset_password %}
-    <button type="button" class="action-btn warning" @click="showResetPassword = true" style="margin-left: 10px;">重設密碼</button>
+    <button type="button" class="action-btn warning" @click="openResetModal()" style="margin-left: 10px;">重設密碼</button>
     {% endif %}
 </p>
 
@@ -396,6 +396,11 @@ function resetPasswordForm() {
 
         async init() {
             await this.loadPasswordRequirements();
+        },
+
+        openResetModal() {
+            this.showResetPassword = true;
+            this.generatePassword();
         },
 
         async loadPasswordRequirements() {
