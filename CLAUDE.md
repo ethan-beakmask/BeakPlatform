@@ -4,7 +4,7 @@
 
 **BeakPlatform 是一個多租戶權限管理平台**
 
-核心功能：
+這是一個**純平台**，核心功能：
 - 安全控制（認證、授權、攔截）
 - 多租戶隔離（企業資料隔離、RLS）
 - RBAC 權限系統
@@ -12,21 +12,32 @@
 - 組織架構管理（部門、群組、角色）
 - 人資架構管理（職等、職系、職稱）
 
-**不包含業務功能** — 業務功能應透過「模組」掛載。
+**業務功能透過「模組」掛載，不在平台內實作。**
+
+---
+
+## 📖 必讀文件
+
+開始工作前，請先閱讀：
+1. **本文件** — 專案規範
+2. **`docs/PLATFORM_MODULARIZATION_PLAN.md`** — 完整開發計劃
 
 ---
 
 ## 📋 每次對話必做
 
 ### 0. 對話開始 (啟動檢查)
-**每次對話開始時**，主動執行以下步驟：
+**每次對話開始時**，主動執行：
 
-1. **閱讀本文件的「下次作業項目」區塊**
-2. **查看 Forgejo Issues**: `curl -s http://192.168.0.16:3000/api/v1/repos/forgejoadmin/BeakPlatform/issues?state=open | jq '.[] | {number, title}'`
-3. **比較兩邊**：列出待辦事項，與用戶討論
+1. 讀取 `docs/PLATFORM_MODULARIZATION_PLAN.md` 了解當前進度
+2. 查看 Forgejo Issues：
+   ```bash
+   curl -s http://192.168.0.16:3000/api/v1/repos/forgejoadmin/BeakPlatform/issues?state=open | jq '.[] | {number, title}'
+   ```
+3. 與用戶確認本次要處理的項目
 
 ### 1. Git Commit (對話結束)
-**每次對話結束前**，提交變更到 Git：
+**每次對話結束前**：
 
 ```bash
 cd /opt/BeakPlatform
@@ -41,12 +52,43 @@ git commit -m "類型: 簡短摘要
 git push origin main
 ```
 
-**Commit 類型**：
-- `feat:` 新功能
-- `fix:` 修復 bug
-- `refactor:` 重構
-- `docs:` 文件更新
-- `security:` 安全相關
+### 2. 更新計劃文件
+如果完成了計劃中的項目，更新 `docs/PLATFORM_MODULARIZATION_PLAN.md` 的狀態。
+
+---
+
+## 🎯 當前開發階段
+
+### Step 1: 單純平台化 ← **目前**
+確保 BeakPlatform 可獨立運行，不含業務功能。
+
+**待完成清單**:
+- [ ] 檢查所有檔案的表單流程引用
+- [ ] 清理前端模板的表單流程連結
+- [ ] 清理選單資料的表單流程項目
+- [ ] 建立獨立資料庫 `beakplatform_dev`
+- [ ] 建立資料庫初始化腳本
+- [ ] 驗證 Flask 可啟動
+- [ ] 驗證登入/登出正常
+- [ ] 驗證平台功能正常
+
+**驗收標準**:
+1. `flask run` 無 import 錯誤
+2. 可以登入系統
+3. 所有平台功能正常
+4. 沒有表單流程相關 UI/API
+
+### Step 2: 建立模組化標準
+詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`
+
+### Step 3: 依標準移轉表單流程系統
+將 `/opt/FormFlow/a6` 改造為模組
+
+### Step 4: 模擬用戶環境驗證
+在新 Ubuntu VM 驗證安裝流程
+
+### Step 5: 開發全新模組
+驗證模組標準通用性
 
 ---
 
@@ -57,7 +99,6 @@ git push origin main
 - 未登入訪問非白名單路由 → 401
 
 ### AUTH-02: 統一認證 Decorator
-所有路由**必須**使用以下裝飾器之一：
 ```python
 @public_route          # 公開路由
 @login_required        # 需要登入
@@ -66,12 +107,12 @@ git push origin main
 ```
 
 ### TENANT-01: 強制企業隔離
-- 所有查詢自動包含 `org_secure_code` 過濾
+- 所有查詢包含 `org_secure_code` 過濾
 - PostgreSQL RLS 作為最後防線
 
 ### TENANT-02: ResourceGateway 要求
-- API 層**禁止**直接使用 `Model.query`
-- 必須透過 `ResourceGateway` 存取資源
+- API 層禁止直接使用 `Model.query`
+- 必須透過 `ResourceGateway` 存取
 
 ---
 
@@ -79,35 +120,23 @@ git push origin main
 
 ```
 /opt/BeakPlatform/
-├── backend/                # 主應用
+├── backend/
 │   ├── app/
-│   │   ├── security/       # 安全核心 (勿隨意修改)
+│   │   ├── security/       # 安全核心（勿隨意修改）
 │   │   ├── api/            # API 路由
-│   │   ├── web/            # Web 路由 (HTML 頁面)
+│   │   ├── web/            # Web 路由
 │   │   ├── models/         # 資料模型
 │   │   ├── services/       # 業務邏輯
 │   │   └── templates/      # Jinja2 模板
 │   └── tests/
+├── modules/                # 模組目錄（Step 2 後建立）
 ├── docs/
+│   ├── PLATFORM_MODULARIZATION_PLAN.md  # 開發計劃
 │   └── knowledge/          # 知識庫
 ├── scripts/
 │   └── migrations/         # 資料庫遷移
 └── .semgrep/               # 安全規則
 ```
-
----
-
-## 🛠️ 開發流程
-
-### 新增 API 路由
-1. 在 `backend/app/api/` 建立檔案
-2. 使用統一認證 decorator
-3. 透過 ResourceGateway 存取資源
-
-### 新增 Model
-1. 繼承 `TenantBaseModel` (多租戶) 或 `BaseModel`
-2. 使用 `secure_code` 作為外部識別碼
-3. 不要暴露自增 `id`
 
 ---
 
@@ -118,76 +147,46 @@ git push origin main
 3. **禁止** 在 URL 使用自增 ID
 4. **禁止** 硬編碼密鑰/密碼
 5. **禁止** SQL 字串拼接
-6. **禁止** 加入業務功能（應透過模組）
+6. **禁止** 在平台內實作業務功能（應透過模組）
 
 ---
 
 ## 📊 資料庫資訊
 
 - **Host**: localhost
-- **Database**: beakplatform_dev (待建立)
+- **Port**: 5432
+- **Database**: beakplatform_dev（待建立）
 - **User**: beakplatform
-- **Password**: postgres123 (開發環境)
-
----
-
-## 🎯 當前開發階段
-
-**Phase 1: 平台基礎** ← 目前
-- [x] 從 BeakMask 提取核心平台功能
-- [ ] 清理表單流程相關引用
-- [ ] 建立獨立資料庫
-- [ ] 驗證平台可獨立運行
-
-**Phase 2: 模組標準制定**
-- [ ] 認證接口標準
-- [ ] 資料接口標準
-- [ ] 權限接口標準
-- [ ] 選單整合標準
-- [ ] 路由掛載標準
-- [ ] 資料庫隔離標準
-
-**Phase 3: 模組範例**
-- [ ] 將 A6 (FormFlow) 改造為第一個模組
-
----
-
-## 🔜 下次作業項目
-
-### 平台清理
-| 項目 | 狀態 |
-|------|------|
-| 移除表單流程 Models | ✅ 已完成 |
-| 移除表單流程 API | ✅ 已完成 |
-| 移除表單流程 Web | ✅ 已完成 |
-| 清理 __init__.py 引用 | ✅ 已完成 |
-| 檢查其他檔案的引用 | ⏳ 待執行 |
-| 建立獨立資料庫 | ⏳ 待執行 |
-| 驗證平台可運行 | ⏳ 待執行 |
-
-### 模組標準制定
-| 項目 | 狀態 |
-|------|------|
-| 認證接口標準 | ⏳ 待執行 |
-| 資料接口標準 | ⏳ 待執行 |
-| 權限接口標準 | ⏳ 待執行 |
-| 選單整合標準 | ⏳ 待執行 |
-| 路由掛載標準 | ⏳ 待執行 |
-| 資料庫隔離標準 | ⏳ 待執行 |
+- **Password**: postgres123（開發環境）
 
 ---
 
 ## 📝 備忘
 
-### Forgejo (版本控制)
+### Forgejo
 - **URL**: http://192.168.0.16:3000/
 - **Repo**: http://192.168.0.16:3000/forgejoadmin/BeakPlatform
 - **API Token**: `be6f8e52f155aa026ac12c5bd470114aa7c54333`
 
 ### 相關專案
-- **BeakMask**: `/opt/BeakMask` — 完整系統（含表單流程）
-- **A6 (FormFlow)**: `/opt/FormFlow/a6` — 表單流程 MVP
+| 專案 | 路徑 | 說明 |
+|------|------|------|
+| BeakPlatform | `/opt/BeakPlatform` | 本專案（純平台）|
+| A6 (FormFlow) | `/opt/FormFlow/a6` | 表單流程 MVP（待改造為模組）|
+| BeakMask | `/opt/BeakMask` | 舊專案（參考用）|
+
+### 服務啟動
+```bash
+cd /opt/BeakPlatform
+source venv/bin/activate  # 如果有 venv
+set -a && source .env && set +a
+cd backend && flask run --host=0.0.0.0 --port=5009
+```
+
+### 檔案輸出
+- **輸出目錄**: `/mnt/smb`（SMB 共享）
+- Windows 路徑: `\\192.168.0.16\smb`
 
 ---
 
-*最後更新: 2026-01-23 (專案初始化)*
+*最後更新: 2026-01-23*
