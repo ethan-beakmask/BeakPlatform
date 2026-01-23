@@ -1,0 +1,88 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增職系 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>新增職系</h1>
+
+<p><a href="{{ url_for('job_families.list_job_families') }}">[返回列表]</a></p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">職系代碼 *</th>
+            <td>
+                <input type="text" name="code" required maxlength="20"
+                       placeholder="如 TECH" style="width: 100%;"
+                       value="{{ request.form.get('code', '') }}">
+                <div style="font-size: 0.8em; color: #666;">建議用大寫英文，如 MGR, SALES, TECH</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職系名稱 *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       placeholder="如 工程技術職" style="width: 100%;"
+                       value="{{ request.form.get('name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">英文名稱</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       placeholder="如 Technical Position" style="width: 100%;"
+                       value="{{ request.form.get('name_en', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職系類型 *</th>
+            <td>
+                {% for type_value, type_label in family_types %}
+                <label style="display: block; margin-bottom: 5px;">
+                    <input type="radio" name="family_type" value="{{ type_value }}"
+                           {% if request.form.get('family_type', 'PROFESSIONAL') == type_value %}checked{% endif %}>
+                    {{ type_label }}
+                </label>
+                {% endfor %}
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">上層職系</th>
+            <td>
+                <select name="parent_secure_code" style="width: 100%;">
+                    <option value="">-- 無 (根職系) --</option>
+                    {% for parent in parent_options %}
+                    <option value="{{ parent.secure_code }}"
+                            {% if request.form.get('parent_secure_code') == parent.secure_code %}selected{% endif %}>
+                        {{ parent.name }} ({{ parent.code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8em; color: #666;">子職系可選擇歸屬的上層職系</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">描述</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;"
+                          placeholder="職系的詳細說明">{{ request.form.get('description', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">排序順序</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       style="width: 100%;"
+                       value="{{ request.form.get('sort_order', '0') }}">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">建立職系</button>
+                <a href="{{ url_for('job_families.list_job_families') }}" style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

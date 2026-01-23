@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外部人員登入 - {{ org.name }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 200px;
+            max-height: 80px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        .error-msg {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        form table {
+            width: 100%;
+        }
+        form td {
+            padding: 8px 0;
+        }
+        form input[type="email"],
+        form input[type="password"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        form input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        form button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #1d4ed8;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    {% if logo_url %}
+    <div class="logo-container">
+        <img src="{{ logo_url }}" alt="{{ org.name }}">
+    </div>
+    <h1>{{ org.name }} - 外部人員登入</h1>
+    {% else %}
+    <h1>{{ org.name }} - 外部人員登入</h1>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="error-msg">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.org_public_login', domain_name=domain_name) }}">
+        <table border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <label for="email">Email</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="email" id="email" name="email" required
+                           autocomplete="email" placeholder="your@email.com">
+                    <div class="help-text">請輸入您的完整 Email 地址</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="password">密碼</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="password" id="password" name="password" required
+                           autocomplete="current-password">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px;">
+                    <button type="submit">登入</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <div class="links">
+        <a href="{{ url_for('auth.org_public', domain_name=domain_name) }}">&larr; 返回</a>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 BeakMask. Security First.</p>
+    </footer>
+</body>
+</html>

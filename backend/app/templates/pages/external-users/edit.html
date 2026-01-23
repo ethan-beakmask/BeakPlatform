@@ -1,0 +1,373 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯 {{ user.display_name }} - 外部人員 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .section-title {
+        background: #f0f0f0;
+        padding: 8px 12px;
+        margin: 20px 0 10px 0;
+        font-weight: bold;
+        border-left: 4px solid #0066cc;
+    }
+    .section-title.optional {
+        border-left-color: #888;
+        color: #666;
+    }
+    .help-text {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 4px;
+    }
+    .info-table {
+        width: 100%;
+        max-width: 600px;
+        border-collapse: collapse;
+    }
+    .info-table th, .info-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .info-table th {
+        width: 120px;
+        color: #666;
+        font-weight: normal;
+        background: #f9fafb;
+    }
+    .group-table {
+        width: 100%;
+        max-width: 600px;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .group-table th, .group-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .group-table th {
+        background: #f9fafb;
+        font-weight: 600;
+    }
+    .btn-remove {
+        color: #dc2626;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+    .btn-remove:hover {
+        text-decoration: underline;
+    }
+    .add-group-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+    }
+    .add-group-form select {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .add-group-form button {
+        padding: 6px 12px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .add-group-form button:hover {
+        background: #1d4ed8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}">&lt; 返回詳情頁</a></p>
+
+<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">
+    編輯外部人員：{{ user.display_name }}
+</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
+          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- 基本資訊（唯讀） -->
+<div class="section-title">基本資訊</div>
+<table class="info-table">
+    <tr>
+        <th>姓名</th>
+        <td>{{ user.display_name }}</td>
+    </tr>
+    <tr>
+        <th>編號</th>
+        <td><code>{{ user.employee_id or '-' }}</code></td>
+    </tr>
+</table>
+
+<!-- 可編輯欄位 -->
+<div class="section-title">帳號資訊</div>
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th>Email *</th>
+            <td>
+                <input type="email" name="email" value="{{ user.email }}"
+                       required maxlength="255" style="width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;">
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">備註</th>
+            <td>
+                <textarea name="notes" rows="3" style="width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;"
+                          maxlength="1000" placeholder="選填">{{ user.notes or '' }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th></th>
+            <td style="padding-top: 15px;">
+                <button type="submit"
+                        style="padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    儲存變更
+                </button>
+                <a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}"
+                   style="margin-left: 15px; color: #6b7280;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<!-- 密碼變更 -->
+<div class="section-title optional">變更密碼</div>
+<form method="POST" action="{{ url_for('external_users.change_password', secure_code=user.secure_code) }}"
+      style="max-width: 600px;" x-data="passwordForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table class="info-table">
+        <tr>
+            <th style="vertical-align: top;">新密碼</th>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: start;">
+                    <div style="flex: 1;">
+                        <input :type="showPassword ? 'text' : 'password'" name="new_password"
+                               x-model="password" @input="validatePassword()"
+                               minlength="8" style="width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <button type="button" @click="showPassword = !showPassword"
+                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                    <button type="button" @click="generatePassword()"
+                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        建議密碼
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <!-- 驗證錯誤 -->
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <!-- 驗證通過 -->
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                    ✓ 密碼符合要求
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th></th>
+            <td>
+                <button type="submit" :disabled="!password || passwordErrors.length > 0"
+                        style="padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        :style="(!password || passwordErrors.length > 0) && 'opacity: 0.5; cursor: not-allowed'">
+                    變更密碼
+                </button>
+                <span style="color: #9ca3af; font-size: 0.85em; margin-left: 15px;">留空則不變更</span>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+function passwordForm() {
+    return {
+        password: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        async init() {
+            await this.loadRequirements();
+        },
+
+        async loadRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、');
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        }
+    };
+}
+</script>
+
+<!-- 群組管理 -->
+<div class="section-title optional">歸屬群組</div>
+
+{% if current_groups %}
+<table class="group-table">
+    <thead>
+        <tr>
+            <th style="width: 200px;">群組名稱</th>
+            <th style="width: 100px;">角色</th>
+            <th style="width: 120px;">加入日期</th>
+            <th style="width: 80px;">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for group in current_groups %}
+        <tr>
+            <td>{{ group.unit.name }}{% if group.unit.code %} <span style="color: #999;">({{ group.unit.code }})</span>{% endif %}</td>
+            <td>
+                {% if group.role_type in ['MANAGER', 'DEPUTY'] %}
+                <strong style="color: #1565c0;">{{ group.role_name }}</strong>
+                {% elif group.role_type in ['PROXY1', 'PROXY2'] %}
+                <span style="color: #6a1b9a;">{{ group.role_name }}</span>
+                {% else %}
+                {{ group.role_name }}
+                {% endif %}
+            </td>
+            <td>{{ group.start_date.strftime('%Y-%m-%d') if group.start_date else '-' }}</td>
+            <td>
+                {% if current_groups|length > 1 %}
+                <form method="POST" action="{{ url_for('external_users.remove_from_group', secure_code=user.secure_code) }}"
+                      style="display: inline;"
+                      onsubmit="return confirm('確定要從「{{ group.unit.name }}」移除嗎？')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="membership_code" value="{{ group.membership_code }}">
+                    <button type="submit" class="btn-remove">移除</button>
+                </form>
+                {% else %}
+                <span style="color: #9ca3af; font-size: 0.85em;">不可移除</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #dc2626;">此外部人員未加入任何群組！請立即加入群組。</p>
+{% endif %}
+
+<!-- 加入新群組 -->
+{% set available_groups = all_groups | rejectattr('code', 'in', joined_group_codes) | list %}
+{% if available_groups %}
+<form method="POST" action="{{ url_for('external_users.add_to_group', secure_code=user.secure_code) }}" class="add-group-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>加入群組：</label>
+    <select name="group_code" required>
+        <option value="">-- 選擇群組 --</option>
+        {% for group in available_groups %}
+        <option value="{{ group.code }}">{{ group.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">加入</button>
+</form>
+{% else %}
+<p style="color: #9ca3af; font-size: 0.9em; margin-top: 10px;">已加入所有可用群組</p>
+{% endif %}
+
+<div style="margin-top: 20px; padding: 12px; background: #f0f9ff; border-radius: 4px; border: 1px solid #bae6fd; max-width: 600px;">
+    <strong style="color: #0369a1;">提示：</strong>
+    <span style="color: #0c4a6e;">外部人員必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。</span>
+</div>
+{% endblock %}

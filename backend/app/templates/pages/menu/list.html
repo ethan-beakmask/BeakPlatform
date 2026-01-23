@@ -1,0 +1,190 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}選單管理 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .menu-table {
+        width: 100%;
+    }
+    .menu-table th, .menu-table td {
+        text-align: center;
+        padding: 6px 10px;
+        white-space: nowrap;
+    }
+    .menu-table th:first-child,
+    .menu-table td:first-child {
+        text-align: left;
+    }
+    .perm-yes { color: #2e7d32; font-weight: bold; }
+    .perm-no { color: #ccc; }
+
+    /* 動態著色：依權限組合 */
+    .menu-sys-only {
+        background-color: #b91c1c;
+        color: white;
+    }
+    .menu-org-only {
+        background-color: #1d4ed8;
+        color: white;
+    }
+    .menu-sys-org-shared {
+        background-color: #b91c1c;
+        color: #fde047;
+    }
+    .menu-fixed-black {
+        background-color: #111827;
+        color: white;
+    }
+
+    /* 有底色時的勾選標記與連結調整 */
+    .menu-sys-only .perm-yes,
+    .menu-org-only .perm-yes,
+    .menu-sys-org-shared .perm-yes,
+    .menu-fixed-black .perm-yes {
+        color: #4ade80;
+    }
+    .menu-sys-only .perm-no,
+    .menu-org-only .perm-no,
+    .menu-sys-org-shared .perm-no,
+    .menu-fixed-black .perm-no {
+        color: rgba(255,255,255,0.3);
+    }
+    .menu-sys-only a,
+    .menu-org-only a,
+    .menu-sys-org-shared a,
+    .menu-fixed-black a {
+        color: #93c5fd;
+    }
+    .menu-sys-only code,
+    .menu-org-only code,
+    .menu-sys-org-shared code,
+    .menu-fixed-black code {
+        background: rgba(255,255,255,0.15);
+        color: inherit;
+    }
+
+    .status-active { color: #16a34a; }
+    .status-inactive { color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>選單管理</h1>
+
+<p><a href="{{ url_for('menu.create_menu') }}">[+ 新增選單項目]</a></p>
+
+{% if menu_items %}
+<table border="1" cellpadding="8" cellspacing="0" class="menu-table">
+    <thead>
+        <tr>
+            <th>選單項目</th>
+            {% for user_type in user_types %}
+            <th>{{ user_type_labels.get(user_type, user_type) }}</th>
+            {% endfor %}
+            <th></th>
+            <th>代碼</th>
+            <th>連結類型</th>
+            <th>連結目標</th>
+            <th>排序</th>
+            <th>狀態</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in menu_items %}
+        {% set perms = permission_matrix.get(entry.item.secure_code, {}) %}
+        {% set has_sys = perms.get('SYSTEM_ADMIN', false) %}
+        {% set has_org = perms.get('ORG_ADMIN', false) %}
+        {% set fixed_titles = ['模組區', '個人設定', '儀表板', '表單中心'] %}
+        {% set is_fixed = entry.item.title in fixed_titles %}
+        {# 計算 row class #}
+        {% if is_fixed %}
+            {% set row_class = 'menu-fixed-black' %}
+        {% elif has_sys and has_org %}
+            {% set row_class = 'menu-sys-org-shared' %}
+        {% elif has_sys %}
+            {% set row_class = 'menu-sys-only' %}
+        {% elif has_org %}
+            {% set row_class = 'menu-org-only' %}
+        {% else %}
+            {% set row_class = '' %}
+        {% endif %}
+        <tr class="{{ row_class }}">
+            <td>{{ entry.indent }}{{ entry.item.icon or '' }} {{ entry.item.title }}</td>
+            {% for user_type in user_types %}
+            <td>
+                {% if perms.get(user_type) %}
+                <span class="perm-yes">&#10003;</span>
+                {% else %}
+                <span class="perm-no">-</span>
+                {% endif %}
+            </td>
+            {% endfor %}
+            <td><a href="{{ url_for('menu.edit_menu', secure_code=entry.item.secure_code) }}">[編輯]</a></td>
+            <td><code>{{ entry.item.code }}</code></td>
+            <td>{{ entry.item.link_type }}</td>
+            <td><code>{{ entry.item.link_target or '-' }}</code></td>
+            <td>{{ entry.item.display_order }}</td>
+            <td>
+                {% if entry.item.is_active %}
+                <span class="status-active">啟用</span>
+                {% else %}
+                <span class="status-inactive">停用</span>
+                {% endif %}
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=entry.item.secure_code) }}" style="display:inline" onsubmit="return confirm('確定要刪除此選單項目嗎？子項目也會一併刪除。');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">[刪除]</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>尚無選單項目。<a href="{{ url_for('menu.create_menu') }}">建立第一個選單項目</a></p>
+{% endif %}
+
+<hr>
+<h2>說明</h2>
+
+<h3>連結類型</h3>
+<table border="1" cellpadding="6" cellspacing="0">
+    <tr><td><code>route</code></td><td>Flask 路由端點 或 URL 路徑 (以 / 開頭)</td></tr>
+    <tr><td><code>url</code></td><td>外部網址</td></tr>
+    <tr><td><code>page</code></td><td>動態頁面</td></tr>
+    <tr><td><code>header</code></td><td>區塊標題 (不可點擊)</td></tr>
+    <tr><td><code>divider</code></td><td>分隔線</td></tr>
+</table>
+
+<h3>用戶類型說明</h3>
+<table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+        <tr>
+            <th>類型</th>
+            <th>說明</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>系統管理員</td>
+            <td>SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料</td>
+        </tr>
+        <tr>
+            <td>企業管理員</td>
+            <td>各企業內最高權限帳號，可管理該企業的所有設定</td>
+        </tr>
+        <tr>
+            <td>員工</td>
+            <td>企業內部員工帳號</td>
+        </tr>
+        <tr>
+            <td>非公司成員</td>
+            <td>企業外部合作夥伴、客戶等，最小權限帳號</td>
+        </tr>
+    </tbody>
+</table>
+<p><small>每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。</small></p>
+{% endblock %}

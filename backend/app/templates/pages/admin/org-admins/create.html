@@ -1,0 +1,284 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增企業管理員 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .form-table input[type="text"],
+    .form-table input[type="email"],
+    .form-table input[type="password"] {
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .form-table input:focus {
+        border-color: #2563eb;
+        outline: none;
+    }
+    .email-input {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .email-input input {
+        width: 150px;
+    }
+    .email-domain {
+        color: #666;
+        font-family: monospace;
+    }
+    .help-text {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('org_admins.list_admins') }}">&lt; 返回管理員列表</a></p>
+
+<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">新增企業管理員</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
+          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if available_employees %}
+<form method="POST" style="max-width: 550px;" x-data="createAdminForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <table class="form-table" border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 120px;">綁定員工 *</th>
+            <td>
+                <select name="bound_employee" required x-model="selectedEmployee" @change="onEmployeeChange()"
+                        style="padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                    <option value="">-- 請選擇員工 --</option>
+                    {% for emp in available_employees %}
+                    <option value="{{ emp.secure_code }}"
+                            data-name="{{ emp.display_name }}"
+                            data-username="{{ emp.username }}"
+                            data-notify-email="{{ emp.backup_email_1 or emp.email }}"
+                            {% if form_data.get('bound_employee') == emp.secure_code %}selected{% endif %}>
+                        {{ emp.display_name }} ({{ emp.employee_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">管理員帳號將綁定此員工，員工停用時管理員也無法登入</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">姓名 *</th>
+            <td>
+                <input type="text" name="display_name" x-model="displayName"
+                       required maxlength="100" style="width: 100%; background: #f3f4f6;" readonly>
+                <div class="help-text">自動帶入綁定員工姓名</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理員帳號</th>
+            <td>
+                <div class="email-input">
+                    <span style="color: #666;">admin-</span>
+                    <input type="text" x-model="username" readonly
+                           style="background: #f3f4f6; width: 100px; border: 1px solid #ccc; padding: 6px 8px; border-radius: 4px;">
+                    <span class="email-domain">@{{ current_user.organization.domain_name if current_user.organization else 'domain' }}</span>
+                </div>
+                <div class="help-text">管理員登入帳號（自動加上 admin- 前綴）</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">通知 Email</th>
+            <td>
+                <input type="text" name="notify_email" x-model="notifyEmail"
+                       maxlength="100" style="width: 100%; background: #f3f4f6;" readonly>
+                <div class="help-text">自動帶入綁定員工通知信箱</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">密碼 *</th>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: start;">
+                    <div style="flex: 1;">
+                        <input :type="showPassword ? 'text' : 'password'" name="password"
+                               x-model="password" @input="validatePassword()"
+                               required minlength="8" style="width: 100%;">
+                    </div>
+                    <button type="button" @click="showPassword = !showPassword"
+                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                    <button type="button" @click="generatePassword()"
+                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        建議密碼
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <!-- 驗證錯誤 -->
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <!-- 驗證通過 -->
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                    ✓ 密碼符合要求
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit" :disabled="!selectedEmployee"
+                        style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        :style="!selectedEmployee && 'opacity: 0.5; cursor: not-allowed'">
+                    建立管理員
+                </button>
+                <a href="{{ url_for('org_admins.list_admins') }}" style="margin-left: 20px; color: #6b7280;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+function createAdminForm() {
+    return {
+        selectedEmployee: '{{ form_data.get("bound_employee", "") }}',
+        displayName: '{{ form_data.get("display_name", "") }}',
+        username: '{{ form_data.get("username", "") }}',
+        notifyEmail: '{{ form_data.get("notify_email", "") }}',
+        password: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        async init() {
+            await this.loadRequirements();
+        },
+
+        async loadRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、');
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元';
+            }
+        },
+
+        onEmployeeChange() {
+            const select = document.querySelector('select[name="bound_employee"]');
+            const option = select.options[select.selectedIndex];
+
+            if (option && option.value) {
+                this.displayName = option.dataset.name || '';
+                this.username = option.dataset.username || '';
+                this.notifyEmail = option.dataset.notifyEmail || '';
+            } else {
+                this.displayName = '';
+                this.username = '';
+                this.notifyEmail = '';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            // 延遲驗證，避免頻繁請求
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        }
+    }
+}
+</script>
+{% else %}
+<div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+    <strong style="color: #92400e;">無法建立管理員</strong>
+    <p style="margin: 8px 0 0 0; color: #78350f;">
+        目前沒有可綁定的員工帳號。請先建立至少一個具有員工編號的員工帳號。
+    </p>
+    <p style="margin: 12px 0 0 0;">
+        <a href="{{ url_for('users.create_user') }}" style="color: #1e40af;">前往新增員工</a>
+    </p>
+</div>
+{% endif %}
+
+<div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 4px; border: 1px solid #fcd34d;">
+    <strong style="color: #92400e;">注意：</strong>
+    <span style="color: #78350f;">企業管理員擁有管理企業設定、用戶帳號的權限。請謹慎授予。</span>
+</div>
+{% endblock %}

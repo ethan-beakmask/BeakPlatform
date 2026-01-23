@@ -1,0 +1,68 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增系統管理員 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('sys_accounts.list_accounts') }}">&lt; 返回列表</a></p>
+
+<h1>新增系統管理員</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#f87171{% else %}#4ade80{% endif %};">
+    <strong>{{ message }}</strong>
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0">
+        <tr>
+            <td><label for="username">帳號 *</label></td>
+            <td>
+                <input type="text" id="username" name="username" size="30" required
+                       pattern="[a-zA-Z0-9_]+" value="{{ request.form.get('username', '') }}">
+                <br><small>英數字和底線，登入時為: username@system.local</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="email">Email *</label></td>
+            <td>
+                <input type="email" id="email" name="email" size="40" required
+                       value="{{ request.form.get('email', '') }}">
+                <br><small>可使用任何 Email（含 Gmail 等公共信箱）</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="display_name">顯示名稱 *</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40" required
+                       value="{{ request.form.get('display_name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="password">密碼 *</label></td>
+            <td>
+                <input type="password" id="password" name="password" size="30" required minlength="12">
+                <br><small>至少 12 碼</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="confirm_password">確認密碼 *</label></td>
+            <td>
+                <input type="password" id="confirm_password" name="confirm_password" size="30" required minlength="12">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">建立帳號</button>
+                <a href="{{ url_for('sys_accounts.list_accounts') }}" style="margin-left: 10px;">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

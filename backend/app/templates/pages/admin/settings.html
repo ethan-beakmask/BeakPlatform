@@ -1,0 +1,2384 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}系統設定 - BeakMask{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    [x-cloak] { display: none !important; }
+
+    .settings-layout {
+        display: flex;
+        gap: 24px;
+        margin-top: 20px;
+    }
+
+    /* 左側選單 */
+    .settings-nav {
+        width: 180px;
+        flex-shrink: 0;
+    }
+    .settings-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: sticky;
+        top: 20px;
+    }
+    .settings-nav li {
+        border-bottom: 1px solid #eee;
+    }
+    .settings-nav a {
+        display: block;
+        padding: 10px 12px;
+        text-decoration: none;
+        color: #333;
+    }
+    .settings-nav a:hover {
+        background: #f5f5f5;
+    }
+    .settings-nav a.active {
+        background: #e3f2fd;
+        color: #0066cc;
+        border-left: 3px solid #0066cc;
+        padding-left: 9px;
+    }
+
+    /* 右側內容 */
+    .settings-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .settings-section {
+        margin-bottom: 48px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #eee;
+    }
+    .settings-section:last-child {
+        border-bottom: none;
+    }
+    .settings-section h2 {
+        margin-top: 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #0066cc;
+    }
+
+    /* 分類管理樣式 */
+    .category-row { transition: background-color 0.15s; }
+    .category-row:hover { background-color: #f9fafb; }
+    .color-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+    .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .unit-tree { max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; padding: 8px; }
+    .unit-item { padding: 4px 0; }
+    .unit-item label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>系統設定</h1>
+<p>企業級系統設定</p>
+
+<div class="settings-layout">
+    <!-- 左側選單 -->
+    <nav class="settings-nav">
+        <ul>
+            <li><a href="#basic">企業資訊</a></li>
+            <li><a href="#general">一般設定</a></li>
+            <li><a href="#password-policy">密碼政策</a></li>
+            <li><a href="#categories">表單流程分類</a></li>
+            <li><a href="#recipients">收件人群組</a></li>
+            <li><a href="#smtp">SMTP 郵件</a></li>
+            <li><a href="#telegram">Telegram</a></li>
+        </ul>
+    </nav>
+
+    <!-- 右側內容 -->
+    <div class="settings-content">
+        <!-- 企業資訊 -->
+        <section id="basic" class="settings-section" x-data="logoSettings()" x-init="init()">
+            <h2>企業資訊</h2>
+            <table border="1" cellpadding="10" cellspacing="0">
+                <tr>
+                    <th style="text-align: left; width: 150px;">企業名稱</th>
+                    <td>{{ current_user.organization.name if current_user.organization else '-' }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">網域</th>
+                    <td>{{ current_user.organization.domain_name if current_user.organization else '-' }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">帳號上限</th>
+                    <td>{{ current_user.organization.user_limit if current_user.organization else '-' }}</td>
+                </tr>
+                <tr>
+                    <th style="text-align: left; vertical-align: top;">企業 Logo</th>
+                    <td>
+                        <!-- 預覽區 -->
+                        <div style="margin-bottom: 12px;">
+                            <template x-if="logoUrl">
+                                <div style="display: flex; align-items: center; gap: 16px;">
+                                    <img :src="logoUrl" alt="企業 Logo"
+                                         style="max-width: 200px; max-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #fff;">
+                                    <button type="button" @click="deleteLogo()"
+                                            style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="!logoUrl">
+                                <span style="color: #999;">尚未上傳 Logo</span>
+                            </template>
+                        </div>
+                        <!-- 上傳區 -->
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="file" id="logo-upload" accept="image/*" @change="uploadLogo($event)"
+                                   style="display: none;">
+                            <button type="button" @click="document.getElementById('logo-upload').click()"
+                                    :disabled="uploading"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <span x-text="uploading ? '上傳中...' : (logoUrl ? '更換 Logo' : '上傳 Logo')"></span>
+                            </button>
+                            <span style="color: #666; font-size: 12px;">支援 PNG, JPG, GIF, SVG, WebP（最大 2MB）</span>
+                        </div>
+                        <!-- 訊息 -->
+                        <p x-show="message" x-text="message"
+                           :style="'margin-top: 8px; padding: 6px 10px; border-radius: 4px; font-size: 13px;' +
+                                   (messageType === 'success' ? 'background: #e8f5e9; color: #2e7d32;' : 'background: #fef2f2; color: #dc2626;')"
+                           x-transition></p>
+                        <div style="margin-top: 8px; color: #666; font-size: 12px;">
+                            Logo 會顯示在企業專屬登入頁面
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin-top: 10px; color: #666;">
+                <small>如需修改其他企業資訊，請聯繫系統管理員。</small>
+            </p>
+        </section>
+
+        <!-- 一般設定 -->
+        <section id="general" class="settings-section" x-data="generalSettings()" x-init="init()">
+            <h2>一般設定</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                控制企業的一般行為設定
+            </p>
+
+            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                <tr>
+                    <th style="text-align: left; width: 200px;">允許用戶修改個人資料</th>
+                    <td>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox"
+                                   x-model="settings.allow_user_self_edit"
+                                   @change="saveSettings()"
+                                   style="width: 18px; height: 18px;">
+                            <span>允許一般用戶在「個人設定」中編輯自己的資料</span>
+                        </label>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            關閉後，用戶只能檢視自己的資料但無法修改（密碼變更除外）
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
+        </section>
+
+        <!-- 密碼政策 -->
+        <section id="password-policy" class="settings-section" x-data="passwordPolicySettings()" x-init="init()">
+            <h2>密碼政策</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定密碼複雜度要求、歷史限制和登入失敗鎖定
+            </p>
+
+            <!-- SMTP 未設定警告 -->
+            <div x-show="!hasSmtp && policy.enabled"
+                 style="padding: 12px 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
+                <strong style="color: #92400e;">注意</strong>
+                <span style="color: #78350f;">
+                    尚未設定 SMTP，忘記密碼功能無法使用。
+                    <a href="#smtp" style="color: #1e40af;">前往設定 SMTP</a>
+                </span>
+            </div>
+
+            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                <!-- 啟用開關 -->
+                <tr>
+                    <th style="text-align: left; width: 180px;">啟用密碼政策</th>
+                    <td>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox"
+                                   x-model="policy.enabled"
+                                   @change="savePolicy()"
+                                   style="width: 18px; height: 18px;">
+                            <span>啟用後，所有密碼欄位將檢查複雜度要求</span>
+                        </label>
+                    </td>
+                </tr>
+
+                <!-- 以下設定只在啟用時顯示 -->
+                <template x-if="policy.enabled">
+                    <tbody>
+                        <!-- 密碼長度 -->
+                        <tr>
+                            <th style="text-align: left;">最小長度</th>
+                            <td>
+                                <input type="number" x-model.number="policy.min_length"
+                                       @change="savePolicy()"
+                                       min="8" max="32"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <span style="margin-left: 8px; color: #666;">個字元（建議 12 以上）</span>
+                            </td>
+                        </tr>
+
+                        <!-- 複雜度要求 -->
+                        <tr>
+                            <th style="text-align: left; vertical-align: top;">複雜度要求</th>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_uppercase" @change="savePolicy()">
+                                        <span>包含大寫字母 (A-Z)</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_lowercase" @change="savePolicy()">
+                                        <span>包含小寫字母 (a-z)</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_digit" @change="savePolicy()">
+                                        <span>包含數字 (0-9)</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" x-model="policy.require_special" @change="savePolicy()">
+                                        <span>包含特殊符號 (!@#$%^&* 等)</span>
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- 密碼歷史 -->
+                        <tr>
+                            <th style="text-align: left;">密碼歷史限制</th>
+                            <td>
+                                <input type="number" x-model.number="policy.history_count"
+                                       @change="savePolicy()"
+                                       min="0" max="24"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <span style="margin-left: 8px; color: #666;">次內不可重複使用（0 = 不限制）</span>
+                            </td>
+                        </tr>
+
+                        <!-- 登入失敗鎖定 -->
+                        <tr>
+                            <th style="text-align: left;">登入失敗鎖定</th>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <span>連續失敗</span>
+                                    <input type="number" x-model.number="policy.max_failed_attempts"
+                                           @change="savePolicy()"
+                                           min="3" max="10"
+                                           style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <span>次後鎖定帳號</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span>基礎鎖定時間</span>
+                                    <input type="number" x-model.number="policy.lockout_duration_minutes"
+                                           @change="savePolicy()"
+                                           min="1" max="60"
+                                           style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <span>分鐘，每次鎖定時間 ×</span>
+                                    <input type="number" x-model.number="policy.lockout_multiplier"
+                                           @change="savePolicy()"
+                                           min="1" max="3"
+                                           style="width: 50px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                </div>
+                                <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                                    例：基礎 15 分鐘 × 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </template>
+            </table>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
+        </section>
+
+        <!-- 表單流程分類 -->
+        <section id="categories" class="settings-section" x-data="categoryManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">表單流程分類</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    + 新增分類
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定表單與流程的分類，控制各模組的顯示及部門權限
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">
+                載入中...
+            </div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && categories.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無分類</p>
+                <p style="color: #999;">點擊「新增分類」開始建立</p>
+            </div>
+
+            <!-- 分類列表 -->
+            <div x-show="!loading && categories.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left; width: 60px;">顏色</th>
+                            <th style="padding: 10px; text-align: left; width: 100px;">代碼</th>
+                            <th style="padding: 10px; text-align: left;">名稱</th>
+                            <th style="padding: 10px; text-align: center; width: 70px;">表單設計</th>
+                            <th style="padding: 10px; text-align: center; width: 70px;">流程設計</th>
+                            <th style="padding: 10px; text-align: center; width: 70px;">表單中心</th>
+                            <th style="padding: 10px; text-align: left; width: 120px;">可見部門</th>
+                            <th style="padding: 10px; text-align: center; width: 80px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(cat, index) in categories" :key="cat.id">
+                            <tr class="category-row" style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;">
+                                    <span class="color-dot" :style="'background-color: ' + (cat.color || '#6b7280')"></span>
+                                </td>
+                                <td style="padding: 10px; font-family: monospace;" x-text="cat.code"></td>
+                                <td style="padding: 10px;">
+                                    <span x-text="cat.name"></span>
+                                    <span x-show="!cat.is_active" style="margin-left: 6px; padding: 2px 6px; background: #fee2e2; color: #991b1b; font-size: 11px;">已停用</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="cat.visible_in_form_design" style="color: #059669;">V</span>
+                                    <span x-show="!cat.visible_in_form_design" style="color: #dc2626;">-</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="cat.visible_in_workflow_design" style="color: #059669;">V</span>
+                                    <span x-show="!cat.visible_in_workflow_design" style="color: #dc2626;">-</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="cat.visible_in_form_center" style="color: #059669;">V</span>
+                                    <span x-show="!cat.visible_in_form_center" style="color: #dc2626;">-</span>
+                                </td>
+                                <td style="padding: 10px; font-size: 12px; color: #666;">
+                                    <span x-text="getUnitsDisplay(cat)"></span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="openEditModal(cat)" title="編輯"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        編輯
+                                    </button>
+                                    <button @click="confirmDelete(cat)" title="刪除"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 說明 -->
+            <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; font-size: 13px;">
+                <p style="margin: 0 0 8px; font-weight: 500;">說明</p>
+                <ul style="margin: 0; padding-left: 20px; color: #0369a1;">
+                    <li>表單設計：在表單設計頁面的分類篩選中顯示</li>
+                    <li>流程設計：在流程設計頁面的分類篩選中顯示</li>
+                    <li>表單中心：在表單中心（填寫表單）頁面中顯示</li>
+                    <li>可見部門：設定哪些部門的用戶可在表單中心看到此分類的表單</li>
+                </ul>
+            </div>
+
+            <!-- 新增/編輯 Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯分類' : '新增分類'"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveCategory()">
+                        <!-- 名稱（放在代碼前面，輸入名稱時自動生成代碼）-->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">顯示名稱 *</label>
+                            <input type="text" x-model="formData.name" required
+                                   @input.debounce.500ms="generateCode()"
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   placeholder="例如: 人事">
+                        </div>
+
+                        <!-- 代碼 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">分類代碼 *</label>
+                            <input type="text" x-model="formData.code" :disabled="isEditing" required
+                                   @input="onCodeInput()"
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   :style="isEditing ? 'background: #f5f5f5; cursor: not-allowed;' : ''"
+                                   placeholder="自動生成或手動輸入">
+                            <p x-show="isEditing" style="margin: 4px 0 0; font-size: 11px; color: #999;">代碼建立後無法修改</p>
+                            <p x-show="!isEditing" style="margin: 4px 0 0; font-size: 11px; color: #666;">輸入名稱後自動生成，可手動修改</p>
+                        </div>
+
+                        <!-- 描述 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">描述</label>
+                            <textarea x-model="formData.description" rows="2"
+                                      style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                      placeholder="選填"></textarea>
+                        </div>
+
+                        <!-- 顏色 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">顏色</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <template x-for="color in colorOptions" :key="color">
+                                    <button type="button" @click="formData.color = color"
+                                            :style="'width: 32px; height: 32px; border-radius: 50%; border: 2px solid ' + (formData.color === color ? '#000' : 'transparent') + '; background-color: ' + color + '; cursor: pointer;'">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- 模組顯示 -->
+                        <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                            <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px;">模組顯示</label>
+                            <div class="checkbox-group" style="display: flex; gap: 24px; flex-wrap: wrap;">
+                                <label>
+                                    <input type="checkbox" x-model="formData.visible_in_form_design">
+                                    表單設計
+                                </label>
+                                <label>
+                                    <input type="checkbox" x-model="formData.visible_in_workflow_design">
+                                    流程設計
+                                </label>
+                                <label>
+                                    <input type="checkbox" x-model="formData.visible_in_form_center">
+                                    表單中心
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 部門權限 -->
+                        <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                            <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px;">
+                                表單中心可見部門/群組
+                            </label>
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="radio" name="unit_mode" value="all" x-model="unitMode">
+                                    全企業可見
+                                </label>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="radio" name="unit_mode" value="specific" x-model="unitMode">
+                                    指定部門/群組
+                                </label>
+                            </div>
+                            <div x-show="unitMode === 'specific'" class="unit-tree" style="margin-top: 8px;">
+                                <template x-if="units.length === 0">
+                                    <p style="color: #999; font-size: 12px;">尚無部門/群組資料</p>
+                                </template>
+                                <template x-for="unit in units" :key="unit.id">
+                                    <div class="unit-item" :style="'padding-left: ' + ((unit.level - 1) * 16) + 'px'">
+                                        <label>
+                                            <input type="checkbox" :value="unit.id" x-model="formData.allowed_units">
+                                            <span x-text="unit.name"></span>
+                                            <span style="color: #999; font-size: 11px;" x-text="'(' + unit.unit_type + ')'"></span>
+                                        </label>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- 啟用狀態 -->
+                        <div x-show="isEditing" style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active">
+                                啟用此分類
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
+                    <p style="margin: 0 0 16px;">
+                        確定要刪除分類「<span style="font-weight: 600;" x-text="categoryToDelete?.name"></span>」嗎？
+                    </p>
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #666;">
+                        已使用此分類的表單不受影響，但之後無法再選擇此分類。
+                    </p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                        <button @click="deleteCategory()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 收件人群組設定 -->
+        <section id="recipients" class="settings-section" x-data="recipientGroupManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">收件人群組設定</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    + 新增群組
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定系統通知的收件人群組，使用「備用 Email 1（系統通知專用）」作為通知信箱
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && groups.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無收件人群組</p>
+                <p style="color: #999;">點擊「新增群組」開始建立</p>
+            </div>
+
+            <!-- 群組列表 -->
+            <div x-show="!loading && groups.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">群組名稱</th>
+                            <th style="padding: 10px; text-align: left;">說明</th>
+                            <th style="padding: 10px; text-align: center; width: 80px;">收件人數</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">狀態</th>
+                            <th style="padding: 10px; text-align: center; width: 140px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="group in groups" :key="group.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;" x-text="group.name"></td>
+                                <td style="padding: 10px; color: #666;" x-text="group.description || '-'"></td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-text="group.recipient_count || 0"></span> 人
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="group.is_active" style="color: #059669;">啟用</span>
+                                    <span x-show="!group.is_active" style="color: #dc2626;">停用</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="previewRecipients(group)" title="預覽"
+                                            style="padding: 4px 8px; background: #e0f2fe; color: #0369a1; border: none; cursor: pointer; margin-right: 4px;">
+                                        預覽
+                                    </button>
+                                    <button @click="openEditModal(group)" title="編輯"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        編輯
+                                    </button>
+                                    <button @click="confirmDelete(group)" title="刪除"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 新增/編輯 Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 900px; max-width: 95%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯收件人群組' : '新增收件人群組'"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveGroup()">
+                        <!-- 基本資訊 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">群組名稱 *</label>
+                                <input type="text" x-model="formData.name" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       placeholder="例如: 全體員工、主管群組">
+                            </div>
+                            <div style="flex: 2;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">說明</label>
+                                <input type="text" x-model="formData.description"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- 收件人選擇區 -->
+                        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                            <!-- 左側：組織樹 + 用戶搜尋 -->
+                            <div style="flex: 1; border: 1px solid #ddd; padding: 12px;">
+                                <div style="font-weight: 500; margin-bottom: 8px;">選擇來源</div>
+
+                                <!-- Tab 切換 -->
+                                <div style="display: flex; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
+                                    <button type="button" @click="sourceTab = 'units'"
+                                            :style="sourceTab === 'units' ? 'background: #e3f2fd; border-bottom: 2px solid #0066cc;' : ''"
+                                            style="flex: 1; padding: 8px; border: none; cursor: pointer;">
+                                        部門/群組
+                                    </button>
+                                    <button type="button" @click="sourceTab = 'users'"
+                                            :style="sourceTab === 'users' ? 'background: #e3f2fd; border-bottom: 2px solid #0066cc;' : ''"
+                                            style="flex: 1; padding: 8px; border: none; cursor: pointer;">
+                                        個別用戶
+                                    </button>
+                                </div>
+
+                                <!-- 部門樹 -->
+                                <div x-show="sourceTab === 'units'" style="max-height: 300px; overflow-y: auto;">
+                                    <template x-for="unit in orgTree" :key="unit.id">
+                                        <div :style="'padding: 4px 8px; padding-left: ' + ((unit.level - 1) * 16 + 8) + 'px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;'"
+                                             :class="{'bg-blue-50': isUnitSelected(unit.id)}"
+                                             @click="toggleUnit(unit)">
+                                            <span style="font-size: 12px; color: #666;" x-text="unit.unit_type === 'GROUP' ? '[G]' : ''"></span>
+                                            <span x-text="unit.name"></span>
+                                            <span style="font-size: 11px; color: #999;" x-text="'(' + unit.member_count + ')'"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="orgTree.length === 0" style="padding: 16px; text-align: center; color: #999;">
+                                        無部門資料
+                                    </div>
+                                </div>
+
+                                <!-- 用戶搜尋 -->
+                                <div x-show="sourceTab === 'users'">
+                                    <input type="text" x-model="userSearch" @input.debounce.300ms="searchUsers()"
+                                           style="width: 100%; padding: 8px; border: 1px solid #ccc; margin-bottom: 8px; box-sizing: border-box;"
+                                           placeholder="搜尋用戶姓名或 email...">
+                                    <div style="max-height: 260px; overflow-y: auto;">
+                                        <template x-for="user in searchedUsers" :key="user.id">
+                                            <div style="padding: 6px 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;"
+                                                 :class="{'bg-blue-50': isUserSelected(user.id)}"
+                                                 @click="toggleUser(user)">
+                                                <span x-text="user.name"></span>
+                                                <span style="font-size: 11px; color: #666;" x-text="user.unit_name ? '(' + user.unit_name + ')' : ''"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="searchedUsers.length === 0 && userSearch" style="padding: 16px; text-align: center; color: #999;">
+                                            無符合的用戶
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右側：已選清單 -->
+                            <div style="flex: 1; border: 1px solid #ddd; padding: 12px;">
+                                <div style="font-weight: 500; margin-bottom: 8px;">已選收件人</div>
+
+                                <!-- 已選部門 -->
+                                <div x-show="formData.included_units.length > 0" style="margin-bottom: 12px;">
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">部門/群組：</div>
+                                    <template x-for="(unitCfg, idx) in formData.included_units" :key="unitCfg.id">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #f0f9ff; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUnitName(unitCfg.id)"></span>
+                                            <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: #666;">
+                                                <input type="checkbox" x-model="unitCfg.include_children">
+                                                含子部門
+                                            </label>
+                                            <button type="button" @click="removeUnit(idx)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- 已選用戶 -->
+                                <div x-show="formData.included_users.length > 0" style="margin-bottom: 12px;">
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 4px;">個別用戶：</div>
+                                    <template x-for="(userId, idx) in formData.included_users" :key="userId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #f0fdf4; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUserName(userId)"></span>
+                                            <button type="button" @click="removeUser(idx)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- 排除區 -->
+                                <div x-show="formData.excluded_units.length > 0 || formData.excluded_users.length > 0"
+                                     style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">
+                                    <div style="font-size: 12px; color: #dc2626; margin-bottom: 4px;">排除：</div>
+                                    <template x-for="(unitId, idx) in formData.excluded_units" :key="'ex-' + unitId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #fef2f2; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUnitName(unitId) + ' (部門)'"></span>
+                                            <button type="button" @click="formData.excluded_units.splice(idx, 1)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-for="(userId, idx) in formData.excluded_users" :key="'exu-' + userId">
+                                        <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #fef2f2; margin-bottom: 4px; border-radius: 4px;">
+                                            <span x-text="getUserName(userId)"></span>
+                                            <button type="button" @click="formData.excluded_users.splice(idx, 1)"
+                                                    style="margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer;">
+                                                &times;
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div x-show="formData.included_units.length === 0 && formData.included_users.length === 0"
+                                     style="padding: 32px; text-align: center; color: #999;">
+                                    點擊左側的部門或用戶來加入收件人
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> 啟用此群組
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 預覽 Modal -->
+            <div x-show="showPreviewModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;">收件人預覽 - <span x-text="previewGroup?.name"></span></h3>
+                        <button @click="showPreviewModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+                    <p style="color: #666; margin-bottom: 12px;">
+                        共 <span x-text="previewRecipientsList.length"></span> 位收件人
+                    </p>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+                        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                            <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 8px; text-align: left;">姓名</th>
+                                    <th style="padding: 8px; text-align: left;">通知信箱</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="r in previewRecipientsList" :key="r.user_id">
+                                    <tr style="border-top: 1px solid #eee;">
+                                        <td style="padding: 8px;" x-text="r.name"></td>
+                                        <td style="padding: 8px; font-size: 12px;" x-text="r.email"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 16px; text-align: right;">
+                        <button @click="showPreviewModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">關閉</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed: inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
+                    <p style="margin: 0 0 16px;">確定要刪除收件人群組「<span style="font-weight: 600;" x-text="groupToDelete?.name"></span>」嗎？</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                        <button @click="deleteGroup()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SMTP 設定 -->
+        <section id="smtp" class="settings-section" x-data="smtpManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">SMTP 郵件設定</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    + 新增設定
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定 SMTP 伺服器用於發送系統郵件通知
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && configs.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無 SMTP 設定</p>
+                <p style="color: #999;">點擊「新增設定」開始建立</p>
+            </div>
+
+            <!-- 設定列表 -->
+            <div x-show="!loading && configs.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">名稱</th>
+                            <th style="padding: 10px; text-align: left;">伺服器</th>
+                            <th style="padding: 10px; text-align: left;">寄件人</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">預設</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">狀態</th>
+                            <th style="padding: 10px; text-align: center; width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="config in configs" :key="config.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;">
+                                    <span x-text="config.name"></span>
+                                    <span x-show="config.provider_type !== 'generic'"
+                                          style="margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #3730a3; font-size: 11px;"
+                                          x-text="config.provider_type"></span>
+                                </td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 12px;">
+                                    <span x-text="config.smtp_host + ':' + config.smtp_port"></span>
+                                </td>
+                                <td style="padding: 10px;" x-text="config.from_email"></td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_default" style="color: #059669;">★</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_active" style="color: #059669;">啟用</span>
+                                    <span x-show="!config.is_active" style="color: #dc2626;">停用</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="testConfig(config)" title="測試"
+                                            style="padding: 4px 8px; background: #d1fae5; color: #065f46; border: none; cursor: pointer; margin-right: 4px;">
+                                        測試
+                                    </button>
+                                    <button @click="openEditModal(config)" title="編輯"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        編輯
+                                    </button>
+                                    <button @click="confirmDelete(config)" title="刪除"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SMTP Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯 SMTP 設定' : '新增 SMTP 設定'"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveConfig()">
+                        <!-- 名稱 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">設定名稱 *</label>
+                            <input type="text" x-model="formData.name" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   placeholder="例如: 公司主要郵件">
+                        </div>
+
+                        <!-- 提供者類型 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">郵件服務</label>
+                            <select x-model="formData.provider_type" @change="applyPreset()"
+                                    style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                                <option value="generic">自訂</option>
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook / Office 365</option>
+                            </select>
+                        </div>
+
+                        <!-- SMTP 伺服器 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 3;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">SMTP 伺服器 *</label>
+                                <input type="text" x-model="formData.smtp_host" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       placeholder="smtp.example.com">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">連接埠 *</label>
+                                <input type="number" x-model="formData.smtp_port" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- TLS/SSL -->
+                        <div style="margin-bottom: 12px; display: flex; gap: 24px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.use_tls"> 使用 STARTTLS
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.use_ssl"> 使用 SSL
+                            </label>
+                        </div>
+
+                        <!-- Gmail 應用程式密碼 -->
+                        <div x-show="formData.provider_type === 'gmail'" style="margin-bottom: 12px; padding: 12px; background: #fef3c7; border: 1px solid #f59e0b;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 8px;">
+                                <input type="checkbox" x-model="formData.use_app_password">
+                                <span style="font-weight: 500;">使用應用程式密碼</span>
+                            </label>
+                            <p style="margin: 0; font-size: 12px; color: #92400e;">
+                                如果您的 Gmail 帳號啟用了兩步驟驗證，需要使用應用程式密碼而非一般密碼。
+                                <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: #b45309;">前往設定應用程式密碼</a>
+                            </p>
+                        </div>
+
+                        <!-- 帳號密碼 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">帳號 *</label>
+                                <input type="text" x-model="formData.username" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">密碼 *</label>
+                                <input type="password" x-model="formData.password" :required="!isEditing"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                       :placeholder="isEditing ? '(不修改請留空)' : ''">
+                            </div>
+                        </div>
+
+                        <!-- 寄件人 -->
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">寄件人信箱 *</label>
+                                <input type="email" x-model="formData.from_email" required
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 13px; margin-bottom: 4px;">寄件人名稱</label>
+                                <input type="text" x-model="formData.from_name"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                            </div>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px; display: flex; gap: 24px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_default"> 設為預設
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> 啟用
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
+                    <p style="margin: 0 0 16px;">確定要刪除 SMTP 設定「<span style="font-weight: 600;" x-text="configToDelete?.name"></span>」嗎？</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                        <button @click="deleteConfig()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Telegram 設定 -->
+        <section id="telegram" class="settings-section" x-data="telegramManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">Telegram 通知設定</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    + 新增設定
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定 Telegram Bot 用於發送即時通知
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && configs.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無 Telegram 設定</p>
+                <p style="color: #999;">點擊「新增設定」開始建立</p>
+            </div>
+
+            <!-- 設定列表 -->
+            <div x-show="!loading && configs.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">名稱</th>
+                            <th style="padding: 10px; text-align: left;">Bot Token</th>
+                            <th style="padding: 10px; text-align: left;">頻道數</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">狀態</th>
+                            <th style="padding: 10px; text-align: center; width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="config in configs" :key="config.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;" x-text="config.name"></td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 12px;" x-text="config.bot_token"></td>
+                                <td style="padding: 10px;">
+                                    <span x-text="Object.keys(config.channels || {}).length"></span> 個頻道
+                                    <span x-show="config.default_channel" style="color: #666; font-size: 11px;">
+                                        (預設: <span x-text="config.default_channel"></span>)
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_active" style="color: #059669;">啟用</span>
+                                    <span x-show="!config.is_active" style="color: #dc2626;">停用</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="testConfig(config)" title="測試"
+                                            style="padding: 4px 8px; background: #d1fae5; color: #065f46; border: none; cursor: pointer; margin-right: 4px;">
+                                        測試
+                                    </button>
+                                    <button @click="openEditModal(config)" title="編輯"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        編輯
+                                    </button>
+                                    <button @click="confirmDelete(config)" title="刪除"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Telegram Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 550px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯 Telegram 設定' : '新增 Telegram 設定'"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveConfig()">
+                        <!-- 名稱 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">設定名稱 *</label>
+                            <input type="text" x-model="formData.name" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   placeholder="例如: 告警通知群組">
+                        </div>
+
+                        <!-- 描述 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">描述</label>
+                            <input type="text" x-model="formData.description"
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                        </div>
+
+                        <!-- Bot Token -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">Bot Token *</label>
+                            <input type="text" x-model="formData.bot_token" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; font-family: monospace;"
+                                   placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                            <p style="margin: 4px 0 0; font-size: 11px; color: #666;">
+                                從 @BotFather 取得的 Token
+                            </p>
+                        </div>
+
+                        <!-- 頻道設定 -->
+                        <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label style="font-size: 13px; font-weight: 500;">頻道設定</label>
+                                <button type="button" @click="addChannel()"
+                                        style="padding: 4px 12px; background: #e0e0e0; border: none; cursor: pointer; font-size: 12px;">
+                                    + 新增頻道
+                                </button>
+                            </div>
+
+                            <template x-if="formData.channels.length === 0">
+                                <p style="color: #999; font-size: 12px; text-align: center; padding: 16px;">
+                                    尚無頻道，點擊「新增頻道」開始設定
+                                </p>
+                            </template>
+
+                            <template x-for="(channel, index) in formData.channels" :key="index">
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                                    <input type="text" x-model="channel.name" placeholder="頻道名稱"
+                                           style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px;">
+                                    <input type="text" x-model="channel.chat_id" placeholder="Chat ID"
+                                           style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px; font-family: monospace;">
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap;">
+                                        <input type="radio" name="default_channel" :value="channel.name"
+                                               x-model="formData.default_channel"> 預設
+                                    </label>
+                                    <button type="button" @click="removeChannel(index)"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer; font-size: 12px;">
+                                        ✕
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> 啟用
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
+                    <p style="margin: 0 0 16px;">確定要刪除 Telegram 設定「<span style="font-weight: 600;" x-text="configToDelete?.name"></span>」嗎？</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                        <button @click="deleteConfig()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<hr style="margin-top: 40px;">
+<p><a href="{{ url_for('admin.index') }}">&larr; 返回企業管理</a></p>
+
+<script>
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
+
+// Logo 設定
+function logoSettings() {
+    return {
+        logoUrl: null,
+        uploading: false,
+        message: '',
+        messageType: 'success',
+
+        async init() {
+            await this.loadLogo();
+        },
+
+        async loadLogo() {
+            try {
+                const response = await fetch('/api/admin/settings/logo');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.logo_url) {
+                        this.logoUrl = data.data.logo_url;
+                    }
+                }
+            } catch (err) {
+                console.error('載入 Logo 失敗:', err);
+            }
+        },
+
+        async uploadLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.uploading = true;
+            this.message = '';
+
+            const formData = new FormData();
+            formData.append('logo', file);
+
+            try {
+                const response = await fetch('/api/admin/settings/logo', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.logoUrl = data.data.logo_url + '?t=' + Date.now();  // 避免快取
+                    this.message = 'Logo 上傳成功';
+                    this.messageType = 'success';
+                } else {
+                    this.message = data.message || '上傳失敗';
+                    this.messageType = 'error';
+                }
+            } catch (err) {
+                this.message = '上傳失敗: ' + err.message;
+                this.messageType = 'error';
+            } finally {
+                this.uploading = false;
+                event.target.value = '';  // 清除檔案選擇
+                setTimeout(() => { this.message = ''; }, 3000);
+            }
+        },
+
+        async deleteLogo() {
+            if (!confirm('確定要刪除企業 Logo 嗎？')) return;
+
+            try {
+                const response = await fetch('/api/admin/settings/logo', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.logoUrl = null;
+                    this.message = 'Logo 已刪除';
+                    this.messageType = 'success';
+                } else {
+                    this.message = data.message || '刪除失敗';
+                    this.messageType = 'error';
+                }
+            } catch (err) {
+                this.message = '刪除失敗: ' + err.message;
+                this.messageType = 'error';
+            }
+            setTimeout(() => { this.message = ''; }, 3000);
+        }
+    };
+}
+
+// 一般設定
+function generalSettings() {
+    return {
+        settings: {
+            allow_user_self_edit: true
+        },
+        saveMessage: '',
+
+        async init() {
+            await this.loadSettings();
+        },
+
+        async loadSettings() {
+            try {
+                const response = await fetch('/api/admin/settings/general');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.settings = data.data;
+                    }
+                }
+            } catch (err) {
+                console.error('載入設定失敗:', err);
+            }
+        },
+
+        async saveSettings() {
+            try {
+                const response = await fetch('/api/admin/settings/general', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(this.settings)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.saveMessage = '設定已儲存';
+                    setTimeout(() => { this.saveMessage = ''; }, 2000);
+                } else {
+                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                }
+            } catch (err) {
+                console.error('儲存設定失敗:', err);
+                alert('儲存失敗: ' + err.message);
+            }
+        }
+    };
+}
+
+function passwordPolicySettings() {
+    return {
+        policy: {
+            enabled: false,
+            min_length: 12,
+            require_uppercase: true,
+            require_lowercase: true,
+            require_digit: true,
+            require_special: true,
+            history_count: 5,
+            max_failed_attempts: 5,
+            lockout_duration_minutes: 15,
+            lockout_multiplier: 2
+        },
+        hasSmtp: false,
+        saveMessage: '',
+
+        async init() {
+            await this.loadPolicy();
+        },
+
+        async loadPolicy() {
+            try {
+                const response = await fetch('/api/admin/settings/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.policy = { ...this.policy, ...data.data.policy };
+                        this.hasSmtp = data.data.has_smtp;
+                    }
+                }
+            } catch (err) {
+                console.error('載入密碼政策失敗:', err);
+            }
+        },
+
+        async savePolicy() {
+            try {
+                const response = await fetch('/api/admin/settings/password-policy', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(this.policy)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.hasSmtp = data.data.has_smtp;
+                    this.saveMessage = '設定已儲存';
+                    setTimeout(() => { this.saveMessage = ''; }, 2000);
+                } else {
+                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                }
+            } catch (err) {
+                console.error('儲存密碼政策失敗:', err);
+                alert('儲存失敗: ' + err.message);
+            }
+        }
+    };
+}
+
+function categoryManager() {
+    return {
+        categories: [],
+        units: [],
+        loading: true,
+        showModal: false,
+        showDeleteModal: false,
+        isEditing: false,
+        categoryToDelete: null,
+        unitMode: 'all',
+        codeManuallyEdited: false,  // 代碼是否被手動修改過
+        formData: {
+            code: '',
+            name: '',
+            description: '',
+            icon: '',
+            color: '#3b82f6',
+            visible_in_form_design: true,
+            visible_in_workflow_design: true,
+            visible_in_form_center: true,
+            allowed_units: [],
+            is_active: true
+        },
+        colorOptions: [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+            '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6b7280'
+        ],
+
+        async init() {
+            await Promise.all([
+                this.loadCategories(),
+                this.loadUnits()
+            ]);
+        },
+
+        async loadCategories() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/admin/form-categories');
+                const result = await response.json();
+                if (result.success) {
+                    this.categories = result.data;
+                }
+            } catch (error) {
+                console.error('載入分類失敗:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadUnits() {
+            try {
+                const response = await fetch('/api/admin/organizational-units');
+                const result = await response.json();
+                if (result.success) {
+                    this.units = result.data;
+                }
+            } catch (error) {
+                console.error('載入部門失敗:', error);
+            }
+        },
+
+        getUnitsDisplay(cat) {
+            if (!cat.allowed_units || cat.allowed_units === null) {
+                return '全企業';
+            }
+            if (cat.allowed_units.length === 0) {
+                return '無';
+            }
+            const names = cat.allowed_units.map(id => {
+                const unit = this.units.find(u => u.id === id);
+                return unit ? unit.name : id;
+            });
+            if (names.length <= 2) {
+                return names.join(', ');
+            }
+            return names.slice(0, 2).join(', ') + ' +' + (names.length - 2);
+        },
+
+        openCreateModal() {
+            this.isEditing = false;
+            this.codeManuallyEdited = false;
+            this.formData = {
+                code: '',
+                name: '',
+                description: '',
+                icon: '',
+                color: '#3b82f6',
+                visible_in_form_design: true,
+                visible_in_workflow_design: true,
+                visible_in_form_center: true,
+                allowed_units: [],
+                is_active: true
+            };
+            this.unitMode = 'all';
+            this.showModal = true;
+        },
+
+        // 根據名稱自動生成代碼（使用翻譯 API）
+        async generateCode() {
+            // 編輯模式或已手動修改代碼時不自動生成
+            if (this.isEditing || this.codeManuallyEdited) return;
+
+            const name = this.formData.name.trim();
+            if (!name) {
+                this.formData.code = '';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/form-categories/generate-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ name })
+                });
+                const result = await response.json();
+                if (result.success && !this.codeManuallyEdited) {
+                    this.formData.code = result.code;
+                }
+            } catch (error) {
+                console.error('生成代碼失敗:', error);
+            }
+        },
+
+        // 標記代碼已被手動修改
+        onCodeInput() {
+            if (this.formData.code.trim()) {
+                this.codeManuallyEdited = true;
+            }
+        },
+
+        openEditModal(cat) {
+            this.isEditing = true;
+            this.formData = {
+                id: cat.id,
+                code: cat.code,
+                name: cat.name,
+                description: cat.description || '',
+                icon: cat.icon || '',
+                color: cat.color || '#3b82f6',
+                visible_in_form_design: cat.visible_in_form_design,
+                visible_in_workflow_design: cat.visible_in_workflow_design,
+                visible_in_form_center: cat.visible_in_form_center,
+                allowed_units: cat.allowed_units || [],
+                is_active: cat.is_active
+            };
+            this.unitMode = cat.allowed_units === null ? 'all' : 'specific';
+            this.showModal = true;
+        },
+
+        closeModal() {
+            this.showModal = false;
+        },
+
+        async saveCategory() {
+            const data = { ...this.formData };
+            if (this.unitMode === 'all') {
+                data.allowed_units = null;
+            }
+
+            try {
+                const url = this.isEditing
+                    ? `/api/admin/form-categories/${this.formData.id}`
+                    : '/api/admin/form-categories';
+                const method = this.isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.closeModal();
+                    await this.loadCategories();
+                } else {
+                    alert(result.message || '操作失敗');
+                }
+            } catch (error) {
+                alert('操作失敗：' + error.message);
+            }
+        },
+
+        confirmDelete(cat) {
+            this.categoryToDelete = cat;
+            this.showDeleteModal = true;
+        },
+
+        async deleteCategory() {
+            if (!this.categoryToDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/form-categories/${this.categoryToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.showDeleteModal = false;
+                    this.categoryToDelete = null;
+                    await this.loadCategories();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (error) {
+                alert('刪除失敗：' + error.message);
+            }
+        }
+    };
+}
+
+// SMTP 設定管理
+function smtpManager() {
+    return {
+        configs: [],
+        loading: true,
+        showModal: false,
+        showDeleteModal: false,
+        isEditing: false,
+        configToDelete: null,
+        presets: {},
+        formData: {
+            name: '',
+            smtp_host: '',
+            smtp_port: 587,
+            use_tls: true,
+            use_ssl: false,
+            username: '',
+            password: '',
+            from_email: '',
+            from_name: '',
+            provider_type: 'generic',
+            use_app_password: false,
+            is_default: false,
+            is_active: true
+        },
+
+        async init() {
+            await Promise.all([
+                this.loadConfigs(),
+                this.loadPresets()
+            ]);
+        },
+
+        async loadConfigs() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/admin/settings/smtp');
+                const result = await response.json();
+                if (result.success) {
+                    this.configs = result.data;
+                }
+            } catch (error) {
+                console.error('載入 SMTP 設定失敗:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadPresets() {
+            try {
+                const response = await fetch('/api/admin/settings/smtp/presets');
+                const result = await response.json();
+                if (result.success) {
+                    this.presets = result.data;
+                }
+            } catch (error) {
+                console.error('載入預設值失敗:', error);
+            }
+        },
+
+        applyPreset() {
+            const preset = this.presets[this.formData.provider_type];
+            if (preset) {
+                this.formData.smtp_host = preset.smtp_host;
+                this.formData.smtp_port = preset.smtp_port;
+                this.formData.use_tls = preset.use_tls;
+                this.formData.use_ssl = preset.use_ssl;
+            }
+        },
+
+        openCreateModal() {
+            this.isEditing = false;
+            this.formData = {
+                name: '',
+                smtp_host: '',
+                smtp_port: 587,
+                use_tls: true,
+                use_ssl: false,
+                username: '',
+                password: '',
+                from_email: '',
+                from_name: '',
+                provider_type: 'generic',
+                use_app_password: false,
+                is_default: false,
+                is_active: true
+            };
+            this.showModal = true;
+        },
+
+        async openEditModal(config) {
+            this.isEditing = true;
+            // 取得完整資料（含密碼）
+            try {
+                const response = await fetch(`/api/admin/settings/smtp/${config.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    const data = result.data;
+                    this.formData = {
+                        id: data.id,
+                        name: data.name,
+                        smtp_host: data.smtp_host,
+                        smtp_port: data.smtp_port,
+                        use_tls: data.use_tls,
+                        use_ssl: data.use_ssl,
+                        username: data.username,
+                        password: '',  // 不回填密碼
+                        from_email: data.from_email,
+                        from_name: data.from_name || '',
+                        provider_type: data.provider_type,
+                        use_app_password: data.use_app_password || false,
+                        is_default: data.is_default,
+                        is_active: data.is_active
+                    };
+                    this.showModal = true;
+                }
+            } catch (error) {
+                alert('載入設定失敗：' + error.message);
+            }
+        },
+
+        closeModal() {
+            this.showModal = false;
+        },
+
+        async saveConfig() {
+            const data = { ...this.formData };
+            // 編輯時如果密碼為空，不送出
+            if (this.isEditing && !data.password) {
+                delete data.password;
+            }
+
+            try {
+                const url = this.isEditing
+                    ? `/api/admin/settings/smtp/${this.formData.id}`
+                    : '/api/admin/settings/smtp';
+                const method = this.isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.closeModal();
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '操作失敗');
+                }
+            } catch (error) {
+                alert('操作失敗：' + error.message);
+            }
+        },
+
+        async testConfig(config) {
+            if (!confirm('要發送測試郵件嗎？')) return;
+            const recipient = prompt('請輸入測試收件人信箱：');
+            if (!recipient) return;
+
+            try {
+                const response = await fetch(`/api/admin/settings/smtp/${config.id}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ test_recipient: recipient })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                if (result.success) {
+                    await this.loadConfigs();  // 重新載入以更新測試狀態
+                }
+            } catch (error) {
+                alert('測試失敗：' + error.message);
+            }
+        },
+
+        confirmDelete(config) {
+            this.configToDelete = config;
+            this.showDeleteModal = true;
+        },
+
+        async deleteConfig() {
+            if (!this.configToDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/settings/smtp/${this.configToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.showDeleteModal = false;
+                    this.configToDelete = null;
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (error) {
+                alert('刪除失敗：' + error.message);
+            }
+        }
+    };
+}
+
+// Telegram 設定管理
+function telegramManager() {
+    return {
+        configs: [],
+        loading: true,
+        showModal: false,
+        showDeleteModal: false,
+        isEditing: false,
+        configToDelete: null,
+        formData: {
+            name: '',
+            description: '',
+            bot_token: '',
+            channels: [],
+            default_channel: '',
+            is_active: true
+        },
+
+        async init() {
+            await this.loadConfigs();
+        },
+
+        async loadConfigs() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/admin/settings/telegram');
+                const result = await response.json();
+                if (result.success) {
+                    this.configs = result.data;
+                }
+            } catch (error) {
+                console.error('載入 Telegram 設定失敗:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        openCreateModal() {
+            this.isEditing = false;
+            this.formData = {
+                name: '',
+                description: '',
+                bot_token: '',
+                channels: [],
+                default_channel: '',
+                is_active: true
+            };
+            this.showModal = true;
+        },
+
+        async openEditModal(config) {
+            this.isEditing = true;
+            // 取得完整資料（含 token）
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${config.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    const data = result.data;
+                    // 將 channels object 轉為 array
+                    const channelsArray = Object.entries(data.channels || {}).map(([name, chat_id]) => ({
+                        name, chat_id
+                    }));
+                    this.formData = {
+                        id: data.id,
+                        name: data.name,
+                        description: data.description || '',
+                        bot_token: data.bot_token,
+                        channels: channelsArray,
+                        default_channel: data.default_channel || '',
+                        is_active: data.is_active
+                    };
+                    this.showModal = true;
+                }
+            } catch (error) {
+                alert('載入設定失敗：' + error.message);
+            }
+        },
+
+        closeModal() {
+            this.showModal = false;
+        },
+
+        addChannel() {
+            this.formData.channels.push({ name: '', chat_id: '' });
+        },
+
+        removeChannel(index) {
+            const removed = this.formData.channels.splice(index, 1)[0];
+            if (this.formData.default_channel === removed.name) {
+                this.formData.default_channel = '';
+            }
+        },
+
+        async saveConfig() {
+            // 將 channels array 轉為 object
+            const channels = {};
+            for (const ch of this.formData.channels) {
+                if (ch.name && ch.chat_id) {
+                    channels[ch.name] = ch.chat_id;
+                }
+            }
+
+            const data = {
+                name: this.formData.name,
+                description: this.formData.description,
+                bot_token: this.formData.bot_token,
+                channels: channels,
+                default_channel: this.formData.default_channel,
+                is_active: this.formData.is_active
+            };
+
+            try {
+                const url = this.isEditing
+                    ? `/api/admin/settings/telegram/${this.formData.id}`
+                    : '/api/admin/settings/telegram';
+                const method = this.isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.closeModal();
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '操作失敗');
+                }
+            } catch (error) {
+                alert('操作失敗：' + error.message);
+            }
+        },
+
+        async testConfig(config) {
+            // 選擇要測試的頻道
+            const channels = config.channels || {};
+            const channelNames = Object.keys(channels);
+
+            let chatId = null;
+            if (channelNames.length === 0) {
+                alert('此設定沒有頻道，請先新增頻道');
+                return;
+            } else if (channelNames.length === 1) {
+                chatId = channels[channelNames[0]];
+            } else {
+                const choice = prompt(`選擇測試頻道 (${channelNames.join(', ')})：`, config.default_channel || channelNames[0]);
+                if (!choice) return;
+                chatId = channels[choice];
+                if (!chatId) {
+                    alert('找不到該頻道');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${config.id}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ chat_id: chatId })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('測試失敗：' + error.message);
+            }
+        },
+
+        confirmDelete(config) {
+            this.configToDelete = config;
+            this.showDeleteModal = true;
+        },
+
+        async deleteConfig() {
+            if (!this.configToDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${this.configToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.showDeleteModal = false;
+                    this.configToDelete = null;
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (error) {
+                alert('刪除失敗：' + error.message);
+            }
+        }
+    };
+}
+
+// 收件人群組管理
+function recipientGroupManager() {
+    return {
+        groups: [],
+        orgTree: [],
+        userCache: {},  // 用戶 ID -> 用戶資料的快取
+        unitCache: {},  // 部門 ID -> 部門資料的快取
+        loading: true,
+        showModal: false,
+        showDeleteModal: false,
+        showPreviewModal: false,
+        isEditing: false,
+        groupToDelete: null,
+        previewGroup: null,
+        previewRecipientsList: [],
+        sourceTab: 'units',
+        userSearch: '',
+        searchedUsers: [],
+        formData: {
+            name: '',
+            description: '',
+            is_active: true,
+            included_units: [],
+            included_users: [],
+            excluded_units: [],
+            excluded_users: []
+        },
+
+        async init() {
+            await Promise.all([
+                this.loadGroups(),
+                this.loadOrgTree()
+            ]);
+        },
+
+        async loadGroups() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/admin/settings/recipient-groups');
+                const result = await response.json();
+                if (result.success) {
+                    this.groups = result.data;
+                }
+            } catch (error) {
+                console.error('載入收件人群組失敗:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadOrgTree() {
+            try {
+                const response = await fetch('/api/admin/settings/org-tree');
+                const result = await response.json();
+                if (result.success) {
+                    this.orgTree = result.data;
+                    // 建立快取
+                    for (const unit of result.data) {
+                        this.unitCache[unit.id] = unit;
+                    }
+                }
+            } catch (error) {
+                console.error('載入組織樹失敗:', error);
+            }
+        },
+
+        async searchUsers() {
+            if (!this.userSearch.trim()) {
+                this.searchedUsers = [];
+                return;
+            }
+            try {
+                const response = await fetch(`/api/admin/settings/org-users?search=${encodeURIComponent(this.userSearch)}`);
+                const result = await response.json();
+                if (result.success) {
+                    this.searchedUsers = result.data;
+                    // 更新快取
+                    for (const user of result.data) {
+                        this.userCache[user.id] = user;
+                    }
+                }
+            } catch (error) {
+                console.error('搜尋用戶失敗:', error);
+            }
+        },
+
+        getUnitName(unitId) {
+            const unit = this.unitCache[unitId];
+            return unit ? unit.name : unitId;
+        },
+
+        getUserName(userId) {
+            const user = this.userCache[userId];
+            return user ? user.name : userId;
+        },
+
+        isUnitSelected(unitId) {
+            return this.formData.included_units.some(u => u.id === unitId);
+        },
+
+        isUserSelected(userId) {
+            return this.formData.included_users.includes(userId);
+        },
+
+        toggleUnit(unit) {
+            const idx = this.formData.included_units.findIndex(u => u.id === unit.id);
+            if (idx >= 0) {
+                this.formData.included_units.splice(idx, 1);
+            } else {
+                this.formData.included_units.push({
+                    id: unit.id,
+                    include_children: false
+                });
+            }
+        },
+
+        toggleUser(user) {
+            const idx = this.formData.included_users.indexOf(user.id);
+            if (idx >= 0) {
+                this.formData.included_users.splice(idx, 1);
+            } else {
+                this.formData.included_users.push(user.id);
+                this.userCache[user.id] = user;
+            }
+        },
+
+        removeUnit(idx) {
+            this.formData.included_units.splice(idx, 1);
+        },
+
+        removeUser(idx) {
+            this.formData.included_users.splice(idx, 1);
+        },
+
+        openCreateModal() {
+            this.isEditing = false;
+            this.formData = {
+                name: '',
+                description: '',
+                is_active: true,
+                included_units: [],
+                included_users: [],
+                excluded_units: [],
+                excluded_users: []
+            };
+            this.sourceTab = 'units';
+            this.userSearch = '';
+            this.searchedUsers = [];
+            this.showModal = true;
+        },
+
+        async openEditModal(group) {
+            this.isEditing = true;
+            try {
+                const response = await fetch(`/api/admin/settings/recipient-groups/${group.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    const data = result.data;
+                    this.formData = {
+                        id: data.id,
+                        name: data.name,
+                        description: data.description || '',
+                        is_active: data.is_active,
+                        included_units: data.included_units || [],
+                        included_users: data.included_users || [],
+                        excluded_units: data.excluded_units || [],
+                        excluded_users: data.excluded_users || []
+                    };
+                    this.sourceTab = 'units';
+                    this.userSearch = '';
+                    this.searchedUsers = [];
+                    this.showModal = true;
+                }
+            } catch (error) {
+                alert('載入群組失敗：' + error.message);
+            }
+        },
+
+        closeModal() {
+            this.showModal = false;
+        },
+
+        async saveGroup() {
+            const data = {
+                name: this.formData.name,
+                description: this.formData.description,
+                is_active: this.formData.is_active,
+                included_units: this.formData.included_units,
+                included_users: this.formData.included_users,
+                excluded_units: this.formData.excluded_units,
+                excluded_users: this.formData.excluded_users
+            };
+
+            try {
+                const url = this.isEditing
+                    ? `/api/admin/settings/recipient-groups/${this.formData.id}`
+                    : '/api/admin/settings/recipient-groups';
+                const method = this.isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.closeModal();
+                    await this.loadGroups();
+                } else {
+                    alert(result.message || '操作失敗');
+                }
+            } catch (error) {
+                alert('操作失敗：' + error.message);
+            }
+        },
+
+        async previewRecipients(group) {
+            this.previewGroup = group;
+            this.previewRecipientsList = [];
+            this.showPreviewModal = true;
+
+            try {
+                const response = await fetch(`/api/admin/settings/recipient-groups/${group.id}/resolve`);
+                const result = await response.json();
+                if (result.success) {
+                    this.previewRecipientsList = result.data.recipients;
+                }
+            } catch (error) {
+                console.error('載入預覽失敗:', error);
+            }
+        },
+
+        confirmDelete(group) {
+            this.groupToDelete = group;
+            this.showDeleteModal = true;
+        },
+
+        async deleteGroup() {
+            if (!this.groupToDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/settings/recipient-groups/${this.groupToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.showDeleteModal = false;
+                    this.groupToDelete = null;
+                    await this.loadGroups();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (error) {
+                alert('刪除失敗：' + error.message);
+            }
+        }
+    };
+}
+
+// 左側選單高亮
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('.settings-nav a');
+    const sections = document.querySelectorAll('.settings-section');
+
+    function updateActiveLink() {
+        let current = '';
+        sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            if (rect.top <= 100) {
+                current = section.id;
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    window.addEventListener('scroll', updateActiveLink);
+    updateActiveLink();
+
+    // 處理 hash 導覽
+    if (window.location.hash) {
+        const target = document.querySelector(window.location.hash);
+        if (target) {
+            setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+    }
+});
+</script>
+{% endblock %}

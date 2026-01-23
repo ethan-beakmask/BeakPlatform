@@ -1,0 +1,110 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯職等 - {{ job_level.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>編輯職等: {{ job_level.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[返回列表]</a>
+    <a href="{{ url_for('job_levels.view_job_level', secure_code=job_level.secure_code) }}">[查看詳情]</a>
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">職等代碼</th>
+            <td>
+                <code style="font-size: 1.2em;">{{ job_level.code }}</code>
+                <span style="color: #666; font-size: 0.9em;">(不可修改)</span>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等名稱 *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name', job_level.name) }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">英文名稱</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name_en', job_level.name_en or '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等序號 *</th>
+            <td>
+                <input type="number" name="level_order" required min="0" max="9999"
+                       style="width: 100%;"
+                       value="{{ request.form.get('level_order', job_level.level_order) }}">
+                <div style="font-size: 0.8em; color: #666;">
+                    數字越大職等越高
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理職等</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_manager_level" value="true"
+                           {% if job_level.is_manager_level %}checked{% endif %}>
+                    是管理職等 (帶人主管)
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理幅度</th>
+            <td>
+                <input type="text" name="management_scope" maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('management_scope', job_level.management_scope or '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">描述</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', job_level.description or '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">狀態</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_active" value="true"
+                           {% if job_level.is_active %}checked{% endif %}>
+                    啟用
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('job_levels.view_job_level', secure_code=job_level.secure_code) }}"
+                   style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% if not job_level.is_system_default %}
+<hr style="margin-top: 40px;">
+<h3 style="color: #c00;">危險區域</h3>
+<form method="POST" action="{{ url_for('job_levels.delete_job_level', secure_code=job_level.secure_code) }}"
+      onsubmit="return confirm('確定要刪除職等「{{ job_level.name }}」嗎？此操作無法復原。');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+        刪除此職等
+    </button>
+</form>
+{% else %}
+<hr style="margin-top: 40px;">
+<p style="color: #666;">
+    此為系統預設職等，不可刪除。
+</p>
+{% endif %}
+{% endblock %}

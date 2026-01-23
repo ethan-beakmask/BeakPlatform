@@ -1,0 +1,61 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ role.name }} - 角色詳情 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('roles.list_roles') }}">&lt; 返回角色列表</a></p>
+
+<h1>{{ role.name }}</h1>
+
+{% if not role.is_system_role %}
+<p><a href="{{ url_for('roles.edit_role', secure_code=role.secure_code) }}">[編輯]</a></p>
+{% endif %}
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>角色代碼</th>
+        <td><code>{{ role.code }}</code></td>
+    </tr>
+    <tr>
+        <th>角色名稱</th>
+        <td>{{ role.name }}</td>
+    </tr>
+    <tr>
+        <th>角色類型</th>
+        <td>{% if role.role_type == 'POSITION' %}職位{% else %}角色{% endif %}</td>
+    </tr>
+    <tr>
+        <th>適用範圍</th>
+        <td>
+            {% if role.scope_type == 'GLOBAL' %}全企業
+            {% elif role.scope_type == 'DEPARTMENT' %}部門
+            {% elif role.scope_type == 'GROUP' %}群組
+            {% else %}{{ role.scope_type }}{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>是否為管理者</th>
+        <td>{{ '是' if role.is_manager else '否' }}</td>
+    </tr>
+    <tr>
+        <th>系統預設角色</th>
+        <td>{{ '是' if role.is_system_role else '否' }}</td>
+    </tr>
+    <tr>
+        <th>描述</th>
+        <td>{{ role.description or '-' }}</td>
+    </tr>
+    <tr>
+        <th>建立時間</th>
+        <td>{{ role.created_at.strftime('%Y-%m-%d %H:%M') if role.created_at else '-' }}</td>
+    </tr>
+    <tr>
+        <th>更新時間</th>
+        <td>{{ role.updated_at.strftime('%Y-%m-%d %H:%M') if role.updated_at else '-' }}</td>
+    </tr>
+</table>
+
+{% if role.is_system_role %}
+<p><strong>注意：</strong>此為系統預設角色，無法編輯或刪除。</p>
+{% endif %}
+{% endblock %}

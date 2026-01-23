@@ -1,0 +1,331 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ user.display_name }} - 用戶詳情 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .user-info {
+        max-width: 700px;
+    }
+    .section-title {
+        background: #f0f0f0;
+        padding: 8px 12px;
+        margin: 20px 0 10px 0;
+        font-weight: bold;
+        border-left: 4px solid #0066cc;
+    }
+    .section-title.optional {
+        border-left-color: #888;
+        color: #666;
+    }
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .info-table th, .info-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .info-table th {
+        width: 120px;
+        color: #666;
+        font-weight: normal;
+    }
+    .info-table td {
+        color: #333;
+    }
+    .empty-value {
+        color: #999;
+        font-style: italic;
+    }
+    .status-active {
+        color: #16a34a;
+    }
+    .status-inactive {
+        color: #dc2626;
+    }
+    .action-btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #0066cc;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .action-btn:hover {
+        background: #0052a3;
+    }
+    .action-btn.warning {
+        background: #f59e0b;
+    }
+    .action-btn.warning:hover {
+        background: #d97706;
+    }
+    /* 模態框樣式 */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        min-width: 350px;
+        max-width: 450px;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
+    }
+    .modal-content label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    .modal-content input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+    }
+    .modal-content input[type="password"]:focus {
+        border-color: #0066cc;
+        outline: none;
+    }
+    .modal-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .modal-buttons button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .modal-buttons .btn-cancel {
+        background: #e5e7eb;
+        border: none;
+    }
+    .modal-buttons .btn-submit {
+        background: #0066cc;
+        color: white;
+        border: none;
+    }
+    .modal-buttons .btn-submit:hover {
+        background: #0052a3;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: -8px;
+        margin-bottom: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="{ showResetPassword: false }">
+<p><a href="{{ url_for('users.list_users') }}">&lt; 返回用戶列表</a></p>
+
+<h1>{{ user.display_name }}</h1>
+
+<p>
+    <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">[編輯]</a>
+    {% if can_reset_password %}
+    <button type="button" class="action-btn warning" @click="showResetPassword = true" style="margin-left: 10px;">重設密碼</button>
+    {% endif %}
+</p>
+
+<div class="user-info">
+    <div class="section-title">帳號資訊</div>
+    <table class="info-table">
+        <tr>
+            <th>姓名</th>
+            <td>{{ user.display_name }}</td>
+        </tr>
+        <tr>
+            <th>帳號 (Email)</th>
+            <td><code>{{ user.email }}</code></td>
+        </tr>
+        <tr>
+            <th>角色</th>
+            <td>
+                {% if user.is_system_admin %}系統管理員
+                {% elif user.is_org_admin %}企業管理員
+                {% else %}一般用戶{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>狀態</th>
+            <td class="{% if user.is_active %}status-active{% else %}status-inactive{% endif %}">
+                {% if user.is_active %}啟用{% else %}停用{% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>建立時間</th>
+            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+        </tr>
+        <tr>
+            <th>最後登入</th>
+            <td>{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else '從未登入' }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">組織資訊</div>
+    <table class="info-table">
+        <tr>
+            <th>用戶編號</th>
+            <td>{% if user.employee_id %}{{ user.employee_id }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>歸屬部門</th>
+            <td>
+                {% if user.primary_unit %}
+                    {{ user.primary_unit.name }} ({{ user.primary_unit.code }})
+                {% else %}
+                    <span class="empty-value">未設定</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">跨部門支援</div>
+    {% if cross_departments %}
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th style="width: 200px;">支援部門</th>
+                <th style="width: 100px;">角色</th>
+                <th>開始日期</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dept in cross_departments %}
+            <tr>
+                <td>{{ dept.name }}{% if dept.code %} <span style="color: #999;">({{ dept.code }})</span>{% endif %}</td>
+                <td>
+                    {% if dept.role_type in ['MANAGER', 'DEPUTY'] %}
+                    <strong style="color: #1565c0;">{{ dept.role }}</strong>
+                    {% elif dept.role_type in ['PROXY1', 'PROXY2'] %}
+                    <span style="color: #6a1b9a;">{{ dept.role }}</span>
+                    {% else %}
+                    {{ dept.role }}
+                    {% endif %}
+                </td>
+                <td>{{ dept.start_date.strftime('%Y-%m-%d') if dept.start_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999; padding: 8px 12px;">無跨部門支援關係</p>
+    {% endif %}
+
+    <div class="section-title optional">個人資料</div>
+    <table class="info-table">
+        <tr>
+            <th>英文姓名</th>
+            <td>{% if user.english_name %}{{ user.english_name }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>本國姓名</th>
+            <td>{% if user.native_name %}{{ user.native_name }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>暱稱</th>
+            <td>{% if user.nickname %}{{ user.nickname }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">聯絡方式</div>
+    <table class="info-table">
+        <tr>
+            <th>備用 Email 1</th>
+            <td>{% if user.backup_email_1 %}{{ user.backup_email_1 }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>備用 Email 2</th>
+            <td>{% if user.backup_email_2 %}{{ user.backup_email_2 }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>手機號碼 1</th>
+            <td>{% if user.mobile_phone_1 %}{{ user.mobile_phone_1 }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <th>手機號碼 2</th>
+            <td>{% if user.mobile_phone_2 %}{{ user.mobile_phone_2 }}{% else %}<span class="empty-value">未設定</span>{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="section-title optional">參與社團</div>
+    {% if groups %}
+    <table class="info-table">
+        <thead>
+            <tr>
+                <th style="width: 200px;">社團名稱</th>
+                <th style="width: 100px;">角色</th>
+                <th>加入日期</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in groups %}
+            <tr>
+                <td>{{ group.name }}{% if group.code %} <span style="color: #999;">({{ group.code }})</span>{% endif %}</td>
+                <td>
+                    {% if group.role_type in ['MANAGER', 'DEPUTY'] %}
+                    <strong style="color: #1565c0;">{{ group.role }}</strong>
+                    {% elif group.role_type in ['PROXY1', 'PROXY2'] %}
+                    <span style="color: #6a1b9a;">{{ group.role }}</span>
+                    {% else %}
+                    {{ group.role }}
+                    {% endif %}
+                </td>
+                <td>{{ group.start_date.strftime('%Y-%m-%d') if group.start_date else '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999; padding: 8px 12px;">尚未參加任何社團</p>
+    {% endif %}
+</div>
+
+{% if can_reset_password %}
+<!-- 重設密碼對話框 -->
+<div class="modal-overlay" x-show="showResetPassword" x-cloak>
+    <div class="modal-content">
+        <h3>重設密碼</h3>
+        <p style="margin-bottom: 16px;">為 <strong>{{ user.display_name }}</strong> 設定新密碼</p>
+        <form method="POST" action="{{ url_for('users.reset_password', secure_code=user.secure_code) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="new_password">新密碼</label>
+            <input type="password" id="new_password" name="new_password" required minlength="8" autocomplete="new-password">
+            <p class="help-text">至少 8 個字元</p>
+            <label for="confirm_password">確認密碼</label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password">
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" @click="showResetPassword = false">取消</button>
+                <button type="submit" class="btn-submit">確認重設</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+</div><!-- 關閉 x-data -->
+{% endblock %}

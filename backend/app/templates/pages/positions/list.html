@@ -1,0 +1,82 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}職位管理 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>職位管理</h1>
+
+<p>
+    <a href="{{ url_for('positions.create_position') }}">[新增職位]</a>
+</p>
+
+<p>共 {{ positions|length }} 筆職位指派</p>
+
+<table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <thead>
+        <tr style="background: #f0f0f0;">
+            <th>員工</th>
+            <th>職稱</th>
+            <th>部門</th>
+            <th>類型</th>
+            <th>部門主管</th>
+            <th>直屬主管</th>
+            <th>生效日</th>
+            <th>狀態</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pos in positions %}
+        <tr>
+            <td>
+                {% if pos.user %}
+                {{ pos.user.display_name }}
+                {% else %}
+                <span style="color: #999;">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.job_title %}
+                {{ pos.job_title.name }}
+                {% else %}
+                <span style="color: #999;">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.unit %}
+                {{ pos.unit.name }}
+                {% else %}
+                <span style="color: #999;">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if pos.position_type == 'PRIMARY' %}主要
+                {% elif pos.position_type == 'CONCURRENT' %}兼任
+                {% elif pos.position_type == 'ACTING' %}代理
+                {% elif pos.position_type == 'TEMPORARY' %}臨時
+                {% else %}{{ pos.position_type }}
+                {% endif %}
+            </td>
+            <td>{% if pos.is_unit_head %}是{% else %}-{% endif %}</td>
+            <td>
+                {% if pos.direct_manager %}
+                {{ pos.direct_manager.display_name }}
+                {% else %}
+                <span style="color: #999;">-</span>
+                {% endif %}
+            </td>
+            <td>{{ pos.effective_from.strftime('%Y-%m-%d') if pos.effective_from else '-' }}</td>
+            <td>{% if pos.is_active %}啟用{% else %}停用{% endif %}</td>
+            <td>
+                <a href="{{ url_for('positions.view_position', secure_code=pos.secure_code) }}">[查看]</a>
+                <a href="{{ url_for('positions.edit_position', secure_code=pos.secure_code) }}">[編輯]</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9" style="text-align: center; color: #999;">尚無職位指派</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

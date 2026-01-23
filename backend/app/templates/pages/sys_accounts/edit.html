@@ -1,0 +1,105 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯系統管理員 {{ account.username }} - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('sys_accounts.list_accounts') }}">&lt; 返回列表</a></p>
+
+<h1>編輯系統管理員</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#f87171{% else %}#4ade80{% endif %};">
+    <strong>{{ message }}</strong>
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0">
+        <tr>
+            <td>帳號</td>
+            <td><code>{{ account.username }}@system.local</code> (不可變更)</td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td>{{ account.email }} (不可變更)</td>
+        </tr>
+        <tr>
+            <td><label for="display_name">顯示名稱 *</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40" required
+                       value="{{ account.display_name }}">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="is_active">狀態</label></td>
+            <td>
+                {% if is_self %}
+                    <span style="color: #4ade80;">啟用</span> (不能停用自己)
+                    <input type="hidden" name="is_active" value="1">
+                {% else %}
+                    <select id="is_active" name="is_active">
+                        <option value="1" {% if account.is_active %}selected{% endif %}>啟用</option>
+                        <option value="0" {% if not account.is_active %}selected{% endif %}>停用</option>
+                    </select>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"><hr><strong>變更密碼</strong>（留空表示不變更）</td>
+        </tr>
+        <tr>
+            <td><label for="new_password">新密碼</label></td>
+            <td>
+                <input type="password" id="new_password" name="new_password" size="30" minlength="12">
+                <br><small>至少 12 碼</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="confirm_password">確認新密碼</label></td>
+            <td>
+                <input type="password" id="confirm_password" name="confirm_password" size="30" minlength="12">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('sys_accounts.list_accounts') }}" style="margin-left: 10px;">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% if not is_self %}
+<hr>
+<h2>刪除帳號</h2>
+<p>刪除此系統管理員帳號將無法復原，請謹慎操作。</p>
+<form method="POST" action="{{ url_for('sys_accounts.delete_account', secure_code=account.secure_code) }}"
+      onsubmit="return confirm('確定要刪除此系統管理員嗎？');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="color: #f87171;">刪除帳號</button>
+</form>
+{% endif %}
+
+<hr>
+<h3>帳號資訊</h3>
+<table border="0" cellpadding="4" cellspacing="0" style="color: #9ca3af;">
+    <tr>
+        <td>建立時間</td>
+        <td>{{ account.created_at.strftime('%Y-%m-%d %H:%M') if account.created_at else '-' }}</td>
+    </tr>
+    <tr>
+        <td>最後登入</td>
+        <td>{{ account.last_login_at.strftime('%Y-%m-%d %H:%M') if account.last_login_at else '-' }}</td>
+    </tr>
+    <tr>
+        <td>密碼變更時間</td>
+        <td>{{ account.password_changed_at.strftime('%Y-%m-%d %H:%M') if account.password_changed_at else '-' }}</td>
+    </tr>
+</table>
+{% endblock %}

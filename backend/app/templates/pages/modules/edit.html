@@ -1,0 +1,62 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯模組 - {{ module.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('modules.view_module', secure_code=module.secure_code) }}">&lt; 返回模組詳情</a></p>
+
+<h1>編輯模組 {{ module.name }}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td>模組代碼</td>
+            <td><code>{{ module.code }}</code> (不可變更)</td>
+        </tr>
+        <tr>
+            <td><label for="name">模組名稱 *</label></td>
+            <td><input type="text" id="name" name="name" size="40" value="{{ module.name }}" required></td>
+        </tr>
+        <tr>
+            <td><label for="icon">圖標</label></td>
+            <td><input type="text" id="icon" name="icon" size="10" value="{{ module.icon or '' }}"></td>
+        </tr>
+        <tr>
+            <td><label for="description">描述</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40">{{ module.description or '' }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="display_order">顯示順序</label></td>
+            <td><input type="number" id="display_order" name="display_order" value="{{ module.display_order }}"></td>
+        </tr>
+        <tr>
+            <td><label for="is_active">啟用</label></td>
+            <td><input type="checkbox" id="is_active" name="is_active" {% if module.is_active %}checked{% endif %}></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('modules.view_module', secure_code=module.secure_code) }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<hr>
+<h2>刪除模組</h2>
+<p>刪除此模組將連同相關頁面和選單一起刪除。</p>
+<form method="POST" action="{{ url_for('modules.delete_module', secure_code=module.secure_code) }}" onsubmit="return confirm('確定要刪除此模組嗎？相關頁面和選單也會一併刪除。');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">刪除模組</button>
+</form>
+{% endblock %}

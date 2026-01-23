@@ -1,0 +1,124 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增職位 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>新增職位指派</h1>
+
+<p><a href="{{ url_for('positions.list_positions') }}">[返回列表]</a></p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">員工 *</th>
+            <td>
+                <select name="user_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇員工 --</option>
+                    {% for user in users %}
+                    <option value="{{ user.secure_code }}"
+                            {% if request.form.get('user_secure_code') == user.secure_code %}selected{% endif %}>
+                        {{ user.display_name }} ({{ user.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職稱 *</th>
+            <td>
+                <select name="job_title_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇職稱 --</option>
+                    {% for title in job_titles %}
+                    <option value="{{ title.secure_code }}"
+                            {% if request.form.get('job_title_secure_code') == title.secure_code %}selected{% endif %}>
+                        {{ title.name }}
+                        {% if title.job_level %}({{ title.job_level.name }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">部門 *</th>
+            <td>
+                <select name="unit_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇部門 --</option>
+                    {% for unit in units %}
+                    <option value="{{ unit.secure_code }}"
+                            {% if request.form.get('unit_secure_code') == unit.secure_code %}selected{% endif %}>
+                        {{ unit.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職位類型 *</th>
+            <td>
+                <select name="position_type" required style="width: 100%;">
+                    {% for type_val, type_name in position_types %}
+                    <option value="{{ type_val }}"
+                            {% if request.form.get('position_type') == type_val %}selected{% endif %}>
+                        {{ type_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">部門主管</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_unit_head" value="true"
+                           {% if request.form.get('is_unit_head') == 'true' %}checked{% endif %}>
+                    此員工為該部門主管
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">直屬主管</th>
+            <td>
+                <select name="direct_manager_secure_code" style="width: 100%;">
+                    <option value="">-- 無直屬主管 --</option>
+                    {% for user in users %}
+                    <option value="{{ user.secure_code }}"
+                            {% if request.form.get('direct_manager_secure_code') == user.secure_code %}selected{% endif %}>
+                        {{ user.display_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8em; color: #666;">簽核流程會送到直屬主管審核</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">生效日期</th>
+            <td>
+                <input type="date" name="effective_from" style="width: 100%;"
+                       value="{{ request.form.get('effective_from', '') }}">
+                <div style="font-size: 0.8em; color: #666;">未填則為今日生效</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">失效日期</th>
+            <td>
+                <input type="date" name="effective_until" style="width: 100%;"
+                       value="{{ request.form.get('effective_until', '') }}">
+                <div style="font-size: 0.8em; color: #666;">未填則為長期有效</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">備註</th>
+            <td>
+                <textarea name="remarks" rows="3" style="width: 100%;">{{ request.form.get('remarks', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">建立職位</button>
+                <a href="{{ url_for('positions.list_positions') }}" style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

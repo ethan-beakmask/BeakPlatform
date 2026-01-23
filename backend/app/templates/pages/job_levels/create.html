@@ -1,0 +1,101 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增職等 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>新增職等</h1>
+
+<p><a href="{{ url_for('job_levels.list_job_levels') }}">[返回列表]</a></p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">職等代碼 *</th>
+            <td>
+                <input type="text" name="code" required maxlength="20"
+                       placeholder="如 L150" style="width: 100%;"
+                       value="{{ request.form.get('code', '') }}">
+                <div style="font-size: 0.8em; color: #666;">建議格式：L + 序號，如 L100, L150, L200</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等名稱 *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       placeholder="如 職員級" style="width: 100%;"
+                       value="{{ request.form.get('name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">英文名稱</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       placeholder="如 Staff Level" style="width: 100%;"
+                       value="{{ request.form.get('name_en', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等序號 *</th>
+            <td>
+                <input type="number" name="level_order" required min="0" max="9999"
+                       placeholder="如 150" style="width: 100%;"
+                       value="{{ request.form.get('level_order', '') }}">
+                <div style="font-size: 0.8em; color: #666;">
+                    數字越大職等越高。使用等距跳號：0, 100, 200... 900
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理職等</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_manager_level" value="true"
+                           {% if request.form.get('is_manager_level') == 'true' %}checked{% endif %}>
+                    是管理職等 (帶人主管)
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理幅度</th>
+            <td>
+                <input type="text" name="management_scope" maxlength="100"
+                       placeholder="如 單一部門、全公司" style="width: 100%;"
+                       value="{{ request.form.get('management_scope', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">描述</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;"
+                          placeholder="職等的詳細說明">{{ request.form.get('description', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">建立職等</button>
+                <a href="{{ url_for('job_levels.list_job_levels') }}" style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<hr>
+<h3>職等序號參考</h3>
+<table border="1" cellpadding="4" cellspacing="0" style="font-size: 0.9em;">
+    <tr>
+        <th>代碼</th><th>序號</th><th>名稱</th>
+    </tr>
+    <tr><td>L900</td><td>900</td><td>總經理級</td></tr>
+    <tr><td>L800</td><td>800</td><td>副總經理級</td></tr>
+    <tr><td>L700</td><td>700</td><td>處長級</td></tr>
+    <tr><td>L600</td><td>600</td><td>副處長級</td></tr>
+    <tr><td>L500</td><td>500</td><td>經理級</td></tr>
+    <tr><td>L400</td><td>400</td><td>副理級</td></tr>
+    <tr><td>L300</td><td>300</td><td>主任級</td></tr>
+    <tr><td>L200</td><td>200</td><td>高級職員級</td></tr>
+    <tr><td>L100</td><td>100</td><td>職員級</td></tr>
+    <tr><td>L000</td><td>0</td><td>非公司成員</td></tr>
+</table>
+
+{% endblock %}

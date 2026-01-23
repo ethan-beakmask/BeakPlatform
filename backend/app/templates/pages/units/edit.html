@@ -1,0 +1,73 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯 {{ unit.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('units.view_unit', secure_code=unit.secure_code) }}">&lt; 返回單位詳情</a></p>
+
+<h1>編輯 {{ unit.name }}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td>單位代碼</td>
+            <td><code>{{ unit.code }}</code> (無法修改)</td>
+        </tr>
+        <tr>
+            <td><label for="name">單位名稱 *</label></td>
+            <td><input type="text" id="name" name="name" value="{{ unit.name }}" required size="30"></td>
+        </tr>
+        <tr>
+            <td><label for="parent_id">上層單位</label></td>
+            <td>
+                <select id="parent_id" name="parent_id">
+                    <option value="">(根層級)</option>
+                    {% for parent in parent_units %}
+                    <option value="{{ parent.secure_code }}" {% if unit.parent_secure_code == parent.secure_code %}selected{% endif %}>
+                        {{ '-- ' * (parent.level - 1) }}{{ parent.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="description">描述</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40">{{ unit.description or '' }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="sort_order">排序順序</label></td>
+            <td><input type="number" id="sort_order" name="sort_order" value="{{ unit.sort_order }}" size="5"></td>
+        </tr>
+        <tr>
+            <td>狀態</td>
+            <td>
+                <label><input type="checkbox" name="is_active" value="1" {% if unit.is_active %}checked{% endif %}> 啟用此單位</label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('units.view_unit', secure_code=unit.secure_code) }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<hr>
+<h2>刪除單位</h2>
+<p>刪除此單位將無法復原，請謹慎操作。</p>
+<form method="POST" action="{{ url_for('units.delete_unit', secure_code=unit.secure_code) }}" onsubmit="return confirm('確定要刪除此單位嗎？');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">刪除單位</button>
+</form>
+{% endblock %}

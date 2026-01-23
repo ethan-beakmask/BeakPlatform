@@ -1,0 +1,108 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}職位詳情 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>職位詳情</h1>
+
+<p>
+    <a href="{{ url_for('positions.list_positions') }}">[返回列表]</a>
+    <a href="{{ url_for('positions.edit_position', secure_code=position.secure_code) }}">[編輯]</a>
+</p>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th style="text-align: left; background: #f0f0f0; width: 150px;">員工</th>
+        <td>
+            {% if position.user %}
+            <a href="{{ url_for('users.view_user', secure_code=position.user.secure_code) }}">
+                {{ position.user.display_name }}
+            </a>
+            {% else %}
+            <span style="color: #999;">-</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">職稱</th>
+        <td>
+            {% if position.job_title %}
+            <a href="{{ url_for('job_titles.view_job_title', secure_code=position.job_title.secure_code) }}">
+                {{ position.job_title.name }}
+            </a>
+            {% if position.job_title.job_level %}
+            <br><span style="color: #666; font-size: 0.9em;">
+                職等: {{ position.job_title.job_level.name }}
+            </span>
+            {% endif %}
+            {% else %}
+            <span style="color: #999;">-</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">部門</th>
+        <td>
+            {% if position.unit %}
+            <a href="{{ url_for('units.view_unit', secure_code=position.unit.secure_code) }}">
+                {{ position.unit.name }}
+            </a>
+            {% else %}
+            <span style="color: #999;">-</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">職位類型</th>
+        <td>
+            {% if position.position_type == 'PRIMARY' %}主要職位
+            {% elif position.position_type == 'CONCURRENT' %}兼任
+            {% elif position.position_type == 'ACTING' %}代理
+            {% elif position.position_type == 'TEMPORARY' %}臨時
+            {% else %}{{ position.position_type }}
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">部門主管</th>
+        <td>{% if position.is_unit_head %}是 (此員工為該部門主管){% else %}否{% endif %}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">直屬主管</th>
+        <td>
+            {% if position.direct_manager %}
+            <a href="{{ url_for('users.view_user', secure_code=position.direct_manager.secure_code) }}">
+                {{ position.direct_manager.display_name }}
+            </a>
+            <br><span style="color: #666; font-size: 0.9em;">(簽核流程會送到此主管)</span>
+            {% else %}
+            <span style="color: #999;">未指定</span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">生效日期</th>
+        <td>{{ position.effective_from.strftime('%Y-%m-%d') if position.effective_from else '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">失效日期</th>
+        <td>{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else '無 (長期有效)' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">備註</th>
+        <td>{{ position.remarks or '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">狀態</th>
+        <td>{% if position.is_active %}啟用{% else %}停用{% endif %}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">指派者</th>
+        <td>{{ position.assigned_by or '-' }}</td>
+    </tr>
+    <tr>
+        <th style="text-align: left; background: #f0f0f0;">建立時間</th>
+        <td>{{ position.created_at.strftime('%Y-%m-%d %H:%M') if position.created_at else '-' }}</td>
+    </tr>
+</table>
+{% endblock %}

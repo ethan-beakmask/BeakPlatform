@@ -1,0 +1,79 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}職等管理 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>職等管理</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    |
+    <strong>[職等管理]</strong>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+</p>
+<p>
+    <a href="{{ url_for('job_levels.create_job_level') }}">[+ 新增職等]</a>
+</p>
+
+<p style="color: #666; font-size: 0.9em;">
+    說明：職等使用等距跳號設計 (L000-L900)，便於未來插入新職等。
+</p>
+
+{% if job_levels %}
+<table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <thead>
+        <tr style="background: #f0f0f0;">
+            <th>代碼</th>
+            <th>名稱</th>
+            <th>英文名稱</th>
+            <th>序號</th>
+            <th>管理職</th>
+            <th>狀態</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for level in job_levels %}
+        <tr{% if not level.is_active %} style="color: #999;"{% endif %}>
+            <td><code>{{ level.code }}</code></td>
+            <td>
+                <strong>{{ level.name }}</strong>
+                {% if level.is_system_default %}
+                <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                {% endif %}
+            </td>
+            <td>{{ level.name_en or '-' }}</td>
+            <td style="text-align: right;">{{ level.level_order }}</td>
+            <td style="text-align: center;">
+                {% if level.is_manager_level %}是{% else %}-{% endif %}
+            </td>
+            <td>{% if level.is_active %}啟用{% else %}停用{% endif %}</td>
+            <td>
+                <a href="{{ url_for('job_levels.view_job_level', secure_code=level.secure_code) }}">[查看]</a>
+                <a href="{{ url_for('job_levels.edit_job_level', secure_code=level.secure_code) }}">[編輯]</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p style="margin-top: 20px; color: #666;">
+    共 {{ job_levels|length }} 個職等
+</p>
+
+{% else %}
+<p>尚無職等資料。<a href="{{ url_for('job_levels.create_job_level') }}">建立第一個職等</a></p>
+{% endif %}
+
+<hr>
+<h3>職等插入計算</h3>
+<p style="font-size: 0.9em; color: #666;">
+    新職等序號 = (下層序號 + 上層序號) / 2<br>
+    範例：L100 和 L200 之間插入 → L150
+</p>
+{% endblock %}

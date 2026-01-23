@@ -1,0 +1,104 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯企業 - {{ organization.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('organizations.view_org', secure_code=organization.secure_code) }}">&lt; 返回企業詳情</a></p>
+
+<h1>編輯企業 {{ organization.name }}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" x-data="orgEditForm()" @submit="handleSubmit($event)">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td>網域名稱</td>
+            <td><code>{{ organization.domain_name }}</code> (不可變更)</td>
+        </tr>
+        <tr>
+            <td><label for="name">企業名稱 *</label></td>
+            <td><input type="text" id="name" name="name" size="40" value="{{ organization.name }}" required></td>
+        </tr>
+        <tr>
+            <td><label for="display_name">顯示名稱</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40" value="{{ organization.display_name or '' }}">
+                <br><small>多語言顯示用，如不填則使用企業名稱</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="description">描述</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40">{{ organization.description or '' }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="is_active">狀態</label></td>
+            <td>
+                <select id="is_active" name="is_active" x-model="isActive">
+                    <option value="true">啟用</option>
+                    <option value="false">停用</option>
+                </select>
+                {% if active_contracts %}
+                <br><small style="color: #666;">* 此企業有 {{ active_contracts|length }} 份未到期合約</small>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('organizations.view_org', secure_code=organization.secure_code) }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+function orgEditForm() {
+    return {
+        isActive: '{{ "true" if organization.is_active else "false" }}',
+        originalActive: {{ 'true' if organization.is_active else 'false' }},
+        hasActiveContracts: {{ 'true' if active_contracts else 'false' }},
+        activeContractCount: {{ active_contracts|length if active_contracts else 0 }},
+        {% if active_contracts %}
+        latestContractEnd: '{{ active_contracts[0].end_date.strftime("%Y-%m-%d") }}',
+        {% else %}
+        latestContractEnd: null,
+        {% endif %}
+
+        handleSubmit(event) {
+            // 檢查：從啟用改為停用，且有未到期合約
+            if (this.originalActive && this.isActive === 'false' && this.hasActiveContracts) {
+                let msg = `此企業尚有 ${this.activeContractCount} 份未到期合約`;
+                if (this.latestContractEnd) {
+                    msg += `（最晚到期日: ${this.latestContractEnd}）`;
+                }
+                msg += `\n\n停用後該企業用戶將無法登入。\n確定要停用嗎？`;
+
+                if (!confirm(msg)) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
+}
+</script>
+
+{% if not organization.is_system_org %}
+<hr>
+<h2>刪除企業</h2>
+<p>刪除此企業將無法復原，所有相關資料都會被標記為刪除。請謹慎操作。</p>
+<form method="POST" action="{{ url_for('organizations.delete_org', secure_code=organization.secure_code) }}" onsubmit="return confirm('確定要刪除此企業嗎？此操作無法復原。');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">刪除企業</button>
+</form>
+{% endif %}
+{% endblock %}

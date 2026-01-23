@@ -1,0 +1,108 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增職稱 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>新增職稱</h1>
+
+<p><a href="{{ url_for('job_titles.list_job_titles') }}">[返回列表]</a></p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">職稱代碼 *</th>
+            <td>
+                <input type="text" name="code" required maxlength="30"
+                       placeholder="如 SR_ENG" style="width: 100%;"
+                       value="{{ request.form.get('code', '') }}">
+                <div style="font-size: 0.8em; color: #666;">建議用大寫英文，如 MGR, PM, SR_ENG</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職稱名稱 *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       placeholder="如 高級工程師" style="width: 100%;"
+                       value="{{ request.form.get('name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">英文名稱</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       placeholder="如 Senior Engineer" style="width: 100%;"
+                       value="{{ request.form.get('name_en', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">簡稱</th>
+            <td>
+                <input type="text" name="short_name" maxlength="50"
+                       placeholder="如 高工" style="width: 100%;"
+                       value="{{ request.form.get('short_name', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等 *</th>
+            <td>
+                <select name="job_level_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇職等 --</option>
+                    {% for level in job_levels %}
+                    <option value="{{ level.secure_code }}"
+                            {% if request.form.get('job_level_secure_code') == level.secure_code %}selected{% endif %}>
+                        {{ level.code }} - {{ level.name }}
+                        (簽核: {% if level.approval_limit is none %}無上限{% elif level.approval_limit == 0 %}無{% else %}{{ '{:,.0f}'.format(level.approval_limit) }}{% endif %})
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職系 *</th>
+            <td>
+                <select name="job_family_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇職系 --</option>
+                    {% for family in job_families %}
+                    <option value="{{ family.secure_code }}"
+                            {% if request.form.get('job_family_secure_code') == family.secure_code %}selected{% endif %}>
+                        {{ family.name }} ({{ family.family_type }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理職</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_supervisor" value="true"
+                           {% if request.form.get('is_supervisor') == 'true' %}checked{% endif %}>
+                    是管理職 (帶人)
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">描述</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;"
+                          placeholder="職責說明">{{ request.form.get('description', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">排序順序</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       style="width: 100%;"
+                       value="{{ request.form.get('sort_order', '0') }}">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">建立職稱</button>
+                <a href="{{ url_for('job_titles.list_job_titles') }}" style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

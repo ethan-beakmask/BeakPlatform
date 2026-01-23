@@ -1,0 +1,180 @@
+# BeakMask Semgrep Security Rules
+# 用於檢測違反安全標準的程式碼
+
+rules:
+  # ===========================================================================
+  # AUTH-01: 禁止繞過認證攔截
+  # ===========================================================================
+  - id: beakmask-missing-auth-decorator
+    patterns:
+      - pattern: |
+          @$BP.route(...)
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @$BP.route(...)
+          @public_route
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @$BP.route(...)
+          @login_required
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @$BP.route(...)
+          @admin_required
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @$BP.route(...)
+          @system_admin_required
+          def $FUNC(...):
+            ...
+    message: "Route missing authentication decorator. Use @public_route, @login_required, @admin_required, or @system_admin_required"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      standard: AUTH-02
+
+  # ===========================================================================
+  # TENANT-02: 禁止 API 層直接查詢資料庫
+  # ===========================================================================
+  - id: beakmask-direct-model-query-in-api
+    patterns:
+      - pattern-either:
+          - pattern: $MODEL.query.$METHOD(...)
+          - pattern: db.session.query($MODEL)
+      - pattern-inside: |
+          @$BP.route(...)
+          def $FUNC(...):
+            ...
+    paths:
+      include:
+        - "**/api/*.py"
+    message: "API routes should use ResourceGateway instead of direct model queries"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      standard: TENANT-02
+
+  # ===========================================================================
+  # INPUT-01: 禁止 SQL 字串拼接
+  # ===========================================================================
+  - id: beakmask-sql-injection
+    patterns:
+      - pattern-either:
+          - pattern: db.engine.execute($SQL + ...)
+          - pattern: db.engine.execute(f"...")
+          - pattern: db.engine.execute("..." % ...)
+          - pattern: db.engine.execute("...".format(...))
+          - pattern: db.session.execute($SQL + ...)
+          - pattern: db.session.execute(f"...")
+          - pattern: db.session.execute("..." % ...)
+          - pattern: db.session.execute("...".format(...))
+          - pattern: text($SQL + ...)
+          - pattern: text(f"...")
+    message: "Potential SQL injection. Use parameterized queries with SQLAlchemy"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      standard: INPUT-01
+      cwe: CWE-89
+
+  # ===========================================================================
+  # INPUT-02: 禁止 Command Injection
+  # ===========================================================================
+  - id: beakmask-command-injection
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.call($CMD, shell=True, ...)
+          - pattern: subprocess.run($CMD, shell=True, ...)
+          - pattern: subprocess.Popen($CMD, shell=True, ...)
+          - pattern: os.system(...)
+          - pattern: os.popen(...)
+    message: "Potential command injection. Avoid shell=True and os.system"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      standard: INPUT-02
+      cwe: CWE-78
+
+  # ===========================================================================
+  # 禁止硬編碼密鑰
+  # ===========================================================================
+  - id: beakmask-hardcoded-secret
+    patterns:
+      - pattern-either:
+          - pattern: SECRET_KEY = "..."
+          - pattern: secret_key = "..."
+          - pattern: password = "..."
+          - pattern: api_key = "..."
+    message: "Hardcoded secret detected. Use environment variables"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      cwe: CWE-798
+
+  # ===========================================================================
+  # 禁止使用不安全的隨機數
+  # ===========================================================================
+  - id: beakmask-insecure-random
+    patterns:
+      - pattern-either:
+          - pattern: random.random()
+          - pattern: random.randint(...)
+          - pattern: random.choice(...)
+    message: "Use secrets module instead of random for security-sensitive operations"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-330
+
+  # ===========================================================================
+  # 禁止 Debug 模式在生產
+  # ===========================================================================
+  - id: beakmask-debug-enabled
+    pattern: app.run(..., debug=True, ...)
+    message: "Debug mode should not be enabled in production"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+
+  # ===========================================================================
+  # 禁止不安全的 pickle
+  # ===========================================================================
+  - id: beakmask-insecure-pickle
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads(...)
+          - pattern: pickle.load(...)
+    message: "Avoid pickle for untrusted data - use JSON instead"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-502
+
+  # ===========================================================================
+  # 禁止明文記錄敏感資訊
+  # ===========================================================================
+  - id: beakmask-log-sensitive-data
+    patterns:
+      - pattern-either:
+          - pattern: logger.$METHOD(..., password=..., ...)
+          - pattern: logger.$METHOD(..., token=..., ...)
+          - pattern: logger.$METHOD(..., secret=..., ...)
+          - pattern: logging.$METHOD(..., password=..., ...)
+    message: "Do not log sensitive data"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      cwe: CWE-532

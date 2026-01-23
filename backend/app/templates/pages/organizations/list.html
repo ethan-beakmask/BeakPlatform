@@ -1,0 +1,1004 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}企業管理 - BeakMask{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    [x-cloak] { display: none !important; }
+
+    /* Outlook 風格左右佈局 */
+    .outlook-layout {
+        display: flex;
+        height: calc(100vh - 100px);
+        margin: -16px;
+        background: #f5f5f5;
+    }
+
+    /* 左側面板 - 企業列表 */
+    .left-panel {
+        width: 420px;
+        min-width: 420px;
+        background: white;
+        border-right: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        background: #fafafa;
+    }
+    .panel-header h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* 搜尋與篩選 */
+    .filter-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .filter-row input[type="text"] {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .filter-row select {
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    /* 企業列表 */
+    .org-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+    .org-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+    .org-item:hover {
+        background: #f5f5f5;
+    }
+    .org-item.selected {
+        background: #e3f2fd;
+        border-left: 3px solid #1976d2;
+    }
+    .org-item .org-name {
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .org-item .org-domain {
+        font-size: 12px;
+        color: #888;
+        font-family: monospace;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .badge-conglomerate {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .badge-inactive {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .badge-active {
+        background: #dcfce7;
+        color: #16a34a;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .badge-contract {
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .badge-no-contract {
+        background: #fef3c7;
+        color: #b45309;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    /* 集團模式 */
+    .conglomerate-mode-bar {
+        padding: 10px 16px;
+        background: #fef3c7;
+        border-bottom: 1px solid #fbbf24;
+    }
+    .conglomerate-mode-bar input {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 150px;
+        margin-right: 8px;
+    }
+
+    /* 分頁 */
+    .pagination-bar {
+        padding: 8px 16px;
+        border-top: 1px solid #eee;
+        background: #fafafa;
+        font-size: 12px;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .pagination-bar a {
+        color: #1976d2;
+        text-decoration: none;
+        margin: 0 4px;
+    }
+
+    /* 右側面板 - 詳情 */
+    .right-panel {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+    }
+    .empty-state p {
+        margin: 8px 0;
+    }
+
+    /* 詳情卡片 */
+    .detail-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+    .detail-card-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .detail-card-header h3 {
+        margin: 0;
+        font-size: 15px;
+    }
+    .detail-card-body {
+        padding: 16px;
+    }
+
+    /* 詳情表格 */
+    .info-table {
+        width: 100%;
+        font-size: 13px;
+    }
+    .info-table td {
+        padding: 6px 0;
+        vertical-align: top;
+    }
+    .info-table td:first-child {
+        width: 100px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    /* 合約表格 */
+    .contract-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .contract-table th,
+    .contract-table td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .contract-table th {
+        background: #f9fafb;
+        font-weight: 500;
+        color: #666;
+    }
+    .contract-table tr:hover {
+        background: #f9fafb;
+    }
+    .status-valid { color: #16a34a; }
+    .status-expired { color: #dc2626; }
+    .status-disabled { color: #9ca3af; }
+
+    /* 按鈕 */
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background: #1976d2;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #1565c0;
+    }
+    .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    .btn-secondary:hover {
+        background: #d1d5db;
+    }
+    .btn-success {
+        background: #16a34a;
+        color: white;
+    }
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    /* 合約期間摘要 */
+    .contract-summary {
+        padding: 12px;
+        background: #f0f9ff;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+    .contract-summary.expired {
+        background: #fef2f2;
+    }
+
+    /* 模態框 */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        width: 500px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .modal-header h3 {
+        margin: 0;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #eee;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+        box-sizing: border-box;
+    }
+    .form-row {
+        display: flex;
+        gap: 12px;
+    }
+    .form-row .form-group {
+        flex: 1;
+    }
+
+    .message {
+        padding: 10px 14px;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+    .message-success {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+    .message-error {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="outlook-layout" x-data="orgManager()" x-cloak>
+    <!-- 左側面板 - 企業列表 -->
+    <div class="left-panel">
+        <div class="panel-header">
+            <h2>
+                企業管理
+                <a href="{{ url_for('organizations.create_org') }}" class="btn btn-primary btn-sm">+ 新增</a>
+            </h2>
+            <div class="filter-row">
+                <input type="text" x-model="searchText" @input.debounce.300ms="applyFilter()"
+                       placeholder="搜尋企業名稱/網域">
+                <select x-model="conglomerateFilter" @change="applyFilter()">
+                    <option value="">全部</option>
+                    <option value="none">無集團</option>
+                    {% for c in conglomerates %}
+                    <option value="{{ c.secure_code }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" @click="toggleConglomerateMode()"
+                        x-text="conglomerateMode ? '取消集團設定' : '集團設定'"></button>
+            </div>
+        </div>
+
+        <!-- 集團設定模式 -->
+        <div class="conglomerate-mode-bar" x-show="conglomerateMode" x-cloak>
+            <template x-if="!editingConglomerate">
+                <div>
+                    <input type="text" x-model="newConglomerateName" placeholder="集團名稱">
+                    <button type="button" class="btn btn-success btn-sm" @click="createConglomerate()">
+                        建立 (<span x-text="selectedOrgs.length"></span>)
+                    </button>
+                </div>
+            </template>
+            <template x-if="editingConglomerate">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" x-model="editingConglomerate.name">
+                    <button type="button" class="btn btn-success btn-sm" @click="updateConglomerate()">
+                        更新 (<span x-text="selectedOrgs.length"></span>)
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" @click="dissolveConglomerate()">解散</button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="cancelEditConglomerate()">取消</button>
+                </div>
+            </template>
+        </div>
+
+        <!-- 企業列表 -->
+        <div class="org-list">
+            {% for org in organizations %}
+            {% if not org.is_system_org %}
+            <div class="org-item"
+                 :class="{'selected': selectedOrgCode === '{{ org.secure_code }}' || selectedOrgs.includes('{{ org.secure_code }}')}"
+                 @click="selectOrg('{{ org.secure_code }}')">
+
+                <template x-if="conglomerateMode">
+                    <input type="checkbox" style="margin-right: 8px;"
+                           :checked="selectedOrgs.includes('{{ org.secure_code }}')"
+                           @click.stop="toggleOrgSelection('{{ org.secure_code }}')">
+                </template>
+
+                <span class="org-name">{{ org.name }}</span>
+                <span class="org-domain">{{ org.domain_name }}</span>
+                {% if org.conglomerate_secure_code and conglomerate_map.get(org.conglomerate_secure_code) %}
+                <span class="badge badge-conglomerate"
+                      @click.stop="editConglomerateById('{{ org.conglomerate_secure_code }}')">
+                    {{ conglomerate_map[org.conglomerate_secure_code].name }}
+                </span>
+                {% endif %}
+                {% set active_count = org_active_counts.get(org.secure_code, 0) %}
+                {% set total_count = org_total_counts.get(org.secure_code, 0) %}
+                {% if total_count > 0 %}
+                <span class="badge {% if active_count > 0 %}badge-contract{% else %}badge-no-contract{% endif %}">{{ active_count }}/{{ total_count }}</span>
+                {% else %}
+                <span class="badge badge-no-contract">無約</span>
+                {% endif %}
+                {% if not org.is_active %}
+                <span class="badge badge-inactive">停用</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- 分頁 -->
+        {% if pagination.pages > 1 %}
+        <div class="pagination-bar">
+            <span>共 {{ pagination.total }} 筆</span>
+            <span>
+                {% if pagination.page > 1 %}
+                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{% if conglomerate_filter %}&conglomerate={{ conglomerate_filter }}{% endif %}">&lt;</a>
+                {% endif %}
+                第 {{ pagination.page }}/{{ pagination.pages }} 頁
+                {% if pagination.page < pagination.pages %}
+                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}{% if conglomerate_filter %}&conglomerate={{ conglomerate_filter }}{% endif %}">&gt;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 右側面板 - 詳情 -->
+    <div class="right-panel">
+        {% if selected_org %}
+        <!-- 企業資訊 -->
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <h3>{{ selected_org.name }}</h3>
+                <div>
+                    <a href="{{ url_for('organizations.edit_org', secure_code=selected_org.secure_code) }}"
+                       class="btn btn-secondary btn-sm">編輯企業</a>
+                </div>
+            </div>
+            <div class="detail-card-body">
+                <table class="info-table">
+                    <tr><td>企業代碼</td><td>{{ selected_org.code }}</td></tr>
+                    <tr><td>網域名稱</td><td><code>{{ selected_org.domain_name }}</code></td></tr>
+                    <tr>
+                        <td>狀態</td>
+                        <td>
+                            {% if selected_org.is_system_org %}系統企業（永久有效）
+                            {% elif selected_org.is_active %}啟用
+                            {% else %}<span style="color: #dc2626;">停用</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>客戶類型</td>
+                        <td>
+                            {% if selected_org.customer_type == 'TRIAL' %}試用
+                            {% elif selected_org.customer_type == 'FORMAL' %}正式客戶
+                            {% elif selected_org.customer_type == 'BLACKLIST' %}黑名單
+                            {% else %}{{ selected_org.customer_type }}{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td>帳號上限</td><td>{{ selected_org.user_limit }}</td></tr>
+                    {% if selected_org.conglomerate %}
+                    <tr><td>所屬集團</td><td><span class="badge badge-conglomerate">{{ selected_org.conglomerate.name }}</span></td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_person %}
+                    <tr><td>聯絡人</td><td>{{ selected_org.contact_person }}</td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_email %}
+                    <tr><td>聯絡信箱</td><td>{{ selected_org.contact_email }}</td></tr>
+                    {% endif %}
+                    {% if selected_org.contact_phone %}
+                    <tr><td>聯絡電話</td><td>{{ selected_org.contact_phone }}</td></tr>
+                    {% endif %}
+                    <tr><td>建立時間</td><td>{{ selected_org.created_at.strftime('%Y-%m-%d %H:%M') if selected_org.created_at else '-' }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 合約管理 -->
+        <div class="detail-card">
+            <div class="detail-card-header">
+                <h3>合約管理 ({{ contracts|length }})</h3>
+                <button type="button" class="btn btn-primary btn-sm" @click="openContractModal()">+ 新增合約</button>
+            </div>
+            <div class="detail-card-body">
+                {% if contract_period %}
+                <div class="contract-summary {% if contract_period.is_expired %}expired{% endif %}">
+                    <strong>合約期間：</strong>
+                    {{ contract_period.start.strftime('%Y-%m-%d') }} ~ {{ contract_period.end.strftime('%Y-%m-%d') }}
+                    （{% if contract_period.is_expired %}<span class="status-expired">{{ contract_period.remaining }}</span>{% else %}<span class="status-valid">剩餘 {{ contract_period.remaining }}</span>{% endif %}）
+                </div>
+                {% elif selected_org.is_system_org %}
+                <div class="contract-summary">
+                    <strong>系統企業：</strong>永久有效，無需合約
+                </div>
+                {% endif %}
+
+                {% if contracts %}
+                <table class="contract-table">
+                    <thead>
+                        <tr>
+                            <th>合約編號</th>
+                            <th>合約名稱</th>
+                            <th>期間</th>
+                            <th>金額</th>
+                            <th>狀態</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in contracts %}
+                        <tr>
+                            <td><code>{{ contract.contract_number }}</code></td>
+                            <td>{{ contract.name or '-' }}</td>
+                            <td>{{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{% if contract.amount %}{{ "{:,.0f}".format(contract.amount) }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% if contract.status == 'DISABLED' %}<span class="status-disabled">停用</span>
+                                {% elif contract.is_expired %}<span class="status-expired">已過期</span>
+                                {% elif contract.is_active %}<span class="status-valid">有效</span>
+                                {% else %}尚未生效{% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        @click="editContract('{{ contract.secure_code }}')">編輯</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    {% if selected_org.is_system_org %}
+                    系統企業無需建立合約
+                    {% else %}
+                    尚無合約，點擊上方「+ 新增合約」建立
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <!-- 未選擇企業 -->
+        <div class="empty-state">
+            <p style="font-size: 48px;">&#8592;</p>
+            <p>請從左側選擇一家企業</p>
+            <p>查看詳情與合約管理</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 合約新增/編輯 Modal -->
+    <div x-show="contractModal.show" x-cloak class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 x-text="contractModal.editing ? '編輯合約' : '新增合約'"></h3>
+                <button class="modal-close" @click="contractModal.show = false">&times;</button>
+            </div>
+
+            <div x-show="contractModal.message" x-cloak
+                 :class="'message ' + (contractModal.error ? 'message-error' : 'message-success')"
+                 x-text="contractModal.message"></div>
+
+            <form @submit.prevent="saveContract()">
+                <div class="form-group">
+                    <label>合約名稱</label>
+                    <input type="text" x-model="contractModal.form.name" placeholder="選填">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>開始日期 *</label>
+                        <input type="date" x-model="contractModal.form.start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>結束日期 *</label>
+                        <input type="date" x-model="contractModal.form.end_date" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>金額</label>
+                    <input type="number" x-model="contractModal.form.amount" placeholder="選填">
+                </div>
+
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea x-model="contractModal.form.description" rows="2" placeholder="選填"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>備註</label>
+                    <textarea x-model="contractModal.form.notes" rows="2" placeholder="選填"></textarea>
+                </div>
+
+                <div class="form-group" x-show="contractModal.editing" style="text-align: left;">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                        <input type="checkbox" x-model="contractModal.form.disabled" style="width: auto; margin: 0;">
+                        <span>停用此合約</span>
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="contractModal.show = false">取消</button>
+                    <template x-if="contractModal.editing">
+                        <button type="button" class="btn btn-danger" @click="deleteContract()">刪除</button>
+                    </template>
+                    <button type="submit" class="btn btn-primary" x-text="contractModal.editing ? '儲存' : '新增'"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+const selectedOrgCode = '{{ selected_org.secure_code if selected_org else '' }}';
+
+function orgManager() {
+    return {
+        searchText: '{{ search }}',
+        conglomerateFilter: '{{ conglomerate_filter }}',
+        selectedOrgCode: selectedOrgCode,
+
+        // 集團模式
+        conglomerateMode: false,
+        selectedOrgs: [],
+        newConglomerateName: '',
+        editingConglomerate: null,
+
+        // 合約 Modal
+        contractModal: {
+            show: false,
+            editing: null,
+            message: '',
+            error: false,
+            form: {
+                name: '',
+                start_date: '',
+                end_date: '',
+                amount: '',
+                description: '',
+                notes: '',
+                disabled: false
+            }
+        },
+
+        selectOrg(secureCode) {
+            if (this.conglomerateMode) {
+                this.toggleOrgSelection(secureCode);
+            } else {
+                // 導航到該企業
+                const url = new URL(window.location.href);
+                url.searchParams.set('org', secureCode);
+                window.location.href = url.toString();
+            }
+        },
+
+        applyFilter() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('org');
+            url.searchParams.delete('page');
+            if (this.searchText) {
+                url.searchParams.set('search', this.searchText);
+            } else {
+                url.searchParams.delete('search');
+            }
+            if (this.conglomerateFilter) {
+                url.searchParams.set('conglomerate', this.conglomerateFilter);
+            } else {
+                url.searchParams.delete('conglomerate');
+            }
+            window.location.href = url.toString();
+        },
+
+        // === 集團功能 ===
+        toggleConglomerateMode() {
+            this.conglomerateMode = !this.conglomerateMode;
+            if (!this.conglomerateMode) {
+                this.selectedOrgs = [];
+                this.newConglomerateName = '';
+                this.editingConglomerate = null;
+            }
+        },
+
+        toggleOrgSelection(secureCode) {
+            const idx = this.selectedOrgs.indexOf(secureCode);
+            if (idx > -1) {
+                this.selectedOrgs.splice(idx, 1);
+            } else {
+                this.selectedOrgs.push(secureCode);
+            }
+        },
+
+        async createConglomerate() {
+            if (!this.newConglomerateName.trim()) {
+                alert('請輸入集團名稱');
+                return;
+            }
+            if (this.selectedOrgs.length < 2) {
+                alert('請選擇至少兩家企業');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/conglomerates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        name: this.newConglomerateName.trim(),
+                        org_secure_codes: this.selectedOrgs
+                    })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    alert(`已建立集團: ${data.conglomerate.name}`);
+                    location.reload();
+                } else {
+                    alert(data.error || '建立失敗');
+                }
+            } catch (e) {
+                alert('建立失敗: ' + e.message);
+            }
+        },
+
+        async editConglomerateById(secureCode) {
+            if (!this.conglomerateMode) {
+                this.conglomerateMode = true;
+            }
+            try {
+                const resp = await fetch(`/api/conglomerates/${secureCode}`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    this.editingConglomerate = data.conglomerate;
+                    this.selectedOrgs = data.organizations.map(o => o.id || o.secure_code);
+                } else {
+                    alert(data.error || '載入失敗');
+                }
+            } catch (e) {
+                alert('載入失敗: ' + e.message);
+            }
+        },
+
+        async updateConglomerate() {
+            if (!this.editingConglomerate || this.selectedOrgs.length < 2) {
+                alert('請選擇至少兩家企業');
+                return;
+            }
+            const conglomerateId = this.editingConglomerate.id || this.editingConglomerate.secure_code;
+            try {
+                await fetch(`/api/conglomerates/${conglomerateId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ name: this.editingConglomerate.name })
+                });
+                const resp = await fetch(`/api/conglomerates/${conglomerateId}/members`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ org_secure_codes: this.selectedOrgs })
+                });
+                if (resp.ok) {
+                    alert('已更新集團');
+                    location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || '更新失敗');
+                }
+            } catch (e) {
+                alert('更新失敗: ' + e.message);
+            }
+        },
+
+        async dissolveConglomerate() {
+            if (!this.editingConglomerate) return;
+            if (!confirm(`確定要解散集團「${this.editingConglomerate.name}」嗎？`)) return;
+
+            const conglomerateId = this.editingConglomerate.id || this.editingConglomerate.secure_code;
+            try {
+                const resp = await fetch(`/api/conglomerates/${conglomerateId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                if (resp.ok) {
+                    alert('已解散集團');
+                    location.reload();
+                } else {
+                    const data = await resp.json();
+                    alert(data.error || '解散失敗');
+                }
+            } catch (e) {
+                alert('解散失敗: ' + e.message);
+            }
+        },
+
+        cancelEditConglomerate() {
+            this.editingConglomerate = null;
+            this.selectedOrgs = [];
+        },
+
+        // === 合約功能 ===
+        openContractModal() {
+            // 預設日期：今天 00:00 ~ 一個月後 23:59:59
+            const today = new Date();
+            const nextMonth = new Date(today);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+            this.contractModal.editing = null;
+            this.contractModal.message = '';
+            this.contractModal.form = {
+                name: '',
+                start_date: this.formatDate(today),
+                end_date: this.formatDate(nextMonth),
+                amount: '',
+                description: '',
+                notes: '',
+                disabled: false
+            };
+            this.contractModal.show = true;
+        },
+
+        async editContract(secureCode) {
+            try {
+                const resp = await fetch(`/api/contracts/${secureCode}`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await resp.json();
+                if (resp.ok && data.contract) {
+                    const c = data.contract;
+                    this.contractModal.editing = secureCode;
+                    this.contractModal.message = '';
+                    this.contractModal.form = {
+                        name: c.name || '',
+                        start_date: c.start_date,
+                        end_date: c.end_date,
+                        amount: c.amount || '',
+                        description: c.description || '',
+                        notes: c.notes || '',
+                        disabled: c.status === 'DISABLED'
+                    };
+                    this.contractModal.show = true;
+                } else {
+                    alert(data.error || '載入失敗');
+                }
+            } catch (e) {
+                alert('載入失敗: ' + e.message);
+            }
+        },
+
+        async saveContract() {
+            const form = this.contractModal.form;
+            if (!form.start_date || !form.end_date) {
+                this.showContractMessage('請填寫開始和結束日期', true);
+                return;
+            }
+
+            const orgSecureCode = '{{ selected_org.secure_code if selected_org else '' }}';
+
+            try {
+                let resp;
+                if (this.contractModal.editing) {
+                    // 更新合約
+                    const payload = {
+                        name: form.name || null,
+                        start_date: form.start_date,
+                        end_date: form.end_date,
+                        amount: form.amount ? parseFloat(form.amount) : null,
+                        description: form.description || null,
+                        notes: form.notes || null,
+                        status: form.disabled ? 'DISABLED' : 'ACTIVE'
+                    };
+                    resp = await fetch(`/api/contracts/${this.contractModal.editing}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    // 新增合約 - API 使用 org_id
+                    const payload = {
+                        org_id: orgSecureCode,
+                        name: form.name || null,
+                        start_date: form.start_date,
+                        end_date: form.end_date,
+                        amount: form.amount ? parseFloat(form.amount) : null,
+                        description: form.description || null,
+                        notes: form.notes || null
+                    };
+                    resp = await fetch('/api/contracts/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const data = await resp.json();
+                if (resp.ok) {
+                    location.reload();
+                } else {
+                    this.showContractMessage(data.error || data.message || '儲存失敗', true);
+                }
+            } catch (e) {
+                this.showContractMessage('儲存失敗: ' + e.message, true);
+            }
+        },
+
+        async deleteContract() {
+            if (!this.contractModal.editing) return;
+            if (!confirm('確定要刪除此合約嗎？')) return;
+
+            try {
+                const resp = await fetch(`/api/contracts/${this.contractModal.editing}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    this.showContractMessage(data.message || '刪除失敗', true);
+                }
+            } catch (e) {
+                this.showContractMessage('刪除失敗: ' + e.message, true);
+            }
+        },
+
+        showContractMessage(msg, isError) {
+            this.contractModal.message = msg;
+            this.contractModal.error = isError;
+            setTimeout(() => { this.contractModal.message = ''; }, 5000);
+        },
+
+        formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+    };
+}
+</script>
+{% endblock %}

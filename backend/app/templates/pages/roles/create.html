@@ -1,0 +1,336 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增角色 - BeakMask{% endblock %}
+
+{% block content %}
+<div x-data="roleCreateForm()">
+    <p><a href="{{ url_for('roles.list_roles') }}" style="color:#3b82f6;">← 返回列表</a></p>
+    <h1 style="font-size:20px; font-weight:bold; margin:16px 0;">新增角色</h1>
+
+    <form @submit.prevent="submitForm" style="max-width: 700px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <table border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+            <!-- 企業內部人員 -->
+            <tr>
+                <th style="text-align: left; width: 150px;">適用對象</th>
+                <td>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" x-model="formData.is_internal"
+                               @change="onInternalChange()">
+                        <span>企業內部人員</span>
+                    </label>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                        <span x-show="!formData.is_internal">外部人員：如訪客、廠商、合作夥伴</span>
+                        <span x-show="formData.is_internal">內部人員：企業正式員工</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 角色名稱（必填） -->
+            <tr>
+                <th style="text-align: left; width: 150px; vertical-align: top;">角色名稱 *</th>
+                <td>
+                    <input type="text" x-model="formData.name" required maxlength="100"
+                           @input.debounce.500ms="generateCode"
+                           placeholder="如：專案經理、業務主管" style="width: 100%;">
+                    <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                        輸入名稱後會自動產生代碼建議
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 角色代碼（選填，自動產生） -->
+            <tr>
+                <th style="text-align: left; vertical-align: top;">角色代碼</th>
+                <td>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" x-model="formData.code" maxlength="50"
+                               @input.debounce.300ms="validateCode"
+                               :placeholder="generatedCode || '留空則自動產生'"
+                               style="width: 100%; text-transform: uppercase;"
+                               :style="codeError ? 'border-color: #dc2626;' : ''">
+                        <button type="button" @click="useGeneratedCode"
+                                x-show="generatedCode && formData.code !== generatedCode"
+                                style="white-space: nowrap; padding: 6px 12px; font-size: 0.9em;">
+                            使用建議
+                        </button>
+                    </div>
+
+                    <!-- 代碼驗證結果 -->
+                    <div x-show="codeError" style="color: #dc2626; font-size: 0.85em; margin-top: 4px;" x-text="codeError"></div>
+                    <div x-show="codeValid && formData.code" style="color: #16a34a; font-size: 0.85em; margin-top: 4px;">
+                        ✓ 代碼可用
+                    </div>
+
+                    <!-- 代碼建議 -->
+                    <div x-show="suggestions.length > 0 && !formData.code" style="margin-top: 8px;">
+                        <span style="font-size: 0.85em; color: #666;">建議代碼：</span>
+                        <template x-for="(sug, idx) in suggestions" :key="idx">
+                            <button type="button" @click="formData.code = sug; validateCode()"
+                                    style="margin: 2px 4px; padding: 4px 8px; font-size: 0.85em;
+                                           background: #e0e7ff; border: 1px solid #a5b4fc; border-radius: 4px; cursor: pointer;">
+                                <code x-text="sug"></code>
+                            </button>
+                        </template>
+                    </div>
+
+                    <div style="font-size: 0.8em; color: #888; margin-top: 4px;">
+                        格式：大寫英文、數字、底線，開頭必須是英文。如 PROJECT_MANAGER
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 角色類型 -->
+            <tr>
+                <th style="text-align: left;">類型 *</th>
+                <td>
+                    <select x-model="formData.role_type" required style="width: 100%;"
+                            :disabled="!formData.is_internal"
+                            :style="!formData.is_internal ? 'background: #f3f4f6; color: #6b7280;' : ''">
+                        <option value="ROLE">角色 (通用)</option>
+                        <option value="POSITION" x-show="formData.is_internal">職位 (部門專用)</option>
+                    </select>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                        <span x-show="formData.is_internal">職位用於部門內職務（如主管、專員），角色用於通用權限（如表單審核者）</span>
+                        <span x-show="!formData.is_internal">外部人員只能指派角色，不能擔任職位</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 適用範圍 -->
+            <tr>
+                <th style="text-align: left; vertical-align: top;">適用範圍 *</th>
+                <td>
+                    <select x-model="formData.scope_type" required style="width: 100%;">
+                        <option value="GLOBAL">全企業</option>
+                        <option value="DEPARTMENT">部門</option>
+                        <option value="GROUP">群組</option>
+                    </select>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                        <template x-if="formData.scope_type === 'GLOBAL'">
+                            <span>此角色可在企業任何地方指派（如：表單審核者、公告管理員）</span>
+                        </template>
+                        <template x-if="formData.scope_type === 'DEPARTMENT'">
+                            <span>此角色只能在部門內指派（如：部門主管、部門秘書）</span>
+                        </template>
+                        <template x-if="formData.scope_type === 'GROUP'">
+                            <span>此角色只能在群組內指派（如：社團團長、專案召集人）</span>
+                        </template>
+                    </div>
+                    <div style="font-size: 0.75em; color: #999; margin-top: 2px;">
+                        註：這是角色的「指派範圍」，不是權限範圍。權限需另外設定。
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 管理職 -->
+            <tr>
+                <th style="text-align: left;">管理職</th>
+                <td>
+                    <label style="display: flex; align-items: center; gap: 8px;"
+                           :style="!formData.is_internal ? 'opacity: 0.5;' : ''">
+                        <input type="checkbox" x-model="formData.is_manager"
+                               :disabled="!formData.is_internal">
+                        <span>是管理職（具有管理權限）</span>
+                    </label>
+                    <div x-show="!formData.is_internal" style="font-size: 0.8em; color: #9ca3af; margin-top: 4px;">
+                        外部人員不能擔任管理職
+                    </div>
+                </td>
+            </tr>
+
+            <!-- 描述 -->
+            <tr>
+                <th style="text-align: left; vertical-align: top;">描述</th>
+                <td>
+                    <textarea x-model="formData.description" rows="3" style="width: 100%;"
+                              placeholder="角色職責說明..."></textarea>
+                </td>
+            </tr>
+
+            <!-- 排序順序 -->
+            <tr>
+                <th style="text-align: left;">排序順序</th>
+                <td>
+                    <input type="number" x-model.number="formData.sort_order" min="0" style="width: 100px;">
+                </td>
+            </tr>
+
+            <!-- 送出按鈕 -->
+            <tr>
+                <td colspan="2" style="text-align: center; padding-top: 20px;">
+                    <button type="submit" :disabled="isSubmitting || (formData.code && !codeValid)"
+                            style="padding: 10px 30px; font-size: 1em;"
+                            :style="isSubmitting ? 'opacity: 0.6; cursor: not-allowed;' : ''">
+                        <span x-show="!isSubmitting">建立角色</span>
+                        <span x-show="isSubmitting">建立中...</span>
+                    </button>
+                    <a href="{{ url_for('roles.list_roles') }}" style="margin-left: 20px;">取消</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <!-- 錯誤訊息 -->
+    <div x-show="submitError" x-cloak
+         style="margin-top: 20px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #dc2626;">
+        <strong>錯誤：</strong> <span x-text="submitError"></span>
+    </div>
+</div>
+
+<script>
+function roleCreateForm() {
+    return {
+        formData: {
+            name: '',
+            code: '',
+            is_internal: false,
+            role_type: 'ROLE',
+            scope_type: 'GLOBAL',
+            is_manager: false,
+            description: '',
+            sort_order: 0
+        },
+        generatedCode: '',
+        suggestions: [],
+        codeValid: false,
+        codeError: '',
+        isSubmitting: false,
+        submitError: '',
+
+        getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.content || '';
+        },
+
+        onInternalChange() {
+            // 外部人員時，強制設為角色且非管理職
+            if (!this.formData.is_internal) {
+                this.formData.role_type = 'ROLE';
+                this.formData.is_manager = false;
+            }
+        },
+
+        async generateCode() {
+            if (!this.formData.name.trim()) {
+                this.generatedCode = '';
+                this.suggestions = [];
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/roles/generate-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({ name: this.formData.name })
+                });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    this.generatedCode = data.code;
+                    this.suggestions = data.suggestions || [];
+
+                    // 如果用戶沒輸入代碼，自動填入
+                    if (!this.formData.code) {
+                        this.codeValid = true;
+                        this.codeError = '';
+                    }
+                }
+            } catch (e) {
+                console.error('Generate code error:', e);
+            }
+        },
+
+        async validateCode() {
+            const code = this.formData.code.trim().toUpperCase();
+
+            if (!code) {
+                this.codeValid = false;
+                this.codeError = '';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/roles/validate-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                const data = await resp.json();
+
+                if (data.valid) {
+                    this.codeValid = true;
+                    this.codeError = '';
+                } else {
+                    this.codeValid = false;
+                    this.codeError = data.error;
+                }
+            } catch (e) {
+                console.error('Validate code error:', e);
+                this.codeError = '驗證失敗';
+            }
+        },
+
+        async useGeneratedCode() {
+            this.formData.code = this.generatedCode;
+            // 使用建議代碼後也要驗證（可能有時間差導致代碼已被使用）
+            await this.validateCode();
+        },
+
+        async submitForm() {
+            this.isSubmitting = true;
+            this.submitError = '';
+
+            // 準備資料
+            const payload = {
+                name: this.formData.name.trim(),
+                role_type: this.formData.role_type,
+                scope_type: this.formData.scope_type,
+                is_manager: this.formData.is_manager,
+                description: this.formData.description.trim(),
+                sort_order: this.formData.sort_order
+            };
+
+            // 只有用戶有輸入代碼時才送出
+            if (this.formData.code.trim()) {
+                payload.code = this.formData.code.trim().toUpperCase();
+            }
+
+            try {
+                const resp = await fetch('/api/roles/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    // 成功，返回列表頁
+                    window.location.href = '{{ url_for("roles.list_roles") }}';
+                } else {
+                    // 失敗，保留表單資料供修改
+                    this.submitError = data.error || '建立失敗';
+                }
+            } catch (e) {
+                console.error('Submit error:', e);
+                this.submitError = '網路錯誤，請稍後再試';
+            } finally {
+                this.isSubmitting = false;
+            }
+        }
+    };
+}
+</script>
+
+<style>
+[x-cloak] { display: none !important; }
+</style>
+{% endblock %}

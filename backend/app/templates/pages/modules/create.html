@@ -1,0 +1,74 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增模組 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('modules.list_modules') }}">&lt; 返回模組列表</a></p>
+
+<h1>新增模組</h1>
+<p>No-Code Builder - 定義功能模組和頁面結構</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td><label for="code">模組代碼 *</label></td>
+            <td>
+                <input type="text" id="code" name="code" size="30" required pattern="[a-z0-9_]+">
+                <br><small>只能使用小寫英文、數字、底線 (例: members)</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="name">模組名稱 *</label></td>
+            <td><input type="text" id="name" name="name" size="40" required placeholder="例: 會員系統"></td>
+        </tr>
+        <tr>
+            <td><label for="icon">圖標</label></td>
+            <td><input type="text" id="icon" name="icon" size="10" placeholder="emoji 或文字符號"></td>
+        </tr>
+        <tr>
+            <td><label for="description">描述</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40" placeholder="模組功能描述"></textarea></td>
+        </tr>
+        <tr>
+            <td><label for="required_level">選單權限等級</label></td>
+            <td>
+                <select id="required_level" name="required_level">
+                    <option value="0">系統管理員</option>
+                    <option value="1">企業管理員</option>
+                    <option value="2" selected>一般用戶</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="create_menu">自動建立選單</label></td>
+            <td><input type="checkbox" id="create_menu" name="create_menu" checked></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">建立模組</button>
+                <a href="{{ url_for('modules.list_modules') }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<hr>
+<h2>說明</h2>
+<p>建立模組後將自動產生以下預設頁面結構：</p>
+<ul>
+    <li>/{code}/ - 列表頁</li>
+    <li>/{code}/create - 新增頁</li>
+    <li>/{code}/{id} - 詳情頁</li>
+    <li>/{code}/{id}/edit - 編輯頁</li>
+</ul>
+{% endblock %}

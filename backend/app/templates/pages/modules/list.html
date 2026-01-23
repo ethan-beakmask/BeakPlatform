@@ -1,0 +1,44 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}模組管理 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>模組管理</h1>
+<p>No-Code Builder - 建立功能模組和頁面結構</p>
+
+<p><a href="{{ url_for('modules.create_module') }}">[+ 新增模組]</a></p>
+
+{% if modules %}
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>模組</th>
+            <th>代碼</th>
+            <th>描述</th>
+            <th>系統模組</th>
+            <th>狀態</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for module in modules %}
+        <tr>
+            <td>{{ module.icon or '' }} {{ module.name }}</td>
+            <td><code>{{ module.code }}</code></td>
+            <td>{{ module.description or '-' }}</td>
+            <td>{% if module.is_system_module %}是{% else %}否{% endif %}</td>
+            <td>{% if module.is_active %}啟用{% else %}停用{% endif %}</td>
+            <td>
+                <a href="{{ url_for('modules.view_module', secure_code=module.secure_code) }}">[查看]</a>
+                {% if not module.is_system_module %}
+                <a href="{{ url_for('modules.edit_module', secure_code=module.secure_code) }}">[編輯]</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>尚無模組。<a href="{{ url_for('modules.create_module') }}">建立第一個模組</a></p>
+{% endif %}
+{% endblock %}

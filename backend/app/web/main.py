@@ -1,0 +1,131 @@
+"""
+BeakMask Main Web Routes
+主要網頁路由
+"""
+from datetime import datetime
+from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask_login import current_user
+
+from ..security.decorators import login_required, public_route
+from .. import db
+
+main_bp = Blueprint('main', __name__)
+
+
+@main_bp.route('/')
+@public_route
+def index():
+    """首頁 - 重導向到儀表板或登入頁"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    return redirect(url_for('auth.login'))
+
+
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """儀表板"""
+    from ..models.user import User, UserType
+
+    # 企業管理員相關提示
+    show_default_admin_warning = False  # 預設 admin@ 帳號需要建立正式管理員
+    show_disable_default_admin_hint = False  # 提示停用預設 admin@ 帳號
+
+    if current_user.user_type == UserType.ORG_ADMIN:
+        # 判斷是否為預設 admin@ 帳號 (原始管理員)
+        if current_user.is_original_admin and current_user.username == 'admin':
+            show_default_admin_warning = True
+        else:
+            # 非預設管理員：檢查是否有未停用的預設 admin@ 帳號
+            default_admin = User.query.filter(
+                User.org_secure_code == current_user.org_secure_code,
+                User.username == 'admin',
+                User.is_original_admin == True,
+                User.is_active == True,
+                User.is_deleted == False
+            ).first()
+            if default_admin:
+                show_disable_default_admin_hint = True
+
+    return render_template(
+        'pages/dashboard.html',
+        show_default_admin_warning=show_default_admin_warning,
+        show_disable_default_admin_hint=show_disable_default_admin_hint
+    )
+
+
+# 支援的介面語言
+SUPPORTED_LANGUAGES = [
+    ('', '使用企業預設'),
+    ('zh-TW', '繁體中文'),
+    ('zh-CN', '简体中文'),
+    ('en', 'English'),
+    ('ja', '日本語'),
+]
+
+
+@main_bp.route('/personal-settings', methods=['GET', 'POST'])
+@login_required
+def personal_settings():
+    """個人設定頁面"""
+    if request.method == 'POST':
+        try:
+            # 更新個人資料
+            current_user.english_name = request.form.get('english_name', '').strip() or None
+            current_user.native_name = request.form.get('native_name', '').strip() or None
+            current_user.nickname = request.form.get('nickname', '').strip() or None
+
+            # 備用 Email 1 (系統通知專用)：空白時自動使用主要 Email
+            backup_email_1 = request.form.get('backup_email_1', '').strip()
+            current_user.backup_email_1 = backup_email_1 if backup_email_1 else current_user.email
+
+            current_user.backup_email_2 = request.form.get('backup_email_2', '').strip() or None
+            current_user.mobile_phone_1 = request.form.get('mobile_phone_1', '').strip() or None
+            current_user.mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
+            current_user.interface_language = request.form.get('interface_language', '').strip() or None
+
+            db.session.commit()
+            flash('個人設定已儲存', 'success')
+            return redirect(url_for('main.personal_settings'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'儲存失敗: {str(e)}', 'error')
+
+    return render_template(
+        'pages/personal_settings.html',
+        languages=SUPPORTED_LANGUAGES
+    )
+
+
+@main_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """變更密碼頁面"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        # 驗證當前密碼
+        if not current_user.check_password(current_password):
+            flash('目前密碼不正確', 'error')
+        elif not new_password:
+            flash('請輸入新密碼', 'error')
+        elif new_password != confirm_password:
+            flash('新密碼與確認密碼不一致', 'error')
+        else:
+            try:
+                current_user.set_password(new_password)
+                current_user.password_changed_at = datetime.utcnow()
+                current_user.must_change_password = False
+                db.session.commit()
+
+                flash('密碼已變更成功', 'success')
+                return redirect(url_for('main.personal_settings'))
+
+            except Exception as e:
+                db.session.rollback()
+                flash(f'變更失敗: {str(e)}', 'error')
+
+    return render_template('pages/change_password.html')

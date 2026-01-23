@@ -1,0 +1,552 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{% if is_self %}個人設定{% else %}編輯用戶 - {{ user.display_name }}{% endif %} - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .edit-form {
+        max-width: 700px;
+    }
+    .section-title {
+        background: #f0f0f0;
+        padding: 8px 12px;
+        margin: 20px 0 10px 0;
+        font-weight: bold;
+        border-left: 4px solid #0066cc;
+    }
+    .section-title.optional {
+        border-left-color: #888;
+        color: #666;
+    }
+    .form-table td {
+        padding: 6px 8px;
+        vertical-align: top;
+    }
+    .form-table td:first-child {
+        width: 120px;
+        text-align: right;
+        padding-right: 12px;
+        color: #666;
+    }
+    .form-table input[type="text"],
+    .form-table input[type="email"],
+    .form-table input[type="tel"],
+    .form-table input[type="password"],
+    .form-table select {
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 220px;
+    }
+    .form-table input:focus,
+    .form-table select:focus {
+        border-color: #0066cc;
+        outline: none;
+    }
+    .form-table input:disabled,
+    .form-table select:disabled {
+        background: #f5f5f5;
+        color: #666;
+        cursor: not-allowed;
+    }
+    .readonly-info {
+        color: #666;
+        background: #f9f9f9;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+    }
+    .required::after {
+        content: " *";
+        color: #dc2626;
+    }
+    .btn-row {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .btn-row button {
+        padding: 8px 20px;
+        background: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-row button:hover {
+        background: #0052a3;
+    }
+    .btn-row button:disabled {
+        background: #999;
+        cursor: not-allowed;
+    }
+    .danger-zone {
+        margin-top: 30px;
+        padding: 15px;
+        border: 1px solid #fecaca;
+        border-radius: 4px;
+        background: #fef2f2;
+    }
+    .danger-zone h3 {
+        color: #dc2626;
+        margin-top: 0;
+    }
+    .danger-zone button {
+        background: #dc2626;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .danger-zone button:hover {
+        background: #b91c1c;
+    }
+    .readonly-notice {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if is_self %}
+<p><a href="{{ url_for('main.dashboard') }}">&lt; 返回首頁</a></p>
+<h1>個人設定</h1>
+{% else %}
+<p><a href="{{ url_for('users.view_user', secure_code=user.secure_code) }}">&lt; 返回用戶詳情</a></p>
+<h1>編輯用戶</h1>
+{% endif %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if is_self and not can_edit %}
+<div class="readonly-notice">
+    企業管理員已關閉「允許用戶修改個人資料」功能，目前您只能檢視資料。如需修改請聯繫管理員。
+</div>
+{% endif %}
+
+<div class="edit-form">
+    <form method="POST" x-data="passwordForm()">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="section-title">帳號資訊</div>
+        <table class="form-table" border="0">
+            <tr>
+                <td>帳號</td>
+                <td><span class="readonly-info">{{ user.email }}</span>
+                    <div class="help-text">帳號不可變更</div>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="display_name" class="required">姓名</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="text" id="display_name" name="display_name" x-model="displayName" required>
+                    {% else %}
+                    <span class="readonly-info">{{ user.display_name }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if can_edit_role %}
+            <tr>
+                <td><label for="role">角色</label></td>
+                <td>
+                    <select id="role" name="role">
+                        <option value="user" {% if user.user_type == 'EMPLOYEE' %}selected{% endif %}>一般用戶</option>
+                        <option value="external" {% if user.user_type == 'EXTERNAL' %}selected{% endif %}>非公司成員</option>
+                        <option value="org_admin" {% if user.user_type == 'ORG_ADMIN' %}selected{% endif %}>企業管理員</option>
+                        {% if current_user.is_system_admin %}
+                        <option value="system_admin" {% if user.user_type == 'SYSTEM_ADMIN' %}selected{% endif %}>系統管理員</option>
+                        {% endif %}
+                    </select>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>角色</td>
+                <td>
+                    <span class="readonly-info">
+                        {% if user.user_type == 'SYSTEM_ADMIN' %}系統管理員
+                        {% elif user.user_type == 'ORG_ADMIN' %}企業管理員
+                        {% elif user.user_type == 'EXTERNAL' %}非公司成員
+                        {% else %}一般用戶{% endif %}
+                    </span>
+                </td>
+            </tr>
+            {% endif %}
+            {% if can_edit_status %}
+            <tr>
+                <td><label for="is_active">狀態</label></td>
+                <td>
+                    <select id="is_active" name="is_active">
+                        <option value="true" {% if user.is_active %}selected{% endif %}>啟用</option>
+                        <option value="false" {% if not user.is_active %}selected{% endif %}>停用</option>
+                    </select>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>狀態</td>
+                <td>
+                    <span class="readonly-info">{{ '啟用' if user.is_active else '停用' }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td style="vertical-align: top;"><label for="new_password">新密碼</label></td>
+                <td>
+                    {% if can_edit %}
+                    <div style="display: flex; gap: 8px; align-items: start;">
+                        <div style="flex: 1;">
+                            <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
+                                   x-model="password" @input="validatePassword()"
+                                   minlength="8" placeholder="留空則不變更" style="width: 100%;">
+                        </div>
+                        <button type="button" @click="showPassword = !showPassword"
+                                style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                                x-text="showPassword ? '隱藏' : '顯示'"></button>
+                        <button type="button" @click="generatePassword()"
+                                style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            建議密碼
+                        </button>
+                    </div>
+                    <div class="help-text" x-text="passwordRequirements"></div>
+                    <!-- 驗證錯誤 -->
+                    <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                        <template x-for="err in passwordErrors" :key="err">
+                            <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                        </template>
+                    </div>
+                    <!-- 驗證通過 -->
+                    <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                         style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                        ✓ 密碼符合要求
+                    </div>
+                    {% else %}
+                    <span class="readonly-info">******</span>
+                    <div class="help-text"><a href="{{ url_for('profile.change_password') }}">變更密碼</a></div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">組織資訊</div>
+        <table class="form-table" border="0">
+            <tr>
+                <td><label for="employee_id">用戶編號</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <input type="text" id="employee_id" name="employee_id" value="{{ user.employee_id or '' }}" placeholder="EMP001">
+                    <div class="help-text">同一企業內需唯一</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.employee_id or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="department_code">部門</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <select id="department_code" name="department_code">
+                        <option value="">-- 未分配 --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.code }}" {% if user.primary_unit and user.primary_unit.code == dept.code %}selected{% endif %}>
+                            {{ dept.name }} ({{ dept.code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <span class="readonly-info">{{ user.primary_unit.name if user.primary_unit else '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="work_schedule_code">班表</label></td>
+                <td>
+                    {% if can_edit_org_info %}
+                    <select id="work_schedule_code" name="work_schedule_code">
+                        <option value="">-- 使用企業預設 --</option>
+                        {% for schedule in work_schedules %}
+                        <option value="{{ schedule.secure_code }}" {% if user.work_schedule_secure_code == schedule.secure_code %}selected{% endif %}>
+                            {{ schedule.name }}{% if schedule.is_default %} (預設){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">用於計算工作時間</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.work_schedule.name if user.work_schedule else '使用企業預設' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">個人資料</div>
+        <table class="form-table" border="0">
+            <tr>
+                <td><label for="english_name">英文姓名</label></td>
+                <td>
+                    {% if can_edit %}
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="english_name" name="english_name" x-model="englishName" placeholder="English Name">
+                        <button type="button" @click="transliterateName()"
+                                :disabled="!displayName || transliterating"
+                                style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                                :style="(!displayName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                            <span x-show="!transliterating">自動翻譯</span>
+                            <span x-show="transliterating">翻譯中...</span>
+                        </button>
+                    </div>
+                    <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
+                        偵測語言: <span x-text="langNames[detectedLang] || detectedLang"></span>
+                    </div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.english_name or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="native_name">本國姓名</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="text" id="native_name" name="native_name" value="{{ user.native_name or '' }}" placeholder="本國語言姓名">
+                    {% else %}
+                    <span class="readonly-info">{{ user.native_name or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="nickname">暱稱</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="text" id="nickname" name="nickname" value="{{ user.nickname or '' }}" placeholder="Nickname">
+                    {% else %}
+                    <span class="readonly-info">{{ user.nickname or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title optional">聯絡方式</div>
+        <table class="form-table" border="0">
+            <tr>
+                <td><label for="backup_email_1">通知 Email</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="email" id="backup_email_1" name="backup_email_1" value="{{ user.backup_email_1 or user.email }}" placeholder="留空則使用帳號 Email">
+                    <div class="help-text">系統通知發送地址</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.backup_email_1 or user.email }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="backup_email_2">備用 Email</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="email" id="backup_email_2" name="backup_email_2" value="{{ user.backup_email_2 or '' }}" placeholder="backup2@example.com">
+                    {% else %}
+                    <span class="readonly-info">{{ user.backup_email_2 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_1">手機號碼 1</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1" value="{{ user.mobile_phone_1 or '' }}" placeholder="+886-912-345-678">
+                    {% else %}
+                    <span class="readonly-info">{{ user.mobile_phone_1 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_2">手機號碼 2</label></td>
+                <td>
+                    {% if can_edit %}
+                    <input type="tel" id="mobile_phone_2" name="mobile_phone_2" value="{{ user.mobile_phone_2 or '' }}" placeholder="+886-912-345-678">
+                    {% else %}
+                    <span class="readonly-info">{{ user.mobile_phone_2 or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        {% if can_edit %}
+        <div class="btn-row">
+            <button type="submit">儲存變更</button>
+            {% if is_self %}
+            <a href="{{ url_for('main.dashboard') }}" style="margin-left: 10px;">[取消]</a>
+            {% else %}
+            <a href="{{ url_for('users.view_user', secure_code=user.secure_code) }}" style="margin-left: 10px;">[取消]</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </form>
+
+    {% if is_admin and not is_self %}
+    <div class="danger-zone">
+        <h3>危險區域</h3>
+        <p>刪除此用戶將無法復原，請謹慎操作。</p>
+        <form method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" onsubmit="return confirm('確定要刪除用戶「{{ user.display_name }}」嗎？此操作無法復原！');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">刪除用戶</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function passwordForm() {
+    return {
+        password: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        // 姓名與翻譯
+        displayName: '{{ user.display_name | e }}',
+        englishName: '{{ user.english_name or "" | e }}',
+        transliterating: false,
+        detectedLang: '',
+        langNames: { 'zh': '中文', 'ja': '日文', 'ko': '韓文', 'unknown': '未知', 'mixed': '混合' },
+
+        async init() {
+            await this.loadRequirements();
+        },
+
+        async loadRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、') + '（留空則不變更）';
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        },
+
+        async transliterateName() {
+            if (!this.displayName || this.transliterating) return;
+
+            this.transliterating = true;
+            this.detectedLang = '';
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/api/transliterate/name', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ name: this.displayName })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.englishName = data.data.romanized;
+                    this.detectedLang = data.data.language;
+                } else {
+                    console.error('翻譯失敗:', data.message);
+                }
+            } catch (err) {
+                console.error('翻譯請求失敗:', err);
+            } finally {
+                this.transliterating = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

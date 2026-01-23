@@ -1,0 +1,38 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯個人資料 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('profile.view') }}">&lt; 返回個人資料</a></p>
+
+<h1>編輯個人資料</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td>帳號 (Email)</td>
+            <td><code>{{ current_user.email }}</code> (不可變更)</td>
+        </tr>
+        <tr>
+            <td><label for="display_name">姓名 *</label></td>
+            <td><input type="text" id="display_name" name="display_name" size="30" value="{{ current_user.display_name }}" required></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('profile.view') }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

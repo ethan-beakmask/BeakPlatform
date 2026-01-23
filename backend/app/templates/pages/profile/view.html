@@ -1,0 +1,35 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}個人資料 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>個人資料</h1>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>姓名</th>
+        <td>{{ current_user.display_name }}</td>
+    </tr>
+    <tr>
+        <th>帳號 (Email)</th>
+        <td><code>{{ current_user.email }}</code></td>
+    </tr>
+    <tr>
+        <th>角色</th>
+        <td>
+            {% if current_user.is_system_admin %}系統管理員
+            {% elif current_user.is_org_admin %}企業管理員
+            {% else %}一般用戶{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>所屬企業</th>
+        <td>{{ current_user.organization.name if current_user.organization else '-' }}</td>
+    </tr>
+</table>
+
+<p>
+    <a href="{{ url_for('profile.edit') }}">[編輯資料]</a>
+    <a href="{{ url_for('profile.change_password') }}">[變更密碼]</a>
+</p>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增代理授權 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>新增代理授權</h1>
+
+<p><a href="{{ url_for('delegations.list_delegations') }}">[返回列表]</a></p>
+
+<p style="color: #666; font-size: 0.9em;">
+    代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">授權人 *</th>
+            <td>
+                <select name="delegator_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇授權人 --</option>
+                    {% for user in users %}
+                    <option value="{{ user.secure_code }}"
+                            {% if request.form.get('delegator_secure_code') == user.secure_code %}selected{% endif %}>
+                        {{ user.display_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8em; color: #666;">原本負責簽核的人 (如: 休假的主管)</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">被授權人 *</th>
+            <td>
+                <select name="delegate_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇被授權人 --</option>
+                    {% for user in users %}
+                    <option value="{{ user.secure_code }}"
+                            {% if request.form.get('delegate_secure_code') == user.secure_code %}selected{% endif %}>
+                        {{ user.display_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8em; color: #666;">代理簽核的人 (如: 代理主管)</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">代理類型 *</th>
+            <td>
+                <select name="delegation_type" required style="width: 100%;" onchange="toggleApprovalLimit(this)">
+                    {% for type_val, type_desc in delegation_types %}
+                    <option value="{{ type_val }}"
+                            {% if request.form.get('delegation_type') == type_val %}selected{% endif %}>
+                        {{ type_desc }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr id="approval_limit_row" style="display: none;">
+            <th style="text-align: left;">簽核金額上限</th>
+            <td>
+                <input type="number" name="approval_limit" min="0" step="1000" style="width: 100%;"
+                       value="{{ request.form.get('approval_limit', '') }}"
+                       placeholder="如: 100000">
+                <div style="font-size: 0.8em; color: #666;">超過此金額需要原授權人或更高層簽核</div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">生效開始 *</th>
+            <td>
+                <input type="date" name="effective_from" required style="width: 100%;"
+                       value="{{ request.form.get('effective_from', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">生效結束 *</th>
+            <td>
+                <input type="date" name="effective_until" required style="width: 100%;"
+                       value="{{ request.form.get('effective_until', '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">授權原因</th>
+            <td>
+                <textarea name="reason" rows="3" style="width: 100%;"
+                          placeholder="如: 休假出國 12/20-12/25">{{ request.form.get('reason', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">建立代理授權</button>
+                <a href="{{ url_for('delegations.list_delegations') }}" style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<script>
+function toggleApprovalLimit(select) {
+    var row = document.getElementById('approval_limit_row');
+    row.style.display = (select.value === 'APPROVAL') ? '' : 'none';
+}
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.querySelector('select[name="delegation_type"]');
+    if (select) toggleApprovalLimit(select);
+});
+</script>
+{% endblock %}

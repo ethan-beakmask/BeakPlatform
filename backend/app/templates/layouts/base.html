@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}BeakMask{% endblock %}</title>
+
+    <!-- Alpine.js (本地) -->
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+
+    <!-- Remix Icon (本地) - Apache 2.0 License -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/remixicon/remixicon.css') }}">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #f5f5f5;
+        }
+        a { color: #0066cc; }
+        a:hover { color: #004499; }
+        code { background: #e8e8e8; padding: 2px 4px; font-family: monospace; }
+        table { border-collapse: collapse; }
+        th { text-align: left; background: #f0f0f0; }
+        button { cursor: pointer; }
+        input::placeholder, textarea::placeholder {
+            color: #999;
+            opacity: 0.5;
+        }
+
+        .navbar {
+            background: white;
+            border-bottom: 1px solid #ccc;
+            padding: 8px 16px;
+        }
+        .navbar a { text-decoration: none; }
+        .navbar-content {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-logo {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            margin-right: auto;
+        }
+        .navbar-user { margin-left: 16px; color: #666; }
+
+        .menubar {
+            background: #333;
+            padding: 4px 16px;
+        }
+        .menubar a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 8px 12px;
+            display: inline-block;
+        }
+        .menubar a:hover { color: white; background: #444; }
+
+        /* ========================================
+           權限等級視覺標記
+           - bg-system: 系統管理員 (紅底)
+           - bg-admin: 企業管理員 (藍底)
+           - cross-level: 跨權限 (黃色字體)
+           ======================================== */
+
+        /* 系統級選單：紅底 */
+        .menubar a.bg-system,
+        .menu-trigger.bg-system {
+            background: #c62828;
+            color: white;
+        }
+        .menubar a.bg-system:hover,
+        .menu-trigger.bg-system:hover {
+            background: #b71c1c;
+            color: white;
+        }
+
+        /* 企業管理員選單：藍底 */
+        .menubar a.bg-admin,
+        .menu-trigger.bg-admin {
+            background: #1565c0;
+            color: white;
+        }
+        .menubar a.bg-admin:hover,
+        .menu-trigger.bg-admin:hover {
+            background: #0d47a1;
+            color: white;
+        }
+
+        /* 跨權限：黃色字體 (優先級高於底色的字體設定) */
+        .menubar a.cross-level,
+        .menu-trigger.cross-level {
+            color: #ffd600 !important;
+        }
+        .menubar a.cross-level:hover,
+        .menu-trigger.cross-level:hover {
+            color: #ffea00 !important;
+        }
+
+        .menubar-sep { color: #666; margin: 0 4px; }
+        .menu-dropdown {
+            display: inline-block;
+            position: relative;
+        }
+        .menu-trigger {
+            color: #ccc;
+            padding: 8px 12px;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .menu-trigger:hover { color: white; background: #444; }
+        .menu-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #444;
+            min-width: 160px;
+            z-index: 100;
+            border-radius: 0 0 4px 4px;
+        }
+        .menu-dropdown:hover .menu-dropdown-content { display: block; }
+        .menu-dropdown-content a {
+            display: block;
+            padding: 8px 12px;
+        }
+
+        .main-content {
+            padding: 16px;
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakMask{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+            <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}</span>
+            <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">登出</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Menu Bar (動態選單) -->
+    <div class="menubar">
+        {% for item in nav_menu %}
+            {# 計算權限等級 class: bg-system/bg-admin + cross-level #}
+            {% set bg_class = 'bg-' ~ (item.bg_level or 'user') %}
+            {% set cross_class = 'cross-level' if item.is_cross_level else '' %}
+            {% set item_class = (bg_class ~ ' ' ~ cross_class) | trim %}
+
+            {% if item.children %}
+            <div class="menu-dropdown">
+                <span class="menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
+                <div class="menu-dropdown-content">
+                    {% for child in item.children %}
+                    {% set child_bg = 'bg-' ~ (child.bg_level or 'user') %}
+                    {% set child_cross = 'cross-level' if child.is_cross_level else '' %}
+                    {% set child_class = (child_bg ~ ' ' ~ child_cross) | trim %}
+                    <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
+                        {% if child.icon %}{{ child.icon }} {% endif %}{{ child.title }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
+                {% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }}
+            </a>
+            {% endif %}
+        {% else %}
+        <!-- 無選單資料時的 fallback -->
+        <a href="{{ url_for('main.dashboard') }}">首頁</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

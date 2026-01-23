@@ -1,0 +1,63 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}系統管理員帳號 - BeakMask{% endblock %}
+
+{% block content %}
+<h1>系統管理員帳號</h1>
+<p>管理 system.local 的系統管理員帳號</p>
+
+<p><a href="{{ url_for('sys_accounts.create_account') }}">[+ 新增系統管理員]</a></p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#f87171{% else %}#4ade80{% endif %};">
+    <strong>{{ message }}</strong>
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if accounts %}
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+    <thead>
+        <tr style="background: #1e3a5f;">
+            <th>帳號</th>
+            <th>Email</th>
+            <th>顯示名稱</th>
+            <th>狀態</th>
+            <th>最後登入</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for account in accounts %}
+        <tr>
+            <td><code>{{ account.username }}</code></td>
+            <td>{{ account.email }}</td>
+            <td>{{ account.display_name }}</td>
+            <td>
+                {% if account.is_active %}
+                    <span style="color: #4ade80;">啟用</span>
+                {% else %}
+                    <span style="color: #9ca3af;">停用</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if account.last_login_at %}
+                    {{ account.last_login_at.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('sys_accounts.edit_account', secure_code=account.secure_code) }}">[編輯]</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>尚無系統管理員帳號。</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,100 @@
+# BeakMask .gitignore
+
+# =============================================================================
+# SECURITY: Never commit these files!
+# =============================================================================
+.env
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Node (if frontend uses it)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Semgrep
+.semgrep_logs/
+
+# =============================================================================
+# E-MailRelay (系統郵件服務)
+# =============================================================================
+# 認證檔案（包含 SMTP 密碼）- 絕對不可上傳
+emailrelay.auth
+emailrelay.auth-backup
+# Spool 和 logs（運行時產生）
+E-MailRelay/spool/
+E-MailRelay/logs/
+E-MailRelay/*.pid

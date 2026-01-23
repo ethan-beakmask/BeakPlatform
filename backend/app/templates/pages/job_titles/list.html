@@ -1,0 +1,183 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}職稱管理 - BeakMask{% endblock %}
+
+{% block content %}
+<style>
+    .family-section {
+        margin-bottom: 30px;
+    }
+    .family-header {
+        background: #1f2937;
+        color: white;
+        padding: 8px 12px;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    .titles-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .titles-table th,
+    .titles-table td {
+        border: 1px solid #d1d5db;
+        padding: 6px 10px;
+        text-align: left;
+    }
+    .titles-table thead th {
+        background: #f0f0f0;
+    }
+    .titles-table tbody tr:hover {
+        background: #f9fafb;
+    }
+    .inactive-row {
+        color: #999;
+    }
+    .supervisor-badge {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.75em;
+        margin-left: 4px;
+    }
+    .empty-family {
+        color: #9ca3af;
+        font-style: italic;
+        padding: 12px;
+        text-align: center;
+        background: #f9fafb;
+        border: 1px solid #d1d5db;
+        border-top: none;
+    }
+</style>
+
+<h1>職稱管理</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    |
+    <strong>[職稱管理]</strong>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+</p>
+<p>
+    <a href="{{ url_for('job_titles.create_job_title') }}">[+ 新增職稱]</a>
+</p>
+
+<p style="color: #666; font-size: 0.9em;">
+    說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。
+</p>
+
+{% for family in job_families %}
+{% set titles = titles_by_family.get(family.secure_code, []) %}
+<div class="family-section">
+    <div class="family-header">{{ family.name }}</div>
+    {% if titles %}
+    <table class="titles-table">
+        <thead>
+            <tr>
+                <th style="width: 100px;">代碼</th>
+                <th style="width: 150px;">名稱</th>
+                <th style="width: 150px;">英文名稱</th>
+                <th style="width: 180px;">職等</th>
+                <th style="width: 60px;">管理職</th>
+                <th style="width: 60px;">狀態</th>
+                <th style="width: 100px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for title in titles %}
+            <tr{% if not title.is_active %} class="inactive-row"{% endif %}>
+                <td><code>{{ title.code }}</code></td>
+                <td>
+                    <strong>{{ title.name }}</strong>
+                    {% if title.is_supervisor %}<span class="supervisor-badge">管理職</span>{% endif %}
+                    {% if title.is_system_default %}
+                    <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                    {% endif %}
+                </td>
+                <td>{{ title.name_en or '-' }}</td>
+                <td>
+                    {% if title.job_level %}
+                    {{ title.job_level.code }} - {{ title.job_level.name }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if title.is_supervisor %}是{% else %}-{% endif %}
+                </td>
+                <td>{% if title.is_active %}啟用{% else %}停用{% endif %}</td>
+                <td>
+                    <a href="{{ url_for('job_titles.view_job_title', secure_code=title.secure_code) }}">[查看]</a>
+                    <a href="{{ url_for('job_titles.edit_job_title', secure_code=title.secure_code) }}">[編輯]</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-family">尚無職稱</div>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% if titles_by_family.get('__unassigned__', []) %}
+<div class="family-section">
+    <div class="family-header" style="background: #6b7280;">未分類</div>
+    <table class="titles-table">
+        <thead>
+            <tr>
+                <th style="width: 100px;">代碼</th>
+                <th style="width: 150px;">名稱</th>
+                <th style="width: 150px;">英文名稱</th>
+                <th style="width: 180px;">職等</th>
+                <th style="width: 60px;">管理職</th>
+                <th style="width: 60px;">狀態</th>
+                <th style="width: 100px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for title in titles_by_family['__unassigned__'] %}
+            <tr{% if not title.is_active %} class="inactive-row"{% endif %}>
+                <td><code>{{ title.code }}</code></td>
+                <td>
+                    <strong>{{ title.name }}</strong>
+                    {% if title.is_supervisor %}<span class="supervisor-badge">管理職</span>{% endif %}
+                </td>
+                <td>{{ title.name_en or '-' }}</td>
+                <td>
+                    {% if title.job_level %}
+                    {{ title.job_level.code }} - {{ title.job_level.name }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if title.is_supervisor %}是{% else %}-{% endif %}
+                </td>
+                <td>{% if title.is_active %}啟用{% else %}停用{% endif %}</td>
+                <td>
+                    <a href="{{ url_for('job_titles.view_job_title', secure_code=title.secure_code) }}">[查看]</a>
+                    <a href="{{ url_for('job_titles.edit_job_title', secure_code=title.secure_code) }}">[編輯]</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not job_families and not titles_by_family.get('__unassigned__', []) %}
+<p>尚無職稱資料。<a href="{{ url_for('job_titles.create_job_title') }}">建立第一個職稱</a></p>
+{% endif %}
+
+<p style="margin-top: 20px; color: #666;">
+    共 {{ total_count }} 個職稱
+</p>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}個人設定 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .settings-form {
+        max-width: 600px;
+    }
+    .settings-form table {
+        width: 100%;
+    }
+    .settings-form td {
+        padding: 8px 4px;
+        vertical-align: top;
+    }
+    .settings-form td:first-child {
+        width: 120px;
+        text-align: right;
+        padding-right: 12px;
+        color: #666;
+    }
+    .settings-form input[type="text"],
+    .settings-form input[type="email"],
+    .settings-form input[type="tel"],
+    .settings-form select {
+        width: 100%;
+        max-width: 300px;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .settings-form input:focus,
+    .settings-form select:focus {
+        border-color: #0066cc;
+        outline: none;
+    }
+    .section-title {
+        background: #f0f0f0;
+        padding: 8px 12px;
+        margin: 20px 0 10px 0;
+        font-weight: bold;
+        border-left: 4px solid #0066cc;
+    }
+    .readonly-info {
+        color: #666;
+        background: #f9f9f9;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+    }
+    .btn-row {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .btn-row button {
+        padding: 8px 24px;
+        background: #0066cc;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-row button:hover {
+        background: #0052a3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>個人設定</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="settings-form">
+    <div class="section-title">帳號資訊</div>
+    <table>
+        <tr>
+            <td>帳號</td>
+            <td><span class="readonly-info">{{ current_user.username }}@{{ current_user.organization.domain_name }}</span></td>
+        </tr>
+        <tr>
+            <td>主要 Email</td>
+            <td><span class="readonly-info">{{ current_user.email }}</span></td>
+        </tr>
+        <tr>
+            <td>顯示名稱</td>
+            <td><span class="readonly-info">{{ current_user.display_name }}</span></td>
+        </tr>
+        <tr>
+            <td>密碼</td>
+            <td><a href="{{ url_for('main.change_password') }}">[變更密碼]</a></td>
+        </tr>
+    </table>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="section-title">個人資料</div>
+        <table>
+            <tr>
+                <td><label for="english_name">英文姓名</label></td>
+                <td>
+                    <input type="text" id="english_name" name="english_name"
+                           value="{{ current_user.english_name or '' }}"
+                           placeholder="English Name">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="native_name">本國姓名</label></td>
+                <td>
+                    <input type="text" id="native_name" name="native_name"
+                           value="{{ current_user.native_name or '' }}"
+                           placeholder="本國語言姓名">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="nickname">暱稱</label></td>
+                <td>
+                    <input type="text" id="nickname" name="nickname"
+                           value="{{ current_user.nickname or '' }}"
+                           placeholder="Nickname">
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">聯絡方式</div>
+        <table>
+            <tr>
+                <td><label for="backup_email_1">備用 Email 1</label></td>
+                <td>
+                    <input type="email" id="backup_email_1" name="backup_email_1"
+                           value="{{ current_user.backup_email_1 or '' }}"
+                           placeholder="backup@example.com">
+                    <div class="help-text">系統通知專用（空白時自動使用主要 Email）</div>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="backup_email_2">備用 Email 2</label></td>
+                <td>
+                    <input type="email" id="backup_email_2" name="backup_email_2"
+                           value="{{ current_user.backup_email_2 or '' }}"
+                           placeholder="backup2@example.com">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_1">手機號碼 1</label></td>
+                <td>
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1"
+                           value="{{ current_user.mobile_phone_1 or '' }}"
+                           placeholder="+886-912-345-678">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_2">手機號碼 2</label></td>
+                <td>
+                    <input type="tel" id="mobile_phone_2" name="mobile_phone_2"
+                           value="{{ current_user.mobile_phone_2 or '' }}"
+                           placeholder="+886-912-345-678">
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">介面設定</div>
+        <table>
+            <tr>
+                <td><label for="interface_language">介面語言</label></td>
+                <td>
+                    <select id="interface_language" name="interface_language">
+                        {% for code, label in languages %}
+                        <option value="{{ code }}" {% if current_user.interface_language == code %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">覆蓋企業預設語言設定</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="btn-row">
+            <button type="submit">儲存設定</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

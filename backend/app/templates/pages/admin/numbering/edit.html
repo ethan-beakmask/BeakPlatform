@@ -1,0 +1,451 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{% if rule %}編輯{% else %}新增{% endif %}編號規則 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .form-section {
+        margin-bottom: 25px;
+    }
+    .section-title {
+        background: #f0f0f0;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        font-weight: bold;
+        border-left: 4px solid #0066cc;
+    }
+    .form-row {
+        display: flex;
+        margin-bottom: 12px;
+        align-items: flex-start;
+    }
+    .form-row label {
+        width: 120px;
+        text-align: right;
+        padding-right: 12px;
+        padding-top: 6px;
+        color: #666;
+    }
+    .form-row .field {
+        flex: 1;
+    }
+    .form-row input[type="text"],
+    .form-row input[type="number"],
+    .form-row select,
+    .form-row textarea {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .form-row input[type="text"],
+    .form-row textarea {
+        width: 300px;
+    }
+    .form-row input[type="number"] {
+        width: 80px;
+    }
+    .form-row select {
+        width: 150px;
+    }
+    .form-row input:focus,
+    .form-row select:focus,
+    .form-row textarea:focus {
+        border-color: #0066cc;
+        outline: none;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+    }
+    .required::after {
+        content: " *";
+        color: #dc2626;
+    }
+
+    /* 元素設定區塊 */
+    .element-group {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 12px;
+        background: #fafafa;
+    }
+    .element-group.disabled {
+        opacity: 0.5;
+    }
+    .element-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .element-header input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+    .element-header label {
+        width: auto;
+        text-align: left;
+        padding: 0;
+        font-weight: 600;
+    }
+    .element-config {
+        margin-left: 28px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
+    }
+    .element-config label {
+        width: auto;
+        padding: 0;
+        font-size: 13px;
+    }
+    .element-config input,
+    .element-config select {
+        padding: 4px 8px;
+        font-size: 13px;
+    }
+
+    /* 預覽區 */
+    .preview-section {
+        background: #e8f4fc;
+        border: 1px solid #0066cc;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .preview-section h3 {
+        margin: 0 0 10px 0;
+        color: #0066cc;
+    }
+    .preview-list {
+        font-family: monospace;
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        word-break: break-all;
+    }
+    .preview-item {
+        display: inline-block;
+        background: #f0f0f0;
+        padding: 4px 8px;
+        margin: 2px;
+        border-radius: 4px;
+    }
+
+    /* 按鈕 */
+    .btn-row {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .btn-primary {
+        background: #0066cc;
+        color: white;
+        padding: 10px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn-primary:hover {
+        background: #0052a3;
+    }
+    .btn-secondary {
+        background: #888;
+        color: white;
+        padding: 10px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{# 預先解析各元素配置，供模板和 JavaScript 使用 #}
+{% set year_config = namespace(val=None) %}
+{% set year_offset_config = namespace(val=None) %}
+{% set month_config = namespace(val=None) %}
+{% if rule %}
+    {% for c in rule.get_components() %}
+        {% if c.type == 'year' %}{% set year_config.val = c %}{% endif %}
+        {% if c.type == 'year_offset' %}{% set year_offset_config.val = c %}{% endif %}
+        {% if c.type == 'month' %}{% set month_config.val = c %}{% endif %}
+    {% endfor %}
+{% endif %}
+
+<p><a href="{{ url_for('numbering.list_rules') }}">&lt; 返回規則列表</a></p>
+
+<h1>{% if rule %}編輯編號規則{% else %}新增編號規則{% endif %}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" x-data="numberingEditor()" @submit="validateForm($event)">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- 基本資訊 -->
+    <div class="form-section">
+        <div class="section-title">基本資訊</div>
+        <div class="form-row">
+            <label for="name" class="required">規則名稱</label>
+            <div class="field">
+                <input type="text" id="name" name="name" value="{{ rule.name if rule else '' }}" required>
+                <div class="help-text">例如：員工編號、來賓編號、臨時編號</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="description">描述</label>
+            <div class="field">
+                <textarea id="description" name="description" rows="2">{{ rule.description if rule else '' }}</textarea>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="usage_scope" class="required">使用範圍</label>
+            <div class="field">
+                <select id="usage_scope" name="usage_scope" required>
+                    <option value="INTERNAL_ONLY" {% if not rule or rule.usage_scope == 'INTERNAL_ONLY' %}selected{% endif %}>內部專用</option>
+                    <option value="EXTERNAL_ONLY" {% if rule and rule.usage_scope == 'EXTERNAL_ONLY' %}selected{% endif %}>外部專用</option>
+                    <option value="INTERNAL_UNIVERSAL" {% if rule and rule.usage_scope == 'INTERNAL_UNIVERSAL' %}selected{% endif %}>內外都通用編號</option>
+                </select>
+                <div class="help-text">
+                    內部專用：員工編號、公司資產 ／
+                    外部專用：廠商、訪客 ／
+                    內外都通用編號：門禁卡、跨公司資源
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="total_length">編號長度</label>
+            <div class="field">
+                <input type="number" id="total_length" name="total_length" min="0" max="50"
+                       x-model="totalLength"
+                       value="{{ rule.elements.total_length if rule and rule.elements else 0 }}">
+                <div class="help-text">設定 0 表示不限制長度</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="default_for">預設用途</label>
+            <div class="field">
+                <select id="default_for" name="default_for">
+                    <option value="" {% if not rule or not rule.default_for %}selected{% endif %}>非預設</option>
+                    <option value="EMPLOYEE" {% if rule and rule.default_for == 'EMPLOYEE' %}selected{% endif %}>員工編號預設</option>
+                    <option value="EXTERNAL" {% if rule and rule.default_for == 'EXTERNAL' %}selected{% endif %}>外部人員預設</option>
+                </select>
+                <div class="help-text">
+                    員工預設：新增員工帳號時自動使用 ／
+                    外部預設：新增外部人員時自動使用
+                </div>
+            </div>
+        </div>
+        {% if rule %}
+        <div class="form-row">
+            <label></label>
+            <div class="field">
+                <label>
+                    <input type="checkbox" name="is_active" value="1"
+                           {% if rule.is_active %}checked{% endif %}>
+                    啟用此規則
+                </label>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 編號元素 -->
+    <div class="form-section">
+        <div class="section-title">編號元素（勾選並設定）</div>
+
+        <!-- 前綴文字 -->
+        <div class="element-group" :class="{ 'disabled': !usePrefix }">
+            <div class="element-header">
+                <input type="checkbox" id="use_prefix" name="use_prefix" value="1"
+                       x-model="usePrefix"
+                       {% if rule and rule.get_prefix_config() %}checked{% endif %}>
+                <label for="use_prefix">前綴文字</label>
+            </div>
+            <div class="element-config" x-show="usePrefix">
+                <label>順序:</label>
+                <input type="number" name="prefix_order" min="1" max="10" value="{{ (rule.get_prefix_config().order if rule and rule.get_prefix_config() else 1) }}" style="width: 50px;">
+                <label>文字（逗號分隔）:</label>
+                <input type="text" name="prefix_values" placeholder="天,地,玄,黃"
+                       value="{{ (rule.get_prefix_config()['values'] | join(',') if rule and rule.get_prefix_config() and rule.get_prefix_config()['values'] else '') }}"
+                       style="width: 200px;">
+                <div class="help-text" style="width: 100%;">序號滿時進位到下一個，最後一個滿時回到第一個</div>
+            </div>
+        </div>
+
+        <!-- 公元年碼 -->
+        <div class="element-group" :class="{ 'disabled': !useYear }">
+            <div class="element-header">
+                <input type="checkbox" id="use_year" name="use_year" value="1"
+                       x-model="useYear"
+                       {% if year_config.val %}checked{% endif %}>
+                <label for="use_year">公元年碼</label>
+            </div>
+            <div class="element-config" x-show="useYear">
+                <label>順序:</label>
+                <input type="number" name="year_order" min="1" max="10" value="{{ year_config.val.order if year_config.val else 2 }}" style="width: 50px;">
+                <label>格式:</label>
+                <select name="year_format">
+                    <option value="yyyy" {% if year_config.val and year_config.val.format == 'yyyy' %}selected{% endif %}>2026（4位）</option>
+                    <option value="yy" {% if year_config.val and year_config.val.format == 'yy' %}selected{% endif %}>26（2位）</option>
+                    <option value="y" {% if year_config.val and year_config.val.format == 'y' %}selected{% endif %}>6（1位）</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 年換算碼 -->
+        <div class="element-group" :class="{ 'disabled': !useYearOffset }">
+            <div class="element-header">
+                <input type="checkbox" id="use_year_offset" name="use_year_offset" value="1"
+                       x-model="useYearOffset"
+                       {% if year_offset_config.val %}checked{% endif %}>
+                <label for="use_year_offset">年換算碼</label>
+            </div>
+            <div class="element-config" x-show="useYearOffset" style="flex-direction: column; align-items: flex-start;">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <span><label>順序:</label>
+                    <input type="number" name="year_offset_order" min="1" max="10" value="{{ year_offset_config.val.order if year_offset_config.val else 2 }}" style="width: 50px;"></span>
+                    <span><label>運算:</label>
+                    <input type="number" name="year_offset_value" value="{{ year_offset_config.val.offset if year_offset_config.val else -1911 }}" style="width: 80px;"></span>
+                    <span><label>位數:</label>
+                    <select name="year_offset_format">
+                        <option value="f" {% if year_offset_config.val and year_offset_config.val.format == 'f' %}selected{% endif %}>1 位</option>
+                        <option value="ff" {% if year_offset_config.val and year_offset_config.val.format == 'ff' %}selected{% endif %}>2 位</option>
+                        <option value="fff" {% if year_offset_config.val and year_offset_config.val.format == 'fff' %}selected{% endif %}>3 位</option>
+                        <option value="ffff" {% if year_offset_config.val and year_offset_config.val.format == 'ffff' %}selected{% endif %}>4 位</option>
+                    </select></span>
+                </div>
+                <div class="help-text" style="margin-top: 8px; background: #f0f8ff; padding: 8px; border-radius: 4px; width: 100%;">
+                    <strong>公式：</strong>|公元年 + 運算值| 補0至指定位數<br>
+                    <strong>範例：</strong>運算值填 <code>-1911</code>，位數選 3 位<br>
+                    → 公元 2010 年：|2010 + (-1911)| = 99 → 補0得 <code>099</code>（民國99年）<br>
+                    → 公元 2026 年：|2026 + (-1911)| = 115 → <code>115</code>（民國115年）
+                </div>
+            </div>
+        </div>
+
+        <!-- 月碼 -->
+        <div class="element-group" :class="{ 'disabled': !useMonth }">
+            <div class="element-header">
+                <input type="checkbox" id="use_month" name="use_month" value="1"
+                       x-model="useMonth"
+                       {% if month_config.val %}checked{% endif %}>
+                <label for="use_month">月碼</label>
+            </div>
+            <div class="element-config" x-show="useMonth">
+                <label>順序:</label>
+                <input type="number" name="month_order" min="1" max="10" value="{{ month_config.val.order if month_config.val else 3 }}" style="width: 50px;">
+                <label>格式:</label>
+                <select name="month_format">
+                    <option value="mm" {% if month_config.val and month_config.val.format == 'mm' %}selected{% endif %}>01（2位）</option>
+                    <option value="m" {% if month_config.val and month_config.val.format == 'm' %}selected{% endif %}>1（1位）</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 序號（必要）-->
+        <div class="element-group" style="border-color: #0066cc;">
+            <div class="element-header">
+                <input type="checkbox" checked disabled>
+                <label style="color: #0066cc;">序號（必要）</label>
+            </div>
+            <div class="element-config">
+                <label>順序:</label>
+                <input type="number" name="seq_order" min="1" max="10"
+                       value="{{ (rule.get_sequence_config().order if rule and rule.get_sequence_config() else 5) }}"
+                       style="width: 50px;">
+                <label>位數:</label>
+                <input type="number" name="seq_digits" min="1" max="10"
+                       value="{{ (rule.get_sequence_config().digits if rule and rule.get_sequence_config() else 4) }}"
+                       x-model="seqDigits"
+                       style="width: 50px;">
+                <label>起始:</label>
+                <input type="number" name="seq_start" min="0"
+                       value="{{ (rule.get_sequence_config().start if rule and rule.get_sequence_config() else 1) }}"
+                       style="width: 80px;">
+                <label>重置:</label>
+                <select name="seq_reset">
+                    <option value="never" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'never' %}selected{% endif %}>永不重置</option>
+                    <option value="yearly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'yearly' %}selected{% endif %}>每年重置</option>
+                    <option value="monthly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'monthly' %}selected{% endif %}>每月重置</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 後綴文字 -->
+        <div class="element-group" :class="{ 'disabled': !useSuffix }">
+            <div class="element-header">
+                <input type="checkbox" id="use_suffix" name="use_suffix" value="1"
+                       x-model="useSuffix"
+                       {% if rule and rule.get_suffix_config() %}checked{% endif %}>
+                <label for="use_suffix">後綴文字</label>
+            </div>
+            <div class="element-config" x-show="useSuffix">
+                <label>順序:</label>
+                <input type="number" name="suffix_order" min="1" max="10" value="6" style="width: 50px;">
+                <label>文字（逗號分隔）:</label>
+                <input type="text" name="suffix_values" placeholder="A,B,C"
+                       value="{{ (rule.get_suffix_config()['values'] | join(',') if rule and rule.get_suffix_config() and rule.get_suffix_config()['values'] else '') }}"
+                       style="width: 200px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- 預覽 -->
+    {% if rule and rule.preview_list %}
+    <div class="preview-section">
+        <h3>編號預覽（連續 10 個）</h3>
+        <div class="preview-list">
+            {% for num in rule.preview_list %}
+            <span class="preview-item">{{ num }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 提交按鈕 -->
+    <div class="btn-row">
+        <button type="submit" class="btn-primary">{% if rule %}儲存變更{% else %}建立規則{% endif %}</button>
+        <a href="{{ url_for('numbering.list_rules') }}" class="btn-secondary" style="text-decoration: none;">取消</a>
+    </div>
+</form>
+
+<script>
+function numberingEditor() {
+    return {
+        totalLength: {{ rule.elements.total_length if rule and rule.elements else 0 }},
+        seqDigits: {{ (rule.get_sequence_config().digits if rule and rule.get_sequence_config() else 4) }},
+        usePrefix: {% if rule and rule.get_prefix_config() %}true{% else %}false{% endif %},
+        useSuffix: {% if rule and rule.get_suffix_config() %}true{% else %}false{% endif %},
+        useYear: {% if year_config.val %}true{% else %}false{% endif %},
+        useYearOffset: {% if year_offset_config.val %}true{% else %}false{% endif %},
+        useMonth: {% if month_config.val %}true{% else %}false{% endif %},
+
+        validateForm(event) {
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                alert('請輸入規則名稱');
+                event.preventDefault();
+                return false;
+            }
+            return true;
+        }
+    };
+}
+</script>
+{% endblock %}

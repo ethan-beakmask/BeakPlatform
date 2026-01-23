@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if login_type == 'org' and org %}
+    <title>登入 - {{ org.name }}</title>
+    {% else %}
+    <title>登入 - BeakMask</title>
+    {% endif %}
+</head>
+<body>
+    {% if login_type == 'org' and org %}
+        {% if logo_url %}
+        <div style="text-align: center; margin-bottom: 16px;">
+            <img src="{{ logo_url }}" alt="{{ org.name }}" style="max-width: 200px; max-height: 80px;">
+        </div>
+        <h1>{{ org.name }} 登入</h1>
+        {% else %}
+        <h1>{{ org.name }} - BeakMask 登入</h1>
+        {% endif %}
+    {% else %}
+    <h1>BeakMask 登入</h1>
+    {% endif %}
+
+    {% if error %}
+    <p><strong>{{ error }}</strong></p>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <p><strong>{{ message }}</strong></p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% if login_type == 'org' and org %}
+    <!-- 企業專屬登入表單 -->
+    <form method="POST" action="{{ url_for('auth.org_login', domain_name=domain_name) }}">
+        <table border="0" cellpadding="4" cellspacing="0">
+            <tr>
+                <td><label for="username">帳號</label></td>
+                <td>
+                    <input type="text" id="username" name="username" size="20" required autocomplete="username">@{{ domain_name }}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="password">密碼</label></td>
+                <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <br>
+                    <button type="submit">登入</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <p>
+        <a href="{{ url_for('auth.org_forgot_password', domain_name=domain_name) }}">忘記密碼？</a>
+    </p>
+
+    {% else %}
+    <!-- 共用登入表單 -->
+    <form method="POST" action="{{ url_for('auth.login') }}">
+        <table border="0" cellpadding="4" cellspacing="0">
+            <tr>
+                <td><label for="account">帳號</label></td>
+                <td>
+                    <input type="text" id="account" name="account" size="30" required autocomplete="username" placeholder="username@company.com">
+                    <br><small>格式：帳號@企業網域</small>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="password">密碼</label></td>
+                <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <br>
+                    <button type="submit">登入</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <p>
+        <a href="{{ url_for('auth.forgot_password') }}">忘記密碼？</a>
+    </p>
+    {% endif %}
+
+    <hr>
+    <p><small>&copy; 2025 BeakMask. Security First.</small></p>
+</body>
+</html>

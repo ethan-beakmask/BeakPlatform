@@ -1,0 +1,207 @@
+-- Migration: 005_seed_job_structure
+-- Description: 建立預設職等、職系、職稱資料
+-- Date: 2024-12-20
+--
+-- 此腳本為各企業建立標準的 HR 結構基礎資料
+-- 使用 org_default_00000000001 作為預設企業
+
+-- ============================================================
+-- 1. 建立預設職等 (Job Levels)
+-- ============================================================
+-- 使用等距跳號：L000, L100, L200, ... L900
+
+INSERT INTO job_levels (
+    secure_code, org_secure_code, code, name, name_en, level_order,
+    approval_limit, approval_currency, is_manager_level, management_scope,
+    sort_order, is_system_default, is_active
+) VALUES
+    -- L900 - 總經理級 (無簽核上限)
+    ('jl_l900_default_0001', 'org_default_00000000001', 'L900', '總經理級', 'President Level', 900,
+     NULL, 'TWD', TRUE, '全公司', 10, TRUE, TRUE),
+
+    -- L800 - 副總經理級 (5000萬)
+    ('jl_l800_default_0001', 'org_default_00000000001', 'L800', '副總經理級', 'Vice President Level', 800,
+     50000000, 'TWD', TRUE, '多處室/事業部', 20, TRUE, TRUE),
+
+    -- L700 - 處長級 (1000萬)
+    ('jl_l700_default_0001', 'org_default_00000000001', 'L700', '處長級', 'Director Level', 700,
+     10000000, 'TWD', TRUE, '單一處室', 30, TRUE, TRUE),
+
+    -- L600 - 副處長級 (500萬)
+    ('jl_l600_default_0001', 'org_default_00000000001', 'L600', '副處長級', 'Deputy Director Level', 600,
+     5000000, 'TWD', TRUE, '協助處室管理', 40, TRUE, TRUE),
+
+    -- L500 - 經理級 (100萬)
+    ('jl_l500_default_0001', 'org_default_00000000001', 'L500', '經理級', 'Manager Level', 500,
+     1000000, 'TWD', TRUE, '單一部門', 50, TRUE, TRUE),
+
+    -- L400 - 副理級 (50萬)
+    ('jl_l400_default_0001', 'org_default_00000000001', 'L400', '副理級', 'Assistant Manager Level', 400,
+     500000, 'TWD', TRUE, '協助部門管理', 60, TRUE, TRUE),
+
+    -- L300 - 主任級 (10萬)
+    ('jl_l300_default_0001', 'org_default_00000000001', 'L300', '主任級', 'Supervisor Level', 300,
+     100000, 'TWD', TRUE, '小組/專案', 70, TRUE, TRUE),
+
+    -- L200 - 高級職員級 (5萬)
+    ('jl_l200_default_0001', 'org_default_00000000001', 'L200', '高級職員級', 'Senior Staff Level', 200,
+     50000, 'TWD', FALSE, NULL, 80, TRUE, TRUE),
+
+    -- L100 - 職員級 (1萬)
+    ('jl_l100_default_0001', 'org_default_00000000001', 'L100', '職員級', 'Staff Level', 100,
+     10000, 'TWD', FALSE, NULL, 90, TRUE, TRUE),
+
+    -- L000 - 外部人員 (無簽核權限)
+    ('jl_l000_default_0001', 'org_default_00000000001', 'L000', '外部人員', 'External', 0,
+     0, 'TWD', FALSE, NULL, 100, TRUE, TRUE)
+
+ON CONFLICT (org_secure_code, code) WHERE is_deleted = FALSE DO NOTHING;
+
+-- ============================================================
+-- 2. 建立預設職系 (Job Families)
+-- ============================================================
+
+INSERT INTO job_families (
+    secure_code, org_secure_code, family_type, code, name, name_en,
+    parent_secure_code, description, sort_order, is_system_default, is_active
+) VALUES
+    -- 管理職 (根)
+    ('jf_mgr_default_00001', 'org_default_00000000001', 'MANAGER', 'MGR', '管理職', 'People Manager',
+     NULL, '帶人主管，負責團隊管理與人員發展', 10, TRUE, TRUE),
+
+    -- 專業職 (根)
+    ('jf_prof_default_0001', 'org_default_00000000001', 'PROFESSIONAL', 'PROF', '專業職', 'Individual Contributor',
+     NULL, '不帶人的專業人員，專注於專業技能發展', 20, TRUE, TRUE),
+
+    -- 專業職 - 業務職 (子)
+    ('jf_sales_default_001', 'org_default_00000000001', 'PROFESSIONAL', 'SALES', '業務職', 'Sales Position',
+     'jf_prof_default_0001', '負責業務開發與客戶關係維護', 21, TRUE, TRUE),
+
+    -- 專業職 - 客服職 (子)
+    ('jf_cs_default_000001', 'org_default_00000000001', 'PROFESSIONAL', 'CS', '客服職', 'Customer Service Position',
+     'jf_prof_default_0001', '負責客戶服務與問題處理', 22, TRUE, TRUE),
+
+    -- 專業職 - 行政職 (子)
+    ('jf_admin_default_001', 'org_default_00000000001', 'PROFESSIONAL', 'ADMIN', '行政職', 'Administration Position',
+     'jf_prof_default_0001', '負責行政支援與內部管理', 23, TRUE, TRUE),
+
+    -- 專業職 - 工程技術職 (子)
+    ('jf_tech_default_0001', 'org_default_00000000001', 'PROFESSIONAL', 'TECH', '工程技術職', 'Technical Position',
+     'jf_prof_default_0001', '負責技術研發與工程實作', 24, TRUE, TRUE)
+
+ON CONFLICT (org_secure_code, code) WHERE is_deleted = FALSE DO NOTHING;
+
+-- ============================================================
+-- 3. 建立預設職稱 (Job Titles)
+-- ============================================================
+
+INSERT INTO job_titles (
+    secure_code, org_secure_code, code, name, name_en,
+    job_level_secure_code, job_family_secure_code,
+    is_supervisor, sort_order, is_system_default, is_active
+) VALUES
+    -- === L900 - 總經理級 ===
+    ('jt_pres_default_0001', 'org_default_00000000001', 'PRES', '總經理', 'President',
+     'jl_l900_default_0001', 'jf_mgr_default_00001', TRUE, 1, TRUE, TRUE),
+    ('jt_evp_default_00001', 'org_default_00000000001', 'EVP', '執行副總經理', 'Executive Vice President',
+     'jl_l900_default_0001', 'jf_mgr_default_00001', TRUE, 2, TRUE, TRUE),
+
+    -- === L800 - 副總經理級 ===
+    ('jt_svp_default_00001', 'org_default_00000000001', 'SVP', '資深副總經理', 'Senior Vice President',
+     'jl_l800_default_0001', 'jf_mgr_default_00001', TRUE, 10, TRUE, TRUE),
+    ('jt_vp_default_000001', 'org_default_00000000001', 'VP', '副總經理', 'Vice President',
+     'jl_l800_default_0001', 'jf_mgr_default_00001', TRUE, 11, TRUE, TRUE),
+    ('jt_sr_consult_0001', 'org_default_00000000001', 'SR_CONSULT', '資深顧問', 'Senior Consultant',
+     'jl_l800_default_0001', 'jf_prof_default_0001', FALSE, 12, TRUE, TRUE),
+    ('jt_consult_default_', 'org_default_00000000001', 'CONSULT', '顧問', 'Consultant',
+     'jl_l800_default_0001', 'jf_prof_default_0001', FALSE, 13, TRUE, TRUE),
+    ('jt_chief_eng_00001', 'org_default_00000000001', 'CHIEF_ENG', '總工程師', 'Chief Engineer',
+     'jl_l800_default_0001', 'jf_tech_default_0001', FALSE, 14, TRUE, TRUE),
+
+    -- === L700 - 處長級 ===
+    ('jt_sr_dir_default_1', 'org_default_00000000001', 'SR_DIR', '資深處長', 'Senior Director',
+     'jl_l700_default_0001', 'jf_mgr_default_00001', TRUE, 20, TRUE, TRUE),
+    ('jt_dir_default_0001', 'org_default_00000000001', 'DIR', '處長', 'Director',
+     'jl_l700_default_0001', 'jf_mgr_default_00001', TRUE, 21, TRUE, TRUE),
+    ('jt_sr_sa_default_01', 'org_default_00000000001', 'SR_SA', '資深特別助理', 'Senior Special Assistant',
+     'jl_l700_default_0001', 'jf_prof_default_0001', FALSE, 22, TRUE, TRUE),
+    ('jt_dep_chief_eng_1', 'org_default_00000000001', 'DEP_CHIEF_ENG', '副總工程師', 'Deputy Chief Engineer',
+     'jl_l700_default_0001', 'jf_tech_default_0001', FALSE, 23, TRUE, TRUE),
+
+    -- === L600 - 副處長級 ===
+    ('jt_dep_dir_default', 'org_default_00000000001', 'DEP_DIR', '副處長', 'Deputy Director',
+     'jl_l600_default_0001', 'jf_mgr_default_00001', TRUE, 30, TRUE, TRUE),
+    ('jt_sa_default_00001', 'org_default_00000000001', 'SA', '特別助理', 'Special Assistant',
+     'jl_l600_default_0001', 'jf_prof_default_0001', FALSE, 31, TRUE, TRUE),
+
+    -- === L500 - 經理級 ===
+    ('jt_mgr_default_0001', 'org_default_00000000001', 'MGR', '經理', 'Manager',
+     'jl_l500_default_0001', 'jf_mgr_default_00001', TRUE, 40, TRUE, TRUE),
+    ('jt_pm_default_00001', 'org_default_00000000001', 'PM', '專案經理', 'Project Manager',
+     'jl_l500_default_0001', 'jf_prof_default_0001', FALSE, 41, TRUE, TRUE),
+    ('jt_pm_tech_default', 'org_default_00000000001', 'PM_TECH', '技術專案經理', 'Technical Project Manager',
+     'jl_l500_default_0001', 'jf_tech_default_0001', FALSE, 42, TRUE, TRUE),
+
+    -- === L400 - 副理級 ===
+    ('jt_asst_mgr_defaul', 'org_default_00000000001', 'ASST_MGR', '副理', 'Assistant Manager',
+     'jl_l400_default_0001', 'jf_mgr_default_00001', TRUE, 50, TRUE, TRUE),
+    ('jt_asst_pm_default', 'org_default_00000000001', 'ASST_PM', '專案副理', 'Assistant Project Manager',
+     'jl_l400_default_0001', 'jf_prof_default_0001', FALSE, 51, TRUE, TRUE),
+
+    -- === L300 - 主任級 ===
+    ('jt_supv_default_001', 'org_default_00000000001', 'SUPV', '主任', 'Supervisor',
+     'jl_l300_default_0001', 'jf_mgr_default_00001', TRUE, 60, TRUE, TRUE),
+    ('jt_pl_default_00001', 'org_default_00000000001', 'PL', '專案主任', 'Project Leader',
+     'jl_l300_default_0001', 'jf_prof_default_0001', FALSE, 61, TRUE, TRUE),
+    ('jt_prin_eng_defaul', 'org_default_00000000001', 'PRIN_ENG', '主任工程師', 'Principal Engineer',
+     'jl_l300_default_0001', 'jf_tech_default_0001', FALSE, 62, TRUE, TRUE),
+
+    -- === L200 - 高級職員級 ===
+    ('jt_sr_spec_default', 'org_default_00000000001', 'SR_SPEC', '高級專員', 'Senior Specialist',
+     'jl_l200_default_0001', 'jf_prof_default_0001', FALSE, 70, TRUE, TRUE),
+    ('jt_sr_sales_defaul', 'org_default_00000000001', 'SR_SALES', '高級業務代表', 'Senior Sales Representative',
+     'jl_l200_default_0001', 'jf_sales_default_001', FALSE, 71, TRUE, TRUE),
+    ('jt_sr_cs_default_01', 'org_default_00000000001', 'SR_CS', '高級客服代表', 'Senior Customer Service Rep',
+     'jl_l200_default_0001', 'jf_cs_default_000001', FALSE, 72, TRUE, TRUE),
+    ('jt_sr_admin_default', 'org_default_00000000001', 'SR_ADMIN', '高級行政專員', 'Senior Admin Specialist',
+     'jl_l200_default_0001', 'jf_admin_default_001', FALSE, 73, TRUE, TRUE),
+    ('jt_sr_eng_default_1', 'org_default_00000000001', 'SR_ENG', '高級工程師', 'Senior Engineer',
+     'jl_l200_default_0001', 'jf_tech_default_0001', FALSE, 74, TRUE, TRUE),
+
+    -- === L100 - 職員級 ===
+    ('jt_spec_default_001', 'org_default_00000000001', 'SPEC', '專員', 'Specialist',
+     'jl_l100_default_0001', 'jf_prof_default_0001', FALSE, 80, TRUE, TRUE),
+    ('jt_sales_default_01', 'org_default_00000000001', 'SALES', '業務代表', 'Sales Representative',
+     'jl_l100_default_0001', 'jf_sales_default_001', FALSE, 81, TRUE, TRUE),
+    ('jt_csr_default_0001', 'org_default_00000000001', 'CSR', '客服代表', 'Customer Service Rep',
+     'jl_l100_default_0001', 'jf_cs_default_000001', FALSE, 82, TRUE, TRUE),
+    ('jt_admin_spec_defau', 'org_default_00000000001', 'ADMIN_SPEC', '行政專員', 'Admin Specialist',
+     'jl_l100_default_0001', 'jf_admin_default_001', FALSE, 83, TRUE, TRUE),
+    ('jt_eng_default_0001', 'org_default_00000000001', 'ENG', '工程師', 'Engineer',
+     'jl_l100_default_0001', 'jf_tech_default_0001', FALSE, 84, TRUE, TRUE),
+
+    -- === L000 - 外部人員 ===
+    ('jt_contractor_defau', 'org_default_00000000001', 'CONTRACTOR', '約聘人員', 'Contractor',
+     'jl_l000_default_0001', 'jf_prof_default_0001', FALSE, 90, TRUE, TRUE),
+    ('jt_intern_default_1', 'org_default_00000000001', 'INTERN', '實習生', 'Intern',
+     'jl_l000_default_0001', 'jf_prof_default_0001', FALSE, 91, TRUE, TRUE),
+    ('jt_vendor_default_1', 'org_default_00000000001', 'VENDOR', '廠商代表', 'Vendor Representative',
+     'jl_l000_default_0001', 'jf_prof_default_0001', FALSE, 92, TRUE, TRUE)
+
+ON CONFLICT (org_secure_code, code) WHERE is_deleted = FALSE DO NOTHING;
+
+-- ============================================================
+-- 驗證資料
+-- ============================================================
+DO $$
+DECLARE
+    level_count INTEGER;
+    family_count INTEGER;
+    title_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO level_count FROM job_levels WHERE org_secure_code = 'org_default_00000000001' AND is_deleted = FALSE;
+    SELECT COUNT(*) INTO family_count FROM job_families WHERE org_secure_code = 'org_default_00000000001' AND is_deleted = FALSE;
+    SELECT COUNT(*) INTO title_count FROM job_titles WHERE org_secure_code = 'org_default_00000000001' AND is_deleted = FALSE;
+
+    RAISE NOTICE 'Seed 完成: % 職等, % 職系, % 職稱', level_count, family_count, title_count;
+END $$;

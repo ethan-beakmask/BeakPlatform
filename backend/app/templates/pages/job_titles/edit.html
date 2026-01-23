@@ -1,0 +1,130 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯職稱 - {{ job_title.name }} - BeakMask{% endblock %}
+
+{% block content %}
+<h1>編輯職稱: {{ job_title.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[返回列表]</a>
+    <a href="{{ url_for('job_titles.view_job_title', secure_code=job_title.secure_code) }}">[查看詳情]</a>
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">職稱代碼</th>
+            <td>
+                <code style="font-size: 1.2em;">{{ job_title.code }}</code>
+                <span style="color: #666; font-size: 0.9em;">(不可修改)</span>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職稱名稱 *</th>
+            <td>
+                <input type="text" name="name" required maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name', job_title.name) }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">英文名稱</th>
+            <td>
+                <input type="text" name="name_en" maxlength="100"
+                       style="width: 100%;"
+                       value="{{ request.form.get('name_en', job_title.name_en or '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">簡稱</th>
+            <td>
+                <input type="text" name="short_name" maxlength="50"
+                       style="width: 100%;"
+                       value="{{ request.form.get('short_name', job_title.short_name or '') }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等 *</th>
+            <td>
+                <select name="job_level_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇職等 --</option>
+                    {% for level in job_levels %}
+                    <option value="{{ level.secure_code }}"
+                            {% if job_title.job_level_secure_code == level.secure_code %}selected{% endif %}>
+                        {{ level.code }} - {{ level.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職系 *</th>
+            <td>
+                <select name="job_family_secure_code" required style="width: 100%;">
+                    <option value="">-- 請選擇職系 --</option>
+                    {% for family in job_families %}
+                    <option value="{{ family.secure_code }}"
+                            {% if job_title.job_family_secure_code == family.secure_code %}selected{% endif %}>
+                        {{ family.name }} ({{ family.family_type }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">管理職</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_supervisor" value="true"
+                           {% if job_title.is_supervisor %}checked{% endif %}>
+                    是管理職 (帶人)
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">描述</th>
+            <td>
+                <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', job_title.description or '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">排序順序</th>
+            <td>
+                <input type="number" name="sort_order" min="0"
+                       style="width: 100%;"
+                       value="{{ request.form.get('sort_order', job_title.sort_order) }}">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">狀態</th>
+            <td>
+                <label>
+                    <input type="checkbox" name="is_active" value="true"
+                           {% if job_title.is_active %}checked{% endif %}>
+                    啟用
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('job_titles.view_job_title', secure_code=job_title.secure_code) }}"
+                   style="margin-left: 20px;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% if not job_title.is_system_default %}
+<hr style="margin-top: 40px;">
+<h3 style="color: #c00;">危險區域</h3>
+<form method="POST" action="{{ url_for('job_titles.delete_job_title', secure_code=job_title.secure_code) }}"
+      onsubmit="return confirm('確定要刪除職稱「{{ job_title.name }}」嗎？');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+        刪除此職稱
+    </button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}編輯選單項目 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('menu.list_menu') }}">&lt; 返回選單管理</a></p>
+
+<h1>編輯選單項目 {{ item.title }}</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td>選單代碼</td>
+            <td><code>{{ item.code }}</code> (不可變更)</td>
+        </tr>
+        <tr>
+            <td><label for="title">選單標題 *</label></td>
+            <td><input type="text" id="title" name="title" size="40" value="{{ item.title }}" required></td>
+        </tr>
+        <tr>
+            <td><label for="icon">圖標</label></td>
+            <td><input type="text" id="icon" name="icon" size="10" value="{{ item.icon or '' }}"></td>
+        </tr>
+        <tr>
+            <td><label for="parent_secure_code">父選單</label></td>
+            <td>
+                <select id="parent_secure_code" name="parent_secure_code">
+                    <option value="">-- 根層級 --</option>
+                    {% for opt in parent_options %}
+                    <option value="{{ opt.item.secure_code }}"
+                        {% if item.parent_secure_code == opt.item.secure_code %}selected{% endif %}>
+                        {{ opt.indent }}{{ opt.item.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <br><small>變更父選單會自動更新層級深度</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="link_type">連結類型</label></td>
+            <td>
+                <select id="link_type" name="link_type">
+                    <option value="route" {% if item.link_type == 'route' %}selected{% endif %}>Flask Route</option>
+                    <option value="url" {% if item.link_type == 'url' %}selected{% endif %}>外部 URL</option>
+                    <option value="page" {% if item.link_type == 'page' %}selected{% endif %}>動態頁面</option>
+                    <option value="header" {% if item.link_type == 'header' %}selected{% endif %}>區塊標題</option>
+                    <option value="divider" {% if item.link_type == 'divider' %}selected{% endif %}>分隔線</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="link_target">連結目標</label></td>
+            <td><input type="text" id="link_target" name="link_target" size="50" value="{{ item.link_target or '' }}"></td>
+        </tr>
+        <tr>
+            <td valign="top">可見用戶類型</td>
+            <td>
+                {% for user_type in user_types %}
+                <label style="display: block; margin-bottom: 4px;">
+                    <input type="checkbox" name="allowed_user_types" value="{{ user_type }}"
+                        {% if user_type in current_permissions %}checked{% endif %}>
+                    {{ user_type_labels.get(user_type, user_type) }}
+                </label>
+                {% endfor %}
+                <small>勾選可看見此選單的用戶類型（平行關係，非繼承）</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="display_order">顯示順序</label></td>
+            <td><input type="number" id="display_order" name="display_order" value="{{ item.display_order }}"></td>
+        </tr>
+        <tr>
+            <td><label for="is_expanded">預設展開</label></td>
+            <td><input type="checkbox" id="is_expanded" name="is_expanded" {% if item.is_expanded %}checked{% endif %}></td>
+        </tr>
+        <tr>
+            <td><label for="is_active">啟用</label></td>
+            <td><input type="checkbox" id="is_active" name="is_active" {% if item.is_active %}checked{% endif %}></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">儲存變更</button>
+                <a href="{{ url_for('menu.list_menu') }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+<hr>
+<h2>刪除選單項目</h2>
+<p>刪除此選單項目將連同子項目一起刪除。</p>
+<form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm('確定要刪除此選單項目嗎？子項目也會一併刪除。');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">刪除選單項目</button>
+</form>
+{% endblock %}

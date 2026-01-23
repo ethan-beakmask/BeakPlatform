@@ -1,0 +1,222 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}企業管理員帳號 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    /* 模態框樣式 */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 8px;
+        min-width: 350px;
+        max-width: 450px;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
+    }
+    .modal-content label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    .modal-content input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+    }
+    .modal-content input[type="password"]:focus {
+        border-color: #2563eb;
+        outline: none;
+    }
+    .modal-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .modal-buttons button {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .modal-buttons .btn-cancel {
+        background: #e5e7eb;
+        border: none;
+    }
+    .modal-buttons .btn-submit {
+        background: #f59e0b;
+        color: white;
+        border: none;
+    }
+    .modal-buttons .btn-submit:hover {
+        background: #d97706;
+    }
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: -8px;
+        margin-bottom: 12px;
+    }
+    .btn-reset-pwd {
+        background: none;
+        border: none;
+        color: #f59e0b;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+    .btn-reset-pwd:hover {
+        color: #d97706;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('admin.settings') }}">&lt; 返回系統設定</a></p>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 style="margin: 0;">企業管理員帳號</h1>
+    <a href="{{ url_for('org_admins.create_admin') }}"
+       style="padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;">
+        + 新增管理員
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
+          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div style="background: #eff6ff; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #bfdbfe;">
+    <strong>目前啟用的管理員：{{ active_count }} 人</strong>
+    <span style="color: #6b7280; margin-left: 10px;">（必須至少保留一個啟用的管理員）</span>
+</div>
+
+{% if admins %}
+<div x-data="{ resetTarget: null, resetName: '' }">
+<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background: #f9fafb;">
+            <th style="text-align: left;">帳號</th>
+            <th style="text-align: left;">姓名</th>
+            <th style="text-align: left;">綁定員工</th>
+            <th style="text-align: center;">狀態</th>
+            <th style="text-align: left;">建立時間</th>
+            <th style="text-align: center;">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for admin in admins %}
+        <tr {% if not admin.is_active %}style="background: #f3f4f6; color: #9ca3af;"{% endif %}>
+            <td>
+                <code>{{ admin.username }}</code>
+                {% if admin.is_original_admin %}
+                <span style="font-size: 0.8em; color: #6b7280;">(預設)</span>
+                {% endif %}
+            </td>
+            <td>{{ admin.display_name }}</td>
+            <td>
+                {% if admin.bound_employee %}
+                    <span title="{{ admin.bound_employee.email }}">
+                        {{ admin.bound_employee.display_name }}
+                        <span style="color: #6b7280; font-size: 0.85em;">({{ admin.bound_employee.employee_id }})</span>
+                    </span>
+                {% elif admin.is_original_admin %}
+                    <span style="color: #9ca3af;">-</span>
+                {% else %}
+                    <span style="color: #f59e0b;">未綁定</span>
+                {% endif %}
+            </td>
+            <td style="text-align: center;">
+                {% if admin.is_active %}
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">啟用</span>
+                {% else %}
+                <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">停用</span>
+                {% endif %}
+            </td>
+            <td>{{ admin.created_at.strftime('%Y-%m-%d %H:%M') if admin.created_at else '-' }}</td>
+            <td style="text-align: center;">
+                {% if admin.secure_code != current_user.secure_code %}
+                <button type="button" class="btn-reset-pwd"
+                        @click="resetTarget = '{{ admin.secure_code }}'; resetName = '{{ admin.display_name }}'">
+                    重設密碼
+                </button>
+                <form method="POST" action="{{ url_for('org_admins.toggle_status', secure_code=admin.secure_code) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" style="background: none; border: none; color: #2563eb; cursor: pointer; padding: 4px 8px;">
+                        {% if admin.is_active %}停用{% else %}啟用{% endif %}
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('org_admins.delete_admin', secure_code=admin.secure_code) }}"
+                      style="display: inline;"
+                      onsubmit="return confirm('確定要刪除管理員「{{ admin.display_name }}」嗎？')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" style="background: none; border: none; color: #dc2626; cursor: pointer; padding: 4px 8px;">刪除</button>
+                </form>
+                {% else %}
+                <span style="color: #9ca3af;">（自己）</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 重設密碼對話框 -->
+<div class="modal-overlay" x-show="resetTarget" x-cloak>
+    <div class="modal-content">
+        <h3>重設密碼</h3>
+        <p style="margin-bottom: 16px;">為 <strong x-text="resetName"></strong> 設定新密碼</p>
+        <form method="POST" :action="'/admin/org-admins/' + resetTarget + '/reset-password'">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="new_password">新密碼</label>
+            <input type="password" id="new_password" name="new_password" required minlength="8" autocomplete="new-password">
+            <p class="help-text">至少 8 個字元</p>
+            <label for="confirm_password">確認密碼</label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password">
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" @click="resetTarget = null">取消</button>
+                <button type="submit" class="btn-submit">確認重設</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+{% else %}
+<p style="color: #6b7280;">尚無企業管理員帳號。</p>
+{% endif %}
+
+<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+    <h3 style="margin-top: 0;">說明</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #666;">
+        <li>企業管理員可以管理企業設定、用戶帳號等</li>
+        <li>必須至少保留一個啟用的管理員</li>
+        <li>預設的 admin 帳號可以停用，但需先建立其他管理員</li>
+        <li>停用的管理員無法登入系統</li>
+        <li><strong>綁定機制</strong>：新增的管理員必須綁定一個有員工編號的員工帳號，當該員工帳號停用或刪除時，對應的管理員帳號也無法登入</li>
+    </ul>
+</div>
+{% endblock %}

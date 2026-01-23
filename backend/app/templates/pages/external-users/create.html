@@ -1,0 +1,225 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增外部人員 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .help-text {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部人員列表</a></p>
+
+<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">新增外部人員</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
+          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" style="max-width: 600px;" x-data="externalUserForm()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <table border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+        <tr>
+            <th style="text-align: left; width: 150px;">姓名 *</th>
+            <td>
+                <input type="text" name="display_name" value="{{ form_data.get('display_name', '') }}"
+                       required maxlength="100" style="width: 100%;">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Email *</th>
+            <td>
+                <input type="email" name="email" value="{{ form_data.get('email', '') }}"
+                       required maxlength="255" style="width: 100%;"
+                       placeholder="例如: guest@gmail.com">
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    請輸入完整的 Email 地址（此為登入帳號）
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">密碼 *</th>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: start;">
+                    <div style="flex: 1;">
+                        <input :type="showPassword ? 'text' : 'password'" name="password"
+                               x-model="password" @input="validatePassword()"
+                               required minlength="8" style="width: 100%;">
+                    </div>
+                    <button type="button" @click="showPassword = !showPassword"
+                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                    <button type="button" @click="generatePassword()"
+                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        建議密碼
+                    </button>
+                </div>
+                <div class="help-text" x-text="passwordRequirements"></div>
+                <!-- 驗證錯誤 -->
+                <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <!-- 驗證通過 -->
+                <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                    ✓ 密碼符合要求
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">歸屬群組 *</th>
+            <td>
+                <select name="group_code" required style="width: 100%;">
+                    <option value="">-- 請選擇 --</option>
+                    {% for group in groups %}
+                    <option value="{{ group.code }}" {% if form_data.get('group_code') == group.code %}selected{% endif %}>
+                        {{ group.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    外部人員必須歸屬至少一個群組
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">編號</th>
+            <td>
+                <span style="color: #059669;">自動產生</span>
+                <span style="color: #6b7280; margin-left: 8px;">（使用規則：{{ default_rule.name }}）</span>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left; vertical-align: top;">備註</th>
+            <td>
+                <textarea name="notes" rows="3" style="width: 100%;" maxlength="1000"
+                          placeholder="選填，可記錄公司、聯絡方式等">{{ form_data.get('notes', '') }}</textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: center; padding-top: 20px;">
+                <button type="submit"
+                        style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    建立外部人員
+                </button>
+                <a href="{{ url_for('external_users.list_external_users') }}" style="margin-left: 20px; color: #6b7280;">取消</a>
+            </td>
+        </tr>
+    </table>
+</form>
+
+
+<script>
+function externalUserForm() {
+    return {
+        password: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        async init() {
+            await this.loadRequirements();
+        },
+
+        async loadRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、');
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

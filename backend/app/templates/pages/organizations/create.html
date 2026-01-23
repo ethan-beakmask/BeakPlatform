@@ -1,0 +1,84 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}新增企業 - BeakMask{% endblock %}
+
+{% block content %}
+<p><a href="{{ url_for('organizations.list_orgs') }}">&lt; 返回企業列表</a></p>
+
+<h1>新增企業</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p><strong>{{ message }}</strong></p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <table border="0" cellpadding="4" cellspacing="0">
+        <tr>
+            <td><label for="code">企業代碼 *</label></td>
+            <td>
+                <input type="text" id="code" name="code" size="20" required pattern="[A-Za-z0-9_]+"
+                       style="text-transform: uppercase;"
+                       value="{{ request.form.get('code', '') }}">
+                <br><small>內部識別碼，如 ACME、DEMO_CORP（會自動轉為大寫）</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="name">企業名稱 *</label></td>
+            <td><input type="text" id="name" name="name" size="40" required
+                       value="{{ request.form.get('name', '') }}"></td>
+        </tr>
+        <tr>
+            <td><label for="display_name">顯示名稱</label></td>
+            <td>
+                <input type="text" id="display_name" name="display_name" size="40"
+                       value="{{ request.form.get('display_name', '') }}">
+                <br><small>多語言顯示用，如不填則使用企業名稱</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="domain_name">網域名稱 *</label></td>
+            <td>
+                <input type="text" id="domain_name" name="domain_name" size="30" required pattern="[a-zA-Z0-9\-\.]+"
+                       style="text-transform: lowercase;"
+                       value="{{ request.form.get('domain_name', '') }}">
+                <br><small>例: example.com (用於登入帳號，如 admin@example.com，會自動轉小寫)</small>
+                <br><small style="color: #666;">不可使用公共信箱 Domain (如 gmail.com, yahoo.com)</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="description">描述</label></td>
+            <td><textarea id="description" name="description" rows="3" cols="40" placeholder="選填"></textarea></td>
+        </tr>
+        <tr>
+            <td colspan="2"><hr><strong>管理員帳號</strong></td>
+        </tr>
+        <tr>
+            <td><label for="admin_username">管理員帳號</label></td>
+            <td>
+                <input type="text" id="admin_username" name="admin_username" size="20"
+                       value="{{ request.form.get('admin_username', 'admin') }}" pattern="[a-zA-Z0-9_]+">
+                <br><small>預設 admin，登入時為: admin@domain</small>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="admin_password">管理員密碼</label></td>
+            <td>
+                <input type="password" id="admin_password" name="admin_password" size="20" minlength="12">
+                <br><small>至少 12 碼，如不填則使用預設密碼 (首次登入需變更)</small>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <br>
+                <button type="submit">建立企業</button>
+                <a href="{{ url_for('organizations.list_orgs') }}">[取消]</a>
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

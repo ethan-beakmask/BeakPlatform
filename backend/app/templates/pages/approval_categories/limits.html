@@ -1,0 +1,251 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}設定核決上限 - {{ category.name }} - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .matrix-table {
+        border-collapse: collapse;
+        font-size: 0.9em;
+    }
+    .matrix-table th,
+    .matrix-table td {
+        border: 1px solid #d1d5db;
+        padding: 6px 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .matrix-table thead th {
+        background: #1f2937;
+        color: white;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+    }
+    .matrix-table tbody tr:nth-child(odd) {
+        background: #f9fafb;
+    }
+    .matrix-table tbody tr:hover {
+        background: #fef3c7;
+    }
+    .level-cell {
+        background: #e5e7eb !important;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+        min-width: 120px;
+    }
+    .level-code {
+        font-family: monospace;
+        color: #6b7280;
+        font-size: 0.85em;
+    }
+    .limit-cell {
+        background: #fef3c7 !important;
+        min-width: 120px;
+    }
+    .limit-input {
+        width: 100px;
+        padding: 4px 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        text-align: right;
+    }
+    .limit-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    .title-cell {
+        min-width: 100px;
+        text-align: left;
+    }
+    .title-item {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin: 2px;
+        font-size: 0.85em;
+    }
+    .title-item.supervisor {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .empty-cell {
+        color: #d1d5db;
+    }
+    .manager-badge {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.7em;
+        margin-left: 4px;
+    }
+    .save-bar {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 12px 0;
+        border-top: 2px solid #e5e7eb;
+        margin-top: 20px;
+    }
+    .btn-save {
+        padding: 10px 24px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    .btn-save:hover {
+        background: #1d4ed8;
+    }
+    .btn-save:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+    }
+    .msg-success { color: #059669; margin-left: 12px; }
+    .msg-error { color: #dc2626; margin-left: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>設定核決上限: {{ category.name }}</h1>
+
+<p>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    |
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
+    |
+    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    |
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
+    |
+    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+</p>
+<p>
+    <a href="{{ url_for('approval_categories.list_categories') }}">[返回列表]</a>
+    <a href="{{ url_for('approval_categories.edit_category', secure_code=category.secure_code) }}">[編輯類別]</a>
+</p>
+
+<p style="color: #666; font-size: 0.9em;">
+    說明：設定各職等對於「{{ category.name }}」的核決金額上限。0 表示無核決權限。
+</p>
+
+{% if job_levels and job_families %}
+<div id="limits-form">
+    <table class="matrix-table">
+        <thead>
+            <tr>
+                <th>職等</th>
+                <th>核決上限<br><small>({{ category.currency }})</small></th>
+                {% for family in job_families %}
+                <th>{{ family.name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for level in job_levels %}
+            <tr>
+                <td class="level-cell">
+                    <span class="level-code">{{ level.code }}</span>
+                    {{ level.name }}
+                    {% if level.is_manager_level %}
+                    <span class="manager-badge">管理</span>
+                    {% endif %}
+                </td>
+                <td class="limit-cell">
+                    <input type="number"
+                           class="limit-input"
+                           id="limit-{{ level.secure_code }}"
+                           data-level="{{ level.secure_code }}"
+                           min="0"
+                           step="1"
+                           value="{{ limits_map.get(level.secure_code).approval_limit|int if limits_map.get(level.secure_code) and limits_map[level.secure_code].approval_limit is not none else 0 }}">
+                </td>
+                {% for family in job_families %}
+                <td class="title-cell">
+                    {% set titles = matrix[level.secure_code][family.secure_code] %}
+                    {% if titles %}
+                        {% for title in titles %}
+                        <span class="title-item{% if title.is_supervisor %} supervisor{% endif %}"
+                              title="{{ title.name_en or '' }}">{{ title.name }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="empty-cell">-</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="save-bar">
+        <button class="btn-save" id="btn-save" onclick="saveLimits()">儲存變更</button>
+        <span id="save-message"></span>
+    </div>
+</div>
+
+<script>
+async function saveLimits() {
+    const btn = document.getElementById('btn-save');
+    const msg = document.getElementById('save-message');
+
+    btn.disabled = true;
+    btn.textContent = '儲存中...';
+    msg.textContent = '';
+    msg.className = '';
+
+    // 收集所有 limit 值
+    const limitsData = [];
+    document.querySelectorAll('.limit-input').forEach(function(input) {
+        const levelCode = input.dataset.level;
+        let value = parseInt(input.value, 10);
+        if (isNaN(value) || value < 0) value = 0;
+        limitsData.push({
+            job_level_secure_code: levelCode,
+            approval_limit: value
+        });
+    });
+
+    try {
+        const resp = await fetch('{{ url_for("approval_categories.save_category_limits", secure_code=category.secure_code) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ limits: limitsData })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            window.location.href = '{{ url_for("approval_categories.list_categories") }}';
+            return;
+        } else {
+            msg.className = 'msg-error';
+            msg.textContent = '儲存失敗: ' + data.error;
+        }
+    } catch (err) {
+        msg.className = 'msg-error';
+        msg.textContent = '請求失敗: ' + err.message;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '儲存變更';
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+}
+</script>
+
+{% else %}
+<p style="color: #6b7280;">
+    尚無職等或職系資料。請先建立
+    <a href="{{ url_for('job_levels.create_job_level') }}">職等</a> 和
+    <a href="{{ url_for('job_families.create_job_family') }}">職系</a>。
+</p>
+{% endif %}
+{% endblock %}
