@@ -42,9 +42,13 @@ def register_web_blueprints(app: Flask) -> None:
     from .approval_categories import approval_categories_bp
     from .org_admins import org_admins_bp
     from .external_users import external_users_bp
+    from .dev import dev_bp
 
     # Main routes (dashboard, etc.)
     app.register_blueprint(main_bp)
+
+    # Dev tools - 開發工具 (僅限內網)
+    app.register_blueprint(dev_bp, url_prefix='/dev')
 
     # Public - 對外公開區 (無需登入)
     app.register_blueprint(public_bp, url_prefix='/public')

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}DevTools - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .tool-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .tool-card {
+        background: #16213e;
+        padding: 20px;
+        border-radius: 6px;
+        min-width: 200px;
+        border: 1px solid #2a2a4a;
+        transition: border-color 0.2s;
+    }
+    .tool-card:hover {
+        border-color: #64b5f6;
+    }
+    .tool-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+    }
+    .tool-card p {
+        margin: 0;
+        color: #888;
+        font-size: 13px;
+    }
+    .warning-box {
+        background: rgba(233, 69, 96, 0.1);
+        border: 1px solid #e94560;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    .warning-box h3 {
+        color: #e94560;
+        margin: 0 0 8px 0;
+    }
+    .warning-box p {
+        margin: 0;
+        color: #b0b0b0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>開發工具</h1>
+
+<div class="warning-box">
+    <h3>[!] 安全提醒</h3>
+    <p>此服務僅供開發環境使用，包含高權限工具。生產環境請勿啟用此服務。</p>
+</div>
+
+<h2>可用工具</h2>
+<div class="tool-grid">
+    {% for tool in tools %}
+    <a href="{{ tool.url }}" class="tool-card" {% if tool.external %}target="_blank"{% endif %}>
+        <h3>
+            {% if tool.icon %}<i class="fas fa-{{ tool.icon }}" style="margin-right: 6px;"></i>{% endif %}
+            {{ tool.name }}
+            {% if tool.external %}<i class="fas fa-external-link-alt" style="font-size: 10px; margin-left: 6px; opacity: 0.6;"></i>{% endif %}
+        </h3>
+        <p>{{ tool.desc }}</p>
+    </a>
+    {% endfor %}
+</div>
+
+<h2>服務資訊</h2>
+<ul>
+    <li>服務端口: 5008</li>
+    <li>存取限制: 內網 IP only (192.168.x.x, 10.x.x.x, 172.16-31.x.x)</li>
+    <li>主應用: <a href="http://192.168.0.16:5007" target="_blank">http://192.168.0.16:5007</a></li>
+</ul>
+{% endblock %}

@@ -82,13 +82,12 @@ from .user_numbering_rule import (
     NumberingUsageScope
 )
 
-# 時間管理（班表、排班、逾時追蹤）
+# 時間管理（班表、排班）
 from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
 from .schedule_holiday import ScheduleHoliday, DEFAULT_TW_HOLIDAYS_2026
 from .shift_type import ShiftType, DEFAULT_SHIFT_TYPES
 from .personal_schedule import PersonalSchedule
 from .schedule_adjustment import ScheduleAdjustment
-from .timeout_tracker import TimeoutTracker
 
 __all__ = [
     # 基礎
@@ -180,5 +179,4 @@ __all__ = [
     'DEFAULT_SHIFT_TYPES',
     'PersonalSchedule',
     'ScheduleAdjustment',
-    'TimeoutTracker',
 ]

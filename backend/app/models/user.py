@@ -149,9 +149,6 @@ class User(TenantBaseModel, UserMixin):
         back_populates='user'
     )
 
-    # 逾時追蹤
-    timeout_trackers = relationship('TimeoutTracker', back_populates='assignee')
-
     @property
     def is_system_admin(self) -> bool:
         """是否為系統管理員"""

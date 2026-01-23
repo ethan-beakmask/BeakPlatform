@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速登入 - BeakPlatform 開發工具</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <style>
+        [x-cloak] { display: none !important; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* 警告橫幅 */
+        .warning-banner {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .warning-banner h1 {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .warning-banner .subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .warning-banner .logout-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .warning-banner .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* 主內容區 */
+        .main-content {
+            background: white;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        /* 左側選擇區 */
+        .select-panel {
+            padding: 24px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .select-panel h2 {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 訊息區 */
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .message .goto-btn {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: #166534;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        /* 列表項目 */
+        .list-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .list-box.org-list {
+            max-height: 243px;  /* 180px + 35% */
+        }
+
+        .list-box.user-list {
+            max-height: 720px;  /* 180px + 300% */
+        }
+
+        .list-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.15s;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item:hover {
+            background: #f9fafb;
+        }
+
+        .list-item.selected {
+            background: #eff6ff;
+        }
+
+        .list-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .list-item.disabled:hover {
+            background: transparent;
+        }
+
+        .list-item .radio {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .list-item.selected .radio {
+            border-color: #2563eb;
+        }
+
+        .list-item.selected .radio::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #2563eb;
+            border-radius: 50%;
+        }
+
+        .list-item .item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .list-item .item-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .list-item .item-meta {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .list-item .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .badge.system { background: #fef3c7; color: #92400e; }
+        .badge.org-admin { background: #dbeafe; color: #1e40af; }
+        .badge.member { background: #f3f4f6; color: #6b7280; }
+        .badge.inactive { background: #fee2e2; color: #991b1b; }
+
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        /* 載入中 */
+        .loading-state {
+            text-align: center;
+            padding: 24px;
+            color: #6b7280;
+        }
+
+        /* 右側資訊區 */
+        .info-panel {
+            padding: 24px;
+            background: #f9fafb;
+        }
+
+        .info-panel h2 {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: white;
+        }
+
+        .info-label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .info-content {
+            font-size: 13px;
+        }
+
+        .info-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .info-link:hover {
+            text-decoration: underline;
+        }
+
+        .info-hint {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .credential {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+
+        .cred-label {
+            font-size: 11px;
+            color: #6b7280;
+            min-width: 36px;
+        }
+
+        .info-content code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .cred-note {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        /* 當前登入狀態 */
+        .current-user-bar {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            padding: 12px 16px;
+            margin: 16px 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .current-user-bar i {
+            color: #059669;
+            font-size: 20px;
+        }
+
+        .current-user-bar .info {
+            flex: 1;
+        }
+
+        .current-user-bar .info strong {
+            color: #065f46;
+        }
+
+        .current-user-bar .info span {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .select-panel {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" x-data="quickLoginManager()" x-init="init()">
+        <!-- 警告橫幅 -->
+        <div class="warning-banner">
+            <div>
+                <h1>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    開發環境快速登入
+                </h1>
+                <div class="subtitle">
+                    <i class="fas fa-lock"></i> 僅限內網 IP 存取 |
+                    <i class="fas fa-trash"></i> 正式上線前必須移除
+                </div>
+            </div>
+            <button class="logout-btn" @click="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>登出</span>
+            </button>
+        </div>
+
+        <!-- 主內容區 -->
+        <div class="main-content">
+            <!-- 當前登入狀態 -->
+            <div x-show="currentUser" class="current-user-bar" x-cloak>
+                <i class="fas fa-user-check"></i>
+                <div class="info">
+                    <strong x-text="'目前登入：' + (currentUser?.display_name || currentUser?.username)"></strong>
+                    <span x-text="' (' + currentUser?.user_type + ')'"></span>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <!-- 左側：選擇區 -->
+                <div class="select-panel">
+                    <!-- 成功訊息 -->
+                    <div x-show="successMessage" x-cloak class="message success">
+                        <i class="fas fa-check-circle"></i>
+                        <span x-text="successMessage"></span>
+                        <a href="/" class="goto-btn">前往首頁</a>
+                    </div>
+
+                    <!-- 錯誤訊息 -->
+                    <div x-show="errorMessage" x-cloak class="message error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span x-text="errorMessage"></span>
+                    </div>
+
+                    <!-- 企業列表 -->
+                    <h2><i class="fas fa-building" style="color: #6366f1;"></i> 選擇企業</h2>
+                    <div class="list-box org-list">
+                        <template x-for="org in organizations" :key="org.secure_code">
+                            <div class="list-item"
+                                 :class="{'selected': selectedOrgSecureCode === org.secure_code}"
+                                 @click="selectOrg(org.secure_code)">
+                                <div class="radio"></div>
+                                <div class="item-content">
+                                    <div class="item-name" x-text="org.name"></div>
+                                    <div class="item-meta" x-text="org.domain_name"></div>
+                                </div>
+                                <span x-show="org.domain_name === 'system.local'" class="badge system">SYSTEM</span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- 帳號列表 -->
+                    <h2><i class="fas fa-user" style="color: #f59e0b;"></i> 選擇帳號 <span style="font-weight: normal; color: #9ca3af;">(點選直接登入)</span></h2>
+                    <div class="list-box user-list">
+                        <div x-show="!selectedOrgSecureCode" class="empty-state">
+                            <i class="fas fa-hand-pointer"></i> 請先選擇企業
+                        </div>
+
+                        <div x-show="loadingUsers" class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i> 載入中...
+                        </div>
+
+                        <div x-show="selectedOrgSecureCode && !loadingUsers && users.length === 0" class="empty-state">
+                            <i class="fas fa-user-slash"></i> 此企業沒有帳號
+                        </div>
+
+                        <template x-for="user in users" :key="user.id">
+                            <div class="list-item"
+                                 :class="{'selected': selectedUserId === user.id, 'disabled': !user.is_active || loading}"
+                                 @click="loginAs(user)">
+                                <div class="radio"></div>
+                                <div class="item-content">
+                                    <div class="item-name" x-text="user.display_name || user.username"></div>
+                                    <div class="item-meta" x-text="user.email"></div>
+                                </div>
+                                <span x-show="!user.is_active" class="badge inactive">停用</span>
+                                <span x-show="user.is_active && user.user_type === 'SYSTEM_ADMIN'" class="badge system">系統管理員</span>
+                                <span x-show="user.is_active && user.user_type === 'ORG_ADMIN'" class="badge org-admin">企業管理員</span>
+                                <span x-show="user.is_active && user.user_type === 'MEMBER'" class="badge member">一般用戶</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 右側：測試資訊 -->
+                <div class="info-panel">
+                    <h2><i class="fas fa-link" style="color: #6366f1;"></i> 登入頁面連結</h2>
+
+                    <div class="info-section">
+                        <div class="info-item">
+                            <div class="info-label">共用登入頁面</div>
+                            <div class="info-content">
+                                <a href="/auth/login" target="_blank" class="info-link">
+                                    <i class="fas fa-external-link-alt"></i> /auth/login
+                                </a>
+                                <div class="info-hint">登入格式: username@domain_name</div>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="fas fa-building" style="color: #2563eb;"></i>
+                                員工登入（<span x-text="selectedOrgDomain || 'system.local'"></span>）
+                            </div>
+                            <div class="info-content">
+                                <a :href="'/auth/org/' + (selectedOrgDomain || 'system.local') + '/login'" target="_blank" class="info-link">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span x-text="'/auth/org/' + (selectedOrgDomain || 'system.local') + '/login'"></span>
+                                </a>
+                                <div class="info-hint">登入格式: username（自動帶入企業網域）</div>
+                            </div>
+                        </div>
+
+                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== 'system.local'">
+                            <div class="info-label">
+                                <i class="fas fa-user-friends" style="color: #10b981;"></i>
+                                外部人員登入（<span x-text="selectedOrgDomain"></span>）
+                            </div>
+                            <div class="info-content">
+                                <a :href="'/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span x-text="'/auth/org/' + selectedOrgDomain + '/public/login'"></span>
+                                </a>
+                                <div class="info-hint">登入格式: 完整 Email（如 guest@gmail.com）</div>
+                            </div>
+                        </div>
+
+                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== 'system.local'">
+                            <div class="info-label">
+                                <i class="fas fa-door-open" style="color: #8b5cf6;"></i>
+                                公開區入口（<span x-text="selectedOrgDomain"></span>）
+                            </div>
+                            <div class="info-content">
+                                <a :href="'/auth/org/' + selectedOrgDomain + '/public'" target="_blank" class="info-link">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span x-text="'/auth/org/' + selectedOrgDomain + '/public'"></span>
+                                </a>
+                                <div class="info-hint">員工 / 外部人員登入選擇頁</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-top: 20px;"><i class="fas fa-key" style="color: #f59e0b;"></i> 預設帳號</h2>
+
+                    <div class="info-section">
+                        <div class="info-item">
+                            <div class="info-label">SYSTEM 管理員</div>
+                            <div class="info-content">
+                                <div class="credential">
+                                    <span class="cred-label">帳號:</span>
+                                    <code>admin@system.local</code>
+                                </div>
+                                <div class="credential">
+                                    <span class="cred-label">密碼:</span>
+                                    <code>admin123</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">企業管理員</div>
+                            <div class="info-content">
+                                <div class="credential">
+                                    <span class="cred-label">帳號:</span>
+                                    <code>admin@{domain_name}</code>
+                                </div>
+                                <div class="credential">
+                                    <span class="cred-label">密碼:</span>
+                                    <code>P@ssw0rd</code>
+                                    <span class="cred-note">(首次建立)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 說明區 -->
+        <div style="margin-top: 16px; padding: 12px 16px; background: white; border-radius: 6px; border-left: 4px solid #f59e0b;">
+            <p style="font-size: 13px; color: #92400e;">
+                <i class="fas fa-info-circle"></i>
+                <strong>開發工具說明：</strong>
+                此頁面僅供開發測試使用，可快速切換不同帳號而無需輸入密碼。
+                正式環境部署前必須移除此功能。
+            </p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/alpine.min.js') }}" defer></script>
+    <script>
+    function quickLoginManager() {
+        return {
+            organizations: [],
+            users: [],
+            selectedOrgSecureCode: '',
+            selectedOrgDomain: '',
+            selectedUserId: '',
+            loading: false,
+            loadingUsers: false,
+            successMessage: '',
+            errorMessage: '',
+            currentUser: null,
+
+            async init() {
+                await this.loadOrganizations();
+
+                // 預設選擇 system.local
+                if (this.organizations.length > 0) {
+                    const systemOrg = this.organizations.find(org => org.domain_name === 'system.local');
+                    if (systemOrg) {
+                        await this.selectOrg(systemOrg.secure_code);
+                    } else {
+                        await this.selectOrg(this.organizations[0].secure_code);
+                    }
+                }
+            },
+
+            async loadOrganizations() {
+                try {
+                    const response = await fetch('/dev/get-orgs');
+                    const result = await response.json();
+                    if (result.success) {
+                        // system.local 排在最前面
+                        this.organizations = result.data.sort((a, b) => {
+                            if (a.domain_name === 'system.local') return -1;
+                            if (b.domain_name === 'system.local') return 1;
+                            return a.name.localeCompare(b.name);
+                        });
+                    } else {
+                        this.errorMessage = result.message;
+                    }
+                } catch (error) {
+                    this.errorMessage = '載入企業失敗: ' + error.message;
+                }
+            },
+
+            async selectOrg(secureCode) {
+                if (this.selectedOrgSecureCode === secureCode) return;
+
+                this.selectedOrgSecureCode = secureCode;
+                // 更新選中的企業 domain
+                const selectedOrg = this.organizations.find(org => org.secure_code === secureCode);
+                this.selectedOrgDomain = selectedOrg ? selectedOrg.domain_name : '';
+
+                this.users = [];
+                this.selectedUserId = '';
+                this.errorMessage = '';
+                this.loadingUsers = true;
+
+                try {
+                    const response = await fetch(`/dev/get-users/${secureCode}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        // 排序：系統管理員 > 企業管理員 > 一般用戶
+                        const order = { 'SYSTEM_ADMIN': 0, 'ORG_ADMIN': 1, 'MEMBER': 2 };
+                        this.users = result.data.sort((a, b) => {
+                            const orderA = order[a.user_type] ?? 9;
+                            const orderB = order[b.user_type] ?? 9;
+                            if (orderA !== orderB) return orderA - orderB;
+                            return (a.display_name || a.username).localeCompare(b.display_name || b.username);
+                        });
+                    } else {
+                        this.errorMessage = result.message;
+                    }
+                } catch (error) {
+                    this.errorMessage = '載入用戶失敗: ' + error.message;
+                } finally {
+                    this.loadingUsers = false;
+                }
+            },
+
+            async loginAs(user) {
+                if (!user.is_active || this.loading) return;
+
+                this.selectedUserId = user.id;
+                this.loading = true;
+                this.errorMessage = '';
+                this.successMessage = '';
+
+                try {
+                    const response = await fetch('/dev/quick-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: user.id })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        this.successMessage = result.message;
+                        this.currentUser = result.data.user;
+
+                        // 1 秒後跳轉
+                        setTimeout(() => {
+                            window.location.href = result.data.redirect_url;
+                        }, 1000);
+                    } else {
+                        this.errorMessage = result.message;
+                        this.loading = false;
+                    }
+                } catch (error) {
+                    this.errorMessage = '登入失敗: ' + error.message;
+                    this.loading = false;
+                }
+            },
+
+            async logout() {
+                this.loading = true;
+                this.successMessage = '';
+                this.errorMessage = '';
+                this.currentUser = null;
+
+                try {
+                    await fetch('/dev/logout', { method: 'POST' });
+                    this.successMessage = 'Session 已清除';
+                } catch (error) {
+                    // 忽略錯誤
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    }
+    </script>
+</body>
+</html>

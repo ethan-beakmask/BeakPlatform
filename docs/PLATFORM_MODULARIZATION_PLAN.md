@@ -39,17 +39,14 @@
 - [x] 移除表單流程 Web routes
 - [x] 清理 __init__.py 引用
 - [x] 建立 Git repo 並推送到 Forgejo
-
-**待完成**:
-- [ ] 檢查所有檔案是否還有表單流程引用
-- [ ] 清理前端模板中的表單流程相關連結
-- [ ] 清理選單資料中的表單流程項目
-- [ ] 建立獨立資料庫 `beakplatform_dev`
-- [ ] 建立資料庫初始化腳本（不含表單流程表）
-- [ ] 驗證 Flask 可啟動
-- [ ] 驗證登入/登出正常
-- [ ] 驗證組織/用戶/角色管理正常
-- [ ] 驗證選單系統正常
+- [x] 檢查所有檔案是否還有表單流程引用
+- [x] 清理前端模板中的表單流程相關連結（admin/settings.html）
+- [x] 清理選單資料中的表單流程項目（資料庫）
+- [x] 建立獨立資料庫 `beakplatform_dev`
+- [x] 建立資料庫初始化腳本（scripts/init_database.sh）
+- [x] 驗證 Flask 可啟動
+- [x] 驗證登入/登出正常（快速登入 API）
+- [x] 驗證認證攔截器正常（401/200）
 
 **驗收標準**:
 1. `flask run` 可以啟動，沒有 import 錯誤
@@ -263,16 +260,22 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 1 - 單純平台化
+**目前階段**: Step 1 完成，準備進入 Step 2
 
-**已完成**:
-- 專案初始化
-- 移除表單流程程式碼
-- Git/Forgejo 設定
+**Step 1 完成項目** (2026-01-23):
+- 專案初始化與 Git/Forgejo 設定
+- 移除表單流程程式碼（Models, API, Web routes）
+- 清理殘留引用（TimeoutTracker, hostconfig, admin/settings）
+- 清理資料庫選單項目
+- 建立資料庫初始化腳本
+- 驗證平台可獨立運行
 
-**進行中**:
-- 清理殘留引用
-- 驗證平台可運行
+**服務配置**:
+- 主服務: http://192.168.0.16:7000 (Nginx port 80)
+- DevTools: http://192.168.0.16:7001
+- 資料庫: beakplatform_dev
+
+**下一步**: Step 2 - 建立模組化標準
 
 ---
 

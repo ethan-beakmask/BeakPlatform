@@ -19,19 +19,6 @@ hostconfig_bp = Blueprint('hostconfig', __name__)
 # 硬刪除涉及的資料表（按刪除順序排列，子表在前）
 # 注意：順序非常重要，必須先刪除有外鍵依賴的子表
 HARD_DELETE_TABLES = [
-    # 流程相關 (依賴 form_instances, workflow_templates)
-    ('workflow_variables', 'org_secure_code', '流程變數'),
-    ('node_execution_queue', 'org_secure_code', '節點執行佇列'),
-    ('workflow_instances', 'org_secure_code', '流程實例'),
-    ('form_instances', 'org_secure_code', '表單實例'),
-    ('published_form_workflows', 'org_secure_code', '已發布表單流程'),
-    ('form_workflow_mappings', 'org_secure_code', '表單流程配對'),
-    ('workflow_templates', 'org_secure_code', '流程範本'),
-    ('form_templates', 'org_secure_code', '表單範本'),
-    ('form_categories', 'org_secure_code', '表單分類'),
-    ('workflow_node_definitions', 'org_secure_code', '流程節點定義'),
-    ('workflow_node_categories', 'org_secure_code', '流程節點分類'),
-
     # 合約 (依賴 users)
     ('contracts', 'org_secure_code', '合約'),
 

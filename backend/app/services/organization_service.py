@@ -12,8 +12,7 @@ from ..models import (
     User, UserType,
     Role, RoleType, ScopeType,
     BlockedEmailDomain,
-    OrganizationalUnit, UnitType,
-    FormCategory
+    OrganizationalUnit, UnitType
 )
 from .. import db
 
@@ -128,9 +127,6 @@ class OrganizationService:
 
             # 建立預設單位（管理員專用）
             OrganizationService._create_default_units(org)
-
-            # 建立預設表單流程分類
-            OrganizationService._create_default_form_categories(org)
 
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
@@ -328,44 +324,6 @@ class OrganizationService:
         logger.info(f"Default units created for org {org.code}")
 
         return units
-
-    @staticmethod
-    def _create_default_form_categories(org: Organization) -> Dict[str, FormCategory]:
-        """
-        建立預設表單流程分類
-
-        Returns:
-            Dict[str, FormCategory]: 分類字典
-        """
-        categories = {}
-
-        # 取得管理員專用單位
-        admin_only_unit = OrganizationalUnit.query.filter_by(
-            org_secure_code=org.secure_code,
-            code='ADMIN_ONLY',
-            is_deleted=False
-        ).first()
-
-        # 流程記錄分類 (系統保留，不可刪除)
-        flow_log_category = FormCategory(
-            org_secure_code=org.secure_code,
-            code='flow-log',
-            name='流程記錄',
-            description='系統預設記錄流程的 log',
-            visible_in_form_design=True,
-            visible_in_workflow_design=True,
-            visible_in_form_center=True,
-            allowed_units=[admin_only_unit.secure_code] if admin_only_unit else [],
-            display_order=999,
-            is_active=True,
-            is_system_category=True
-        )
-        db.session.add(flow_log_category)
-        categories['flow_log'] = flow_log_category
-
-        logger.info(f"Default form categories created for org {org.code}")
-
-        return categories
 
     @staticmethod
     def create_contract(
