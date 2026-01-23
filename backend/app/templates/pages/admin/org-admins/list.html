@@ -84,6 +84,40 @@
     .btn-reset-pwd:hover {
         color: #d97706;
     }
+    .password-field {
+        display: flex;
+        gap: 8px;
+        align-items: start;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .password-field input {
+        flex: 1;
+        min-width: 150px;
+    }
+    .password-field button {
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-toggle {
+        background: #f3f4f6;
+        border: 1px solid #ccc;
+    }
+    .btn-generate {
+        background: #10b981;
+        color: white;
+        border: none;
+    }
+    .password-errors div {
+        color: #dc2626;
+        font-size: 12px;
+    }
+    .password-ok {
+        color: #16a34a;
+        font-size: 12px;
+    }
 </style>
 {% endblock %}
 
@@ -116,7 +150,7 @@
 </div>
 
 {% if admins %}
-<div x-data="{ resetTarget: null, resetName: '' }">
+<div x-data="resetPasswordForm()" x-init="init()">
 <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <thead>
         <tr style="background: #f9fafb;">
@@ -161,7 +195,7 @@
             <td style="text-align: center;">
                 {% if admin.secure_code != current_user.secure_code %}
                 <button type="button" class="btn-reset-pwd"
-                        @click="resetTarget = '{{ admin.secure_code }}'; resetName = '{{ admin.display_name }}'">
+                        @click="openModal('{{ admin.secure_code }}', '{{ admin.display_name }}')">
                     重設密碼
                 </button>
                 <form method="POST" action="{{ url_for('org_admins.toggle_status', secure_code=admin.secure_code) }}" style="display: inline;">
@@ -193,18 +227,153 @@
         <form method="POST" :action="'/admin/org-admins/' + resetTarget + '/reset-password'">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="new_password">新密碼</label>
-            <input type="password" id="new_password" name="new_password" required minlength="8" autocomplete="new-password">
-            <p class="help-text">至少 8 個字元</p>
+            <div class="password-field">
+                <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
+                       x-model="password" @input="validatePassword()"
+                       required minlength="8" autocomplete="new-password">
+                <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
+                        x-text="showPassword ? '隱藏' : '顯示'"></button>
+                <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
+            </div>
+            <p class="help-text" x-text="passwordRequirements"></p>
+            <div x-show="password && passwordErrors.length > 0" style="margin-bottom: 12px;">
+                <template x-for="err in passwordErrors" :key="err">
+                    <div class="password-errors"><div x-text="'• ' + err"></div></div>
+                </template>
+            </div>
+            <div x-show="password && passwordErrors.length === 0 && passwordChecked" class="password-ok" style="margin-bottom: 12px;">
+                密碼符合要求
+            </div>
             <label for="confirm_password">確認密碼</label>
-            <input type="password" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password">
+            <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
+                   x-model="confirmPassword" required minlength="8" autocomplete="new-password">
+            <div x-show="confirmPassword && password !== confirmPassword" style="color: #dc2626; font-size: 12px; margin-top: 4px; margin-bottom: 8px;">
+                密碼不一致
+            </div>
             <div class="modal-buttons">
-                <button type="button" class="btn-cancel" @click="resetTarget = null">取消</button>
+                <button type="button" class="btn-cancel" @click="closeModal()">取消</button>
                 <button type="submit" class="btn-submit">確認重設</button>
             </div>
         </form>
     </div>
 </div>
 </div>
+
+<script>
+function resetPasswordForm() {
+    return {
+        resetTarget: null,
+        resetName: '',
+        password: '',
+        confirmPassword: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        async init() {
+            await this.loadPasswordRequirements();
+        },
+
+        openModal(secureCode, displayName) {
+            this.resetTarget = secureCode;
+            this.resetName = displayName;
+            this.generatePassword();
+        },
+
+        async loadPasswordRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、');
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.confirmPassword = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        },
+
+        closeModal() {
+            this.resetTarget = null;
+            this.resetName = '';
+            this.password = '';
+            this.confirmPassword = '';
+            this.showPassword = false;
+            this.passwordErrors = [];
+            this.passwordChecked = false;
+        }
+    };
+}
+</script>
 {% else %}
 <p style="color: #6b7280;">尚無企業管理員帳號。</p>
 {% endif %}

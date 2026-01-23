@@ -2,6 +2,48 @@
 
 {% block title %}新增系統管理員 - BeakMask{% endblock %}
 
+{% block head %}
+<style>
+    .password-field {
+        display: flex;
+        gap: 8px;
+        align-items: start;
+        flex-wrap: wrap;
+    }
+    .password-field input {
+        flex: 1;
+        min-width: 200px;
+    }
+    .password-field button {
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-toggle {
+        background: #f3f4f6;
+        border: 1px solid #ccc;
+    }
+    .btn-generate {
+        background: #10b981;
+        color: white;
+        border: none;
+    }
+    .password-errors {
+        margin-top: 6px;
+    }
+    .password-errors div {
+        color: #dc2626;
+        font-size: 12px;
+    }
+    .password-ok {
+        margin-top: 6px;
+        color: #16a34a;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <p><a href="{{ url_for('sys_accounts.list_accounts') }}">&lt; 返回列表</a></p>
 
@@ -17,7 +59,7 @@
 {% endif %}
 {% endwith %}
 
-<form method="POST">
+<form method="POST" x-data="passwordForm()" x-init="init()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table border="0" cellpadding="8" cellspacing="0">
         <tr>
@@ -44,16 +86,35 @@
             </td>
         </tr>
         <tr>
-            <td><label for="password">密碼 *</label></td>
+            <td style="vertical-align: top;"><label for="password">密碼 *</label></td>
             <td>
-                <input type="password" id="password" name="password" size="30" required minlength="12">
-                <br><small>至少 12 碼</small>
+                <div class="password-field">
+                    <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
+                           x-model="password" @input="validatePassword()"
+                           required minlength="8">
+                    <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
+                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                    <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
+                </div>
+                <small x-text="passwordRequirements"></small>
+                <div class="password-errors" x-show="passwordErrors.length > 0">
+                    <template x-for="err in passwordErrors" :key="err">
+                        <div x-text="'• ' + err"></div>
+                    </template>
+                </div>
+                <div class="password-ok" x-show="password && passwordErrors.length === 0 && passwordChecked">
+                    密碼符合要求
+                </div>
             </td>
         </tr>
         <tr>
             <td><label for="confirm_password">確認密碼 *</label></td>
             <td>
-                <input type="password" id="confirm_password" name="confirm_password" size="30" required minlength="12">
+                <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
+                       x-model="confirmPassword" required minlength="8">
+                <div x-show="confirmPassword && password !== confirmPassword" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
+                    密碼不一致
+                </div>
             </td>
         </tr>
         <tr>
@@ -65,4 +126,103 @@
         </tr>
     </table>
 </form>
+
+<script>
+function passwordForm() {
+    return {
+        password: '',
+        confirmPassword: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        async init() {
+            await this.loadPasswordRequirements();
+            await this.generatePassword();
+        },
+
+        async loadPasswordRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、');
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.confirmPassword = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        }
+    };
+}
+</script>
 {% endblock %}
