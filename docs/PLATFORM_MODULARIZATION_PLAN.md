@@ -316,7 +316,10 @@ systemctl restart beakplatform
   - `migrations/002_add_subflow_columns.sql` - 子流程欄位
 - [x] 建立節點處理器測試
   - `tests/test_workflow_engine.py` - 10 個測試案例
-- [ ] 移轉前端模板
+- [x] 建立基礎前端模板
+  - `templates/modules/form_workflow/dashboard.html` - 模組儀表板
+  - `web/__init__.py` - 11 個 Web 路由 (部分為 TODO)
+- [ ] 移轉完整前端模板（表單設計器、流程監控等）
 - [ ] 完整整合測試
 
 **下一步**: 移轉前端模板或完整測試工作流引擎
