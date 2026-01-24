@@ -298,13 +298,25 @@ systemctl restart beakplatform
   - FwApprovalRecord - 簽核記錄
   - FwNodeExecutionQueue - 節點執行隊列
 - [x] 建立基礎 API Blueprint
-- [ ] 移轉工作流引擎 (WorkflowEngine)
-- [ ] 移轉節點處理器 (NodeHandlers)
+- [x] 移轉工作流引擎 (WorkflowEngine)
+  - `services/workflow_engine.py` - 核心引擎（start_workflow, advance_workflow, complete_workflow）
+  - `services/workflow_executor.py` - 背景執行器（輪詢和 subprocess 啟動）
+  - `services/node_runner.py` - CLI 入口點
+- [x] 移轉節點處理器 (NodeHandlers) - 基礎架構
+  - `services/node_handlers/base.py` - 處理器基類
+  - `services/node_handlers/factory.py` - 處理器工廠
+  - `services/node_handlers/start_handler.py` - 開始節點
+  - `services/node_handlers/end_handler.py` - 結束節點
+  - `services/node_handlers/delay_handler.py` - 延遲節點
+  - `services/node_handlers/approve_handler.py` - 簽核節點
+  - `services/node_handlers/branch_handler.py` - 條件分支
+  - `services/node_handlers/converge_handler.py` - 匯聚節點
 - [ ] 建立資料庫遷移腳本
+- [ ] 移轉剩餘節點處理器（Subflow, Switch, Telegram 等）
 - [ ] 移轉前端模板
 - [ ] 完整測試
 
-**下一步**: 移轉工作流引擎核心
+**下一步**: 建立資料庫遷移腳本
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
@@ -376,4 +388,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-24*
+*最後更新: 2026-01-24 (工作流引擎移轉完成)*
