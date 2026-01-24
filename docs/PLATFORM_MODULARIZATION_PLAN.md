@@ -311,12 +311,14 @@ systemctl restart beakplatform
   - `services/node_handlers/approve_handler.py` - 簽核節點
   - `services/node_handlers/branch_handler.py` - 條件分支
   - `services/node_handlers/converge_handler.py` - 匯聚節點
-- [ ] 建立資料庫遷移腳本
+- [x] 建立資料庫遷移腳本
+  - `migrations/001_create_tables.sql` - 建立 7 個資料表
+  - `migrations/001_drop_tables.sql` - 回滾腳本
 - [ ] 移轉剩餘節點處理器（Subflow, Switch, Telegram 等）
 - [ ] 移轉前端模板
 - [ ] 完整測試
 
-**下一步**: 建立資料庫遷移腳本
+**下一步**: 移轉剩餘節點處理器或移轉前端模板
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
