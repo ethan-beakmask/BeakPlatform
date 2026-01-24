@@ -226,7 +226,7 @@ systemctl restart beakplatform
 
 ---
 
-### Step 4: 模擬用戶環境驗證
+### Step 4: 模擬用戶環境驗證 ✅
 **目標**: 在乾淨環境驗證平台+模組的安裝流程
 
 **已完成**:
@@ -234,13 +234,22 @@ systemctl restart beakplatform
 - [x] 建立自動化安裝腳本 (`scripts/install.sh`)
 - [x] 建立驗證腳本 (`scripts/verify_install.sh`)
 - [x] 建立環境變數範例 (`.env.example`)
-- [ ] 在新 Ubuntu VM 執行安裝測試
+- [x] 建立選單初始化腳本 (`scripts/init_menus.py`)
+- [x] 在新 Ubuntu VM 執行安裝測試 (192.168.0.13)
 
 **產出**:
 - `docs/INSTALL.md` - 完整安裝指南
 - `scripts/install.sh` - 自動化安裝腳本
+- `scripts/init_database.sh` - 資料庫初始化腳本
+- `scripts/init_menus.py` - 選單初始化腳本
 - `scripts/verify_install.sh` - 安裝驗證腳本
 - `.env.example` - 環境變數範例
+
+**修正的問題**:
+- 模組同步順序問題（新增 `SKIP_MODULE_SYNC` 環境變數）
+- Session 目錄權限問題（安裝時自動清除）
+- 表單流程路由修正（`/forms/my/` → `/forms/instances`）
+- 密碼雜湊格式（使用 bcrypt 而非 werkzeug）
 
 ---
 
@@ -261,7 +270,7 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 4 進行中 - 安裝文件已建立，等待用戶測試
+**目前階段**: Step 4 完成 ✅ - 安裝測試通過
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -406,4 +415,11 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-24 (Step 4 安裝文件建立完成)*
+**Step 4 完成** (2026-01-25):
+- 安裝腳本已在新 Ubuntu VM (192.168.0.13) 測試通過
+- 平台核心功能正常運作
+- 表單流程模組已整合
+
+---
+
+*最後更新: 2026-01-25 (Step 4 安裝測試完成)*
