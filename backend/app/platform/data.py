@@ -349,3 +349,50 @@ def _build_department_tree(departments: list) -> List[Dict[str, Any]]:
             roots.append(d)
 
     return roots
+
+
+# ==================== Menu Functions ====================
+
+def get_module_menu_tree(module_name: str) -> List[Dict[str, Any]]:
+    """
+    取得模組的選單樹
+
+    Args:
+        module_name: 模組名稱
+
+    Returns:
+        選單樹結構
+    """
+    from ..services.module_menu_service import ModuleMenuService
+
+    menus = ModuleMenuService.get_module_menus(module_name)
+
+    # 建構樹狀結構
+    return _build_menu_tree(menus)
+
+
+def _build_menu_tree(menus: list) -> List[Dict[str, Any]]:
+    """將選單列表建構為樹狀結構"""
+    menu_dict = {}
+
+    # 先建立所有選單的字典
+    for m in menus:
+        menu_dict[m.secure_code] = {
+            'code': m.code,
+            'title': m.title,
+            'icon': m.icon,
+            'url': m.link_target,
+            'is_active': m.is_active,
+            'children': []
+        }
+
+    # 建構父子關係
+    roots = []
+    for m in menus:
+        node = menu_dict[m.secure_code]
+        if m.parent_secure_code and m.parent_secure_code in menu_dict:
+            menu_dict[m.parent_secure_code]['children'].append(node)
+        else:
+            roots.append(node)
+
+    return roots

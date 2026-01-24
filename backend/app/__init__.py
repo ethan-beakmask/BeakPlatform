@@ -70,6 +70,10 @@ def create_app(config_name: str = None) -> Flask:
     from .module_loader import init_module_loader
     init_module_loader(app)
 
+    # Register CLI commands
+    from .cli import register_cli
+    register_cli(app)
+
     # Health check endpoint (public)
     from .security.decorators import public_route
 

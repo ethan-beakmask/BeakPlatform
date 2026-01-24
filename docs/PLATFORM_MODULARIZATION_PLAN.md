@@ -260,7 +260,7 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 2 進行中
+**目前階段**: Step 2 已完成，準備進入 Step 3
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -271,23 +271,66 @@ systemctl restart beakplatform
 - 驗證平台可獨立運行
 - Git tag: v0.1.0
 
-**Step 2 進行中** (2026-01-24):
+**Step 2 已完成** (2026-01-24):
 - [x] 2.1 模組目錄結構 - 建立 `modules/` 目錄
 - [x] 2.2 模組元資料 - MODULE_INFO 規範和讀取機制
 - [x] 2.3 認證接口 - `app/platform/auth.py`
 - [x] 2.4 資料接口 - `app/platform/data.py`
 - [x] 2.7 路由掛載 - 自動註冊 Blueprint (ModuleLoader)
 - [x] 範例模組 - `modules/sample_module/` 驗證機制
-- [ ] 2.5 權限接口 - 權限定義註冊到平台
-- [ ] 2.6 選單整合 - 動態載入模組選單
-- [ ] 2.9 安裝流程 - `manage.py module` 命令
+- [x] 2.5 權限接口 - `ModulePermissionService` 權限註冊機制
+- [x] 2.6 選單整合 - `ModuleMenuService` 選單註冊機制
+- [x] 2.9 安裝流程 - Flask CLI `flask module` 命令
 
 **服務配置**:
 - 主服務: http://192.168.0.16:7000 (Nginx port 80)
 - DevTools: http://192.168.0.16:7001
 - 資料庫: beakplatform_dev
 
-**下一步**: 完成 Step 2 剩餘項目（權限註冊、選單整合）
+**下一步**: 進入 Step 3 - 依模組化標準移轉表單流程系統
+
+**2.5 權限接口實作細節**:
+- `ModulePermissionService` (`app/services/module_permission_service.py`)
+  - 將模組 `MODULE_INFO['permissions']` 同步到 Permission 資料表
+  - 支援新增、更新、停用模組權限
+  - 在模組載入時自動執行
+- 模組可用的權限接口 (`app/platform/auth.py`):
+  - `get_module_permissions(module_name)` - 取得模組權限列表
+  - `get_user_roles(user)` - 取得用戶角色
+  - `require_permission(code)` - 權限裝飾器
+  - `has_permission(code)` - 權限檢查函數
+
+**2.6 選單整合實作細節**:
+- `ModuleMenuService` (`app/services/module_menu_service.py`)
+  - 將模組 `MODULE_INFO['menu_items']` 同步到 MenuItem 資料表
+  - 支援巢狀選單結構（遞迴處理 children）
+  - 自動設定 MenuPermission（預設所有用戶類型可見）
+  - 模組選單歸屬於 `system.local` 組織
+  - 在模組載入時自動執行
+- 選單定義格式:
+  ```python
+  'menu_items': [{
+      'code': 'module_name',
+      'name': '模組名稱',
+      'icon': 'box',
+      'sort_order': 900,
+      'children': [
+          {'code': 'module_name.feature', 'name': '功能', 'url': '/path/'}
+      ]
+  }]
+  ```
+
+**2.9 安裝流程實作細節**:
+- Flask CLI 命令 (`app/cli.py`):
+  ```bash
+  flask module list           # 列出所有模組
+  flask module info <name>    # 顯示模組詳細資訊
+  flask module sync           # 同步權限和選單到資料庫
+  flask module status         # 顯示模組系統狀態
+  flask module register       # 掃描並註冊新模組
+  flask module enable <name>  # 啟用模組
+  flask module disable <name> # 停用模組
+  ```
 
 ---
 
@@ -316,4 +359,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-23*
+*最後更新: 2026-01-24*

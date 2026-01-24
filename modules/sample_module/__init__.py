@@ -33,8 +33,20 @@ MODULE_INFO = {
     ],
 
     # 模組權限定義
+    # 權限代碼格式：{module_name}.{action} 或 {module_name}.{resource}.{action}
+    # 權限層級：SYSTEM（系統級）, ORG（企業級）, MODULE（模組級，預設）
     'permissions': [
-        {'code': 'sample_module.view', 'name': '檢視範例模組'},
-        {'code': 'sample_module.manage', 'name': '管理範例模組'},
+        {
+            'code': 'sample_module.view',
+            'name': '檢視範例模組',
+            'description': '允許檢視範例模組的內容',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'sample_module.manage',
+            'name': '管理範例模組',
+            'description': '允許管理範例模組的設定和內容',
+            'level': 'MODULE',
+        },
     ],
 }

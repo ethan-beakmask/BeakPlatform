@@ -4,11 +4,21 @@ BeakPlatform - Authentication API for Modules
 
 提供模組存取當前用戶資訊和權限檢查的標準接口。
 模組不應自行實作認證，而應使用這些接口。
+
+使用方式：
+    from app.platform.auth import (
+        current_user,           # 當前登入用戶
+        get_user_permissions,   # 取得用戶權限
+        has_permission,         # 檢查權限
+        require_login,          # 裝飾器：需要登入
+        require_permission,     # 裝飾器：需要特定權限
+        get_module_permissions, # 取得模組定義的權限
+    )
 """
 from functools import wraps
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set, Any
 
-from flask import abort, g
+from flask import abort, g, current_app
 from flask_login import current_user as flask_current_user, login_required as flask_login_required
 
 
@@ -212,3 +222,186 @@ def require_org_admin(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
+
+# =============================================================================
+# 模組權限相關接口
+# =============================================================================
+
+def get_module_permissions(module_name: str) -> List[Dict[str, Any]]:
+    """
+    取得模組定義的權限列表
+
+    從資料庫取得已註冊的模組權限。
+
+    Args:
+        module_name: 模組名稱
+
+    Returns:
+        權限列表，每個權限為 dict:
+        [
+            {'code': 'sample_module.view', 'name': '檢視範例模組', 'is_active': True},
+            ...
+        ]
+    """
+    from ..models import Permission
+
+    permissions = Permission.query.filter(
+        Permission.code.like(f"{module_name}.%"),
+        Permission.is_deleted == False
+    ).all()
+
+    return [
+        {
+            'code': p.code,
+            'name': p.name,
+            'description': p.description,
+            'is_active': p.is_active,
+        }
+        for p in permissions
+    ]
+
+
+def get_user_roles(user=None) -> List[Dict[str, Any]]:
+    """
+    取得用戶的所有角色
+
+    Args:
+        user: 用戶物件，預設為當前登入用戶
+
+    Returns:
+        角色列表，每個角色為 dict:
+        [
+            {'code': 'admin', 'name': '管理員', 'secure_code': '...'},
+            ...
+        ]
+    """
+    if user is None:
+        user = current_user
+
+    if not user or not user.is_authenticated:
+        return []
+
+    from ..models import UserRoleAssignment, Role
+
+    role_assignments = UserRoleAssignment.query.filter_by(
+        user_secure_code=user.secure_code,
+        is_deleted=False
+    ).all()
+
+    roles = []
+    for ra in role_assignments:
+        role = Role.query.filter_by(
+            secure_code=ra.role_secure_code,
+            is_deleted=False
+        ).first()
+        if role:
+            roles.append({
+                'code': role.code,
+                'name': role.name,
+                'secure_code': role.secure_code,
+                'role_level': role.role_level,
+            })
+
+    return roles
+
+
+def check_permission_with_context(
+    permission_code: str,
+    resource: Any = None,
+    context: Dict[str, Any] = None,
+    user=None
+) -> Dict[str, Any]:
+    """
+    帶上下文的權限檢查（支援 ABAC 條件）
+
+    使用 PermissionService 進行完整的權限檢查，包括 ABAC 條件評估。
+
+    Args:
+        permission_code: 權限代碼
+        resource: 資源物件（用於 ABAC 條件評估）
+        context: 額外上下文（如時間、IP 等）
+        user: 用戶物件，預設為當前登入用戶
+
+    Returns:
+        {
+            'allowed': True/False,
+            'reason': '允許/拒絕原因',
+            'conditions_evaluated': [...],  # 評估的條件
+        }
+    """
+    if user is None:
+        user = current_user
+
+    if not user or not user.is_authenticated:
+        return {
+            'allowed': False,
+            'reason': 'User not authenticated',
+            'conditions_evaluated': []
+        }
+
+    from ..services import PermissionService
+
+    result = PermissionService.check(
+        user=user,
+        permission_code=permission_code,
+        resource=resource,
+        context=context
+    )
+
+    return {
+        'allowed': result.allowed,
+        'reason': result.reason if hasattr(result, 'reason') else None,
+        'conditions_evaluated': result.conditions if hasattr(result, 'conditions') else []
+    }
+
+
+def is_system_admin(user=None) -> bool:
+    """
+    檢查用戶是否為系統管理員
+
+    Args:
+        user: 用戶物件，預設為當前登入用戶
+
+    Returns:
+        是否為系統管理員
+    """
+    if user is None:
+        user = current_user
+
+    if not user or not user.is_authenticated:
+        return False
+
+    return user.is_system_admin
+
+
+def is_org_admin(user=None) -> bool:
+    """
+    檢查用戶是否為企業管理員
+
+    Args:
+        user: 用戶物件，預設為當前登入用戶
+
+    Returns:
+        是否為企業管理員
+    """
+    if user is None:
+        user = current_user
+
+    if not user or not user.is_authenticated:
+        return False
+
+    return user.is_org_admin
+
+
+def get_current_org_secure_code() -> Optional[str]:
+    """
+    取得當前用戶的企業 secure_code
+
+    Returns:
+        企業 secure_code，未登入時返回 None
+    """
+    if not current_user or not current_user.is_authenticated:
+        return None
+
+    return current_user.org_secure_code

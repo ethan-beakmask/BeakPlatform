@@ -408,6 +408,40 @@ def init_module_loader(app: Flask, modules_path: str = None):
         loaded = [name for name, success in results.items() if success]
         if loaded:
             logger.info(f"Loaded {len(loaded)} modules: {', '.join(loaded)}")
+
+            # 註冊模組權限和選單到資料庫（需要在 app context 中執行）
+            def sync_module_data():
+                # 同步權限
+                try:
+                    from .services.module_permission_service import ModulePermissionService
+                    perm_results = ModulePermissionService.sync_all_module_permissions(module_loader)
+                    for mod_name, result in perm_results.items():
+                        if 'error' not in result:
+                            logger.info(
+                                f"Module {mod_name} permissions: "
+                                f"{result.get('created', 0)} created, "
+                                f"{result.get('updated', 0)} updated"
+                            )
+                except Exception as e:
+                    logger.warning(f"Failed to register module permissions: {e}")
+
+                # 同步選單
+                try:
+                    from .services.module_menu_service import ModuleMenuService
+                    menu_results = ModuleMenuService.sync_all_module_menus(module_loader)
+                    for mod_name, result in menu_results.items():
+                        if 'error' not in result:
+                            logger.info(
+                                f"Module {mod_name} menus: "
+                                f"{result.get('created', 0)} created, "
+                                f"{result.get('updated', 0)} updated"
+                            )
+                except Exception as e:
+                    logger.warning(f"Failed to register module menus: {e}")
+
+            # 在 app context 中執行同步
+            with app.app_context():
+                sync_module_data()
     else:
         logger.info("No modules found")
 
