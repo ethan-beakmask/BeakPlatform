@@ -155,19 +155,69 @@ cd "$INSTALL_DIR/backend"
 source ../venv/bin/activate
 set -a && source ../.env && set +a
 
-# 執行平台資料庫遷移
-flask db upgrade 2>/dev/null || echo "DB upgrade 跳過或已完成"
+# 使用 Python 建立資料表
+echo "建立平台資料表..."
+python3 << 'PYEOF'
+from app import create_app, db
+app = create_app()
+with app.app_context():
+    db.create_all()
+    print("   資料表建立完成")
+PYEOF
 
-# 執行種子資料
-flask seed init 2>/dev/null || echo "Seed 跳過或已完成"
+# 建立初始資料
+echo "建立初始資料..."
+python3 << 'PYEOF'
+import bcrypt
+from app import create_app, db
+from app.models import Organization, User, UserType
+
+app = create_app()
+with app.app_context():
+    # 檢查是否已有 system.local
+    existing = Organization.query.filter_by(domain_name='system.local').first()
+    if existing:
+        print("   初始資料已存在，跳過")
+    else:
+        # 建立 system.local 企業
+        system_org = Organization(
+            secure_code='system.local',
+            code='SYSTEM',
+            name='system.local',
+            domain_name='system.local',
+            is_active=True
+        )
+        db.session.add(system_org)
+        db.session.flush()
+
+        # 使用 bcrypt 產生密碼 hash
+        password = 'admin123'.encode('utf-8')
+        salt = bcrypt.gensalt()
+        password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
+
+        # 建立系統管理員
+        admin = User(
+            org_secure_code='system.local',
+            username='admin',
+            email='admin@system.local',
+            display_name='系統管理員',
+            password_hash=password_hash,
+            user_type=UserType.SYSTEM_ADMIN,
+            is_active=True,
+            must_change_password=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("   初始資料建立完成")
+PYEOF
 
 # 執行模組資料庫遷移
 echo "執行 FormWorkflow 模組遷移..."
-PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/001_create_tables.sql 2>/dev/null || echo "表格已存在"
-PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/002_add_subflow_columns.sql 2>/dev/null || echo "欄位已存在"
+PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/001_create_tables.sql 2>/dev/null || echo "   表格已存在"
+PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/002_add_subflow_columns.sql 2>/dev/null || echo "   欄位已存在"
 
-# 同步模組
-flask module sync 2>/dev/null || echo "模組同步跳過"
+# 同步模組權限和選單
+flask module sync 2>/dev/null || echo "   模組同步跳過"
 
 echo -e "${GREEN}✓ 資料庫初始化完成${NC}"
 
