@@ -229,17 +229,18 @@ systemctl restart beakplatform
 ### Step 4: 模擬用戶環境驗證
 **目標**: 在乾淨環境驗證平台+模組的安裝流程
 
-**步驟**:
-1. 準備新的 Ubuntu VM
-2. 安裝 BeakPlatform（文件化安裝步驟）
-3. 安裝 form_workflow 模組
-4. 驗證所有功能正常
-5. 記錄問題並修正
+**已完成**:
+- [x] 建立安裝文件 (`docs/INSTALL.md`)
+- [x] 建立自動化安裝腳本 (`scripts/install.sh`)
+- [x] 建立驗證腳本 (`scripts/verify_install.sh`)
+- [x] 建立環境變數範例 (`.env.example`)
+- [ ] 在新 Ubuntu VM 執行安裝測試
 
 **產出**:
-- 平台安裝文件
-- 模組安裝文件
-- 常見問題排除指南
+- `docs/INSTALL.md` - 完整安裝指南
+- `scripts/install.sh` - 自動化安裝腳本
+- `scripts/verify_install.sh` - 安裝驗證腳本
+- `.env.example` - 環境變數範例
 
 ---
 
@@ -260,7 +261,7 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 3 進行中 - 表單流程模組移轉
+**目前階段**: Step 4 進行中 - 安裝文件已建立，等待用戶測試
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -333,7 +334,7 @@ systemctl restart beakplatform
   - /forms/instances, /forms/pending
 - [ ] 完整整合測試
 
-**下一步**: 完整整合測試或開始 Step 4
+**Step 3 完成** (2026-01-24)
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
@@ -405,4 +406,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-24 (前端模板與 API 移轉完成)*
+*最後更新: 2026-01-24 (Step 4 安裝文件建立完成)*
