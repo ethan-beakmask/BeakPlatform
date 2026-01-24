@@ -95,6 +95,8 @@ def register_builtin_handlers():
     - Delay: 延遲
     - Branch, Switch, Converge: 分支/匯合
     - Approve, FormAdapter: 簽核
+    - OpSet: 變數設定
+    - Notify, Telegram, Email: 通知
     """
     from .start_handler import StartHandler
     from .end_handler import EndHandler
@@ -102,6 +104,9 @@ def register_builtin_handlers():
     from .approve_handler import ApproveHandler
     from .branch_handler import BranchHandler
     from .converge_handler import ConvergeHandler
+    from .switch_handler import SwitchHandler
+    from .opset_handler import OpSetHandler
+    from .notify_handler import NotifyHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -116,7 +121,16 @@ def register_builtin_handlers():
 
     # 分支/匯合
     NodeHandlerFactory.register('Branch', BranchHandler)
+    NodeHandlerFactory.register('Switch', SwitchHandler)
     NodeHandlerFactory.register('Converge', ConvergeHandler)
+
+    # 變數設定
+    NodeHandlerFactory.register('OpSet', OpSetHandler)
+
+    # 通知
+    NodeHandlerFactory.register('Notify', NotifyHandler)
+    NodeHandlerFactory.register('Telegram', NotifyHandler)  # 用 Notify 處理
+    NodeHandlerFactory.register('Email', NotifyHandler)      # 用 Notify 處理
 
 
 # 自動執行註冊

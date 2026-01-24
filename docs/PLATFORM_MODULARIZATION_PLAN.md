@@ -302,19 +302,17 @@ systemctl restart beakplatform
   - `services/workflow_engine.py` - 核心引擎（start_workflow, advance_workflow, complete_workflow）
   - `services/workflow_executor.py` - 背景執行器（輪詢和 subprocess 啟動）
   - `services/node_runner.py` - CLI 入口點
-- [x] 移轉節點處理器 (NodeHandlers) - 基礎架構
-  - `services/node_handlers/base.py` - 處理器基類
-  - `services/node_handlers/factory.py` - 處理器工廠
-  - `services/node_handlers/start_handler.py` - 開始節點
-  - `services/node_handlers/end_handler.py` - 結束節點
-  - `services/node_handlers/delay_handler.py` - 延遲節點
-  - `services/node_handlers/approve_handler.py` - 簽核節點
-  - `services/node_handlers/branch_handler.py` - 條件分支
-  - `services/node_handlers/converge_handler.py` - 匯聚節點
+- [x] 移轉節點處理器 (NodeHandlers) - 12 種類型
+  - 流程控制: StartHandler, EndHandler
+  - 時間控制: DelayHandler
+  - 簽核: ApproveHandler (含 FormAdapter 別名)
+  - 分支匯合: BranchHandler, SwitchHandler, ConvergeHandler
+  - 變數操作: OpSetHandler
+  - 通知: NotifyHandler (含 Telegram, Email 別名)
 - [x] 建立資料庫遷移腳本
   - `migrations/001_create_tables.sql` - 建立 7 個資料表
   - `migrations/001_drop_tables.sql` - 回滾腳本
-- [ ] 移轉剩餘節點處理器（Subflow, Switch, Telegram 等）
+- [ ] 移轉剩餘節點處理器（Subflow 子流程）
 - [ ] 移轉前端模板
 - [ ] 完整測試
 
