@@ -155,9 +155,13 @@ cd "$INSTALL_DIR/backend"
 source ../venv/bin/activate
 set -a && source ../.env && set +a
 
-# 使用 Python 建立資料表
+# 清除舊的 session 目錄（避免權限問題）
+echo "清除 session 目錄..."
+rm -rf /tmp/beakmask_sessions 2>/dev/null || true
+
+# 使用 Python 建立資料表（跳過模組同步，因為 system.local 還沒建立）
 echo "建立平台資料表..."
-python3 << 'PYEOF'
+SKIP_MODULE_SYNC=1 python3 << 'PYEOF'
 from app import create_app, db
 app = create_app()
 with app.app_context():
@@ -165,9 +169,9 @@ with app.app_context():
     print("   資料表建立完成")
 PYEOF
 
-# 建立初始資料
+# 建立初始資料（跳過模組同步）
 echo "建立初始資料..."
-python3 << 'PYEOF'
+SKIP_MODULE_SYNC=1 python3 << 'PYEOF'
 import bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType

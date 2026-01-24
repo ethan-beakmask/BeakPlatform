@@ -439,9 +439,12 @@ def init_module_loader(app: Flask, modules_path: str = None):
                 except Exception as e:
                     logger.warning(f"Failed to register module menus: {e}")
 
-            # 在 app context 中執行同步
-            with app.app_context():
-                sync_module_data()
+            # 在 app context 中執行同步（可透過環境變數跳過）
+            if not os.environ.get('SKIP_MODULE_SYNC'):
+                with app.app_context():
+                    sync_module_data()
+            else:
+                logger.info("Skipping module sync (SKIP_MODULE_SYNC is set)")
     else:
         logger.info("No modules found")
 

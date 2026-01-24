@@ -36,13 +36,16 @@ sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 echo "4. 授權..."
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 
-echo "5. 執行 Flask 資料庫遷移..."
+echo "5. 清除 session 目錄..."
+rm -rf /tmp/beakmask_sessions 2>/dev/null || true
+
+echo "6. 執行 Flask 資料庫遷移..."
 cd /opt/BeakPlatform/backend
 source /opt/BeakPlatform/venv/bin/activate
 set -a && source ../.env && set +a
 
-# 使用 Flask-Migrate 或直接建立表
-python3 << 'EOF'
+# 使用 Flask-Migrate 或直接建立表（跳過模組同步）
+SKIP_MODULE_SYNC=1 python3 << 'EOF'
 from app import create_app, db
 app = create_app()
 with app.app_context():
@@ -50,8 +53,8 @@ with app.app_context():
     print("   資料表建立完成")
 EOF
 
-echo "6. 建立初始資料..."
-python3 << 'EOF'
+echo "7. 建立初始資料..."
+SKIP_MODULE_SYNC=1 python3 << 'EOF'
 import bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
@@ -93,7 +96,7 @@ with app.app_context():
     print("   - 管理員: admin@system.local / admin123")
 EOF
 
-echo "7. 初始化平台選單..."
+echo "8. 初始化平台選單..."
 python3 /opt/BeakPlatform/scripts/init_menus.py --force
 
 echo ""
