@@ -93,6 +93,9 @@ with app.app_context():
     print("   - 管理員: admin@system.local / admin123")
 EOF
 
+echo "7. 初始化平台選單..."
+python3 /opt/BeakPlatform/scripts/init_menus.py --force
+
 echo ""
 echo "=== 初始化完成 ==="
 echo ""

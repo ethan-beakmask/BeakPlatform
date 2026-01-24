@@ -219,6 +219,10 @@ PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form
 # 同步模組權限和選單
 flask module sync 2>/dev/null || echo "   模組同步跳過"
 
+# 初始化平台選單
+echo "初始化平台選單..."
+python3 ../scripts/init_menus.py --force 2>/dev/null || echo "   選單初始化跳過"
+
 echo -e "${GREEN}✓ 資料庫初始化完成${NC}"
 
 # 設定 Nginx
