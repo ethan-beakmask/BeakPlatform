@@ -1,0 +1,273 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}我的表單 - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+    [x-cloak] { display: none !important; }
+
+    .fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .fw-header h1 { margin: 0; font-size: 20px; }
+    .fw-toolbar { display: flex; gap: 12px; align-items: center; }
+    .fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
+    .fw-btn:hover { background: #e9e9e9; }
+    .fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
+
+    .fw-card { background: white; border: 1px solid #ddd; }
+    .fw-tabs { display: flex; border-bottom: 1px solid #ddd; }
+    .fw-tab { padding: 12px 20px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; }
+    .fw-tab:hover { background: #f9f9f9; }
+    .fw-tab.active { border-bottom-color: #0066cc; color: #0066cc; font-weight: 500; }
+
+    .fw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
+    .fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    .fw-table tr:hover { background: #fafafa; }
+    .fw-table .actions { text-align: center; white-space: nowrap; }
+    .fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
+
+    .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; display: inline-block; }
+    .fw-badge.draft { background: #e5e7eb; color: #374151; }
+    .fw-badge.pending { background: #fef3c7; color: #92400e; }
+    .fw-badge.running { background: #dbeafe; color: #1e40af; }
+    .fw-badge.completed { background: #dcfce7; color: #166534; }
+    .fw-badge.rejected { background: #fee2e2; color: #991b1b; }
+    .fw-badge.cancelled { background: #f3f4f6; color: #6b7280; }
+
+    .fw-empty { text-align: center; padding: 48px; color: #999; }
+    .fw-loading { text-align: center; padding: 48px; color: #666; }
+    .fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
+
+    .fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .fw-modal-content { background: white; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+    .fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .fw-modal-header h3 { margin: 0; font-size: 16px; }
+    .fw-modal-body { padding: 20px; }
+    .fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+
+    .fw-detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .fw-detail-label { width: 120px; color: #666; font-size: 13px; }
+    .fw-detail-value { flex: 1; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="instanceListManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div>
+            <h1>我的表單</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">查看您填寫和參與的表單</p>
+        </div>
+        <div class="fw-toolbar">
+            <select x-model="statusFilter" @change="loadInstances()" style="padding: 8px 12px; border: 1px solid #ddd;">
+                <option value="">全部狀態</option>
+                <option value="DRAFT">草稿</option>
+                <option value="PENDING">待處理</option>
+                <option value="RUNNING">處理中</option>
+                <option value="COMPLETED">已完成</option>
+                <option value="REJECTED">已駁回</option>
+                <option value="CANCELLED">已取消</option>
+            </select>
+            <button class="fw-btn" @click="loadInstances()">重新載入</button>
+        </div>
+    </div>
+
+    <!-- 標籤頁 -->
+    <div class="fw-card">
+        <div class="fw-tabs">
+            <div class="fw-tab" :class="{ active: tab === 'mine' }" @click="tab = 'mine'; loadInstances()">
+                我提交的
+            </div>
+            <div class="fw-tab" :class="{ active: tab === 'involved' }" @click="tab = 'involved'; loadInstances()">
+                我參與的
+            </div>
+        </div>
+
+        <div x-show="loading" class="fw-loading">載入中...</div>
+
+        <div x-show="!loading && instances.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">尚無表單記錄</p>
+        </div>
+
+        <table x-show="!loading && instances.length > 0" class="fw-table">
+            <thead>
+                <tr>
+                    <th style="width: 150px;">單號</th>
+                    <th style="width: 180px;">表單名稱</th>
+                    <th>當前節點</th>
+                    <th style="width: 100px;">狀態</th>
+                    <th style="width: 140px;">提交時間</th>
+                    <th style="width: 100px;" class="actions">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="i in instances" :key="i.secure_code">
+                    <tr>
+                        <td style="font-family: monospace;" x-text="i.serial_number || i.secure_code.substring(0, 8)"></td>
+                        <td style="font-weight: 500;" x-text="i.form_name || '-'"></td>
+                        <td style="color: #666;" x-text="i.current_node || '-'"></td>
+                        <td>
+                            <span class="fw-badge" :class="getStatusClass(i.status)"
+                                  x-text="getStatusText(i.status)"></span>
+                        </td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(i.created_at)"></td>
+                        <td class="actions">
+                            <button class="fw-btn" @click="viewDetail(i)">檢視</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+
+        <!-- 分頁 -->
+        <div x-show="!loading && pagination.pages > 1" class="fw-pagination">
+            <span style="font-size: 12px; color: #666;">
+                共 <strong x-text="pagination.total"></strong> 項
+            </span>
+            <div style="display: flex; gap: 4px;">
+                <button class="fw-btn" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
+                <button class="fw-btn" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳情 Modal -->
+    <div x-show="showDetailModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3>表單詳情</h3>
+                <button @click="showDetailModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">單號</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.serial_number || viewingInstance?.secure_code"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">表單名稱</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.form_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">狀態</div>
+                    <div class="fw-detail-value">
+                        <span class="fw-badge" :class="getStatusClass(viewingInstance?.status)"
+                              x-text="getStatusText(viewingInstance?.status)"></span>
+                    </div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">當前節點</div>
+                    <div class="fw-detail-value" x-text="viewingInstance?.current_node || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">提交時間</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingInstance?.created_at)"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">更新時間</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingInstance?.updated_at)"></div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">表單資料</h4>
+                    <pre style="background: #f5f5f5; padding: 12px; font-size: 12px; overflow: auto; max-height: 200px;"
+                         x-text="JSON.stringify(viewingInstance?.form_data || {}, null, 2)"></pre>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDetailModal = false">關閉</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function instanceListManager() {
+    return {
+        instances: [],
+        loading: true,
+        tab: 'mine',
+        statusFilter: '',
+        pagination: { page: 1, pages: 1, total: 0, has_prev: false, has_next: false },
+
+        showDetailModal: false,
+        viewingInstance: null,
+
+        async init() {
+            await this.loadInstances();
+        },
+
+        async loadInstances() {
+            this.loading = true;
+            try {
+                let url = `/api/form-workflow/instances?page=${this.pagination.page}&tab=${this.tab}`;
+                if (this.statusFilter) url += `&status=${this.statusFilter}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success) {
+                    this.instances = data.data.instances || [];
+                    this.pagination = data.data.pagination || this.pagination;
+                }
+            } catch (e) {
+                console.error('載入失敗:', e);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        goToPage(page) {
+            if (page < 1 || page > this.pagination.pages) return;
+            this.pagination.page = page;
+            this.loadInstances();
+        },
+
+        async viewDetail(i) {
+            try {
+                const res = await fetch(`/api/form-workflow/instances/${i.secure_code}`);
+                const data = await res.json();
+                if (data.success) {
+                    this.viewingInstance = data.data;
+                    this.showDetailModal = true;
+                }
+            } catch (e) {
+                console.error('載入詳情失敗:', e);
+            }
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+        },
+
+        getStatusText(status) {
+            const map = {
+                'DRAFT': '草稿',
+                'PENDING': '待處理',
+                'RUNNING': '處理中',
+                'COMPLETED': '已完成',
+                'REJECTED': '已駁回',
+                'CANCELLED': '已取消'
+            };
+            return map[status] || status || '-';
+        },
+
+        getStatusClass(status) {
+            const map = {
+                'DRAFT': 'draft',
+                'PENDING': 'pending',
+                'RUNNING': 'running',
+                'COMPLETED': 'completed',
+                'REJECTED': 'rejected',
+                'CANCELLED': 'cancelled'
+            };
+            return map[status] || 'draft';
+        }
+    };
+}
+</script>
+{% endblock %}

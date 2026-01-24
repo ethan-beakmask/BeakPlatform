@@ -1,0 +1,317 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}待簽核任務 - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+    [x-cloak] { display: none !important; }
+
+    .fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .fw-header h1 { margin: 0; font-size: 20px; }
+    .fw-header .count { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; margin-left: 12px; }
+    .fw-toolbar { display: flex; gap: 12px; align-items: center; }
+    .fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
+    .fw-btn:hover { background: #e9e9e9; }
+    .fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
+    .fw-btn.approve { background: #10b981; color: white; border-color: #10b981; }
+    .fw-btn.reject { background: #dc2626; color: white; border-color: #dc2626; }
+
+    .fw-card { background: white; border: 1px solid #ddd; }
+    .fw-empty { text-align: center; padding: 48px; color: #999; }
+    .fw-loading { text-align: center; padding: 48px; color: #666; }
+
+    .fw-task-list { list-style: none; padding: 0; margin: 0; }
+    .fw-task-item { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start; }
+    .fw-task-item:hover { background: #fafafa; }
+    .fw-task-item:last-child { border-bottom: none; }
+
+    .fw-task-info h3 { margin: 0 0 4px 0; font-size: 15px; font-weight: 500; }
+    .fw-task-meta { font-size: 12px; color: #666; display: flex; gap: 16px; margin-top: 8px; }
+    .fw-task-desc { font-size: 13px; color: #666; margin-top: 4px; }
+
+    .fw-task-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; background: #fef3c7; color: #92400e; }
+
+    .fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .fw-modal-content { background: white; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+    .fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .fw-modal-header h3 { margin: 0; font-size: 16px; }
+    .fw-modal-body { padding: 20px; }
+    .fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+
+    .fw-form-group { margin-bottom: 16px; }
+    .fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .fw-form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; min-height: 80px; resize: vertical; }
+
+    .fw-detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .fw-detail-label { width: 100px; color: #666; font-size: 13px; }
+    .fw-detail-value { flex: 1; font-size: 13px; }
+
+    .fw-path-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .fw-path-option { padding: 8px 16px; border: 2px solid #ddd; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+    .fw-path-option:hover { border-color: #0066cc; }
+    .fw-path-option.selected { border-color: #0066cc; background: #dbeafe; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fw-container" x-data="pendingListManager()">
+
+    <!-- 頁首 -->
+    <div class="fw-header">
+        <div style="display: flex; align-items: center;">
+            <h1>待簽核任務</h1>
+            <span x-show="tasks.length > 0" class="count" x-text="tasks.length"></span>
+        </div>
+        <div class="fw-toolbar">
+            <button class="fw-btn" @click="loadTasks()">重新載入</button>
+        </div>
+    </div>
+
+    <!-- 任務列表 -->
+    <div class="fw-card">
+        <div x-show="loading" class="fw-loading">載入中...</div>
+
+        <div x-show="!loading && tasks.length === 0" class="fw-empty">
+            <p style="font-size: 16px; margin-bottom: 8px;">目前沒有待簽核的任務</p>
+            <p>當有表單需要您簽核時，會顯示在這裡</p>
+        </div>
+
+        <ul x-show="!loading && tasks.length > 0" class="fw-task-list">
+            <template x-for="task in tasks" :key="task.queue_secure_code">
+                <li class="fw-task-item">
+                    <div class="fw-task-info">
+                        <h3 x-text="task.form_name || '表單簽核'"></h3>
+                        <div class="fw-task-desc">
+                            申請人：<strong x-text="task.applicant_name || '-'"></strong>
+                            <span style="margin: 0 8px;">|</span>
+                            節點：<span class="fw-badge" x-text="task.node_name || task.node_type"></span>
+                        </div>
+                        <div class="fw-task-meta">
+                            <span>單號：<span x-text="task.serial_number || '-'"></span></span>
+                            <span>提交：<span x-text="formatDate(task.submitted_at)"></span></span>
+                        </div>
+                    </div>
+                    <div class="fw-task-actions">
+                        <button class="fw-btn" @click="viewTask(task)">檢視</button>
+                        <button class="fw-btn approve" @click="openApproveModal(task)">簽核</button>
+                    </div>
+                </li>
+            </template>
+        </ul>
+    </div>
+
+    <!-- 簽核 Modal -->
+    <div x-show="showApproveModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header" style="background: #f59e0b; color: white;">
+                <h3>簽核表單</h3>
+                <button @click="closeApproveModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <!-- 基本資訊 -->
+                <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-weight: 500;" x-text="currentTask?.form_name"></div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                        申請人：<span x-text="currentTask?.applicant_name"></span>
+                        <span style="margin: 0 8px;">|</span>
+                        單號：<span x-text="currentTask?.serial_number"></span>
+                    </div>
+                </div>
+
+                <!-- 表單資料 -->
+                <div style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">表單內容</h4>
+                    <div x-show="!taskDetail" style="text-align: center; padding: 16px; color: #999;">載入中...</div>
+                    <div x-show="taskDetail" style="background: #f9f9f9; padding: 12px; max-height: 200px; overflow-y: auto;">
+                        <template x-for="(value, key) in (taskDetail?.form_data || {})" :key="key">
+                            <div class="fw-detail-row">
+                                <div class="fw-detail-label" x-text="key"></div>
+                                <div class="fw-detail-value" x-text="typeof value === 'object' ? JSON.stringify(value) : value"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 路徑選擇 -->
+                <div x-show="availablePaths.length > 0" style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">選擇路徑</h4>
+                    <div class="fw-path-options">
+                        <template x-for="path in availablePaths" :key="path.id">
+                            <div class="fw-path-option"
+                                 :class="{ selected: selectedPath === path.id }"
+                                 @click="selectedPath = path.id"
+                                 x-text="path.label || path.id"></div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核意見 -->
+                <div class="fw-form-group">
+                    <label>簽核意見（選填）</label>
+                    <textarea x-model="comment" placeholder="輸入簽核意見..."></textarea>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="closeApproveModal()">取消</button>
+                <button class="fw-btn approve" @click="submitApproval()" :disabled="submitting || (availablePaths.length > 0 && !selectedPath)">
+                    <span x-show="!submitting">確認簽核</span>
+                    <span x-show="submitting">處理中...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳情 Modal -->
+    <div x-show="showDetailModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content">
+            <div class="fw-modal-header">
+                <h3>任務詳情</h3>
+                <button @click="showDetailModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">表單名稱</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.form_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">單號</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.serial_number || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">申請人</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.applicant_name || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">節點</div>
+                    <div class="fw-detail-value" x-text="viewingTask?.node_name || viewingTask?.node_type || '-'"></div>
+                </div>
+                <div class="fw-detail-row">
+                    <div class="fw-detail-label">提交時間</div>
+                    <div class="fw-detail-value" x-text="formatDate(viewingTask?.submitted_at)"></div>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showDetailModal = false">關閉</button>
+                <button class="fw-btn approve" @click="showDetailModal = false; openApproveModal(viewingTask)">開始簽核</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function pendingListManager() {
+    return {
+        tasks: [],
+        loading: true,
+
+        showDetailModal: false,
+        viewingTask: null,
+
+        showApproveModal: false,
+        currentTask: null,
+        taskDetail: null,
+        availablePaths: [],
+        selectedPath: null,
+        comment: '',
+        submitting: false,
+
+        async init() {
+            await this.loadTasks();
+        },
+
+        async loadTasks() {
+            this.loading = true;
+            try {
+                const res = await fetch('/api/form-workflow/pending-tasks');
+                const data = await res.json();
+                if (data.success) {
+                    this.tasks = data.data.tasks || [];
+                }
+            } catch (e) {
+                console.error('載入失敗:', e);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        viewTask(task) {
+            this.viewingTask = task;
+            this.showDetailModal = true;
+        },
+
+        async openApproveModal(task) {
+            this.currentTask = task;
+            this.taskDetail = null;
+            this.availablePaths = [];
+            this.selectedPath = null;
+            this.comment = '';
+            this.showApproveModal = true;
+
+            // 載入任務詳情
+            try {
+                const res = await fetch(`/api/form-workflow/pending-tasks/${task.queue_secure_code}`);
+                const data = await res.json();
+                if (data.success) {
+                    this.taskDetail = data.data;
+                    this.availablePaths = data.data.available_paths || [];
+                    if (this.availablePaths.length === 1) {
+                        this.selectedPath = this.availablePaths[0].id;
+                    }
+                }
+            } catch (e) {
+                console.error('載入詳情失敗:', e);
+            }
+        },
+
+        closeApproveModal() {
+            this.showApproveModal = false;
+            this.currentTask = null;
+            this.taskDetail = null;
+        },
+
+        async submitApproval() {
+            if (this.submitting) return;
+            if (this.availablePaths.length > 0 && !this.selectedPath) {
+                alert('請選擇路徑');
+                return;
+            }
+
+            this.submitting = true;
+            try {
+                const res = await fetch(`/api/form-workflow/pending-tasks/${this.currentTask.queue_secure_code}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        selected_path: this.selectedPath,
+                        comment: this.comment
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('簽核完成');
+                    this.closeApproveModal();
+                    this.loadTasks();
+                } else {
+                    alert('簽核失敗: ' + (data.error || data.message));
+                }
+            } catch (e) {
+                alert('簽核失敗: ' + e.message);
+            } finally {
+                this.submitting = false;
+            }
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+        }
+    };
+}
+</script>
+{% endblock %}

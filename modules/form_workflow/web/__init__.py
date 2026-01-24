@@ -18,6 +18,10 @@ web_bp = Blueprint(
 )
 
 
+# =============================================================================
+# 主要頁面
+# =============================================================================
+
 @web_bp.route('/')
 @security_login_required
 def index():
@@ -33,88 +37,79 @@ def dashboard():
 
 
 # =============================================================================
-# 表單模板管理（TODO: 實作）
+# 表單模板管理
 # =============================================================================
 
 @web_bp.route('/templates')
 @security_login_required
 def templates():
     """表單模板列表"""
-    # TODO: 實作表單模板列表頁面
-    return redirect(url_for('form_workflow_web.index'))
+    return render_template('modules/form_workflow/template_list.html')
 
 
 @web_bp.route('/templates/new')
 @security_login_required
 def template_new():
-    """建立表單模板"""
-    # TODO: 實作表單模板建立頁面
-    return redirect(url_for('form_workflow_web.index'))
+    """建立表單模板（跳轉到列表頁，使用 Modal）"""
+    return redirect(url_for('form_workflow_web.templates'))
 
 
 @web_bp.route('/templates/<secure_code>')
 @security_login_required
 def template_detail(secure_code):
-    """表單模板詳情"""
-    # TODO: 實作表單模板詳情頁面
-    return redirect(url_for('form_workflow_web.index'))
+    """表單模板詳情（跳轉到列表頁）"""
+    return redirect(url_for('form_workflow_web.templates'))
 
 
 # =============================================================================
-# 工作流管理（TODO: 實作）
+# 工作流管理
 # =============================================================================
 
 @web_bp.route('/workflows')
 @security_login_required
 def workflows():
     """工作流列表"""
-    # TODO: 實作工作流列表頁面
-    return redirect(url_for('form_workflow_web.index'))
+    return render_template('modules/form_workflow/workflow_list.html')
 
 
 @web_bp.route('/workflows/new')
 @security_login_required
 def workflow_new():
-    """建立工作流"""
-    # TODO: 實作工作流建立頁面
-    return redirect(url_for('form_workflow_web.index'))
+    """建立工作流（跳轉到列表頁，使用 Modal）"""
+    return redirect(url_for('form_workflow_web.workflows'))
 
 
 @web_bp.route('/workflows/<secure_code>')
 @security_login_required
 def workflow_detail(secure_code):
-    """工作流詳情"""
-    # TODO: 實作工作流詳情頁面
-    return redirect(url_for('form_workflow_web.index'))
+    """工作流詳情（跳轉到列表頁）"""
+    return redirect(url_for('form_workflow_web.workflows'))
 
 
 # =============================================================================
-# 表單實例（TODO: 實作）
+# 表單實例
 # =============================================================================
 
 @web_bp.route('/instances')
 @security_login_required
 def instances():
     """我的表單列表"""
-    # TODO: 實作表單實例列表頁面
-    return redirect(url_for('form_workflow_web.index'))
+    return render_template('modules/form_workflow/instance_list.html')
 
 
 @web_bp.route('/instances/<secure_code>')
 @security_login_required
 def instance_detail(secure_code):
-    """表單實例詳情"""
-    # TODO: 實作表單實例詳情頁面
-    return redirect(url_for('form_workflow_web.index'))
+    """表單實例詳情（跳轉到列表頁）"""
+    return redirect(url_for('form_workflow_web.instances'))
 
 
 # =============================================================================
-# 待簽核任務（TODO: 實作）
+# 待簽核任務
 # =============================================================================
 
 @web_bp.route('/pending')
 @security_login_required
 def pending():
     """待簽核任務列表"""
-    # TODO: 實作待簽核任務頁面
-    return redirect(url_for('form_workflow_web.index'))
+    return render_template('modules/form_workflow/pending_list.html')
