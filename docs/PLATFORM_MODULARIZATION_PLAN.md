@@ -316,13 +316,24 @@ systemctl restart beakplatform
   - `migrations/002_add_subflow_columns.sql` - 子流程欄位
 - [x] 建立節點處理器測試
   - `tests/test_workflow_engine.py` - 10 個測試案例
-- [x] 建立基礎前端模板
+- [x] 建立前端模板 (5 個頁面)
   - `templates/modules/form_workflow/dashboard.html` - 模組儀表板
-  - `web/__init__.py` - 11 個 Web 路由 (部分為 TODO)
-- [ ] 移轉完整前端模板（表單設計器、流程監控等）
+  - `templates/modules/form_workflow/template_list.html` - 表單模板管理
+  - `templates/modules/form_workflow/workflow_list.html` - 流程模板管理
+  - `templates/modules/form_workflow/instance_list.html` - 表單實例列表
+  - `templates/modules/form_workflow/pending_list.html` - 待簽核任務
+- [x] 建立完整 API 端點 (19 個)
+  - CRUD: templates, workflows
+  - 查詢: instances, pending-tasks
+  - 操作: approve
+  - 統計: stats
+- [x] 建立 Web 路由 (11 個)
+  - /forms/, /forms/dashboard
+  - /forms/templates, /forms/workflows
+  - /forms/instances, /forms/pending
 - [ ] 完整整合測試
 
-**下一步**: 移轉前端模板或完整測試工作流引擎
+**下一步**: 完整整合測試或開始 Step 4
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
@@ -394,4 +405,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-24 (SubFlow 處理器與單元測試完成)*
+*最後更新: 2026-01-24 (前端模板與 API 移轉完成)*
