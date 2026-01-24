@@ -1,0 +1,291 @@
+/**
+ * Form.io Theme Customizations
+ * 自定義 Form.io 外觀樣式
+ */
+
+/* ===== Form Builder Area ===== */
+.formio-builder {
+    min-height: 500px;
+}
+
+.builder-component {
+    border-radius: 4px;
+}
+
+.builder-component:hover {
+    outline: 2px solid #3b82f6;
+}
+
+/* ===== Component Drag Handle ===== */
+.component-btn-group {
+    margin-top: 2px;
+}
+
+.formio-component-draghandle {
+    cursor: move;
+}
+
+/* ===== Form Display Area ===== */
+.formio-form {
+    padding: 10px;
+}
+
+.formio-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.formio-form label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.formio-form .form-control {
+    border-radius: 4px;
+    border-color: #d1d5db;
+}
+
+.formio-form .form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+/* ===== Required Field Indicator ===== */
+.formio-form .field-required:after {
+    content: ' *';
+    color: #ef4444;
+}
+
+/* ===== Error Messages ===== */
+.formio-form .formio-errors {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.formio-form .has-error .form-control {
+    border-color: #ef4444;
+}
+
+/* ===== Buttons ===== */
+.formio-form .btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.formio-form .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+/* ===== Panel Component ===== */
+.formio-component-panel {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.formio-component-panel > .card-header {
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+}
+
+.formio-component-panel > .card-body {
+    padding: 1rem;
+}
+
+/* ===== Table Component ===== */
+.formio-component-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.formio-component-table th,
+.formio-component-table td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem;
+}
+
+.formio-component-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+}
+
+/* ===== Signature Component ===== */
+.formio-component-signature .signature-pad-canvas {
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+/* ===== File Upload Component ===== */
+.formio-component-file .fileSelector {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.formio-component-file .fileSelector:hover {
+    border-color: #3b82f6;
+}
+
+/* ===== DataGrid Component ===== */
+.formio-component-datagrid table {
+    width: 100%;
+}
+
+.formio-component-datagrid .datagrid-table {
+    border: 1px solid #e5e7eb;
+}
+
+.formio-component-datagrid .datagrid-table th {
+    background-color: #f9fafb;
+}
+
+/* ===== Edit Grid Component ===== */
+.formio-component-editgrid .list-group-item {
+    border: 1px solid #e5e7eb;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+/* ===== Tabs Component ===== */
+.formio-component-tabs .nav-tabs {
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.formio-component-tabs .nav-link {
+    color: #6b7280;
+    border: none;
+    padding: 0.75rem 1rem;
+}
+
+.formio-component-tabs .nav-link.active {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+}
+
+.formio-component-tabs .tab-content {
+    padding: 1rem 0;
+}
+
+/* ===== Wizard Component ===== */
+.formio-wizard-nav-container {
+    margin-bottom: 1.5rem;
+}
+
+.formio-wizard-nav-container .pagination {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.formio-wizard-nav-container .page-item .page-link {
+    border-radius: 4px;
+}
+
+/* ===== Builder Sidebar ===== */
+.formbuilder .builder-sidebar {
+    background-color: #f9fafb;
+    border-right: 1px solid #e5e7eb;
+}
+
+.formbuilder .builder-sidebar .builder-group-button {
+    background-color: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.formbuilder .builder-sidebar .builder-group-button:hover {
+    background-color: #f3f4f6;
+}
+
+/* ===== Component Settings Modal ===== */
+.formio-dialog {
+    z-index: 1050;
+}
+
+.formio-dialog-content {
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Tooltip ===== */
+.formio-component .fa-question-circle {
+    color: #9ca3af;
+    cursor: help;
+}
+
+/* ===== Disabled State ===== */
+.formio-form .form-control:disabled,
+.formio-form .form-control[readonly] {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
+/* ===== Select Component ===== */
+.formio-component-select .choices__inner {
+    border-radius: 4px;
+    border-color: #d1d5db;
+    min-height: 38px;
+}
+
+.formio-component-select .choices__list--dropdown {
+    border-radius: 0 0 4px 4px;
+}
+
+/* ===== DateTime Component ===== */
+.formio-component-datetime .flatpickr-calendar {
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Survey Component ===== */
+.formio-component-survey table {
+    width: 100%;
+}
+
+.formio-component-survey th,
+.formio-component-survey td {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+/* ===== Address Component ===== */
+.formio-component-address .address-autocomplete-container {
+    position: relative;
+}
+
+/* ===== Hidden Components in Builder ===== */
+.formbuilder .formio-component-hidden {
+    border: 1px dashed #d1d5db;
+    padding: 0.5rem;
+    background-color: #f9fafb;
+}
+
+/* ===== Empty Drop Zone ===== */
+.formio-builder-form .drag-and-drop-alert {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* ===== Print Styles ===== */
+@media print {
+    .formio-builder .builder-sidebar,
+    .formio-builder .component-btn-group {
+        display: none !important;
+    }
+
+    .formio-form {
+        padding: 0;
+    }
+}

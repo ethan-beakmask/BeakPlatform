@@ -24,6 +24,13 @@ class DelayHandler(BaseNodeHandler):
         Returns:
             執行結果
         """
+        # 注意：延遲節點不呼叫 report_running()，因為可能被多次呼叫
+        # 只在第一次執行時記錄 started_at
+        if not self.queue_item.started_at:
+            self.queue_item.started_at = datetime.utcnow()
+            from app import db
+            db.session.commit()
+
         self.log_info('延遲節點啟動', {
             'node_id': self.queue_item.node_id
         })

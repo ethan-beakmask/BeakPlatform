@@ -52,6 +52,7 @@ class FwWorkflowTemplate(ModuleBaseModel):
     # 子流程相關
     is_subprocess = Column(Boolean, default=False, nullable=False, index=True)
     parent_workflow_secure_code = Column(String(32), nullable=True, index=True)
+    parent_workflow_id = Column(BigInteger, nullable=True, index=True)  # 父流程 ID（用於專屬子流程）
 
     def __repr__(self):
         return f'<FwWorkflowTemplate {self.code}: {self.name}>'

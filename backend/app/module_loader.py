@@ -269,6 +269,12 @@ class ModuleLoader:
                     module.api_blueprint = api_module.api_bp
                     self.app.register_blueprint(api_module.api_bp)
                     logger.debug(f"Registered API blueprint for {module.name}")
+
+                # 註冊額外的 Blueprint（用於相容性）
+                if hasattr(api_module, 'additional_blueprints'):
+                    for bp in api_module.additional_blueprints:
+                        self.app.register_blueprint(bp)
+                        logger.debug(f"Registered additional blueprint {bp.name} for {module.name}")
             except Exception as e:
                 logger.error(f"Failed to load API blueprint for {module.name}: {e}")
 

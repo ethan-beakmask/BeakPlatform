@@ -3,7 +3,7 @@ FormWorkflow Module - Form Instance Model
 表單實例（用戶填寫的表單）
 """
 from datetime import datetime
-from sqlalchemy import Column, String, Text, Boolean, DateTime
+from sqlalchemy import Column, BigInteger, String, Text, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
@@ -17,10 +17,21 @@ class FwFormInstance(ModuleBaseModel):
     """
     __tablename__ = 'fw_form_instances'
 
-    # 關聯的模板
+    # 關聯的模板（保留 ID 方便快速查詢）
+    form_template_id = Column(BigInteger, nullable=True, index=True)
     form_template_secure_code = Column(String(32), nullable=False, index=True)
+    workflow_template_id = Column(BigInteger, nullable=True, index=True)
     workflow_template_secure_code = Column(String(32), nullable=True, index=True)
     published_secure_code = Column(String(32), nullable=True, index=True)
+
+    # 流程實例關聯
+    workflow_instance_id = Column(BigInteger, nullable=True, index=True)
+    workflow_instance_secure_code = Column(String(32), nullable=True, index=True)
+
+    # 表單基本資訊（快照）
+    form_name = Column(String(200), nullable=True)
+    form_code = Column(String(100), nullable=True)
+    form_version = Column(String(10), nullable=True)
 
     # 測試標記
     is_test = Column(Boolean, default=False, nullable=False, index=True)
@@ -40,9 +51,10 @@ class FwFormInstance(ModuleBaseModel):
 
     # 表單內容
     form_data = Column(JSON, nullable=False)
+    schema_snapshot = Column(JSON, nullable=True)  # 表單 schema 快照
     builder_config = Column(JSON, nullable=True)
 
-    # 狀態：DRAFT, PENDING, APPROVED, REJECTED, CANCELLED
+    # 狀態：DRAFT, INITIAL, PENDING, APPROVED, REJECTED, CANCELLED
     status = Column(String(50), default='DRAFT', nullable=False, index=True)
     current_node_id = Column(String(100), nullable=True)
 
@@ -56,6 +68,7 @@ class FwFormInstance(ModuleBaseModel):
     # 狀態名稱對應
     STATUS_NAMES = {
         'DRAFT': '草稿',
+        'INITIAL': '初始化',
         'PENDING': '簽核中',
         'APPROVED': '已核准',
         'REJECTED': '已退回',
@@ -74,10 +87,17 @@ class FwFormInstance(ModuleBaseModel):
             'status_name': self.STATUS_NAMES.get(self.status, self.status),
             'form_template_secure_code': self.form_template_secure_code,
             'workflow_template_secure_code': self.workflow_template_secure_code,
+            'workflow_instance_secure_code': self.workflow_instance_secure_code,
+            'form_name': self.form_name,
+            'form_code': self.form_code,
+            'form_version': self.form_version,
             'applicant_name': self.applicant_name,
             'applicant_dept': self.applicant_dept,
+            'applicant_username': self.applicant_username,
+            'applicant_email': self.applicant_email,
             'is_test': self.is_test,
             'source_type': self.source_type,
+            'current_node_id': self.current_node_id,
         })
 
         if include_form_data:

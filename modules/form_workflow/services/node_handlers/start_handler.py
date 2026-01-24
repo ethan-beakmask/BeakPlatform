@@ -24,6 +24,8 @@ class StartHandler(BaseNodeHandler):
         Returns:
             執行結果
         """
+        self.report_running()
+
         self.log_info('開始節點啟動', {
             'workflow_instance': self.queue_item.workflow_instance_secure_code,
             'node_id': self.queue_item.node_id

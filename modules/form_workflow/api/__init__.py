@@ -690,3 +690,23 @@ def get_stats():
             'pending_instances': pending_count,
         }
     })
+
+
+# =============================================================================
+# 額外的 Blueprint（用於與 A6 前端相容）
+# =============================================================================
+
+# 導入 workflows API Blueprint
+from .workflows import workflows_bp
+
+# 導入 forms API Blueprint
+from .forms import forms_bp
+
+# 導入 mappings API Blueprint
+from .mappings import mappings_bp
+
+# 導入 form_center API Blueprint
+from .form_center import form_center_bp
+
+# 導出所有 Blueprint（供模組載入器使用）
+additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp]

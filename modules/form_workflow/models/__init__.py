@@ -11,6 +11,10 @@ from .form_instance import FwFormInstance
 from .workflow_instance import FwWorkflowInstance
 from .approval_record import FwApprovalRecord
 from .node_execution import FwNodeExecutionQueue
+from .workflow_variable import FwWorkflowVariable
+from .node_execution_log import FwNodeExecutionLog
+from .form_workflow_mapping import FwFormWorkflowMapping
+from .published_form_workflow import FwPublishedFormWorkflow
 
 __all__ = [
     'ModuleBaseModel',
@@ -20,4 +24,8 @@ __all__ = [
     'FwWorkflowInstance',
     'FwApprovalRecord',
     'FwNodeExecutionQueue',
+    'FwWorkflowVariable',
+    'FwNodeExecutionLog',
+    'FwFormWorkflowMapping',
+    'FwPublishedFormWorkflow',
 ]

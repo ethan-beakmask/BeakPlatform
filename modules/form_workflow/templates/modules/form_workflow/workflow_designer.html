@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>流程設計器 - BeakPlatform</title>
+    <!-- 使用平台 vendor 庫 -->
+    <script src="/static/vendor/cytoscape.min.js"></script>
+    <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
+    <!-- 模組專用樣式 -->
+    <link rel="stylesheet" href="/static/modules/form_workflow/css/themes.css">
+    <link rel="stylesheet" href="/static/modules/form_workflow/css/workflow-designer.css">
+</head>
+<body>
+    <!-- 導航欄 -->
+    <!-- 導航欄容器 (組件會自動載入) -->
+    <div id="navbarContainer"></div>
+
+    <!-- 工作區容器 -->
+    <div class="workflow-container">
+        <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-cube"></i> 流程元件</h2>
+        </div>
+
+        <!-- 節點分類可捲動區域 -->
+        <div class="node-categories-container">
+            <!-- 控制面板展開按鈕（固定於最前方） -->
+            <div style="padding: 8px 12px; margin-bottom: 10px;">
+                <button onclick="toggleControlPanel()" id="toggle-panel-btn-top" class="toggle-panel-btn" style="width: 100%; padding: 6px; font-size: 11px; background: #667eea; color: white; border: 1px solid #5568d3; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                    <i class="fas fa-chevron-up"></i> 展開控制面板
+                </button>
+            </div>
+
+            <!-- 全部打開/關閉按鈕 -->
+            <div style="padding: 8px 12px; display: flex; gap: 5px; margin-bottom: 10px;">
+                <button class="btn-primary" onclick="expandAllCategories()" style="flex: 1; font-size: 11px; padding: 6px;">
+                    <i class="fas fa-angles-down"></i> 全開
+                </button>
+                <button class="btn-secondary" onclick="collapseAllCategories()" style="flex: 1; font-size: 11px; padding: 6px;">
+                    <i class="fas fa-angles-up"></i> 全關
+                </button>
+            </div>
+
+            <!-- 基本節點 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('basic-nodes')">
+                    <span><i class="fas fa-circle-dot"></i> 基本節點</span>
+                    <span id="basic-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="basic-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node start" draggable="true" data-node-type="start">
+                            <div class="node-icon">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">開始</div>
+                                <div class="node-description">流程起點</div>
+                            </div>
+                        </div>
+                        <div class="palette-node end" draggable="true" data-node-type="end">
+                            <div class="node-icon">
+                                <i class="fas fa-stop"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">結束</div>
+                                <div class="node-description">流程終點</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 資料處理 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('data-nodes')">
+                    <span><i class="fas fa-database"></i> 資料處理</span>
+                    <span id="data-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="data-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node sql" draggable="true" data-node-type="SQLExecutor">
+                            <div class="node-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">SQL 查詢器</div>
+                                <div class="node-description">執行預定義的安全查詢</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表單簽核 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('form-approval-nodes')">
+                    <span><i class="fas fa-file-signature"></i> 表單簽核</span>
+                    <span id="form-approval-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="form-approval-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node form" draggable="true" data-node-type="form_creator">
+                            <div class="node-icon">
+                                <i class="fas fa-list-check"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">清單表單</div>
+                                <div class="node-description">收集使用者輸入資料</div>
+                            </div>
+                        </div>
+                        <div class="palette-node form" draggable="true" data-node-type="custom_form">
+                            <div class="node-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">客製表單</div>
+                                <div class="node-description">使用已設計的表單範本</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知元件 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('notification-nodes')">
+                    <span><i class="fas fa-bell"></i> 通知元件</span>
+                    <span id="notification-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="notification-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node telegram" draggable="true" data-node-type="TELEGRAM">
+                            <div class="node-icon">
+                                <i class="fab fa-telegram"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">Telegram 通知</div>
+                                <div class="node-description">發送 Telegram 訊息</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 流程控制 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('flow-control-nodes')">
+                    <span><i class="fas fa-route"></i> 流程控制</span>
+                    <span id="flow-control-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="flow-control-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node condition" draggable="true" data-node-type="condition">
+                            <div class="node-icon">
+                                <i class="fas fa-code-branch"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">條件分支</div>
+                                <div class="node-description">根據條件選擇路徑</div>
+                            </div>
+                        </div>
+                        <div class="palette-node parallel" draggable="true" data-node-type="parallel_fork">
+                            <div class="node-icon">
+                                <i class="fas fa-code-fork"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">並行分叉 (Fork)</div>
+                                <div class="node-description">同時執行多個分支</div>
+                            </div>
+                        </div>
+                        <div class="palette-node parallel" draggable="true" data-node-type="parallel_join">
+                            <div class="node-icon">
+                                <i class="fas fa-code-merge"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">並行匯合 (Join)</div>
+                                <div class="node-description">等待所有分支完成</div>
+                            </div>
+                        </div>
+
+                        <!-- 子流程節點 -->
+                        <div class="palette-node subprocess" draggable="true" data-node-type="subprocess">
+                            <div class="node-icon">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">子流程</div>
+                                <div class="node-description">呼叫其他工作流程</div>
+                            </div>
+                        </div>
+
+                        <!-- 匯聚節點（兩種模式：等待全部/任一完成） -->
+                        <div class="palette-node converge" draggable="true" data-node-type="CONVERGE">
+                            <div class="node-icon">
+                                <i class="fas fa-compress-arrows-alt"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">匯聚節點</div>
+                                <div class="node-description">等待多條路徑匯合</div>
+                            </div>
+                        </div>
+
+                        <!-- 延遲暫停節點 -->
+                        <div class="palette-node delay" draggable="true" data-node-type="DELAY">
+                            <div class="node-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">暫停</div>
+                                <div class="node-description">延遲等待指定秒數</div>
+                            </div>
+                        </div>
+
+                        <!-- 迴圈開始節點 -->
+                        <div class="palette-node loop" draggable="true" data-node-type="loop_start">
+                            <div class="node-icon">
+                                <i class="fas fa-redo"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">迴圈開始</div>
+                                <div class="node-description">For/While/ForEach</div>
+                            </div>
+                        </div>
+
+                        <!-- 迴圈結束節點 -->
+                        <div class="palette-node loop" draggable="true" data-node-type="loop_end">
+                            <div class="node-icon">
+                                <i class="fas fa-stop-circle"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">迴圈結束</div>
+                                <div class="node-description">檢查迴圈條件</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 測試節點 -->
+            <div class="node-category">
+                <div class="category-header" onclick="toggleCategory('test-nodes')">
+                    <span><i class="fas fa-flask"></i> 測試節點</span>
+                    <span id="test-nodes-icon" class="category-icon">▶</span>
+                </div>
+                <div id="test-nodes" class="category-content">
+                    <div class="node-palette">
+                        <div class="palette-node test" draggable="true" data-node-type="test_node_inside">
+                            <div class="node-icon">
+                                <i class="fas fa-square"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">測試-文字內部</div>
+                                <div class="node-description">文字顯示在節點內部</div>
+                            </div>
+                        </div>
+                        <div class="palette-node test" draggable="true" data-node-type="test_node_outside">
+                            <div class="node-icon">
+                                <i class="fas fa-square"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">測試-文字外部</div>
+                                <div class="node-description">文字顯示在節點下方</div>
+                            </div>
+                        </div>
+                        <div class="palette-node test" draggable="true" data-node-type="test_node_3colors">
+                            <div class="node-icon">
+                                <i class="fas fa-palette"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">測試-三色圖案</div>
+                                <div class="node-description">SVG 三色圓圈</div>
+                            </div>
+                        </div>
+                        <div class="palette-node test" draggable="true" data-node-type="test_node_image">
+                            <div class="node-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">測試-網路圖片</div>
+                                <div class="node-description">使用外部圖片</div>
+                            </div>
+                        </div>
+                        <div class="palette-node test" draggable="true" data-node-type="test_node_circle">
+                            <div class="node-icon">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">測試-圓形遮罩</div>
+                                <div class="node-description">圓形顯示網路圖片</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 鷹眼（縮略圖）- 固定在底部 -->
+        <div class="minimap-container">
+            <div class="minimap-header">
+                <div>
+                    <i class="fas fa-map"></i> 鷹眼
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="fitToView()" title="將所有節點置中顯示">
+                        <i class="fas fa-compress-arrows-alt"></i> 置中
+                    </button>
+                    <button onclick="toggleControlPanel()" id="toggle-panel-btn-temp" class="toggle-panel-btn" style="padding: 3px 8px; font-size: 10px; background: #667eea; color: white; border: 1px solid #5568d3; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                        <i class="fas fa-chevron-up"></i> 展開
+                    </button>
+                </div>
+            </div>
+            <div class="minimap-canvas-wrapper">
+                <canvas id="minimap-canvas"></canvas>
+                <div id="minimap-viewport"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="main">
+        <div class="header" id="workflow-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="btn-save-workflow" class="btn-success" onclick="saveWorkflow()" data-permission="workflow:create,workflow:update" style="display: none; padding: 3px 6px; font-size: 11px;">
+                    <i class="fas fa-save"></i> 儲存
+                </button>
+                <button id="btn-save-and-close" class="btn-success" onclick="saveAndClose()" data-permission="workflow:create,workflow:update" style="display: none; padding: 3px 6px; font-size: 11px;">
+                    <i class="fas fa-save"></i> 儲存並關閉
+                </button>
+                <button id="btn-discard" class="btn-danger" onclick="discardAndClose()" style="display: none; padding: 3px 6px; font-size: 11px;">
+                    <i class="fas fa-times"></i> 放棄
+                </button>
+                <div id="workflow-info" style="display: none; margin-left: 50px;">
+                    <input type="text" id="current-workflow-name" value="未開啟流程"
+                           style="font-size: 1.2rem; font-weight: bold; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white; min-width: 200px;"
+                           onblur="updateWorkflowInfo()"
+                           onkeypress="if(event.key==='Enter') this.blur()">
+                    <span style="margin-left: 10px; color: var(--text-tertiary); font-size: 0.9rem;" id="current-workflow-version"></span>
+                    <input type="text" id="current-workflow-description" placeholder="描述（選填）"
+                           style="margin-left: 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white; min-width: 300px; color: var(--text-secondary);"
+                           onblur="updateWorkflowInfo()"
+                           onkeypress="if(event.key==='Enter') this.blur()">
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-indicator" id="mode-indicator">
+            <i class="fas fa-hand-pointer"></i> Shift 模式：框選節點 / 連續畫線
+        </div>
+
+        <div id="cy"></div>
+
+        <!-- 流程選擇模式已移除：現在使用 URL 參數直接控制（?id=X 或 ?new=1），不需要對話框 -->
+
+        <!-- 畫布控制區 -->
+        <div class="canvas-control-area">
+            <!-- 頁籤導航 -->
+            <div style="display: flex; background: #f0f0f0; border-bottom: 2px solid #e0e0e0;">
+                <button onclick="switchTab('canvas')" id="tab-canvas" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-bottom: 3px solid #667eea; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    <i class="fas fa-tools"></i> 常用控制
+                </button>
+                <button onclick="switchTab('controls')" id="tab-controls" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    <i class="fas fa-sliders-h"></i> 控制項
+                </button>
+                <button onclick="switchTab('groups')" id="tab-groups" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    <i class="fas fa-image"></i> 底圖管理
+                </button>
+                <button onclick="switchTab('formfields')" id="tab-formfields" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    <i class="fas fa-list-alt"></i> 表單欄位
+                </button>
+            </div>
+
+            <!-- 控制面板容器 -->
+            <div class="control-panels-container" style="position: relative; min-height: 80px;">
+
+                <!-- Tab 1: 常用控制 -->
+                <div id="canvas-tab-content" style="display: flex; gap: 5px; flex-wrap: wrap; width: 100%; padding: 5px;">
+                    <!-- 系統訊息歷史記錄 -->
+                    <fieldset class="canvas-control-panel" style="min-width: 200px; flex: 1; max-width: 450px; display: flex; flex-direction: column; padding: 2px; margin: 0;">
+                        <legend style="font-size: 13px; font-weight: 500; padding: 0 4px; margin: 0;"><i class="fas fa-info-circle"></i> 系統訊息 <span id="alert-indicator" style="display: none; margin-left: 8px; padding: 2px 6px; font-size: 16px; border-radius: 3px; font-weight: bold;">⚠ 警告</span></legend>
+                        <div id="status-history" style="flex: 1; min-height: 200px; max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 6px; font-size: 11px; font-family: monospace; margin: 0;"></div>
+                    </fieldset>
+
+                    <!-- 畫布調整：縮放優先 -->
+                    <fieldset class="canvas-control-panel" style="min-width: 270px; max-width: 290px; margin: 0; padding: 4px 12px 8px 12px;">
+                        <legend style="font-size: 13px; font-weight: 600; padding: 0 8px; margin: 0 0 0 1em;"><i class="fas fa-palette"></i> 畫布調整</legend>
+
+                        <!-- 縮放控制（全寬，優先顯示） -->
+                        <div style="margin-top: 2px;">
+                            <label style="font-size: 11px; display: block; margin-bottom: 3px;">縮放 <span id="zoom-display" style="font-size: 9px; color: #999;">100%</span></label>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <button onclick="zoomTo(0.25)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="25%">25%</button>
+                                <button onclick="zoomTo(0.5)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="50%">50%</button>
+                                <button onclick="zoomTo(1)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="100%">100%</button>
+                                <button onclick="zoomTo(1.25)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="125%">125%</button>
+                                <button onclick="zoomTo(1.5)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="150%">150%</button>
+                                <button onclick="zoomTo(2)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="200%">200%</button>
+                            </div>
+                            <div style="display: flex; gap: 3px; margin-top: 5px;">
+                                <button onclick="zoomIn()" style="flex: 1; padding: 4px 8px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;" title="放大"><i class="fas fa-search-plus"></i> 放大</button>
+                                <button onclick="zoomOut()" style="flex: 1; padding: 4px 8px; background: #e67e22; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;" title="縮小"><i class="fas fa-search-minus"></i> 縮小</button>
+                                <button onclick="fitToView()" style="flex: 1; padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 14px;" title="自適應"><i class="fas fa-compress-arrows-alt"></i> 適應</button>
+                            </div>
+                        </div>
+
+                        <!-- 4格佈局：畫布顏色、自訂顏色、網格、節點邊框 -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; padding-top: 1px; border-top: 1px solid #e0e0e0;">
+                            <!-- 格子1：畫布顏色 -->
+                            <div>
+                                <label style="font-size: 11px; display: block; margin-bottom: 3px;">畫布顏色</label>
+                                <div style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;">
+                                    <button onclick="changeCanvasColor('#383838')" style="width: 20px; height: 20px; background: #383838; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0;" title="黑色"></button>
+                                    <button onclick="changeCanvasColor('#234413')" style="width: 20px; height: 20px; background: #234413; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0;" title="中灰"></button>
+                                    <button onclick="changeCanvasColor('#d6d6d6')" style="width: 20px; height: 20px; background: #d6d6d6; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0;" title="白色"></button>
+                                    <button onclick="changeCanvasColor('#1e3a5f')" style="width: 20px; height: 20px; background: #1e3a5f; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0;" title="藍晒圖"></button>
+                                </div>
+                            </div>
+
+                            <!-- 格子2：自訂顏色 -->
+                            <div>
+                                <label style="font-size: 11px; display: block; margin-bottom: 3px;">自訂顏色 <span id="canvas-color-display" style="font-size: 11px; color: #333; font-weight: 600;">#ffffff</span></label>
+                                <input type="color" id="canvas-color-picker" value="#ffffff" onchange="changeCanvasColorFromPicker()" style="width: 28px; height: 28px; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 0;" title="自訂顏色">
+                            </div>
+
+                            <!-- 格子3：網格 -->
+                            <div>
+                                <label style="font-size: 11px; display: block; margin-bottom: 3px;">網格</label>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="checkbox" id="grid-lines" onchange="toggleGridCheckbox()" style="width: auto; cursor: pointer; margin: 0;">
+                                        <label for="grid-lines" style="font-size: 14px; margin: 0; cursor: pointer; font-weight: 500;">線</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="checkbox" id="grid-dots" checked onchange="toggleGridCheckbox()" style="width: auto; cursor: pointer; margin: 0;">
+                                        <label for="grid-dots" style="font-size: 14px; margin: 0; cursor: pointer; font-weight: 500;">點</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 格子4：節點邊框 -->
+                            <div>
+                                <label style="font-size: 11px; display: block; margin-bottom: 3px;">節點邊框</label>
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" id="global-node-border" checked onchange="toggleGlobalNodeBorder()" style="width: auto; cursor: pointer; margin: 0;">
+                                    <label for="global-node-border" style="font-size: 10px; margin: 0; cursor: pointer;">顯示</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- 群組管理 -->
+                    <fieldset class="canvas-control-panel" style="min-width: 320px; max-width: 370px; margin: 0;">
+                        <legend style="font-size: 13px; font-weight: 600; padding: 0 8px; margin: 0 0 0 1em;"><i class="fas fa-object-group"></i> 群組管理</legend>
+
+                        <div style="display: flex; gap: 15px;">
+                            <!-- 左側：按鈕區 -->
+                            <div style="flex: 0 0 80px;">
+                                <button class="btn-primary" onclick="createGroup()" style="margin-bottom: 8px; width: 100%;">
+                                    <i class="fas fa-plus-circle"></i> 建立群組
+                                </button>
+
+                                <button class="btn-info" onclick="addToGroup()" style="margin-bottom: 8px; width: 100%;">
+                                    <i class="fas fa-arrow-down"></i> 加入群組
+                                </button>
+
+                                <button class="btn-danger" onclick="removeFromGroup()" style="margin-bottom: 8px; width: 100%;">
+                                    <i class="fas fa-arrow-up"></i> 移出群組
+                                </button>
+
+                                <button class="btn-danger" onclick="dissolveGroup()" style="width: 100%;">
+                                    <i class="fas fa-times-circle"></i> 解散群組
+                                </button>
+                            </div>
+
+                            <!-- 右側：群組資訊顯示區 -->
+                            <div style="flex: 1; border-left: 1px solid #ddd; padding-left: 15px;">
+                                <div style="font-size: 11px; color: #333;">
+                                    <div id="group-info-display" style="min-height: 100px;">
+                                        <div style="color: #999; font-style: italic;">
+                                            點擊群組可查看詳細資訊
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- 線段動畫效果 -->
+                    <fieldset class="canvas-control-panel" style="min-width: 200px; max-width: 220px; margin: 0;">
+                        <legend style="font-size: 13px; font-weight: 600; padding: 0 8px; margin: 0 0 0 1em;"><i class="fas fa-magic"></i> 線段動畫效果</legend>
+
+                        <div class="checkbox-control">
+                            <input type="checkbox" id="enable-flow-animation" onchange="toggleFlowAnimation()">
+                            <label for="enable-flow-animation">
+                                <i class="fas fa-water"></i> 流動動畫
+                            </label>
+                        </div>
+
+                        <div class="checkbox-control">
+                            <input type="checkbox" id="enable-pulse-animation" onchange="togglePulseAnimation()">
+                            <label for="enable-pulse-animation">
+                                <i class="fas fa-heartbeat"></i> 脈衝效果
+                            </label>
+                        </div>
+
+                        <div class="range-control">
+                            <label>
+                                動畫速度:
+                                <span class="range-value-display" id="animation-speed-value">1.0</span>x
+                            </label>
+                            <input type="range" id="animation-speed" min="0.5" max="3" step="0.1" value="1" oninput="updateAnimationSpeed()">
+                        </div>
+
+                        <button class="btn-danger" onclick="stopAllAnimations()">
+                            <i class="fas fa-stop"></i> 停止所有動畫
+                        </button>
+                    </fieldset>
+                </div>
+
+                <!-- Tab 2: 控制項 -->
+                <div id="controls-tab-content" style="display: none; gap: 10px; flex-wrap: wrap; width: 100%; padding: 5px;">
+                    <!-- 操作說明 -->
+                    <div class="canvas-control-panel">
+                        <h4><i class="fas fa-info-circle"></i> 快捷鍵說明</h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 12px; line-height: 1.8;">
+                            <li><strong>Shift 模式</strong>（節點操作）：</li>
+                            <ul style="padding-left: 15px; margin-top: 4px;">
+                                <li>圈選（空白處拖動）：只選節點</li>
+                                <li>連續點擊節點：連續畫線，放開 Shift 結束</li>
+                            </ul>
+                            <li style="margin-top: 8px;"><strong>Ctrl 模式</strong>（線條操作）：</li>
+                            <ul style="padding-left: 15px; margin-top: 4px;">
+                                <li>圈選（空白處拖動）：只選線條</li>
+                                <li>點擊線段：編輯多點折線</li>
+                            </ul>
+                            <li style="margin-top: 8px;"><strong>Alt 模式</strong>（群組操作）：</li>
+                            <ul style="padding-left: 15px; margin-top: 4px;">
+                                <li>拖拉節點/群組：脫離群組</li>
+                            </ul>
+                            <li style="margin-top: 8px;"><strong>Delete</strong>：刪除選中元素</li>
+                            <li><strong>Escape</strong>：取消當前操作</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tab 3: 底圖管理 -->
+                <div id="groups-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px;">
+                    <div class="canvas-control-panel" style="flex: 1; max-width: 100%;">
+                        <div style="display: flex; gap: 10px;">
+                            <!-- 左側控制區 -->
+                            <div style="min-width: 160px; max-width: 180px; display: flex; flex-direction: column; gap: 10px;">
+                                <!-- 上傳新底圖 -->
+                                <div>
+                                    <input type="file" id="background-upload-input" accept="image/*" style="display: none;" onchange="uploadNewBackground()">
+                                    <button onclick="document.getElementById('background-upload-input').click()" style="padding: 8px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%;">
+                                        <i class="fas fa-upload"></i> 上傳新底圖
+                                    </button>
+                                    <div id="upload-progress" style="display: none; margin-top: 5px; font-size: 10px; color: #666; text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> 上傳中...
+                                    </div>
+                                </div>
+
+                                <!-- 當前選擇 -->
+                                <div style="padding: 8px; background: #f5f5f5; border-radius: 4px;">
+                                    <div style="font-size: 9px; color: #999; margin-bottom: 3px; text-align: center;">當前底圖</div>
+                                    <input type="text" id="current-background-name" value="(無)" style="width: 100%; font-size: 11px; font-weight: bold; color: #333; background: white; border: 1px solid #ddd; border-radius: 3px; padding: 4px; text-align: center; margin-bottom: 6px;">
+                                    <button onclick="saveBackgroundDescription()" style="padding: 6px 10px; background: #27ae60; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px; width: 100%; margin-bottom: 4px;">
+                                        <i class="fas fa-save"></i> 儲存名稱
+                                    </button>
+                                    <button onclick="deleteCurrentBackground()" style="padding: 6px 10px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px; width: 100%;">
+                                        <i class="fas fa-trash"></i> 刪除底圖
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 右側縮圖牆 -->
+                            <div style="flex: 1; max-height: 500px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; background: #fafafa;">
+                                <div id="background-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+                                    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+                                        載入中...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: 表單欄位 -->
+                <div id="formfields-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px; max-height: 450px; overflow-y: auto;">
+                    <div class="canvas-control-panel" style="flex: 1; max-width: 100%;">
+                        <!-- 子分頁切換 -->
+                        <div style="display: flex; gap: 0; margin-bottom: 10px; border-bottom: 2px solid #e0e0e0;">
+                            <button onclick="switchFormFieldsSubTab('fieldlist')" id="subtab-fieldlist"
+                                style="padding: 6px 16px; background: #667eea; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; margin-right: 2px;">
+                                <i class="fas fa-list"></i> 欄位查詢
+                            </button>
+                            <button onclick="switchFormFieldsSubTab('varconfig')" id="subtab-varconfig"
+                                style="padding: 6px 16px; background: #e0e0e0; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px;">
+                                <i class="fas fa-cogs"></i> 變數配置
+                            </button>
+                        </div>
+
+                        <!-- 子分頁內容：欄位查詢 -->
+                        <div id="subtab-fieldlist-content" style="display: flex; gap: 10px; height: 100%;">
+                            <!-- 左側：表單選擇區 -->
+                            <div style="min-width: 200px; max-width: 250px; display: flex; flex-direction: column; gap: 10px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #333; padding-bottom: 5px; border-bottom: 1px solid #ddd;">
+                                    <i class="fas fa-file-alt"></i> 配對表單
+                                </div>
+
+                                <!-- 版本切換 -->
+                                <div style="display: flex; gap: 5px;">
+                                    <button id="btn-form-design" onclick="loadMappedForms('design')"
+                                        style="flex: 1; padding: 5px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        設計版
+                                    </button>
+                                    <button id="btn-form-published" onclick="loadMappedForms('published')"
+                                        style="flex: 1; padding: 5px 8px; background: #e0e0e0; color: #666; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        發行版
+                                    </button>
+                                </div>
+
+                                <!-- 表單列表 -->
+                                <div id="mapped-forms-list" style="flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa; min-height: 150px; max-height: 400px;">
+                                    <div style="text-align: center; padding: 20px; color: #999; font-size: 11px;">
+                                        <i class="fas fa-spinner fa-spin"></i> 載入中...
+                                    </div>
+                                </div>
+
+                                <!-- 表單數量統計 -->
+                                <div id="mapped-forms-count" style="font-size: 10px; color: #666; text-align: center;">
+                                    共 0 張表單
+                                </div>
+                            </div>
+
+                            <!-- 右側：欄位顯示區 -->
+                            <div style="flex: 1; display: flex; flex-direction: column; border-left: 1px solid #e0e0e0; padding-left: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 5px; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #333;">
+                                        <i class="fas fa-list"></i> 欄位清單
+                                        <span id="form-fields-title" style="font-weight: 400; color: #666;"></span>
+                                    </div>
+                                    <div style="display: flex; gap: 5px;">
+                                        <input type="text" id="field-search" placeholder="搜尋欄位..."
+                                            style="padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 3px; width: 150px;"
+                                            oninput="filterFormFields()">
+                                        <button onclick="copyFieldsTable()" title="複製表格"
+                                            style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 欄位表格 -->
+                                <div style="flex: 1; overflow: auto; max-height: 400px;">
+                                    <table id="form-fields-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                        <thead style="position: sticky; top: 0; background: #f0f0f0;">
+                                            <tr>
+                                                <th style="padding: 6px 8px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 50px;">
+                                                    <input type="checkbox" id="field-select-all" onchange="toggleAllFieldSelection()" title="全選/取消全選">
+                                                    取值
+                                                </th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">變數語法</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">欄位代碼</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">顯示名稱</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">類型</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">資料型別</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">必填</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">預設值/選項</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="form-fields-tbody">
+                                            <tr>
+                                                <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                                                    請先選擇表單
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- 欄位數量統計與狀態顯示 -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
+                                    <div id="form-fields-count" style="font-size: 10px; color: #666;">
+                                        共 0 個欄位
+                                    </div>
+                                    <div style="display: flex; gap: 5px; align-items: center;">
+                                        <span id="field-config-status" style="font-size: 10px; color: #999;"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 子分頁內容：變數配置 -->
+                        <div id="subtab-varconfig-content" style="display: none; gap: 15px;">
+                            <div style="display: flex; gap: 15px; height: 100%;">
+                                <!-- 左側：FieldRead 區塊 -->
+                                <div style="flex: 1; background: #f8fff8; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #28a745; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #c3e6cb;">
+                                        <i class="fas fa-download"></i> FieldRead - 批次讀取欄位到變數
+                                    </div>
+
+                                    <!-- 表單選擇 -->
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">選擇表單</label>
+                                        <select id="varconfig-read-form" onchange="onVarConfigFormChange('read')"
+                                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                            <option value="">-- 請選擇表單 --</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- 欄位多選清單 -->
+                                    <div style="margin-bottom: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                            <label style="font-size: 11px; color: #666;">選擇欄位</label>
+                                            <div style="display: flex; gap: 5px;">
+                                                <button onclick="varConfigSelectAll('read')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">全選</button>
+                                                <button onclick="varConfigDeselectAll('read')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">清除</button>
+                                            </div>
+                                        </div>
+                                        <div id="varconfig-read-fields" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                                            <div style="padding: 15px; text-align: center; color: #999; font-size: 11px;">
+                                                請先選擇表單
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 已選欄位預覽（含變數名稱與衝突檢測） -->
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                            已選欄位 <span id="varconfig-read-count" style="color: #28a745;">(0)</span>
+                                        </label>
+                                        <div id="varconfig-read-preview" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; font-size: 11px;">
+                                            <div style="padding: 10px; text-align: center; color: #999;">
+                                                尚未選擇欄位
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 套用按鈕 -->
+                                    <button onclick="applyVarConfigRead()" style="width: 100%; padding: 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-check"></i> 套用到 FieldRead 設定
+                                    </button>
+                                </div>
+
+                                <!-- 右側：FieldWrite 區塊 -->
+                                <div style="flex: 1; background: #fff8f0; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px;">
+                                    <div style="font-size: 13px; font-weight: 600; color: #dc3545; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f5c6cb;">
+                                        <i class="fas fa-upload"></i> FieldWrite - 批次寫入變數到欄位
+                                    </div>
+
+                                    <!-- 表單選擇 -->
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">選擇表單</label>
+                                        <select id="varconfig-write-form" onchange="onVarConfigFormChange('write')"
+                                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                            <option value="">-- 請選擇表單 --</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- 欄位多選清單 -->
+                                    <div style="margin-bottom: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                            <label style="font-size: 11px; color: #666;">選擇目標欄位</label>
+                                            <div style="display: flex; gap: 5px;">
+                                                <button onclick="varConfigSelectAll('write')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">全選</button>
+                                                <button onclick="varConfigDeselectAll('write')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">清除</button>
+                                            </div>
+                                        </div>
+                                        <div id="varconfig-write-fields" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                                            <div style="padding: 15px; text-align: center; color: #999; font-size: 11px;">
+                                                請先選擇表單
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 已選欄位預覽（含變數名稱） -->
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                            已選欄位 <span id="varconfig-write-count" style="color: #dc3545;">(0)</span>
+                                        </label>
+                                        <div id="varconfig-write-preview" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; font-size: 11px;">
+                                            <div style="padding: 10px; text-align: center; color: #999;">
+                                                尚未選擇欄位
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 複製變數語法按鈕 -->
+                                    <button onclick="copyVarConfigWriteSyntax()" style="width: 100%; padding: 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-copy"></i> 複製變數語法到剪貼簿
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 說明區塊 -->
+                            <div style="background: #e8f4fd; border: 1px solid #bee5eb; border-radius: 6px; padding: 10px; margin-top: 10px;">
+                                <div style="font-size: 11px; color: #0c5460;">
+                                    <i class="fas fa-info-circle"></i> <strong>使用說明：</strong>
+                                    <ul style="margin: 5px 0 0 15px; padding: 0;">
+                                        <li><strong>FieldRead：</strong>選擇欄位後按「套用」，會自動配置到流程的 FieldRead 設定，變數名稱格式為 <code>formCode_fieldKey</code></li>
+                                        <li><strong>FieldWrite：</strong>選擇欄位後按「複製」，可將 <code>${formCode_fieldKey}</code> 語法複製到剪貼簿，貼入 FieldWrite 的內容欄位</li>
+                                        <li><span style="color: #dc3545;">●</span> 紅燈表示變數名稱已存在於目前流程設定中，新設定會覆蓋舊值</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <h3 style="margin-top: 0; color: #667eea;">
+            <i class="fas fa-cog"></i> 設定面板
+        </h3>
+
+        <!-- 節點設定 -->
+        <div id="nodeSettings">
+            <p style="color: #333; text-align: center; padding: 20px; font-size: 11px;">請點擊節點查看設定</p>
+        </div>
+
+        <!-- 多點折線編輯面板 -->
+        <div class="edge-editing-panel" id="edge-editing-panel" style="display: none;">
+            <h4><i class="fas fa-project-diagram"></i> 線段編輯</h4>
+
+            <label>新增中繼點數量:</label>
+            <input type="number" id="relay-count" min="1" max="10" value="1">
+            <button class="btn-primary" onclick="addRelayPoints()">
+                <i class="fas fa-plus"></i> 新增中繼點
+            </button>
+
+            <label style="margin-top: 15px;">現有中繼點:</label>
+            <div class="relay-points-list" id="relay-points-list">
+                <div style="color: #999; text-align: center; padding: 10px;">無中繼點</div>
+            </div>
+
+            <button class="btn-danger" onclick="removeAllRelayPoints()">
+                <i class="fas fa-trash"></i> 清除所有中繼點
+            </button>
+        </div>
+
+        <!-- 直角折線座標控制面板 -->
+        <div class="edge-editing-panel" id="taxi-coord-panel" style="display: none; background: #e3f2fd; border-left-color: #2196F3;">
+            <h4><i class="fas fa-arrows-alt"></i> 直角折線座標調整</h4>
+
+            <div class="info-box" style="background: #fff; margin: 10px 0;">
+                <strong>說明：</strong>
+                <p style="margin: 5px 0; font-size: 11px;">調整中間段的座標來改變直角折線的形狀</p>
+            </div>
+
+            <div id="taxi-coord-info" style="background: white; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                    <strong>線段類型：</strong><span id="taxi-segment-type">-</span>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    <strong>目前座標：</strong><span id="taxi-current-coord">-</span>
+                </div>
+            </div>
+
+            <label>調整座標值：</label>
+            <div style="display: flex; gap: 5px; margin: 10px 0;">
+                <button class="btn-primary btn-small" onclick="adjustTaxiCoord(-10)" style="flex: 1;">
+                    <i class="fas fa-minus"></i> -10
+                </button>
+                <button class="btn-primary btn-small" onclick="adjustTaxiCoord(-1)" style="flex: 1;">
+                    -1
+                </button>
+                <button class="btn-primary btn-small" onclick="adjustTaxiCoord(1)" style="flex: 1;">
+                    +1
+                </button>
+                <button class="btn-primary btn-small" onclick="adjustTaxiCoord(10)" style="flex: 1;">
+                    <i class="fas fa-plus"></i> +10
+                </button>
+            </div>
+
+            <label>精確輸入：</label>
+            <input type="number" id="taxi-coord-input" style="width: 100%; margin-bottom: 10px;">
+            <button class="btn-primary" onclick="setTaxiCoord()">
+                <i class="fas fa-check"></i> 套用座標
+            </button>
+
+            <button class="btn-danger" onclick="closeTaxiCoordPanel()" style="margin-top: 15px;">
+                <i class="fas fa-times"></i> 關閉
+            </button>
+        </div>
+
+        <!-- 線段屬性控制面板 -->
+        <div class="edge-control-panel" id="edge-control-panel" style="display: none;">
+            <h4><i class="fas fa-bezier-curve"></i> 線段屬性控制</h4>
+
+            <!-- 線段選擇器 -->
+            <div class="control-group">
+                <label><i class="fas fa-hand-pointer"></i> 選擇線段:</label>
+                <select id="edge-selector" onchange="onEdgeSelected()">
+                    <option value="">-- 點擊線段以選取 --</option>
+                </select>
+            </div>
+
+            <div class="edge-info-box" id="edge-info">
+                請先選擇一條線段以調整其屬性
+            </div>
+
+            <!-- 曲線樣式 -->
+            <div class="control-group">
+                <label><i class="fas fa-project-diagram"></i> 線段樣式:</label>
+                <select id="curve-style" onchange="updateEdgeStyle()">
+                    <option value="straight">直線</option>
+                    <option value="bezier">曲線</option>
+                    <option value="polyline" disabled>分段折線 (使用 Shift+點擊 添加中繼點)</option>
+                    <option value="taxi-control">直角折線(藍點)</option>
+                    <option value="yellow-control">直角折線(黃點)</option>
+                    <option value="taxi">直角折線</option>
+                </select>
+            </div>
+
+            <!-- 貝茲曲線控制 -->
+            <div class="control-group" id="bezier-controls">
+                <label>
+                    控制點距離:
+                    <span class="range-value-display" id="control-distance-value">0</span>
+                </label>
+                <input type="range" id="control-distance" min="-200" max="200" value="0" oninput="updateBezierControls()">
+
+                <label style="margin-top: 10px;">
+                    控制點權重:
+                    <span class="range-value-display" id="control-weight-value">0.5</span>
+                </label>
+                <input type="range" id="control-weight" min="0" max="1" step="0.1" value="0.5" oninput="updateBezierControls()">
+            </div>
+
+            <!-- 直角折線控制 -->
+            <div class="control-group" id="taxi-controls" style="display: none;">
+                <div class="edge-info-box" style="display: block; background: #e3f2fd; margin-bottom: 10px;">
+                    <i class="fas fa-info-circle"></i> 直角折線會自動創建兩個藍色菱形控制點，拖動控制點可調整轉角位置（只能垂直移動）
+                </div>
+
+                <label>計程車方向:</label>
+                <select id="taxi-direction" onchange="updateTaxiControls()">
+                    <option value="auto">自動</option>
+                    <option value="vertical">垂直優先</option>
+                    <option value="horizontal">水平優先</option>
+                    <option value="downward">向下</option>
+                    <option value="upward">向上</option>
+                </select>
+
+                <label style="margin-top: 10px;">
+                    轉彎半徑:
+                    <span class="range-value-display" id="taxi-turn-value">20</span>
+                </label>
+                <input type="range" id="taxi-turn" min="0" max="100" value="20" oninput="updateTaxiControls()">
+            </div>
+
+            <!-- 線條屬性 -->
+            <div class="control-group">
+                <label>
+                    線條寬度:
+                    <span class="range-value-display" id="line-width-value">3</span>
+                </label>
+                <input type="range" id="line-width" min="1" max="20" value="3" oninput="updateLineStyle()">
+
+                <label style="margin-top: 10px;">線條顏色:</label>
+                <input type="color" id="line-color" value="#e67e22" onchange="updateLineStyle()">
+
+                <label style="margin-top: 10px;">線條樣式:</label>
+                <select id="line-style" onchange="updateLineStyle()">
+                    <option value="solid">實線</option>
+                    <option value="dashed">虛線</option>
+                    <option value="dotted">點線</option>
+                </select>
+            </div>
+
+            <!-- 箭頭屬性 -->
+            <div class="control-group">
+                <label>箭頭樣式:</label>
+                <select id="arrow-shape" onchange="updateArrowStyle()">
+                    <option value="triangle">三角形</option>
+                    <option value="triangle-tee">T型三角</option>
+                    <option value="circle">圓形</option>
+                    <option value="square">方形</option>
+                    <option value="diamond">菱形</option>
+                    <option value="chevron">V形</option>
+                    <option value="none">無箭頭</option>
+                </select>
+
+                <label style="margin-top: 10px;">
+                    箭頭縮放:
+                    <span class="range-value-display" id="arrow-scale-value">1.0</span>
+                </label>
+                <input type="range" id="arrow-scale" min="0.5" max="3" step="0.1" value="1" oninput="updateArrowStyle()">
+            </div>
+
+            <!-- 條件分支設定 -->
+            <div class="control-group" id="condition-controls">
+                <h4 style="margin-top: 15px; color: #FFC107;"><i class="fas fa-code-branch"></i> 條件分支設定</h4>
+
+                <div class="edge-info-box" style="display: block; background: #fff3cd; margin-bottom: 10px;">
+                    <i class="fas fa-info-circle"></i> 用於條件分支節點的出邊，設定條件表達式來決定流程路徑
+                </div>
+
+                <label>標籤文字 (Label):</label>
+                <input type="text" id="edge-label" placeholder="例如: 已核准、年齡 > 18" oninput="updateEdgeLabel()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+
+                <label>條件表達式:</label>
+                <textarea id="edge-condition" rows="3" placeholder="例如: vars.age > 18" oninput="updateEdgeCondition()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px; margin-bottom: 5px;"></textarea>
+
+                <div style="font-size: 11px; color: #666; margin-bottom: 10px;">
+                    表達式範例:<br>
+                    <code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px; display: inline-block; margin: 2px;">vars.status === "approved"</code>
+                    <code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px; display: inline-block; margin: 2px;">vars.score >= 60</code>
+                </div>
+
+                <label style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="edge-is-default" onchange="updateEdgeIsDefault()" style="margin-right: 8px; width: auto;">
+                    設為預設路徑 (當所有條件都不符合時使用)
+                </label>
+
+                <button class="btn-primary" onclick="testConditionExpression()" style="margin-top: 10px; width: 100%;">
+                    <i class="fas fa-vial"></i> 測試表達式
+                </button>
+            </div>
+
+            <!-- 快速預設 -->
+            <h4 style="margin-top: 15px;"><i class="fas fa-magic"></i> 快速預設</h4>
+            <div class="preset-buttons">
+                <button onclick="applyPreset('straight')">直線</button>
+                <button onclick="applyPreset('bezier')">曲線</button>
+                <button onclick="applyPreset('polyline')">分段折線</button>
+                <button onclick="applyPreset('taxi')">直角折線</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 注入全域變數 (在載入 workflow-main.js 之前) -->
+    <script>
+        // 從 Flask 模板注入全域變數
+        window.orgCode = '{{ org_secure_code }}';
+    </script>
+
+    <!-- Workflow Designer JavaScript -->
+    <script src="/static/modules/form_workflow/js/workflow-main.js"></script>
+    <script>
+        // Workflow Designer 专用主題管理
+        (function() {
+            const WORKFLOW_THEME_KEY = 'workflow_designer_theme';
+
+            // 獲取workflow-designer特定主題
+            function getWorkflowTheme() {
+                // 1. 先檢查用戶是否設定「跟隨系統主題」
+                const followSystemTheme = localStorage.getItem('workflow_designer_follow_theme');
+
+                // 2. 如果設定為 false (關閉跟隨)，就使用 workflow-designer 專屬主題（預設淺色）
+                if (followSystemTheme === 'false') {
+                    return localStorage.getItem(WORKFLOW_THEME_KEY) || 'light';
+                }
+
+                // 3. 預設或設定為 true 時，跟隨系統主題
+                const systemTheme = localStorage.getItem('theme');
+                if (systemTheme) {
+                    return systemTheme;
+                }
+
+                // 4. 如果都沒有設定，預設使用淺色（因為大部分用戶繪圖偏好淺色）
+                return 'light';
+            }
+
+            // 設置workflow-designer特定主題
+            function setWorkflowTheme(theme) {
+                localStorage.setItem(WORKFLOW_THEME_KEY, theme);
+                applyWorkflowTheme(theme);
+            }
+
+            // 應用主題
+            function applyWorkflowTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+
+                // 更新按鈕狀態
+                document.querySelectorAll('[data-workflow-theme]').forEach(btn => {
+                    if (btn.dataset.workflowTheme === theme) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+
+            // 頁面載入時應用workflow-designer特定主題
+            document.addEventListener('DOMContentLoaded', () => {
+                const theme = getWorkflowTheme();
+                applyWorkflowTheme(theme);
+
+                // 設置主題切換器
+                document.querySelectorAll('[data-workflow-theme]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const theme = btn.dataset.workflowTheme;
+                        setWorkflowTheme(theme);
+                    });
+                });
+            });
+
+            // 立即應用主題（在DOM載入前）
+            const theme = getWorkflowTheme();
+            if (document.documentElement) {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        })();
+    </script>
+
+    <!-- 右鍵選單 -->
+    <div id="contextMenu" class="context-menu">
+        <!-- 選單項目會動態生成 -->
+    </div>
+
+    </div><!-- 關閉 workflow-container -->
+
+    <!-- 認證腳本 -->
+    <script src="/static/modules/form_workflow/js/auth.js"></script>
+
+    <!-- 初始化主題切換器 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const themeSwitcherContainer = document.getElementById('themeSwitcherContainer');
+                if (themeSwitcherContainer && window.ThemeManager) {
+                    const switcher = ThemeManager.createThemeSwitcher();
+                    themeSwitcherContainer.appendChild(switcher);
+                }
+            }, 300);
+        });
+    </script>
+
+    <!-- Badge 樣式 -->
+    <style>
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-danger { background: #e74c3c; }
+        .badge-primary { background: #3498db; }
+        .badge-info { background: #1abc9c; }
+        .badge-secondary { background: #95a5a6; }
+    </style>
+
+    <!-- Debug Footer 容器 (組件會自動載入) -->
+    <div class="container-fluid" style="padding: 3px 15px; min-height: 10px;">
+        <div id="debugFooterContainer"></div>
+    </div>
+
+</body>
+</html>

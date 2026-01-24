@@ -57,6 +57,8 @@ class OpSetHandler(BaseNodeHandler):
 
     def handle(self) -> Dict[str, Any]:
         """處理 OpSet 節點"""
+        self.report_running()
+
         operations = self.get_config_value('operations')
 
         if not operations:
@@ -73,11 +75,19 @@ class OpSetHandler(BaseNodeHandler):
             try:
                 result = self._execute_operation(op)
                 results[op['target_var']] = result
-                self.log_info(f'變數操作完成: {op["target_var"]} = {result}')
+
+                # 儲存到工作流變數
+                self.set_global_var(op['target_var'], result)
+
+                self.log_info(f'變數操作完成: {op["target_var"]} = {result}', {
+                    'operation': op['operation'],
+                    'target_var': op['target_var'],
+                    'result': result
+                })
             except Exception as e:
                 error_msg = f'操作 {idx} 失敗: {str(e)}'
                 errors.append(error_msg)
-                self.log_error(error_msg)
+                self.log_error(error_msg, {'operation': op})
 
         if errors:
             return {
@@ -179,9 +189,8 @@ class OpSetHandler(BaseNodeHandler):
         return value
 
     def _get_var(self, var_name: str, default: Any = None) -> Any:
-        """取得變數值（簡化版）"""
-        # TODO: 實作完整的變數服務
-        return default
+        """取得變數值（使用 base handler 的變數服務）"""
+        return self.get_var(var_name, default)
 
     def _format_number(self, value: float) -> Union[int, float]:
         """格式化數字"""
