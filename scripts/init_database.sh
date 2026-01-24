@@ -38,7 +38,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
 
 echo "5. 執行 Flask 資料庫遷移..."
 cd /opt/BeakPlatform/backend
-source /opt/BeakMask/venv/bin/activate
+source /opt/BeakPlatform/venv/bin/activate
 set -a && source ../.env && set +a
 
 # 使用 Flask-Migrate 或直接建立表
@@ -97,6 +97,6 @@ echo "  密碼: admin123"
 echo ""
 echo "啟動服務："
 echo "  cd /opt/BeakPlatform/backend"
-echo "  source /opt/BeakMask/venv/bin/activate"
+echo "  source /opt/BeakPlatform/venv/bin/activate"
 echo "  set -a && source ../.env && set +a"
 echo "  flask run --host=0.0.0.0 --port=7000"
