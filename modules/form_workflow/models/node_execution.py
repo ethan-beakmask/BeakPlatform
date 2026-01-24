@@ -19,12 +19,18 @@ class FwNodeExecutionQueue(ModuleBaseModel):
 
     # 關聯的工作流實例
     workflow_instance_secure_code = Column(String(32), nullable=False, index=True)
+    form_instance_secure_code = Column(String(32), nullable=True, index=True)
+
+    # 子流程關聯
+    calling_instance_code = Column(String(32), nullable=True, index=True)  # 調用方流程實例
+    parent_node_id = Column(String(100), nullable=True)                     # 父節點 ID
 
     # 節點資訊
     node_id = Column(String(100), nullable=False)
     node_type = Column(String(50), nullable=False, index=True)
     node_name = Column(String(200), nullable=True)
     node_config = Column(JSON, default=dict)
+    priority = Column(Integer, default=5, nullable=False)
 
     # 執行狀態：PENDING, RUNNING, SUCCESS, FAILED, CANCELLED, WAITING
     status = Column(String(50), default='PENDING', nullable=False, index=True)

@@ -302,21 +302,24 @@ systemctl restart beakplatform
   - `services/workflow_engine.py` - 核心引擎（start_workflow, advance_workflow, complete_workflow）
   - `services/workflow_executor.py` - 背景執行器（輪詢和 subprocess 啟動）
   - `services/node_runner.py` - CLI 入口點
-- [x] 移轉節點處理器 (NodeHandlers) - 12 種類型
+- [x] 移轉節點處理器 (NodeHandlers) - 14 種類型
   - 流程控制: StartHandler, EndHandler
   - 時間控制: DelayHandler
   - 簽核: ApproveHandler (含 FormAdapter 別名)
   - 分支匯合: BranchHandler, SwitchHandler, ConvergeHandler
   - 變數操作: OpSetHandler
   - 通知: NotifyHandler (含 Telegram, Email 別名)
+  - 子流程: SubFlowHandler (含 Subprocess 別名)
 - [x] 建立資料庫遷移腳本
   - `migrations/001_create_tables.sql` - 建立 7 個資料表
   - `migrations/001_drop_tables.sql` - 回滾腳本
-- [ ] 移轉剩餘節點處理器（Subflow 子流程）
+  - `migrations/002_add_subflow_columns.sql` - 子流程欄位
+- [x] 建立節點處理器測試
+  - `tests/test_workflow_engine.py` - 10 個測試案例
 - [ ] 移轉前端模板
-- [ ] 完整測試
+- [ ] 完整整合測試
 
-**下一步**: 移轉剩餘節點處理器或移轉前端模板
+**下一步**: 移轉前端模板或完整測試工作流引擎
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
@@ -388,4 +391,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-24 (工作流引擎移轉完成)*
+*最後更新: 2026-01-24 (SubFlow 處理器與單元測試完成)*

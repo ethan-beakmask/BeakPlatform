@@ -97,6 +97,7 @@ def register_builtin_handlers():
     - Approve, FormAdapter: 簽核
     - OpSet: 變數設定
     - Notify, Telegram, Email: 通知
+    - SubFlow, Subprocess: 子流程
     """
     from .start_handler import StartHandler
     from .end_handler import EndHandler
@@ -107,6 +108,7 @@ def register_builtin_handlers():
     from .switch_handler import SwitchHandler
     from .opset_handler import OpSetHandler
     from .notify_handler import NotifyHandler
+    from .subflow_handler import SubFlowHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -131,6 +133,10 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('Notify', NotifyHandler)
     NodeHandlerFactory.register('Telegram', NotifyHandler)  # 用 Notify 處理
     NodeHandlerFactory.register('Email', NotifyHandler)      # 用 Notify 處理
+
+    # 子流程
+    NodeHandlerFactory.register('SubFlow', SubFlowHandler)
+    NodeHandlerFactory.register('Subprocess', SubFlowHandler)  # 兼容舊名稱
 
 
 # 自動執行註冊

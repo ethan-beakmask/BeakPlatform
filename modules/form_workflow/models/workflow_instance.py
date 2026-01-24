@@ -3,7 +3,7 @@ FormWorkflow Module - Workflow Instance Model
 工作流實例
 """
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime
+from sqlalchemy import Column, String, Text, DateTime, Integer
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
@@ -20,6 +20,11 @@ class FwWorkflowInstance(ModuleBaseModel):
     # 關聯
     form_instance_secure_code = Column(String(32), nullable=True, index=True)
     workflow_template_secure_code = Column(String(32), nullable=False, index=True)
+
+    # 子流程關聯
+    parent_instance_code = Column(String(32), nullable=True, index=True)  # 父流程實例
+    root_instance_code = Column(String(32), nullable=True, index=True)    # 根流程實例
+    workflow_depth = Column(Integer, default=0, nullable=False)           # 流程深度（0=主流程）
 
     # 狀態：PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
     status = Column(String(50), default='PENDING', nullable=False, index=True)
