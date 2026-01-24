@@ -260,7 +260,7 @@ systemctl restart beakplatform
 
 ## 當前狀態
 
-**目前階段**: Step 2 已完成，準備進入 Step 3
+**目前階段**: Step 3 進行中 - 表單流程模組移轉
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -287,7 +287,24 @@ systemctl restart beakplatform
 - DevTools: http://192.168.0.16:7001
 - 資料庫: beakplatform_dev
 
-**下一步**: 進入 Step 3 - 依模組化標準移轉表單流程系統
+**Step 3 進行中** (2026-01-24):
+- [x] 建立 form_workflow 模組目錄結構
+- [x] 定義 MODULE_INFO（權限、選單）
+- [x] 建立核心 Models（使用 fw_ 前綴）
+  - FwFormTemplate - 表單模板
+  - FwWorkflowTemplate - 工作流模板
+  - FwFormInstance - 表單實例
+  - FwWorkflowInstance - 工作流實例
+  - FwApprovalRecord - 簽核記錄
+  - FwNodeExecutionQueue - 節點執行隊列
+- [x] 建立基礎 API Blueprint
+- [ ] 移轉工作流引擎 (WorkflowEngine)
+- [ ] 移轉節點處理器 (NodeHandlers)
+- [ ] 建立資料庫遷移腳本
+- [ ] 移轉前端模板
+- [ ] 完整測試
+
+**下一步**: 移轉工作流引擎核心
 
 **2.5 權限接口實作細節**:
 - `ModulePermissionService` (`app/services/module_permission_service.py`)
