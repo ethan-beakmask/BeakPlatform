@@ -52,9 +52,9 @@ EOF
 
 echo "6. 建立初始資料..."
 python3 << 'EOF'
+import bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
-from werkzeug.security import generate_password_hash
 
 app = create_app()
 with app.app_context():
@@ -69,13 +69,18 @@ with app.app_context():
     db.session.add(system_org)
     db.session.flush()
 
+    # 使用 bcrypt 產生密碼 hash
+    password = 'admin123'.encode('utf-8')
+    salt = bcrypt.gensalt()
+    password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
+
     # 建立系統管理員
     admin = User(
         org_secure_code='system.local',
         username='admin',
         email='admin@system.local',
         display_name='系統管理員',
-        password_hash=generate_password_hash('admin123'),
+        password_hash=password_hash,
         user_type=UserType.SYSTEM_ADMIN,
         is_active=True,
         must_change_password=True
