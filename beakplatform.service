@@ -1,6 +1,6 @@
 [Unit]
-Description=BeakPlatform - Multi-tenant Platform
-After=network.target postgresql.service redis.service
+Description=BeakPlatform Flask Application
+After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
@@ -8,9 +8,9 @@ Type=simple
 User=ethan
 Group=ethan
 WorkingDirectory=/opt/BeakPlatform/backend
-Environment="PATH=/opt/BeakPlatform/venv/bin:/usr/local/bin:/usr/bin:/bin"
 EnvironmentFile=/opt/BeakPlatform/.env
-ExecStart=/opt/BeakPlatform/venv/bin/flask run --host=0.0.0.0 --port=5009
+Environment="PATH=/opt/BeakPlatform/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/BeakPlatform/venv/bin/flask run --host=0.0.0.0 --port=7000
 Restart=always
 RestartSec=5
 

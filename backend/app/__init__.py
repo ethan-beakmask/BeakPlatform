@@ -80,7 +80,7 @@ def create_app(config_name: str = None) -> Flask:
     @app.route('/health')
     @public_route
     def health_check():
-        return {'status': 'healthy', 'service': 'beakmask'}, 200
+        return {'status': 'healthy', 'service': 'beakplatform'}, 200
 
     return app
 

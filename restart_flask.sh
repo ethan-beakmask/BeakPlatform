@@ -14,7 +14,7 @@ echo ""
 
 # 停止現有進程
 echo "[1/4] 停止現有 Flask 進程..."
-pkill -f "flask run.*--port=5009" 2>/dev/null || true
+pkill -f "flask run.*--port=7000" 2>/dev/null || true
 sleep 1
 echo "  ✓ 已停止"
 
@@ -23,7 +23,7 @@ echo "[2/4] 啟動 Flask 服務..."
 source venv/bin/activate
 set -a && source .env && set +a
 cd backend
-nohup flask run --host=0.0.0.0 --port=5009 > /tmp/beakplatform.log 2>&1 &
+nohup flask run --host=0.0.0.0 --port=7000 > /tmp/beakplatform.log 2>&1 &
 cd ..
 echo "  ✓ Flask 已在背景啟動"
 
