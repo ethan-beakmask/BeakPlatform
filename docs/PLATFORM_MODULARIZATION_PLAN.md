@@ -273,7 +273,9 @@ systemctl restart beakplatform
 
 **目前階段**: Step 5 完成 ✅ - 模組標準驗證通過
 
-**待辦**: 完善表單流程模組功能
+**待辦**:
+- 完善表單流程模組功能
+- [ ] 驗證 WorkflowExecutor 背景服務正常運作（送出表單後流程自動推進）
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
