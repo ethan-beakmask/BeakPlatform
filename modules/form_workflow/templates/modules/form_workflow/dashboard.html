@@ -349,8 +349,9 @@ function fwDashboard() {
                 'instances': '/forms/instances',
                 'pending': '/forms/pending'
             };
-            // TODO: 實作頁面路由
-            alert('功能開發中：' + page);
+            if (urls[page]) {
+                window.location.href = urls[page];
+            }
         },
 
         formatDate(dateStr) {
