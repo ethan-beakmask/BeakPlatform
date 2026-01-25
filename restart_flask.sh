@@ -33,8 +33,8 @@ sleep 3
 
 # 測試服務
 echo "[4/4] 測試服務響應..."
-if curl -s --max-time 5 http://localhost:5009/health > /dev/null; then
-    echo "  ✓ 服務 (5009) 響應正常"
+if curl -s --max-time 5 http://localhost:7000/health > /dev/null; then
+    echo "  ✓ 服務 (7000) 響應正常"
 else
     echo "  ⚠ 服務可能未正常響應，查看日誌: tail -f /tmp/beakplatform.log"
 fi
@@ -44,6 +44,6 @@ echo "======================================"
 echo "  重啟完成！"
 echo "======================================"
 echo ""
-echo "服務訪問地址: http://192.168.0.16:5009"
+echo "服務訪問地址: http://192.168.0.16:7000"
 echo "查看日誌:     tail -f /tmp/beakplatform.log"
 echo ""
