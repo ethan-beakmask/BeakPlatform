@@ -123,6 +123,58 @@ def designer(secure_code=None):
     )
 
 
+@forms_bp.route('/designer/standalone')
+@login_required
+def designer_standalone():
+    """表單設計器獨立頁面（用於 iframe 嵌入或直接訪問）"""
+    from ..models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    secure_code = request.args.get('id')
+    template = None
+
+    if secure_code:
+        template = FwFormTemplate.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+
+    return render_template(
+        'modules/form_workflow/form_designer.html',
+        org_secure_code=org.secure_code,
+        form_secure_code=secure_code,
+        form=template.to_dict(include_schema=True) if template else None
+    )
+
+
+# =============================================================================
+# 分類 API
+# =============================================================================
+
+@forms_bp.route('/data/categories')
+@login_required
+def list_categories():
+    """取得表單分類列表"""
+    # 目前使用固定分類，未來可改為從資料庫讀取
+    categories = [
+        {'id': 'general', 'name': '一般', 'description': '通用表單'},
+        {'id': 'hr', 'name': '人事', 'description': '人事相關表單'},
+        {'id': 'finance', 'name': '財務', 'description': '財務相關表單'},
+        {'id': 'procurement', 'name': '採購', 'description': '採購相關表單'},
+        {'id': 'it', 'name': '資訊', 'description': '資訊相關表單'},
+        {'id': 'admin', 'name': '行政', 'description': '行政相關表單'},
+    ]
+
+    return jsonify({
+        'success': True,
+        'categories': categories
+    })
+
+
 # =============================================================================
 # 數據 API
 # =============================================================================

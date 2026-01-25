@@ -134,6 +134,14 @@ BeakMask 已停止（port 5007, beakmask_dev）
 - [x] 新增流程後自動跳轉到設計器
 - [x] 編輯按鈕跳轉到設計器
 
+### 8. 表單設計器移植（已完成）- 2026-01-26
+- [x] 複製 Form.io 主題 CSS
+- [x] 複製並調整表單設計器模板
+- [x] 添加 designer/standalone 路由
+- [x] 添加 categories API
+- [x] 新增表單後自動跳轉到設計器
+- [x] 編輯按鈕跳轉到設計器
+
 ---
 
 ## 待完成項目
@@ -144,10 +152,6 @@ BeakMask 已停止（port 5007, beakmask_dev）
 
 ### 2. 完整流程測試
 - [ ] 建立表單 → 設計流程 → 配對 → 發布 → 填寫 → 簽核
-
-### 3. 進階功能
-- [ ] 表單設計器移植
-- [ ] 簽核流程完整測試
 
 ---
 
@@ -179,10 +183,11 @@ BeakMask 已停止（port 5007, beakmask_dev）
 | 節點工廠 | `/opt/BeakPlatform/modules/form_workflow/services/node_handlers/factory.py` |
 | 服務檔 | `/opt/BeakPlatform/beakplatform.service` |
 | 重啟腳本 | `/opt/BeakPlatform/restart_flask.sh` |
-| 設計器 CSS | `/opt/BeakPlatform/backend/app/static/css/workflow-designer.css` |
-| 設計器 JS | `/opt/BeakPlatform/backend/app/static/js/workflow-main.js` |
+| 工作流設計器 CSS | `/opt/BeakPlatform/backend/app/static/css/workflow-designer.css` |
+| 工作流設計器 JS | `/opt/BeakPlatform/backend/app/static/js/workflow-main.js` |
 | 節點圖標 | `/opt/BeakPlatform/backend/app/static/icons/workflow/*.svg` |
+| Form.io 主題 CSS | `/opt/BeakPlatform/backend/app/static/css/formio-theme.css` |
 
 ---
 
-*最後更新: 2026-01-26 (工作流設計器移植完成)*
+*最後更新: 2026-01-26 (表單設計器移植完成)*

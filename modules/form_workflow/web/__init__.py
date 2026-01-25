@@ -59,8 +59,8 @@ def template_new():
 @web_bp.route('/templates/<secure_code>')
 @security_login_required
 def template_detail(secure_code):
-    """表單模板詳情（跳轉到列表頁）"""
-    return redirect(url_for('form_workflow_web.templates'))
+    """表單設計器（重定向到查詢參數格式）"""
+    return redirect(f'/api/forms/designer/standalone?id={secure_code}')
 
 
 # =============================================================================

@@ -247,14 +247,8 @@ function templateListManager() {
         },
 
         editTemplate(t) {
-            this.editingTemplate = t;
-            this.formData = {
-                name: t.name,
-                code: t.code || '',
-                description: t.description || '',
-                is_active: t.is_active
-            };
-            this.showModal = true;
+            // 直接跳轉到設計器頁面
+            window.location.href = `/forms/templates/${t.secure_code}`;
         },
 
         closeModal() {
@@ -280,8 +274,13 @@ function templateListManager() {
                 const data = await res.json();
 
                 if (data.success) {
-                    this.closeModal();
-                    this.loadTemplates();
+                    if (!this.editingTemplate && data.data && data.data.secure_code) {
+                        // 新增成功後跳轉到設計器
+                        window.location.href = `/forms/templates/${data.data.secure_code}`;
+                    } else {
+                        this.closeModal();
+                        this.loadTemplates();
+                    }
                 } else {
                     alert('操作失敗: ' + (data.error || data.message));
                 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表單設計器 - FormFlow</title>
+    <title>表單設計器 - BeakPlatform</title>
 
     <!-- Bootstrap 5 (本地) -->
     <link href="/static/vendor/bootstrap.min.css" rel="stylesheet">
@@ -614,7 +614,7 @@
         <div class="navbar-left">
             <a href="/" class="navbar-logo">
                 <i class="fas fa-file-signature"></i>
-                <span>FormFlow</span>
+                <span>BeakPlatform</span>
             </a>
             <div class="navbar-title">表單設計器</div>
         </div>
@@ -2362,7 +2362,7 @@
                     }
 
                     // 跳轉到表單清單頁面
-                    window.location.href = '/api/forms/list';
+                    window.location.href = '/forms/templates';
                 } else {
                     throw new Error(result.message || '儲存失敗');
                 }
@@ -2465,7 +2465,7 @@
                 discardModal.style.display = 'flex';
             } else {
                 // 沒有未儲存變更，直接離開
-                window.location.href = '/api/forms/list';
+                window.location.href = '/forms/templates';
             }
         });
 
@@ -2482,7 +2482,7 @@
         // 放棄 modal - 確認放棄按鈕
         document.getElementById('discard-confirm').addEventListener('click', () => {
             hasUnsavedChanges = false;  // 清除未儲存標記
-            window.location.href = '/api/forms/list';  // 跳轉到表單清單頁面
+            window.location.href = '/forms/templates';  // 跳轉到表單清單頁面
         });
 
         // ==================== 範本載入功能 ====================
