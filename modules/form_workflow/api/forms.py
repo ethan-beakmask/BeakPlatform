@@ -237,7 +237,7 @@ def get_template(secure_code):
 
     return jsonify({
         'success': True,
-        **result
+        'data': result
     })
 
 
@@ -286,10 +286,11 @@ def create_template():
     db.session.add(template)
     db.session.commit()
 
+    result = template.to_dict(include_schema=True)
+    result['secure_code'] = template.secure_code
     return jsonify({
         'success': True,
-        'secure_code': template.secure_code,
-        **template.to_dict(include_schema=True),
+        'data': result,
         'message': '表單模板已建立'
     })
 
@@ -332,7 +333,7 @@ def update_template(secure_code):
 
     return jsonify({
         'success': True,
-        **template.to_dict(include_schema=True),
+        'data': template.to_dict(include_schema=True),
         'message': '表單模板已更新'
     })
 
@@ -398,7 +399,7 @@ def publish_template(secure_code):
 
     return jsonify({
         'success': True,
-        **template.to_dict(include_schema=True),
+        'data': template.to_dict(include_schema=True),
         'message': '表單模板已發布'
     })
 
@@ -429,7 +430,7 @@ def unpublish_template(secure_code):
 
     return jsonify({
         'success': True,
-        **template.to_dict(include_schema=True),
+        'data': template.to_dict(include_schema=True),
         'message': '表單模板已取消發布'
     })
 
@@ -770,6 +771,6 @@ def save_new_version(secure_code):
 
     return jsonify({
         'success': True,
-        **template.to_dict(include_schema=True),
+        'data': template.to_dict(include_schema=True),
         'message': f'已儲存新版本 {new_version}'
     })
