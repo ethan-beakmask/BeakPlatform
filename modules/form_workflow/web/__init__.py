@@ -41,6 +41,7 @@ def dashboard():
 # =============================================================================
 
 @web_bp.route('/templates')
+@web_bp.route('/templates/')
 @security_login_required
 def templates():
     """表單模板列表"""
@@ -66,6 +67,7 @@ def template_detail(secure_code):
 # =============================================================================
 
 @web_bp.route('/workflows')
+@web_bp.route('/workflows/')
 @security_login_required
 def workflows():
     """工作流列表"""
@@ -87,10 +89,12 @@ def workflow_detail(secure_code):
 
 
 # =============================================================================
-# 表單實例
+# 表單實例（我的表單）
 # =============================================================================
 
 @web_bp.route('/instances')
+@web_bp.route('/my')
+@web_bp.route('/my/')
 @security_login_required
 def instances():
     """我的表單列表"""
@@ -131,6 +135,7 @@ def center():
 # =============================================================================
 
 @web_bp.route('/pending')
+@web_bp.route('/pending/')
 @security_login_required
 def pending():
     """待簽核任務列表"""
