@@ -7,6 +7,7 @@ FormWorkflow Module - API Routes
 import secrets
 from flask import Blueprint, jsonify, request
 
+from app import csrf
 from app.security.decorators import public_route
 from app.platform.auth import (
     current_user,
@@ -119,6 +120,7 @@ def get_template(secure_code):
 
 
 @api_bp.route('/templates', methods=['POST'])
+@csrf.exempt
 @require_permission('form_workflow.template.create')
 def create_template():
     """建立表單模板"""
@@ -171,6 +173,7 @@ def create_template():
 
 
 @api_bp.route('/templates/<secure_code>', methods=['PUT'])
+@csrf.exempt
 @require_permission('form_workflow.template.edit')
 def update_template(secure_code):
     """更新表單模板"""
@@ -212,6 +215,7 @@ def update_template(secure_code):
 
 
 @api_bp.route('/templates/<secure_code>', methods=['DELETE'])
+@csrf.exempt
 @require_permission('form_workflow.template.delete')
 def delete_template(secure_code):
     """刪除表單模板（軟刪除）"""
@@ -304,6 +308,7 @@ def get_workflow(secure_code):
 
 
 @api_bp.route('/workflows', methods=['POST'])
+@csrf.exempt
 @require_permission('form_workflow.workflow.create')
 def create_workflow():
     """建立工作流模板"""
@@ -356,6 +361,7 @@ def create_workflow():
 
 
 @api_bp.route('/workflows/<secure_code>', methods=['PUT'])
+@csrf.exempt
 @require_permission('form_workflow.workflow.edit')
 def update_workflow(secure_code):
     """更新工作流模板"""
@@ -397,6 +403,7 @@ def update_workflow(secure_code):
 
 
 @api_bp.route('/workflows/<secure_code>', methods=['DELETE'])
+@csrf.exempt
 @require_permission('form_workflow.workflow.delete')
 def delete_workflow(secure_code):
     """刪除工作流模板（軟刪除）"""
@@ -585,6 +592,7 @@ def get_pending_task(secure_code):
 
 
 @api_bp.route('/pending-tasks/<secure_code>/approve', methods=['POST'])
+@csrf.exempt
 @require_permission('form_workflow.form.approve')
 def approve_task(secure_code):
     """簽核任務"""
