@@ -531,6 +531,70 @@ def archive_published(secure_code):
 # 一般用戶端點
 # =============================================================================
 
+@mappings_bp.route('/unmapped-forms')
+@login_required
+def list_unmapped_forms():
+    """取得未配對的表單列表"""
+    from ..models import FwFormTemplate, FwFormWorkflowMapping
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 取得已配對的表單 ID
+    mapped_form_ids = db.session.query(FwFormWorkflowMapping.form_template_id).filter_by(
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).distinct()
+
+    # 取得未配對的表單
+    unmapped = FwFormTemplate.query.filter(
+        FwFormTemplate.org_secure_code == org.secure_code,
+        FwFormTemplate.is_deleted == False,
+        FwFormTemplate.is_active == True,
+        ~FwFormTemplate.id.in_(mapped_form_ids)
+    ).order_by(FwFormTemplate.name.asc()).all()
+
+    return jsonify({
+        'success': True,
+        'data': [{
+            'secure_code': f.secure_code,
+            'name': f.name,
+            'code': f.code,
+            'version': f.version
+        } for f in unmapped]
+    })
+
+
+@mappings_bp.route('/workflows-for-mapping')
+@login_required
+def list_workflows_for_mapping():
+    """取得可用於配對的主流程列表"""
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 取得所有啟用的工作流（只取主流程，非子流程）
+    workflows = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+        is_active=True,
+        is_sub_workflow=False
+    ).order_by(FwWorkflowTemplate.name.asc()).all()
+
+    return jsonify({
+        'success': True,
+        'data': [{
+            'secure_code': w.secure_code,
+            'name': w.name,
+            'code': w.code,
+            'version': w.version
+        } for w in workflows]
+    })
+
+
 @mappings_bp.route('/available')
 @login_required
 def list_available_forms():

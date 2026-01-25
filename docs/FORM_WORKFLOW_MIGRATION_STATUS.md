@@ -58,12 +58,21 @@ BeakMask 已停止（port 5007, beakmask_dev）
 │   ├── __init__.py          ✓ api_bp 註冊
 │   ├── forms.py             ✓ 表單 CRUD API
 │   ├── workflows.py         ✓ 工作流 CRUD API
-│   ├── mappings.py          ✓ 配對 API
+│   ├── mappings.py          ✓ 配對 API（含 unmapped-forms, workflows-for-mapping）
 │   └── form_center.py       ✓ 表單中心 API
 ├── web/
-│   └── __init__.py          ⚠ 只有空殼，缺頁面路由
+│   └── __init__.py          ✓ 11 個 Web 路由
 └── templates/
-    └── modules/             ⚠ 缺少前端模板
+    └── modules/form_workflow/
+        ├── dashboard.html       ✓ 儀表板
+        ├── template_list.html   ✓ 表單模板列表
+        ├── workflow_list.html   ✓ 工作流列表
+        ├── mappings_list.html   ✓ 配對管理（新增）
+        ├── form_center.html     ✓ 表單中心（新增）
+        ├── instance_list.html   ✓ 我的表單
+        ├── pending_list.html    ✓ 待簽核
+        ├── form_designer.html   ✓ 表單設計器
+        └── workflow_designer.html ✓ 工作流設計器
 ```
 
 ---
@@ -71,11 +80,13 @@ BeakMask 已停止（port 5007, beakmask_dev）
 ## 完成項目
 
 ### 1. 後端 API（已完成）
-- [x] 表單模板 CRUD (`/api/forms/templates/`)
-- [x] 工作流模板 CRUD (`/api/forms/workflows/`)
+- [x] 表單模板 CRUD (`/api/form-workflow/templates/`)
+- [x] 工作流模板 CRUD (`/api/form-workflow/workflows/`)
 - [x] 配對管理 (`/api/mappings/`)
 - [x] 表單中心 (`/api/form-center/`)
 - [x] 發布/暫停/封存功能
+- [x] 未配對表單列表 (`/api/mappings/unmapped-forms`)
+- [x] 可配對流程列表 (`/api/mappings/workflows-for-mapping`)
 
 ### 2. 節點處理器（已完成，共 27 個）
 - [x] Start, End, Form, Approval
@@ -99,64 +110,49 @@ BeakMask 已停止（port 5007, beakmask_dev）
 - [x] 10 個 fw_* 表已建立
 - [x] 欄位已同步（手動遷移）
 
----
+### 5. 前端頁面（已完成）
+- [x] 儀表板 (`/forms/dashboard`)
+- [x] 表單模板列表 (`/forms/templates`)
+- [x] 工作流列表 (`/forms/workflows`)
+- [x] 配對管理頁面 (`/forms/mappings`) - 2026-01-26 新增
+- [x] 表單中心頁面 (`/forms/center`) - 2026-01-26 新增
+- [x] 我的表單頁面 (`/forms/instances`)
+- [x] 待簽核頁面 (`/forms/pending`)
+- [x] 表單設計器 (`/forms/templates/<code>`)
+- [x] 工作流設計器 (`/forms/workflows/<code>`)
 
-## 未完成項目
-
-### 1. 前端頁面（未開始）
-- [ ] 表單設計器頁面 (`/forms/templates/`)
-- [ ] 流程設計器頁面 (`/forms/workflows/`)
-- [ ] 配對管理頁面 (`/forms/mappings/`)
-- [ ] 表單中心頁面 (`/forms/center/`)
-- [ ] 我的表單頁面 (`/forms/my/`)
-- [ ] 待簽核頁面 (`/forms/pending/`)
-
-### 2. 前端資源
-- [ ] 流程設計器 JS (Cytoscape.js)
-- [ ] 表單設計器 JS (Form.io)
-- [ ] 節點面板 UI
-- [ ] CSS 樣式
-
-### 3. 整合修正
-- [ ] 錯誤頁面標題改為 BeakPlatform
-- [ ] 選單項目實際可用
-- [ ] 登入後權限檢查
+### 6. 整合修正（已完成）
+- [x] 錯誤頁面標題改為 BeakPlatform - 2026-01-26
+- [x] 主要 layout 標題改為 BeakPlatform - 2026-01-26
+- [x] 登入頁面標題改為 BeakPlatform - 2026-01-26
 
 ---
 
-## 已知問題
+## 待完成項目
 
-1. **BeakMask 殘留**: 錯誤頁面 title 還是 "BeakMask"
-   - 檔案: `/opt/BeakPlatform/backend/app/templates/errors/*.html`
+### 1. 前端資源優化
+- [ ] 流程設計器節點面板 UI 優化
+- [ ] 表單設計器欄位面板優化
 
-2. **Model vs DB 不一致**: 部分欄位需手動遷移
-   - 已處理: fw_workflow_instances, fw_form_instances 新增欄位
-
-3. **前端模板缺失**: `form_workflow/templates/` 基本為空
-
----
-
-## 參考來源
-
-A6 專案前端位置：
-- 表單設計器: `/opt/FormFlow/a6/frontend/templates/form-designer.html`
-- 流程設計器: `/opt/FormFlow/a6/frontend/templates/workflow-designer.html`
-- 表單中心: `/opt/FormFlow/a6/frontend/templates/form-center.html`
-- 靜態資源: `/opt/FormFlow/a6/frontend/static/`
+### 2. 完整流程測試
+- [ ] 建立表單 → 設計流程 → 配對 → 發布 → 填寫 → 簽核
 
 ---
 
-## 下一步建議
+## Web 路由清單
 
-1. **優先處理前端頁面移轉**
-   - 從 A6 複製並修改模板
-   - 調整 API 路徑和認證方式
-
-2. **修正 BeakMask 殘留文字**
-   - 全專案搜尋替換
-
-3. **測試完整流程**
-   - 建立表單 → 設計流程 → 配對 → 發布 → 填寫 → 簽核
+| 路由 | 頁面 | 狀態 |
+|------|------|------|
+| `/forms/` | 儀表板 | ✓ |
+| `/forms/dashboard` | 儀表板 | ✓ |
+| `/forms/templates` | 表單模板列表 | ✓ |
+| `/forms/templates/<code>` | 表單設計器 | ✓ |
+| `/forms/workflows` | 工作流列表 | ✓ |
+| `/forms/workflows/<code>` | 工作流設計器 | ✓ |
+| `/forms/mappings` | 配對管理 | ✓ |
+| `/forms/center` | 表單中心 | ✓ |
+| `/forms/instances` | 我的表單 | ✓ |
+| `/forms/pending` | 待簽核 | ✓ |
 
 ---
 
@@ -166,6 +162,7 @@ A6 專案前端位置：
 |------|------|
 | 模組入口 | `/opt/BeakPlatform/modules/form_workflow/__init__.py` |
 | API 註冊 | `/opt/BeakPlatform/modules/form_workflow/api/__init__.py` |
+| Web 路由 | `/opt/BeakPlatform/modules/form_workflow/web/__init__.py` |
 | 執行器 | `/opt/BeakPlatform/modules/form_workflow/services/workflow_executor.py` |
 | 節點工廠 | `/opt/BeakPlatform/modules/form_workflow/services/node_handlers/factory.py` |
 | 服務檔 | `/opt/BeakPlatform/beakplatform.service` |
@@ -173,4 +170,4 @@ A6 專案前端位置：
 
 ---
 
-*此文件由 Claude Code 自動生成*
+*最後更新: 2026-01-26 (前端頁面移轉完成)*

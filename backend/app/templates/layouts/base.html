@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}BeakMask{% endblock %}</title>
+    <title>{% block title %}BeakPlatform{% endblock %}</title>
 
     <!-- Alpine.js (本地) -->
     <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
@@ -143,7 +143,7 @@
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-content">
-            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakMask{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
             <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}</span>
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

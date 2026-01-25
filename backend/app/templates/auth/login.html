@@ -6,7 +6,7 @@
     {% if login_type == 'org' and org %}
     <title>登入 - {{ org.name }}</title>
     {% else %}
-    <title>登入 - BeakMask</title>
+    <title>登入 - BeakPlatform</title>
     {% endif %}
 </head>
 <body>
@@ -17,10 +17,10 @@
         </div>
         <h1>{{ org.name }} 登入</h1>
         {% else %}
-        <h1>{{ org.name }} - BeakMask 登入</h1>
+        <h1>{{ org.name }} - BeakPlatform 登入</h1>
         {% endif %}
     {% else %}
-    <h1>BeakMask 登入</h1>
+    <h1>BeakPlatform 登入</h1>
     {% endif %}
 
     {% if error %}
@@ -92,6 +92,6 @@
     {% endif %}
 
     <hr>
-    <p><small>&copy; 2025 BeakMask. Security First.</small></p>
+    <p><small>&copy; 2025 BeakPlatform. Security First.</small></p>
 </body>
 </html>
