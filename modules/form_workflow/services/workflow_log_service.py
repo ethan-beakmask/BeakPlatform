@@ -45,26 +45,37 @@ class WorkflowLogService:
                 INSERT INTO fw_node_execution_logs
                 (secure_code, org_secure_code, execution_id, node_instance_id, node_type,
                  status, log_level, log_message, log_data, workflow_instance_id,
-                 node_queue_id, node_id, created_at, updated_at)
+                 node_queue_id, node_id, created_at, updated_at, is_deleted)
                 VALUES
                 (:secure_code, :org_secure_code, :execution_id, :node_instance_id, :node_type,
-                 :status, :log_level, :log_message, CAST(:log_data AS jsonb), :workflow_instance_id,
-                 :node_queue_id, :node_id, :created_at, :updated_at)
+                 :status, :log_level, :log_message, CAST(:log_data AS json), :workflow_instance_id,
+                 :node_queue_id, :node_id, :created_at, :updated_at, false)
             """)
 
             import secrets
             now = datetime.utcnow()
 
+            # 嘗試從 workflow_instance 取得 org_secure_code
+            org_code = 'SYSTEM'  # 預設值
+            if workflow_instance_id:
+                try:
+                    from ..models import FwWorkflowInstance
+                    wi = FwWorkflowInstance.query.get(workflow_instance_id)
+                    if wi:
+                        org_code = wi.org_secure_code
+                except Exception:
+                    pass
+
             db.session.execute(sql, {
                 'secure_code': secrets.token_urlsafe(16),
-                'org_secure_code': None,  # 可從 workflow_instance 取得
+                'org_secure_code': org_code,
                 'execution_id': execution_id or f'EXEC-{now.strftime("%Y%m%d%H%M%S")}',
                 'node_instance_id': node_id or 'SYSTEM',
                 'node_type': 'SYSTEM',
                 'status': 'INFO',
                 'log_level': level.upper(),
                 'log_message': message,
-                'log_data': json.dumps(data) if data else None,
+                'log_data': json.dumps(data) if data else '{}',
                 'workflow_instance_id': workflow_instance_id,
                 'node_queue_id': node_queue_id,
                 'node_id': node_id,
@@ -74,6 +85,11 @@ class WorkflowLogService:
             db.session.commit()
 
         except Exception as e:
+            # rollback 以清除失敗的 session
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             # 如果資料庫寫入失敗，至少記錄到 Python logger
             logger.warning(f"Failed to write workflow log to database: {e}")
             logger.info(f"[{level}] {message} - data: {data}")

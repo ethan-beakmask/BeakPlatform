@@ -5,6 +5,7 @@ FormWorkflow Module - Workflow Executor
 負責輪詢待處理的節點，並以 subprocess 啟動獨立程序執行。
 適配 BeakPlatform 模組化架構。
 """
+import os
 import subprocess
 import sys
 import threading
@@ -23,6 +24,8 @@ PENDING_POLL_INTERVAL_SECONDS = 120
 
 # 模組根目錄
 MODULE_ROOT = '/opt/BeakPlatform'
+# Backend 目錄（node_runner 需要從這裡執行）
+BACKEND_ROOT = '/opt/BeakPlatform/backend'
 
 
 class WorkflowExecutor:
@@ -85,6 +88,11 @@ class WorkflowExecutor:
 
                 except Exception as e:
                     logger.error(f'執行器錯誤: {str(e)}', exc_info=True)
+                    # 重要：rollback 以清除失敗的交易
+                    try:
+                        db.session.rollback()
+                    except Exception:
+                        pass
 
                 time.sleep(self.poll_interval)
 
@@ -135,6 +143,7 @@ class WorkflowExecutor:
 
             except Exception as e:
                 logger.error(f'啟動節點失敗 {queue_item.secure_code}: {str(e)}', exc_info=True)
+                db.session.rollback()
 
     def _launch_node_process(self, queue_item):
         """
@@ -152,6 +161,10 @@ class WorkflowExecutor:
         db.session.commit()
 
         # 啟動 subprocess 執行 node_runner
+        # 需要設定 PYTHONPATH 以便找到 app 模組
+        env = os.environ.copy()
+        env['PYTHONPATH'] = f"{BACKEND_ROOT}:{MODULE_ROOT}:{env.get('PYTHONPATH', '')}"
+
         cmd = [
             sys.executable,
             '-m', 'modules.form_workflow.services.node_runner',
@@ -165,7 +178,8 @@ class WorkflowExecutor:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=MODULE_ROOT
+                cwd=MODULE_ROOT,
+                env=env
             )
 
             logger.info(f'節點程序已啟動: queue_code={queue_item.secure_code}, PID={process.pid}')
@@ -205,6 +219,7 @@ class WorkflowExecutor:
 
             except Exception as e:
                 logger.error(f'喚醒節點失敗 {queue_item.secure_code}: {str(e)}')
+                db.session.rollback()
 
 
 # 全域執行器實例

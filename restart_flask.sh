@@ -1,55 +1,42 @@
 #!/bin/bash
 
-# BeakMask 服務重啟腳本 (systemd 版本)
-# 同時重啟主服務 (5007) 和 DevTools (5008)
+# BeakPlatform 服務重啟腳本
+# 開發環境使用
 
 set -e
 
+cd /opt/BeakPlatform
+
 echo "======================================"
-echo "  BeakMask 服務重啟"
+echo "  BeakPlatform 服務重啟"
 echo "======================================"
 echo ""
 
-echo "[1/4] 重啟主服務 (beakmask)..."
-sudo systemctl restart beakmask
-echo "  ✓ 主服務重啟指令已發送"
+# 停止現有進程
+echo "[1/4] 停止現有 Flask 進程..."
+pkill -f "flask run.*--port=5009" 2>/dev/null || true
+sleep 1
+echo "  ✓ 已停止"
 
-echo "[2/4] 重啟 DevTools (beakmask-devtools)..."
-sudo systemctl restart beakmask-devtools
-echo "  ✓ DevTools 重啟指令已發送"
-echo ""
+# 啟動服務
+echo "[2/4] 啟動 Flask 服務..."
+source venv/bin/activate
+set -a && source .env && set +a
+cd backend
+nohup flask run --host=0.0.0.0 --port=5009 > /tmp/beakplatform.log 2>&1 &
+cd ..
+echo "  ✓ Flask 已在背景啟動"
 
+# 等待啟動
 echo "[3/4] 等待服務啟動..."
-sleep 2
+sleep 3
 
-# 檢查主服務
-if systemctl is-active --quiet beakmask; then
-    echo "  ✓ 主服務運行中"
-else
-    echo "  ✗ 主服務啟動失敗"
-    journalctl -u beakmask -n 10 --no-pager
-fi
-
-# 檢查 DevTools
-if systemctl is-active --quiet beakmask-devtools; then
-    echo "  ✓ DevTools 運行中"
-else
-    echo "  ✗ DevTools 啟動失敗"
-    journalctl -u beakmask-devtools -n 10 --no-pager
-fi
-echo ""
-
+# 測試服務
 echo "[4/4] 測試服務響應..."
-if curl -s --max-time 5 http://localhost:5007/health > /dev/null; then
-    echo "  ✓ 主服務 (5007) 響應正常"
+if curl -s --max-time 5 http://localhost:5009/health > /dev/null; then
+    echo "  ✓ 服務 (5009) 響應正常"
 else
-    echo "  ⚠ 主服務 (5007) 可能未正常響應"
-fi
-
-if curl -s --max-time 5 http://localhost:5008/health > /dev/null; then
-    echo "  ✓ DevTools (5008) 響應正常"
-else
-    echo "  ⚠ DevTools (5008) 可能未正常響應"
+    echo "  ⚠ 服務可能未正常響應，查看日誌: tail -f /tmp/beakplatform.log"
 fi
 echo ""
 
@@ -57,19 +44,6 @@ echo "======================================"
 echo "  重啟完成！"
 echo "======================================"
 echo ""
-echo "服務狀態："
-systemctl status beakmask --no-pager | head -5
+echo "服務訪問地址: http://192.168.0.16:5009"
+echo "查看日誌:     tail -f /tmp/beakplatform.log"
 echo ""
-systemctl status beakmask-devtools --no-pager | head -5
-echo ""
-echo "常用指令："
-echo "  查看日誌:   journalctl -u beakmask -f"
-echo "              journalctl -u beakmask-devtools -f"
-echo ""
-echo "服務訪問地址："
-echo "  主服務:     http://192.168.0.16:5007"
-echo "  DevTools:   http://192.168.0.16:5008 (內網限定)"
-echo ""
-
-journalctl -u beakmask -f
-
