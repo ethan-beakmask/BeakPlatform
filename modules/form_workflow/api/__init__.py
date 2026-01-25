@@ -158,8 +158,7 @@ def create_template():
         code=code,
         description=data.get('description', ''),
         schema=data.get('schema', {}),
-        is_active=data.get('is_active', True),
-        created_by=current_user.secure_code
+        is_active=data.get('is_active', True)
     )
 
     db.session.add(template)
@@ -204,7 +203,6 @@ def update_template(secure_code):
     if 'is_active' in data:
         template.is_active = data['is_active']
 
-    template.updated_by = current_user.secure_code
     db.session.commit()
 
     return jsonify({
@@ -236,7 +234,6 @@ def delete_template(secure_code):
         return jsonify({'success': False, 'error': 'Template not found'}), 404
 
     template.is_deleted = True
-    template.updated_by = current_user.secure_code
     db.session.commit()
 
     return jsonify({
@@ -346,8 +343,7 @@ def create_workflow():
         code=code,
         description=data.get('description', ''),
         graph=data.get('graph', {'nodes': [], 'edges': []}),
-        is_active=data.get('is_active', True),
-        created_by=current_user.secure_code
+        is_active=data.get('is_active', True)
     )
 
     db.session.add(workflow)
@@ -392,7 +388,6 @@ def update_workflow(secure_code):
     if 'is_active' in data:
         workflow.is_active = data['is_active']
 
-    workflow.updated_by = current_user.secure_code
     db.session.commit()
 
     return jsonify({
@@ -424,7 +419,6 @@ def delete_workflow(secure_code):
         return jsonify({'success': False, 'error': 'Workflow not found'}), 404
 
     workflow.is_deleted = True
-    workflow.updated_by = current_user.secure_code
     db.session.commit()
 
     return jsonify({
