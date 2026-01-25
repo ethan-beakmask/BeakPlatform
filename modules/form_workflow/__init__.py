@@ -146,3 +146,22 @@ MODULE_INFO = {
         },
     ],
 }
+
+
+def init_runtime(app):
+    """
+    模組運行時初始化 hook
+
+    在應用啟動時被 module_loader 調用，用於啟動背景服務。
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # 僅在非測試環境啟動執行器
+    if not app.config.get('TESTING', False):
+        try:
+            from .services.workflow_executor import start_executor
+            start_executor()
+            logger.info('FormWorkflow: 工作流執行器已啟動')
+        except Exception as e:
+            logger.error(f'FormWorkflow: 啟動工作流執行器失敗: {str(e)}')

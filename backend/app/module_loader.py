@@ -306,6 +306,9 @@ class ModuleLoader:
             # 可以透過 Blueprint 的 static_folder 處理
             pass
 
+        # 調用模組運行時初始化 hook（用於啟動背景服務等）
+        self._call_init_runtime(module)
+
     def _import_module_file(self, module_name: str, file_path: Path):
         """
         動態匯入模組檔案
@@ -326,6 +329,28 @@ class ModuleLoader:
 
         spec.loader.exec_module(module)
         return module
+
+    def _call_init_runtime(self, module: ModuleInfo):
+        """
+        調用模組的運行時初始化 hook
+
+        如果模組定義了 init_runtime(app) 函數，則調用它。
+        用於啟動背景服務（如工作流執行器）等。
+
+        Args:
+            module: ModuleInfo 物件
+        """
+        init_file = module.path / '__init__.py'
+        try:
+            module_obj = self._import_module_file(
+                f"modules.{module.name}",
+                init_file
+            )
+            if hasattr(module_obj, 'init_runtime'):
+                logger.info(f"Calling init_runtime for module {module.name}")
+                module_obj.init_runtime(self.app)
+        except Exception as e:
+            logger.error(f"Failed to call init_runtime for {module.name}: {e}")
 
     def get_all_menu_items(self) -> List[Dict[str, Any]]:
         """

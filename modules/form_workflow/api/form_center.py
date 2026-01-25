@@ -269,7 +269,7 @@ def submit_form():
             node_type='Start',
             node_name=display_name,
             node_config=node_config,
-            status='INITIAL',
+            status='PENDING',  # PENDING 狀態才會被執行器處理
             priority=10,
             scheduled_at=datetime.utcnow(),
         )
