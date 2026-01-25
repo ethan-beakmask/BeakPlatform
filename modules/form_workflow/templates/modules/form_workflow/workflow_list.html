@@ -267,14 +267,8 @@ function workflowListManager() {
         },
 
         editWorkflow(w) {
-            this.editingWorkflow = w;
-            this.formData = {
-                name: w.name,
-                code: w.code || '',
-                description: w.description || '',
-                is_active: w.is_active
-            };
-            this.showModal = true;
+            // 直接跳轉到設計器頁面
+            window.location.href = `/forms/workflows/${w.secure_code}`;
         },
 
         closeModal() {
@@ -300,8 +294,13 @@ function workflowListManager() {
                 const data = await res.json();
 
                 if (data.success) {
-                    this.closeModal();
-                    this.loadWorkflows();
+                    if (!this.editingWorkflow && data.data && data.data.secure_code) {
+                        // 新增成功後跳轉到設計器
+                        window.location.href = `/forms/workflows/${data.data.secure_code}`;
+                    } else {
+                        this.closeModal();
+                        this.loadWorkflows();
+                    }
                 } else {
                     alert('操作失敗: ' + (data.error || data.message));
                 }

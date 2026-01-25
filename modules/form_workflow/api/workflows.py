@@ -39,7 +39,7 @@ def _get_default_graph():
                 "id": "node-Start",
                 "label": "開始",
                 "type": "Start",
-                "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
+                "icon": "/static/icons/workflow/start.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": -175, "y": -50}
@@ -48,7 +48,7 @@ def _get_default_graph():
                 "id": "node-End",
                 "label": "結束",
                 "type": "End",
-                "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
+                "icon": "/static/icons/workflow/end.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": 875, "y": 350}
@@ -66,7 +66,7 @@ def _get_node_definitions():
             "node_type": "Start",
             "display_name": "開始",
             "description": "流程的起點",
-            "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
+            "icon": "/static/icons/workflow/start.svg",
             "category": "基本",
             "config_schema": {},
             "is_active": True
@@ -75,7 +75,7 @@ def _get_node_definitions():
             "node_type": "End",
             "display_name": "結束",
             "description": "流程的終點",
-            "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
+            "icon": "/static/icons/workflow/end.svg",
             "category": "基本",
             "config_schema": {},
             "is_active": True
@@ -84,7 +84,7 @@ def _get_node_definitions():
             "node_type": "FormAdapter",
             "display_name": "簽核",
             "description": "表單簽核節點",
-            "icon": "/static/modules/form_workflow/icons/workflow/form.svg",
+            "icon": "/static/icons/workflow/form.svg",
             "category": "表單",
             "config_schema": {
                 "assigneeType": "string",
@@ -97,7 +97,7 @@ def _get_node_definitions():
             "node_type": "Delay",
             "display_name": "暫停",
             "description": "延遲執行指定時間",
-            "icon": "/static/modules/form_workflow/icons/workflow/delay.svg",
+            "icon": "/static/icons/workflow/delay.svg",
             "category": "控制",
             "config_schema": {
                 "delay_seconds": "number"
@@ -108,7 +108,7 @@ def _get_node_definitions():
             "node_type": "Branch",
             "display_name": "條件分支",
             "description": "根據條件選擇路徑",
-            "icon": "/static/modules/form_workflow/icons/workflow/branch.svg",
+            "icon": "/static/icons/workflow/branch.svg",
             "category": "控制",
             "config_schema": {},
             "is_active": True
@@ -117,7 +117,7 @@ def _get_node_definitions():
             "node_type": "Converge",
             "display_name": "匯合",
             "description": "等待多條路徑匯合",
-            "icon": "/static/modules/form_workflow/icons/workflow/converge.svg",
+            "icon": "/static/icons/workflow/converge.svg",
             "category": "控制",
             "config_schema": {
                 "mode": "string"
@@ -128,7 +128,7 @@ def _get_node_definitions():
             "node_type": "Telegram",
             "display_name": "Telegram 通知",
             "description": "發送 Telegram 訊息",
-            "icon": "/static/modules/form_workflow/icons/workflow/telegram.svg",
+            "icon": "/static/icons/workflow/telegram.svg",
             "category": "通知",
             "config_schema": {
                 "message": "string",
@@ -140,7 +140,7 @@ def _get_node_definitions():
             "node_type": "EmailAdapter",
             "display_name": "Email 通知",
             "description": "發送 Email",
-            "icon": "/static/modules/form_workflow/icons/workflow/email.svg",
+            "icon": "/static/icons/workflow/email.svg",
             "category": "通知",
             "config_schema": {
                 "to": "string",
@@ -153,7 +153,7 @@ def _get_node_definitions():
             "node_type": "SubFlow",
             "display_name": "子流程",
             "description": "呼叫其他工作流程",
-            "icon": "/static/modules/form_workflow/icons/workflow/subflow.svg",
+            "icon": "/static/icons/workflow/subflow.svg",
             "category": "控制",
             "config_schema": {
                 "childFlowId": "string"
@@ -164,7 +164,7 @@ def _get_node_definitions():
             "node_type": "OpSet",
             "display_name": "設定變數",
             "description": "設定流程變數值",
-            "icon": "/static/modules/form_workflow/icons/workflow/settings.svg",
+            "icon": "/static/icons/workflow/settings.svg",
             "category": "變數",
             "config_schema": {
                 "variables": "array"
@@ -175,7 +175,7 @@ def _get_node_definitions():
             "node_type": "OpFieldRead",
             "display_name": "讀取欄位",
             "description": "從表單讀取欄位到變數",
-            "icon": "/static/modules/form_workflow/icons/workflow/form-read.svg",
+            "icon": "/static/icons/workflow/form-read.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -186,7 +186,7 @@ def _get_node_definitions():
             "node_type": "OpFieldWrite",
             "display_name": "寫入欄位",
             "description": "將變數寫入表單欄位",
-            "icon": "/static/modules/form_workflow/icons/workflow/form-write.svg",
+            "icon": "/static/icons/workflow/form-write.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -531,12 +531,39 @@ def save_new_version(secure_code):
 @workflows_bp.route('/data/node-definitions')
 @login_required
 def get_node_definitions():
-    """取得節點定義列表"""
+    """取得節點定義列表（按分類分組）"""
     definitions = _get_node_definitions()
+
+    # 將節點按分類分組
+    category_map = {
+        '基本': 'basic',
+        '表單': 'form',
+        '通知': 'notification',
+        '控制': 'flow_control',
+        '變數': 'data',
+        '操作': 'operation',
+        '整合': 'integration',
+        '系統': 'system_admin'
+    }
+
+    grouped = {}
+    for node_def in definitions:
+        category_zh = node_def.get('category', '基本')
+        category_key = category_map.get(category_zh, 'basic')
+
+        if category_key not in grouped:
+            grouped[category_key] = []
+
+        grouped[category_key].append({
+            'type': node_def['node_type'],
+            'label': node_def['display_name'],
+            'icon': node_def['icon'],
+            'description': node_def.get('description', '')
+        })
 
     return jsonify({
         'success': True,
-        'definitions': definitions
+        'data': grouped
     })
 
 

@@ -4,294 +4,306 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>流程設計器 - BeakPlatform</title>
-    <!-- 使用平台 vendor 庫 -->
+    <link rel="stylesheet" href="/static/css/themes.css">
     <script src="/static/vendor/cytoscape.min.js"></script>
+    <!-- Font Awesome Icons (本地) -->
     <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
-    <!-- 模組專用樣式 -->
-    <link rel="stylesheet" href="/static/modules/form_workflow/css/themes.css">
-    <link rel="stylesheet" href="/static/modules/form_workflow/css/workflow-designer.css">
+    <!-- Workflow Designer CSS -->
+    <link rel="stylesheet" href="/static/css/workflow-designer.css">
+
+    <!-- Navbar CSS -->
+    <style>
+        .navbar-custom {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0 20px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #1f2937;
+            font-size: 20px;
+            font-weight: 700;
+            transition: opacity 0.2s;
+        }
+
+        .navbar-logo:hover {
+            opacity: 0.8;
+        }
+
+        .navbar-logo i {
+            color: #3b82f6;
+            font-size: 24px;
+        }
+
+        .navbar-title {
+            color: #6b7280;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* 帳號選單按鈕 */
+        .user-menu-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #374151;
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-size: 14px;
+        }
+
+        .user-menu-button:hover {
+            color: #111827;
+        }
+
+        .user-menu-button i.fa-user-circle {
+            font-size: 32px;
+        }
+
+        .user-menu-button i.fa-chevron-down {
+            font-size: 12px;
+        }
+
+        .user-menu-button .user-display-name {
+            display: inline;
+        }
+
+        @media (max-width: 768px) {
+            .user-menu-button .user-display-name {
+                display: none;
+            }
+        }
+
+        /* 下拉選單 */
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            right: 60px;
+            top: 60px;
+            width: 192px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            padding: 4px 0;
+            z-index: 1000;
+        }
+
+        .user-dropdown.show {
+            display: block;
+        }
+
+        .user-dropdown-header {
+            padding: 8px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .user-dropdown-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #111827;
+        }
+
+        .user-dropdown-account {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .user-dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            text-align: left;
+            font-size: 14px;
+            color: #374151;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-dropdown-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .user-dropdown-item i {
+            margin-right: 8px;
+        }
+
+        /* 登出按鈕 */
+        .logout-button {
+            color: #6b7280;
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-size: 18px;
+        }
+
+        .logout-button:hover {
+            color: #ef4444;
+        }
+
+        /* 個人設定模態框 */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .settings-modal.show {
+            display: flex;
+        }
+
+        .settings-modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 28rem;
+            padding: 24px;
+        }
+
+        .settings-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .settings-modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .settings-modal-close {
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-size: 20px;
+        }
+
+        .settings-modal-close:hover {
+            color: #4b5563;
+        }
+    </style>
 </head>
 <body>
-    <!-- 導航欄 -->
-    <!-- 導航欄容器 (組件會自動載入) -->
-    <div id="navbarContainer"></div>
+    <!-- Navbar -->
+    <div class="navbar-custom">
+        <div class="navbar-left">
+            <a href="/forms/workflows" class="navbar-logo">
+                <i class="fas fa-project-diagram"></i>
+                <span>BeakPlatform</span>
+            </a>
+            <div class="navbar-title">流程設計器</div>
+        </div>
+        <div class="navbar-right">
+            <!-- 帳號選單 -->
+            <button class="user-menu-button" id="user-menu-button">
+                <i class="fas fa-user-circle"></i>
+                <span class="user-display-name" data-user-info="displayName">載入中...</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+
+            <!-- 下拉選單 -->
+            <div class="user-dropdown" id="user-dropdown">
+                <div class="user-dropdown-header">
+                    <p class="user-dropdown-name" data-user-info="fullName">載入中...</p>
+                    <p class="user-dropdown-account" data-user-info="account">-</p>
+                </div>
+                <button class="user-dropdown-item" id="settings-button">
+                    <i class="fas fa-user-cog"></i>個人設定
+                </button>
+            </div>
+
+            <!-- 登出按鈕 -->
+            <button class="logout-button" id="logout-button">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 個人設定模態框 -->
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-modal-content">
+            <div class="settings-modal-header">
+                <h3 class="settings-modal-title">個人設定</h3>
+                <button class="settings-modal-close" id="settings-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div>
+                <p style="color: #6b7280;">個人設定功能開發中...</p>
+            </div>
+        </div>
+    </div>
 
     <!-- 工作區容器 -->
     <div class="workflow-container">
         <div class="sidebar">
-        <div class="sidebar-header">
-            <h2><i class="fas fa-cube"></i> 流程元件</h2>
+        <div class="sidebar-header" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="font-size: 11px; margin: 0;"><i class="fas fa-cube"></i> 流程元件</h2>
+            <button id="toggle-all-categories-btn" onclick="toggleAllCategories()" style="padding: 2px 6px; font-size: 9px; background: #555; color: white; border: none; border-radius: 3px; cursor: pointer;" title="展開/收合所有分類">
+                <i class="fas fa-angles-down"></i>
+            </button>
         </div>
 
         <!-- 節點分類可捲動區域 -->
         <div class="node-categories-container">
-            <!-- 控制面板展開按鈕（固定於最前方） -->
-            <div style="padding: 8px 12px; margin-bottom: 10px;">
-                <button onclick="toggleControlPanel()" id="toggle-panel-btn-top" class="toggle-panel-btn" style="width: 100%; padding: 6px; font-size: 11px; background: #667eea; color: white; border: 1px solid #5568d3; border-radius: 4px; cursor: pointer; white-space: nowrap;">
-                    <i class="fas fa-chevron-up"></i> 展開控制面板
-                </button>
-            </div>
-
-            <!-- 全部打開/關閉按鈕 -->
-            <div style="padding: 8px 12px; display: flex; gap: 5px; margin-bottom: 10px;">
-                <button class="btn-primary" onclick="expandAllCategories()" style="flex: 1; font-size: 11px; padding: 6px;">
-                    <i class="fas fa-angles-down"></i> 全開
-                </button>
-                <button class="btn-secondary" onclick="collapseAllCategories()" style="flex: 1; font-size: 11px; padding: 6px;">
-                    <i class="fas fa-angles-up"></i> 全關
-                </button>
-            </div>
-
-            <!-- 基本節點 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('basic-nodes')">
-                    <span><i class="fas fa-circle-dot"></i> 基本節點</span>
-                    <span id="basic-nodes-icon" class="category-icon">▶</span>
-                </div>
-                <div id="basic-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node start" draggable="true" data-node-type="start">
-                            <div class="node-icon">
-                                <i class="fas fa-play"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">開始</div>
-                                <div class="node-description">流程起點</div>
-                            </div>
-                        </div>
-                        <div class="palette-node end" draggable="true" data-node-type="end">
-                            <div class="node-icon">
-                                <i class="fas fa-stop"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">結束</div>
-                                <div class="node-description">流程終點</div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- 節點分類容器（動態載入） -->
+            <div id="node-categories-container">
+                <div style="padding: 10px; text-align: center; color: #666; font-size: 10px;">
+                    <i class="fas fa-spinner fa-spin"></i> 載入中...
                 </div>
             </div>
+        </div>
 
-            <!-- 資料處理 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('data-nodes')">
-                    <span><i class="fas fa-database"></i> 資料處理</span>
-                    <span id="data-nodes-icon" class="category-icon">▶</span>
+        <!-- 流程樹（父子流程導航） -->
+        <div class="flow-tree-container">
+            <div class="flow-tree-header">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sitemap"></i> 流程樹系
                 </div>
-                <div id="data-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node sql" draggable="true" data-node-type="SQLExecutor">
-                            <div class="node-icon">
-                                <i class="fas fa-database"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">SQL 查詢器</div>
-                                <div class="node-description">執行預定義的安全查詢</div>
-                            </div>
-                        </div>
-                    </div>
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="refreshFlowTree()" title="重新載入流程樹">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
             </div>
-
-            <!-- 表單簽核 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('form-approval-nodes')">
-                    <span><i class="fas fa-file-signature"></i> 表單簽核</span>
-                    <span id="form-approval-nodes-icon" class="category-icon">▶</span>
-                </div>
-                <div id="form-approval-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node form" draggable="true" data-node-type="form_creator">
-                            <div class="node-icon">
-                                <i class="fas fa-list-check"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">清單表單</div>
-                                <div class="node-description">收集使用者輸入資料</div>
-                            </div>
-                        </div>
-                        <div class="palette-node form" draggable="true" data-node-type="custom_form">
-                            <div class="node-icon">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">客製表單</div>
-                                <div class="node-description">使用已設計的表單範本</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 通知元件 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('notification-nodes')">
-                    <span><i class="fas fa-bell"></i> 通知元件</span>
-                    <span id="notification-nodes-icon" class="category-icon">▶</span>
-                </div>
-                <div id="notification-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node telegram" draggable="true" data-node-type="TELEGRAM">
-                            <div class="node-icon">
-                                <i class="fab fa-telegram"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">Telegram 通知</div>
-                                <div class="node-description">發送 Telegram 訊息</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 流程控制 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('flow-control-nodes')">
-                    <span><i class="fas fa-route"></i> 流程控制</span>
-                    <span id="flow-control-nodes-icon" class="category-icon">▶</span>
-                </div>
-                <div id="flow-control-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node condition" draggable="true" data-node-type="condition">
-                            <div class="node-icon">
-                                <i class="fas fa-code-branch"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">條件分支</div>
-                                <div class="node-description">根據條件選擇路徑</div>
-                            </div>
-                        </div>
-                        <div class="palette-node parallel" draggable="true" data-node-type="parallel_fork">
-                            <div class="node-icon">
-                                <i class="fas fa-code-fork"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">並行分叉 (Fork)</div>
-                                <div class="node-description">同時執行多個分支</div>
-                            </div>
-                        </div>
-                        <div class="palette-node parallel" draggable="true" data-node-type="parallel_join">
-                            <div class="node-icon">
-                                <i class="fas fa-code-merge"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">並行匯合 (Join)</div>
-                                <div class="node-description">等待所有分支完成</div>
-                            </div>
-                        </div>
-
-                        <!-- 子流程節點 -->
-                        <div class="palette-node subprocess" draggable="true" data-node-type="subprocess">
-                            <div class="node-icon">
-                                <i class="fas fa-sitemap"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">子流程</div>
-                                <div class="node-description">呼叫其他工作流程</div>
-                            </div>
-                        </div>
-
-                        <!-- 匯聚節點（兩種模式：等待全部/任一完成） -->
-                        <div class="palette-node converge" draggable="true" data-node-type="CONVERGE">
-                            <div class="node-icon">
-                                <i class="fas fa-compress-arrows-alt"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">匯聚節點</div>
-                                <div class="node-description">等待多條路徑匯合</div>
-                            </div>
-                        </div>
-
-                        <!-- 延遲暫停節點 -->
-                        <div class="palette-node delay" draggable="true" data-node-type="DELAY">
-                            <div class="node-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">暫停</div>
-                                <div class="node-description">延遲等待指定秒數</div>
-                            </div>
-                        </div>
-
-                        <!-- 迴圈開始節點 -->
-                        <div class="palette-node loop" draggable="true" data-node-type="loop_start">
-                            <div class="node-icon">
-                                <i class="fas fa-redo"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">迴圈開始</div>
-                                <div class="node-description">For/While/ForEach</div>
-                            </div>
-                        </div>
-
-                        <!-- 迴圈結束節點 -->
-                        <div class="palette-node loop" draggable="true" data-node-type="loop_end">
-                            <div class="node-icon">
-                                <i class="fas fa-stop-circle"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">迴圈結束</div>
-                                <div class="node-description">檢查迴圈條件</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 測試節點 -->
-            <div class="node-category">
-                <div class="category-header" onclick="toggleCategory('test-nodes')">
-                    <span><i class="fas fa-flask"></i> 測試節點</span>
-                    <span id="test-nodes-icon" class="category-icon">▶</span>
-                </div>
-                <div id="test-nodes" class="category-content">
-                    <div class="node-palette">
-                        <div class="palette-node test" draggable="true" data-node-type="test_node_inside">
-                            <div class="node-icon">
-                                <i class="fas fa-square"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">測試-文字內部</div>
-                                <div class="node-description">文字顯示在節點內部</div>
-                            </div>
-                        </div>
-                        <div class="palette-node test" draggable="true" data-node-type="test_node_outside">
-                            <div class="node-icon">
-                                <i class="fas fa-square"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">測試-文字外部</div>
-                                <div class="node-description">文字顯示在節點下方</div>
-                            </div>
-                        </div>
-                        <div class="palette-node test" draggable="true" data-node-type="test_node_3colors">
-                            <div class="node-icon">
-                                <i class="fas fa-palette"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">測試-三色圖案</div>
-                                <div class="node-description">SVG 三色圓圈</div>
-                            </div>
-                        </div>
-                        <div class="palette-node test" draggable="true" data-node-type="test_node_image">
-                            <div class="node-icon">
-                                <i class="fas fa-image"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">測試-網路圖片</div>
-                                <div class="node-description">使用外部圖片</div>
-                            </div>
-                        </div>
-                        <div class="palette-node test" draggable="true" data-node-type="test_node_circle">
-                            <div class="node-icon">
-                                <i class="fas fa-circle"></i>
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">測試-圓形遮罩</div>
-                                <div class="node-description">圓形顯示網路圖片</div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="flow-tree-list" id="flow-tree-list">
+                <div style="padding: 10px; text-align: center; color: #999; font-size: 9px;">
+                    載入中...
                 </div>
             </div>
         </div>
@@ -321,14 +333,17 @@
 
     <div class="main">
         <div class="header" id="workflow-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button id="btn-save-workflow" class="btn-success" onclick="saveWorkflow()" data-permission="workflow:create,workflow:update" style="display: none; padding: 3px 6px; font-size: 11px;">
+            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                <button id="btn-save-workflow" class="btn-success" onclick="saveWorkflow()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
                     <i class="fas fa-save"></i> 儲存
                 </button>
-                <button id="btn-save-and-close" class="btn-success" onclick="saveAndClose()" data-permission="workflow:create,workflow:update" style="display: none; padding: 3px 6px; font-size: 11px;">
+                <button id="btn-save-and-close" class="btn-success" onclick="saveAndClose()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
                     <i class="fas fa-save"></i> 儲存並關閉
                 </button>
-                <button id="btn-discard" class="btn-danger" onclick="discardAndClose()" style="display: none; padding: 3px 6px; font-size: 11px;">
+                <button id="btn-save-new-version" class="btn-primary" onclick="saveNewVersion()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0; width: auto; margin-bottom: 0;">
+                    <i class="fas fa-code-branch"></i> 另存新版
+                </button>
+                <button id="btn-discard" class="btn-danger" onclick="discardAndClose()" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
                     <i class="fas fa-times"></i> 放棄
                 </button>
                 <div id="workflow-info" style="display: none; margin-left: 50px;">
@@ -337,6 +352,11 @@
                            onblur="updateWorkflowInfo()"
                            onkeypress="if(event.key==='Enter') this.blur()">
                     <span style="margin-left: 10px; color: var(--text-tertiary); font-size: 0.9rem;" id="current-workflow-version"></span>
+                    <select id="current-workflow-category"
+                            style="margin-left: 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white;"
+                            onchange="updateWorkflowInfo()">
+                        <option value="">未分類</option>
+                    </select>
                     <input type="text" id="current-workflow-description" placeholder="描述（選填）"
                            style="margin-left: 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white; min-width: 300px; color: var(--text-secondary);"
                            onblur="updateWorkflowInfo()"
@@ -368,6 +388,14 @@
                 </button>
                 <button onclick="switchTab('formfields')" id="tab-formfields" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
                     <i class="fas fa-list-alt"></i> 表單欄位
+                </button>
+                <button onclick="switchTab('opsetvars')" id="tab-opsetvars" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    <i class="fas fa-calculator"></i> OPSET變數
+                </button>
+                <!-- 展開/收合按鈕（右側） -->
+                <div style="flex: 1;"></div>
+                <button onclick="toggleControlPanel()" id="toggle-panel-btn-tab" style="padding: 8px 12px; background: #5a6fd6; color: white; border: none; cursor: pointer; font-size: 11px; white-space: nowrap;" title="展開或收合控制面板">
+                    <i class="fas fa-chevron-up"></i> 展開
                 </button>
             </div>
 
@@ -587,21 +615,9 @@
                 </div>
 
                 <!-- Tab 4: 表單欄位 -->
-                <div id="formfields-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px; max-height: 450px; overflow-y: auto;">
+                <div id="formfields-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px; height: calc(100% - 10px); overflow: hidden;">
                     <div class="canvas-control-panel" style="flex: 1; max-width: 100%;">
-                        <!-- 子分頁切換 -->
-                        <div style="display: flex; gap: 0; margin-bottom: 10px; border-bottom: 2px solid #e0e0e0;">
-                            <button onclick="switchFormFieldsSubTab('fieldlist')" id="subtab-fieldlist"
-                                style="padding: 6px 16px; background: #667eea; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px; margin-right: 2px;">
-                                <i class="fas fa-list"></i> 欄位查詢
-                            </button>
-                            <button onclick="switchFormFieldsSubTab('varconfig')" id="subtab-varconfig"
-                                style="padding: 6px 16px; background: #e0e0e0; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 12px;">
-                                <i class="fas fa-cogs"></i> 變數配置
-                            </button>
-                        </div>
-
-                        <!-- 子分頁內容：欄位查詢 -->
+                        <!-- 欄位變數查詢 -->
                         <div id="subtab-fieldlist-content" style="display: flex; gap: 10px; height: 100%;">
                             <!-- 左側：表單選擇區 -->
                             <div style="min-width: 200px; max-width: 250px; display: flex; flex-direction: column; gap: 10px;">
@@ -609,8 +625,12 @@
                                     <i class="fas fa-file-alt"></i> 配對表單
                                 </div>
 
-                                <!-- 版本切換 -->
+                                <!-- 版本切換與重載 -->
                                 <div style="display: flex; gap: 5px;">
+                                    <button onclick="loadMappedForms('design')" title="重新載入配對表單"
+                                        style="padding: 5px 8px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
                                     <button id="btn-form-design" onclick="loadMappedForms('design')"
                                         style="flex: 1; padding: 5px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
                                         設計版
@@ -622,7 +642,7 @@
                                 </div>
 
                                 <!-- 表單列表 -->
-                                <div id="mapped-forms-list" style="flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa; min-height: 150px; max-height: 400px;">
+                                <div id="mapped-forms-list" style="flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; background: #fafafa; min-height: 100px; max-height: 175px;">
                                     <div style="text-align: center; padding: 20px; color: #999; font-size: 11px;">
                                         <i class="fas fa-spinner fa-spin"></i> 載入中...
                                     </div>
@@ -638,32 +658,44 @@
                             <div style="flex: 1; display: flex; flex-direction: column; border-left: 1px solid #e0e0e0; padding-left: 10px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 5px; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
                                     <div style="font-size: 13px; font-weight: 600; color: #333;">
-                                        <i class="fas fa-list"></i> 欄位清單
+                                        <i class="fas fa-code"></i> 變數清單
                                         <span id="form-fields-title" style="font-weight: 400; color: #666;"></span>
                                     </div>
-                                    <div style="display: flex; gap: 5px;">
-                                        <input type="text" id="field-search" placeholder="搜尋欄位..."
-                                            style="padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 3px; width: 150px;"
+                                    <div style="display: flex; gap: 5px; align-items: center;">
+                                        <input type="text" id="field-search" placeholder="搜尋..."
+                                            style="padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 3px; width: 100px;"
                                             oninput="filterFormFields()">
-                                        <button onclick="copyFieldsTable()" title="複製表格"
-                                            style="padding: 4px 8px; background: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
-                                            <i class="fas fa-copy"></i>
+                                        <button onclick="copyFieldsTable()" title="複製表格到剪貼簿"
+                                            style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                            <i class="fas fa-table"></i>
+                                        </button>
+                                        <button onclick="copySelectedOldVars()" title="複製勾選欄位的舊式變數"
+                                            style="padding: 4px 8px; background: #fd7e14; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                            <i class="fas fa-clipboard"></i> 舊變數
+                                        </button>
+                                        <button onclick="copySelectedDisplayVars()" title="複製勾選欄位的新式變數"
+                                            style="padding: 4px 8px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                            <i class="fas fa-clipboard"></i> 新變數
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- 欄位表格 -->
-                                <div style="flex: 1; overflow: auto; max-height: 400px;">
+                                <div id="form-fields-scroll" style="flex: 1; overflow: auto; max-height: 175px;">
                                     <table id="form-fields-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
                                         <thead style="position: sticky; top: 0; background: #f0f0f0;">
                                             <tr>
-                                                <th style="padding: 6px 8px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 50px;">
+                                                <th style="padding: 6px 8px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 40px;">
                                                     <input type="checkbox" id="field-select-all" onchange="toggleAllFieldSelection()" title="全選/取消全選">
-                                                    取值
                                                 </th>
-                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">變數語法</th>
-                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">欄位代碼</th>
-                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">顯示名稱</th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
+                                                    舊式變數
+                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="FieldWrite 使用的變數格式，點擊可複製"></i>
+                                                </th>
+                                                <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
+                                                    新式變數
+                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="人類可讀的變數格式，點擊可複製"></i>
+                                                </th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">類型</th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">資料型別</th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">必填</th>
@@ -672,7 +704,7 @@
                                         </thead>
                                         <tbody id="form-fields-tbody">
                                             <tr>
-                                                <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                                                <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
                                                     請先選擇表單
                                                 </td>
                                             </tr>
@@ -680,130 +712,85 @@
                                     </table>
                                 </div>
 
-                                <!-- 欄位數量統計與狀態顯示 -->
+                                <!-- 欄位數量統計 -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
                                     <div id="form-fields-count" style="font-size: 10px; color: #666;">
                                         共 0 個欄位
                                     </div>
-                                    <div style="display: flex; gap: 5px; align-items: center;">
-                                        <span id="field-config-status" style="font-size: 10px; color: #999;"></span>
-                                    </div>
+                                    <span id="field-config-status" style="font-size: 10px; color: #999;"></span>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- 子分頁內容：變數配置 -->
-                        <div id="subtab-varconfig-content" style="display: none; gap: 15px;">
-                            <div style="display: flex; gap: 15px; height: 100%;">
-                                <!-- 左側：FieldRead 區塊 -->
-                                <div style="flex: 1; background: #f8fff8; border: 1px solid #c3e6cb; border-radius: 6px; padding: 12px;">
-                                    <div style="font-size: 13px; font-weight: 600; color: #28a745; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #c3e6cb;">
-                                        <i class="fas fa-download"></i> FieldRead - 批次讀取欄位到變數
-                                    </div>
-
-                                    <!-- 表單選擇 -->
-                                    <div style="margin-bottom: 10px;">
-                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">選擇表單</label>
-                                        <select id="varconfig-read-form" onchange="onVarConfigFormChange('read')"
-                                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
-                                            <option value="">-- 請選擇表單 --</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- 欄位多選清單 -->
-                                    <div style="margin-bottom: 10px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                                            <label style="font-size: 11px; color: #666;">選擇欄位</label>
-                                            <div style="display: flex; gap: 5px;">
-                                                <button onclick="varConfigSelectAll('read')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">全選</button>
-                                                <button onclick="varConfigDeselectAll('read')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">清除</button>
-                                            </div>
-                                        </div>
-                                        <div id="varconfig-read-fields" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white;">
-                                            <div style="padding: 15px; text-align: center; color: #999; font-size: 11px;">
-                                                請先選擇表單
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 已選欄位預覽（含變數名稱與衝突檢測） -->
-                                    <div style="margin-bottom: 10px;">
-                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
-                                            已選欄位 <span id="varconfig-read-count" style="color: #28a745;">(0)</span>
-                                        </label>
-                                        <div id="varconfig-read-preview" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; font-size: 11px;">
-                                            <div style="padding: 10px; text-align: center; color: #999;">
-                                                尚未選擇欄位
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 套用按鈕 -->
-                                    <button onclick="applyVarConfigRead()" style="width: 100%; padding: 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                        <i class="fas fa-check"></i> 套用到 FieldRead 設定
-                                    </button>
+                <!-- Tab 5: OPSET 自訂變數 -->
+                <div id="opsetvars-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px; height: calc(100% - 10px); overflow: hidden;">
+                    <div class="canvas-control-panel" style="flex: 1; max-width: 100%;">
+                        <div style="display: flex; flex-direction: column; height: 100%;">
+                            <!-- 標題列 -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #333;">
+                                    <i class="fas fa-calculator"></i> OPSET 自訂變數統計表
+                                    <span id="opset-vars-count" style="font-weight: 400; color: #666; font-size: 11px;"></span>
                                 </div>
-
-                                <!-- 右側：FieldWrite 區塊 -->
-                                <div style="flex: 1; background: #fff8f0; border: 1px solid #f5c6cb; border-radius: 6px; padding: 12px;">
-                                    <div style="font-size: 13px; font-weight: 600; color: #dc3545; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f5c6cb;">
-                                        <i class="fas fa-upload"></i> FieldWrite - 批次寫入變數到欄位
-                                    </div>
-
-                                    <!-- 表單選擇 -->
-                                    <div style="margin-bottom: 10px;">
-                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">選擇表單</label>
-                                        <select id="varconfig-write-form" onchange="onVarConfigFormChange('write')"
-                                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
-                                            <option value="">-- 請選擇表單 --</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- 欄位多選清單 -->
-                                    <div style="margin-bottom: 10px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                                            <label style="font-size: 11px; color: #666;">選擇目標欄位</label>
-                                            <div style="display: flex; gap: 5px;">
-                                                <button onclick="varConfigSelectAll('write')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">全選</button>
-                                                <button onclick="varConfigDeselectAll('write')" style="padding: 2px 6px; font-size: 10px; background: #e0e0e0; border: none; border-radius: 2px; cursor: pointer;">清除</button>
-                                            </div>
-                                        </div>
-                                        <div id="varconfig-write-fields" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white;">
-                                            <div style="padding: 15px; text-align: center; color: #999; font-size: 11px;">
-                                                請先選擇表單
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 已選欄位預覽（含變數名稱） -->
-                                    <div style="margin-bottom: 10px;">
-                                        <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
-                                            已選欄位 <span id="varconfig-write-count" style="color: #dc3545;">(0)</span>
-                                        </label>
-                                        <div id="varconfig-write-preview" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; font-size: 11px;">
-                                            <div style="padding: 10px; text-align: center; color: #999;">
-                                                尚未選擇欄位
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 複製變數語法按鈕 -->
-                                    <button onclick="copyVarConfigWriteSyntax()" style="width: 100%; padding: 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                        <i class="fas fa-copy"></i> 複製變數語法到剪貼簿
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <button onclick="reloadOpsetVars()" title="重新掃描所有 OPSET 節點"
+                                        style="padding: 4px 10px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        <i class="fas fa-sync-alt"></i> Reload
+                                    </button>
+                                    <button onclick="copySelectedOpsetVars()" title="複製勾選的變數"
+                                        style="padding: 4px 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        <i class="fas fa-clipboard"></i> 複製變數
+                                    </button>
+                                    <button onclick="copyOpsetVarsTable()" title="複製表格到剪貼簿"
+                                        style="padding: 4px 10px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                        <i class="fas fa-table"></i> 複製表格
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 說明區塊 -->
-                            <div style="background: #e8f4fd; border: 1px solid #bee5eb; border-radius: 6px; padding: 10px; margin-top: 10px;">
-                                <div style="font-size: 11px; color: #0c5460;">
-                                    <i class="fas fa-info-circle"></i> <strong>使用說明：</strong>
-                                    <ul style="margin: 5px 0 0 15px; padding: 0;">
-                                        <li><strong>FieldRead：</strong>選擇欄位後按「套用」，會自動配置到流程的 FieldRead 設定，變數名稱格式為 <code>formCode_fieldKey</code></li>
-                                        <li><strong>FieldWrite：</strong>選擇欄位後按「複製」，可將 <code>${formCode_fieldKey}</code> 語法複製到剪貼簿，貼入 FieldWrite 的內容欄位</li>
-                                        <li><span style="color: #dc3545;">●</span> 紅燈表示變數名稱已存在於目前流程設定中，新設定會覆蓋舊值</li>
-                                    </ul>
-                                </div>
+                            <!-- 變數表格 -->
+                            <div id="opset-vars-scroll" style="flex: 1; overflow: auto; max-height: 175px;">
+                                <table id="opset-vars-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                    <thead style="position: sticky; top: 0; background: #f0f0f0;">
+                                        <tr>
+                                            <th style="padding: 6px 8px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 30px;">
+                                                <input type="checkbox" id="opset-var-select-all" onchange="toggleAllOpsetVarSelection()" title="全選/取消全選">
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 120px;">
+                                                節點名稱
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
+                                                描述
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 100px;">
+                                                Node ID
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 130px;">
+                                                變數名稱
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 80px;">
+                                                運算元
+                                            </th>
+                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">
+                                                值 / 表達式
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="opset-vars-tbody">
+                                        <tr>
+                                            <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
+                                                <i class="fas fa-info-circle"></i> 點擊 Reload 掃描流程中的 OPSET 節點
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- 說明 -->
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 10px; color: #666;">
+                                <i class="fas fa-lightbulb"></i> 提示：此表列出流程圖中所有 OPSET 節點定義的自訂變數。使用 <code>${變數名稱}</code> 引用這些變數。
                             </div>
                         </div>
                     </div>
@@ -911,7 +898,7 @@
                     <option value="straight">直線</option>
                     <option value="bezier">曲線</option>
                     <option value="polyline" disabled>分段折線 (使用 Shift+點擊 添加中繼點)</option>
-                    <option value="taxi-control">直角折線(藍點)</option>
+                    <option value="orthogonal">正交折線 (拖動線段調整)</option>
                     <option value="yellow-control">直角折線(黃點)</option>
                     <option value="taxi">直角折線</option>
                 </select>
@@ -952,6 +939,19 @@
                     <span class="range-value-display" id="taxi-turn-value">20</span>
                 </label>
                 <input type="range" id="taxi-turn" min="0" max="100" value="20" oninput="updateTaxiControls()">
+            </div>
+
+            <!-- 正交折線控制 -->
+            <div class="control-group" id="orthogonal-controls" style="display: none;">
+                <div class="edge-info-box" style="display: block; background: #e8f5e9; margin-bottom: 10px;">
+                    <i class="fas fa-arrows-alt"></i> 正交折線：點擊線段後拖動，水平線只能上下移動，垂直線只能左右移動
+                </div>
+                <label>起始方向:</label>
+                <select id="orthogonal-direction" onchange="updateOrthogonalDirection()">
+                    <option value="auto">自動判斷</option>
+                    <option value="horizontal">水平優先</option>
+                    <option value="vertical">垂直優先</option>
+                </select>
             </div>
 
             <!-- 線條屬性 -->
@@ -1002,7 +1002,30 @@
                 </div>
 
                 <label>標籤文字 (Label):</label>
-                <input type="text" id="edge-label" placeholder="例如: 已核准、年齡 > 18" oninput="updateEdgeLabel()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+                <input type="text" id="edge-label" placeholder="例如: 已核准、年齡 > 18" oninput="updateEdgeLabel()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px;">顯示在第幾段:</label>
+                        <select id="edge-label-segment" onchange="updateEdgeLabel()" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="1">第1段</option>
+                            <option value="2">第2段</option>
+                            <option value="3">第3段</option>
+                            <option value="4">第4段</option>
+                            <option value="5">第5段</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px;">文字方向:</label>
+                        <select id="edge-label-rotation" onchange="updateEdgeLabel()" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="autorotate">自動旋轉</option>
+                            <option value="0">0° (水平)</option>
+                            <option value="90">90°</option>
+                            <option value="180">180°</option>
+                            <option value="270">270°</option>
+                        </select>
+                    </div>
+                </div>
 
                 <label>條件表達式:</label>
                 <textarea id="edge-condition" rows="3" placeholder="例如: vars.age > 18" oninput="updateEdgeCondition()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px; margin-bottom: 5px;"></textarea>
@@ -1023,13 +1046,11 @@
                 </button>
             </div>
 
-            <!-- 快速預設 -->
-            <h4 style="margin-top: 15px;"><i class="fas fa-magic"></i> 快速預設</h4>
-            <div class="preset-buttons">
-                <button onclick="applyPreset('straight')">直線</button>
-                <button onclick="applyPreset('bezier')">曲線</button>
-                <button onclick="applyPreset('polyline')">分段折線</button>
-                <button onclick="applyPreset('taxi')">直角折線</button>
+            <!-- 刪除線段 -->
+            <div class="control-group" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                <button onclick="deleteSelectedEdge()" style="width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    <i class="fas fa-trash"></i> 刪除線段
+                </button>
             </div>
         </div>
     </div>
@@ -1039,11 +1060,11 @@
     <!-- 注入全域變數 (在載入 workflow-main.js 之前) -->
     <script>
         // 從 Flask 模板注入全域變數
-        window.orgCode = '{{ org_secure_code }}';
+        window.orgCode = '{{ g.org_secure_code }}';
     </script>
 
     <!-- Workflow Designer JavaScript -->
-    <script src="/static/modules/form_workflow/js/workflow-main.js"></script>
+    <script src="/static/js/workflow-main.js"></script>
     <script>
         // Workflow Designer 专用主題管理
         (function() {
@@ -1119,11 +1140,240 @@
     </div><!-- 關閉 workflow-container -->
 
     <!-- 認證腳本 -->
-    <script src="/static/modules/form_workflow/js/auth.js"></script>
+    <script src="/static/js/auth.js"></script>
+
+    <!-- Navbar 初始化 -->
+    <script>
+        // 初始化用戶資訊
+        async function initUserInfo() {
+            if (typeof AuthModule === 'undefined') {
+                console.error('AuthModule 未載入');
+                return;
+            }
+
+            if (AuthModule.isAuthenticated()) {
+                try {
+                    const response = await AuthModule.authenticatedFetch('/auth/me');
+                    const data = await response.json();
+                    const user = data.data || data.user;
+
+                    if (user) {
+                        // 更新顯示名稱
+                        document.querySelectorAll('[data-user-info="displayName"]').forEach(el => {
+                            el.textContent = user.display_name || user.username;
+                        });
+                        // 更新全名
+                        document.querySelectorAll('[data-user-info="fullName"]').forEach(el => {
+                            el.textContent = user.full_name || user.display_name || user.username;
+                        });
+                        // 更新帳號
+                        document.querySelectorAll('[data-user-info="account"]').forEach(el => {
+                            el.textContent = `${user.username}@${user.org_code}`;
+                        });
+                    }
+                } catch (error) {
+                    console.error('更新用戶資訊失敗:', error);
+                }
+            }
+        }
+
+        // 下拉選單控制
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+
+        if (userMenuButton && userDropdown) {
+            userMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            // 點擊外部關閉下拉選單
+            document.addEventListener('click', (e) => {
+                if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // 個人設定按鈕
+        const settingsButton = document.getElementById('settings-button');
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsModalClose = document.getElementById('settings-modal-close');
+
+        if (settingsButton && settingsModal) {
+            settingsButton.addEventListener('click', () => {
+                userDropdown.classList.remove('show');
+                settingsModal.classList.add('show');
+            });
+
+            if (settingsModalClose) {
+                settingsModalClose.addEventListener('click', () => {
+                    settingsModal.classList.remove('show');
+                });
+            }
+
+            // 點擊模態框外部關閉
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.remove('show');
+                }
+            });
+        }
+
+        // 登出按鈕
+        const logoutButton = document.getElementById('logout-button');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => {
+                if (confirm('確定要登出嗎？')) {
+                    if (typeof AuthModule !== 'undefined') {
+                        AuthModule.logout();
+                    }
+                }
+            });
+        }
+
+        // 初始化用戶資訊
+        initUserInfo();
+    </script>
 
     <!-- 初始化主題切換器 -->
     <script>
+        // 分類名稱對應
+        const CATEGORY_NAMES = {
+            'basic': '基本節點',
+            'form': '表單處理',
+            'notification': '通知機制',
+            'flow_control': '流程控制',
+            'data': '資料處理',
+            'operation': '運算操作',
+            'integration': '系統整合',
+            'system_admin': '系統專用'
+        };
+
+        // 分類圖示對應
+        const CATEGORY_ICONS = {
+            'basic': 'fas fa-circle-dot',
+            'form': 'fas fa-file-signature',
+            'notification': 'fas fa-bell',
+            'flow_control': 'fas fa-route',
+            'data': 'fas fa-database',
+            'operation': 'fas fa-calculator',
+            'integration': 'fas fa-plug',
+            'system_admin': 'fas fa-shield-alt'
+        };
+
+        // 載入節點定義
+        async function loadNodeDefinitions() {
+            try {
+                const response = await fetch('/api/workflows/data/node-definitions');
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message || '載入節點定義失敗');
+                }
+
+                const container = document.getElementById('node-categories-container');
+                container.innerHTML = '';
+
+                const grouped = result.data;
+
+                // 依序渲染各分類（system_admin 放最後，僅系統管理員可見）
+                const categoryOrder = ['basic', 'form', 'notification', 'flow_control', 'data', 'operation', 'integration', 'system_admin'];
+
+                categoryOrder.forEach(categoryKey => {
+                    if (!grouped[categoryKey] || grouped[categoryKey].length === 0) {
+                        return;
+                    }
+
+                    // 節點顯示由資料庫 require_system_admin 欄位控制，後端 API 已根據用戶身份過濾
+                    const nodes = grouped[categoryKey];
+
+                    const categoryName = CATEGORY_NAMES[categoryKey] || categoryKey;
+                    const categoryIcon = CATEGORY_ICONS[categoryKey] || 'fas fa-folder';
+                    const categoryId = `${categoryKey}-nodes`;
+
+                    // 建立分類區塊
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'node-category';
+
+                    // 分類標題
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'category-header';
+                    headerDiv.onclick = () => toggleCategory(categoryId);
+                    headerDiv.innerHTML = `
+                        <span><i class="${categoryIcon}"></i> ${categoryName}</span>
+                        <span id="${categoryId}-icon" class="category-icon open">▶</span>
+                    `;
+
+                    // 分類內容（預設展開）
+                    const contentDiv = document.createElement('div');
+                    contentDiv.id = categoryId;
+                    contentDiv.className = 'category-content open';
+
+                    const paletteDiv = document.createElement('div');
+                    paletteDiv.className = 'node-palette';
+
+                    // 建立節點
+                    nodes.forEach(node => {
+                        const nodeDiv = document.createElement('div');
+                        nodeDiv.className = `palette-node ${categoryKey}`;
+                        nodeDiv.draggable = true;
+                        nodeDiv.setAttribute('data-node-type', node.type);
+                        nodeDiv.setAttribute('data-node-label', node.label);  // 保存 display_name
+                        nodeDiv.setAttribute('data-node-icon', node.icon || '');  // 保存 icon class
+
+                        nodeDiv.innerHTML = `
+                            <div class="node-icon">
+                                <img src="${node.icon}" class="node-svg-icon" alt="">
+                            </div>
+                            <div class="node-info">
+                                <div class="node-title">${node.label}</div>
+                                <div class="node-description">${node.description || ''}</div>
+                            </div>
+                        `;
+
+                        // 綁定拖拽事件（如果 workflow-main.js 有提供 setupNodeDragEvents）
+                        if (typeof setupNodeDragEvents === 'function') {
+                            setupNodeDragEvents(nodeDiv);
+                        } else {
+                            // 基本拖拽事件
+                            nodeDiv.addEventListener('dragstart', function(e) {
+                                const nodeType = this.getAttribute('data-node-type');
+                                const nodeLabel = this.getAttribute('data-node-label');
+                                const nodeIcon = this.getAttribute('data-node-icon');
+                                e.dataTransfer.setData('nodeType', nodeType);
+                                e.dataTransfer.setData('nodeLabel', nodeLabel);
+                                e.dataTransfer.setData('nodeIcon', nodeIcon);
+                                e.dataTransfer.effectAllowed = 'copy';
+                            });
+                        }
+
+                        paletteDiv.appendChild(nodeDiv);
+                    });
+
+                    contentDiv.appendChild(paletteDiv);
+                    categoryDiv.appendChild(headerDiv);
+                    categoryDiv.appendChild(contentDiv);
+                    container.appendChild(categoryDiv);
+                });
+
+                console.log('節點定義載入完成');
+            } catch (error) {
+                console.error('載入節點定義失敗:', error);
+                const container = document.getElementById('node-categories-container');
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #EF4444;">
+                        <i class="fas fa-exclamation-triangle"></i> 載入節點失敗: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // 載入節點定義
+            loadNodeDefinitions();
+
+            // 初始化主題切換器
             setTimeout(() => {
                 const themeSwitcherContainer = document.getElementById('themeSwitcherContainer');
                 if (themeSwitcherContainer && window.ThemeManager) {

@@ -4,10 +4,11 @@ FormWorkflow Module - Web Routes
 
 提供表單填寫、簽核等頁面。
 """
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, request
 
 from app.security.decorators import login_required as security_login_required
 from app.platform.auth import current_user
+from app.platform.data import get_current_org
 
 # 建立 Web Blueprint
 web_bp = Blueprint(
@@ -84,8 +85,8 @@ def workflow_new():
 @web_bp.route('/workflows/<secure_code>')
 @security_login_required
 def workflow_detail(secure_code):
-    """工作流詳情（跳轉到列表頁）"""
-    return redirect(url_for('form_workflow_web.workflows'))
+    """工作流設計器（重定向到查詢參數格式）"""
+    return redirect(f'/api/workflows/designer/standalone?id={secure_code}')
 
 
 # =============================================================================
