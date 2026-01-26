@@ -139,6 +139,7 @@ class BaseNodeHandler(ABC):
         WorkflowLogService.log(
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
+            node_id=self.queue_item.node_id,
             level='INFO',
             message=message,
             data=details
@@ -150,6 +151,7 @@ class BaseNodeHandler(ABC):
         WorkflowLogService.log(
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
+            node_id=self.queue_item.node_id,
             level='WARNING',
             message=message,
             data=details
@@ -161,6 +163,7 @@ class BaseNodeHandler(ABC):
         WorkflowLogService.log(
             workflow_instance_id=self._get_workflow_instance_id(),
             node_queue_id=self.queue_item.id,
+            node_id=self.queue_item.node_id,
             level='ERROR',
             message=message,
             data=details
@@ -171,6 +174,10 @@ class BaseNodeHandler(ABC):
         if self.workflow_instance:
             return self.workflow_instance.id
         return None
+
+    def _get_workflow_instance_code(self) -> Optional[str]:
+        """取得 workflow_instance_secure_code (用於 VariableService)"""
+        return self.queue_item.workflow_instance_secure_code
 
     # ========================================
     # 新版變數 API（推薦使用）
@@ -188,25 +195,17 @@ class BaseNodeHandler(ABC):
         """
         from ..variable_service import VariableService
 
-        instance_id = self._get_workflow_instance_id()
-        if not instance_id:
+        instance_code = self._get_workflow_instance_code()
+        if not instance_code:
             return default
 
         # 先嘗試 LOCAL
-        value = VariableService.get_local_var(
-            instance_id,
-            self.queue_item.node_id,
-            var_name
-        )
+        value = VariableService.get_local_var(instance_code, var_name)
         if value is not None:
             return value
 
         # 再嘗試 GLOBAL
-        return VariableService.get_global_var(
-            instance_id,
-            var_name,
-            default
-        )
+        return VariableService.get_global_var(instance_code, var_name, default)
 
     def set_global_var(self, var_name: str, value: Any):
         """
@@ -218,16 +217,17 @@ class BaseNodeHandler(ABC):
         """
         from ..variable_service import VariableService
 
-        instance_id = self._get_workflow_instance_id()
-        if not instance_id:
-            logger.warning(f"Cannot set global var: workflow_instance_id is None")
+        instance_code = self._get_workflow_instance_code()
+        if not instance_code:
+            logger.warning(f"Cannot set global var: workflow_instance_code is None")
             return None
 
         return VariableService.set_global_var(
-            instance_id,
+            instance_code,
             var_name,
             value,
-            self.queue_item.org_secure_code
+            self.queue_item.org_secure_code,
+            self.queue_item.node_id
         )
 
     def set_local_var(self, var_name: str, value: Any):
@@ -240,17 +240,17 @@ class BaseNodeHandler(ABC):
         """
         from ..variable_service import VariableService
 
-        instance_id = self._get_workflow_instance_id()
-        if not instance_id:
-            logger.warning(f"Cannot set local var: workflow_instance_id is None")
+        instance_code = self._get_workflow_instance_code()
+        if not instance_code:
+            logger.warning(f"Cannot set local var: workflow_instance_code is None")
             return None
 
         return VariableService.set_local_var(
-            instance_id,
-            self.queue_item.node_id,
+            instance_code,
             var_name,
             value,
-            self.queue_item.org_secure_code
+            self.queue_item.org_secure_code,
+            self.queue_item.node_id
         )
 
     def get_all_vars(self) -> Dict[str, Any]:
@@ -262,14 +262,11 @@ class BaseNodeHandler(ABC):
         """
         from ..variable_service import VariableService
 
-        instance_id = self._get_workflow_instance_id()
-        if not instance_id:
+        instance_code = self._get_workflow_instance_code()
+        if not instance_code:
             return {}
 
-        return VariableService.get_all_vars(
-            instance_id,
-            self.queue_item.node_id
-        )
+        return VariableService.get_all_vars(instance_code)
 
     # ========================================
     # 表單欄位存取 API

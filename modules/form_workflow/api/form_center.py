@@ -1041,3 +1041,146 @@ def get_execution_path(instance_id):
             'workflow_tabs': workflow_tabs
         }
     })
+
+
+@form_center_bp.route('/executions/<instance_id>/logs')
+@login_required
+def get_execution_logs(instance_id):
+    """
+    取得流程執行日誌（用於 Debug 和追蹤）
+
+    Args:
+        instance_id: 工作流實例 secure_code 或 execution_code
+
+    Query Params:
+        level: 過濾日誌等級 (INFO, WARNING, ERROR, DEBUG)
+        limit: 限制筆數，預設 500
+
+    Returns:
+        JSON: {
+            "success": true,
+            "data": {
+                "instance": {...},
+                "logs": [...],
+                "variables": {...}
+            }
+        }
+    """
+    from ..models import (
+        FwWorkflowInstance, FwNodeExecutionLog,
+        FwWorkflowVariable, FwNodeExecutionQueue
+    )
+    from sqlalchemy import or_
+
+    logger.info(f'[LOGS API] 查詢執行日誌: instance_id={instance_id}')
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 查詢流程實例（支援 secure_code 或 execution_code）
+    instance = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.org_secure_code == org.secure_code,
+        or_(
+            FwWorkflowInstance.secure_code == instance_id,
+            FwWorkflowInstance.execution_code == instance_id
+        )
+    ).first()
+
+    if not instance:
+        return jsonify({'success': False, 'error': f'流程實例 {instance_id} 不存在'}), 404
+
+    # 取得查詢參數
+    level_filter = request.args.get('level')
+    limit = request.args.get('limit', 500, type=int)
+
+    # 取得所有相關的流程實例（主流程 + 子流程）
+    # 使用 root_instance_code 或 form_instance_secure_code 來查詢整個流程樹
+    all_instances = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.org_secure_code == org.secure_code,
+        FwWorkflowInstance.form_instance_secure_code == instance.form_instance_secure_code
+    ).all()
+
+    all_instance_ids = [wi.id for wi in all_instances]
+    all_instance_codes = [wi.secure_code for wi in all_instances]
+    logger.info(f'[LOGS API] 找到 {len(all_instances)} 個相關流程實例, IDs: {all_instance_ids}')
+
+    # 建立 workflow_instance_id -> workflow_name 映射
+    workflow_name_map = {}
+    for wi in all_instances:
+        workflow_name_map[wi.id] = wi.workflow_name or '未命名流程'
+        workflow_name_map[wi.secure_code] = wi.workflow_name or '未命名流程'
+
+    # 取得節點顯示名稱映射（從執行佇列）
+    node_display_names = {}  # key: (workflow_instance_secure_code, node_id)
+    queue_items = FwNodeExecutionQueue.query.filter(
+        FwNodeExecutionQueue.workflow_instance_secure_code.in_(all_instance_codes)
+    ).all()
+    for item in queue_items:
+        key = (item.workflow_instance_secure_code, item.node_id)
+        node_display_names[key] = item.node_name or item.node_id
+
+    # 查詢執行日誌
+    log_query = FwNodeExecutionLog.query.filter(
+        FwNodeExecutionLog.workflow_instance_id.in_(all_instance_ids)
+    )
+    if level_filter:
+        log_query = log_query.filter(FwNodeExecutionLog.log_level == level_filter.upper())
+    log_query = log_query.order_by(
+        FwNodeExecutionLog.created_at.asc()
+    ).limit(limit)
+
+    logs = []
+    log_results = log_query.all()
+    logger.info(f'[LOGS API] 查詢到 {len(log_results)} 筆日誌')
+    for log in log_results:
+        # 找到對應的 workflow instance
+        wi = next((w for w in all_instances if w.id == log.workflow_instance_id), None)
+        workflow_name = wi.workflow_name if wi else '未知流程'
+        node_id = log.node_id or ''
+
+        # 嘗試取得節點顯示名稱
+        display_name_key = (wi.secure_code if wi else '', node_id)
+        display_name = node_display_names.get(display_name_key, node_id.replace('node-', '') if node_id else '')
+
+        logs.append({
+            'timestamp': log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '',
+            'level': log.log_level or 'INFO',
+            'node_id': node_id,
+            'workflow_instance_id': wi.secure_code if wi else None,
+            'workflow_name': workflow_name,
+            'display_name': display_name,
+            'message': log.log_message or '',
+            'data': log.log_data if log.log_data else None
+        })
+
+    # 查詢所有相關流程的變數值（只取 GLOBAL 範圍）
+    # 注意：資料庫實際欄位是 workflow_instance_secure_code 和 var_type
+    variables = {}
+    vars_query = FwWorkflowVariable.query.filter(
+        FwWorkflowVariable.workflow_instance_secure_code.in_(all_instance_codes),
+        FwWorkflowVariable.var_type == 'GLOBAL'
+    ).all()
+    logger.info(f'[LOGS API] 查詢到 {len(vars_query)} 個變數')
+    for v in vars_query:
+        # 使用 workflow_name::var_name 格式區分不同流程的變數
+        wi = next((w for w in all_instances if w.secure_code == v.workflow_instance_secure_code), None)
+        wf_name = wi.workflow_name if wi else ''
+        var_key = f"{wf_name}::{v.var_name}" if wf_name and v.workflow_instance_secure_code != instance.secure_code else v.var_name
+        variables[var_key] = v.var_value
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'instance': {
+                'secure_code': instance.secure_code,
+                'execution_code': instance.execution_code,
+                'status': instance.status,
+                'started_at': instance.started_at.strftime('%Y-%m-%d %H:%M:%S') if instance.started_at else None,
+                'completed_at': instance.completed_at.strftime('%Y-%m-%d %H:%M:%S') if instance.completed_at else None,
+                'template_name': instance.workflow_name
+            },
+            'logs': logs,
+            'variables': variables
+        }
+    })

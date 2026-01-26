@@ -597,8 +597,23 @@
                 <button @click="closeMonitorModal()" class="fc-close-btn">&times;</button>
             </div>
 
-            <!-- 主要內容 -->
-            <div class="fc-monitor-body">
+            <!-- 主分頁切換 -->
+            <div style="display: flex; border-bottom: 1px solid #e5e7eb; padding: 0 16px; background: white; flex-shrink: 0;">
+                <button @click="monitorPage = 'overview'"
+                        :style="monitorPage === 'overview' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
+                        style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
+                    流程總覽
+                </button>
+                <button @click="monitorPage = 'detail'"
+                        :style="monitorPage === 'detail' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
+                        style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
+                    執行詳情
+                    <span x-show="(monitorData?.logs || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #e5e7eb; border-radius: 10px; font-size: 10px;" x-text="(monitorData?.logs || []).length"></span>
+                </button>
+            </div>
+
+            <!-- 第一頁：流程總覽 -->
+            <div x-show="monitorPage === 'overview'" class="fc-monitor-body">
                 <!-- 左側：流程圖 -->
                 <div class="fc-graph-container">
                     <!-- 流程 Tabs -->
@@ -694,6 +709,95 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 第二頁：執行詳情 -->
+            <div x-show="monitorPage === 'detail'" class="fc-monitor-body">
+                <!-- 左側：執行日誌 -->
+                <div style="flex: 1; display: flex; flex-direction: column; background: #f9fafb; border-radius: 8px; padding: 12px; overflow: hidden;">
+                    <!-- 標題列 -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; flex-shrink: 0;">
+                        <div style="font-size: 13px; font-weight: 600;">
+                            執行日誌
+                            <span style="font-weight: normal; color: #6b7280; margin-left: 4px;">(<span x-text="filteredLogs.length"></span>)</span>
+                        </div>
+                        <!-- 搜尋框 -->
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="text" x-model="logSearchQuery" placeholder="搜尋日誌..."
+                                   style="width: 150px; padding: 4px 8px; font-size: 11px; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <button x-show="logSearchQuery" @click="logSearchQuery = ''" style="font-size: 11px; color: #6b7280; background: none; border: none; cursor: pointer;">清除</button>
+                        </div>
+                    </div>
+                    <!-- 日誌清單 -->
+                    <div style="flex: 1; overflow-y: auto;">
+                        <div x-show="filteredLogs.length === 0" style="text-align: center; padding: 32px; color: #9ca3af;">
+                            <p x-text="logSearchQuery ? '沒有符合的日誌' : '尚無執行日誌'"></p>
+                        </div>
+                        <template x-for="(log, idx) in filteredLogs" :key="idx">
+                            <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid;"
+                                 :style="{
+                                     'border-left-color': log.level === 'ERROR' ? '#ef4444' : (log.level === 'WARNING' ? '#f59e0b' : '#3b82f6'),
+                                     'background': log.level === 'ERROR' ? '#fef2f2' : (log.level === 'WARNING' ? '#fffbeb' : 'white')
+                                 }">
+                                <div style="font-size: 10px; color: #9ca3af; font-family: monospace; white-space: nowrap;" x-text="log.timestamp?.split(' ')[1] || ''"></div>
+                                <div style="font-size: 10px; white-space: nowrap;">
+                                    <span style="color: #6b7280;" x-text="log.workflow_name || ''"></span>
+                                    <span x-show="log.display_name || log.node_id" style="color: #9ca3af;"> &gt; </span>
+                                    <span style="color: #7c3aed; font-weight: 500;" x-text="log.display_name || log.node_id?.replace('node-', '') || ''"></span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 12px; color: #374151;" x-text="log.message"></div>
+                                    <pre x-show="log.data && Object.keys(log.data).length" style="margin-top: 4px; padding: 8px; background: #f3f4f6; font-size: 10px; color: #4b5563; border-radius: 4px; overflow-x: auto; max-height: 80px;"
+                                         x-text="JSON.stringify(log.data, null, 2)"></pre>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 右側：變數變化 -->
+                <div style="width: 40%; display: flex; flex-direction: column; background: #f9fafb; border-radius: 8px; padding: 12px; overflow: hidden;">
+                    <div style="font-size: 13px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; flex-shrink: 0;">
+                        變數變化
+                        <span style="font-weight: normal; color: #6b7280; margin-left: 4px;">(<span x-text="variableChanges.length"></span>)</span>
+                    </div>
+                    <!-- 變數變化清單 -->
+                    <div style="flex: 1; overflow-y: auto;">
+                        <div x-show="variableChanges.length === 0" style="text-align: center; padding: 32px; color: #9ca3af;">
+                            <p>尚無變數變化記錄</p>
+                        </div>
+                        <template x-for="(change, idx) in variableChanges" :key="idx">
+                            <div style="display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid;"
+                                 :style="{ 'border-left-color': change.action === 'read' ? '#22c55e' : '#7c3aed' }">
+                                <div style="font-size: 10px; color: #9ca3af; font-family: monospace; white-space: nowrap;" x-text="change.timestamp"></div>
+                                <div style="font-size: 10px; white-space: nowrap;">
+                                    <span style="color: #6b7280;" x-text="change.workflowName"></span>
+                                    <span style="color: #9ca3af;"> &gt; </span>
+                                    <span style="color: #7c3aed; font-weight: 500;" x-text="change.displayName || change.node"></span>
+                                </div>
+                                <div style="flex: 1; font-size: 11px;">
+                                    <span style="color: #6b7280;" x-text="change.actionLabel"></span>
+                                    <span style="font-family: monospace; color: #3b82f6;" x-text="'${' + change.varName + '}'"></span>
+                                    <span style="color: #9ca3af;">=</span>
+                                    <span style="font-family: monospace; color: #374151;" x-text="change.displayValue"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <!-- 最終變數值 -->
+                    <div x-show="Object.keys(monitorData?.variables || {}).length > 0" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
+                        <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px;">最終變數值</div>
+                        <div style="max-height: 120px; overflow-y: auto;">
+                            <template x-for="[key, value] in Object.entries(monitorData?.variables || {})" :key="key">
+                                <div style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: white; border-radius: 4px; margin-bottom: 4px; font-size: 11px;">
+                                    <span style="font-family: monospace; color: #3b82f6; max-width: 120px; overflow: hidden; text-overflow: ellipsis;" x-text="key"></span>
+                                    <span style="color: #9ca3af;">=</span>
+                                    <span style="font-family: monospace; color: #374151; flex: 1; overflow: hidden; text-overflow: ellipsis;" x-text="JSON.stringify(value)"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -767,6 +871,9 @@ function formCenterManager() {
         workflowTabs: [],
         activeWorkflowTab: null,
         workflowGraphCache: {},
+        monitorPage: 'overview',  // 'overview' | 'detail'
+        monitorData: null,        // logs API 資料
+        logSearchQuery: '',       // 日誌搜尋
         monitorStatus: {
             flowStatus: '-',
             activeCount: 0,
@@ -857,6 +964,67 @@ function formCenterManager() {
         get pagedSignedHistoryList() {
             const start = (this.signedHistoryPage - 1) * this.signedHistoryPageSize;
             return this.signedHistoryList.slice(start, start + this.signedHistoryPageSize);
+        },
+
+        // 過濾後的日誌
+        get filteredLogs() {
+            const logs = this.monitorData?.logs || [];
+            if (!this.logSearchQuery) return logs;
+            const q = this.logSearchQuery.toLowerCase();
+            return logs.filter(log =>
+                (log.message || '').toLowerCase().includes(q) ||
+                (log.node_id || '').toLowerCase().includes(q) ||
+                (log.workflow_name || '').toLowerCase().includes(q) ||
+                JSON.stringify(log.data || {}).toLowerCase().includes(q)
+            );
+        },
+
+        // 變數變化記錄
+        get variableChanges() {
+            const logs = this.monitorData?.logs || [];
+            const changes = [];
+
+            for (const log of logs) {
+                const time = log.timestamp?.split(' ')[1] || '';
+                const node = log.node_id?.replace('node-', '') || '';
+                const displayName = log.display_name || node;
+                const workflowName = log.workflow_name || '';
+                const data = log.data || {};
+
+                // 讀取欄位（OpFieldRead）
+                if (log.message?.includes('讀取欄位:')) {
+                    const match = log.message.match(/讀取欄位:\s*(\S+)\s*=\s*(.+)/);
+                    if (match) {
+                        changes.push({
+                            timestamp: time,
+                            node: node,
+                            displayName: displayName,
+                            workflowName: workflowName,
+                            action: 'read',
+                            actionLabel: 'read',
+                            varName: match[1],
+                            displayValue: match[2]
+                        });
+                    }
+                }
+                // 變數操作完成（OpSet）
+                else if (log.message?.includes('變數操作完成:')) {
+                    const match = log.message.match(/變數操作完成:\s*(\S+)\s*=\s*(.*)/);
+                    if (match) {
+                        changes.push({
+                            timestamp: time,
+                            node: node,
+                            displayName: displayName,
+                            workflowName: workflowName,
+                            action: 'set',
+                            actionLabel: data.operation || 'set',
+                            varName: match[1],
+                            displayValue: match[2] || '(空)'
+                        });
+                    }
+                }
+            }
+            return changes;
         },
 
         // 載入函式
@@ -1215,12 +1383,20 @@ function formCenterManager() {
             this.workflowTabs = [];
             this.activeWorkflowTab = null;
             this.workflowGraphCache = {};
+            this.monitorPage = 'overview';
+            this.monitorData = null;
+            this.logSearchQuery = '';
             this.showMonitorModal = true;
 
             await this.$nextTick();
 
             try {
-                await this.loadExecutionSnapshot(item);
+                // 同時載入 path（含 workflow_tabs）和 logs
+                const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
+                const [pathLoaded, logsLoaded] = await Promise.all([
+                    this.loadExecutionSnapshot(item),
+                    this.loadExecutionLogs(instanceId)
+                ]);
 
                 // 從快取取得主流程的圖並初始化 Cytoscape
                 const mainTab = this.workflowTabs.find(t => t.is_main);
@@ -1243,6 +1419,28 @@ function formCenterManager() {
             } catch (error) {
                 console.error('載入流程追蹤錯誤:', error);
                 this.showToast('載入流程圖失敗', 'error');
+            }
+        },
+
+        async loadExecutionLogs(instanceId) {
+            console.log('[LOGS] loadExecutionLogs 呼叫, instanceId:', instanceId);
+            try {
+                const url = `/api/form-center/executions/${instanceId}/logs`;
+                console.log('[LOGS] 請求 URL:', url);
+                const response = await fetch(url);
+                console.log('[LOGS] 回應狀態:', response.status);
+                const result = await response.json();
+                console.log('[LOGS] 回應內容:', result);
+
+                if (result.success) {
+                    this.monitorData = result.data;
+                    console.log('[LOGS] logs 數量:', result.data?.logs?.length || 0);
+                    console.log('[LOGS] variables:', result.data?.variables);
+                } else {
+                    console.error('[LOGS] 載入失敗:', result.error);
+                }
+            } catch (error) {
+                console.error('[LOGS] 載入錯誤:', error);
             }
         },
 
@@ -1488,6 +1686,9 @@ function formCenterManager() {
             this.workflowTabs = [];
             this.activeWorkflowTab = null;
             this.workflowGraphCache = {};
+            this.monitorPage = 'overview';
+            this.monitorData = null;
+            this.logSearchQuery = '';
             this.showMonitorModal = false;
             this.monitoringExecution = null;
         },
