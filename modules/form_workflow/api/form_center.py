@@ -522,8 +522,15 @@ def submit_form():
 @form_center_bp.route('/my-forms')
 @login_required
 def list_my_forms():
-    """取得我提交的表單列表"""
-    from ..models import FwFormInstance
+    """
+    取得我提交/簽核過的表單列表
+
+    Query Parameters:
+    - status: 篩選狀態，支援逗號分隔多值（如 status=COMPLETED,ERROR）
+    - signed: 若為 1，顯示我簽核過的表單（而非我提交的表單）
+    - limit: 回傳筆數上限（預設 50）
+    """
+    from ..models import FwFormInstance, FwApprovalRecord
 
     org = get_current_org()
     if not org:
@@ -531,22 +538,50 @@ def list_my_forms():
 
     # 篩選條件
     status = request.args.get('status')
+    signed = request.args.get('signed', '0')
     limit = request.args.get('limit', 50, type=int)
 
-    query = FwFormInstance.query.filter_by(
-        org_secure_code=org.secure_code,
-        applicant_secure_code=current_user.secure_code,
-        is_deleted=False
-    )
+    if signed == '1':
+        # 查詢我簽核過的表單
+        # 先找出我簽核過的 form_instance_id
+        signed_form_ids = db.session.query(FwApprovalRecord.form_instance_id).filter(
+            FwApprovalRecord.org_secure_code == org.secure_code,
+            FwApprovalRecord.approver_secure_code == current_user.secure_code
+        ).distinct().subquery()
 
+        query = FwFormInstance.query.filter(
+            FwFormInstance.org_secure_code == org.secure_code,
+            FwFormInstance.id.in_(signed_form_ids),
+            FwFormInstance.is_deleted == False
+        )
+    else:
+        # 查詢我提交的表單
+        query = FwFormInstance.query.filter_by(
+            org_secure_code=org.secure_code,
+            applicant_secure_code=current_user.secure_code,
+            is_deleted=False
+        )
+
+    # 支援多狀態篩選（逗號分隔）
     if status:
-        query = query.filter_by(status=status)
+        status_list = [s.strip() for s in status.split(',') if s.strip()]
+        if len(status_list) == 1:
+            query = query.filter_by(status=status_list[0])
+        elif len(status_list) > 1:
+            query = query.filter(FwFormInstance.status.in_(status_list))
 
     instances = query.order_by(FwFormInstance.created_at.desc()).limit(limit).all()
 
+    # 增加 is_test 標記（根據 serial_number 前綴判斷）
+    result = []
+    for i in instances:
+        data = i.to_dict(include_form_data=False)
+        data['is_test'] = data.get('serial_number', '').startswith('TEST-')
+        result.append(data)
+
     return jsonify({
         'success': True,
-        'data': [i.to_dict(include_form_data=False) for i in instances]
+        'data': result
     })
 
 
@@ -602,8 +637,10 @@ def list_pending_tasks():
     for task in tasks:
         # 取得表單資訊
         form_instance = FwFormInstance.query.filter_by(
-            id=task.form_instance_id
-        ).first() if task.form_instance_id else None
+            secure_code=task.form_instance_secure_code
+        ).first() if task.form_instance_secure_code else None
+
+        serial_number = form_instance.serial_number if form_instance else None
 
         result.append({
             'queue_secure_code': task.secure_code,
@@ -611,9 +648,10 @@ def list_pending_tasks():
             'node_type': task.node_type,
             'node_name': task.node_name,
             'form_name': form_instance.form_name if form_instance else None,
-            'serial_number': form_instance.serial_number if form_instance else None,
+            'serial_number': serial_number,
             'applicant_name': form_instance.applicant_name if form_instance else None,
             'submitted_at': task.scheduled_at.isoformat() if task.scheduled_at else None,
+            'is_test': serial_number.startswith('TEST-') if serial_number else False,
         })
 
     return jsonify({
