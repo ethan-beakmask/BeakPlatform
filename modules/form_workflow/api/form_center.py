@@ -699,14 +699,20 @@ def get_pending_task(secure_code):
     if not task:
         return jsonify({'success': False, 'error': '找不到指定的任務'}), 404
 
-    # 取得表單資訊
+    # 取得表單資訊（使用 secure_code）
     form_instance = FwFormInstance.query.filter_by(
-        id=task.form_instance_id
-    ).first() if task.form_instance_id else None
+        secure_code=task.form_instance_secure_code
+    ).first() if task.form_instance_secure_code else None
 
-    # 取得可用路徑
+    # 取得可用路徑（FormAdapter 存在 result.data.available_paths）
     node_config = task.node_config or {}
-    available_paths = node_config.get('paths', [])
+    result_data = (task.result or {}).get('data', {})
+    available_paths = result_data.get('available_paths', [])
+
+    # 取得簽核配置
+    selection_mode = result_data.get('selection_mode', 'single')
+    allow_comment = result_data.get('allow_comment', True)
+    require_comment = result_data.get('require_comment', False)
 
     return jsonify({
         'success': True,
@@ -722,6 +728,9 @@ def get_pending_task(secure_code):
             'serial_number': form_instance.serial_number if form_instance else None,
             'applicant_name': form_instance.applicant_name if form_instance else None,
             'available_paths': available_paths,
+            'selection_mode': selection_mode,
+            'allow_comment': allow_comment,
+            'require_comment': require_comment,
         }
     })
 
@@ -757,17 +766,13 @@ def approve_task(secure_code):
         approval_record = FwApprovalRecord(
             secure_code=secrets.token_urlsafe(16),
             org_secure_code=org.secure_code,
-            workflow_instance_id=task.workflow_instance_id,
             workflow_instance_secure_code=task.workflow_instance_secure_code,
-            form_instance_id=task.form_instance_id,
             form_instance_secure_code=task.form_instance_secure_code,
             node_id=task.node_id,
             approver_secure_code=current_user.secure_code,
             approver_name=current_user.display_name or current_user.username,
-            decision=decision,
-            selected_path=selected_path,
+            action=decision,
             comment=comment,
-            approved_at=datetime.utcnow(),
         )
         db.session.add(approval_record)
 
