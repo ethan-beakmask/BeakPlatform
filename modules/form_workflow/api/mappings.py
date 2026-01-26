@@ -29,8 +29,8 @@ mappings_bp = Blueprint(
 @mappings_bp.route('/')
 @login_required
 def list_mappings():
-    """取得配對列表"""
-    from ..models import FwFormWorkflowMapping
+    """取得配對列表（含表單和流程名稱）"""
+    from ..models import FwFormWorkflowMapping, FwFormTemplate, FwWorkflowTemplate
 
     org = get_current_org()
     if not org:
@@ -56,9 +56,32 @@ def list_mappings():
 
     mappings = query.order_by(FwFormWorkflowMapping.updated_at.desc()).all()
 
+    # 批次查詢表單和流程名稱
+    form_ids = [m.form_template_id for m in mappings]
+    workflow_ids = [m.workflow_template_id for m in mappings]
+
+    form_map = {}
+    workflow_map = {}
+
+    if form_ids:
+        forms = FwFormTemplate.query.filter(FwFormTemplate.id.in_(form_ids)).all()
+        form_map = {f.id: f.name for f in forms}
+
+    if workflow_ids:
+        workflows = FwWorkflowTemplate.query.filter(FwWorkflowTemplate.id.in_(workflow_ids)).all()
+        workflow_map = {w.id: w.name for w in workflows}
+
+    # 組合結果
+    result = []
+    for m in mappings:
+        data = m.to_dict()
+        data['form_template_name'] = form_map.get(m.form_template_id, m.form_template_code)
+        data['workflow_template_name'] = workflow_map.get(m.workflow_template_id, m.workflow_template_code)
+        result.append(data)
+
     return jsonify({
         'success': True,
-        'data': [m.to_dict() for m in mappings]
+        'data': result
     })
 
 
@@ -581,7 +604,7 @@ def list_workflows_for_mapping():
         org_secure_code=org.secure_code,
         is_deleted=False,
         is_active=True,
-        is_sub_workflow=False
+        is_subprocess=False
     ).order_by(FwWorkflowTemplate.name.asc()).all()
 
     return jsonify({

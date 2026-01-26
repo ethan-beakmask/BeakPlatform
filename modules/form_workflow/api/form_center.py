@@ -31,37 +31,114 @@ def list_available_forms():
     """
     取得可填寫的表單列表
 
-    回傳所有已發行且狀態為 Published 的表單流程配對。
+    權限控制：
+    - 一般用戶 (ORG_USER)：只顯示已發行 (Published) 的表單
+    - 管理員 (ORG_ADMIN/SYSTEM_ADMIN)：顯示已發行 + 未發行配對（用於測試，標記 TEST）
+
+    回傳格式：
+    - _status: 'published' (已發行) 或 'test' (測試中)
+    - _source: 'published' (來自快照) 或 'mapping' (來自設計稿)
     """
-    from ..models import FwPublishedFormWorkflow
+    from ..models import (
+        FwPublishedFormWorkflow, FwFormWorkflowMapping,
+        FwFormTemplate, FwWorkflowTemplate
+    )
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
+    # 判斷是否為管理員
+    is_admin = (
+        getattr(current_user, 'is_system_admin', False) or
+        getattr(current_user, 'level', 0) >= 90  # ORG_ADMIN level
+    )
+
+    result = []
+    seen_mapping_ids = set()
+
+    # 1. 優先顯示已發行版本（從快照取得，設計稿刪除不影響）
     published_list = FwPublishedFormWorkflow.query.filter_by(
         org_secure_code=org.secure_code,
         status='Published',
         is_deleted=False
-    ).order_by(FwPublishedFormWorkflow.name.asc()).all()
+    ).order_by(FwPublishedFormWorkflow.published_at.desc()).all()
 
-    result = []
     for p in published_list:
-        form_info = p.form_snapshot or {}
+        mapping_id = p.source_mapping_id
+        if mapping_id in seen_mapping_ids:
+            continue
+        seen_mapping_ids.add(mapping_id)
+
+        form_snapshot = p.form_snapshot or {}
+        workflow_snapshot = p.workflow_snapshot or {}
+
         result.append({
+            'id': p.source_form_template_id,
             'secure_code': p.secure_code,
-            'name': p.name,
-            'description': p.description,
-            'form_name': form_info.get('name'),
-            'form_code': form_info.get('code'),
-            'category': form_info.get('category'),
+            'name': form_snapshot.get('name') or p.name,
+            'description': form_snapshot.get('description') or p.description,
+            'category': form_snapshot.get('category'),
+            'code': form_snapshot.get('code'),
+            'version': form_snapshot.get('version'),
             'publish_version': p.publish_version,
             'published_at': p.published_at.isoformat() if p.published_at else None,
+            'workflow_template_name': workflow_snapshot.get('name'),
+            'mapping_id': mapping_id,
+            '_status': 'published',
+            '_source': 'published',
         })
+
+    # 2. 管理員額外顯示未發行的配對（用於測試）
+    if is_admin:
+        mappings = FwFormWorkflowMapping.query.filter_by(
+            org_secure_code=org.secure_code,
+            is_active=True,
+            is_deleted=False
+        ).order_by(FwFormWorkflowMapping.created_at.desc()).all()
+
+        for mapping in mappings:
+            # 跳過已經顯示的發行版本
+            if mapping.id in seen_mapping_ids:
+                continue
+
+            # 查詢表單和流程模板
+            form_template = FwFormTemplate.query.filter_by(
+                id=mapping.form_template_id,
+                is_deleted=False,
+                is_active=True
+            ).first()
+
+            workflow_template = FwWorkflowTemplate.query.filter_by(
+                id=mapping.workflow_template_id,
+                is_deleted=False,
+                is_subprocess=False
+            ).first()
+
+            if not form_template or not workflow_template:
+                continue
+
+            result.append({
+                'id': form_template.id,
+                'secure_code': form_template.secure_code,
+                'name': form_template.name,
+                'description': form_template.description,
+                'category': form_template.category,
+                'code': form_template.code,
+                'version': form_template.version,
+                'mapping_id': mapping.id,
+                'mapping_secure_code': mapping.secure_code,
+                'workflow_template_id': workflow_template.id,
+                'workflow_template_name': workflow_template.name,
+                'workflow_template_secure_code': workflow_template.secure_code,
+                '_status': 'test',
+                '_source': 'mapping',
+            })
 
     return jsonify({
         'success': True,
-        'data': result
+        'data': result,
+        'is_admin': is_admin
     })
 
 
@@ -71,38 +148,83 @@ def get_form_for_filling(secure_code):
     """
     取得表單定義（用於填寫）
 
+    支援兩種來源：
+    1. 已發行版本 (Published) - 使用 published 的 secure_code
+    2. 設計稿測試 (Test) - 使用 form_template 的 secure_code + ?source=mapping
+
     Args:
-        secure_code: 已發行版本的 secure_code
+        secure_code: 已發行版本或表單模板的 secure_code
+        source: 'published' (預設) 或 'mapping' (測試模式)
     """
-    from ..models import FwPublishedFormWorkflow
+    from ..models import FwPublishedFormWorkflow, FwFormTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    published = FwPublishedFormWorkflow.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        status='Published',
-        is_deleted=False
-    ).first()
+    source = request.args.get('source', 'published')
 
-    if not published:
-        return jsonify({'success': False, 'error': '找不到指定的表單或已停用'}), 404
+    if source == 'mapping':
+        # 測試模式：從設計稿取得表單定義
+        form_template = FwFormTemplate.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
 
-    form_snapshot = published.form_snapshot or {}
+        if not form_template:
+            return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
 
-    return jsonify({
-        'success': True,
-        'data': {
-            'secure_code': published.secure_code,
-            'name': published.name,
-            'form_name': form_snapshot.get('name'),
-            'form_code': form_snapshot.get('code'),
-            'schema': form_snapshot.get('schema'),
-            'description': published.description,
-        }
-    })
+        # 取得配對資訊
+        mapping = FwFormWorkflowMapping.query.filter_by(
+            form_template_secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'secure_code': form_template.secure_code,
+                'name': form_template.name,
+                'form_name': form_template.name,
+                'form_code': form_template.code,
+                'schema': form_template.schema,
+                'description': form_template.description,
+                'builder_config': form_template.builder_config,
+                '_source': 'mapping',
+                '_is_test': True,
+                'mapping_secure_code': mapping.secure_code if mapping else None,
+            }
+        })
+    else:
+        # 正式模式：從已發行快照取得
+        published = FwPublishedFormWorkflow.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            status='Published',
+            is_deleted=False
+        ).first()
+
+        if not published:
+            return jsonify({'success': False, 'error': '找不到指定的表單或已停用'}), 404
+
+        form_snapshot = published.form_snapshot or {}
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'secure_code': published.secure_code,
+                'name': published.name,
+                'form_name': form_snapshot.get('name'),
+                'form_code': form_snapshot.get('code'),
+                'schema': form_snapshot.get('schema'),
+                'description': published.description,
+                'builder_config': form_snapshot.get('builder_config'),
+                '_source': 'published',
+                '_is_test': False,
+            }
+        })
 
 
 # =============================================================================
@@ -116,9 +238,14 @@ def submit_form():
     """
     提交表單並觸發流程
 
+    支援兩種模式：
+    1. 正式模式：使用 published_secure_code（已發行快照）
+    2. 測試模式：使用 mapping_secure_code（設計稿，需管理員權限）
+
     Request JSON:
     {
-        "published_secure_code": "xxx",  # 已發行版本的 secure_code
+        "published_secure_code": "xxx",  # 正式模式
+        "mapping_secure_code": "xxx",    # 測試模式（二選一）
         "form_data": {...}               # 表單資料
     }
 
@@ -129,7 +256,8 @@ def submit_form():
             "form_instance_secure_code": "xxx",
             "serial_number": "xxx",
             "workflow_instance_secure_code": "xxx",
-            "execution_code": "xxx"
+            "execution_code": "xxx",
+            "is_test": false
         }
     }
     """
@@ -145,49 +273,148 @@ def submit_form():
 
     data = request.get_json() or {}
     published_secure_code = data.get('published_secure_code')
+    mapping_secure_code = data.get('mapping_secure_code')
     form_data = data.get('form_data', {})
 
-    if not published_secure_code:
-        return jsonify({'success': False, 'error': '缺少 published_secure_code'}), 400
+    # 判斷模式
+    is_test_mode = bool(mapping_secure_code) and not published_secure_code
+
+    if not published_secure_code and not mapping_secure_code:
+        return jsonify({'success': False, 'error': '缺少 published_secure_code 或 mapping_secure_code'}), 400
 
     try:
-        # 1. 查找已發行版本
-        published = FwPublishedFormWorkflow.query.filter_by(
-            secure_code=published_secure_code,
-            org_secure_code=org.secure_code,
-            is_deleted=False
-        ).first()
+        date_str = datetime.now().strftime('%Y%m%d')
+        from sqlalchemy import text
 
-        if not published:
-            return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+        if is_test_mode:
+            # ============================================
+            # 測試模式：使用設計稿（需管理員權限）
+            # ============================================
+            is_admin = (
+                getattr(current_user, 'is_system_admin', False) or
+                getattr(current_user, 'level', 0) >= 90
+            )
+            if not is_admin:
+                return jsonify({'success': False, 'error': '測試模式需要管理員權限'}), 403
 
-        if published.status != 'Published':
-            return jsonify({'success': False, 'error': '此表單已停用'}), 400
+            # 查找配對
+            mapping = FwFormWorkflowMapping.query.filter_by(
+                secure_code=mapping_secure_code,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).first()
 
-        # 標記為已使用
-        published.mark_as_used()
+            if not mapping:
+                return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
 
-        # 2. 從快照取得表單和流程定義
-        form_snapshot = published.form_snapshot or {}
-        workflow_snapshot = published.workflow_snapshot or {}
+            # 取得表單設計稿
+            form_template = FwFormTemplate.query.filter_by(
+                id=mapping.form_template_id,
+                is_deleted=False
+            ).first()
 
-        # 3. 建立表單實例
+            if not form_template:
+                return jsonify({'success': False, 'error': '找不到關聯的表單模板'}), 404
+
+            # 取得流程設計稿
+            workflow_template = FwWorkflowTemplate.query.filter_by(
+                id=mapping.workflow_template_id,
+                is_deleted=False
+            ).first()
+
+            if not workflow_template:
+                return jsonify({'success': False, 'error': '找不到關聯的流程模板'}), 404
+
+            # 使用設計稿資料
+            form_name = form_template.name
+            form_code = form_template.code
+            form_version = form_template.version
+            form_schema = form_template.schema
+            workflow_name = workflow_template.name
+            workflow_version = workflow_template.revision
+            workflow_graph = workflow_template.graph or workflow_template.cytoscape_config or {}
+
+            source_form_template_id = form_template.id
+            source_form_template_secure_code = form_template.secure_code
+            source_workflow_template_id = workflow_template.id
+            source_workflow_template_secure_code = workflow_template.secure_code
+            published_sc = None  # 測試模式沒有 published
+
+            # 生成測試序號 (TEST-YYYYMMDD-NNNN)
+            form_prefix = 'TEST-'
+            proc_prefix = 'TEST-'
+
+        else:
+            # ============================================
+            # 正式模式：使用已發行快照
+            # ============================================
+            published = FwPublishedFormWorkflow.query.filter_by(
+                secure_code=published_secure_code,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).first()
+
+            if not published:
+                return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+
+            if published.status != 'Published':
+                return jsonify({'success': False, 'error': '此表單已停用'}), 400
+
+            # 標記為已使用
+            published.mark_as_used()
+
+            # 從快照取得表單和流程定義
+            form_snapshot = published.form_snapshot or {}
+            workflow_snapshot = published.workflow_snapshot or {}
+
+            form_name = form_snapshot.get('name')
+            form_code = form_snapshot.get('code')
+            form_version = published.source_form_version
+            form_schema = form_snapshot.get('schema')
+            workflow_name = workflow_snapshot.get('name')
+            workflow_version = published.source_workflow_version
+            workflow_graph = workflow_snapshot.get('graph') or workflow_snapshot.get('cytoscape_config') or {}
+
+            source_form_template_id = published.source_form_template_id
+            source_form_template_secure_code = published.source_form_template_secure_code
+            source_workflow_template_id = published.source_workflow_template_id
+            source_workflow_template_secure_code = published.source_workflow_template_secure_code
+            published_sc = published.secure_code
+
+            # 生成正式序號 (FORM-YYYYMMDD-NNNN / PROC-YYYYMMDD-NNNN)
+            form_prefix = 'FORM-'
+            proc_prefix = 'PROC-'
+
+        # 生成表單序號
+        result = db.session.execute(
+            text("""
+                SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d{4}$') AS INTEGER)), 0) + 1
+                FROM fw_form_instances
+                WHERE serial_number LIKE :pattern
+            """),
+            {'pattern': f'{form_prefix}{date_str}-%'}
+        )
+        form_seq = result.scalar() or 1
+        serial_number = f"{form_prefix}{date_str}-{str(form_seq).zfill(4)}"
+
+        # 建立表單實例
         form_instance = FwFormInstance(
             secure_code=secrets.token_urlsafe(16),
             org_secure_code=org.secure_code,
-            form_template_id=published.source_form_template_id,
-            form_template_secure_code=published.source_form_template_secure_code,
-            published_secure_code=published.secure_code,
-            form_name=form_snapshot.get('name'),
-            form_code=form_snapshot.get('code'),
-            form_version=published.source_form_version,
+            form_template_id=source_form_template_id,
+            form_template_secure_code=source_form_template_secure_code,
+            published_secure_code=published_sc,
+            serial_number=serial_number,
+            form_name=form_name,
+            form_code=form_code,
+            form_version=form_version,
             applicant_secure_code=current_user.secure_code,
             applicant_name=current_user.display_name or current_user.username,
             applicant_username=current_user.username,
             applicant_email=getattr(current_user, 'email', None),
             applicant_dept=getattr(current_user, 'department_name', None),
             form_data=form_data,
-            schema_snapshot=form_snapshot.get('schema'),
+            schema_snapshot=form_schema,
             status='INITIAL',
             source_type='WEB',
             source_ip=request.remote_addr,
@@ -195,37 +422,33 @@ def submit_form():
         )
 
         db.session.add(form_instance)
-        db.session.flush()  # 取得 ID
+        db.session.flush()
 
-        # 4. 生成執行編號
-        date_str = datetime.now().strftime('%Y%m%d')
-        prefix = 'PROC-'
-
-        from sqlalchemy import text
+        # 生成流程執行編號
         result = db.session.execute(
             text("""
                 SELECT COALESCE(MAX(CAST(SUBSTRING(execution_code FROM '\\d{4}$') AS INTEGER)), 0) + 1
                 FROM fw_workflow_instances
                 WHERE execution_code LIKE :pattern
             """),
-            {'pattern': f'{prefix}{date_str}-%'}
+            {'pattern': f'{proc_prefix}{date_str}-%'}
         )
-        seq = result.scalar() or 1
-        execution_code = f"{prefix}{date_str}-{str(seq).zfill(4)}"
+        proc_seq = result.scalar() or 1
+        execution_code = f"{proc_prefix}{date_str}-{str(proc_seq).zfill(4)}"
 
-        # 5. 建立流程實例
+        # 建立流程實例
         workflow_instance = FwWorkflowInstance(
             secure_code=secrets.token_urlsafe(16),
             org_secure_code=org.secure_code,
             form_instance_id=form_instance.id,
             form_instance_secure_code=form_instance.secure_code,
-            workflow_template_id=published.source_workflow_template_id,
-            workflow_template_secure_code=published.source_workflow_template_secure_code,
-            published_secure_code=published.secure_code,
+            workflow_template_id=source_workflow_template_id,
+            workflow_template_secure_code=source_workflow_template_secure_code,
+            published_secure_code=published_sc,
             execution_code=execution_code,
-            workflow_name=workflow_snapshot.get('name'),
-            workflow_version=published.source_workflow_version,
-            graph_snapshot=workflow_snapshot.get('graph'),
+            workflow_name=workflow_name,
+            workflow_version=workflow_version,
+            graph_snapshot=workflow_graph,
             status='RUNNING',
             started_at=datetime.utcnow(),
         )
@@ -237,10 +460,8 @@ def submit_form():
         form_instance.workflow_instance_id = workflow_instance.id
         form_instance.workflow_instance_secure_code = workflow_instance.secure_code
 
-        # 6. 找到起始節點
-        workflow_graph = workflow_snapshot.get('graph') or workflow_snapshot.get('cytoscape_config') or {}
+        # 找到起始節點
         nodes = workflow_graph.get('nodes', [])
-
         start_node = None
         for node in nodes:
             node_id = node.get('id', '')
@@ -253,7 +474,7 @@ def submit_form():
             db.session.rollback()
             return jsonify({'success': False, 'error': '流程中找不到起始節點'}), 400
 
-        # 7. 將起始節點加入執行佇列
+        # 將起始節點加入執行佇列
         node_id = start_node.get('id')
         node_config = start_node.get('config', {})
         display_name = start_node.get('label') or start_node.get('data', {}).get('label') or '開始'
@@ -261,15 +482,13 @@ def submit_form():
         queue_item = FwNodeExecutionQueue(
             secure_code=secrets.token_urlsafe(16),
             org_secure_code=org.secure_code,
-            workflow_instance_id=workflow_instance.id,
             workflow_instance_secure_code=workflow_instance.secure_code,
-            form_instance_id=form_instance.id,
             form_instance_secure_code=form_instance.secure_code,
             node_id=node_id,
             node_type='Start',
             node_name=display_name,
             node_config=node_config,
-            status='PENDING',  # PENDING 狀態才會被執行器處理
+            status='PENDING',
             priority=10,
             scheduled_at=datetime.utcnow(),
         )
@@ -279,12 +498,13 @@ def submit_form():
 
         return jsonify({
             'success': True,
-            'message': '表單已送出，流程已啟動',
+            'message': '表單已送出，流程已啟動' + ('（測試模式）' if is_test_mode else ''),
             'data': {
                 'form_instance_secure_code': form_instance.secure_code,
                 'serial_number': form_instance.serial_number,
                 'workflow_instance_secure_code': workflow_instance.secure_code,
                 'execution_code': workflow_instance.execution_code,
+                'is_test': is_test_mode,
             }
         }), 201
 

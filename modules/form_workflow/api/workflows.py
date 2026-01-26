@@ -401,7 +401,7 @@ def create_template():
 @login_required
 def update_template(secure_code):
     """更新流程模板"""
-    from ..models import FwWorkflowTemplate
+    from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
     if not org:
@@ -418,6 +418,9 @@ def update_template(secure_code):
 
     data = request.get_json() or {}
 
+    # 記錄舊的 revision（用於判斷是否首次儲存）
+    old_revision = template.revision or 0
+
     if 'name' in data:
         template.name = data['name'].strip()
     if 'description' in data:
@@ -429,15 +432,93 @@ def update_template(secure_code):
     if 'is_active' in data:
         template.is_active = data['is_active']
 
-    # template.updated_by = current_user.secure_code  # Model 沒有此欄位
+    # 首次儲存時遞增 revision
+    if old_revision == 0 and (data.get('graph') or data.get('cytoscape_config')):
+        template.revision = 1
+
     template.updated_at = datetime.utcnow()
+
+    # =========================================================================
+    # 自動配對機制：首次儲存時（revision 0 → 1），自動建立同名表單並配對
+    # =========================================================================
+    auto_created_form = None
+    auto_created_mapping = None
+
+    if old_revision == 0 and template.revision == 1 and not template.is_subprocess:
+        # 檢查是否已存在同名表單
+        existing_form = FwFormTemplate.query.filter_by(
+            org_secure_code=org.secure_code,
+            name=template.name,
+            is_deleted=False
+        ).first()
+
+        if not existing_form:
+            # 建立空白表單（流程記錄單）
+            form_code = f"FORM_{template.code}_{secrets.token_hex(2).upper()}"
+            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄單'
+
+            form_template = FwFormTemplate(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=org.secure_code,
+                code=form_code,
+                name=template.name,
+                version='AA',
+                description=f'{template.name} 流程記錄單',
+                category=form_category,
+                schema={
+                    "components": [],
+                    "display": "form"
+                },
+                is_active=True,
+                is_published=False,
+                owner_secure_code=current_user.secure_code
+            )
+            db.session.add(form_template)
+            db.session.flush()  # 取得 form_template.id
+            auto_created_form = form_template
+
+            # 自動建立配對關係
+            mapping = FwFormWorkflowMapping(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=org.secure_code,
+                form_template_id=form_template.id,
+                form_template_secure_code=form_template.secure_code,
+                form_template_code=form_template.code,
+                form_template_version=form_template.version,
+                workflow_template_id=template.id,
+                workflow_template_secure_code=template.secure_code,
+                workflow_template_code=template.code,
+                workflow_template_version=template.version or 'AA',
+                is_active=True,
+                is_published=False
+            )
+            db.session.add(mapping)
+            auto_created_mapping = mapping
+
     db.session.commit()
 
-    return jsonify({
+    # 建立回應
+    response_data = {
         'success': True,
         **template.to_dict(include_graph=True),
         'message': '流程模板已更新'
-    })
+    }
+
+    # 如果有自動建立表單和配對，加入額外資訊
+    if auto_created_form:
+        response_data['auto_created'] = {
+            'form': {
+                'secure_code': auto_created_form.secure_code,
+                'name': auto_created_form.name,
+                'code': auto_created_form.code
+            },
+            'mapping': {
+                'secure_code': auto_created_mapping.secure_code
+            } if auto_created_mapping else None
+        }
+        response_data['message'] = f'流程模板已更新，並自動建立表單「{auto_created_form.name}」及配對'
+
+    return jsonify(response_data)
 
 
 @workflows_bp.route('/data/templates/<secure_code>', methods=['DELETE'])
@@ -476,7 +557,7 @@ def delete_template(secure_code):
 @login_required
 def save_new_version(secure_code):
     """儲存新版本"""
-    from ..models import FwWorkflowTemplate
+    from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
     if not org:
@@ -493,6 +574,9 @@ def save_new_version(secure_code):
 
     data = request.get_json() or {}
 
+    # 記錄舊的 revision（用於判斷是否首次儲存）
+    old_revision = template.revision or 0
+
     # 更新版本號
     current_version = template.version or 'AA'
     # 簡單的版本遞增（AA -> AB -> ... -> AZ -> BA -> ...）
@@ -506,22 +590,96 @@ def save_new_version(secure_code):
         new_version = 'AA'
 
     template.version = new_version
-    template.revision = (template.revision or 0) + 1
+    template.revision = old_revision + 1
 
     if 'graph' in data:
         template.graph = data['graph']
     if 'cytoscape_config' in data:
         template.cytoscape_config = data['cytoscape_config']
 
-    # template.updated_by = current_user.secure_code  # Model 沒有此欄位
     template.updated_at = datetime.utcnow()
+
+    # =========================================================================
+    # 自動配對機制：首次儲存時（revision 0 → 1），自動建立同名表單並配對
+    # =========================================================================
+    auto_created_form = None
+    auto_created_mapping = None
+
+    if old_revision == 0 and not template.is_subprocess:
+        # 檢查是否已存在同名表單
+        existing_form = FwFormTemplate.query.filter_by(
+            org_secure_code=org.secure_code,
+            name=template.name,
+            is_deleted=False
+        ).first()
+
+        if not existing_form:
+            # 建立空白表單（流程記錄單）
+            form_code = f"FORM_{template.code}_{secrets.token_hex(2).upper()}"
+            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄單'
+
+            form_template = FwFormTemplate(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=org.secure_code,
+                code=form_code,
+                name=template.name,
+                version='AA',
+                description=f'{template.name} 流程記錄單',
+                category=form_category,
+                schema={
+                    "components": [],
+                    "display": "form"
+                },
+                is_active=True,
+                is_published=False,
+                owner_secure_code=current_user.secure_code
+            )
+            db.session.add(form_template)
+            db.session.flush()  # 取得 form_template.id
+            auto_created_form = form_template
+
+            # 自動建立配對關係
+            mapping = FwFormWorkflowMapping(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=org.secure_code,
+                form_template_id=form_template.id,
+                form_template_secure_code=form_template.secure_code,
+                form_template_code=form_template.code,
+                form_template_version=form_template.version,
+                workflow_template_id=template.id,
+                workflow_template_secure_code=template.secure_code,
+                workflow_template_code=template.code,
+                workflow_template_version=template.version,
+                is_active=True,
+                is_published=False
+            )
+            db.session.add(mapping)
+            auto_created_mapping = mapping
+
     db.session.commit()
 
-    return jsonify({
+    # 建立回應
+    response_data = {
         'success': True,
         **template.to_dict(include_graph=True),
         'message': f'已儲存新版本 {new_version}'
-    })
+    }
+
+    # 如果有自動建立表單和配對，加入額外資訊
+    if auto_created_form:
+        response_data['auto_created'] = {
+            'form': {
+                'secure_code': auto_created_form.secure_code,
+                'name': auto_created_form.name,
+                'code': auto_created_form.code
+            },
+            'mapping': {
+                'secure_code': auto_created_mapping.secure_code
+            } if auto_created_mapping else None
+        }
+        response_data['message'] = f'已儲存新版本 {new_version}，並自動建立表單「{auto_created_form.name}」及配對'
+
+    return jsonify(response_data)
 
 
 # =============================================================================

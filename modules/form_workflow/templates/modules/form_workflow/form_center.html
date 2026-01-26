@@ -3,194 +3,416 @@
 {% block title %}表單中心 - BeakPlatform{% endblock %}
 
 {% block head %}
+<!-- Form.io CSS -->
+<link rel="stylesheet" href="/static/vendor/formio.full.min.css">
 <style>
     [x-cloak] { display: none !important; }
 
-    .fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
-    .fw-section { background: white; border: 1px solid #ddd; margin-bottom: 16px; }
-    .fw-section-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-    .fw-section-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
-    .fw-section-body { padding: 20px; }
+    /* 主容器 */
+    .fc-container { display: flex; gap: 16px; padding: 16px; min-height: calc(100vh - 120px); }
 
-    .fw-btn { padding: 6px 12px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 12px; }
-    .fw-btn:hover { background: #e9e9e9; }
-    .fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
-    .fw-btn.primary:hover { background: #0055aa; }
+    /* 左側邊欄 */
+    .fc-sidebar { width: 200px; flex-shrink: 0; }
+    .fc-sidebar-box { background: white; border: 1px solid #ddd; padding: 12px; margin-bottom: 12px; }
+    .fc-sidebar-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+    .fc-category-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px; }
+    .fc-category-item:hover { background: #f3f4f6; }
+    .fc-category-item.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+    .fc-category-count { font-size: 11px; background: #e5e7eb; padding: 2px 6px; border-radius: 10px; }
+    .fc-category-item.active .fc-category-count { background: #bfdbfe; }
 
-    .fw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-    .fw-card { border: 1px solid #ddd; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; }
-    .fw-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .fw-card h4 { margin: 0 0 8px 0; font-size: 14px; font-weight: 600; }
-    .fw-card p { margin: 0; font-size: 12px; color: #666; }
-    .fw-card .meta { margin-top: 8px; font-size: 11px; color: #999; }
+    /* 快速連結 */
+    .fc-link-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px; color: #4b5563; }
+    .fc-link-item:hover { background: #f3f4f6; }
+    .fc-link-badge { font-size: 10px; background: #fbbf24; color: white; padding: 2px 6px; border-radius: 10px; }
 
-    .fw-badge { padding: 2px 6px; font-size: 10px; border-radius: 2px; display: inline-block; }
-    .fw-badge.active { background: #dcfce7; color: #166534; }
-    .fw-badge.pending { background: #fef3c7; color: #92400e; }
-    .fw-badge.running { background: #dbeafe; color: #1e40af; }
-    .fw-badge.completed { background: #f3f4f6; color: #374151; }
+    /* 主內容區 */
+    .fc-main { flex: 1; min-width: 0; }
 
-    .fw-empty { text-align: center; padding: 32px; color: #999; }
-    .fw-loading { text-align: center; padding: 32px; color: #666; }
+    /* 區塊 */
+    .fc-section { background: white; border: 1px solid #ddd; margin-bottom: 16px; }
+    .fc-section-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+    .fc-section-title { font-size: 14px; font-weight: 600; color: #1f2937; display: flex; align-items: center; gap: 8px; }
+    .fc-section-body { padding: 16px; }
 
-    .fw-list { }
-    .fw-list-item { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
-    .fw-list-item:hover { background: #fafafa; }
-    .fw-list-item:last-child { border-bottom: none; }
-    .fw-list-info { flex: 1; }
-    .fw-list-title { font-weight: 500; font-size: 13px; margin-bottom: 4px; }
-    .fw-list-meta { font-size: 11px; color: #999; }
+    /* 表單網格 */
+    .fc-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 140px; overflow-y: auto; }
+    .fc-form-card { border: 1px solid #e5e7eb; padding: 12px; cursor: pointer; transition: all 0.2s; border-radius: 4px; }
+    .fc-form-card:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .fc-form-card h4 { font-size: 13px; font-weight: 600; margin: 0; color: #1f2937; display: flex; align-items: center; gap: 6px; }
 
-    .fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .fw-modal-content { background: white; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
-    .fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-    .fw-modal-header h3 { margin: 0; font-size: 16px; }
-    .fw-modal-body { padding: 20px; }
-    .fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+    /* 徽章 */
+    .fc-badge { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
+    .fc-badge-test { background: #fed7aa; color: #c2410c; }
+    .fc-badge-proc { background: #fecaca; color: #b91c1c; }
+    .fc-badge-pending { background: #fef3c7; color: #92400e; }
+    .fc-badge-running { background: #dbeafe; color: #1e40af; }
+    .fc-badge-completed { background: #dcfce7; color: #166534; }
+    .fc-badge-error { background: #fee2e2; color: #dc2626; }
 
-    .fw-form-row { margin-bottom: 16px; }
-    .fw-form-row label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: #333; }
-    .fw-form-row input, .fw-form-row textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
-    .fw-form-row textarea { min-height: 80px; resize: vertical; }
+    /* 表格 */
+    .fc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .fc-table th { text-align: left; padding: 8px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; }
+    .fc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
+    .fc-table tr:hover td { background: #fafafa; }
+    .fc-table-pending { background: #fffbeb; }
+    .fc-table-pending th { background: #fef3c7; }
 
-    .fw-toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 4px; color: white; z-index: 2000; }
-    .fw-toast.success { background: #16a34a; }
-    .fw-toast.error { background: #dc2626; }
+    /* 頁籤 */
+    .fc-tabs { display: flex; gap: 4px; }
+    .fc-tab { padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; color: #6b7280; }
+    .fc-tab:hover { background: #f3f4f6; }
+    .fc-tab.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+
+    /* 分頁 */
+    .fc-pagination { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7280; }
+    .fc-pagination button { background: none; border: none; cursor: pointer; padding: 2px 6px; color: #3b82f6; }
+    .fc-pagination button:disabled { color: #d1d5db; cursor: not-allowed; }
+
+    /* 按鈕 */
+    .fc-btn { padding: 6px 12px; font-size: 12px; border: none; cursor: pointer; border-radius: 4px; }
+    .fc-btn-primary { background: #3b82f6; color: white; }
+    .fc-btn-primary:hover { background: #2563eb; }
+    .fc-btn-warning { background: #f59e0b; color: white; }
+    .fc-btn-warning:hover { background: #d97706; }
+    .fc-btn-sm { padding: 4px 8px; font-size: 11px; }
+
+    /* 空狀態 */
+    .fc-empty { text-align: center; padding: 24px; color: #9ca3af; font-size: 13px; }
+    .fc-loading { text-align: center; padding: 24px; color: #6b7280; }
+
+    /* 模態框 */
+    .fc-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .fc-modal-content { background: white; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; }
+    .fc-modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .fc-modal-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+    .fc-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .fc-modal-footer { padding: 16px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; background: #f9fafb; }
+    .fc-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; }
+    .fc-close-btn:hover { color: #1f2937; }
+
+    /* 唯讀表單樣式 */
+    .fc-form-readonly .formio-component input,
+    .fc-form-readonly .formio-component textarea,
+    .fc-form-readonly .formio-component select {
+        background-color: #f9fafb !important;
+        pointer-events: none;
+    }
+    .fc-form-readonly .formio-component button[type="submit"] {
+        display: none !important;
+    }
+
+    /* Toast */
+    .fc-toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: white; z-index: 2000; font-size: 13px; }
+    .fc-toast-success { background: #16a34a; }
+    .fc-toast-error { background: #dc2626; }
+    .fc-toast-warning { background: #f59e0b; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="fw-container" x-data="formCenterManager()">
+<div class="fc-container" x-data="formCenterManager()">
 
-    <!-- 區域一：新填表單 -->
-    <div class="fw-section">
-        <div class="fw-section-header">
-            <h2>新填表單</h2>
-            <button class="fw-btn" @click="loadAvailableForms()">重新載入</button>
-        </div>
-        <div class="fw-section-body">
-            <div x-show="loadingForms" class="fw-loading">載入中...</div>
-
-            <div x-show="!loadingForms && availableForms.length === 0" class="fw-empty">
-                <p style="margin-bottom: 8px;">目前沒有可填寫的表單</p>
-                <p style="font-size: 12px;">請至「表單流程配對」建立配對並發行</p>
-            </div>
-
-            <div x-show="!loadingForms && availableForms.length > 0" class="fw-grid">
-                <template x-for="form in availableForms" :key="form.secure_code">
-                    <div class="fw-card" @click="openFormFill(form)">
-                        <h4 x-text="form.name || form.form_name"></h4>
-                        <p x-text="form.description || '無描述'"></p>
-                        <div class="meta">
-                            <span class="fw-badge active">可填寫</span>
-                            <span style="margin-left: 8px;" x-text="'v' + form.publish_version"></span>
-                        </div>
+    <!-- 左側邊欄 -->
+    <div class="fc-sidebar">
+        <!-- 分類選單 -->
+        <div class="fc-sidebar-box">
+            <div class="fc-sidebar-title">表單分類</div>
+            <div x-show="loadingCategories" class="fc-loading" style="padding: 16px;">載入中...</div>
+            <div x-show="!loadingCategories">
+                <div class="fc-category-item" :class="{ active: selectedCategory === null }" @click="selectedCategory = null">
+                    <span>全部</span>
+                    <span class="fc-category-count" x-text="availableForms.length"></span>
+                </div>
+                <template x-for="cat in categories" :key="cat.id">
+                    <div class="fc-category-item" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name">
+                        <span x-text="cat.name"></span>
+                        <span class="fc-category-count" x-text="getFormCountByCategory(cat.name)"></span>
                     </div>
                 </template>
+                <div x-show="getFormCountByCategory(null) > 0" class="fc-category-item" :class="{ active: selectedCategory === '__uncategorized__' }" @click="selectedCategory = '__uncategorized__'">
+                    <span>未分類</span>
+                    <span class="fc-category-count" x-text="getFormCountByCategory(null)"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速連結 -->
+        <div class="fc-sidebar-box">
+            <div class="fc-link-item">
+                <span>待簽核</span>
+                <span x-show="pendingApprovals.length > 0" class="fc-link-badge" x-text="pendingApprovals.length"></span>
+            </div>
+            <div class="fc-link-item">
+                <span>追蹤中</span>
+                <span x-show="trackingList.length > 0" class="fc-link-badge" style="background: #3b82f6;" x-text="trackingList.length"></span>
+            </div>
+            <div class="fc-link-item">
+                <span>歷史</span>
             </div>
         </div>
     </div>
 
-    <!-- 區域二：我的表單 -->
-    <div class="fw-section">
-        <div class="fw-section-header">
-            <h2>我的表單</h2>
-            <button class="fw-btn" @click="loadMyForms()">重新載入</button>
-        </div>
-        <div class="fw-section-body" style="padding: 0;">
-            <div x-show="loadingMyForms" class="fw-loading">載入中...</div>
+    <!-- 主內容區 -->
+    <div class="fc-main">
 
-            <div x-show="!loadingMyForms && myForms.length === 0" class="fw-empty">
-                <p>尚無提交的表單</p>
+        <!-- 區域一：新填表單 -->
+        <div class="fc-section">
+            <div class="fc-section-header">
+                <div class="fc-section-title">
+                    <span>新填表單</span>
+                    <span x-show="selectedCategory && selectedCategory !== '__uncategorized__'" style="font-weight: normal; color: #6b7280;">
+                        / <span x-text="selectedCategory"></span>
+                    </span>
+                    <span x-show="selectedCategory === '__uncategorized__'" style="font-weight: normal; color: #6b7280;">/ 未分類</span>
+                </div>
+                <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
             </div>
-
-            <div x-show="!loadingMyForms && myForms.length > 0" class="fw-list">
-                <template x-for="form in myForms" :key="form.secure_code">
-                    <div class="fw-list-item">
-                        <div class="fw-list-info">
-                            <div class="fw-list-title" x-text="form.form_name"></div>
-                            <div class="fw-list-meta">
-                                <span x-text="form.serial_number || '-'"></span>
-                                <span style="margin: 0 8px;">|</span>
-                                <span x-text="formatDate(form.submitted_at)"></span>
-                            </div>
+            <div class="fc-section-body">
+                <div x-show="loadingForms" class="fc-loading">載入中...</div>
+                <div x-show="!loadingForms && filteredForms.length === 0" class="fc-empty">
+                    <span x-text="availableForms.length === 0 ? '目前沒有可填寫的表單' : '此分類目前沒有表單'"></span>
+                </div>
+                <div x-show="!loadingForms && filteredForms.length > 0" class="fc-form-grid">
+                    <template x-for="form in filteredForms" :key="form.secure_code">
+                        <div class="fc-form-card" @click="openFormFill(form)">
+                            <h4>
+                                <span x-show="form._status === 'test'" class="fc-badge fc-badge-test">TEST</span>
+                                <span x-text="form.name"></span>
+                            </h4>
                         </div>
-                        <span class="fw-badge" :class="getStatusClass(form.status)" x-text="getStatusText(form.status)"></span>
-                    </div>
-                </template>
+                    </template>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- 區域三：待簽核 -->
-    <div class="fw-section">
-        <div class="fw-section-header">
-            <h2>待簽核任務</h2>
-            <button class="fw-btn" @click="loadPendingTasks()">重新載入</button>
-        </div>
-        <div class="fw-section-body" style="padding: 0;">
-            <div x-show="loadingPending" class="fw-loading">載入中...</div>
-
-            <div x-show="!loadingPending && pendingTasks.length === 0" class="fw-empty">
-                <p>目前沒有待簽核的任務</p>
+        <!-- 區域二：待簽核 -->
+        <div class="fc-section">
+            <div class="fc-section-header">
+                <div class="fc-section-title">
+                    <span>待簽核</span>
+                    <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" x-text="pendingApprovals.length"></span>
+                </div>
+                <div x-show="pendingTotalPages > 1" class="fc-pagination">
+                    <button @click="pendingPage = Math.max(1, pendingPage - 1)" :disabled="pendingPage === 1">&lt;</button>
+                    <span x-text="pendingPage + '/' + pendingTotalPages"></span>
+                    <button @click="pendingPage = Math.min(pendingTotalPages, pendingPage + 1)" :disabled="pendingPage === pendingTotalPages">&gt;</button>
+                </div>
             </div>
-
-            <div x-show="!loadingPending && pendingTasks.length > 0" class="fw-list">
-                <template x-for="task in pendingTasks" :key="task.queue_secure_code">
-                    <div class="fw-list-item" style="cursor: pointer;" @click="openApproval(task)">
-                        <div class="fw-list-info">
-                            <div class="fw-list-title" x-text="task.form_name || task.node_name"></div>
-                            <div class="fw-list-meta">
-                                <span x-text="'申請人：' + (task.applicant_name || '-')"></span>
-                                <span style="margin: 0 8px;">|</span>
-                                <span x-text="formatDate(task.submitted_at)"></span>
-                            </div>
-                        </div>
-                        <span class="fw-badge pending">待簽核</span>
-                    </div>
-                </template>
-            </div>
-        </div>
-    </div>
-
-    <!-- 填寫表單 Modal -->
-    <div x-show="showFillModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content" style="width: 700px;">
-            <div class="fw-modal-header">
-                <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
-                <button @click="closeFillModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-            </div>
-            <div class="fw-modal-body">
-                <div x-show="loadingFormSchema" class="fw-loading">載入表單結構中...</div>
-
-                <div x-show="!loadingFormSchema && formSchema">
-                    <p style="margin-bottom: 16px; color: #666; font-size: 13px;" x-text="selectedForm?.description || ''"></p>
-
-                    <!-- 動態表單欄位 -->
-                    <div x-show="formFields.length > 0">
-                        <template x-for="field in formFields" :key="field.key">
-                            <div class="fw-form-row">
-                                <label x-text="field.label + (field.required ? ' *' : '')"></label>
-                                <template x-if="field.type === 'textarea'">
-                                    <textarea x-model="formData[field.key]" :placeholder="field.placeholder || ''"></textarea>
-                                </template>
-                                <template x-if="field.type !== 'textarea'">
-                                    <input :type="field.type || 'text'" x-model="formData[field.key]" :placeholder="field.placeholder || ''">
-                                </template>
-                            </div>
+            <div style="padding: 0;">
+                <div x-show="loadingPending" class="fc-loading">載入中...</div>
+                <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">目前沒有待簽核的表單</div>
+                <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-pending">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">單號</th>
+                            <th>表單</th>
+                            <th style="width: 100px;">目前關卡</th>
+                            <th style="width: 100px;">發起人</th>
+                            <th style="width: 80px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="item in pagedPendingApprovals" :key="item.queue_secure_code">
+                            <tr>
+                                <td>
+                                    <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
+                                    <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
+                                    <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
+                                </td>
+                                <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
+                                <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
+                                <td x-text="item.applicant_name || '-'"></td>
+                                <td>
+                                    <button class="fc-btn fc-btn-warning fc-btn-sm" @click="openApprovalModal(item)">簽核</button>
+                                </td>
+                            </tr>
                         </template>
-                    </div>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                    <!-- 沒有欄位時的提示 -->
-                    <div x-show="formFields.length === 0" style="text-align: center; padding: 24px; color: #999;">
-                        <p>此表單尚無欄位定義</p>
-                        <p style="font-size: 12px;">請至表單設計器添加欄位</p>
+        <!-- 區域三：追蹤中 -->
+        <div class="fc-section">
+            <div class="fc-section-header">
+                <div class="fc-section-title">
+                    <span>追蹤中</span>
+                    <div class="fc-tabs" style="margin-left: 12px;">
+                        <div class="fc-tab" :class="{ active: trackingTab === 'mine' }" @click="trackingTab = 'mine'; trackingPage = 1">
+                            我的(<span x-text="trackingList.length"></span>)
+                        </div>
+                        <div class="fc-tab" :class="{ active: trackingTab === 'signed' }" @click="trackingTab = 'signed'; signedPage = 1">
+                            簽核(<span x-text="signedList.length"></span>)
+                        </div>
+                    </div>
+                </div>
+                <div x-show="trackingTab === 'mine' && trackingTotalPages > 1" class="fc-pagination">
+                    <button @click="trackingPage = Math.max(1, trackingPage - 1)" :disabled="trackingPage === 1">&lt;</button>
+                    <span x-text="trackingPage + '/' + trackingTotalPages"></span>
+                    <button @click="trackingPage = Math.min(trackingTotalPages, trackingPage + 1)" :disabled="trackingPage === trackingTotalPages">&gt;</button>
+                </div>
+            </div>
+            <div style="padding: 0;">
+                <!-- 我的表單 -->
+                <div x-show="trackingTab === 'mine'">
+                    <div x-show="loadingTracking" class="fc-loading">載入中...</div>
+                    <div x-show="!loadingTracking && trackingList.length === 0" class="fc-empty">目前沒有執行中的流程</div>
+                    <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">單號</th>
+                                <th>表單</th>
+                                <th style="width: 120px;">待簽關卡</th>
+                                <th style="width: 140px;">提交時間</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedTrackingList" :key="item.secure_code">
+                                <tr>
+                                    <td>
+                                        <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
+                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
+                                    </td>
+                                    <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
+                                    <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 簽核表單 -->
+                <div x-show="trackingTab === 'signed'">
+                    <div x-show="loadingSigned" class="fc-loading">載入中...</div>
+                    <div x-show="!loadingSigned && signedList.length === 0" class="fc-empty">沒有曾簽核過的執行中流程</div>
+                    <table x-show="!loadingSigned && signedList.length > 0" class="fc-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">單號</th>
+                                <th>表單</th>
+                                <th style="width: 100px;">發起人</th>
+                                <th style="width: 120px;">待簽關卡</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedSignedList" :key="item.secure_code">
+                                <tr>
+                                    <td>
+                                        <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-text="item.applicant_name || '-'"></td>
+                                    <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 區域四：歷史 -->
+        <div class="fc-section">
+            <div class="fc-section-header">
+                <div class="fc-section-title">
+                    <span>歷史</span>
+                    <div class="fc-tabs" style="margin-left: 12px;">
+                        <div class="fc-tab" :class="{ active: historyTab === 'mine' }" @click="historyTab = 'mine'; historyPage = 1">
+                            我的(<span x-text="historyList.length"></span>)
+                        </div>
+                        <div class="fc-tab" :class="{ active: historyTab === 'signed' }" @click="historyTab = 'signed'; signedHistoryPage = 1">
+                            簽核(<span x-text="signedHistoryList.length"></span>)
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="fw-modal-footer">
-                <button class="fw-btn" @click="closeFillModal()">取消</button>
-                <button class="fw-btn primary" @click="submitForm()" :disabled="submitting">
+            <div style="padding: 0;">
+                <!-- 我的歷史 -->
+                <div x-show="historyTab === 'mine'">
+                    <div x-show="loadingHistory" class="fc-loading">載入中...</div>
+                    <div x-show="!loadingHistory && historyList.length === 0" class="fc-empty">沒有歷史記錄</div>
+                    <table x-show="!loadingHistory && historyList.length > 0" class="fc-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">單號</th>
+                                <th>表單</th>
+                                <th style="width: 80px;">狀態</th>
+                                <th style="width: 140px;">結束時間</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedHistoryList" :key="item.secure_code">
+                                <tr>
+                                    <td>
+                                        <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
+                                    <td style="color: #6b7280;" x-text="formatDate(item.completed_at || item.ended_at)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 簽核歷史 -->
+                <div x-show="historyTab === 'signed'">
+                    <div x-show="loadingSignedHistory" class="fc-loading">載入中...</div>
+                    <div x-show="!loadingSignedHistory && signedHistoryList.length === 0" class="fc-empty">沒有曾簽核過的已結束流程</div>
+                    <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">單號</th>
+                                <th>表單</th>
+                                <th style="width: 100px;">發起人</th>
+                                <th style="width: 80px;">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedSignedHistoryList" :key="item.secure_code">
+                                <tr>
+                                    <td>
+                                        <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
+                                    </td>
+                                    <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td x-text="item.applicant_name || '-'"></td>
+                                    <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 填寫表單 Modal -->
+    <div x-show="showFillModal" x-cloak class="fc-modal">
+        <div class="fc-modal-content" :style="'width: ' + (selectedForm?.builder_config?.formWidth ? Math.max(selectedForm.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+            <div class="fc-modal-header">
+                <div>
+                    <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
+                    <p x-show="selectedForm?._status === 'test'" style="margin: 4px 0 0; font-size: 12px; color: #c2410c;">
+                        測試模式 - 表單尚未正式發行
+                    </p>
+                </div>
+                <button class="fc-close-btn" @click="closeFillModal()">&times;</button>
+            </div>
+            <div class="fc-modal-body">
+                <div x-show="loadingFormSchema" class="fc-loading">載入表單結構中...</div>
+                <div x-show="!loadingFormSchema && formSchema">
+                    <div id="form-fill-container"></div>
+                </div>
+                <div x-show="!loadingFormSchema && !formSchema" class="fc-empty">
+                    <p>此表單尚無欄位定義</p>
+                    <p style="font-size: 12px;">請至表單設計器添加欄位</p>
+                </div>
+            </div>
+            <div class="fc-modal-footer">
+                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeFillModal()">取消</button>
+                <button class="fc-btn fc-btn-primary" @click="submitForm()" :disabled="submitting">
                     <span x-show="!submitting">送出表單</span>
                     <span x-show="submitting">處理中...</span>
                 </button>
@@ -199,157 +421,309 @@
     </div>
 
     <!-- 簽核 Modal -->
-    <div x-show="showApprovalModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content">
-            <div class="fw-modal-header">
-                <h3 x-text="'簽核 - ' + (selectedTask?.form_name || '')"></h3>
-                <button @click="closeApprovalModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+    <div x-show="showApprovalModal" x-cloak class="fc-modal">
+        <div class="fc-modal-content" :style="'width: ' + (currentApproval?.builder_config?.formWidth ? Math.max(currentApproval.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+            <div class="fc-modal-header">
+                <div>
+                    <h3>簽核表單</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: #374151;" x-text="currentApproval?.form_name || ''"></p>
+                    <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="getShortSerial(currentApproval?.serial_number)"></p>
+                </div>
+                <button class="fc-close-btn" @click="closeApprovalModal()">&times;</button>
             </div>
-            <div class="fw-modal-body">
-                <div x-show="loadingTaskDetail" class="fw-loading">載入中...</div>
-
-                <div x-show="!loadingTaskDetail && taskDetail">
-                    <div style="background: #f5f5f5; padding: 12px; margin-bottom: 16px; font-size: 13px;">
-                        <div><strong>申請人：</strong><span x-text="taskDetail.applicant_name || '-'"></span></div>
-                        <div style="margin-top: 4px;"><strong>節點：</strong><span x-text="taskDetail.node_name"></span></div>
+            <div class="fc-modal-body">
+                <div x-show="loadingApproval" class="fc-loading">載入中...</div>
+                <div x-show="!loadingApproval && currentApproval">
+                    <!-- 申請人資訊 -->
+                    <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+                        <span>申請人：<strong x-text="currentApproval?.applicant_name || '-'"></strong></span>
+                        <span style="margin-left: 16px;">關卡：<strong x-text="currentApproval?.node_name || '-'"></strong></span>
                     </div>
 
-                    <!-- 表單資料預覽 -->
-                    <div x-show="Object.keys(taskDetail.form_data || {}).length > 0" style="margin-bottom: 16px;">
-                        <h4 style="font-size: 13px; margin-bottom: 8px;">表單內容</h4>
-                        <div style="background: #fafafa; padding: 12px; font-size: 12px;">
-                            <template x-for="(value, key) in taskDetail.form_data" :key="key">
-                                <div style="margin-bottom: 4px;">
-                                    <strong x-text="key + '：'"></strong>
-                                    <span x-text="value"></span>
-                                </div>
+                    <!-- 表單內容（唯讀） -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <label style="font-size: 13px; font-weight: 500;">表單內容</label>
+                            <span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
+                        </div>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;">
+                            <div id="approval-form-container" class="fc-form-readonly"></div>
+                        </div>
+                    </div>
+
+                    <!-- 簽核選項 -->
+                    <div style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                        <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">
+                            請選擇後續動作
+                            <span x-show="currentApproval?.selection_mode === 'multiple'" style="color: #7c3aed;">（可複選）</span>
+                        </label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <template x-for="path in (currentApproval?.available_paths || [])" :key="path.edge_id">
+                                <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
+                                       :style="selectedEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
+                                    <input x-show="currentApproval?.selection_mode !== 'multiple'" type="radio" name="approval_path" :value="path.edge_id"
+                                           @change="selectedEdges = [path.edge_id]" style="margin-right: 12px;">
+                                    <input x-show="currentApproval?.selection_mode === 'multiple'" type="checkbox" :value="path.edge_id"
+                                           @change="toggleEdgeSelection(path.edge_id)" :checked="selectedEdges.includes(path.edge_id)" style="margin-right: 12px;">
+                                    <span style="font-weight: 500;" x-text="path.label"></span>
+                                    <span style="margin-left: 8px; font-size: 12px; color: #6b7280;" x-text="'→ ' + path.target_node_type"></span>
+                                </label>
                             </template>
                         </div>
                     </div>
 
-                    <div class="fw-form-row">
-                        <label>備註</label>
-                        <textarea x-model="approvalComment" placeholder="輸入簽核意見..."></textarea>
+                    <!-- 簽核意見 -->
+                    <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;">
+                        <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">
+                            簽核意見 <span x-show="currentApproval?.require_comment" style="color: #dc2626;">*</span>
+                        </label>
+                        <textarea x-model="approvalComment" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; resize: vertical; box-sizing: border-box;"
+                                  placeholder="輸入簽核意見..."></textarea>
                     </div>
                 </div>
             </div>
-            <div class="fw-modal-footer">
-                <button class="fw-btn" @click="closeApprovalModal()">取消</button>
-                <button class="fw-btn" style="background: #dc2626; color: white; border-color: #dc2626;"
-                        @click="doApprove('rejected')" :disabled="approving">退回</button>
-                <button class="fw-btn primary" @click="doApprove('approved')" :disabled="approving">
-                    <span x-show="!approving">核准</span>
-                    <span x-show="approving">處理中...</span>
+            <div class="fc-modal-footer">
+                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeApprovalModal()">取消</button>
+                <button class="fc-btn fc-btn-primary" @click="submitApproval()"
+                        :disabled="selectedEdges.length === 0 || submittingApproval">
+                    <span x-show="!submittingApproval">送出簽核</span>
+                    <span x-show="submittingApproval">處理中...</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Toast -->
-    <div x-show="toast.show" x-cloak class="fw-toast" :class="toast.type" x-text="toast.message"></div>
+    <div x-show="toast.show" x-cloak class="fc-toast" :class="'fc-toast-' + toast.type" x-text="toast.message"></div>
 
 </div>
 
+<!-- Form.io JS -->
+<script src="/static/vendor/formio.full.min.js"></script>
 <script>
 function formCenterManager() {
     return {
-        // 可填寫的表單
+        // 資料
         availableForms: [],
+        categories: [],
+        pendingApprovals: [],
+        trackingList: [],
+        signedList: [],
+        historyList: [],
+        signedHistoryList: [],
+
+        // 分類選擇
+        selectedCategory: null,
+
+        // 載入狀態
         loadingForms: true,
-
-        // 我的表單
-        myForms: [],
-        loadingMyForms: true,
-
-        // 待簽核
-        pendingTasks: [],
+        loadingCategories: true,
         loadingPending: true,
+        loadingTracking: true,
+        loadingSigned: true,
+        loadingHistory: true,
+        loadingSignedHistory: true,
+
+        // 頁籤
+        trackingTab: 'mine',
+        historyTab: 'mine',
+
+        // 分頁
+        pendingPage: 1, pendingPageSize: 5,
+        trackingPage: 1, trackingPageSize: 5,
+        signedPage: 1, signedPageSize: 5,
+        historyPage: 1, historyPageSize: 5,
+        signedHistoryPage: 1, signedHistoryPageSize: 5,
 
         // 填寫表單
         showFillModal: false,
         selectedForm: null,
         formSchema: null,
-        formFields: [],
-        formData: {},
+        formInstance: null,
         loadingFormSchema: false,
         submitting: false,
 
         // 簽核
         showApprovalModal: false,
-        selectedTask: null,
-        taskDetail: null,
-        loadingTaskDetail: false,
+        currentApproval: null,
+        approvalFormInstance: null,
+        selectedEdges: [],
         approvalComment: '',
-        approving: false,
+        loadingApproval: false,
+        submittingApproval: false,
 
         // Toast
         toast: { show: false, message: '', type: 'success' },
 
+        // 自動刷新
+        autoRefreshInterval: null,
+
         init() {
             this.loadAvailableForms();
-            this.loadMyForms();
-            this.loadPendingTasks();
+            this.loadCategories();
+            this.loadPendingApprovals();
+            this.loadTracking();
+            this.loadSigned();
+            this.loadHistory();
+            this.loadSignedHistory();
+
+            // 每 5 秒自動刷新（僅在沒開啟模態框時）
+            this.autoRefreshInterval = setInterval(() => {
+                if (!this.showFillModal && !this.showApprovalModal) {
+                    this.refreshAll();
+                }
+            }, 5000);
         },
 
+        async refreshAll() {
+            try {
+                const [forms, approvals, tracking, signed, history, signedHist] = await Promise.all([
+                    fetch('/api/form-center/available-forms').then(r => r.json()),
+                    fetch('/api/form-center/pending-tasks').then(r => r.json()),
+                    fetch('/api/form-center/my-forms?status=RUNNING').then(r => r.json()),
+                    fetch('/api/form-center/my-forms?signed=1&status=RUNNING').then(r => r.json()),
+                    fetch('/api/form-center/my-forms?status=COMPLETED,ERROR').then(r => r.json()),
+                    fetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR').then(r => r.json())
+                ]);
+                if (forms.success) this.availableForms = forms.data || [];
+                if (approvals.success) this.pendingApprovals = approvals.data || [];
+                if (tracking.success) this.trackingList = tracking.data || [];
+                if (signed.success) this.signedList = signed.data || [];
+                if (history.success) this.historyList = history.data || [];
+                if (signedHist.success) this.signedHistoryList = signedHist.data || [];
+            } catch (e) {
+                console.error('自動刷新失敗:', e);
+            }
+        },
+
+        // 計算屬性
+        get filteredForms() {
+            if (this.selectedCategory === null) return this.availableForms;
+            if (this.selectedCategory === '__uncategorized__') return this.availableForms.filter(f => !f.category);
+            return this.availableForms.filter(f => f.category === this.selectedCategory);
+        },
+
+        getFormCountByCategory(name) {
+            if (name === null) return this.availableForms.filter(f => !f.category).length;
+            return this.availableForms.filter(f => f.category === name).length;
+        },
+
+        get pendingTotalPages() { return Math.ceil(this.pendingApprovals.length / this.pendingPageSize); },
+        get pagedPendingApprovals() {
+            const start = (this.pendingPage - 1) * this.pendingPageSize;
+            return this.pendingApprovals.slice(start, start + this.pendingPageSize);
+        },
+
+        get trackingTotalPages() { return Math.ceil(this.trackingList.length / this.trackingPageSize); },
+        get pagedTrackingList() {
+            const start = (this.trackingPage - 1) * this.trackingPageSize;
+            return this.trackingList.slice(start, start + this.trackingPageSize);
+        },
+
+        get pagedSignedList() {
+            const start = (this.signedPage - 1) * this.signedPageSize;
+            return this.signedList.slice(start, start + this.signedPageSize);
+        },
+
+        get pagedHistoryList() {
+            const start = (this.historyPage - 1) * this.historyPageSize;
+            return this.historyList.slice(start, start + this.historyPageSize);
+        },
+
+        get pagedSignedHistoryList() {
+            const start = (this.signedHistoryPage - 1) * this.signedHistoryPageSize;
+            return this.signedHistoryList.slice(start, start + this.signedHistoryPageSize);
+        },
+
+        // 載入函式
         async loadAvailableForms() {
             this.loadingForms = true;
             try {
                 const res = await fetch('/api/form-center/available-forms');
                 const data = await res.json();
-                if (data.success) {
-                    this.availableForms = data.data || [];
-                }
-            } catch (e) {
-                console.error('載入可填寫表單失敗:', e);
-            } finally {
-                this.loadingForms = false;
-            }
+                if (data.success) this.availableForms = data.data || [];
+            } catch (e) { console.error('載入可填寫表單失敗:', e); }
+            finally { this.loadingForms = false; }
         },
 
-        async loadMyForms() {
-            this.loadingMyForms = true;
+        async loadCategories() {
+            this.loadingCategories = true;
             try {
-                const res = await fetch('/api/form-center/my-forms');
+                const res = await fetch('/api/form-workflow/categories');
                 const data = await res.json();
-                if (data.success) {
-                    this.myForms = data.data || [];
-                }
-            } catch (e) {
-                console.error('載入我的表單失敗:', e);
-            } finally {
-                this.loadingMyForms = false;
-            }
+                if (data.success) this.categories = data.data || [];
+            } catch (e) { /* 分類 API 可能不存在，忽略 */ }
+            finally { this.loadingCategories = false; }
         },
 
-        async loadPendingTasks() {
+        async loadPendingApprovals() {
             this.loadingPending = true;
             try {
                 const res = await fetch('/api/form-center/pending-tasks');
                 const data = await res.json();
-                if (data.success) {
-                    this.pendingTasks = data.data || [];
-                }
-            } catch (e) {
-                console.error('載入待簽核任務失敗:', e);
-            } finally {
-                this.loadingPending = false;
-            }
+                if (data.success) this.pendingApprovals = data.data || [];
+            } catch (e) { console.error('載入待簽核失敗:', e); }
+            finally { this.loadingPending = false; }
         },
 
+        async loadTracking() {
+            this.loadingTracking = true;
+            try {
+                const res = await fetch('/api/form-center/my-forms?status=RUNNING');
+                const data = await res.json();
+                if (data.success) this.trackingList = data.data || [];
+            } catch (e) { console.error('載入追蹤失敗:', e); }
+            finally { this.loadingTracking = false; }
+        },
+
+        async loadSigned() {
+            this.loadingSigned = true;
+            try {
+                // TODO: 需要後端支援 signed 參數
+                this.signedList = [];
+            } catch (e) { console.error('載入簽核追蹤失敗:', e); }
+            finally { this.loadingSigned = false; }
+        },
+
+        async loadHistory() {
+            this.loadingHistory = true;
+            try {
+                const res = await fetch('/api/form-center/my-forms?status=COMPLETED,ERROR');
+                const data = await res.json();
+                if (data.success) this.historyList = data.data || [];
+            } catch (e) { console.error('載入歷史失敗:', e); }
+            finally { this.loadingHistory = false; }
+        },
+
+        async loadSignedHistory() {
+            this.loadingSignedHistory = true;
+            try {
+                // TODO: 需要後端支援
+                this.signedHistoryList = [];
+            } catch (e) { console.error('載入簽核歷史失敗:', e); }
+            finally { this.loadingSignedHistory = false; }
+        },
+
+        // 填寫表單
         async openFormFill(form) {
             this.selectedForm = form;
-            this.formData = {};
-            this.formFields = [];
             this.formSchema = null;
             this.showFillModal = true;
             this.loadingFormSchema = true;
 
             try {
-                const res = await fetch(`/api/form-center/forms/${form.secure_code}`);
+                // 根據來源決定 API 參數
+                const source = form._source || 'published';
+                const url = `/api/form-center/forms/${form.secure_code}?source=${source}`;
+                const res = await fetch(url);
                 const data = await res.json();
-                if (data.success) {
+
+                if (data.success && data.data.schema) {
                     this.formSchema = data.data.schema;
-                    this.parseFormFields(this.formSchema);
+                    this.selectedForm = { ...this.selectedForm, ...data.data };
+
+                    await this.$nextTick();
+                    this.renderFillForm();
                 }
             } catch (e) {
                 console.error('載入表單結構失敗:', e);
@@ -358,52 +732,72 @@ function formCenterManager() {
             }
         },
 
-        parseFormFields(schema) {
-            if (!schema || !schema.components) {
-                this.formFields = [];
-                return;
+        async renderFillForm() {
+            const container = document.getElementById('form-fill-container');
+            if (!container || !this.formSchema) return;
+
+            try {
+                // 銷毀舊實例
+                if (this.formInstance) {
+                    this.formInstance.destroy();
+                    this.formInstance = null;
+                }
+
+                // 渲染 Form.io
+                this.formInstance = await Formio.createForm(container, this.formSchema, {
+                    readOnly: false
+                });
+
+                console.log('表單渲染成功');
+            } catch (e) {
+                console.error('表單渲染失敗:', e);
+                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
             }
-
-            this.formFields = schema.components
-                .filter(c => c.type !== 'button')
-                .map(c => ({
-                    key: c.key,
-                    label: c.label || c.key,
-                    type: c.type === 'textarea' ? 'textarea' : (c.type === 'number' ? 'number' : 'text'),
-                    required: c.validate?.required || false,
-                    placeholder: c.placeholder || ''
-                }));
-
-            // 初始化表單資料
-            this.formFields.forEach(f => {
-                this.formData[f.key] = '';
-            });
         },
 
         closeFillModal() {
+            if (this.formInstance) {
+                this.formInstance.destroy();
+                this.formInstance = null;
+            }
+            const container = document.getElementById('form-fill-container');
+            if (container) container.innerHTML = '';
+
             this.showFillModal = false;
             this.selectedForm = null;
+            this.formSchema = null;
         },
 
         async submitForm() {
-            if (this.submitting) return;
+            if (this.submitting || !this.formInstance) return;
             this.submitting = true;
 
             try {
+                // 取得表單資料
+                const submission = this.formInstance.submission || {};
+                const formData = submission.data || {};
+
+                // 準備請求資料
+                const payload = { form_data: formData };
+
+                // 根據來源決定使用哪個參數
+                if (this.selectedForm._source === 'mapping' || this.selectedForm._status === 'test') {
+                    payload.mapping_secure_code = this.selectedForm.mapping_secure_code;
+                } else {
+                    payload.published_secure_code = this.selectedForm.secure_code;
+                }
+
                 const res = await fetch('/api/form-center/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        published_secure_code: this.selectedForm.secure_code,
-                        form_data: this.formData
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
                 if (data.success) {
-                    this.showToast('表單已送出，流程已啟動');
+                    this.showToast(data.message || '表單已送出');
                     this.closeFillModal();
-                    this.loadMyForms();
+                    this.loadTracking();
                 } else {
                     this.showToast(data.error || '送出失敗', 'error');
                 }
@@ -414,88 +808,161 @@ function formCenterManager() {
             }
         },
 
-        async openApproval(task) {
-            this.selectedTask = task;
-            this.taskDetail = null;
+        // 簽核
+        async openApprovalModal(item) {
+            this.currentApproval = null;
+            this.selectedEdges = [];
             this.approvalComment = '';
             this.showApprovalModal = true;
-            this.loadingTaskDetail = true;
+            this.loadingApproval = true;
 
             try {
-                const res = await fetch(`/api/form-center/pending-tasks/${task.queue_secure_code}`);
+                const res = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}`);
                 const data = await res.json();
+
                 if (data.success) {
-                    this.taskDetail = data.data;
+                    this.currentApproval = data.data;
+
+                    await this.$nextTick();
+                    this.renderApprovalForm();
+                } else {
+                    this.showToast(data.error || '載入失敗', 'error');
+                    this.closeApprovalModal();
                 }
             } catch (e) {
-                console.error('載入任務詳情失敗:', e);
+                console.error('載入簽核詳情失敗:', e);
+                this.showToast('載入失敗', 'error');
+                this.closeApprovalModal();
             } finally {
-                this.loadingTaskDetail = false;
+                this.loadingApproval = false;
+            }
+        },
+
+        async renderApprovalForm() {
+            const container = document.getElementById('approval-form-container');
+            if (!container || !this.currentApproval) return;
+
+            const schema = this.currentApproval.form_schema;
+            const formData = this.currentApproval.form_data;
+
+            if (!schema) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
+                return;
+            }
+
+            try {
+                if (this.approvalFormInstance) {
+                    this.approvalFormInstance.destroy();
+                    this.approvalFormInstance = null;
+                }
+
+                this.approvalFormInstance = await Formio.createForm(container, schema, {
+                    readOnly: true,
+                    renderMode: 'html'
+                });
+
+                if (formData) {
+                    this.approvalFormInstance.submission = { data: formData };
+                }
+            } catch (e) {
+                console.error('簽核表單渲染失敗:', e);
+                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
             }
         },
 
         closeApprovalModal() {
+            if (this.approvalFormInstance) {
+                this.approvalFormInstance.destroy();
+                this.approvalFormInstance = null;
+            }
+            const container = document.getElementById('approval-form-container');
+            if (container) container.innerHTML = '';
+
             this.showApprovalModal = false;
-            this.selectedTask = null;
+            this.currentApproval = null;
+            this.selectedEdges = [];
+            this.approvalComment = '';
         },
 
-        async doApprove(decision) {
-            if (this.approving) return;
-            this.approving = true;
+        toggleEdgeSelection(edgeId) {
+            const idx = this.selectedEdges.indexOf(edgeId);
+            if (idx === -1) {
+                this.selectedEdges.push(edgeId);
+            } else {
+                this.selectedEdges.splice(idx, 1);
+            }
+        },
+
+        async submitApproval() {
+            if (this.selectedEdges.length === 0 || this.submittingApproval) return;
+
+            if (this.currentApproval?.require_comment && !this.approvalComment.trim()) {
+                this.showToast('請填寫簽核意見', 'warning');
+                return;
+            }
+
+            this.submittingApproval = true;
 
             try {
-                const res = await fetch(`/api/form-center/pending-tasks/${this.selectedTask.queue_secure_code}/approve`, {
+                const res = await fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/approve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        decision: decision,
+                        decision: 'approved',
+                        selected_path: this.selectedEdges[0],
                         comment: this.approvalComment
                     })
                 });
                 const data = await res.json();
 
                 if (data.success) {
-                    this.showToast(decision === 'approved' ? '已核准' : '已退回');
+                    this.showToast('簽核完成');
                     this.closeApprovalModal();
-                    this.loadPendingTasks();
+                    this.loadPendingApprovals();
+                    this.loadTracking();
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || '簽核失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗: ' + e.message, 'error');
+                this.showToast('簽核失敗: ' + e.message, 'error');
             } finally {
-                this.approving = false;
+                this.submittingApproval = false;
             }
         },
 
+        // 工具函式
         formatDate(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
-            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        getShortSerial(serial) {
+            if (!serial) return '-';
+            // TEST-20260127-0001 -> 0127-0001
+            const parts = serial.split('-');
+            if (parts.length >= 3) {
+                const date = parts[1];
+                const seq = parts[2];
+                return date.slice(4) + '-' + seq;
+            }
+            return serial;
         },
 
         getStatusText(status) {
             const map = {
-                'INITIAL': '草稿',
-                'PENDING': '待處理',
-                'RUNNING': '進行中',
-                'COMPLETED': '已完成',
-                'REJECTED': '已退回',
-                'ERROR': '錯誤'
+                'INITIAL': '草稿', 'PENDING': '待處理', 'RUNNING': '進行中',
+                'COMPLETED': '已完成', 'REJECTED': '已退回', 'ERROR': '錯誤', 'TERMINATED': '已終止'
             };
             return map[status] || status;
         },
 
         getStatusClass(status) {
             const map = {
-                'INITIAL': 'secondary',
-                'PENDING': 'pending',
-                'RUNNING': 'running',
-                'COMPLETED': 'completed',
-                'REJECTED': 'error',
-                'ERROR': 'error'
+                'RUNNING': 'fc-badge-running', 'COMPLETED': 'fc-badge-completed',
+                'ERROR': 'fc-badge-error', 'REJECTED': 'fc-badge-error', 'TERMINATED': 'fc-badge-error'
             };
-            return map[status] || 'secondary';
+            return map[status] || '';
         },
 
         showToast(message, type = 'success') {

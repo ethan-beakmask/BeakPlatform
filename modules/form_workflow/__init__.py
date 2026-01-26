@@ -38,16 +38,22 @@ MODULE_INFO = {
                     'sort_order': 1
                 },
                 {
+                    'code': 'form_workflow.center',
+                    'name': '表單中心',
+                    'url': '/forms/center',
+                    'sort_order': 2
+                },
+                {
                     'code': 'form_workflow.my_forms',
                     'name': '我的表單',
                     'url': '/forms/my/',
-                    'sort_order': 2
+                    'sort_order': 3
                 },
                 {
                     'code': 'form_workflow.pending',
                     'name': '待簽核',
                     'url': '/forms/pending/',
-                    'sort_order': 3
+                    'sort_order': 4
                 },
                 {
                     'code': 'form_workflow.templates',
@@ -61,6 +67,13 @@ MODULE_INFO = {
                     'name': '流程設計',
                     'url': '/forms/workflows/',
                     'sort_order': 11,
+                    'required_permission': 'form_workflow.workflow.manage'
+                },
+                {
+                    'code': 'form_workflow.mappings',
+                    'name': '配對管理',
+                    'url': '/forms/mappings',
+                    'sort_order': 12,
                     'required_permission': 'form_workflow.workflow.manage'
                 },
             ]
