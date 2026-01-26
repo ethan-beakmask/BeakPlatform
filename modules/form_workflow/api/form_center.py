@@ -596,6 +596,7 @@ def list_my_forms():
         data['workflow_status'] = workflow_instance.status
         data['execution_code'] = workflow_instance.execution_code
         data['workflow_name'] = workflow_instance.workflow_name
+        data['workflow_instance_secure_code'] = workflow_instance.secure_code
         # 當前等待的簽核關卡
         data['current_approver'] = waiting_nodes.get(workflow_instance.secure_code, None)
         result.append(data)
@@ -875,5 +876,168 @@ def get_workflow_progress(secure_code):
                 }
                 for approval in approvals
             ]
+        }
+    })
+
+
+# =============================================================================
+# 流程執行追蹤（監控用）
+# =============================================================================
+
+@form_center_bp.route('/executions/<instance_id>/path')
+@login_required
+def get_execution_path(instance_id):
+    """
+    取得流程執行路徑（用於監控與追蹤）
+
+    Args:
+        instance_id: 工作流實例 secure_code 或 execution_code
+
+    Returns:
+        JSON: {
+            "success": true,
+            "data": {
+                "active_nodes": ["node-1"],          # 執行中
+                "completed_nodes": ["node-start"],   # 已完成
+                "failed_nodes": [],                  # 失敗
+                "pending_nodes": [],                 # 待執行
+                "active_paths": ["edge-1"],          # 活動路徑
+                "instance_status": "RUNNING",        # 流程狀態
+                "execution_history": [...],          # 執行歷程
+                "workflow_tabs": [...]               # 流程分頁（主流程+子流程）
+            }
+        }
+    """
+    from ..models import FwWorkflowInstance, FwNodeExecutionQueue, FwFormInstance
+    from sqlalchemy import or_, func
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 查詢流程實例（支援 secure_code 或 execution_code）
+    instance = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.org_secure_code == org.secure_code,
+        or_(
+            FwWorkflowInstance.secure_code == instance_id,
+            FwWorkflowInstance.execution_code == instance_id
+        )
+    ).first()
+
+    if not instance:
+        return jsonify({'success': False, 'error': f'流程實例 {instance_id} 不存在'}), 404
+
+    # 查詢此流程實例的所有節點執行記錄
+    nodes = FwNodeExecutionQueue.query.filter_by(
+        workflow_instance_secure_code=instance.secure_code
+    ).all()
+
+    # 分類節點狀態
+    active_nodes = [n.node_id for n in nodes if n.status == 'RUNNING']
+    completed_nodes = [n.node_id for n in nodes if n.status == 'SUCCESS']
+    failed_nodes = [n.node_id for n in nodes if n.status in ('FAILED', 'ERROR', 'TIMEOUT')]
+    pending_nodes = [n.node_id for n in nodes if n.status == 'PENDING']
+    waiting_nodes = [n.node_id for n in nodes if n.status == 'WAITING']
+
+    # 計算活動路徑（已完成 → 執行中/等待中的連線）
+    active_paths = []
+    graph = instance.graph_snapshot or {}
+    if graph:
+        edges = graph.get('edges', [])
+        for edge in edges:
+            source = edge.get('source')
+            target = edge.get('target')
+            edge_id = edge.get('id')
+            if (source in completed_nodes and
+                (target in active_nodes or target in waiting_nodes or target in pending_nodes)):
+                active_paths.append(edge_id)
+
+    # 查詢執行歷程（同一表單實例的所有節點記錄，包含子流程）
+    # 依 started_at 排序以呈現真實執行順序
+    execution_history = FwNodeExecutionQueue.query.filter_by(
+        form_instance_secure_code=instance.form_instance_secure_code
+    ).order_by(
+        func.coalesce(FwNodeExecutionQueue.started_at, FwNodeExecutionQueue.scheduled_at).asc()
+    ).all()
+
+    # 收集所有相關的 workflow_instance（主流程 + 子流程）
+    workflow_instance_codes = list(set([item.workflow_instance_secure_code for item in execution_history]))
+    workflow_instances = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.secure_code.in_(workflow_instance_codes)
+    ).all()
+
+    # 建立映射表
+    workflow_map = {wi.secure_code: wi for wi in workflow_instances}
+
+    # 準備 workflow_tabs（流程分頁）
+    workflow_tabs = []
+    for wi in workflow_instances:
+        # 計算該流程的狀態
+        sub_nodes = [n for n in execution_history if n.workflow_instance_secure_code == wi.secure_code]
+        has_running = any(n.status == 'RUNNING' for n in sub_nodes)
+        has_failed = any(n.status in ('FAILED', 'ERROR', 'TIMEOUT') for n in sub_nodes)
+        has_waiting = any(n.status == 'WAITING' for n in sub_nodes)
+        all_completed = all(n.status == 'SUCCESS' for n in sub_nodes) if sub_nodes else False
+
+        if has_running:
+            tab_status = 'RUNNING'
+        elif has_failed:
+            tab_status = 'ERROR'
+        elif has_waiting:
+            tab_status = 'WAITING'
+        elif all_completed:
+            tab_status = 'COMPLETED'
+        else:
+            tab_status = 'INITIAL'
+
+        workflow_tabs.append({
+            'instance_id': wi.secure_code,
+            'secure_code': wi.secure_code,
+            'execution_code': wi.execution_code,
+            'name': wi.workflow_name or '未命名流程',
+            'is_main': wi.secure_code == instance.secure_code,
+            'status': tab_status,
+            'graph': wi.graph_snapshot
+        })
+
+    # 確保主流程排在最前面
+    workflow_tabs.sort(key=lambda x: (not x['is_main'], x.get('execution_code', '')))
+
+    # 轉換執行歷程為前端格式
+    history_data = []
+    for queue_item in execution_history:
+        wi = workflow_map.get(queue_item.workflow_instance_secure_code)
+        is_subprocess = queue_item.calling_instance_code is not None
+        workflow_name = wi.workflow_name if wi else '未知流程'
+
+        history_data.append({
+            'node_id': queue_item.node_id,
+            'node_name': queue_item.node_name or queue_item.node_id,
+            'display_name': queue_item.node_name or '',
+            'node_type': queue_item.node_type,
+            'status': queue_item.status,
+            'scheduled_at': queue_item.scheduled_at.isoformat() if queue_item.scheduled_at else None,
+            'started_at': queue_item.started_at.isoformat() if queue_item.started_at else None,
+            'completed_at': queue_item.completed_at.isoformat() if queue_item.completed_at else None,
+            'error_message': queue_item.error_message,
+            'retry_count': queue_item.retry_count or 0,
+            'is_subprocess': is_subprocess,
+            'workflow_name': workflow_name,
+            'workflow_instance_id': queue_item.workflow_instance_secure_code
+        })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'active_nodes': active_nodes,
+            'completed_nodes': completed_nodes,
+            'failed_nodes': failed_nodes,
+            'pending_nodes': pending_nodes,
+            'waiting_nodes': waiting_nodes,
+            'active_paths': active_paths,
+            'instance_status': instance.status,
+            'current_node_id': instance.current_node_id,
+            'execution_history': history_data,
+            'workflow_tabs': workflow_tabs
         }
     })
