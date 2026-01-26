@@ -174,12 +174,14 @@ class WorkflowExecutor:
         logger.info(f'啟動 subprocess: {" ".join(cmd)}')
 
         try:
+            # 使用 DEVNULL 避免 PIPE 緩衝區滿造成阻塞
             process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 cwd=MODULE_ROOT,
-                env=env
+                env=env,
+                start_new_session=True  # 讓子進程獨立運行
             )
 
             logger.info(f'節點程序已啟動: queue_code={queue_item.secure_code}, PID={process.pid}')
