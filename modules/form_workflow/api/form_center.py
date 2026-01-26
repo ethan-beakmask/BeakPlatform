@@ -4,6 +4,7 @@ FormWorkflow Module - Form Center API
 
 提供一般用戶填寫表單、發起流程、查看進度等功能。
 """
+import logging
 import secrets
 from datetime import datetime
 from flask import Blueprint, jsonify, request
@@ -12,6 +13,8 @@ from flask_login import current_user
 from app.security.decorators import login_required
 from app.platform.data import get_current_org
 from app import db, csrf
+
+logger = logging.getLogger(__name__)
 
 # 建立 API Blueprint
 form_center_bp = Blueprint(
