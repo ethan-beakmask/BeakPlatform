@@ -526,11 +526,12 @@ def list_my_forms():
     取得我提交/簽核過的表單列表
 
     Query Parameters:
-    - status: 篩選狀態，支援逗號分隔多值（如 status=COMPLETED,ERROR）
+    - status: 篩選流程狀態，支援逗號分隔多值（如 status=COMPLETED,ERROR）
+              對應的是 workflow_instance 的狀態
     - signed: 若為 1，顯示我簽核過的表單（而非我提交的表單）
     - limit: 回傳筆數上限（預設 50）
     """
-    from ..models import FwFormInstance, FwApprovalRecord
+    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord
 
     org = get_current_org()
     if not org:
@@ -541,42 +542,48 @@ def list_my_forms():
     signed = request.args.get('signed', '0')
     limit = request.args.get('limit', 50, type=int)
 
+    # 建立基礎查詢（JOIN workflow_instance 以便根據流程狀態篩選）
+    base_query = db.session.query(FwFormInstance, FwWorkflowInstance).join(
+        FwWorkflowInstance,
+        FwFormInstance.workflow_instance_secure_code == FwWorkflowInstance.secure_code
+    ).filter(
+        FwFormInstance.org_secure_code == org.secure_code,
+        FwFormInstance.is_deleted == False
+    )
+
     if signed == '1':
         # 查詢我簽核過的表單
-        # 先找出我簽核過的 form_instance_id
         signed_form_ids = db.session.query(FwApprovalRecord.form_instance_id).filter(
             FwApprovalRecord.org_secure_code == org.secure_code,
             FwApprovalRecord.approver_secure_code == current_user.secure_code
         ).distinct().subquery()
 
-        query = FwFormInstance.query.filter(
-            FwFormInstance.org_secure_code == org.secure_code,
-            FwFormInstance.id.in_(signed_form_ids),
-            FwFormInstance.is_deleted == False
-        )
+        base_query = base_query.filter(FwFormInstance.id.in_(signed_form_ids))
     else:
         # 查詢我提交的表單
-        query = FwFormInstance.query.filter_by(
-            org_secure_code=org.secure_code,
-            applicant_secure_code=current_user.secure_code,
-            is_deleted=False
+        base_query = base_query.filter(
+            FwFormInstance.applicant_secure_code == current_user.secure_code
         )
 
-    # 支援多狀態篩選（逗號分隔）
+    # 根據流程狀態篩選（使用 workflow_instance.status）
     if status:
         status_list = [s.strip() for s in status.split(',') if s.strip()]
         if len(status_list) == 1:
-            query = query.filter_by(status=status_list[0])
+            base_query = base_query.filter(FwWorkflowInstance.status == status_list[0])
         elif len(status_list) > 1:
-            query = query.filter(FwFormInstance.status.in_(status_list))
+            base_query = base_query.filter(FwWorkflowInstance.status.in_(status_list))
 
-    instances = query.order_by(FwFormInstance.created_at.desc()).limit(limit).all()
+    rows = base_query.order_by(FwFormInstance.created_at.desc()).limit(limit).all()
 
-    # 增加 is_test 標記（根據 serial_number 前綴判斷）
+    # 組裝結果
     result = []
-    for i in instances:
-        data = i.to_dict(include_form_data=False)
+    for form_instance, workflow_instance in rows:
+        data = form_instance.to_dict(include_form_data=False)
         data['is_test'] = data.get('serial_number', '').startswith('TEST-')
+        # 附加流程資訊
+        data['workflow_status'] = workflow_instance.status
+        data['execution_code'] = workflow_instance.execution_code
+        data['workflow_name'] = workflow_instance.workflow_name
         result.append(data)
 
     return jsonify({

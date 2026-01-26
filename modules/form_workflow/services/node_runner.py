@@ -118,6 +118,13 @@ def update_result(queue_item, result):
         queue_item.result = result
         db.session.commit()
 
+    elif status == 'waiting_form_action':
+        # FormAdapter 等待簽核（特殊狀態）
+        queue_item.status = 'WAITING'
+        queue_item.result = result
+        db.session.commit()
+        logger.info(f'FormAdapter 進入等待簽核狀態')
+
     elif status == 'success':
         # 執行完成
         queue_item.success(result)

@@ -162,14 +162,14 @@ class FormAdapterHandler(BaseNodeHandler):
         if not self.workflow_instance:
             return {}
 
+        # 優先使用 workflow_instance 的 graph_snapshot（執行時快照）
+        if hasattr(self.workflow_instance, 'graph_snapshot') and self.workflow_instance.graph_snapshot:
+            return self.workflow_instance.graph_snapshot
+
         # 嘗試從 workflow_template 取得
         if hasattr(self.workflow_instance, 'workflow_template') and self.workflow_instance.workflow_template:
             template = self.workflow_instance.workflow_template
-            return template.graph_data or {}
-
-        # 嘗試從 workflow_instance 本身取得（測試模式）
-        if hasattr(self.workflow_instance, 'test_graph_data') and self.workflow_instance.test_graph_data:
-            return self.workflow_instance.test_graph_data
+            return template.graph or template.cytoscape_config or {}
 
         return {}
 
@@ -336,12 +336,12 @@ def _create_next_nodes(queue_item, selected_edges: List[str], available_paths: L
     if not workflow_instance:
         return
 
-    # 取得流程定義
+    # 取得流程定義（優先使用執行快照）
     graph = None
-    if hasattr(workflow_instance, 'workflow_template') and workflow_instance.workflow_template:
-        graph = workflow_instance.workflow_template.graph_data or {}
-    elif hasattr(workflow_instance, 'test_graph_data'):
-        graph = workflow_instance.test_graph_data or {}
+    if hasattr(workflow_instance, 'graph_snapshot') and workflow_instance.graph_snapshot:
+        graph = workflow_instance.graph_snapshot
+    elif hasattr(workflow_instance, 'workflow_template') and workflow_instance.workflow_template:
+        graph = workflow_instance.workflow_template.graph or workflow_instance.workflow_template.cytoscape_config or {}
 
     if not graph:
         return
