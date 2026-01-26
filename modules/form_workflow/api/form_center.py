@@ -575,6 +575,18 @@ def list_my_forms():
 
     rows = base_query.order_by(FwFormInstance.created_at.desc()).limit(limit).all()
 
+    # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
+    from ..models import FwNodeExecutionQueue
+    workflow_secure_codes = [w.secure_code for f, w in rows]
+    waiting_nodes = {}
+    if workflow_secure_codes:
+        waiting_items = FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code.in_(workflow_secure_codes),
+            FwNodeExecutionQueue.status == 'WAITING'
+        ).all()
+        for item in waiting_items:
+            waiting_nodes[item.workflow_instance_secure_code] = item.node_name
+
     # 組裝結果
     result = []
     for form_instance, workflow_instance in rows:
@@ -584,6 +596,8 @@ def list_my_forms():
         data['workflow_status'] = workflow_instance.status
         data['execution_code'] = workflow_instance.execution_code
         data['workflow_name'] = workflow_instance.workflow_name
+        # 當前等待的簽核關卡
+        data['current_approver'] = waiting_nodes.get(workflow_instance.secure_code, None)
         result.append(data)
 
     return jsonify({
