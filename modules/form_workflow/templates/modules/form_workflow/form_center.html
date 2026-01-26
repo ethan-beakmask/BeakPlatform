@@ -1041,9 +1041,9 @@ function formCenterManager() {
         async loadCategories() {
             this.loadingCategories = true;
             try {
-                const res = await fetch('/api/form-workflow/categories');
+                const res = await fetch('/api/forms/data/categories');
                 const data = await res.json();
-                if (data.success) this.categories = data.data || [];
+                if (data.success) this.categories = data.categories || [];
             } catch (e) { /* 分類 API 可能不存在，忽略 */ }
             finally { this.loadingCategories = false; }
         },

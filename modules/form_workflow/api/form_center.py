@@ -552,13 +552,13 @@ def list_my_forms():
     )
 
     if signed == '1':
-        # 查詢我簽核過的表單
-        signed_form_ids = db.session.query(FwApprovalRecord.form_instance_id).filter(
+        # 查詢我簽核過的表單（使用 secure_code）
+        signed_form_codes = db.session.query(FwApprovalRecord.form_instance_secure_code).filter(
             FwApprovalRecord.org_secure_code == org.secure_code,
             FwApprovalRecord.approver_secure_code == current_user.secure_code
         ).distinct().subquery()
 
-        base_query = base_query.filter(FwFormInstance.id.in_(signed_form_ids))
+        base_query = base_query.filter(FwFormInstance.secure_code.in_(signed_form_codes))
     else:
         # 查詢我提交的表單
         base_query = base_query.filter(
@@ -835,15 +835,15 @@ def get_workflow_progress(secure_code):
     if not workflow:
         return jsonify({'success': False, 'error': '找不到指定的流程'}), 404
 
-    # 取得所有節點執行記錄
+    # 取得所有節點執行記錄（使用 secure_code）
     queue_items = FwNodeExecutionQueue.query.filter_by(
-        workflow_instance_id=workflow.id
+        workflow_instance_secure_code=workflow.secure_code
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
-    # 取得所有簽核記錄
+    # 取得所有簽核記錄（使用 secure_code）
     approvals = FwApprovalRecord.query.filter_by(
-        workflow_instance_id=workflow.id
-    ).order_by(FwApprovalRecord.approved_at.asc()).all()
+        workflow_instance_secure_code=workflow.secure_code
+    ).order_by(FwApprovalRecord.acted_at.asc()).all()
 
     return jsonify({
         'success': True,
