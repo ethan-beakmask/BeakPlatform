@@ -350,6 +350,7 @@ class WorkflowEngine:
             queue_item = FwNodeExecutionQueue(
                 org_secure_code=workflow_instance.org_secure_code,
                 workflow_instance_secure_code=workflow_instance.secure_code,
+                form_instance_secure_code=workflow_instance.form_instance_secure_code,
                 node_id=next_node_id,
                 node_type=node_type,
                 node_name=display_name,
