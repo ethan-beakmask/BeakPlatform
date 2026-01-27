@@ -164,5 +164,71 @@ def get_organizations():
     })
 
 
+@app.route('/api/clear-form-workflow', methods=['POST'])
+@internal_network_only
+def clear_form_workflow():
+    """清除表單流程資料"""
+    data = request.get_json() or {}
+    org_code = data.get('org_secure_code', '')
+
+    if not org_code:
+        return jsonify({'success': False, 'message': '未指定企業'}), 400
+
+    # 要清除的表（按順序，考慮外鍵約束）
+    tables = [
+        'fw_node_execution_logs',
+        'fw_node_execution_queue',
+        'fw_approval_records',
+        'fw_workflow_variables',
+        'fw_workflow_instances',
+        'fw_form_instances',
+        'fw_published_form_workflows',
+        'fw_form_workflow_mappings',
+        'fw_workflow_templates',
+        'fw_form_templates',
+    ]
+
+    details = {}
+
+    try:
+        with engine.begin() as conn:
+            for table in tables:
+                # 檢查表是否存在
+                check_result = conn.execute(text("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables
+                        WHERE table_name = :table_name
+                    )
+                """), {'table_name': table})
+
+                if not check_result.scalar():
+                    details[table] = 'N/A'
+                    continue
+
+                if org_code == '__ALL__':
+                    # 刪除全部
+                    result = conn.execute(text(f'DELETE FROM "{table}"'))
+                else:
+                    # 刪除指定企業
+                    result = conn.execute(
+                        text(f'DELETE FROM "{table}" WHERE org_secure_code = :org_code'),
+                        {'org_code': org_code}
+                    )
+                details[table] = result.rowcount
+
+        org_name = '全部企業' if org_code == '__ALL__' else org_code
+        return jsonify({
+            'success': True,
+            'message': f'已清除「{org_name}」的表單流程資料',
+            'details': details
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=7001, debug=True)
