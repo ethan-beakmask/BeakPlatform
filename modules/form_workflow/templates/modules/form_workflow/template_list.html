@@ -135,6 +135,14 @@
                         <input type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
                     </div>
                     <div class="fw-form-group">
+                        <label>分類</label>
+                        <select x-model="formData.category">
+                            <template x-for="cat in categories" :key="cat.secure_code">
+                                <option :value="cat.name" x-text="cat.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="fw-form-group">
                         <label>描述</label>
                         <textarea x-model="formData.description" placeholder="簡述此表單的用途"></textarea>
                     </div>
@@ -202,7 +210,8 @@ function templateListManager() {
 
         showModal: false,
         editingTemplate: null,
-        formData: { name: '', code: '', description: '', is_active: true },
+        formData: { name: '', code: '', description: '', category: '流程記錄', is_active: true },
+        categories: [],
         saving: false,
 
         showSchemaModal: false,
@@ -212,7 +221,20 @@ function templateListManager() {
         deletingTemplate: null,
 
         async init() {
+            await this.loadCategories();
             await this.loadTemplates();
+        },
+
+        async loadCategories() {
+            try {
+                const res = await fetch('/api/form-workflow/categories?context=form_design');
+                const data = await res.json();
+                if (data.success) {
+                    this.categories = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入分類失敗:', e);
+            }
         },
 
         async loadTemplates() {
@@ -242,7 +264,7 @@ function templateListManager() {
 
         openCreateModal() {
             this.editingTemplate = null;
-            this.formData = { name: '', code: '', description: '', is_active: true };
+            this.formData = { name: '', code: '', description: '', category: '流程記錄', is_active: true };
             this.showModal = true;
         },
 

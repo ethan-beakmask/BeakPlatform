@@ -2140,10 +2140,8 @@
             document.getElementById('workflow-info').style.display = 'block';
             document.getElementById('current-workflow-name').value = workflowName || '未命名流程';
             document.getElementById('current-workflow-version').textContent = workflowVersion ? `版本 ${workflowVersion}` : 'v1.0';
-            const categorySelect = document.getElementById('current-workflow-category');
-            if (categorySelect) {
-                categorySelect.value = workflowCategory || '';
-            }
+            // 使用非同步方式設定分類（等待分類列表載入完成）
+            setCategoryValue(workflowCategory);
             document.getElementById('current-workflow-description').value = workflowDescription || '';
             console.log('  ✓ 更新流程資訊顯示');
         }
@@ -2532,43 +2530,61 @@
             console.log('✅ 已放棄變更並返回流程目錄');
         }
 
+        // 分類載入 Promise（用於確保分類載入完成後再設定值）
+        let categoriesLoadedPromise = null;
+        let categoriesLoaded = false;
+
         // 載入分類列表
         async function loadCategories() {
-            try {
-                const response = await fetch('/api/forms/data/categories');
-                const result = await response.json();
+            categoriesLoadedPromise = (async () => {
+                try {
+                    const response = await fetch('/api/forms/data/categories');
+                    const result = await response.json();
 
-                if (result.success) {
+                    if (result.success) {
+                        const categorySelect = document.getElementById('current-workflow-category');
+                        if (categorySelect) {
+                            // 清空現有選項（保留「未分類」選項）
+                            categorySelect.innerHTML = '<option value="">未分類</option>';
+
+                            // 加入分類選項
+                            result.data.forEach(cat => {
+                                const option = document.createElement('option');
+                                option.value = cat.name;
+                                option.textContent = cat.name;
+                                categorySelect.appendChild(option);
+                            });
+
+                            console.log('✅ 已載入分類:', result.data.length, '個');
+                        }
+                    }
+                    categoriesLoaded = true;
+                } catch (error) {
+                    console.error('❌ 載入分類失敗:', error);
+                    // 失敗時使用預設分類
                     const categorySelect = document.getElementById('current-workflow-category');
                     if (categorySelect) {
-                        // 清空現有選項（保留「未分類」選項）
-                        categorySelect.innerHTML = '<option value="">未分類</option>';
-
-                        // 加入分類選項
-                        result.data.forEach(cat => {
-                            const option = document.createElement('option');
-                            option.value = cat.name;
-                            option.textContent = cat.name;
-                            categorySelect.appendChild(option);
-                        });
-
-                        console.log('✅ 已載入分類:', result.data.length, '個');
+                        categorySelect.innerHTML = `
+                            <option value="">未分類</option>
+                            <option value="流程記錄">流程記錄</option>
+                            <option value="其他">其他</option>
+                        `;
                     }
+                    categoriesLoaded = true;
                 }
-            } catch (error) {
-                console.error('❌ 載入分類失敗:', error);
-                // 失敗時使用預設分類
-                const categorySelect = document.getElementById('current-workflow-category');
-                if (categorySelect) {
-                    categorySelect.innerHTML = `
-                        <option value="">未分類</option>
-                        <option value="人事">人事</option>
-                        <option value="財務">財務</option>
-                        <option value="採購">採購</option>
-                        <option value="行政">行政</option>
-                        <option value="其他">其他</option>
-                    `;
-                }
+            })();
+            return categoriesLoadedPromise;
+        }
+
+        // 等待分類載入完成後設定分類值
+        async function setCategoryValue(value) {
+            if (categoriesLoadedPromise) {
+                await categoriesLoadedPromise;
+            }
+            const categorySelect = document.getElementById('current-workflow-category');
+            if (categorySelect) {
+                categorySelect.value = value || '';
+                console.log('✅ 已設定分類:', value || '(未分類)');
             }
         }
 
@@ -2954,11 +2970,8 @@
 
                 // 套用底圖（新系統使用 backgroundId）
                 if (settings.backgroundId) {
-                    // 新的底圖系統：使用 background_id
-                    const bg = availableBackgrounds.find(b => b.id === settings.backgroundId);
-                    if (bg) {
-                        selectBackground(bg.id, bg.url);
-                    }
+                    // 新的底圖系統：使用 background_id（非同步等待底圖列表載入）
+                    applyBackgroundById(settings.backgroundId);
                 } else if (settings.backgroundImage) {
                     // 舊系統相容：使用 base64 backgroundImage（已廢棄）
                     // 為了向後相容，暫時保留但不再更新狀態元素
@@ -7441,20 +7454,44 @@
         let currentBackgroundId = null;
         let currentBackgroundUrl = null;
 
+        // 底圖載入 Promise
+        let backgroundsLoadedPromise = null;
+
         // 載入底圖列表
         async function loadBackgrounds() {
-            try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds`);
-                const data = await response.json();
+            backgroundsLoadedPromise = (async () => {
+                try {
+                    const response = await fetch('/api/workflows/backgrounds');
+                    const data = await response.json();
 
-                if (data.success) {
-                    availableBackgrounds = data.data;
-                    renderBackgroundList();
-                } else {
-                    console.error('載入底圖列表失敗:', data.message);
+                    if (data.success) {
+                        availableBackgrounds = data.data || [];
+                    } else {
+                        console.error('載入底圖列表失敗:', data.message);
+                        availableBackgrounds = [];
+                    }
+                } catch (error) {
+                    console.error('載入底圖列表錯誤:', error);
+                    availableBackgrounds = [];
                 }
-            } catch (error) {
-                console.error('載入底圖列表錯誤:', error);
+                renderBackgroundList();
+            })();
+            return backgroundsLoadedPromise;
+        }
+
+        // 等待底圖列表載入後套用底圖
+        async function applyBackgroundById(backgroundId) {
+            if (backgroundsLoadedPromise) {
+                await backgroundsLoadedPromise;
+            }
+            if (backgroundId && availableBackgrounds.length > 0) {
+                const bg = availableBackgrounds.find(b => b.id === backgroundId || b.secure_code === backgroundId);
+                if (bg) {
+                    selectBackground(bg.id, bg.url);
+                    console.log('✅ 已套用底圖:', bg.description || bg.filename);
+                } else {
+                    console.warn('⚠️ 找不到底圖:', backgroundId);
+                }
             }
         }
 
@@ -7481,7 +7518,7 @@
                 html += '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999; font-size: 11px;">尚無底圖，請先上傳</div>';
             } else {
                 html += availableBackgrounds.map(bg => `
-                    <div onclick="selectBackground(${bg.id}, '${bg.url}')" style="cursor: pointer; border: 2px solid ${currentBackgroundId === bg.id ? '#667eea' : '#e0e0e0'}; border-radius: 8px; background: ${currentBackgroundId === bg.id ? '#f0f4ff' : '#fff'}; padding: 8px; text-align: center; transition: all 0.2s;">
+                    <div onclick="selectBackground('${bg.id}', '${bg.url}')" style="cursor: pointer; border: 2px solid ${currentBackgroundId === bg.id ? '#667eea' : '#e0e0e0'}; border-radius: 8px; background: ${currentBackgroundId === bg.id ? '#f0f4ff' : '#fff'}; padding: 8px; text-align: center; transition: all 0.2s;">
                         <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px;">
                             <img src="${bg.url}" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
@@ -7529,7 +7566,7 @@
                 formData.append('file', file);
                 formData.append('description', description.trim());
 
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/upload`, {
+                const response = await fetch('/api/workflows/backgrounds/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -7592,8 +7629,8 @@
             }
 
             try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/${currentBackgroundId}`, {
-                    method: 'PATCH',
+                const response = await fetch(`/api/workflows/backgrounds/${currentBackgroundId}`, {
+                    method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -7632,7 +7669,7 @@
             }
 
             try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/${currentBackgroundId}`, {
+                const response = await fetch(`/api/workflows/backgrounds/${currentBackgroundId}`, {
                     method: 'DELETE'
                 });
 
@@ -9550,6 +9587,10 @@
             }
 
             if (!gridEnabled) return;
+
+            // 縮放小於 75% 時關閉網格繪製以優化效能
+            const currentZoom = cy.zoom();
+            if (currentZoom < 0.75) return;
 
             const canvas = document.createElement('canvas');
             canvas.className = 'grid-canvas';

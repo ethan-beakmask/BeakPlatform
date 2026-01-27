@@ -76,6 +76,13 @@ MODULE_INFO = {
                     'sort_order': 12,
                     'required_permission': 'form_workflow.workflow.manage'
                 },
+                {
+                    'code': 'form_workflow.categories',
+                    'name': '分類管理',
+                    'url': '/forms/categories',
+                    'sort_order': 20,
+                    'required_permission': 'form_workflow.admin'
+                },
             ]
         }
     ],

@@ -159,19 +159,32 @@ def designer_standalone():
 @login_required
 def list_categories():
     """取得表單分類列表"""
-    # 目前使用固定分類，未來可改為從資料庫讀取
-    categories = [
-        {'id': 'general', 'name': '一般', 'description': '通用表單'},
-        {'id': 'hr', 'name': '人事', 'description': '人事相關表單'},
-        {'id': 'finance', 'name': '財務', 'description': '財務相關表單'},
-        {'id': 'procurement', 'name': '採購', 'description': '採購相關表單'},
-        {'id': 'it', 'name': '資訊', 'description': '資訊相關表單'},
-        {'id': 'admin', 'name': '行政', 'description': '行政相關表單'},
-    ]
+    from ..models import FwCategory
+    from app.platform.data import get_current_org
+    from app import db
 
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'message': 'Organization not found'}), 400
+
+    # 查詢：系統分類 + 當前企業分類
+    query = FwCategory.query.filter_by(is_deleted=False).filter(
+        db.or_(
+            FwCategory.org_secure_code.is_(None),  # 系統分類
+            FwCategory.org_secure_code == org.secure_code  # 企業分類
+        )
+    ).filter(FwCategory.show_in_form_design == True)
+
+    categories = query.order_by(FwCategory.display_order, FwCategory.name).all()
+
+    result = [
+        {'id': cat.name, 'name': cat.name, 'description': cat.description or ''}
+        for cat in categories
+    ]
     return jsonify({
         'success': True,
-        'categories': categories
+        'data': result,
+        'categories': result  # 向後相容
     })
 
 

@@ -5,6 +5,7 @@ FormWorkflow Module - Models
 所有模型使用 'fw_' 前綴以避免表名衝突。
 """
 from .base import ModuleBaseModel
+from .category import FwCategory
 from .form_template import FwFormTemplate
 from .workflow_template import FwWorkflowTemplate
 from .form_instance import FwFormInstance
@@ -15,9 +16,11 @@ from .workflow_variable import FwWorkflowVariable
 from .node_execution_log import FwNodeExecutionLog
 from .form_workflow_mapping import FwFormWorkflowMapping
 from .published_form_workflow import FwPublishedFormWorkflow
+from .workflow_background import FwWorkflowBackground
 
 __all__ = [
     'ModuleBaseModel',
+    'FwCategory',
     'FwFormTemplate',
     'FwWorkflowTemplate',
     'FwFormInstance',
@@ -28,4 +31,5 @@ __all__ = [
     'FwNodeExecutionLog',
     'FwFormWorkflowMapping',
     'FwPublishedFormWorkflow',
+    'FwWorkflowBackground',
 ]

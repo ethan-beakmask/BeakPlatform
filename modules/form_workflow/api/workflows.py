@@ -1001,6 +1001,7 @@ def get_workflow_mapped_forms(template_id):
                     form = FwFormTemplate.query.get(form_id)
                     if form and not form.is_deleted:
                         forms.append({
+                            'form_id': form.secure_code,  # 前端使用此欄位呼叫 API
                             'form_secure_code': form.secure_code,
                             'form_name': form.name,
                             'form_version': pub.form_snapshot.get('version', 'AA') if pub.form_snapshot else form.version,
@@ -1028,6 +1029,7 @@ def get_workflow_mapped_forms(template_id):
 
                 if form:
                     form_data = {
+                        'form_id': form.secure_code,  # 前端使用此欄位呼叫 API
                         'form_secure_code': form.secure_code,
                         'form_name': form.name,
                         'form_version': form.version,

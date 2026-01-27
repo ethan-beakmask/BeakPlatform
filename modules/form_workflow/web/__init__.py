@@ -141,3 +141,14 @@ def center():
 def pending():
     """待簽核任務列表"""
     return render_template('modules/form_workflow/pending_list.html')
+
+
+# =============================================================================
+# 分類管理
+# =============================================================================
+
+@web_bp.route('/categories')
+@security_login_required
+def categories():
+    """分類管理頁面"""
+    return render_template('modules/form_workflow/category_list.html')

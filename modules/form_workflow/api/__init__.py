@@ -157,6 +157,7 @@ def create_template():
         name=name,
         code=code,
         description=data.get('description', ''),
+        category=data.get('category', '流程記錄'),
         schema=data.get('schema', {}),
         is_active=data.get('is_active', True)
     )
@@ -342,6 +343,7 @@ def create_workflow():
         name=name,
         code=code,
         description=data.get('description', ''),
+        category=data.get('category', '流程記錄'),
         graph=data.get('graph', {'nodes': [], 'edges': []}),
         is_active=data.get('is_active', True)
     )
@@ -710,5 +712,11 @@ from .mappings import mappings_bp
 # 導入 form_center API Blueprint
 from .form_center import form_center_bp
 
+# 導入 categories API Blueprint
+from .categories import categories_bp
+
+# 導入 backgrounds API Blueprint
+from .backgrounds import backgrounds_bp
+
 # 導出所有 Blueprint（供模組載入器使用）
-additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp]
+additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp]
