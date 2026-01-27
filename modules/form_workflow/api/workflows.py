@@ -923,3 +923,417 @@ def get_org_tree():
         'success': True,
         'tree': tree
     })
+
+
+# =============================================================================
+# 表單欄位 API（用於 OPSET 變數）
+# =============================================================================
+
+@workflows_bp.route('/data/templates/<template_id>/mapped-forms', methods=['GET'])
+@login_required
+def get_workflow_mapped_forms(template_id):
+    """
+    取得指定流程的已配對表單清單
+
+    支援兩種版本來源：
+    - 設計版：從 FwFormWorkflowMapping 取得
+    - 發行版：從 FwPublishedFormWorkflow 取得
+
+    Query Parameters:
+        version_type: 'design' (設計版, 預設) 或 'published' (發行版)
+
+    Returns:
+        JSON: {
+            "success": true,
+            "data": {
+                "forms": [
+                    {
+                        "form_secure_code": "...",
+                        "form_name": "請假申請單",
+                        "form_version": "AA",
+                        "form_revision": 5,
+                        "mapping_id": 1,
+                        "source": "design" | "published",
+                        "publish_version": null | 1
+                    }
+                ],
+                "total": 2,
+                "auto_select": true | false
+            }
+        }
+    """
+    from ..models import FwWorkflowTemplate, FwFormWorkflowMapping, FwPublishedFormWorkflow, FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    version_type = request.args.get('version_type', 'design')
+
+    try:
+        # 取得流程模板
+        workflow = FwWorkflowTemplate.query.filter_by(
+            secure_code=template_id,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+
+        if not workflow:
+            return jsonify({'success': False, 'message': '流程不存在'}), 404
+
+        forms = []
+
+        if version_type == 'published':
+            # 從發行版取得表單
+            published_list = FwPublishedFormWorkflow.query.filter_by(
+                source_workflow_template_id=workflow.id,
+                org_secure_code=org.secure_code
+            ).filter(
+                FwPublishedFormWorkflow.status.in_(['Published', 'Suspended'])
+            ).order_by(FwPublishedFormWorkflow.publish_version.desc()).all()
+
+            # 去重：同一個表單只保留最新發行版
+            seen_forms = set()
+            for pub in published_list:
+                form_id = pub.source_form_template_id
+                if form_id not in seen_forms:
+                    seen_forms.add(form_id)
+                    form = FwFormTemplate.query.get(form_id)
+                    if form and not form.is_deleted:
+                        forms.append({
+                            'form_secure_code': form.secure_code,
+                            'form_name': form.name,
+                            'form_version': pub.form_snapshot.get('version', 'AA') if pub.form_snapshot else form.version,
+                            'form_revision': pub.form_snapshot.get('revision', 1) if pub.form_snapshot else form.revision,
+                            'mapping_id': pub.source_mapping_id,
+                            'source': 'published',
+                            'publish_version': pub.publish_version,
+                            'publish_status': pub.status
+                        })
+        else:
+            # 從設計版 (Mapping) 取得表單
+            mappings = FwFormWorkflowMapping.query.filter_by(
+                workflow_template_id=workflow.id,
+                org_secure_code=org.secure_code,
+                is_active=True
+            ).all()
+
+            for mapping in mappings:
+                form = mapping.form_template
+                if form and not form.is_deleted:
+                    forms.append({
+                        'form_secure_code': form.secure_code,
+                        'form_name': form.name,
+                        'form_version': form.version,
+                        'form_revision': form.revision,
+                        'mapping_id': mapping.id,
+                        'source': 'design',
+                        'publish_version': None,
+                        'publish_status': None
+                    })
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'forms': forms,
+                'total': len(forms),
+                'auto_select': len(forms) == 1
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"❌ GET_WORKFLOW_MAPPED_FORMS ERROR: {str(e)}")
+        print(f"📋 Traceback:\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'取得配對表單失敗: {str(e)}'}), 500
+
+
+@workflows_bp.route('/data/forms/<form_id>/fields', methods=['GET'])
+@login_required
+def get_form_fields(form_id):
+    """
+    分析並取得指定表單的欄位清單
+
+    Query Parameters:
+        version_type: 'design' (設計版, 預設) 或 'published' (發行版)
+        publish_version: 發行版號 (僅當 version_type=published 時使用)
+        mapping_id: Mapping ID (用於取得特定配對的發行版)
+
+    Returns:
+        JSON: {
+            "success": true,
+            "data": {
+                "form_info": {
+                    "secure_code": "...",
+                    "name": "請假申請單",
+                    "version": "AA",
+                    "revision": 5
+                },
+                "fields": [
+                    {
+                        "key": "applicant_name",
+                        "label": "申請人姓名",
+                        "type": "textfield",
+                        "data_type": "string",
+                        "default_value": null,
+                        "options": null,
+                        "required": true,
+                        "path": "data.applicant_name",
+                        "nested_level": 0
+                    }
+                ],
+                "total": 10
+            }
+        }
+    """
+    from ..models import FwFormTemplate, FwPublishedFormWorkflow
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    version_type = request.args.get('version_type', 'design')
+    publish_version = request.args.get('publish_version')
+    mapping_id = request.args.get('mapping_id')
+
+    try:
+        # 取得表單
+        form = FwFormTemplate.query.filter_by(
+            secure_code=form_id,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+
+        if not form:
+            return jsonify({'success': False, 'message': '表單不存在'}), 404
+
+        # 取得 schema
+        schema = None
+        form_info = {
+            'secure_code': form.secure_code,
+            'name': form.name,
+            'version': form.version,
+            'revision': form.revision
+        }
+
+        if version_type == 'published' and mapping_id:
+            # 從發行版取得 schema
+            query = FwPublishedFormWorkflow.query.filter_by(
+                source_mapping_id=int(mapping_id),
+                org_secure_code=org.secure_code
+            )
+            if publish_version:
+                query = query.filter_by(publish_version=int(publish_version))
+            else:
+                query = query.filter(FwPublishedFormWorkflow.status == 'Published')
+
+            published = query.order_by(FwPublishedFormWorkflow.publish_version.desc()).first()
+
+            if published and published.form_snapshot:
+                schema = published.form_snapshot.get('schema', {})
+                form_info['version'] = published.form_snapshot.get('version', form.version)
+                form_info['revision'] = published.form_snapshot.get('revision', form.revision)
+                form_info['source'] = 'published'
+                form_info['publish_version'] = published.publish_version
+        else:
+            # 從設計版取得 schema
+            schema = form.schema
+            form_info['source'] = 'design'
+
+        if not schema:
+            schema = form.schema  # 回退到設計版
+
+        # 分析欄位
+        fields = _extract_form_fields(schema.get('components', []) if schema else [])
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'form_info': form_info,
+                'fields': fields,
+                'total': len(fields)
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"❌ GET_FORM_FIELDS ERROR: {str(e)}")
+        print(f"📋 Traceback:\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'分析表單欄位失敗: {str(e)}'}), 500
+
+
+def _extract_form_fields(components, path_prefix='data', nested_level=0):
+    """
+    遞迴分析 Form.io schema 中的欄位
+
+    Args:
+        components: Form.io 元件陣列
+        path_prefix: 欄位路徑前綴
+        nested_level: 巢狀層級
+
+    Returns:
+        list: 欄位資訊列表
+    """
+    fields = []
+
+    # Form.io 類型到資料類型的映射
+    TYPE_MAPPING = {
+        'textfield': 'string',
+        'textarea': 'string',
+        'number': 'number',
+        'password': 'string',
+        'email': 'string',
+        'phoneNumber': 'string',
+        'url': 'string',
+        'currency': 'number',
+        'checkbox': 'boolean',
+        'selectboxes': 'object',
+        'select': 'string',
+        'radio': 'string',
+        'datetime': 'datetime',
+        'day': 'string',
+        'time': 'string',
+        'date': 'date',
+        'hidden': 'string',
+        'signature': 'string',
+        'file': 'array',
+        'tags': 'array',
+        'address': 'object',
+        'datagrid': 'array',
+        'editgrid': 'array',
+        'survey': 'object',
+    }
+
+    # 布局類型 (不產生資料欄位)
+    LAYOUT_TYPES = {
+        'button', 'htmlelement', 'content', 'well', 'fieldset',
+        'panel', 'table', 'tabs', 'columns', 'container'
+    }
+
+    for component in components:
+        comp_type = component.get('type', '')
+        comp_key = component.get('key', '')
+
+        # 跳過無 key 的元件
+        if not comp_key:
+            continue
+
+        # 跳過按鈕類型
+        if comp_type == 'button':
+            continue
+
+        # 處理布局容器 - 遞迴處理子元件
+        if comp_type in {'panel', 'well', 'fieldset'}:
+            sub_components = component.get('components', [])
+            if sub_components:
+                fields.extend(_extract_form_fields(
+                    sub_components,
+                    path_prefix,
+                    nested_level + 1
+                ))
+            continue
+
+        if comp_type == 'columns':
+            for column in component.get('columns', []):
+                sub_components = column.get('components', [])
+                if sub_components:
+                    fields.extend(_extract_form_fields(
+                        sub_components,
+                        path_prefix,
+                        nested_level + 1
+                    ))
+            continue
+
+        if comp_type == 'tabs':
+            for tab in component.get('components', []):
+                sub_components = tab.get('components', [])
+                if sub_components:
+                    fields.extend(_extract_form_fields(
+                        sub_components,
+                        path_prefix,
+                        nested_level + 1
+                    ))
+            continue
+
+        if comp_type == 'table':
+            for row in component.get('rows', []):
+                for cell in row:
+                    sub_components = cell.get('components', [])
+                    if sub_components:
+                        fields.extend(_extract_form_fields(
+                            sub_components,
+                            path_prefix,
+                            nested_level + 1
+                        ))
+            continue
+
+        if comp_type == 'container':
+            sub_components = component.get('components', [])
+            if sub_components:
+                fields.extend(_extract_form_fields(
+                    sub_components,
+                    f"{path_prefix}.{comp_key}",
+                    nested_level + 1
+                ))
+            continue
+
+        # 跳過其他布局類型
+        if comp_type in LAYOUT_TYPES:
+            continue
+
+        # 取得欄位資訊
+        field_path = f"{path_prefix}.{comp_key}"
+        data_type = TYPE_MAPPING.get(comp_type, 'string')
+
+        # 處理選項 (select, radio, selectboxes)
+        options = None
+        if comp_type in {'select', 'radio', 'selectboxes'}:
+            values = component.get('data', {}).get('values', [])
+            if not values:
+                values = component.get('values', [])
+            if values:
+                options = [
+                    {'value': v.get('value'), 'label': v.get('label')}
+                    for v in values
+                ]
+            if comp_type == 'select' and component.get('multiple'):
+                data_type = 'array'
+
+        # 取得預設值
+        default_value = component.get('defaultValue')
+
+        # 取得驗證資訊
+        validate = component.get('validate', {})
+        required = validate.get('required', False)
+
+        field_info = {
+            'key': comp_key,
+            'label': component.get('label', comp_key),
+            'type': comp_type,
+            'data_type': data_type,
+            'default_value': default_value,
+            'options': options,
+            'required': required,
+            'path': field_path,
+            'nested_level': nested_level,
+            'placeholder': component.get('placeholder', ''),
+            'description': component.get('description', ''),
+            'tooltip': component.get('tooltip', ''),
+        }
+
+        fields.append(field_info)
+
+        # datagrid 和 editgrid 有子元件結構
+        if comp_type in {'datagrid', 'editgrid'}:
+            sub_components = component.get('components', [])
+            if sub_components:
+                sub_fields = _extract_form_fields(
+                    sub_components,
+                    f"{field_path}[*]",
+                    nested_level + 1
+                )
+                for sf in sub_fields:
+                    sf['parent_grid'] = comp_key
+                fields.extend(sub_fields)
+
+    return fields

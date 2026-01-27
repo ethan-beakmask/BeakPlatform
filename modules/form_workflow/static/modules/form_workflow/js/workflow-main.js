@@ -11841,7 +11841,9 @@
 
             let html = '';
             for (const form of forms) {
-                const isSelected = selectedFormId === form.form_id;
+                // 使用 form_secure_code 或 form_id 進行比對
+                const formIdentifier = form.form_secure_code || form.form_id;
+                const isSelected = selectedFormId === formIdentifier;
                 const selectedStyle = isSelected ? 'background: #e3f2fd; border-left: 3px solid #667eea;' : 'border-left: 3px solid transparent;';
                 const versionBadge = form.source === 'published'
                     ? `<span style="background: #27ae60; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px; margin-left: 5px;">v${form.publish_version}</span>`
@@ -11869,7 +11871,8 @@
          * @param {Object} form - 表單資料
          */
         async function selectForm(form) {
-            selectedFormId = form.form_id;
+            // 優先使用 form_secure_code
+            selectedFormId = form.form_secure_code || form.form_id;
             selectedFormSecureCode = form.form_secure_code || '';
 
             // 重新渲染列表以更新選中狀態
@@ -11903,7 +11906,9 @@
             `;
 
             try {
-                let url = `/api/workflows/data/forms/${form.form_id}/fields?version_type=${currentVersionType}`;
+                // 優先使用 form_secure_code，若無則使用 form_id
+                const formIdentifier = form.form_secure_code || form.form_id;
+                let url = `/api/workflows/data/forms/${formIdentifier}/fields?version_type=${currentVersionType}`;
                 if (form.mapping_id) {
                     url += `&mapping_id=${form.mapping_id}`;
                 }

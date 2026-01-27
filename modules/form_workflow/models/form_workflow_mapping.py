@@ -25,16 +25,20 @@ class FwFormWorkflowMapping(ModuleBaseModel):
     org_secure_code = Column(String(100), nullable=False, index=True)
 
     # 表單資訊
-    form_template_id = Column(BigInteger, nullable=False, index=True)
+    form_template_id = Column(BigInteger, ForeignKey('fw_form_templates.id'), nullable=False, index=True)
     form_template_secure_code = Column(String(32), nullable=False, index=True)
     form_template_code = Column(String(100))  # 表單代碼
     form_template_version = Column(String(10))  # 表單版本
 
     # 流程資訊
-    workflow_template_id = Column(BigInteger, nullable=False, index=True)
+    workflow_template_id = Column(BigInteger, ForeignKey('fw_workflow_templates.id'), nullable=False, index=True)
     workflow_template_secure_code = Column(String(32), nullable=False, index=True)
     workflow_template_code = Column(String(100))  # 流程代碼
     workflow_template_version = Column(String(10))  # 流程版本
+
+    # 關聯
+    form_template = relationship('FwFormTemplate', foreign_keys=[form_template_id])
+    workflow_template = relationship('FwWorkflowTemplate', foreign_keys=[workflow_template_id])
 
     # 狀態
     is_active = Column(Boolean, default=True, nullable=False)
