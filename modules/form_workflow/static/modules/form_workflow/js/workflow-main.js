@@ -11771,6 +11771,7 @@
                 }
             }
         }
+        window.loadMappedForms = loadMappedForms;
 
         /**
          * 載入變數映射表
@@ -11888,6 +11889,7 @@
             // 載入欄位
             await loadFormFields(form);
         }
+        window.selectForm = selectForm;
 
         /**
          * 載入指定表單的欄位
