@@ -1019,8 +1019,14 @@ def get_workflow_mapped_forms(template_id):
             ).all()
 
             for mapping in mappings:
-                form = mapping.form_template
-                if form and not form.is_deleted:
+                # 直接查詢表單（避免關聯問題）
+                form = FwFormTemplate.query.filter_by(
+                    id=mapping.form_template_id,
+                    org_secure_code=org.secure_code,
+                    is_deleted=False
+                ).first()
+
+                if form:
                     forms.append({
                         'form_secure_code': form.secure_code,
                         'form_name': form.name,

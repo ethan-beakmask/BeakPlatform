@@ -2544,15 +2544,16 @@
                         // 清空現有選項（保留「未分類」選項）
                         categorySelect.innerHTML = '<option value="">未分類</option>';
 
-                        // 加入分類選項
-                        result.data.forEach(cat => {
+                        // 加入分類選項（API 回傳 categories 而非 data）
+                        const categories = result.categories || result.data || [];
+                        categories.forEach(cat => {
                             const option = document.createElement('option');
                             option.value = cat.name;
                             option.textContent = cat.name;
                             categorySelect.appendChild(option);
                         });
 
-                        console.log('✅ 已載入分類:', result.data.length, '個');
+                        console.log('✅ 已載入分類:', categories.length, '個');
                     }
                 }
             } catch (error) {
