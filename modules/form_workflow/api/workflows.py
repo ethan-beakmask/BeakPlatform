@@ -1027,7 +1027,7 @@ def get_workflow_mapped_forms(template_id):
                 ).first()
 
                 if form:
-                    forms.append({
+                    form_data = {
                         'form_secure_code': form.secure_code,
                         'form_name': form.name,
                         'form_version': form.version,
@@ -1036,7 +1036,9 @@ def get_workflow_mapped_forms(template_id):
                         'source': 'design',
                         'publish_version': None,
                         'publish_status': None
-                    })
+                    }
+                    print(f"📋 Adding form: {form_data}")
+                    forms.append(form_data)
 
         return jsonify({
             'success': True,
