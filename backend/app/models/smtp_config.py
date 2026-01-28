@@ -1,5 +1,5 @@
 """
-BeakMask SMTP Config Model
+BeakPlatform SMTP Config Model
 SMTP 郵件伺服器設定
 
 密碼加密：使用 Fernet 對稱加密，密鑰從 Flask SECRET_KEY 派生
@@ -244,8 +244,8 @@ class SmtpConfig(TenantBaseModel):
             # 發送測試信
             if test_recipient and from_email:
                 from email.mime.text import MIMEText
-                msg = MIMEText('這是 BeakMask SMTP 測試郵件。\n\nThis is a test email from BeakMask.')
-                msg['Subject'] = '[BeakMask] SMTP 連線測試'
+                msg = MIMEText('這是 BeakPlatform SMTP 測試郵件。\n\nThis is a test email from BeakPlatform.')
+                msg['Subject'] = '[BeakPlatform] SMTP 連線測試'
                 msg['From'] = from_email
                 msg['To'] = test_recipient
                 server.sendmail(from_email, [test_recipient], msg.as_string())

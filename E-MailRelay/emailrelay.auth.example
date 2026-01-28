@@ -1,0 +1,38 @@
+# E-MailRelay SMTP 認證檔案範例
+# ========================================
+#
+# 重要：此檔案包含 SMTP 密碼，請妥善保管！
+# 真正的認證檔案是 emailrelay.auth（已被 .gitignore 排除）
+#
+# 格式說明：
+# client <auth_type> <username> <password>
+#
+# auth_type:
+# - plain      : 純文字（密碼無空格時使用）
+# - plain:b    : Base64 編碼（密碼有空格時必須使用）
+#
+# Gmail 應用程式密碼格式為 "xxxx xxxx xxxx xxxx"（有空格）
+# 必須使用 Base64 編碼，否則會出現 "too many fields" 錯誤
+
+# ========================================
+# 方法一：純文字（密碼無空格）
+# ========================================
+# client plain your.email@gmail.com yourpassword
+
+# ========================================
+# 方法二：Base64 編碼（密碼有空格）
+# ========================================
+# 1. 產生 Base64：
+#    echo -n "your.email@gmail.com" | base64
+#    echo -n "xxxx xxxx xxxx xxxx" | base64
+#
+# 2. 填入下方：
+# client plain:b <帳號Base64> <密碼Base64>
+
+# 範例（請勿使用此範例值！）：
+# client plain:b eW91ci5lbWFpbEBnbWFpbC5jb20= eHh4eCB4eHh4IHh4eHggeHh4eA==
+
+# ========================================
+# 建議：使用系統設定頁面管理此檔案
+# ========================================
+# 系統設定頁面會自動處理 Base64 編碼，更安全方便

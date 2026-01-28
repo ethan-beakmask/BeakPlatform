@@ -1,0 +1,19 @@
+[Unit]
+Description=E-MailRelay for BeakPlatform
+Documentation=man:emailrelay(1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=10
+User=ethan
+Group=ethan
+WorkingDirectory=/opt/BeakPlatform/E-MailRelay
+ExecStart=/usr/sbin/emailrelay --as-server --pid-file /opt/BeakPlatform/E-MailRelay/emailrelay.pid /opt/BeakPlatform/E-MailRelay/emailrelay.conf
+ExecStop=/bin/kill -15 $MAINPID
+PIDFile=/opt/BeakPlatform/E-MailRelay/emailrelay.pid
+
+[Install]
+WantedBy=multi-user.target

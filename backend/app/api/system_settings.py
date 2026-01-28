@@ -1,5 +1,5 @@
 """
-BeakMask System Settings API
+BeakPlatform System Settings API
 系統設定 API - 僅系統管理員可用
 
 [標準 AUTH-02] 使用 @system_admin_required 裝飾器
@@ -61,8 +61,8 @@ api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/ap
 # E-MailRelay 設定
 # =============================================================================
 
-EMAILRELAY_AUTH_FILE = '/opt/BeakMask/E-MailRelay/emailrelay.auth'
-EMAILRELAY_SPOOL_DIR = '/opt/BeakMask/E-MailRelay/spool'
+EMAILRELAY_AUTH_FILE = '/opt/BeakPlatform/E-MailRelay/emailrelay.auth'
+EMAILRELAY_SPOOL_DIR = '/opt/BeakPlatform/E-MailRelay/spool'
 
 
 @api_system_settings.route('/emailrelay', methods=['GET'])
@@ -80,8 +80,8 @@ def get_emailrelay_settings():
     settings = {
         'enabled': SystemSetting.get('emailrelay_enabled', True),
         'spool_dir': SystemSetting.get('emailrelay_spool_dir', EMAILRELAY_SPOOL_DIR),
-        'from_email': SystemSetting.get('emailrelay_from_email', 'system@beakmask.local'),
-        'from_name': SystemSetting.get('emailrelay_from_name', 'BeakMask System'),
+        'from_email': SystemSetting.get('emailrelay_from_email', 'system@beakplatform.local'),
+        'from_name': SystemSetting.get('emailrelay_from_name', 'BeakPlatform System'),
     }
 
     # Auth 設定（從檔案讀取）
@@ -291,13 +291,13 @@ def test_emailrelay():
         }), 400
 
     # 3. 取得發件人設定
-    from_email = SystemSetting.get('emailrelay_from_email', 'system@beakmask.local')
-    from_name = SystemSetting.get('emailrelay_from_name', 'BeakMask System')
+    from_email = SystemSetting.get('emailrelay_from_email', 'system@beakplatform.local')
+    from_name = SystemSetting.get('emailrelay_from_name', 'BeakPlatform System')
 
     # 4. 建立測試郵件
     now = datetime.now()
-    subject = f'[BeakMask] E-MailRelay 測試郵件 - {now.strftime("%Y-%m-%d %H:%M:%S")}'
-    body = f'''這是一封來自 BeakMask 系統的測試郵件。
+    subject = f'[BeakPlatform] E-MailRelay 測試郵件 - {now.strftime("%Y-%m-%d %H:%M:%S")}'
+    body = f'''這是一封來自 BeakPlatform 系統的測試郵件。
 
 發送時間：{now.strftime("%Y-%m-%d %H:%M:%S")}
 發件人：{from_name} <{from_email}>
@@ -307,7 +307,7 @@ Spool 目錄：{spool_dir}
 如果您收到此郵件，表示 E-MailRelay 設定正確運作中。
 
 ---
-BeakMask System
+BeakPlatform System
 '''
 
     msg = MIMEText(body, 'plain', 'utf-8')
@@ -315,8 +315,8 @@ BeakMask System
     msg['To'] = recipient
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=True)
-    msg['Message-ID'] = make_msgid(domain='beakmask.local')
-    msg['X-BeakMask-Test'] = 'true'
+    msg['Message-ID'] = make_msgid(domain='beakplatform.local')
+    msg['X-BeakPlatform-Test'] = 'true'
 
     eml_content = msg.as_string()
 
@@ -400,7 +400,7 @@ def control_emailrelay_service(action):
             'message': f'不支援的操作: {action}'
         }), 400
 
-    service_name = 'beakmask-emailrelay'
+    service_name = 'beakplatform-emailrelay'
 
     try:
         if action == 'status':
@@ -524,7 +524,7 @@ def _read_emailrelay_auth() -> dict:
 
 def _get_emailrelay_service_status() -> dict:
     """取得 E-MailRelay 服務狀態"""
-    service_name = 'beakmask-emailrelay'
+    service_name = 'beakplatform-emailrelay'
 
     result = {
         'name': service_name,
@@ -1027,7 +1027,7 @@ def test_telegram_connection():
     result = TelegramConfig.test_connection(
         bot_token=data['bot_token'],
         chat_id=data.get('chat_id'),
-        test_message=data.get('test_message', '[BeakMask] Telegram 連線測試')
+        test_message=data.get('test_message', '[BeakPlatform] Telegram 連線測試')
     )
 
     return jsonify({
@@ -1061,7 +1061,7 @@ def test_saved_telegram_config(secure_code):
     result = TelegramConfig.test_connection(
         bot_token=config.bot_token,
         chat_id=chat_id,
-        test_message=data.get('test_message', '[BeakMask] Telegram 連線測試')
+        test_message=data.get('test_message', '[BeakPlatform] Telegram 連線測試')
     )
 
     return jsonify({
