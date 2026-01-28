@@ -883,6 +883,67 @@ def get_workflow_progress(secure_code):
     })
 
 
+@form_center_bp.route('/form-detail/<secure_code>')
+@login_required
+def get_form_detail(secure_code):
+    """
+    取得表單詳情（用於歷史表單查看）
+
+    包含：表單內容、schema、簽核歷史
+    """
+    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 查詢表單實例
+    form_instance = FwFormInstance.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not form_instance:
+        return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+
+    # 取得簽核歷史
+    approvals = []
+    if form_instance.workflow_instance_secure_code:
+        approval_records = FwApprovalRecord.query.filter_by(
+            workflow_instance_secure_code=form_instance.workflow_instance_secure_code
+        ).order_by(FwApprovalRecord.acted_at.asc()).all()
+
+        for approval in approval_records:
+            approvals.append({
+                'node_id': approval.node_id,
+                'node_name': approval.node_name,
+                'approver_name': approval.approver_name,
+                'action': approval.action,
+                'comment': approval.comment,
+                'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
+            })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'secure_code': form_instance.secure_code,
+            'serial_number': form_instance.serial_number,
+            'form_name': form_instance.form_name,
+            'form_code': form_instance.form_code,
+            'status': form_instance.status,
+            'applicant_name': form_instance.applicant_name,
+            'applicant_dept': form_instance.applicant_dept,
+            'submitted_at': form_instance.submitted_at.isoformat() if form_instance.submitted_at else None,
+            'completed_at': form_instance.completed_at.isoformat() if form_instance.completed_at else None,
+            'form_data': form_instance.form_data,
+            'schema': form_instance.schema_snapshot,
+            'builder_config': form_instance.builder_config,
+            'approvals': approvals
+        }
+    })
+
+
 # =============================================================================
 # 流程執行追蹤（監控用）
 # =============================================================================

@@ -90,71 +90,56 @@ def register_builtin_handlers():
     """
     註冊內建處理器
 
-    命名規範（PascalCase）：
+    節點類型名稱與 API 定義 (_get_node_definitions) 一致，不使用別名。
+    Factory 已支援大小寫不敏感查找，無需重複註冊。
+
+    標準節點類型（共 12 種）：
     - Start, End: 流程控制
+    - FormAdapter: 簽核
     - Delay: 延遲
-    - Branch, Switch, Converge: 分支/匯合
-    - Approve, FormAdapter: 簽核
-    - OpSet: 變數設定
-    - Notify, Telegram, Email: 通知
-    - SubFlow, Subprocess: 子流程
+    - Branch, Converge: 分支/匯合
+    - Telegram, EmailAdapter: 通知
+    - SubFlow: 子流程
+    - OpSet, OpFieldRead, OpFieldWrite: 變數操作
     """
     from .start_handler import StartHandler
     from .end_handler import EndHandler
     from .delay_handler import DelayHandler
-    from .approve_handler import ApproveHandler
     from .formadapter_handler import FormAdapterHandler
     from .branch_handler import BranchHandler
     from .converge_handler import ConvergeHandler
-    from .switch_handler import SwitchHandler
     from .opset_handler import OpSetHandler
     from .fieldread_handler import FieldReadHandler
     from .fieldwrite_handler import FieldWriteHandler
-    from .notify_handler import NotifyHandler
     from .telegram_handler import TelegramHandler
     from .email_handler import EmailHandler
     from .subflow_handler import SubFlowHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
-    NodeHandlerFactory.register('START', StartHandler)  # A6 兼容
     NodeHandlerFactory.register('End', EndHandler)
-    NodeHandlerFactory.register('END', EndHandler)  # A6 兼容
+
+    # 簽核
+    NodeHandlerFactory.register('FormAdapter', FormAdapterHandler)
 
     # 時間控制
     NodeHandlerFactory.register('Delay', DelayHandler)
-    NodeHandlerFactory.register('DELAY', DelayHandler)  # A6 兼容
-    NodeHandlerFactory.register('TIME', DelayHandler)   # A6 兼容
-
-    # 簽核
-    NodeHandlerFactory.register('Approve', ApproveHandler)
-    NodeHandlerFactory.register('FormAdapter', FormAdapterHandler)  # 專用 FormAdapter 處理器
-    NodeHandlerFactory.register('FORMADAPTER', FormAdapterHandler)  # A6 兼容
 
     # 分支/匯合
     NodeHandlerFactory.register('Branch', BranchHandler)
-    NodeHandlerFactory.register('Switch', SwitchHandler)
     NodeHandlerFactory.register('Converge', ConvergeHandler)
 
-    # 變數設定與欄位操作
-    NodeHandlerFactory.register('OpSet', OpSetHandler)
-    NodeHandlerFactory.register('OPSET', OpSetHandler)  # A6 兼容
-    NodeHandlerFactory.register('FieldRead', FieldReadHandler)
-    NodeHandlerFactory.register('OP_FIELDREAD', FieldReadHandler)  # A6 兼容
-    NodeHandlerFactory.register('FieldWrite', FieldWriteHandler)
-    NodeHandlerFactory.register('OP_FIELDWRITE', FieldWriteHandler)  # A6 兼容
-
     # 通知
-    NodeHandlerFactory.register('Notify', NotifyHandler)
     NodeHandlerFactory.register('Telegram', TelegramHandler)
-    NodeHandlerFactory.register('TELEGRAM', TelegramHandler)  # A6 兼容
-    NodeHandlerFactory.register('Email', EmailHandler)
-    NodeHandlerFactory.register('EMAIL', EmailHandler)  # A6 兼容
-    NodeHandlerFactory.register('EMAILRELAY', EmailHandler)  # A6 兼容
+    NodeHandlerFactory.register('EmailAdapter', EmailHandler)
 
     # 子流程
     NodeHandlerFactory.register('SubFlow', SubFlowHandler)
-    NodeHandlerFactory.register('Subprocess', SubFlowHandler)  # 兼容舊名稱
+
+    # 變數操作
+    NodeHandlerFactory.register('OpSet', OpSetHandler)
+    NodeHandlerFactory.register('OpFieldRead', FieldReadHandler)
+    NodeHandlerFactory.register('OpFieldWrite', FieldWriteHandler)
 
 
 # 自動執行註冊

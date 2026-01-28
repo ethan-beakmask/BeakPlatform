@@ -100,13 +100,27 @@ class WorkflowExecutor:
         """輪詢並執行待處理的節點"""
         from ..models import FwNodeExecutionQueue, FwWorkflowInstance
 
-        # 查詢 PENDING 狀態的節點
+        now = datetime.utcnow()
+
+        # 查詢 PENDING 狀態的節點，或 Delay 類型的 WAITING 節點且 scheduled_at 已到期
+        # 注意：FormAdapter 的 WAITING 是等待用戶簽核，不應該被自動恢復
         pending_nodes = FwNodeExecutionQueue.query.filter(
-            and_(
-                FwNodeExecutionQueue.status == 'PENDING',
-                or_(
-                    FwNodeExecutionQueue.scheduled_at.is_(None),
-                    FwNodeExecutionQueue.scheduled_at <= datetime.utcnow()
+            or_(
+                # PENDING 節點（無排程或已到期）
+                and_(
+                    FwNodeExecutionQueue.status == 'PENDING',
+                    or_(
+                        FwNodeExecutionQueue.scheduled_at.is_(None),
+                        FwNodeExecutionQueue.scheduled_at <= now
+                    )
+                ),
+                # 僅 Delay 類型的 WAITING 節點且 scheduled_at 已到期
+                # FormAdapter 等待簽核不在此處理
+                and_(
+                    FwNodeExecutionQueue.status == 'WAITING',
+                    FwNodeExecutionQueue.node_type == 'Delay',
+                    FwNodeExecutionQueue.scheduled_at.isnot(None),
+                    FwNodeExecutionQueue.scheduled_at <= now
                 )
             )
         ).order_by(
@@ -138,19 +152,29 @@ class WorkflowExecutor:
                     db.session.commit()
                     continue
 
+                # 如果是 WAITING 節點，記錄原本的 started_at（不應該被重置）
+                is_resuming_wait = queue_item.status == 'WAITING'
+                original_started_at = queue_item.started_at if is_resuming_wait else None
+
+                if is_resuming_wait:
+                    logger.info(f'WAITING 節點已到期，恢復執行: {queue_item.node_id}')
+                    queue_item.status = 'PENDING'
+                    db.session.commit()
+
                 # 啟動節點執行
-                self._launch_node_process(queue_item)
+                self._launch_node_process(queue_item, preserve_started_at=original_started_at)
 
             except Exception as e:
                 logger.error(f'啟動節點失敗 {queue_item.secure_code}: {str(e)}', exc_info=True)
                 db.session.rollback()
 
-    def _launch_node_process(self, queue_item):
+    def _launch_node_process(self, queue_item, preserve_started_at=None):
         """
         啟動節點執行程序
 
         Args:
             queue_item: 節點佇列項目
+            preserve_started_at: 如果提供，恢復此 started_at（用於 WAITING 節點）
         """
         from ..models import FwNodeExecutionQueue
 
@@ -158,6 +182,11 @@ class WorkflowExecutor:
 
         # 更新狀態為 RUNNING
         queue_item.start()
+
+        # 如果是恢復 WAITING 節點，保留原來的 started_at
+        if preserve_started_at is not None:
+            queue_item.started_at = preserve_started_at
+
         db.session.commit()
 
         # 啟動 subprocess 執行 node_runner
@@ -196,27 +225,34 @@ class WorkflowExecutor:
             db.session.commit()
 
     def _poll_waiting_nodes(self):
-        """輪詢等待中的節點"""
+        """
+        輪詢等待中的節點（定期備份檢查）
+
+        注意：
+        - Delay 節點的 WAITING 已在 _poll_and_execute() 中即時處理
+        - FormAdapter 等待簽核的節點不應在此處理（需要用戶操作）
+        - 此方法主要作為備份機制處理其他可能需要喚醒的節點
+        """
         from ..models import FwNodeExecutionQueue
 
+        # 只處理 Delay 類型的 WAITING 節點（作為備份）
+        # FormAdapter 等需要用戶操作的節點不處理
         waiting_nodes = FwNodeExecutionQueue.query.filter(
             FwNodeExecutionQueue.status == 'WAITING',
-            or_(
-                FwNodeExecutionQueue.scheduled_at.is_(None),
-                FwNodeExecutionQueue.scheduled_at <= datetime.utcnow()
-            )
+            FwNodeExecutionQueue.node_type == 'Delay',
+            FwNodeExecutionQueue.scheduled_at.isnot(None),
+            FwNodeExecutionQueue.scheduled_at <= datetime.utcnow()
         ).limit(10).all()
 
         if not waiting_nodes:
             return
 
-        logger.info(f'發現 {len(waiting_nodes)} 個等待中節點')
+        logger.info(f'發現 {len(waiting_nodes)} 個等待中 Delay 節點')
 
         for queue_item in waiting_nodes:
             try:
                 # 重新設為 PENDING 以便重新執行
                 queue_item.status = 'PENDING'
-                queue_item.scheduled_at = datetime.utcnow()
                 db.session.commit()
 
             except Exception as e:

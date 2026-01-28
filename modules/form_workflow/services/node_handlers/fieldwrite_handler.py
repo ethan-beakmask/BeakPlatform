@@ -19,22 +19,27 @@ class FieldWriteHandler(BaseNodeHandler):
     """OP_FIELDWRITE 節點處理器"""
 
     def validate(self) -> bool:
-        """驗證節點配置"""
-        target_field = self.get_config_value('target_field')
-        if not target_field:
-            raise ValueError('必須指定目標欄位 (target_field)')
-
-        content = self.get_config_value('content')
-        if content is None:
-            raise ValueError('必須指定寫入內容 (content)')
-
+        """驗證節點配置（允許空配置，執行時跳過）"""
         return True
 
     def handle(self) -> Dict[str, Any]:
-        """處理 OP_FIELDWRITE 節點"""
+        """處理 OpFieldWrite 節點"""
         self.report_running()
 
         try:
+            # 取得配置
+            target_field = self.get_config_value('target_field')
+            content = self.get_config_value('content')
+
+            # 如果沒有配置，跳過執行
+            if not target_field or content is None:
+                self.log_info('OpFieldWrite 節點未配置，跳過執行')
+                return {
+                    'status': 'success',
+                    'message': '節點未配置，已跳過',
+                    'data': {'skipped': True}
+                }
+
             # 取得表單實例
             form_instance = self.form_instance
             if not form_instance:
@@ -43,9 +48,6 @@ class FieldWriteHandler(BaseNodeHandler):
                     'message': '找不到表單實例'
                 }
 
-            # 取得配置
-            target_field = self.get_config_value('target_field')
-            content = self.get_config_value('content', '')
             content_type = self.get_config_value('content_type', 'text')  # text 或 html
 
             # 解析 target_field：如果是變數語法格式 ${...}，提取實際欄位名稱
@@ -83,8 +85,8 @@ class FieldWriteHandler(BaseNodeHandler):
             db.session.commit()
 
             # 同步更新工作流變數
-            if hasattr(form_instance, 'form_template') and form_instance.form_template:
-                form_code = form_instance.form_template.secure_code
+            form_code = form_instance.form_template_secure_code or form_instance.form_code
+            if form_code:
                 var_name_prefixed = f'{form_code}_{target_field}'
                 self.set_global_var(var_name_prefixed, processed_content)
                 self.set_global_var(target_field, processed_content)

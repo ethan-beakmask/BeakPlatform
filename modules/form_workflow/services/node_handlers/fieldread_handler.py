@@ -22,7 +22,7 @@ class FieldReadHandler(BaseNodeHandler):
         return True
 
     def handle(self) -> Dict[str, Any]:
-        """處理 OP_FIELDREAD 節點"""
+        """處理 OpFieldRead 節點"""
         self.report_running()
 
         try:
@@ -34,38 +34,38 @@ class FieldReadHandler(BaseNodeHandler):
                     'message': '找不到表單實例'
                 }
 
-            # 取得表單模板資訊
-            if not hasattr(form_instance, 'form_template') or not form_instance.form_template:
+            # 使用表單實例中的快照資訊（不依賴 relationship）
+            form_code = form_instance.form_template_secure_code or form_instance.form_code
+            form_name = form_instance.form_name or '未知表單'
+
+            if not form_code:
                 return {
                     'status': 'error',
-                    'message': '找不到表單模板'
+                    'message': '找不到表單模板代碼'
                 }
-
-            form_template = form_instance.form_template
-            form_code = form_template.secure_code
-            form_name = form_template.name
 
             self.log_info('開始讀取表單欄位', {
                 'form_code': form_code,
                 'form_name': form_name
             })
 
+            # 讀取表單資料
+            form_data = form_instance.form_data or {}
+
             # 取得要讀取的欄位列表
             fields_to_read = self.get_config_value('fields', [])
 
             # 如果沒有配置欄位，嘗試從流程模板的 fieldReadConfig 取得
-            if not fields_to_read:
-                fields_to_read = self._get_fields_from_workflow_config(form_template.id)
+            if not fields_to_read and form_instance.form_template_id:
+                fields_to_read = self._get_fields_from_workflow_config(form_instance.form_template_id)
 
-            if not fields_to_read:
-                return {
-                    'status': 'success',
-                    'message': f'表單「{form_name}」沒有設定需要讀取的欄位',
-                    'data': {'read_count': 0}
-                }
-
-            # 讀取表單資料
-            form_data = form_instance.form_data or {}
+            # 如果還是沒有，自動讀取所有表單欄位（排除系統欄位）
+            if not fields_to_read and form_data:
+                fields_to_read = [
+                    key for key in form_data.keys()
+                    if not key.startswith('_') and key not in ('submit', 'data')
+                ]
+                self.log_info(f'自動偵測到 {len(fields_to_read)} 個表單欄位')
 
             # 讀取指定欄位並設定全域變數
             read_results = {}
@@ -117,18 +117,28 @@ class FieldReadHandler(BaseNodeHandler):
         if not self.workflow_instance:
             return []
 
-        # 嘗試取得流程模板
-        if not hasattr(self.workflow_instance, 'workflow_template') or not self.workflow_instance.workflow_template:
-            return []
+        # 優先使用 graph_snapshot 中的配置
+        graph_snapshot = self.workflow_instance.graph_snapshot
+        if graph_snapshot:
+            field_read_config = graph_snapshot.get('fieldReadConfig', {})
+            if field_read_config:
+                form_key = f'formId_{form_template_id}'
+                form_field_config = field_read_config.get(form_key, {})
+                return form_field_config.get('fields', [])
 
-        workflow_template = self.workflow_instance.workflow_template
+        # 若無快照，嘗試查詢流程模板
+        if self.workflow_instance.workflow_template_secure_code:
+            from ...models import FwWorkflowTemplate
+            workflow_template = FwWorkflowTemplate.query.filter_by(
+                secure_code=self.workflow_instance.workflow_template_secure_code,
+                is_deleted=False
+            ).first()
 
-        # 從 cytoscape_config 取得 fieldReadConfig
-        cytoscape_config = getattr(workflow_template, 'cytoscape_config', {}) or {}
-        field_read_config = cytoscape_config.get('fieldReadConfig', {})
+            if workflow_template:
+                cytoscape_config = workflow_template.cytoscape_config or {}
+                field_read_config = cytoscape_config.get('fieldReadConfig', {})
+                form_key = f'formId_{form_template_id}'
+                form_field_config = field_read_config.get(form_key, {})
+                return form_field_config.get('fields', [])
 
-        # 尋找當前表單的欄位設定
-        form_key = f'formId_{form_template_id}'
-        form_field_config = field_read_config.get(form_key, {})
-
-        return form_field_config.get('fields', [])
+        return []

@@ -274,10 +274,35 @@ class WorkflowEngine:
         return None
 
     @staticmethod
+    def get_next_node_by_edge(graph: dict, edge_id: str) -> List[str]:
+        """
+        根據 edge ID 取得目標節點
+
+        Args:
+            graph: 流程圖結構
+            edge_id: 邊的 ID
+
+        Returns:
+            List[str]: 目標節點 ID 列表（通常只有一個）
+        """
+        if not graph or 'edges' not in graph:
+            return []
+
+        for edge in graph['edges']:
+            edge_data = edge.get('data', edge)
+            eid = edge_data.get('id') or edge.get('id')
+            if eid == edge_id:
+                target = edge_data.get('target')
+                if target:
+                    return [target]
+
+        return []
+
+    @staticmethod
     def advance_workflow(
         workflow_instance_secure_code: str,
         completed_node_id: str,
-        result: Optional[dict] = None
+        selected_path: Optional[str] = None
     ) -> List[FwNodeExecutionQueue]:
         """
         推進工作流到下一個節點
@@ -285,7 +310,7 @@ class WorkflowEngine:
         Args:
             workflow_instance_secure_code: 工作流實例 secure_code
             completed_node_id: 已完成的節點 ID
-            result: 節點執行結果
+            selected_path: 選擇的路徑 edge ID（用於 FormAdapter 等需要選擇的節點）
 
         Returns:
             新建立的佇列項目列表
@@ -312,7 +337,11 @@ class WorkflowEngine:
             return []
 
         # 找到下一個節點
-        next_node_ids = WorkflowEngine.get_next_nodes(graph, completed_node_id)
+        # 如果有 selected_path（字符串，edge ID），只取該路徑的目標節點
+        if selected_path and isinstance(selected_path, str):
+            next_node_ids = WorkflowEngine.get_next_node_by_edge(graph, selected_path)
+        else:
+            next_node_ids = WorkflowEngine.get_next_nodes(graph, completed_node_id)
 
         if not next_node_ids:
             return []

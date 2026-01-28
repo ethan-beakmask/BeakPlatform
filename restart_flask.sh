@@ -1,49 +1,40 @@
 #!/bin/bash
 
 # BeakPlatform 服務重啟腳本
-# 開發環境使用
+# 使用 systemd 管理服務
 
 set -e
-
-cd /opt/BeakPlatform
 
 echo "======================================"
 echo "  BeakPlatform 服務重啟"
 echo "======================================"
 echo ""
 
-# 停止現有進程
-echo "[1/4] 停止現有 Flask 進程..."
-pkill -f "flask run.*--port=7000" 2>/dev/null || true
-sleep 1
-echo "  ✓ 已停止"
-
-# 啟動服務
-echo "[2/4] 啟動 Flask 服務..."
-source venv/bin/activate
-set -a && source .env && set +a
-cd backend
-nohup flask run --host=0.0.0.0 --port=7000 > /tmp/beakplatform.log 2>&1 &
-cd ..
-echo "  ✓ Flask 已在背景啟動"
+# 重啟 systemd 服務
+echo "[1/3] 重啟服務..."
+sudo systemctl restart beakplatform
+echo "  ✓ 服務重啟指令已送出"
 
 # 等待啟動
-echo "[3/4] 等待服務啟動..."
+echo "[2/3] 等待服務啟動..."
 sleep 3
 
 # 測試服務
-echo "[4/4] 測試服務響應..."
-if curl -s --max-time 5 http://localhost:7000/health > /dev/null; then
-    echo "  ✓ 服務 (7000) 響應正常"
+echo "[3/3] 測試服務響應..."
+if curl -s --max-time 5 http://localhost:7000/health > /dev/null 2>&1; then
+    echo "  ✓ 服務響應正常"
 else
-    echo "  ⚠ 服務可能未正常響應，查看日誌: tail -f /tmp/beakplatform.log"
+    echo "  ⚠ 服務可能未正常響應"
 fi
 echo ""
 
+# 顯示狀態
 echo "======================================"
-echo "  重啟完成！"
+echo "  服務狀態"
 echo "======================================"
+sudo systemctl status beakplatform --no-pager -l | head -15
 echo ""
+
 echo "服務訪問地址: http://192.168.0.16:7000"
-echo "查看日誌:     tail -f /tmp/beakplatform.log"
+echo "查看日誌:     sudo journalctl -u beakplatform -f"
 echo ""

@@ -91,14 +91,18 @@
     .fc-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; }
     .fc-close-btn:hover { color: #1f2937; }
 
-    /* 唯讀表單樣式 */
-    .fc-form-readonly .formio-component input,
-    .fc-form-readonly .formio-component textarea,
-    .fc-form-readonly .formio-component select {
+    /* 唯讀表單樣式（僅針對特定容器內的 Form.io 元素） */
+    #formDetailViewer .formio-component input,
+    #formDetailViewer .formio-component textarea,
+    #formDetailViewer .formio-component select,
+    #approval-form-container .formio-component input,
+    #approval-form-container .formio-component textarea,
+    #approval-form-container .formio-component select {
         background-color: #f9fafb !important;
         pointer-events: none;
     }
-    .fc-form-readonly .formio-component button[type="submit"] {
+    #formDetailViewer .formio-component button[type="submit"],
+    #approval-form-container .formio-component button[type="submit"] {
         display: none !important;
     }
 
@@ -610,6 +614,17 @@
                     執行詳情
                     <span x-show="(monitorData?.logs || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #e5e7eb; border-radius: 10px; font-size: 10px;" x-text="(monitorData?.logs || []).length"></span>
                 </button>
+                <button @click="switchToFormContent()"
+                        :style="monitorPage === 'formContent' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
+                        style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
+                    表單內容
+                </button>
+                <button @click="switchToApprovalHistory()"
+                        :style="monitorPage === 'approvals' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
+                        style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
+                    簽核歷史
+                    <span x-show="(formDetail?.approvals || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #fef3c7; color: #92400e; border-radius: 10px; font-size: 10px;" x-text="(formDetail?.approvals || []).length"></span>
+                </button>
             </div>
 
             <!-- 第一頁：流程總覽 -->
@@ -798,6 +813,77 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 第三頁：表單內容 -->
+            <div x-show="monitorPage === 'formContent'" class="fc-monitor-body" style="padding: 20px;">
+                <div x-show="loadingFormDetail" class="fc-loading">載入表單內容中...</div>
+                <div x-show="!loadingFormDetail && !formDetail" class="fc-empty">無法載入表單內容</div>
+                <div x-show="!loadingFormDetail && formDetail">
+                    <!-- 表單基本資訊 -->
+                    <div style="background: #f9fafb; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 24px; font-size: 12px;">
+                        <div>
+                            <span style="color: #6b7280;">單號：</span>
+                            <span style="font-family: monospace; font-weight: 500;" x-text="formDetail.serial_number"></span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280;">表單：</span>
+                            <span style="font-weight: 500;" x-text="formDetail.form_name"></span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280;">申請人：</span>
+                            <span x-text="formDetail.applicant_name || '-'"></span>
+                        </div>
+                        <div>
+                            <span style="color: #6b7280;">送出時間：</span>
+                            <span x-text="formDetail.submitted_at ? formatDate(formDetail.submitted_at) : '-'"></span>
+                        </div>
+                    </div>
+                    <!-- 表單內容（只讀） -->
+                    <div id="formDetailViewer" class="fc-form-readonly" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; min-height: 300px;"></div>
+                </div>
+            </div>
+
+            <!-- 第四頁：簽核歷史 -->
+            <div x-show="monitorPage === 'approvals'" class="fc-monitor-body" style="padding: 20px;">
+                <div x-show="loadingFormDetail" class="fc-loading">載入簽核歷史中...</div>
+                <div x-show="!loadingFormDetail && (!formDetail?.approvals || formDetail.approvals.length === 0)" class="fc-empty">
+                    此表單尚無簽核記錄
+                </div>
+                <div x-show="!loadingFormDetail && formDetail?.approvals?.length > 0">
+                    <!-- 簽核流程時間軸 -->
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <template x-for="(approval, idx) in formDetail?.approvals || []" :key="idx">
+                            <div style="display: flex; gap: 16px; margin-bottom: 0;">
+                                <!-- 左側時間軸 -->
+                                <div style="display: flex; flex-direction: column; align-items: center; width: 24px;">
+                                    <div style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;"
+                                         :style="approval.action === 'approved' ? 'background: #22c55e;' : (approval.action === 'rejected' ? 'background: #ef4444;' : 'background: #6b7280;')"></div>
+                                    <div x-show="idx < (formDetail?.approvals || []).length - 1" style="width: 2px; flex: 1; min-height: 40px; background: #e5e7eb;"></div>
+                                </div>
+                                <!-- 右側內容 -->
+                                <div style="flex: 1; padding-bottom: 24px;">
+                                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-weight: 600; font-size: 14px;" x-text="approval.approver_name"></span>
+                                                <span class="fc-badge"
+                                                      :class="approval.action === 'approved' ? 'fc-badge-completed' : (approval.action === 'rejected' ? 'fc-badge-error' : 'fc-badge-pending')"
+                                                      x-text="approval.action === 'approved' ? '核准' : (approval.action === 'rejected' ? '退回' : approval.action)"></span>
+                                            </div>
+                                            <span style="font-size: 12px; color: #6b7280;" x-text="approval.acted_at ? formatDate(approval.acted_at) : ''"></span>
+                                        </div>
+                                        <div x-show="approval.node_name" style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                                            關卡：<span x-text="approval.node_name"></span>
+                                        </div>
+                                        <div x-show="approval.comment" style="background: #f9fafb; padding: 12px; border-radius: 6px; font-size: 13px; color: #374151; white-space: pre-wrap;" x-text="approval.comment"></div>
+                                        <div x-show="!approval.comment" style="font-size: 12px; color: #9ca3af; font-style: italic;">（無意見）</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -871,7 +957,7 @@ function formCenterManager() {
         workflowTabs: [],
         activeWorkflowTab: null,
         workflowGraphCache: {},
-        monitorPage: 'overview',  // 'overview' | 'detail'
+        monitorPage: 'overview',  // 'overview' | 'detail' | 'formContent' | 'approvals'
         monitorData: null,        // logs API 資料
         logSearchQuery: '',       // 日誌搜尋
         monitorStatus: {
@@ -882,6 +968,11 @@ function formCenterManager() {
             waitingCount: 0,
             executionHistory: []
         },
+
+        // 表單詳情（歷史查看用）
+        formDetail: null,
+        loadingFormDetail: false,
+        formDetailViewer: null,
 
         // Toast
         toast: { show: false, message: '', type: 'success' },
@@ -1386,6 +1477,8 @@ function formCenterManager() {
             this.monitorPage = 'overview';
             this.monitorData = null;
             this.logSearchQuery = '';
+            this.formDetail = null;
+            this.loadingFormDetail = false;
             this.showMonitorModal = true;
 
             await this.$nextTick();
@@ -1689,8 +1782,100 @@ function formCenterManager() {
             this.monitorPage = 'overview';
             this.monitorData = null;
             this.logSearchQuery = '';
+            this.formDetail = null;
             this.showMonitorModal = false;
             this.monitoringExecution = null;
+
+            // 清理表單檢視器
+            if (this.formDetailViewer) {
+                this.formDetailViewer.destroy();
+                this.formDetailViewer = null;
+            }
+        },
+
+        // 切換到表單內容頁籤
+        async switchToFormContent() {
+            this.monitorPage = 'formContent';
+            if (!this.formDetail) {
+                await this.loadFormDetail();
+            } else {
+                // 已載入，重新渲染表單
+                this.$nextTick(() => this.renderFormViewer());
+            }
+        },
+
+        // 切換到簽核歷史頁籤
+        async switchToApprovalHistory() {
+            this.monitorPage = 'approvals';
+            if (!this.formDetail) {
+                await this.loadFormDetail();
+            }
+        },
+
+        // 載入表單詳情
+        async loadFormDetail() {
+            if (!this.monitoringExecution) return;
+
+            this.loadingFormDetail = true;
+            try {
+                const secureCode = this.monitoringExecution.secure_code;
+                const response = await fetch(`/api/form-center/form-detail/${secureCode}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    this.formDetail = result.data;
+                    console.log('表單詳情載入完成:', this.formDetail);
+
+                    // 如果在表單內容頁，渲染表單
+                    if (this.monitorPage === 'formContent') {
+                        this.$nextTick(() => this.renderFormViewer());
+                    }
+                } else {
+                    console.error('載入表單詳情失敗:', result.error);
+                    this.showToast('載入表單詳情失敗', 'error');
+                }
+            } catch (error) {
+                console.error('載入表單詳情錯誤:', error);
+                this.showToast('載入表單詳情錯誤', 'error');
+            } finally {
+                this.loadingFormDetail = false;
+            }
+        },
+
+        // 渲染表單檢視器（只讀）
+        renderFormViewer() {
+            if (!this.formDetail?.schema) {
+                console.warn('沒有表單 schema');
+                return;
+            }
+
+            const container = document.getElementById('formDetailViewer');
+            if (!container) {
+                console.warn('找不到表單容器');
+                return;
+            }
+
+            // 清理舊的實例
+            if (this.formDetailViewer) {
+                this.formDetailViewer.destroy();
+            }
+
+            // 建立只讀表單
+            Formio.createForm(container, this.formDetail.schema, {
+                readOnly: true,
+                viewAsHtml: false
+            }).then(form => {
+                this.formDetailViewer = form;
+
+                // 填入資料
+                if (this.formDetail.form_data) {
+                    form.submission = { data: this.formDetail.form_data };
+                }
+
+                console.log('表單檢視器已渲染');
+            }).catch(error => {
+                console.error('渲染表單失敗:', error);
+            });
         },
 
         toggleAutoRefresh() {
