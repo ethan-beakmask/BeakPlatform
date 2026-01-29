@@ -36,23 +36,19 @@ class ModuleMenuService:
     def register_module_menus(
         cls,
         module_name: str,
-        menu_items: List[Dict[str, Any]]
+        menu_items: List[Dict[str, Any]],
+        force: bool = False
     ) -> Dict[str, int]:
         """
         註冊模組的選單定義到資料庫
 
+        預設只建立缺少的選單，不覆蓋已存在的（保護管理員手動修改）。
+        使用 force=True 可強制覆蓋回模組定義。
+
         Args:
             module_name: 模組名稱
-            menu_items: 選單定義列表，每個選單為 dict:
-                - code: 選單代碼（必填）
-                - name: 選單名稱（必填）
-                - icon: 圖標（選填）
-                - url: 連結 URL（選填）
-                - parent: 父選單代碼（選填，None=根層級）
-                - sort_order: 排序（選填，預設 0）
-                - children: 子選單列表（選填）
-                - user_types: 允許的用戶類型（選填，預設所有人）
-                - required_permission: 需要的權限代碼（選填）
+            menu_items: 選單定義列表
+            force: 是否強制覆蓋已存在的選單
 
         Returns:
             {'created': n, 'updated': n, 'unchanged': n}
@@ -67,7 +63,8 @@ class ModuleMenuService:
             sub_result = cls._register_menu_item(
                 module_name=module_name,
                 menu_def=menu_def,
-                parent_secure_code=None
+                parent_secure_code=None,
+                force=force
             )
             result['created'] += sub_result['created']
             result['updated'] += sub_result['updated']
@@ -91,7 +88,8 @@ class ModuleMenuService:
         cls,
         module_name: str,
         menu_def: Dict[str, Any],
-        parent_secure_code: Optional[str]
+        parent_secure_code: Optional[str],
+        force: bool = False
     ) -> Dict[str, int]:
         """
         註冊單一選單項目（遞迴處理子選單）
@@ -100,6 +98,7 @@ class ModuleMenuService:
             module_name: 模組名稱
             menu_def: 選單定義
             parent_secure_code: 父選單 secure_code
+            force: 是否強制覆蓋已存在的選單
 
         Returns:
             {'created': n, 'updated': n, 'unchanged': n}
@@ -139,53 +138,57 @@ class ModuleMenuService:
             link_target = None
 
         if existing:
-            # 更新現有選單
-            changed = False
-
-            if existing.title != name:
-                existing.title = name
-                changed = True
-            if existing.icon != icon:
-                existing.icon = icon
-                changed = True
-            if existing.link_type != link_type:
-                existing.link_type = link_type
-                changed = True
-            if existing.link_target != link_target:
-                existing.link_target = link_target
-                changed = True
-            if existing.display_order != sort_order:
-                existing.display_order = sort_order
-                changed = True
-            if existing.is_expanded != is_expanded:
-                existing.is_expanded = is_expanded
-                changed = True
-            if existing.required_permission != required_permission:
-                existing.required_permission = required_permission
-                changed = True
-            if existing.parent_secure_code != parent_secure_code:
-                existing.parent_secure_code = parent_secure_code
-                # 重新計算深度
-                existing.depth = cls._calculate_depth(parent_secure_code)
-                changed = True
-            if not existing.is_active:
-                existing.is_active = True
-                changed = True
-
-            # 更新權限
-            current_perms = set(MenuService.get_menu_permissions(existing.secure_code))
-            new_perms = set(user_types)
-            if current_perms != new_perms:
-                MenuService.set_menu_permissions(existing.secure_code, list(user_types))
-                changed = True
-
-            if changed:
-                result['updated'] += 1
-                logger.debug(f"Updated menu: {code}")
-            else:
+            if not force:
+                # 非強制模式：保留管理員手動修改，跳過更新
                 result['unchanged'] += 1
+                menu_secure_code = existing.secure_code
+            else:
+                # 強制模式：覆蓋回模組定義
+                changed = False
 
-            menu_secure_code = existing.secure_code
+                if existing.title != name:
+                    existing.title = name
+                    changed = True
+                if existing.icon != icon:
+                    existing.icon = icon
+                    changed = True
+                if existing.link_type != link_type:
+                    existing.link_type = link_type
+                    changed = True
+                if existing.link_target != link_target:
+                    existing.link_target = link_target
+                    changed = True
+                if existing.display_order != sort_order:
+                    existing.display_order = sort_order
+                    changed = True
+                if existing.is_expanded != is_expanded:
+                    existing.is_expanded = is_expanded
+                    changed = True
+                if existing.required_permission != required_permission:
+                    existing.required_permission = required_permission
+                    changed = True
+                if existing.parent_secure_code != parent_secure_code:
+                    existing.parent_secure_code = parent_secure_code
+                    existing.depth = cls._calculate_depth(parent_secure_code)
+                    changed = True
+                if not existing.is_active:
+                    existing.is_active = True
+                    changed = True
+
+                # 更新權限
+                current_perms = set(MenuService.get_menu_permissions(existing.secure_code))
+                new_perms = set(user_types)
+                if current_perms != new_perms:
+                    MenuService.set_menu_permissions(existing.secure_code, list(user_types))
+                    changed = True
+
+                if changed:
+                    result['updated'] += 1
+                    logger.debug(f"Force updated menu: {code}")
+                else:
+                    result['unchanged'] += 1
+
+                menu_secure_code = existing.secure_code
 
         else:
             # 建立新選單
@@ -223,7 +226,8 @@ class ModuleMenuService:
             sub_result = cls._register_menu_item(
                 module_name=module_name,
                 menu_def=child_def,
-                parent_secure_code=menu_secure_code
+                parent_secure_code=menu_secure_code,
+                force=force
             )
             result['created'] += sub_result['created']
             result['updated'] += sub_result['updated']
@@ -246,12 +250,17 @@ class ModuleMenuService:
         return 0
 
     @classmethod
-    def sync_all_module_menus(cls, module_loader) -> Dict[str, Dict[str, int]]:
+    def sync_all_module_menus(
+        cls,
+        module_loader,
+        force: bool = False
+    ) -> Dict[str, Dict[str, int]]:
         """
         同步所有模組的選單
 
         Args:
             module_loader: ModuleLoader 實例
+            force: 是否強制覆蓋已存在的選單
 
         Returns:
             {module_name: {'created': n, 'updated': n, 'unchanged': n}}
@@ -263,7 +272,8 @@ class ModuleMenuService:
                 try:
                     result = cls.register_module_menus(
                         module.name,
-                        module.menu_items
+                        module.menu_items,
+                        force=force
                     )
                     results[module.name] = result
                 except Exception as e:

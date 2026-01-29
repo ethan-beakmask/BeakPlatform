@@ -174,14 +174,17 @@ def init_runtime(app):
 
     在應用啟動時被 module_loader 調用，用於啟動背景服務。
     """
+    import os
     import logging
     logger = logging.getLogger(__name__)
 
-    # 僅在非測試環境啟動執行器
-    if not app.config.get('TESTING', False):
+    # 僅在非測試環境且未使用獨立 executor 進程時啟動
+    if not app.config.get('TESTING', False) and not os.environ.get('EXECUTOR_STANDALONE'):
         try:
             from .services.workflow_executor import start_executor
-            start_executor()
-            logger.info('FormWorkflow: 工作流執行器已啟動')
+            start_executor(app=app)
+            logger.info('FormWorkflow: 工作流執行器已啟動（Flask 內建模式）')
         except Exception as e:
             logger.error(f'FormWorkflow: 啟動工作流執行器失敗: {str(e)}')
+    else:
+        logger.info('FormWorkflow: 工作流執行器由獨立進程管理')

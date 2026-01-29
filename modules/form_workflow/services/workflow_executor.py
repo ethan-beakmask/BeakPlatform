@@ -44,17 +44,24 @@ class WorkflowExecutor:
         self.app = None
         self.last_pending_poll = None
 
-    def start(self):
-        """啟動執行器"""
+    def start(self, app=None):
+        """
+        啟動執行器
+
+        Args:
+            app: Flask app 實例。如為 None 則自行建立（獨立進程模式）。
+        """
         if self.running:
             logger.warning('執行器已在運行中')
             return
 
         self.running = True
 
-        # 取得 Flask app
-        from app import create_app
-        self.app = create_app()
+        if app is not None:
+            self.app = app
+        else:
+            from app import create_app
+            self.app = create_app()
 
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
@@ -197,7 +204,7 @@ class WorkflowExecutor:
         cmd = [
             sys.executable,
             '-m', 'modules.form_workflow.services.node_runner',
-            '--queue-item-code', queue_item.secure_code
+            f'--queue-item-code={queue_item.secure_code}',
         ]
 
         logger.info(f'啟動 subprocess: {" ".join(cmd)}')
@@ -272,10 +279,14 @@ def get_executor() -> WorkflowExecutor:
     return _executor_instance
 
 
-def start_executor():
-    """啟動全域執行器"""
+def start_executor(app=None):
+    """啟動全域執行器
+
+    Args:
+        app: Flask app 實例。如為 None 則自行建立（獨立進程模式）。
+    """
     executor = get_executor()
-    executor.start()
+    executor.start(app=app)
 
 
 def stop_executor():

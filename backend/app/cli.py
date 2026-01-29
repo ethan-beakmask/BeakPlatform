@@ -92,14 +92,20 @@ def _print_menu_tree(items, indent=0):
 
 
 @module_cli.command('sync')
+@click.option('--force', is_flag=True, default=False,
+              help='強制覆蓋已存在的選單（會覆蓋管理員的手動修改）')
 @with_appcontext
-def sync_modules():
+def sync_modules(force):
     """同步所有模組（權限、選單）"""
     from .module_loader import module_loader
     from .services.module_permission_service import ModulePermissionService
     from .services.module_menu_service import ModuleMenuService
 
     click.echo("\n=== Syncing Modules ===\n")
+
+    if force:
+        click.echo(click.style("Force mode: 將覆蓋所有手動修改", fg="yellow"))
+        click.echo()
 
     # 同步權限
     click.echo("Syncing permissions...")
@@ -117,7 +123,7 @@ def sync_modules():
 
     # 同步選單
     click.echo("\nSyncing menus...")
-    menu_results = ModuleMenuService.sync_all_module_menus(module_loader)
+    menu_results = ModuleMenuService.sync_all_module_menus(module_loader, force=force)
     for mod_name, result in menu_results.items():
         if 'error' in result:
             click.echo(f"  {mod_name}: " + click.style(f"ERROR - {result['error']}", fg="red"))
