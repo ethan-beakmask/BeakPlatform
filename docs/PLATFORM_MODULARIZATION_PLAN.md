@@ -275,7 +275,11 @@ systemctl restart beakplatform
 
 **待辦**:
 - 完善表單流程模組功能
-- [ ] 驗證 WorkflowExecutor 背景服務正常運作（送出表單後流程自動推進）
+- [x] 驗證 WorkflowExecutor 背景服務正常運作（送出表單後流程自動推進）
+  - 2026-01-30 端對端測試通過
+  - 流程: Start → OpFieldRead → OpFieldWrite → FormAdapter(簽核) → Delay(20s) → End
+  - Executor 輪詢(5s)正常、subprocess 啟動正常、Delay 到期恢復正常
+  - Workflow COMPLETED、Form APPROVED
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定

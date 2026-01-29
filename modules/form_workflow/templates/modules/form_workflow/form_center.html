@@ -823,19 +823,19 @@
                     <div style="background: #f9fafb; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 24px; font-size: 12px;">
                         <div>
                             <span style="color: #6b7280;">單號：</span>
-                            <span style="font-family: monospace; font-weight: 500;" x-text="formDetail.serial_number"></span>
+                            <span style="font-family: monospace; font-weight: 500;" x-text="formDetail?.serial_number"></span>
                         </div>
                         <div>
                             <span style="color: #6b7280;">表單：</span>
-                            <span style="font-weight: 500;" x-text="formDetail.form_name"></span>
+                            <span style="font-weight: 500;" x-text="formDetail?.form_name"></span>
                         </div>
                         <div>
                             <span style="color: #6b7280;">申請人：</span>
-                            <span x-text="formDetail.applicant_name || '-'"></span>
+                            <span x-text="formDetail?.applicant_name || '-'"></span>
                         </div>
                         <div>
                             <span style="color: #6b7280;">送出時間：</span>
-                            <span x-text="formDetail.submitted_at ? formatDate(formDetail.submitted_at) : '-'"></span>
+                            <span x-text="formDetail?.submitted_at ? formatDate(formDetail.submitted_at) : '-'"></span>
                         </div>
                     </div>
                     <!-- 表單內容（只讀） -->
@@ -998,24 +998,21 @@ function formCenterManager() {
         },
 
         async refreshAll() {
-            try {
-                const [forms, approvals, tracking, signed, history, signedHist] = await Promise.all([
-                    fetch('/api/form-center/available-forms').then(r => r.json()),
-                    fetch('/api/form-center/pending-tasks').then(r => r.json()),
-                    fetch('/api/form-center/my-forms?status=RUNNING').then(r => r.json()),
-                    fetch('/api/form-center/my-forms?signed=1&status=RUNNING').then(r => r.json()),
-                    fetch('/api/form-center/my-forms?status=COMPLETED,ERROR').then(r => r.json()),
-                    fetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR').then(r => r.json())
-                ]);
-                if (forms.success) this.availableForms = forms.data || [];
-                if (approvals.success) this.pendingApprovals = approvals.data || [];
-                if (tracking.success) this.trackingList = tracking.data || [];
-                if (signed.success) this.signedList = signed.data || [];
-                if (history.success) this.historyList = history.data || [];
-                if (signedHist.success) this.signedHistoryList = signedHist.data || [];
-            } catch (e) {
-                console.error('自動刷新失敗:', e);
-            }
+            const safeFetch = (url) => fetch(url).then(r => r.json()).catch(() => null);
+            const [forms, approvals, tracking, signed, history, signedHist] = await Promise.all([
+                safeFetch('/api/form-center/available-forms'),
+                safeFetch('/api/form-center/pending-tasks'),
+                safeFetch('/api/form-center/my-forms?status=RUNNING'),
+                safeFetch('/api/form-center/my-forms?signed=1&status=RUNNING'),
+                safeFetch('/api/form-center/my-forms?status=COMPLETED,ERROR'),
+                safeFetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR')
+            ]);
+            if (forms?.success) this.availableForms = forms.data || [];
+            if (approvals?.success) this.pendingApprovals = approvals.data || [];
+            if (tracking?.success) this.trackingList = tracking.data || [];
+            if (signed?.success) this.signedList = signed.data || [];
+            if (history?.success) this.historyList = history.data || [];
+            if (signedHist?.success) this.signedHistoryList = signedHist.data || [];
         },
 
         // 計算屬性
