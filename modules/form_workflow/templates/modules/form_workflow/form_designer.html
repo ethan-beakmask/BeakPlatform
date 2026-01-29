@@ -913,8 +913,8 @@
                         </button>
                     </div>
                     <input type="number" class="form-control form-control-sm" style="width: 90px;"
-                           id="form-width-input" placeholder="自訂 px" min="300" max="2000" step="10">
-                    <span class="text-muted small ms-1">300~2000</span>
+                           id="form-width-input" placeholder="自訂 px" min="300" step="10">
+                    <span class="text-muted small ms-1">300+</span>
                 </div>
             </div>
 
@@ -1209,13 +1209,9 @@
 
             async loadGallery() {
                 const gallery = document.getElementById('bg-gallery');
-                if (!this.orgSecureCode) {
-                    gallery.innerHTML = '<div class="col-12 text-center text-muted py-3">無法取得組織資訊</div>';
-                    return;
-                }
 
                 try {
-                    const response = await fetch(`/org/${this.orgSecureCode}/forms/backgrounds`);
+                    const response = await fetch('/api/workflows/backgrounds');
                     const result = await response.json();
 
                     if (result.success && result.data.length > 0) {
@@ -1257,16 +1253,11 @@
                     return;
                 }
 
-                if (!this.orgSecureCode) {
-                    Toast.error('無法取得組織資訊');
-                    return;
-                }
-
                 const formData = new FormData();
                 formData.append('file', file);
 
                 try {
-                    const response = await fetch(`/org/${this.orgSecureCode}/forms/backgrounds/upload`, {
+                    const response = await fetch('/api/workflows/backgrounds/upload', {
                         method: 'POST',
                         body: formData
                     });
@@ -1806,6 +1797,11 @@
 
         // 表單寬度設定功能
         function setFormWidth(width) {
+            // 相容舊資料：null 視為瀏覽器寬度
+            if (width === null || width === undefined) {
+                width = document.documentElement.clientWidth;
+            }
+
             console.log('📐 設定表單寬度:', width);
             currentFormWidth = width;
 
@@ -1819,10 +1815,10 @@
                 document.head.appendChild(styleEl);
             }
 
-            if (width === null) {
-                // 全寬模式 - 移除寬度限制樣式
+            const browserWidth = document.documentElement.clientWidth;
+            if (width >= browserWidth) {
+                // 全寬模式 - 寬度等於或大於瀏覽器寬度，不限制
                 styleEl.textContent = '';
-                widthInput.value = '';
             } else {
                 // 限制寬度模式 - 對 .formarea 本身設定寬度（讓它成為畫布）
                 styleEl.textContent = `
@@ -1834,14 +1830,14 @@
                         min-height: 400px;
                     }
                 `;
-                widthInput.value = width;
             }
+            widthInput.value = width;
 
             // 更新按鈕狀態
             document.querySelectorAll('#btn-width-narrow, #btn-width-wide, #btn-width-full').forEach(btn => {
                 btn.classList.remove('active');
             });
-            if (width === null) {
+            if (width >= browserWidth) {
                 document.getElementById('btn-width-full').classList.add('active');
             } else if (width === WIDTH_PRESETS.narrow) {
                 document.getElementById('btn-width-narrow').classList.add('active');
@@ -1856,17 +1852,23 @@
         // 綁定寬度設定按鈕和輸入框
         document.getElementById('btn-width-narrow').addEventListener('click', () => setFormWidth(WIDTH_PRESETS.narrow));
         document.getElementById('btn-width-wide').addEventListener('click', () => setFormWidth(WIDTH_PRESETS.wide));
-        document.getElementById('btn-width-full').addEventListener('click', () => setFormWidth(null));
+        document.getElementById('btn-width-full').addEventListener('click', () => {
+            // 取得瀏覽器可用寬度作為表單寬度
+            const browserWidth = document.documentElement.clientWidth;
+            setFormWidth(browserWidth);
+        });
         document.getElementById('form-width-input').addEventListener('change', (e) => {
             const value = parseInt(e.target.value);
-            if (value && value >= 300 && value <= 2000) {
+            if (value && value >= 300) {
                 setFormWidth(value);
             } else if (!e.target.value) {
-                setFormWidth(null);
+                // 清空輸入框時，使用瀏覽器寬度
+                const browserWidth = document.documentElement.clientWidth;
+                setFormWidth(browserWidth);
             }
         });
 
-        // 無限模式時點擊輸入框，預設值設為 1400
+        // 點擊輸入框時，若無值則預設 1400
         document.getElementById('form-width-input').addEventListener('focus', (e) => {
             if (!e.target.value) {
                 e.target.value = 1400;

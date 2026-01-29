@@ -333,6 +333,7 @@ def submit_form():
             form_code = form_template.code
             form_version = form_template.version
             form_schema = form_template.schema
+            form_builder_config = form_template.builder_config
             workflow_name = workflow_template.name
             workflow_version = workflow_template.revision
             workflow_graph = workflow_template.graph or workflow_template.cytoscape_config or {}
@@ -374,6 +375,7 @@ def submit_form():
             form_code = form_snapshot.get('code')
             form_version = published.source_form_version
             form_schema = form_snapshot.get('schema')
+            form_builder_config = form_snapshot.get('builder_config')
             workflow_name = workflow_snapshot.get('name')
             workflow_version = published.source_workflow_version
             workflow_graph = workflow_snapshot.get('graph') or workflow_snapshot.get('cytoscape_config') or {}
@@ -418,6 +420,7 @@ def submit_form():
             applicant_dept=getattr(current_user, 'department_name', None),
             form_data=form_data,
             schema_snapshot=form_schema,
+            builder_config=form_builder_config,
             status='INITIAL',
             source_type='WEB',
             source_ip=request.remote_addr,
@@ -731,6 +734,7 @@ def get_pending_task(secure_code):
             'form_name': form_instance.form_name if form_instance else None,
             'serial_number': form_instance.serial_number if form_instance else None,
             'applicant_name': form_instance.applicant_name if form_instance else None,
+            'builder_config': form_instance.builder_config if form_instance else None,
             'available_paths': available_paths,
             'selection_mode': selection_mode,
             'allow_comment': allow_comment,

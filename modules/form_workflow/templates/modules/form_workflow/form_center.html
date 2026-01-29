@@ -91,10 +91,21 @@
     .fc-close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; }
     .fc-close-btn:hover { color: #1f2937; }
 
+    /* 底圖支援 */
+    .has-background { position: relative; }
+    .has-background::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none; z-index: 0;
+    }
+    .has-background > * { position: relative; z-index: 1; }
+
     /* 唯讀表單樣式（僅針對特定容器內的 Form.io 元素） */
     #formDetailViewer .formio-component input,
     #formDetailViewer .formio-component textarea,
     #formDetailViewer .formio-component select,
+    #read-form-container .formio-component input,
+    #read-form-container .formio-component textarea,
+    #read-form-container .formio-component select,
     #approval-form-container .formio-component input,
     #approval-form-container .formio-component textarea,
     #approval-form-container .formio-component select {
@@ -102,6 +113,7 @@
         pointer-events: none;
     }
     #formDetailViewer .formio-component button[type="submit"],
+    #read-form-container .formio-component button[type="submit"],
     #approval-form-container .formio-component button[type="submit"] {
         display: none !important;
     }
@@ -326,9 +338,12 @@
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
-                                    <td>
+                                    <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
                                 </tr>
@@ -359,9 +374,12 @@
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
-                                    <td>
+                                    <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
                                 </tr>
@@ -411,9 +429,12 @@
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.completed_at || item.ended_at)"></td>
-                                    <td>
+                                    <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
                                 </tr>
@@ -444,9 +465,12 @@
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
-                                    <td>
+                                    <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
                                 </tr>
@@ -887,6 +911,64 @@
         </div>
     </div>
 
+    <!-- 閱讀表單 Modal -->
+    <div x-show="showReadFormModal" x-cloak class="fc-modal">
+        <div class="fc-modal-content" :style="'width: ' + (readFormData?.builder_config?.formWidth ? Math.max(readFormData.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+            <div class="fc-modal-header">
+                <div>
+                    <h3 x-text="'閱讀表單 - ' + (readFormData?.form_name || '')"></h3>
+                    <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="readFormData?.serial_number ? getShortSerial(readFormData.serial_number) : ''"></p>
+                </div>
+                <button class="fc-close-btn" @click="closeReadForm()">&times;</button>
+            </div>
+            <div class="fc-modal-body">
+                <div x-show="loadingReadForm" class="fc-loading">載入表單中...</div>
+                <div x-show="!loadingReadForm && readFormData">
+                    <!-- 申請人資訊 -->
+                    <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+                        <span>申請人：<strong x-text="readFormData?.applicant_name || '-'"></strong></span>
+                        <span x-show="readFormData?.applicant_dept" style="margin-left: 16px;">部門：<strong x-text="readFormData?.applicant_dept || '-'"></strong></span>
+                        <span style="margin-left: 16px;">狀態：<span class="fc-badge" :class="getStatusClass(readFormData?.status)" x-text="getStatusText(readFormData?.status)"></span></span>
+                    </div>
+
+                    <!-- 表單內容（唯讀） -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;">
+                            <div id="read-form-container" class="fc-form-readonly"></div>
+                        </div>
+                    </div>
+
+                    <!-- 簽核歷程 -->
+                    <div x-show="readFormData?.approvals?.length > 0" style="margin-top: 16px;">
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">簽核歷程</div>
+                        <template x-for="(approval, idx) in readFormData?.approvals || []" :key="idx">
+                            <div style="display: flex; gap: 12px; margin-bottom: 8px; padding: 10px; background: #f9fafb; border-radius: 4px; font-size: 12px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; width: 16px;">
+                                    <div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"
+                                         :style="approval.action === 'approved' ? 'background: #22c55e;' : (approval.action === 'rejected' ? 'background: #ef4444;' : 'background: #6b7280;')"></div>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <strong x-text="approval.approver_name"></strong>
+                                        <span class="fc-badge"
+                                              :class="approval.action === 'approved' ? 'fc-badge-completed' : (approval.action === 'rejected' ? 'fc-badge-error' : 'fc-badge-pending')"
+                                              x-text="approval.action === 'approved' ? '核准' : (approval.action === 'rejected' ? '退回' : approval.action)"></span>
+                                        <span style="color: #6b7280; margin-left: auto;" x-text="approval.acted_at ? formatDate(approval.acted_at) : ''"></span>
+                                    </div>
+                                    <div x-show="approval.node_name" style="color: #6b7280; margin-bottom: 2px;">關卡：<span x-text="approval.node_name"></span></div>
+                                    <div x-show="approval.comment" style="color: #374151; white-space: pre-wrap;" x-text="approval.comment"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <div class="fc-modal-footer">
+                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeReadForm()">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div x-show="toast.show" x-cloak class="fc-toast" :class="'fc-toast-' + toast.type" x-text="toast.message"></div>
 
@@ -974,6 +1056,12 @@ function formCenterManager() {
         loadingFormDetail: false,
         formDetailViewer: null,
 
+        // 閱讀表單
+        showReadFormModal: false,
+        readFormData: null,
+        readFormInstance: null,
+        loadingReadForm: false,
+
         // Toast
         toast: { show: false, message: '', type: 'success' },
 
@@ -991,7 +1079,7 @@ function formCenterManager() {
 
             // 每 5 秒自動刷新（僅在沒開啟模態框時）
             this.autoRefreshInterval = setInterval(() => {
-                if (!this.showFillModal && !this.showApprovalModal) {
+                if (!this.showFillModal && !this.showApprovalModal && !this.showReadFormModal) {
                     this.refreshAll();
                 }
             }, 5000);
@@ -1228,6 +1316,9 @@ function formCenterManager() {
                     readOnly: false
                 });
 
+                // 套用底圖和寬度
+                this.applyFormBackground('form-fill-container', this.selectedForm?.builder_config);
+
                 console.log('表單渲染成功');
             } catch (e) {
                 console.error('表單渲染失敗:', e);
@@ -1240,6 +1331,7 @@ function formCenterManager() {
                 this.formInstance.destroy();
                 this.formInstance = null;
             }
+            this.cleanupFormBackground('form-fill-container');
             const container = document.getElementById('form-fill-container');
             if (container) container.innerHTML = '';
 
@@ -1344,6 +1436,9 @@ function formCenterManager() {
                 if (formData) {
                     this.approvalFormInstance.submission = { data: formData };
                 }
+
+                // 套用底圖和寬度
+                this.applyFormBackground('approval-form-container', this.currentApproval?.builder_config);
             } catch (e) {
                 console.error('簽核表單渲染失敗:', e);
                 container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
@@ -1355,6 +1450,7 @@ function formCenterManager() {
                 this.approvalFormInstance.destroy();
                 this.approvalFormInstance = null;
             }
+            this.cleanupFormBackground('approval-form-container');
             const container = document.getElementById('approval-form-container');
             if (container) container.innerHTML = '';
 
@@ -1788,6 +1884,7 @@ function formCenterManager() {
                 this.formDetailViewer.destroy();
                 this.formDetailViewer = null;
             }
+            this.cleanupFormBackground('formDetailViewer');
         },
 
         // 切換到表單內容頁籤
@@ -1869,6 +1966,9 @@ function formCenterManager() {
                     form.submission = { data: this.formDetail.form_data };
                 }
 
+                // 套用底圖和寬度
+                this.applyFormBackground('formDetailViewer', this.formDetail.builder_config);
+
                 console.log('表單檢視器已渲染');
             }).catch(error => {
                 console.error('渲染表單失敗:', error);
@@ -1910,6 +2010,174 @@ function formCenterManager() {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
             return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        },
+
+        // =============================================================
+        // 統一底圖/寬度渲染
+        // =============================================================
+
+        applyFormBackground(containerId, builderConfig) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // 套用寬度
+            const formWidth = builderConfig?.formWidth;
+            if (formWidth) {
+                container.style.maxWidth = formWidth + 'px';
+                container.style.margin = '0 auto';
+            }
+
+            // 套用底圖
+            const bgConfig = builderConfig?.background;
+            if (!bgConfig || !bgConfig.url) return;
+
+            const opacity = (bgConfig.opacity || 30) / 100;
+            const fit = bgConfig.fit || 'contain';
+            const position = bgConfig.position || 'center center';
+            const isTile = fit === 'tile';
+            const isTileOffset = fit === 'tile-offset';
+
+            container.classList.add('has-background');
+
+            // 移除舊的動態 style
+            let styleEl = document.getElementById(containerId + '-bg-style');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = containerId + '-bg-style';
+                document.head.appendChild(styleEl);
+            }
+
+            if (isTileOffset) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const w = img.width;
+                    const h = img.height;
+                    const halfW = Math.floor(w / 2);
+
+                    canvas.width = w;
+                    canvas.height = h * 2;
+
+                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, halfW, 0, w - halfW, h, 0, h, w - halfW, h);
+                    ctx.drawImage(img, 0, 0, halfW, h, w - halfW, h, halfW, h);
+
+                    const dataUrl = canvas.toDataURL('image/png');
+                    styleEl.textContent = `
+                        #${containerId}.has-background::before {
+                            background-image: url(${dataUrl});
+                            background-repeat: repeat;
+                            background-size: auto;
+                            opacity: ${opacity};
+                        }
+                    `;
+                };
+                img.src = bgConfig.url;
+            } else {
+                const bgSize = isTile ? 'auto' : fit;
+                const bgRepeat = isTile ? 'repeat' : 'no-repeat';
+                styleEl.textContent = `
+                    #${containerId}.has-background::before {
+                        background-image: url(${bgConfig.url});
+                        background-repeat: ${bgRepeat};
+                        background-size: ${bgSize};
+                        background-position: ${position};
+                        opacity: ${opacity};
+                    }
+                `;
+            }
+        },
+
+        cleanupFormBackground(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.classList.remove('has-background');
+                container.style.maxWidth = '';
+                container.style.margin = '';
+            }
+            const styleEl = document.getElementById(containerId + '-bg-style');
+            if (styleEl) styleEl.remove();
+        },
+
+        // =============================================================
+        // 閱讀表單
+        // =============================================================
+
+        async openReadForm(item) {
+            this.readFormData = null;
+            this.showReadFormModal = true;
+            this.loadingReadForm = true;
+
+            try {
+                const secureCode = item.secure_code;
+                const response = await fetch(`/api/form-center/form-detail/${secureCode}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    this.readFormData = result.data;
+                    await this.$nextTick();
+                    this.renderReadForm();
+                } else {
+                    this.showToast(result.error || '載入失敗', 'error');
+                    this.closeReadForm();
+                }
+            } catch (e) {
+                console.error('載入閱讀表單失敗:', e);
+                this.showToast('載入失敗', 'error');
+                this.closeReadForm();
+            } finally {
+                this.loadingReadForm = false;
+            }
+        },
+
+        async renderReadForm() {
+            const container = document.getElementById('read-form-container');
+            if (!container || !this.readFormData) return;
+
+            const schema = this.readFormData.schema;
+            const formData = this.readFormData.form_data;
+
+            if (!schema) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
+                return;
+            }
+
+            try {
+                if (this.readFormInstance) {
+                    this.readFormInstance.destroy();
+                    this.readFormInstance = null;
+                }
+
+                this.readFormInstance = await Formio.createForm(container, schema, {
+                    readOnly: true,
+                    renderMode: 'html'
+                });
+
+                if (formData) {
+                    this.readFormInstance.submission = { data: formData };
+                }
+
+                // 套用底圖和寬度
+                this.applyFormBackground('read-form-container', this.readFormData.builder_config);
+            } catch (e) {
+                console.error('閱讀表單渲染失敗:', e);
+                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
+            }
+        },
+
+        closeReadForm() {
+            if (this.readFormInstance) {
+                this.readFormInstance.destroy();
+                this.readFormInstance = null;
+            }
+            this.cleanupFormBackground('read-form-container');
+            const container = document.getElementById('read-form-container');
+            if (container) container.innerHTML = '';
+
+            this.showReadFormModal = false;
+            this.readFormData = null;
         }
     };
 }
