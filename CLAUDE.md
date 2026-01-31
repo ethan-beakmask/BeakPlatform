@@ -140,6 +140,26 @@ git push origin main
 
 ---
 
+## 📦 模組靜態檔案規範
+
+模組的 JS/CSS/圖片等靜態資源由 `module_loader.py` 自動註冊 serve。
+
+**目錄結構：**
+```
+modules/<module_name>/static/modules/<module_name>/
+  ├── js/           # JavaScript
+  ├── css/          # 樣式表
+  └── icons/        # 圖示
+```
+
+**存取 URL：** `/static/modules/<module_name>/js/xxx.js`
+
+**禁止** 將模組靜態檔案複製到 `backend/app/static/`。
+`backend/app/static/` 只放平台級資源（themes.css、vendor/、auth.js 等）。
+模組資源一律放在 `modules/<name>/static/` 下，由 module_loader 自動 serve。
+
+---
+
 ## 🚫 禁止事項
 
 1. **禁止** 繞過認證攔截器
@@ -148,6 +168,7 @@ git push origin main
 4. **禁止** 硬編碼密鑰/密碼
 5. **禁止** SQL 字串拼接
 6. **禁止** 在平台內實作業務功能（應透過模組）
+7. **禁止** 將模組靜態檔案複製到 `backend/app/static/`（會造成雙份不同步）
 
 ---
 

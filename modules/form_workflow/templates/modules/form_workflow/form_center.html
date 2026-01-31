@@ -608,10 +608,15 @@
                     <!-- 簽核意見 -->
                     <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;">
                         <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">
-                            簽核意見 <span x-show="currentApproval?.require_comment" style="color: #dc2626;">*</span>
+                            簽核意見 <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
                         </label>
                         <textarea x-model="approvalComment" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; resize: vertical; box-sizing: border-box;"
                                   placeholder="輸入簽核意見..."></textarea>
+                        <div x-show="(currentApproval?.min_comment_length || 0) > 0" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #6b7280;">
+                            <span>最少 <span x-text="currentApproval?.min_comment_length"></span> 字</span>
+                            <span :style="approvalComment.trim().length < (currentApproval?.min_comment_length || 0) ? 'color: #dc2626;' : 'color: #16a34a;'"
+                                  x-text="approvalComment.trim().length + ' / ' + (currentApproval?.min_comment_length || 0)"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1527,8 +1532,9 @@ function formCenterManager() {
         async submitApproval() {
             if (this.selectedEdges.length === 0 || this.submittingApproval) return;
 
-            if (this.currentApproval?.require_comment && !this.approvalComment.trim()) {
-                this.showToast('請填寫簽核意見', 'warning');
+            const minLen = this.currentApproval?.min_comment_length || 0;
+            if (minLen > 0 && this.approvalComment.trim().length < minLen) {
+                this.showToast(`簽核意見至少需要 ${minLen} 字`, 'warning');
                 return;
             }
 

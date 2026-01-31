@@ -720,6 +720,7 @@ def get_pending_task(secure_code):
     selection_mode = result_data.get('selection_mode', 'single')
     allow_comment = result_data.get('allow_comment', True)
     require_comment = result_data.get('require_comment', False)
+    min_comment_length = result_data.get('min_comment_length', 1 if require_comment else 0)
 
     # 取得簽核歷程
     approvals = []
@@ -756,6 +757,7 @@ def get_pending_task(secure_code):
             'selection_mode': selection_mode,
             'allow_comment': allow_comment,
             'require_comment': require_comment,
+            'min_comment_length': min_comment_length,
             'approvals': approvals,
         }
     })

@@ -39,7 +39,7 @@ def _get_default_graph():
                 "id": "node-Start",
                 "label": "開始",
                 "type": "Start",
-                "icon": "/static/icons/workflow/start.svg",
+                "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": -175, "y": -50}
@@ -48,7 +48,7 @@ def _get_default_graph():
                 "id": "node-End",
                 "label": "結束",
                 "type": "End",
-                "icon": "/static/icons/workflow/end.svg",
+                "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": 875, "y": 350}
@@ -66,7 +66,7 @@ def _get_node_definitions():
             "node_type": "Start",
             "display_name": "開始",
             "description": "流程的起點",
-            "icon": "/static/icons/workflow/start.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
             "category": "基本",
             "config_schema": {},
             "is_active": True
@@ -75,7 +75,7 @@ def _get_node_definitions():
             "node_type": "End",
             "display_name": "結束",
             "description": "流程的終點",
-            "icon": "/static/icons/workflow/end.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
             "category": "基本",
             "config_schema": {},
             "is_active": True
@@ -84,7 +84,7 @@ def _get_node_definitions():
             "node_type": "FormAdapter",
             "display_name": "簽核",
             "description": "表單簽核節點",
-            "icon": "/static/icons/workflow/form.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/form.svg",
             "category": "表單",
             "config_schema": {
                 "assigneeType": "string",
@@ -97,7 +97,7 @@ def _get_node_definitions():
             "node_type": "Delay",
             "display_name": "暫停",
             "description": "延遲執行指定時間",
-            "icon": "/static/icons/workflow/delay.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/delay.svg",
             "category": "控制",
             "config_schema": {
                 "delay_seconds": "number"
@@ -108,7 +108,7 @@ def _get_node_definitions():
             "node_type": "Branch",
             "display_name": "條件分支",
             "description": "根據條件選擇路徑",
-            "icon": "/static/icons/workflow/branch.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/branch.svg",
             "category": "控制",
             "config_schema": {},
             "is_active": True
@@ -117,7 +117,7 @@ def _get_node_definitions():
             "node_type": "Converge",
             "display_name": "匯合",
             "description": "等待多條路徑匯合",
-            "icon": "/static/icons/workflow/converge.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/converge.svg",
             "category": "控制",
             "config_schema": {
                 "mode": "string"
@@ -128,7 +128,7 @@ def _get_node_definitions():
             "node_type": "Telegram",
             "display_name": "Telegram 通知",
             "description": "發送 Telegram 訊息",
-            "icon": "/static/icons/workflow/telegram.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/telegram.svg",
             "category": "通知",
             "config_schema": {
                 "message": "string",
@@ -140,7 +140,7 @@ def _get_node_definitions():
             "node_type": "EmailAdapter",
             "display_name": "Email 通知",
             "description": "發送 Email",
-            "icon": "/static/icons/workflow/email.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/email.svg",
             "category": "通知",
             "config_schema": {
                 "to": "string",
@@ -153,7 +153,7 @@ def _get_node_definitions():
             "node_type": "SubFlow",
             "display_name": "子流程",
             "description": "呼叫其他工作流程",
-            "icon": "/static/icons/workflow/subflow.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/subflow.svg",
             "category": "控制",
             "config_schema": {
                 "childFlowId": "string"
@@ -164,7 +164,7 @@ def _get_node_definitions():
             "node_type": "OpSet",
             "display_name": "設定變數",
             "description": "設定流程變數值",
-            "icon": "/static/icons/workflow/settings.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/settings.svg",
             "category": "變數",
             "config_schema": {
                 "variables": "array"
@@ -175,7 +175,7 @@ def _get_node_definitions():
             "node_type": "OpFieldRead",
             "display_name": "讀取欄位",
             "description": "從表單讀取欄位到變數",
-            "icon": "/static/icons/workflow/form-read.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/form-read.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -186,7 +186,7 @@ def _get_node_definitions():
             "node_type": "OpFieldWrite",
             "display_name": "寫入欄位",
             "description": "將變數寫入表單欄位",
-            "icon": "/static/icons/workflow/form-write.svg",
+            "icon": "/static/modules/form_workflow/icons/workflow/form-write.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -954,22 +954,24 @@ def variable_mapping():
 # 組織樹 API（用於選擇簽核人）
 # =============================================================================
 
-@workflows_bp.route('/org-tree')
+@workflows_bp.route('/data/org-tree')
 @login_required
 def get_org_tree():
     """取得組織架構樹（用於選擇簽核人）"""
-    from app.models.department import Department
+    from app.models.organizational_unit import OrganizationalUnit, UnitType
     from app.models.user import User
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    # 取得部門
-    departments = Department.query.filter_by(
+    # 取得部門（只取 DEPARTMENT 類型）
+    departments = OrganizationalUnit.query.filter_by(
         org_secure_code=org.secure_code,
-        is_deleted=False
-    ).all()
+        unit_type=UnitType.DEPARTMENT,
+        is_deleted=False,
+        is_active=True
+    ).order_by(OrganizationalUnit.sort_order.asc()).all()
 
     # 取得用戶
     users = User.query.filter_by(
@@ -988,8 +990,8 @@ def get_org_tree():
                     'secure_code': dept.secure_code,
                     'children': build_tree(dept.secure_code)
                 }
-                # 添加該部門的用戶
-                dept_users = [u for u in users if u.department_secure_code == dept.secure_code]
+                # 添加該部門的用戶（透過 primary_unit_secure_code）
+                dept_users = [u for u in users if u.primary_unit_secure_code == dept.secure_code]
                 for user in dept_users:
                     node['children'].append({
                         'id': f'user_{user.secure_code}',
@@ -1001,6 +1003,24 @@ def get_org_tree():
         return result
 
     tree = build_tree(None)
+
+    # 未歸屬部門的用戶
+    assigned_codes = {u.primary_unit_secure_code for u in users if u.primary_unit_secure_code}
+    dept_codes = {d.secure_code for d in departments}
+    unassigned = [u for u in users if not u.primary_unit_secure_code or u.primary_unit_secure_code not in dept_codes]
+    if unassigned:
+        tree.append({
+            'id': 'dept_unassigned',
+            'text': '(未歸屬部門)',
+            'type': 'department',
+            'secure_code': '',
+            'children': [{
+                'id': f'user_{u.secure_code}',
+                'text': u.display_name or u.username,
+                'type': 'user',
+                'secure_code': u.secure_code
+            } for u in unassigned]
+        })
 
     return jsonify({
         'success': True,

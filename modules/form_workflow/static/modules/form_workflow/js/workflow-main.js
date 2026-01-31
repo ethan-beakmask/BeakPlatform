@@ -2479,11 +2479,25 @@
             return hasUnsavedChanges;
         }
 
+        // 更新儲存按鈕狀態（反映未儲存變更）
+        function updateSaveButtonState() {
+            const saveBtn = document.getElementById('btn-save-workflow');
+            if (!saveBtn) return;
+            if (hasUnsavedChanges) {
+                saveBtn.style.outline = '2px solid #f59e0b';
+                saveBtn.title = '有未儲存的變更';
+            } else {
+                saveBtn.style.outline = '';
+                saveBtn.title = '';
+            }
+        }
+
         // 更新初始狀態（在儲存後調用）
         function updateInitialState() {
             if (cy) {
                 initialGraphState = JSON.stringify(cy.json());
                 hasUnsavedChanges = false;
+                updateSaveButtonState();
             }
         }
 
@@ -2995,7 +3009,7 @@
                     id: 'node-Start',
                     label: 'Start',
                     type: 'Start',
-                    icon: '/static/icons/workflow/start.svg',
+                    icon: '/static/modules/form_workflow/icons/workflow/start.svg',
                     config: {},
                     description: '',
                     position: { x: -175, y: -50 }
@@ -3015,7 +3029,7 @@
                     id: 'node-End',
                     label: 'End',
                     type: 'End',
-                    icon: '/static/icons/workflow/end.svg',
+                    icon: '/static/modules/form_workflow/icons/workflow/end.svg',
                     config: {},
                     description: '',
                     position: { x: 875, y: 350 }
@@ -3887,7 +3901,10 @@
                 const assigneeListConfig = currentConfig.assignee_list || [];
                 const selectionMode = currentConfig.selection_mode || 'single';
                 const allowComment = currentConfig.allow_comment !== false;
-                const requireComment = currentConfig.require_comment === true;
+                // 向後相容：若無 min_comment_length 但有 require_comment=true，視為 1
+                const minCommentLength = currentConfig.min_comment_length !== undefined
+                    ? parseInt(currentConfig.min_comment_length) || 0
+                    : (currentConfig.require_comment === true ? 1 : 0);
 
                 // 從 config 恢復已選擇的簽核者列表
                 restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
@@ -3984,13 +4001,16 @@
                         <div style="margin-bottom: 15px; border-top: 1px solid #eee; padding-top: 15px;">
                             <strong>備註設定：</strong><br>
                             <label style="display: flex; align-items: center; margin-top: 8px; cursor: pointer;">
-                                <input type="checkbox" id="formAdapterAllowComment" ${allowComment ? 'checked' : ''} style="margin-right: 8px;">
+                                <input type="checkbox" id="formAdapterAllowComment" ${allowComment ? 'checked' : ''} style="margin-right: 8px;"
+                                       onchange="document.getElementById('minCommentLengthRow').style.display = this.checked ? 'flex' : 'none';">
                                 顯示備註欄位
                             </label>
-                            <label style="display: flex; align-items: center; margin-top: 8px; cursor: pointer;">
-                                <input type="checkbox" id="formAdapterRequireComment" ${requireComment ? 'checked' : ''} style="margin-right: 8px;">
-                                備註為必填
-                            </label>
+                            <div id="minCommentLengthRow" style="display: ${allowComment ? 'flex' : 'none'}; align-items: center; margin-top: 8px; gap: 8px;">
+                                <span style="white-space: nowrap;">最少字數：</span>
+                                <input type="number" id="formAdapterMinCommentLength" value="${minCommentLength}" min="0" max="500" step="1"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
+                                <span style="font-size: 11px; color: #999;">0 = 不需留言</span>
+                            </div>
                         </div>
 
                         <button class="btn-primary" onclick="applyFormAdapterConfig('${nodeId}')" style="width: 100%;">
@@ -6548,7 +6568,7 @@
 
             orgTreeLoading = true;
             try {
-                const response = await fetch('/api/workflows/org-tree');
+                const response = await fetch('/api/workflows/data/org-tree');
                 const result = await response.json();
                 if (result.success) {
                     orgTreeData = result.data;
@@ -6803,7 +6823,7 @@
             const selectionModeRadio = document.querySelector('input[name="selectionMode"]:checked');
             const selectionMode = selectionModeRadio?.value || 'single';
             const allowComment = document.getElementById('formAdapterAllowComment')?.checked !== false;
-            const requireComment = document.getElementById('formAdapterRequireComment')?.checked === true;
+            const minCommentLength = parseInt(document.getElementById('formAdapterMinCommentLength')?.value) || 0;
 
             // 驗證
             if (assigneeType !== 'INITIATOR' && !assigneeValue.trim()) {
@@ -6821,7 +6841,7 @@
                 assignee_list: assigneeList,  // 多用戶詳細列表
                 selection_mode: selectionMode,
                 allow_comment: allowComment,
-                require_comment: requireComment
+                min_comment_length: minCommentLength
             };
 
             node.data('config', updatedConfig);

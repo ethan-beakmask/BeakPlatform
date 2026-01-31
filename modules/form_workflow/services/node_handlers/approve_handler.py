@@ -18,7 +18,7 @@ class ApproveHandler(BaseNodeHandler):
     - assignee_value: 簽核者值
     - selection_mode: 選擇模式 (single/multiple)
     - allow_comment: 是否允許備註
-    - require_comment: 是否強制備註
+    - min_comment_length: 最少意見字數 (0=不需要, >0=必須輸入指定字數)
     """
 
     def validate(self) -> bool:
@@ -49,7 +49,11 @@ class ApproveHandler(BaseNodeHandler):
         assignee_value = self.get_config_value('assignee_value', '')
         selection_mode = self.get_config_value('selection_mode', 'single')
         allow_comment = self.get_config_value('allow_comment', True)
-        require_comment = self.get_config_value('require_comment', False)
+        # 向後相容：若無 min_comment_length 但有 require_comment=True，視為 1
+        min_comment_length = self.get_config_value('min_comment_length', None)
+        if min_comment_length is None:
+            min_comment_length = 1 if self.get_config_value('require_comment', False) else 0
+        min_comment_length = int(min_comment_length)
 
         # 取得可選路徑
         available_paths = self._get_available_paths()
@@ -79,7 +83,8 @@ class ApproveHandler(BaseNodeHandler):
                 'assignees': assignees,
                 'selection_mode': selection_mode,
                 'allow_comment': allow_comment,
-                'require_comment': require_comment,
+                'min_comment_length': min_comment_length,
+                'require_comment': min_comment_length > 0,
                 'available_paths': available_paths,
                 'waiting_since': datetime.utcnow().isoformat()
             }

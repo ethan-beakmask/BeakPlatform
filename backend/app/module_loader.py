@@ -9,6 +9,12 @@ BeakPlatform - Module Loader
 4. 註冊模組的 Blueprint
 5. 註冊模組的選單項目
 6. 執行模組的資料庫遷移
+7. 註冊模組的靜態檔案目錄
+
+靜態檔案規範：
+  模組的靜態資源必須放在 modules/<name>/static/modules/<name>/ 目錄下，
+  由 module_loader 自動註冊，透過 /static/modules/<name>/ URL 存取。
+  禁止將模組靜態檔案複製到 backend/app/static/，避免雙份副本不同步。
 """
 import os
 import importlib
@@ -17,7 +23,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from flask import Flask
+from flask import Flask, Blueprint
 
 logger = logging.getLogger(__name__)
 
@@ -301,10 +307,18 @@ class ModuleLoader:
             pass
 
         # 註冊靜態檔案目錄
-        static_path = module.path / 'static'
+        # 模組靜態檔案結構：modules/<name>/static/modules/<name>/{js,css,icons}/
+        # 對應 URL：/static/modules/<name>/{js,css,icons}/
+        static_path = module.path / 'static' / 'modules' / module.name
         if static_path.exists():
-            # 可以透過 Blueprint 的 static_folder 處理
-            pass
+            static_bp = Blueprint(
+                f'{module.name}_static',
+                module.name,
+                static_folder=str(static_path),
+                static_url_path=f'/static/modules/{module.name}'
+            )
+            self.app.register_blueprint(static_bp)
+            logger.info(f"Registered static files for {module.name}: /static/modules/{module.name}/")
 
         # 調用模組運行時初始化 hook（用於啟動背景服務等）
         self._call_init_runtime(module)
