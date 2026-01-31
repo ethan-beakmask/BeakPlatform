@@ -3911,6 +3911,8 @@
 
                 // 載入組織樹並渲染
                 initOrgTree(assigneeType);
+                // 載入角色列表
+                loadRolesList(assigneeValue);
 
                 info += `
                     <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
@@ -3962,12 +3964,13 @@
                             </div>
                         </div>
 
-                        <!-- ROLE 角色輸入 -->
+                        <!-- ROLE 角色選擇 -->
                         <div id="roleInputContainer" style="margin-bottom: 15px; display: ${assigneeType === 'ROLE' ? 'block' : 'none'};">
-                            <strong>角色代碼：</strong><br>
-                            <input type="text" id="formAdapterRoleValue" value="${assigneeType === 'ROLE' ? assigneeValue : ''}"
-                                   placeholder="例如: SECURITY_REVIEWER"
-                                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
+                            <strong>選擇角色：</strong><br>
+                            <select id="formAdapterRoleValue" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
+                                <option value="">載入中...</option>
+                            </select>
+                            <div style="margin-top: 4px; font-size: 11px; color: #888;">此角色下的所有用戶都可簽核</div>
                         </div>
 
                         <!-- DYNAMIC 變數輸入 -->
@@ -6586,6 +6589,46 @@
         }
         window.initOrgTree = initOrgTree;
 
+        // 角色列表快取
+        let rolesListData = null;
+
+        // 載入角色列表
+        async function loadRolesList(selectedValue) {
+            const select = document.getElementById('formAdapterRoleValue');
+            if (!select) return;
+
+            if (rolesListData) {
+                renderRolesSelect(select, rolesListData, selectedValue);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/workflows/data/roles');
+                const result = await response.json();
+                if (result.success) {
+                    rolesListData = result.data;
+                    // 延遲渲染（等 DOM 準備好）
+                    setTimeout(() => {
+                        const sel = document.getElementById('formAdapterRoleValue');
+                        if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
+                    }, 50);
+                }
+            } catch (error) {
+                console.error('載入角色列表失敗:', error);
+                if (select) select.innerHTML = '<option value="">載入失敗</option>';
+            }
+        }
+        window.loadRolesList = loadRolesList;
+
+        function renderRolesSelect(select, roles, selectedValue) {
+            let html = '<option value="">-- 請選擇角色 --</option>';
+            for (const role of roles) {
+                const selected = role.secure_code === selectedValue ? 'selected' : '';
+                html += `<option value="${role.secure_code}" ${selected}>${role.name}</option>`;
+            }
+            select.innerHTML = html;
+        }
+
         // 載入組織樹（相容舊版）
         async function loadOrgTree() {
             return initOrgTree();
@@ -6813,8 +6856,9 @@
                     assigneeLabel = selectedAssigneeList[0].label;
                 }
             } else if (assigneeType === 'ROLE') {
-                assigneeValue = document.getElementById('formAdapterRoleValue')?.value || '';
-                assigneeLabel = assigneeValue;
+                const roleSelect = document.getElementById('formAdapterRoleValue');
+                assigneeValue = roleSelect?.value || '';
+                assigneeLabel = roleSelect?.selectedOptions[0]?.text || assigneeValue;
             } else if (assigneeType === 'DYNAMIC') {
                 assigneeValue = document.getElementById('formAdapterDynamicValue')?.value || '';
                 assigneeLabel = assigneeValue;

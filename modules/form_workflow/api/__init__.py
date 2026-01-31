@@ -519,8 +519,16 @@ def list_pending_tasks():
         FwNodeExecutionQueue.node_type.in_(['Approve', 'FormAdapter'])
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
+    user_code = current_user.secure_code
     result = []
     for task in tasks:
+        # 檢查當前用戶是否為指定簽核人
+        task_result_data = (task.result or {}).get('data', {})
+        assignee_type = task_result_data.get('assignee_type')
+        assignees = task_result_data.get('assignees', [])
+        if assignee_type and user_code not in assignees:
+            continue
+
         # 取得關聯的表單實例資訊
         form_instance = FwFormInstance.query.filter_by(
             secure_code=task.form_instance_secure_code
@@ -562,6 +570,13 @@ def get_pending_task(secure_code):
 
     if not task:
         return jsonify({'success': False, 'error': 'Task not found'}), 404
+
+    # 檢查當前用戶是否為指定簽核人
+    task_result_data = (task.result or {}).get('data', {})
+    assignee_type = task_result_data.get('assignee_type')
+    assignees = task_result_data.get('assignees', [])
+    if assignee_type and current_user.secure_code not in assignees:
+        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
 
     # 取得關聯的表單實例
     form_instance = FwFormInstance.query.filter_by(
@@ -610,9 +625,21 @@ def approve_task(secure_code):
     if not task:
         return jsonify({'success': False, 'error': 'Task not found or already processed'}), 404
 
+    # 檢查當前用戶是否為指定簽核人
+    task_result_data = (task.result or {}).get('data', {})
+    assignee_type = task_result_data.get('assignee_type')
+    assignees = task_result_data.get('assignees', [])
+    if assignee_type and current_user.secure_code not in assignees:
+        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+
     data = request.get_json() or {}
     selected_path = data.get('selected_path')
     comment = data.get('comment', '')
+
+    # 驗證簽核意見最少字數
+    min_comment_length = task_result_data.get('min_comment_length', 0)
+    if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
+        return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
 
     # 建立簽核記錄
     approval_record = FwApprovalRecord(

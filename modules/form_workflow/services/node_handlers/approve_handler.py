@@ -157,11 +157,50 @@ class ApproveHandler(BaseNodeHandler):
             return []
 
         elif assignee_type == 'DYNAMIC':
-            # TODO: 實作動態解析
+            # 從變數取得
+            if assignee_value:
+                value = self.get_var(assignee_value)
+                if value:
+                    if isinstance(value, list):
+                        return [str(v) for v in value]
+                    return [str(value)]
             return []
 
-        elif assignee_type in ['ROLE', 'DEPARTMENT']:
-            # TODO: 實作角色/部門解析
-            return [f'{assignee_type}:{assignee_value}']
+        elif assignee_type == 'ROLE':
+            if assignee_value:
+                return self._resolve_role_users(assignee_value)
+            return []
+
+        elif assignee_type == 'DEPARTMENT':
+            if assignee_value:
+                return self._resolve_department_users(assignee_value)
+            return []
 
         return []
+
+    def _resolve_role_users(self, role_secure_code: str) -> List[str]:
+        """查詢指定角色下的所有用戶 secure_code"""
+        from app.models.associations import UserRoleAssignment
+        org_code = self.queue_item.org_secure_code
+
+        assignments = UserRoleAssignment.query.filter(
+            UserRoleAssignment.role_secure_code == role_secure_code,
+            UserRoleAssignment.org_secure_code == org_code,
+            UserRoleAssignment.is_deleted == False
+        ).all()
+
+        return [a.user_secure_code for a in assignments if a.user_secure_code]
+
+    def _resolve_department_users(self, dept_secure_code: str) -> List[str]:
+        """查詢指定部門下的所有用戶 secure_code"""
+        from app.models.user import User
+        org_code = self.queue_item.org_secure_code
+
+        users = User.query.filter(
+            User.primary_unit_secure_code == dept_secure_code,
+            User.org_secure_code == org_code,
+            User.is_active == True,
+            User.is_deleted == False
+        ).all()
+
+        return [u.secure_code for u in users]

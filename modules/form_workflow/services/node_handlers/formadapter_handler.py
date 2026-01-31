@@ -62,6 +62,7 @@ class FormAdapterHandler(BaseNodeHandler):
         selection_mode = self.get_config_value('selection_mode', 'single')
         allow_comment = self.get_config_value('allow_comment', True)
         require_comment = self.get_config_value('require_comment', False)
+        min_comment_length = int(self.get_config_value('min_comment_length', 0))
 
         # 取得此節點的所有出線選項
         available_paths = self._get_available_paths()
@@ -96,6 +97,7 @@ class FormAdapterHandler(BaseNodeHandler):
                 'selection_mode': selection_mode,
                 'allow_comment': allow_comment,
                 'require_comment': require_comment,
+                'min_comment_length': min_comment_length,
                 'available_paths': available_paths,
                 'waiting_since': datetime.utcnow().isoformat()
             }
@@ -186,11 +188,8 @@ class FormAdapterHandler(BaseNodeHandler):
         """
         if assignee_type == 'INITIATOR':
             # 表單發起人
-            if self.form_instance:
-                # 使用 secure_code 或 owner_secure_code
-                owner_code = getattr(self.form_instance, 'owner_secure_code', None)
-                if owner_code:
-                    return [str(owner_code)]
+            if self.form_instance and self.form_instance.applicant_secure_code:
+                return [self.form_instance.applicant_secure_code]
             return []
 
         elif assignee_type == 'USER':
@@ -209,12 +208,52 @@ class FormAdapterHandler(BaseNodeHandler):
                     return [str(value)]
             return []
 
-        elif assignee_type in ['ROLE', 'DEPARTMENT']:
-            # 角色或部門需要查詢對應的用戶
-            # TODO: 實作角色/部門 -> 用戶的解析
-            return [f'{assignee_type}:{assignee_value}']
+        elif assignee_type == 'ROLE':
+            # 查詢該角色下的所有用戶
+            if assignee_value:
+                return self._resolve_role_users(assignee_value)
+            return []
+
+        elif assignee_type == 'DEPARTMENT':
+            # 查詢該部門下的所有用戶
+            if assignee_value:
+                return self._resolve_department_users(assignee_value)
+            return []
 
         return []
+
+    def _resolve_role_users(self, role_secure_code: str) -> List[str]:
+        """查詢指定角色下的所有用戶 secure_code"""
+        from app.models.associations import UserRoleAssignment
+        org_code = self.queue_item.org_secure_code
+
+        assignments = UserRoleAssignment.query.filter(
+            UserRoleAssignment.role_secure_code == role_secure_code,
+            UserRoleAssignment.org_secure_code == org_code,
+            UserRoleAssignment.is_deleted == False
+        ).all()
+
+        user_codes = [a.user_secure_code for a in assignments if a.user_secure_code]
+        if not user_codes:
+            logger.warning(f'角色 {role_secure_code} 下無用戶')
+        return user_codes
+
+    def _resolve_department_users(self, dept_secure_code: str) -> List[str]:
+        """查詢指定部門下的所有用戶 secure_code"""
+        from app.models.user import User
+        org_code = self.queue_item.org_secure_code
+
+        users = User.query.filter(
+            User.primary_unit_secure_code == dept_secure_code,
+            User.org_secure_code == org_code,
+            User.is_active == True,
+            User.is_deleted == False
+        ).all()
+
+        user_codes = [u.secure_code for u in users]
+        if not user_codes:
+            logger.warning(f'部門 {dept_secure_code} 下無用戶')
+        return user_codes
 
 
 def complete_form_action(queue_item_secure_code: str, selected_edges: List[str],

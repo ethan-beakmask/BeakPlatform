@@ -983,9 +983,10 @@ def get_org_tree():
         result = []
         for dept in departments:
             if dept.parent_secure_code == parent_code:
+                dept_name = dept.name
                 node = {
                     'id': f'dept_{dept.secure_code}',
-                    'text': dept.name,
+                    'name': dept_name,
                     'type': 'department',
                     'secure_code': dept.secure_code,
                     'children': build_tree(dept.secure_code)
@@ -995,7 +996,7 @@ def get_org_tree():
                 for user in dept_users:
                     node['children'].append({
                         'id': f'user_{user.secure_code}',
-                        'text': user.display_name or user.username,
+                        'label': user.display_name or user.username,
                         'type': 'user',
                         'secure_code': user.secure_code
                     })
@@ -1005,18 +1006,17 @@ def get_org_tree():
     tree = build_tree(None)
 
     # 未歸屬部門的用戶
-    assigned_codes = {u.primary_unit_secure_code for u in users if u.primary_unit_secure_code}
     dept_codes = {d.secure_code for d in departments}
     unassigned = [u for u in users if not u.primary_unit_secure_code or u.primary_unit_secure_code not in dept_codes]
     if unassigned:
         tree.append({
             'id': 'dept_unassigned',
-            'text': '(未歸屬部門)',
+            'name': '(未歸屬部門)',
             'type': 'department',
             'secure_code': '',
             'children': [{
                 'id': f'user_{u.secure_code}',
-                'text': u.display_name or u.username,
+                'label': u.display_name or u.username,
                 'type': 'user',
                 'secure_code': u.secure_code
             } for u in unassigned]
@@ -1024,7 +1024,37 @@ def get_org_tree():
 
     return jsonify({
         'success': True,
-        'tree': tree
+        'data': tree
+    })
+
+
+@workflows_bp.route('/data/roles')
+@login_required
+def get_roles_list():
+    """取得角色列表（用於簽核人角色選擇）"""
+    from app.models.role import Role
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    roles = Role.query.filter(
+        Role.org_secure_code == org.secure_code,
+        Role.is_deleted == False,
+        Role.is_active == True
+    ).order_by(Role.name).all()
+
+    result = []
+    for role in roles:
+        result.append({
+            'secure_code': role.secure_code,
+            'code': role.code,
+            'name': role.name,
+        })
+
+    return jsonify({
+        'success': True,
+        'data': result
     })
 
 

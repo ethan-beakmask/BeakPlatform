@@ -654,15 +654,22 @@ def list_pending_tasks():
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     # 查詢等待簽核的節點
-    # TODO: 需要加入簽核人過濾邏輯
     tasks = FwNodeExecutionQueue.query.filter(
         FwNodeExecutionQueue.org_secure_code == org.secure_code,
         FwNodeExecutionQueue.status == 'WAITING',
         FwNodeExecutionQueue.node_type.in_(['Approve', 'FormAdapter', 'FORMADAPTER'])
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
+    user_code = current_user.secure_code
     result = []
     for task in tasks:
+        # 檢查當前用戶是否為指定簽核人
+        task_result_data = (task.result or {}).get('data', {})
+        assignee_type = task_result_data.get('assignee_type')
+        assignees = task_result_data.get('assignees', [])
+        if assignee_type and user_code not in assignees:
+            continue
+
         # 取得表單資訊
         form_instance = FwFormInstance.query.filter_by(
             secure_code=task.form_instance_secure_code
@@ -705,6 +712,13 @@ def get_pending_task(secure_code):
 
     if not task:
         return jsonify({'success': False, 'error': '找不到指定的任務'}), 404
+
+    # 檢查當前用戶是否為指定簽核人
+    task_result_data = (task.result or {}).get('data', {})
+    assignee_type = task_result_data.get('assignee_type')
+    assignees = task_result_data.get('assignees', [])
+    if assignee_type and current_user.secure_code not in assignees:
+        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
 
     # 取得表單資訊（使用 secure_code）
     form_instance = FwFormInstance.query.filter_by(
@@ -784,10 +798,22 @@ def approve_task(secure_code):
     if not task:
         return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
 
+    # 檢查當前用戶是否為指定簽核人
+    task_result_data = (task.result or {}).get('data', {})
+    assignee_type = task_result_data.get('assignee_type')
+    assignees = task_result_data.get('assignees', [])
+    if assignee_type and current_user.secure_code not in assignees:
+        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+
     data = request.get_json() or {}
     decision = data.get('decision', 'approved')  # approved, rejected
     selected_path = data.get('selected_path')
     comment = data.get('comment', '')
+
+    # 驗證簽核意見最少字數
+    min_comment_length = task_result_data.get('min_comment_length', 0)
+    if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
+        return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
 
     try:
         # 建立簽核記錄
