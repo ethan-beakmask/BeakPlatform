@@ -546,6 +546,44 @@
                         </div>
                     </div>
 
+                    <!-- 簽核歷程 -->
+                    <div x-show="currentApproval?.approvals?.length > 0" style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                            <span style="font-size: 13px; font-weight: 600;">簽核歷程</span>
+                            <button @click="approvalSortAsc = !approvalSortAsc"
+                                    style="padding: 2px 8px; font-size: 11px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                                <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                            </button>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #f9fafb;">
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">簽核者</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">動作</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                        簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                    </th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">意見</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(approval, idx) in sortedApprovals(currentApproval?.approvals)" :key="idx">
+                                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                                        <td style="padding: 6px 8px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                        <td style="padding: 6px 8px; white-space: nowrap;">
+                                            <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                        </td>
+                                        <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                        <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                        <td style="padding: 6px 8px; color: #374151; white-space: pre-wrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                            x-text="approval.comment || '-'"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <!-- 簽核選項 -->
                     <div style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
                         <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">
@@ -874,38 +912,38 @@
                     此表單尚無簽核記錄
                 </div>
                 <div x-show="!loadingFormDetail && formDetail?.approvals?.length > 0">
-                    <!-- 簽核流程時間軸 -->
-                    <div style="max-width: 800px; margin: 0 auto;">
-                        <template x-for="(approval, idx) in formDetail?.approvals || []" :key="idx">
-                            <div style="display: flex; gap: 16px; margin-bottom: 0;">
-                                <!-- 左側時間軸 -->
-                                <div style="display: flex; flex-direction: column; align-items: center; width: 24px;">
-                                    <div style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;"
-                                         :style="approval.action === 'approved' ? 'background: #22c55e;' : (approval.action === 'rejected' ? 'background: #ef4444;' : 'background: #6b7280;')"></div>
-                                    <div x-show="idx < (formDetail?.approvals || []).length - 1" style="width: 2px; flex: 1; min-height: 40px; background: #e5e7eb;"></div>
-                                </div>
-                                <!-- 右側內容 -->
-                                <div style="flex: 1; padding-bottom: 24px;">
-                                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <span style="font-weight: 600; font-size: 14px;" x-text="approval.approver_name"></span>
-                                                <span class="fc-badge"
-                                                      :class="approval.action === 'approved' ? 'fc-badge-completed' : (approval.action === 'rejected' ? 'fc-badge-error' : 'fc-badge-pending')"
-                                                      x-text="approval.action === 'approved' ? '核准' : (approval.action === 'rejected' ? '退回' : approval.action)"></span>
-                                            </div>
-                                            <span style="font-size: 12px; color: #6b7280;" x-text="approval.acted_at ? formatDate(approval.acted_at) : ''"></span>
-                                        </div>
-                                        <div x-show="approval.node_name" style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
-                                            關卡：<span x-text="approval.node_name"></span>
-                                        </div>
-                                        <div x-show="approval.comment" style="background: #f9fafb; padding: 12px; border-radius: 6px; font-size: 13px; color: #374151; white-space: pre-wrap;" x-text="approval.comment"></div>
-                                        <div x-show="!approval.comment" style="font-size: 12px; color: #9ca3af; font-style: italic;">（無意見）</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                        <button @click="approvalSortAsc = !approvalSortAsc"
+                                style="padding: 4px 12px; font-size: 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                            <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                        </button>
                     </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; max-width: 900px; margin: 0 auto;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">簽核者</th>
+                                <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">動作</th>
+                                <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                                <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                    簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                </th>
+                                <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">意見</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(approval, idx) in sortedApprovals(formDetail?.approvals)" :key="idx">
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 8px 10px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                    <td style="padding: 8px 10px; white-space: nowrap;">
+                                        <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                    </td>
+                                    <td style="padding: 8px 10px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                    <td style="padding: 8px 10px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                    <td style="padding: 8px 10px; color: #374151; white-space: pre-wrap;" x-text="approval.comment || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -940,26 +978,40 @@
 
                     <!-- 簽核歷程 -->
                     <div x-show="readFormData?.approvals?.length > 0" style="margin-top: 16px;">
-                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">簽核歷程</div>
-                        <template x-for="(approval, idx) in readFormData?.approvals || []" :key="idx">
-                            <div style="display: flex; gap: 12px; margin-bottom: 8px; padding: 10px; background: #f9fafb; border-radius: 4px; font-size: 12px;">
-                                <div style="display: flex; flex-direction: column; align-items: center; width: 16px;">
-                                    <div style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"
-                                         :style="approval.action === 'approved' ? 'background: #22c55e;' : (approval.action === 'rejected' ? 'background: #ef4444;' : 'background: #6b7280;')"></div>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                        <strong x-text="approval.approver_name"></strong>
-                                        <span class="fc-badge"
-                                              :class="approval.action === 'approved' ? 'fc-badge-completed' : (approval.action === 'rejected' ? 'fc-badge-error' : 'fc-badge-pending')"
-                                              x-text="approval.action === 'approved' ? '核准' : (approval.action === 'rejected' ? '退回' : approval.action)"></span>
-                                        <span style="color: #6b7280; margin-left: auto;" x-text="approval.acted_at ? formatDate(approval.acted_at) : ''"></span>
-                                    </div>
-                                    <div x-show="approval.node_name" style="color: #6b7280; margin-bottom: 2px;">關卡：<span x-text="approval.node_name"></span></div>
-                                    <div x-show="approval.comment" style="color: #374151; white-space: pre-wrap;" x-text="approval.comment"></div>
-                                </div>
-                            </div>
-                        </template>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                            <span style="font-size: 13px; font-weight: 600;">簽核歷程</span>
+                            <button @click="approvalSortAsc = !approvalSortAsc"
+                                    style="padding: 2px 8px; font-size: 11px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                                <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                            </button>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #f9fafb;">
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">簽核者</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">動作</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                        簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                    </th>
+                                    <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">意見</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(approval, idx) in sortedApprovals(readFormData?.approvals)" :key="idx">
+                                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                                        <td style="padding: 6px 8px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                        <td style="padding: 6px 8px; white-space: nowrap;">
+                                            <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                        </td>
+                                        <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                        <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                        <td style="padding: 6px 8px; color: #374151; white-space: pre-wrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                            x-text="approval.comment || '-'"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1061,6 +1113,9 @@ function formCenterManager() {
         readFormData: null,
         readFormInstance: null,
         loadingReadForm: false,
+
+        // 簽核歷程排序（false = 最新在前）
+        approvalSortAsc: false,
 
         // Toast
         toast: { show: false, message: '', type: 'success' },
@@ -1511,6 +1566,26 @@ function formCenterManager() {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
             return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        sortedApprovals(list) {
+            if (!list || list.length === 0) return [];
+            return [...list].sort((a, b) => {
+                const tA = a.acted_at ? new Date(a.acted_at).getTime() : 0;
+                const tB = b.acted_at ? new Date(b.acted_at).getTime() : 0;
+                return this.approvalSortAsc ? tA - tB : tB - tA;
+            });
+        },
+
+        getActionText(action) {
+            const map = { 'approved': '核准', 'rejected': '退回', 'PENDING': '待簽' };
+            return map[action] || action;
+        },
+
+        getActionBadgeClass(action) {
+            if (action === 'approved') return 'fc-badge-completed';
+            if (action === 'rejected') return 'fc-badge-error';
+            return 'fc-badge-pending';
         },
 
         getShortSerial(serial) {

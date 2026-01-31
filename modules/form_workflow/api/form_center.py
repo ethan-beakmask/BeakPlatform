@@ -691,8 +691,8 @@ def list_pending_tasks():
 @form_center_bp.route('/pending-tasks/<secure_code>')
 @login_required
 def get_pending_task(secure_code):
-    """取得待簽核任務詳情"""
-    from ..models import FwNodeExecutionQueue, FwFormInstance
+    """取得待簽核任務詳情（含簽核歷程）"""
+    from ..models import FwNodeExecutionQueue, FwFormInstance, FwApprovalRecord
 
     org = get_current_org()
     if not org:
@@ -721,6 +721,23 @@ def get_pending_task(secure_code):
     allow_comment = result_data.get('allow_comment', True)
     require_comment = result_data.get('require_comment', False)
 
+    # 取得簽核歷程
+    approvals = []
+    if task.workflow_instance_secure_code:
+        approval_records = FwApprovalRecord.query.filter_by(
+            workflow_instance_secure_code=task.workflow_instance_secure_code
+        ).order_by(FwApprovalRecord.acted_at.asc()).all()
+
+        for approval in approval_records:
+            approvals.append({
+                'node_id': approval.node_id,
+                'node_name': approval.node_name,
+                'approver_name': approval.approver_name,
+                'action': approval.action,
+                'comment': approval.comment,
+                'acted_at': approval.acted_at.isoformat() if approval.acted_at else None,
+            })
+
     return jsonify({
         'success': True,
         'data': {
@@ -739,6 +756,7 @@ def get_pending_task(secure_code):
             'selection_mode': selection_mode,
             'allow_comment': allow_comment,
             'require_comment': require_comment,
+            'approvals': approvals,
         }
     })
 
@@ -777,10 +795,12 @@ def approve_task(secure_code):
             workflow_instance_secure_code=task.workflow_instance_secure_code,
             form_instance_secure_code=task.form_instance_secure_code,
             node_id=task.node_id,
+            node_name=task.node_name,
             approver_secure_code=current_user.secure_code,
             approver_name=current_user.display_name or current_user.username,
             action=decision,
             comment=comment,
+            acted_at=datetime.utcnow(),
         )
         db.session.add(approval_record)
 

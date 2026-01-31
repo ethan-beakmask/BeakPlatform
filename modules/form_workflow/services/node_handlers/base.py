@@ -385,9 +385,8 @@ class BaseNodeHandler(ABC):
                         return getattr(self.form_instance, 'serial_number', '') or ''
                     return ''
                 elif var_name == 'form.display_name':
-                    if self.form_instance and hasattr(self.form_instance, 'form_template'):
-                        template = self.form_instance.form_template
-                        return template.name if template else ''
+                    if self.form_instance:
+                        return self.form_instance.form_name or ''
                     return ''
                 else:
                     # form.field_name - 支援巢狀欄位
@@ -468,12 +467,21 @@ class BaseNodeHandler(ABC):
             logger.warning(f"[DisplayVar] form_instance 為 None，無法解析 '{display_var}'")
             return None
 
-        if not hasattr(self.form_instance, 'form_template') or not self.form_instance.form_template:
-            logger.warning(f"[DisplayVar] form_template 為 None，無法解析 '{display_var}'")
-            return None
+        # 取得 schema：優先使用 schema_snapshot（提交時快照），否則查詢 form_template
+        schema = None
+        form_secure_code = self.form_instance.form_template_secure_code
 
-        form_template = self.form_instance.form_template
-        if not form_template.schema:
+        if self.form_instance.schema_snapshot:
+            schema = self.form_instance.schema_snapshot
+        else:
+            from ...models import FwFormTemplate
+            form_template = FwFormTemplate.query.filter_by(
+                secure_code=form_secure_code
+            ).first()
+            if form_template:
+                schema = form_template.schema
+
+        if not schema:
             logger.warning(f"[DisplayVar] schema 為 None，無法解析 '{display_var}'")
             return None
 
@@ -524,16 +532,16 @@ class BaseNodeHandler(ABC):
             return None
 
         # 查找欄位
-        schema = form_template.schema
         field_key = find_field_by_label(schema.get('components', []), field_label, explicit_key)
 
         if field_key:
             # 建立內部變數名稱
-            internal_var = f"{form_template.secure_code}_{field_key}"
+            internal_var = f"{form_secure_code}_{field_key}"
             logger.info(f"[DisplayVar] 解析成功: '{display_var}' -> '{internal_var}' (透過標籤 '{field_label}')")
             return internal_var
         else:
-            logger.warning(f"[DisplayVar] 解析失敗: '{display_var}' - 在表單 '{form_template.name}' 中找不到標籤 '{field_label}'")
+            form_name = self.form_instance.form_name or form_secure_code
+            logger.warning(f"[DisplayVar] 解析失敗: '{display_var}' - 在表單 '{form_name}' 中找不到標籤 '{field_label}'")
             return None
 
     # ========================================

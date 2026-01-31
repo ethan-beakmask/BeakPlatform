@@ -5,6 +5,7 @@ FormWorkflow Module - API Routes
 提供表單和工作流的 RESTful API。
 """
 import secrets
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from app import csrf
@@ -620,11 +621,12 @@ def approve_task(secure_code):
         workflow_instance_secure_code=task.workflow_instance_secure_code,
         form_instance_secure_code=task.form_instance_secure_code,
         node_id=task.node_id,
+        node_name=task.node_name,
         approver_secure_code=current_user.secure_code,
         approver_name=current_user.display_name or current_user.username,
-        decision='approved',
-        selected_path=selected_path,
-        comment=comment
+        action='approved',
+        comment=comment,
+        acted_at=datetime.utcnow(),
     )
     db.session.add(approval_record)
 

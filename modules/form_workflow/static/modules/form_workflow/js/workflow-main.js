@@ -11902,7 +11902,7 @@
             // 顯示載入中
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 30px; color: #999;">
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
                         <i class="fas fa-spinner fa-spin"></i> 分析欄位中...
                     </td>
                 </tr>
@@ -11942,7 +11942,7 @@
                 console.error('載入表單欄位失敗:', error);
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 30px; color: #e74c3c;">
+                        <td colspan="8" style="text-align: center; padding: 30px; color: #e74c3c;">
                             <i class="fas fa-exclamation-circle"></i> 分析失敗: ${error.message}
                         </td>
                     </tr>
@@ -11961,7 +11961,7 @@
             if (fields.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
+                        <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
                             <i class="fas fa-info-circle"></i> 此表單沒有資料欄位
                         </td>
                     </tr>
@@ -12047,8 +12047,11 @@
                                 onchange="onFieldSelectionChange()"
                                 style="cursor: pointer; width: 16px; height: 16px;">
                         </td>
-                        <td style="padding: 6px 8px; ${indentStyle} font-family: monospace; font-size: 10px;">
-                            ${nestedIndicator}<code style="background: #fff3cd; padding: 2px 4px; border-radius: 3px; cursor: grab; color: #856404;"
+                        <td style="padding: 6px 8px; ${indentStyle} font-size: 11px; color: #333; white-space: nowrap;">
+                            ${nestedIndicator}${field.label || field.key}
+                        </td>
+                        <td style="padding: 6px 8px; font-family: monospace; font-size: 10px;">
+                            <code style="background: #fff3cd; padding: 2px 4px; border-radius: 3px; cursor: grab; color: #856404;"
                                   draggable="true"
                                   ondragstart="handleVarDragStart(event, '${internalVar.replace(/'/g, "\\'")}')"
                                   ondragend="handleVarDragEnd(event)"

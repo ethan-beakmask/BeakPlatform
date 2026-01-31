@@ -5,6 +5,7 @@ FormWorkflow Module - Workflow Engine
 負責啟動工作流、處理節點執行、推進流程。
 適配 BeakPlatform 模組化架構。
 """
+import secrets
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy import and_, or_
@@ -482,12 +483,16 @@ class WorkflowEngine:
 
             # 建立簽核記錄
             approval_record = FwApprovalRecord(
+                secure_code=secrets.token_urlsafe(16),
                 org_secure_code=queue_item.org_secure_code,
                 workflow_instance_secure_code=queue_item.workflow_instance_secure_code,
+                form_instance_secure_code=queue_item.form_instance_secure_code,
                 node_id=queue_item.node_id,
+                node_name=queue_item.node_name,
                 approver_secure_code=approver_secure_code,
                 action=action,
-                comment=comment
+                comment=comment,
+                acted_at=datetime.utcnow(),
             )
             db.session.add(approval_record)
 

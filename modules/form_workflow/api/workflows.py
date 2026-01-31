@@ -838,13 +838,20 @@ def create_subflow():
 @csrf.exempt
 @login_required
 def variable_mapping():
-    """取得或建立變數映射"""
+    """
+    取得或建立變數映射
+
+    POST: 根據配對表單建立 內部變數 <-> 顯示變數 的雙向映射表
+        內部格式: ${SECURE_CODE_fieldKey}   (除錯用唯一識別碼)
+        顯示格式: ${表單名稱::欄位標籤}       (人類可讀格式)
+    """
+    from ..models import FwFormTemplate
+
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     if request.method == 'GET':
-        # 取得變數映射（目前回傳空的結構）
         return jsonify({
             'success': True,
             'mapping': {
@@ -858,13 +865,89 @@ def variable_mapping():
                 ]
             }
         })
-    else:
-        # POST - 儲存變數映射（目前只回傳成功）
-        data = request.get_json() or {}
+
+    # POST - 根據 form_ids 建立變數映射表
+    data = request.get_json() or {}
+    form_ids = data.get('form_ids', [])
+
+    if not form_ids:
+        return jsonify({'success': True, 'data': {'forward': {}, 'reverse': {}, 'form_info': {}}})
+
+    try:
+        forward = {}
+        reverse = {}
+        form_info = {}
+
+        for form_secure_code in form_ids:
+            form = FwFormTemplate.query.filter_by(
+                secure_code=form_secure_code,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).first()
+
+            if not form or not form.schema:
+                continue
+
+            form_name = form.name or ''
+            # 正規化表單名稱：移除半形和全形空格
+            display_form_name = form_name.replace(' ', '').replace('\u3000', '')
+
+            # 提取欄位
+            fields = _extract_form_fields(form.schema.get('components', []))
+
+            # 檢測同一表單內欄位標籤重複
+            label_counts = {}
+            for f in fields:
+                norm_label = (f.get('label', '') or '').replace(' ', '').replace('\u3000', '')
+                label_counts[norm_label] = label_counts.get(norm_label, 0) + 1
+
+            # 建立映射
+            field_info = {}
+            for f in fields:
+                key = f.get('key', '')
+                if not key:
+                    continue
+
+                label = f.get('label', '') or key
+                norm_label = label.replace(' ', '').replace('\u3000', '')
+
+                # 同名標籤加上 key 後綴區分
+                if label_counts.get(norm_label, 0) > 1:
+                    display_label = f"{norm_label}({key})"
+                else:
+                    display_label = norm_label
+
+                internal_var = f"{form_secure_code}_{key}"
+                display_var = f"{display_form_name}::{display_label}"
+
+                forward[internal_var] = display_var
+                reverse[display_var] = internal_var
+
+                field_info[key] = {
+                    'label': label,
+                    'display_label': display_label
+                }
+
+            form_info[form_secure_code] = {
+                'name': form_name,
+                'display_name': display_form_name,
+                'fields': field_info
+            }
+
         return jsonify({
             'success': True,
-            'message': '變數映射已儲存'
+            'data': {
+                'forward': forward,
+                'reverse': reverse,
+                'form_info': form_info
+            }
         })
+
+    except Exception as e:
+        import traceback
+        print(f"❌ VARIABLE_MAPPING ERROR: {str(e)}")
+        print(f"📋 Traceback:\n{traceback.format_exc()}")
+        return jsonify({'success': False, 'message': f'建立變數映射失敗: {str(e)}'}), 500
 
 
 # =============================================================================
