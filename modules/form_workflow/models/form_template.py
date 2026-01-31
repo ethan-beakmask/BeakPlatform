@@ -61,8 +61,10 @@ class FwFormTemplate(ModuleBaseModel):
             'category': self.category,
             'version': self.version,
             'revision': self.revision,
+            'thumbnail_2x1': self.thumbnail_2x1,
             'is_published': self.is_published,
             'is_active': self.is_active,
+            'is_protected': self.is_protected,
             'owner_secure_code': self.owner_secure_code,
         })
 

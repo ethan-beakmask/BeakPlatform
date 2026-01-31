@@ -202,7 +202,7 @@
                             'color': '#000000',
                             'font-size': '10px',
                             'font-weight': 'normal',
-                            'shape': 'rectangle',
+                            'shape': 'round-rectangle',
                             'width': 50,
                             'height': 50,
                             'text-wrap': 'wrap',
@@ -271,14 +271,36 @@
                         selector: 'node[type="start"]',
                         style: {
                             'background-color': '#4CAF50',
-                            'shape': 'ellipse'
+                            'shape': 'round-rectangle'
                         }
                     },
+                    // End 節點預設樣式（藍色 - detach 模式）
                     {
-                        selector: 'node[type="end"]',
+                        selector: 'node[type="end"], node[type="End"], node[type="END"]',
                         style: {
-                            'background-color': '#f44336',
-                            'shape': 'ellipse'
+                            'background-color': '#3B82F6',
+                            'shape': 'round-rectangle'
+                        }
+                    },
+                    // End 節點 - Detach 模式（藍色）
+                    {
+                        selector: 'node[type="end"][finishMode="detach"], node[type="End"][finishMode="detach"], node[type="END"][finishMode="detach"]',
+                        style: {
+                            'background-color': '#3B82F6'
+                        }
+                    },
+                    // End 節點 - Cancel 模式（橘色）
+                    {
+                        selector: 'node[type="end"][finishMode="cancel"], node[type="End"][finishMode="cancel"], node[type="END"][finishMode="cancel"]',
+                        style: {
+                            'background-color': '#F97316'
+                        }
+                    },
+                    // End 節點 - Strict 模式（綠色）
+                    {
+                        selector: 'node[type="end"][finishMode="strict"], node[type="End"][finishMode="strict"], node[type="END"][finishMode="strict"]',
+                        style: {
+                            'background-color': '#22C55E'
                         }
                     },
                     {
@@ -341,7 +363,7 @@
                         selector: 'node[type="Converge"], node[type="CONVERGE"]',
                         style: {
                             'background-color': '#9C27B0',
-                            'shape': 'diamond',
+                            'shape': 'round-rectangle',
                             'border-width': 3,
                             'border-color': '#7B1FA2'
                         }
@@ -351,7 +373,7 @@
                         selector: 'node[type="Converge"][?anyMode], node[type="CONVERGE"][?anyMode]',
                         style: {
                             'background-color': '#FF9800',
-                            'shape': 'diamond',
+                            'shape': 'round-rectangle',
                             'border-width': 3,
                             'border-color': '#F57C00'
                         }
@@ -364,115 +386,6 @@
                             'shape': 'round-rectangle',
                             'border-width': 2,
                             'border-color': '#0097A7'
-                        }
-                    },
-                    // 測試節點 - 文字內部（含 vee 形狀）
-                    {
-                        selector: 'node[type="test_node_inside"]',
-                        style: {
-                            'background-color': '#E0E0E0',
-                            'shape': 'rectangle',
-                            'width': 50,
-                            'height': 50,
-                            'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><polygon points="10,15 25,35 40,15" fill="%23000000" stroke="none"/></svg>',
-                            'background-fit': 'contain',
-                            'background-clip': 'none',
-                            'label': 'data(label)',
-                            'text-valign': 'bottom',
-                            'text-halign': 'center',
-                            'text-margin-y': 5,
-                            'color': '#000000',
-                            'font-size': '8px',
-                            'font-weight': 'normal',
-                            'text-wrap': 'wrap',
-                            'text-max-width': 45
-                        }
-                    },
-                    // 測試節點 - 文字外部（下方）
-                    {
-                        selector: 'node[type="test_node_outside"]',
-                        style: {
-                            'background-color': '#E0E0E0',
-                            'shape': 'rectangle',
-                            'width': 50,
-                            'height': 50,
-                            'label': 'data(label)',
-                            'text-valign': 'bottom',
-                            'text-halign': 'center',
-                            'text-margin-y': 5,
-                            'color': '#000000',
-                            'font-size': '8px',
-                            'font-weight': 'normal',
-                            'text-wrap': 'wrap',
-                            'text-max-width': 45
-                        }
-                    },
-                    // 測試節點 - 3種顏色
-                    {
-                        selector: 'node[type="test_node_3colors"]',
-                        style: {
-                            'background-color': '#FFFFFF',
-                            'shape': 'rectangle',
-                            'width': 50,
-                            'height': 50,
-                            'background-image': 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><circle cx="25" cy="15" r="10" fill="%23FF6B6B"/><circle cx="15" cy="30" r="10" fill="%234ECDC4"/><circle cx="35" cy="30" r="10" fill="%23FFE66D"/></svg>',
-                            'background-fit': 'contain',
-                            'background-clip': 'none',
-                            'label': 'data(label)',
-                            'text-valign': 'bottom',
-                            'text-halign': 'center',
-                            'text-margin-y': 5,
-                            'color': '#000000',
-                            'font-size': '8px',
-                            'font-weight': 'normal',
-                            'text-wrap': 'wrap',
-                            'text-max-width': 45
-                        }
-                    },
-                    // 測試節點 - 網路圖片
-                    {
-                        selector: 'node[type="test_node_image"]',
-                        style: {
-                            'background-color': '#FFFFFF',
-                            'shape': 'rectangle',
-                            'width': 50,
-                            'height': 50,
-                            'background-image': 'https://picsum.photos/50/50',
-                            'background-fit': 'cover',
-                            'background-clip': 'node',
-                            'label': 'data(label)',
-                            'text-valign': 'bottom',
-                            'text-halign': 'center',
-                            'text-margin-y': 5,
-                            'color': '#000000',
-                            'font-size': '8px',
-                            'font-weight': 'normal',
-                            'text-wrap': 'wrap',
-                            'text-max-width': 45
-                        }
-                    },
-                    // 測試節點 - 圓形遮罩圖片
-                    {
-                        selector: 'node[type="test_node_circle"]',
-                        style: {
-                            'background-color': '#FFFFFF',
-                            'shape': 'ellipse',
-                            'width': 50,
-                            'height': 50,
-                            'background-image': 'https://picsum.photos/50/50',
-                            'background-fit': 'cover',
-                            'background-clip': 'node',
-                            'border-width': 2,
-                            'border-color': '#666666',
-                            'label': 'data(label)',
-                            'text-valign': 'bottom',
-                            'text-halign': 'center',
-                            'text-margin-y': 5,
-                            'color': '#000000',
-                            'font-size': '8px',
-                            'font-weight': 'normal',
-                            'text-wrap': 'wrap',
-                            'text-max-width': 45
                         }
                     },
                     // 一般線段
@@ -7204,13 +7117,8 @@
             }
         }
 
-        // 生成並儲存縮圖（由後端使用 html2image 生成彩色完整縮圖）
+        // 生成並儲存縮圖（前端使用 Cytoscape PNG 導出 + Canvas 調整尺寸）
         async function generateAndSaveThumbnail() {
-            // 後端在儲存 graph 時會自動生成彩色縮圖，前端不需要生成
-            console.log('📸 縮圖將由後端自動生成（使用 html2image）');
-            return;
-
-            // === 以下是舊的前端生成邏輯（已禁用）===
             if (!currentWorkflowId || !cy) {
                 console.log('⚠️ 無法生成縮圖：缺少 workflow ID 或 Cytoscape 實例');
                 return;

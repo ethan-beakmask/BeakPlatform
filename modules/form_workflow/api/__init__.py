@@ -205,6 +205,14 @@ def update_template(secure_code):
     if 'is_active' in data:
         template.is_active = data['is_active']
 
+    # 縮圖
+    if 'thumbnail_2x1' in data:
+        template.thumbnail_2x1 = data['thumbnail_2x1']
+    if 'thumbnail_1x1' in data:
+        template.thumbnail_1x1 = data['thumbnail_1x1']
+    if 'thumbnail_1x2' in data:
+        template.thumbnail_1x2 = data['thumbnail_1x2']
+
     db.session.commit()
 
     return jsonify({
@@ -390,6 +398,14 @@ def update_workflow(secure_code):
         workflow.graph = data['graph']
     if 'is_active' in data:
         workflow.is_active = data['is_active']
+
+    # 縮圖
+    if 'thumbnail_2x1' in data:
+        workflow.thumbnail_2x1 = data['thumbnail_2x1']
+    if 'thumbnail_1x1' in data:
+        workflow.thumbnail_1x1 = data['thumbnail_1x1']
+    if 'thumbnail_1x2' in data:
+        workflow.thumbnail_1x2 = data['thumbnail_1x2']
 
     db.session.commit()
 

@@ -432,6 +432,14 @@ def update_template(secure_code):
     if 'is_active' in data:
         template.is_active = data['is_active']
 
+    # 縮圖
+    if 'thumbnail_2x1' in data:
+        template.thumbnail_2x1 = data['thumbnail_2x1']
+    if 'thumbnail_1x1' in data:
+        template.thumbnail_1x1 = data['thumbnail_1x1']
+    if 'thumbnail_1x2' in data:
+        template.thumbnail_1x2 = data['thumbnail_1x2']
+
     # 首次儲存時遞增 revision
     if old_revision == 0 and (data.get('graph') or data.get('cytoscape_config')):
         template.revision = 1

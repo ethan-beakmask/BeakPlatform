@@ -330,19 +330,45 @@ def update_template(secure_code):
 
     data = request.get_json() or {}
 
+    schema_changed = False
+
     if 'name' in data:
         template.name = data['name'].strip()
     if 'description' in data:
         template.description = data['description']
     if 'schema' in data:
         template.schema = data['schema']
+        schema_changed = True
     if 'is_active' in data:
         template.is_active = data['is_active']
     if 'builder_config' in data:
         template.builder_config = data['builder_config']
 
+    # 縮圖（前端直接傳遞的優先）
+    if 'thumbnail_2x1' in data:
+        template.thumbnail_2x1 = data['thumbnail_2x1']
+    if 'thumbnail_1x1' in data:
+        template.thumbnail_1x1 = data['thumbnail_1x1']
+    if 'thumbnail_1x2' in data:
+        template.thumbnail_1x2 = data['thumbnail_1x2']
+
     template.updated_at = datetime.utcnow()
     db.session.commit()
+
+    # schema 變更且前端沒傳縮圖 → 背景生成
+    if schema_changed and 'thumbnail_2x1' not in data and template.schema:
+        try:
+            from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
+            if is_available():
+                from flask import current_app
+                generate_form_thumbnails_async(
+                    current_app._get_current_object(),
+                    template.id,
+                    template.schema,
+                    template.name
+                )
+        except Exception as e:
+            pass
 
     return jsonify({
         'success': True,
