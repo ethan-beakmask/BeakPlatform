@@ -114,6 +114,11 @@ git push origin main
 - API 層禁止直接使用 `Model.query`
 - 必須透過 `ResourceGateway` 存取
 
+### DATA-01: 帳號查詢必須過濾刪除與停用
+- **所有查詢用戶/帳號的地方**，必須同時過濾 `is_deleted=False` 和 `is_active=True`
+- 包含但不限於：用戶列表、組織樹、簽核人選擇、角色成員解析、部門成員解析
+- 關聯查詢（如透過角色/部門取用戶）需 JOIN User 表確認帳號狀態
+
 ---
 
 ## 📁 專案結構

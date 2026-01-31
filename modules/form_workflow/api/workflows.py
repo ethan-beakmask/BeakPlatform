@@ -973,10 +973,11 @@ def get_org_tree():
         is_active=True
     ).order_by(OrganizationalUnit.sort_order.asc()).all()
 
-    # 取得用戶
+    # 取得用戶（排除已刪除和停用的帳號）
     users = User.query.filter_by(
         org_secure_code=org.secure_code,
-        is_active=True
+        is_active=True,
+        is_deleted=False
     ).all()
 
     def build_tree(parent_code=None):

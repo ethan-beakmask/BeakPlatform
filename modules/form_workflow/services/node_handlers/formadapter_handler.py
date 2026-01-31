@@ -223,14 +223,19 @@ class FormAdapterHandler(BaseNodeHandler):
         return []
 
     def _resolve_role_users(self, role_secure_code: str) -> List[str]:
-        """查詢指定角色下的所有用戶 secure_code"""
+        """查詢指定角色下的所有用戶 secure_code（排除已刪除和停用的帳號）"""
         from app.models.associations import UserRoleAssignment
+        from app.models.user import User
         org_code = self.queue_item.org_secure_code
 
-        assignments = UserRoleAssignment.query.filter(
+        assignments = UserRoleAssignment.query.join(
+            User, UserRoleAssignment.user_secure_code == User.secure_code
+        ).filter(
             UserRoleAssignment.role_secure_code == role_secure_code,
             UserRoleAssignment.org_secure_code == org_code,
-            UserRoleAssignment.is_deleted == False
+            UserRoleAssignment.is_deleted == False,
+            User.is_active == True,
+            User.is_deleted == False
         ).all()
 
         user_codes = [a.user_secure_code for a in assignments if a.user_secure_code]

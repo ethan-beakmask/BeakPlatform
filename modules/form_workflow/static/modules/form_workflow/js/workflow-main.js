@@ -6594,11 +6594,12 @@
 
         // 載入角色列表
         async function loadRolesList(selectedValue) {
-            const select = document.getElementById('formAdapterRoleValue');
-            if (!select) return;
-
             if (rolesListData) {
-                renderRolesSelect(select, rolesListData, selectedValue);
+                // 已有快取，延遲渲染（等 DOM 準備好）
+                setTimeout(() => {
+                    const sel = document.getElementById('formAdapterRoleValue');
+                    if (sel) renderRolesSelect(sel, rolesListData, selectedValue);
+                }, 50);
                 return;
             }
 
@@ -6615,7 +6616,10 @@
                 }
             } catch (error) {
                 console.error('載入角色列表失敗:', error);
-                if (select) select.innerHTML = '<option value="">載入失敗</option>';
+                setTimeout(() => {
+                    const sel = document.getElementById('formAdapterRoleValue');
+                    if (sel) sel.innerHTML = '<option value="">載入失敗</option>';
+                }, 50);
             }
         }
         window.loadRolesList = loadRolesList;
@@ -7509,7 +7513,7 @@
         // 載入底圖列表
         async function loadBackgrounds() {
             try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds`);
+                const response = await fetch(`/api/workflows/backgrounds`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -7546,7 +7550,7 @@
                 html += '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #999; font-size: 11px;">尚無底圖，請先上傳</div>';
             } else {
                 html += availableBackgrounds.map(bg => `
-                    <div onclick="selectBackground(${bg.id}, '${bg.url}')" style="cursor: pointer; border: 2px solid ${currentBackgroundId === bg.id ? '#667eea' : '#e0e0e0'}; border-radius: 8px; background: ${currentBackgroundId === bg.id ? '#f0f4ff' : '#fff'}; padding: 8px; text-align: center; transition: all 0.2s;">
+                    <div onclick="selectBackground('${bg.id}', '${bg.url}')" style="cursor: pointer; border: 2px solid ${currentBackgroundId === bg.id ? '#667eea' : '#e0e0e0'}; border-radius: 8px; background: ${currentBackgroundId === bg.id ? '#f0f4ff' : '#fff'}; padding: 8px; text-align: center; transition: all 0.2s;">
                         <div style="width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 6px;">
                             <img src="${bg.url}" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
@@ -7594,7 +7598,7 @@
                 formData.append('file', file);
                 formData.append('description', description.trim());
 
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/upload`, {
+                const response = await fetch(`/api/workflows/backgrounds/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -7657,7 +7661,7 @@
             }
 
             try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/${currentBackgroundId}`, {
+                const response = await fetch(`/api/workflows/backgrounds/${currentBackgroundId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'
@@ -7697,7 +7701,7 @@
             }
 
             try {
-                const response = await fetch(`/org/${window.orgCode}/workflows/backgrounds/${currentBackgroundId}`, {
+                const response = await fetch(`/api/workflows/backgrounds/${currentBackgroundId}`, {
                     method: 'DELETE'
                 });
 
@@ -11151,7 +11155,7 @@
         }
 
         // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 初始化 Workflow Designer');
 
             // 防止瀏覽器縮放和導航手勢
@@ -11385,8 +11389,8 @@
             // 初始化頁籤（預設顯示第一個）
             switchTab('canvas');
 
-            // 載入底圖列表
-            loadBackgrounds();
+            // 載入底圖列表（必須在載入流程前完成，否則無法還原底圖設定）
+            await loadBackgrounds();
 
             // 載入分類列表
             loadCategories();
@@ -11404,7 +11408,7 @@
                 // 有 id，直接開啟舊檔案進行編輯
                 console.log('📂 開啟現有流程:', workflowId);
                 hasEverSaved = true;  // 載入現有流程，標記為已儲存過
-                enterDesignMode(workflowId);
+                await enterDesignMode(workflowId);
                 updateStatus('載入流程中...');
             } else if (isNewWorkflow) {
                 // 新增流程，直接進入設計模式

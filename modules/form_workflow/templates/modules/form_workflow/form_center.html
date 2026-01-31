@@ -299,10 +299,10 @@
                     <span>追蹤中</span>
                     <div class="fc-tabs" style="margin-left: 12px;">
                         <div class="fc-tab" :class="{ active: trackingTab === 'mine' }" @click="trackingTab = 'mine'; trackingPage = 1">
-                            我的(<span x-text="trackingList.length"></span>)
+                            我發起的表單(<span x-text="trackingList.length"></span>)
                         </div>
                         <div class="fc-tab" :class="{ active: trackingTab === 'signed' }" @click="trackingTab = 'signed'; signedPage = 1">
-                            簽核(<span x-text="signedList.length"></span>)
+                            我簽過的表單(<span x-text="signedList.length"></span>)
                         </div>
                     </div>
                 </div>
@@ -397,10 +397,10 @@
                     <span>歷史</span>
                     <div class="fc-tabs" style="margin-left: 12px;">
                         <div class="fc-tab" :class="{ active: historyTab === 'mine' }" @click="historyTab = 'mine'; historyPage = 1">
-                            我的(<span x-text="historyList.length"></span>)
+                            我發起的表單(<span x-text="historyList.length"></span>)
                         </div>
                         <div class="fc-tab" :class="{ active: historyTab === 'signed' }" @click="historyTab = 'signed'; signedHistoryPage = 1">
-                            簽核(<span x-text="signedHistoryList.length"></span>)
+                            我簽過的表單(<span x-text="signedHistoryList.length"></span>)
                         </div>
                     </div>
                 </div>
@@ -1307,8 +1307,9 @@ function formCenterManager() {
         async loadSigned() {
             this.loadingSigned = true;
             try {
-                // TODO: 需要後端支援 signed 參數
-                this.signedList = [];
+                const res = await fetch('/api/form-center/my-forms?signed=1&status=RUNNING');
+                const data = await res.json();
+                if (data.success) this.signedList = data.data || [];
             } catch (e) { console.error('載入簽核追蹤失敗:', e); }
             finally { this.loadingSigned = false; }
         },
@@ -1326,8 +1327,9 @@ function formCenterManager() {
         async loadSignedHistory() {
             this.loadingSignedHistory = true;
             try {
-                // TODO: 需要後端支援
-                this.signedHistoryList = [];
+                const res = await fetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR');
+                const data = await res.json();
+                if (data.success) this.signedHistoryList = data.data || [];
             } catch (e) { console.error('載入簽核歷史失敗:', e); }
             finally { this.loadingSignedHistory = false; }
         },

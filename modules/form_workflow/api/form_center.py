@@ -558,13 +558,16 @@ def list_my_forms():
     )
 
     if signed == '1':
-        # 查詢我簽核過的表單（使用 secure_code）
+        # 查詢我簽核過的表單（使用 secure_code），排除自己發起的
         signed_form_codes = db.session.query(FwApprovalRecord.form_instance_secure_code).filter(
             FwApprovalRecord.org_secure_code == org.secure_code,
             FwApprovalRecord.approver_secure_code == current_user.secure_code
         ).distinct().subquery()
 
-        base_query = base_query.filter(FwFormInstance.secure_code.in_(signed_form_codes))
+        base_query = base_query.filter(
+            FwFormInstance.secure_code.in_(signed_form_codes),
+            FwFormInstance.applicant_secure_code != current_user.secure_code
+        )
     else:
         # 查詢我提交的表單
         base_query = base_query.filter(
