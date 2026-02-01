@@ -184,6 +184,7 @@ modules/<module_name>/static/modules/<module_name>/
 - **Database**: beakplatform_dev（待建立）
 - **User**: beakplatform
 - **Password**: postgres123（開發環境）
+- **本機資料皆為測試資料**：變更後可忽略舊資料，不用修正舊資料，除非用戶要求
 
 ---
 

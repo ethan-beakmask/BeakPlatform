@@ -11300,8 +11300,8 @@
             // 載入底圖列表（必須在載入流程前完成，否則無法還原底圖設定）
             await loadBackgrounds();
 
-            // 載入分類列表
-            loadCategories();
+            // 載入分類列表（必須 await，否則後續設定 category 時 option 尚未填入）
+            await loadCategories();
 
             // 從 URL 取得參數
             const urlParams = new URLSearchParams(window.location.search);
