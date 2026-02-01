@@ -97,7 +97,7 @@ def _get_node_definitions():
             "node_type": "FormAdapter",
             "display_name": "簽核",
             "description": "表單簽核節點",
-            "icon": f"{_ICON}/form.svg",
+            "icon": f"{_ICON}/formadapter.svg",
             "category": "表單",
             "config_schema": {
                 "assigneeType": "string",
@@ -168,7 +168,7 @@ def _get_node_definitions():
             "node_type": "ParallelFork",
             "display_name": "並行分支",
             "description": "並行執行多路分支",
-            "icon": f"{_ICON}/parallel_fork.svg",
+            "icon": f"{_ICON}/parallelfork.svg",
             "category": "控制",
             "config_schema": {},
             "is_active": True,
@@ -178,7 +178,7 @@ def _get_node_definitions():
             "node_type": "ParallelJoin",
             "display_name": "並行匯合",
             "description": "等待所有並行分支完成",
-            "icon": f"{_ICON}/parallel_join.svg",
+            "icon": f"{_ICON}/paralleljoin.svg",
             "category": "控制",
             "config_schema": {
                 "mode": "string"
@@ -231,7 +231,7 @@ def _get_node_definitions():
             "node_type": "EmailAdapter",
             "display_name": "Email 通知",
             "description": "發送 Email",
-            "icon": f"{_ICON}/email.svg",
+            "icon": f"{_ICON}/emailadapter.svg",
             "category": "通知",
             "config_schema": {
                 "to": "string",
@@ -248,7 +248,7 @@ def _get_node_definitions():
             "node_type": "OpSet",
             "display_name": "設定變數",
             "description": "設定流程變數值",
-            "icon": f"{_ICON}/settings.svg",
+            "icon": f"{_ICON}/opset.svg",
             "category": "變數",
             "config_schema": {
                 "variables": "array"
@@ -260,7 +260,7 @@ def _get_node_definitions():
             "node_type": "OpFieldRead",
             "display_name": "讀取欄位",
             "description": "從表單讀取欄位到變數",
-            "icon": f"{_ICON}/form-read.svg",
+            "icon": f"{_ICON}/opfieldread.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -272,7 +272,7 @@ def _get_node_definitions():
             "node_type": "OpFieldWrite",
             "display_name": "寫入欄位",
             "description": "將變數寫入表單欄位",
-            "icon": f"{_ICON}/form-write.svg",
+            "icon": f"{_ICON}/opfieldwrite.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
@@ -327,7 +327,7 @@ def _get_node_definitions():
             "node_type": "SysTelegram",
             "display_name": "系統 Telegram",
             "description": "系統級 Telegram 通知",
-            "icon": f"{_ICON}/sys_telegram.svg",
+            "icon": f"{_ICON}/systelegram.svg",
             "category": "系統",
             "config_schema": {
                 "message": "string"
