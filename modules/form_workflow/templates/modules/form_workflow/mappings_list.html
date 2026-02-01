@@ -54,6 +54,16 @@
     .fw-toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 4px; color: white; z-index: 2000; }
     .fw-toast.success { background: #16a34a; }
     .fw-toast.error { background: #dc2626; }
+
+    /* SQL Sync Toggle */
+    .fw-toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .fw-toggle input { opacity: 0; width: 0; height: 0; }
+    .fw-toggle .slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; transition: 0.2s; border-radius: 10px; }
+    .fw-toggle .slider:before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: 0.2s; border-radius: 50%; }
+    .fw-toggle input:checked + .slider { background: #0066cc; }
+    .fw-toggle input:checked + .slider:before { transform: translateX(16px); }
+    .fw-sync-info { font-size: 11px; color: #999; margin-top: 2px; }
+    .fw-sync-info.active { color: #0066cc; }
 </style>
 {% endblock %}
 
@@ -88,6 +98,7 @@
                     <th style="width: 40px;"></th>
                     <th>流程</th>
                     <th style="width: 80px; text-align: center;">狀態</th>
+                    <th style="width: 80px; text-align: center;">SQL 同步</th>
                     <th style="width: 140px;">更新時間</th>
                     <th style="width: 180px;" class="actions">操作</th>
                 </tr>
@@ -107,6 +118,14 @@
                         <td style="text-align: center;">
                             <span class="fw-badge" :class="m.is_published ? 'active' : 'secondary'"
                                   x-text="m.is_published ? '已發行' : '未發行'"></span>
+                        </td>
+                        <td style="text-align: center;">
+                            <label class="fw-toggle">
+                                <input type="checkbox" :checked="m.sql_sync_enabled" @change="toggleSqlSync(m, $event.target.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <div class="fw-sync-info" :class="m._syncInfo ? 'active' : ''"
+                                 x-text="m._syncInfo || ''"></div>
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
                         <td class="actions">
@@ -266,6 +285,12 @@ function mappingsManager() {
             await this.loadMappings();
             await this.loadUnmappedForms();
             await this.loadWorkflows();
+            // 載入每個 mapping 的 SQL sync 狀態
+            for (const m of this.mappings) {
+                if (m.sql_sync_enabled) {
+                    this.loadSyncStatus(m);
+                }
+            }
         },
 
         async loadMappings() {
@@ -459,6 +484,45 @@ function mappingsManager() {
                 }
             } catch (e) {
                 this.showToast('刪除失敗: ' + e.message, 'error');
+            }
+        },
+
+        async toggleSqlSync(m, enabled) {
+            try {
+                const res = await fetch(`/api/mappings/${m.secure_code}/sql-sync`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql_sync_enabled: enabled })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    m.sql_sync_enabled = enabled;
+                    this.showToast(data.message || (enabled ? 'SQL 同步已啟用' : 'SQL 同步已停用'));
+                    if (enabled) {
+                        this.loadSyncStatus(m);
+                    } else {
+                        m._syncInfo = '';
+                    }
+                } else {
+                    this.showToast(data.error || '操作失敗', 'error');
+                    m.sql_sync_enabled = !enabled; // revert
+                }
+            } catch (e) {
+                this.showToast('操作失敗', 'error');
+                m.sql_sync_enabled = !enabled;
+            }
+        },
+
+        async loadSyncStatus(m) {
+            try {
+                const res = await fetch(`/api/mappings/${m.secure_code}/sql-sync/status`);
+                const data = await res.json();
+                if (data.success && data.data.tables && data.data.tables.length > 0) {
+                    const latest = data.data.tables[0]; // 按 publish_version desc
+                    m._syncInfo = `${latest.row_count || 0} 筆`;
+                }
+            } catch (e) {
+                // silent
             }
         },
 

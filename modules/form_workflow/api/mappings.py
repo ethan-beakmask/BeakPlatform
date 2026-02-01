@@ -222,6 +222,8 @@ def update_mapping(secure_code):
         mapping.trigger_condition = data['trigger_condition']
     if 'description' in data:
         mapping.description = data['description']
+    if 'sql_sync_enabled' in data:
+        mapping.sql_sync_enabled = bool(data['sql_sync_enabled'])
 
     mapping.updated_at = datetime.utcnow()
     db.session.commit()
@@ -264,6 +266,90 @@ def delete_mapping(secure_code):
     return jsonify({
         'success': True,
         'message': '配對已刪除'
+    })
+
+
+# =============================================================================
+# SQL 同步管理 API
+# =============================================================================
+
+@mappings_bp.route('/<secure_code>/sql-sync', methods=['PATCH'])
+@csrf.exempt
+@login_required
+def toggle_sql_sync(secure_code):
+    """切換 SQL 同步開關"""
+    from ..models import FwFormWorkflowMapping
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not mapping:
+        return jsonify({'success': False, 'error': 'Mapping not found'}), 404
+
+    data = request.get_json() or {}
+    if 'sql_sync_enabled' not in data:
+        return jsonify({'success': False, 'error': '缺少 sql_sync_enabled 參數'}), 400
+
+    mapping.sql_sync_enabled = bool(data['sql_sync_enabled'])
+    mapping.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'secure_code': mapping.secure_code,
+            'sql_sync_enabled': mapping.sql_sync_enabled,
+        },
+        'message': f'SQL 同步已{"啟用" if mapping.sql_sync_enabled else "停用"}'
+    })
+
+
+@mappings_bp.route('/<secure_code>/sql-sync/status')
+@login_required
+def get_sql_sync_status(secure_code):
+    """取得 SQL 同步狀態"""
+    from ..models import FwFormWorkflowMapping, FwSqlFormRegistry
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not mapping:
+        return jsonify({'success': False, 'error': 'Mapping not found'}), 404
+
+    # 查詢該 mapping 的所有 SQL sync registries
+    registries = FwSqlFormRegistry.query.filter_by(
+        mapping_secure_code=secure_code,
+    ).order_by(FwSqlFormRegistry.publish_version.desc()).all()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'sql_sync_enabled': mapping.sql_sync_enabled,
+            'tables': [
+                {
+                    'table_name': r.table_name,
+                    'publish_version': r.publish_version,
+                    'status': r.status,
+                    'row_count': r.row_count,
+                    'last_synced_at': r.last_synced_at.isoformat() if r.last_synced_at else None,
+                }
+                for r in registries
+            ]
+        }
     })
 
 
@@ -354,6 +440,15 @@ def publish_mapping(secure_code):
         mapping.is_published = True
         mapping.form_template_version = form_template.version
         mapping.workflow_template_version = workflow_template.version
+
+        # SQL Sync: 如果啟用，建立同步表
+        if mapping.sql_sync_enabled:
+            from ..services.sql_sync.table_manager import create_sync_table_for_published
+            create_sync_table_for_published(
+                published=published,
+                form_schema=form_template.schema,
+                org_secure_code=org.secure_code,
+            )
 
         db.session.add(published)
         db.session.commit()

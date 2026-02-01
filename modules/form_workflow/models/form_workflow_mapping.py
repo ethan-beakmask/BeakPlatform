@@ -51,6 +51,9 @@ class FwFormWorkflowMapping(ModuleBaseModel):
     # 條件觸發（可選）
     trigger_condition = Column(JSON)  # 觸發條件 JSON
 
+    # SQL 同步
+    sql_sync_enabled = Column(Boolean, default=False, nullable=False)
+
     # 備註
     description = Column(String(500))
 
@@ -88,6 +91,9 @@ class FwFormWorkflowMapping(ModuleBaseModel):
             'priority': self.priority,
             'is_published': self.is_published,
             'publish_at': self.publish_at.isoformat() if self.publish_at else None,
+
+            # SQL 同步
+            'sql_sync_enabled': self.sql_sync_enabled,
 
             # 條件
             'trigger_condition': self.trigger_condition,

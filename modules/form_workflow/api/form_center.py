@@ -502,6 +502,11 @@ def submit_form():
         db.session.add(queue_item)
         db.session.commit()
 
+        # SQL Sync (non-blocking) — JSONB 為主，SQL 副本失敗不影響提交
+        if form_instance.published_secure_code:
+            from ..services.sql_sync.sync_service import sync_form_data_safe
+            sync_form_data_safe(form_instance, form_instance.published_secure_code)
+
         return jsonify({
             'success': True,
             'message': '表單已送出，流程已啟動' + ('（測試模式）' if is_test_mode else ''),
@@ -983,6 +988,11 @@ def approve_task(secure_code):
         }
 
         db.session.commit()
+
+        # SQL Sync — 簽核修改後重新同步
+        if updated_form_data and form_instance and form_instance.published_secure_code:
+            from ..services.sql_sync.sync_service import sync_form_data_safe
+            sync_form_data_safe(form_instance, form_instance.published_secure_code)
 
         # 觸發工作流推進
         if decision == 'approved':
