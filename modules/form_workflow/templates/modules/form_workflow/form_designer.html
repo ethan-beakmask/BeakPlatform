@@ -2272,6 +2272,11 @@
                         currentFormId = result.data.secure_code;
                         console.log('✅ 新表單 secure_code:', currentFormId);
                     }
+
+                    // 縮圖背景生成中，記錄待更新的模板
+                    if (result.thumbnail_pending && (currentFormId || result.data?.secure_code)) {
+                        sessionStorage.setItem('thumb_pending', currentFormId || result.data.secure_code);
+                    }
                 } else {
                     throw new Error(result.message || '儲存失敗');
                 }
@@ -2361,6 +2366,11 @@
                     // 如果是新增，更新 currentFormId（保持邏輯一致）
                     if (!currentFormId && result.data && result.data.secure_code) {
                         currentFormId = result.data.secure_code;
+                    }
+
+                    // 縮圖背景生成中，記錄待更新的模板
+                    if (result.thumbnail_pending && (currentFormId || result.data?.secure_code)) {
+                        sessionStorage.setItem('thumb_pending', currentFormId || result.data.secure_code);
                     }
 
                     // 跳轉到表單清單頁面

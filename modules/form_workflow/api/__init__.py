@@ -200,6 +200,8 @@ def update_template(secure_code):
         template.name = data['name'].strip()
     if 'description' in data:
         template.description = data['description']
+    if 'category' in data:
+        template.category = data['category']
     if 'schema' in data:
         template.schema = data['schema']
     if 'is_active' in data:
@@ -394,6 +396,8 @@ def update_workflow(secure_code):
         workflow.name = data['name'].strip()
     if 'description' in data:
         workflow.description = data['description']
+    if 'category' in data:
+        workflow.category = data['category']
     if 'graph' in data:
         workflow.graph = data['graph']
     if 'is_active' in data:

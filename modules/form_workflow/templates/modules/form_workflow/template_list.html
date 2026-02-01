@@ -89,6 +89,13 @@
     .view-toggle { display: flex; background: #f0f0f0; padding: 2px; }
     .view-toggle button { padding: 4px 8px; border: none; font-size: 14px; cursor: pointer; background: transparent; line-height: 1; }
     .view-toggle button.active { background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+    .fw-filter-bar { display: flex; gap: 6px; padding: 0 0 12px 0; flex-wrap: wrap; }
+    .fw-chip { padding: 5px 12px; font-size: 12px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .fw-chip:hover { background: #e9e9e9; }
+    .fw-chip.active { background: #0066cc; color: white; border-color: #0066cc; }
+    .fw-chip .chip-count { font-size: 10px; background: rgba(0,0,0,0.1); padding: 1px 5px; border-radius: 8px; }
+    .fw-chip.active .chip-count { background: rgba(255,255,255,0.3); }
 </style>
 {% endblock %}
 
@@ -119,17 +126,32 @@
         </div>
     </div>
 
+    <!-- 分類篩選 -->
+    <div x-show="!loading" class="fw-filter-bar">
+        <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('forms_filter_category', '')">
+            全部 <span class="chip-count" x-text="templates.length"></span>
+        </div>
+        <template x-for="cat in categories" :key="cat.secure_code">
+            <div class="fw-chip" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name; localStorage.setItem('forms_filter_category', cat.name)">
+                <span x-text="cat.name"></span> <span class="chip-count" x-text="getCategoryCount(cat.name)"></span>
+            </div>
+        </template>
+        <div class="fw-chip" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'; localStorage.setItem('forms_filter_category', '__other__')">
+            其他 <span class="chip-count" x-text="getOtherCount()"></span>
+        </div>
+    </div>
+
     <!-- 表格 -->
     <div class="fw-card">
         <div x-show="loading" class="fw-loading">載入中...</div>
 
-        <div x-show="!loading && templates.length === 0" class="fw-empty">
+        <div x-show="!loading && filteredTemplates.length === 0" class="fw-empty">
             <p style="font-size: 16px; margin-bottom: 8px;">尚無表單模板</p>
             <p>點擊「新增模板」開始建立</p>
         </div>
 
         <!-- 清單模式 -->
-        <table x-show="!loading && templates.length > 0 && viewMode === 'list'" class="fw-table">
+        <table x-show="!loading && filteredTemplates.length > 0 && viewMode === 'list'" class="fw-table">
             <thead>
                 <tr>
                     <th style="width: 200px;">名稱</th>
@@ -141,7 +163,7 @@
                 </tr>
             </thead>
             <tbody>
-                <template x-for="t in templates" :key="t.secure_code">
+                <template x-for="t in filteredTemplates" :key="t.secure_code">
                     <tr>
                         <td style="font-weight: 500;" x-text="t.name"></td>
                         <td style="font-family: monospace; color: #666;" x-text="t.code || '-'"></td>
@@ -174,9 +196,9 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && templates.length > 0 && viewMode === 'grid'">
+    <template x-if="!loading && filteredTemplates.length > 0 && viewMode === 'grid'">
         <div class="thumb-grid">
-            <template x-for="t in templates" :key="t.secure_code">
+            <template x-for="t in filteredTemplates" :key="t.secure_code">
                 <div class="thumb-card" @click="editTemplate(t)">
                     <div class="thumb-img">
                         <img x-show="t.thumbnail_2x1" :src="t.thumbnail_2x1" :alt="t.name">
@@ -278,7 +300,12 @@ function templateListManager() {
         loading: true,
         searchQuery: '',
         viewMode: localStorage.getItem('forms_view_mode') || 'grid',
+        selectedCategory: null,
         pagination: { page: 1, pages: 1, total: 0, has_prev: false, has_next: false },
+        _thumbPendingTimer: null,
+        _thumbPendingCount: 0,
+        _refreshTimer: null,
+        _refreshCount: 0,
 
         showModal: false,
         editingTemplate: null,
@@ -295,6 +322,14 @@ function templateListManager() {
         async init() {
             await this.loadCategories();
             await this.loadTemplates();
+            const saved = localStorage.getItem('forms_filter_category');
+            if (saved === '__other__') {
+                this.selectedCategory = '__other__';
+            } else if (saved && this.categories.some(c => c.name === saved)) {
+                this.selectedCategory = saved;
+            }
+            this.pollPendingThumbnail();
+            this.startPeriodicRefresh();
         },
 
         async loadCategories() {
@@ -326,6 +361,56 @@ function templateListManager() {
             } finally {
                 this.loading = false;
             }
+        },
+
+        startPeriodicRefresh() {
+            this._refreshCount = 0;
+            this._refreshTimer = setInterval(() => {
+                this._refreshCount++;
+                this.silentReload();
+                // 前 4 次每 3 秒，之後切換為每 2 分鐘
+                if (this._refreshCount === 4) {
+                    clearInterval(this._refreshTimer);
+                    this._refreshTimer = setInterval(() => this.silentReload(), 120000);
+                }
+            }, 3000);
+        },
+
+        async silentReload() {
+            try {
+                let url = `/api/form-workflow/templates?page=${this.pagination.page}`;
+                if (this.searchQuery) url += `&q=${encodeURIComponent(this.searchQuery)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success) {
+                    this.templates = data.data.templates || [];
+                    this.pagination = data.data.pagination || this.pagination;
+                }
+            } catch (e) { /* silent */ }
+        },
+
+        pollPendingThumbnail() {
+            const pendingCode = sessionStorage.getItem('thumb_pending');
+            if (!pendingCode) return;
+            sessionStorage.removeItem('thumb_pending');
+            this._thumbPendingCount = 0;
+            this._thumbPendingTimer = setInterval(async () => {
+                this._thumbPendingCount++;
+                if (this._thumbPendingCount > 10) {
+                    clearInterval(this._thumbPendingTimer);
+                    this._thumbPendingTimer = null;
+                    return;
+                }
+                try {
+                    const res = await fetch(`/api/form-workflow/templates/${pendingCode}`);
+                    const data = await res.json();
+                    if (!data.success || !data.data.thumbnail_2x1) return;
+                    const target = this.templates.find(t => t.secure_code === pendingCode);
+                    if (target) target.thumbnail_2x1 = data.data.thumbnail_2x1;
+                    clearInterval(this._thumbPendingTimer);
+                    this._thumbPendingTimer = null;
+                } catch (e) { /* silent */ }
+            }, 3000);
         },
 
         goToPage(page) {
@@ -422,6 +507,24 @@ function templateListManager() {
             } catch (e) {
                 alert('刪除失敗: ' + e.message);
             }
+        },
+
+        get filteredTemplates() {
+            if (this.selectedCategory === null) return this.templates;
+            if (this.selectedCategory === '__other__') {
+                const catNames = this.categories.map(c => c.name);
+                return this.templates.filter(t => !t.category || !catNames.includes(t.category));
+            }
+            return this.templates.filter(t => t.category === this.selectedCategory);
+        },
+
+        getCategoryCount(name) {
+            return this.templates.filter(t => t.category === name).length;
+        },
+
+        getOtherCount() {
+            const catNames = this.categories.map(c => c.name);
+            return this.templates.filter(t => !t.category || !catNames.includes(t.category)).length;
         },
 
         formatDate(dateStr) {

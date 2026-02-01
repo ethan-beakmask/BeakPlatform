@@ -336,6 +336,8 @@ def update_template(secure_code):
         template.name = data['name'].strip()
     if 'description' in data:
         template.description = data['description']
+    if 'category' in data:
+        template.category = data['category']
     if 'schema' in data:
         template.schema = data['schema']
         schema_changed = True
@@ -356,6 +358,7 @@ def update_template(secure_code):
     db.session.commit()
 
     # schema 變更且前端沒傳縮圖 → 背景生成
+    thumbnail_pending = False
     if schema_changed and 'thumbnail_2x1' not in data and template.schema:
         try:
             from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
@@ -367,12 +370,14 @@ def update_template(secure_code):
                     template.schema,
                     template.name
                 )
+                thumbnail_pending = True
         except Exception as e:
             pass
 
     return jsonify({
         'success': True,
         'data': template.to_dict(include_schema=True),
+        'thumbnail_pending': thumbnail_pending,
         'message': '表單模板已更新'
     })
 

@@ -189,9 +189,9 @@
                         <span class="fc-category-count" x-text="getFormCountByCategory(cat.name)"></span>
                     </div>
                 </template>
-                <div x-show="getFormCountByCategory(null) > 0" class="fc-category-item" :class="{ active: selectedCategory === '__uncategorized__' }" @click="selectedCategory = '__uncategorized__'">
-                    <span>未分類</span>
-                    <span class="fc-category-count" x-text="getFormCountByCategory(null)"></span>
+                <div class="fc-category-item" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'">
+                    <span>其他</span>
+                    <span class="fc-category-count" x-text="getOtherCount()"></span>
                 </div>
             </div>
         </div>
@@ -220,10 +220,10 @@
             <div class="fc-section-header">
                 <div class="fc-section-title">
                     <span>新填表單</span>
-                    <span x-show="selectedCategory && selectedCategory !== '__uncategorized__'" style="font-weight: normal; color: #6b7280;">
+                    <span x-show="selectedCategory && selectedCategory !== '__other__'" style="font-weight: normal; color: #6b7280;">
                         / <span x-text="selectedCategory"></span>
                     </span>
-                    <span x-show="selectedCategory === '__uncategorized__'" style="font-weight: normal; color: #6b7280;">/ 未分類</span>
+                    <span x-show="selectedCategory === '__other__'" style="font-weight: normal; color: #6b7280;">/ 其他</span>
                 </div>
                 <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
             </div>
@@ -1166,13 +1166,20 @@ function formCenterManager() {
         // 計算屬性
         get filteredForms() {
             if (this.selectedCategory === null) return this.availableForms;
-            if (this.selectedCategory === '__uncategorized__') return this.availableForms.filter(f => !f.category);
+            if (this.selectedCategory === '__other__') {
+                const catNames = this.categories.map(c => c.name);
+                return this.availableForms.filter(f => !f.category || !catNames.includes(f.category));
+            }
             return this.availableForms.filter(f => f.category === this.selectedCategory);
         },
 
         getFormCountByCategory(name) {
-            if (name === null) return this.availableForms.filter(f => !f.category).length;
             return this.availableForms.filter(f => f.category === name).length;
+        },
+
+        getOtherCount() {
+            const catNames = this.categories.map(c => c.name);
+            return this.availableForms.filter(f => !f.category || !catNames.includes(f.category)).length;
         },
 
         get pendingTotalPages() { return Math.ceil(this.pendingApprovals.length / this.pendingPageSize); },

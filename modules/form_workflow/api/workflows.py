@@ -581,6 +581,8 @@ def update_template(secure_code):
         template.graph = data['graph']
     if 'cytoscape_config' in data:
         template.cytoscape_config = data['cytoscape_config']
+    if 'category' in data:
+        template.category = data['category']
     if 'is_active' in data:
         template.is_active = data['is_active']
 
