@@ -280,6 +280,43 @@ systemctl restart beakplatform
   - 流程: Start → OpFieldRead → OpFieldWrite → FormAdapter(簽核) → Delay(20s) → End
   - Executor 輪詢(5s)正常、subprocess 啟動正常、Delay 到期恢復正常
   - Workflow COMPLETED、Form APPROVED
+- [x] JSONB Primary + SQL Sync 功能實作（2026-02-02）
+  - 獨立 DB (beakform_data) + 專用帳號 (beakform)
+  - 連線池 + converter + table_manager + sync_service
+  - 自動化測試通過（建表/UPSERT/更新/安全模式）
+
+---
+
+### ⏭ 下次對話：SQL Sync 實機測試
+
+**測試順序**（需先啟動 Flask 服務）：
+
+1. **配對頁面 SQL 開關**
+   - 開啟配對管理頁 → 確認 SQL 同步 toggle 顯示
+   - 選擇一個配對 → 開啟 SQL 同步 toggle
+   - 確認 API `PATCH /api/mappings/{sc}/sql-sync` 正常
+
+2. **發行 → 自動建表**
+   - 對已啟用 SQL 同步的配對點「發行」
+   - 確認 beakform_data 中自動建立 `fw_data_xxx_v{N}` 表
+   - 確認 fw_sql_form_registries 有對應記錄
+   - `psql -U beakform -d beakform_data -c "\dt fw_data_*"`
+
+3. **提交表單 → SQL 同步**
+   - 填寫表單並送出
+   - 確認 SQL 表出現對應資料
+   - `psql -U beakform -d beakform_data -c "SELECT * FROM fw_data_xxx_v1"`
+
+4. **簽核修改 → SQL 更新**
+   - 簽核時修改可編輯欄位
+   - 確認 SQL 表資料已更新
+
+5. **容錯驗證**
+   - 停止 beakform_data DB (`pg_ctl stop` 或 revoke beakform)
+   - 送出表單 → 確認仍成功（只有 sync warning 在日誌中）
+   - 恢復後再送一次 → 確認 sync 恢復正常
+
+---
 
 **Step 1 完成項目** (2026-01-23):
 - 專案初始化與 Git/Forgejo 設定
@@ -435,4 +472,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-01-25 (Step 5 模組標準驗證完成)*
+*最後更新: 2026-02-02 (SQL Sync 功能實作完成，待實機測試)*
