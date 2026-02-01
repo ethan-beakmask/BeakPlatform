@@ -1,1 +1,19 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="#333333" xmlns="http://www.w3.org/2000/svg"><path d="M21 9.5V12.5C21 14.9853 16.9706 17 12 17C7.02944 17 3 14.9853 3 12.5V9.5C3 11.9853 7.02944 14 12 14C16.9706 14 21 11.9853 21 9.5ZM3 14.5C3 16.9853 7.02944 19 12 19C16.9706 19 21 16.9853 21 14.5V17.5C21 19.9853 16.9706 22 12 22C7.02944 22 3 19.9853 3 17.5V14.5ZM12 12C7.02944 12 3 9.98528 3 7.5C3 5.01472 7.02944 3 12 3C16.9706 3 21 5.01472 21 7.5C21 9.98528 16.9706 12 12 12Z"/></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect x="2" y="3" width="20" height="18" rx="2" />
+  <circle cx="6" cy="8" r="0.5" />
+  <line x1="9" y1="8" x2="18" y2="8" />
+  <circle cx="6" cy="12" r="0.5" />
+  <line x1="9" y1="12" x2="15" y2="12" />
+  <circle cx="6" cy="16" r="0.5" />
+  <line x1="9" y1="16" x2="13" y2="16" />
+</svg>

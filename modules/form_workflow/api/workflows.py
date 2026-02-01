@@ -60,138 +60,290 @@ def _get_default_graph():
 
 
 def _get_node_definitions():
-    """取得節點定義列表"""
+    """
+    取得節點定義列表
+
+    每個節點包含 require_system_admin 欄位，用於 API 層權限過濾。
+    """
+    _ICON = "/static/modules/form_workflow/icons/workflow"
     return [
+        # =================================================================
+        # 基本
+        # =================================================================
         {
             "node_type": "Start",
             "display_name": "開始",
             "description": "流程的起點",
-            "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
+            "icon": f"{_ICON}/start.svg",
             "category": "基本",
             "config_schema": {},
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "End",
             "display_name": "結束",
             "description": "流程的終點",
-            "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
+            "icon": f"{_ICON}/end.svg",
             "category": "基本",
             "config_schema": {},
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
+        # =================================================================
+        # 表單 / 簽核
+        # =================================================================
         {
             "node_type": "FormAdapter",
             "display_name": "簽核",
             "description": "表單簽核節點",
-            "icon": "/static/modules/form_workflow/icons/workflow/form.svg",
+            "icon": f"{_ICON}/form.svg",
             "category": "表單",
             "config_schema": {
                 "assigneeType": "string",
                 "assigneeValue": "string",
                 "approvalMode": "string"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
+        # =================================================================
+        # 流程控制
+        # =================================================================
         {
             "node_type": "Delay",
             "display_name": "暫停",
             "description": "延遲執行指定時間",
-            "icon": "/static/modules/form_workflow/icons/workflow/delay.svg",
+            "icon": f"{_ICON}/delay.svg",
             "category": "控制",
             "config_schema": {
                 "delay_seconds": "number"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "Branch",
-            "display_name": "條件分支",
+            "display_name": "分支",
             "description": "根據條件選擇路徑",
-            "icon": "/static/modules/form_workflow/icons/workflow/branch.svg",
+            "icon": f"{_ICON}/branch.svg",
             "category": "控制",
             "config_schema": {},
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "Condition",
+            "display_name": "條件判斷",
+            "description": "條件判斷節點",
+            "icon": f"{_ICON}/condition.svg",
+            "category": "控制",
+            "config_schema": {},
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "Switch",
+            "display_name": "條件分支",
+            "description": "多路條件判斷分支",
+            "icon": f"{_ICON}/switch.svg",
+            "category": "控制",
+            "config_schema": {},
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "Converge",
             "display_name": "匯合",
             "description": "等待多條路徑匯合",
-            "icon": "/static/modules/form_workflow/icons/workflow/converge.svg",
+            "icon": f"{_ICON}/converge.svg",
             "category": "控制",
             "config_schema": {
                 "mode": "string"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "ParallelFork",
+            "display_name": "並行分支",
+            "description": "並行執行多路分支",
+            "icon": f"{_ICON}/parallel_fork.svg",
+            "category": "控制",
+            "config_schema": {},
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "ParallelJoin",
+            "display_name": "並行匯合",
+            "description": "等待所有並行分支完成",
+            "icon": f"{_ICON}/parallel_join.svg",
+            "category": "控制",
+            "config_schema": {
+                "mode": "string"
+            },
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "SubFlow",
+            "display_name": "子流程",
+            "description": "呼叫其他工作流程",
+            "icon": f"{_ICON}/subflow.svg",
+            "category": "控制",
+            "config_schema": {
+                "childFlowId": "string"
+            },
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        # =================================================================
+        # 通知
+        # =================================================================
+        {
+            "node_type": "Notification",
+            "display_name": "通知",
+            "description": "系統內部通知",
+            "icon": f"{_ICON}/notification.svg",
+            "category": "通知",
+            "config_schema": {
+                "message": "string",
+                "notifyType": "string"
+            },
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "Telegram",
             "display_name": "Telegram 通知",
             "description": "發送 Telegram 訊息",
-            "icon": "/static/modules/form_workflow/icons/workflow/telegram.svg",
+            "icon": f"{_ICON}/telegram.svg",
             "category": "通知",
             "config_schema": {
                 "message": "string",
                 "chat_id": "string"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "EmailAdapter",
             "display_name": "Email 通知",
             "description": "發送 Email",
-            "icon": "/static/modules/form_workflow/icons/workflow/email.svg",
+            "icon": f"{_ICON}/email.svg",
             "category": "通知",
             "config_schema": {
                 "to": "string",
                 "subject": "string",
                 "body": "string"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
-        {
-            "node_type": "SubFlow",
-            "display_name": "子流程",
-            "description": "呼叫其他工作流程",
-            "icon": "/static/modules/form_workflow/icons/workflow/subflow.svg",
-            "category": "控制",
-            "config_schema": {
-                "childFlowId": "string"
-            },
-            "is_active": True
-        },
+        # =================================================================
+        # 變數 / 資料操作
+        # =================================================================
         {
             "node_type": "OpSet",
             "display_name": "設定變數",
             "description": "設定流程變數值",
-            "icon": "/static/modules/form_workflow/icons/workflow/settings.svg",
+            "icon": f"{_ICON}/settings.svg",
             "category": "變數",
             "config_schema": {
                 "variables": "array"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "OpFieldRead",
             "display_name": "讀取欄位",
             "description": "從表單讀取欄位到變數",
-            "icon": "/static/modules/form_workflow/icons/workflow/form-read.svg",
+            "icon": f"{_ICON}/form-read.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
         },
         {
             "node_type": "OpFieldWrite",
             "display_name": "寫入欄位",
             "description": "將變數寫入表單欄位",
-            "icon": "/static/modules/form_workflow/icons/workflow/form-write.svg",
+            "icon": f"{_ICON}/form-write.svg",
             "category": "變數",
             "config_schema": {
                 "mappings": "array"
             },
-            "is_active": True
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "FormExp",
+            "display_name": "表單匯出",
+            "description": "將表單資料匯出",
+            "icon": f"{_ICON}/formexp.svg",
+            "category": "變數",
+            "config_schema": {},
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        # =================================================================
+        # 外部整合
+        # =================================================================
+        {
+            "node_type": "EmailRelay",
+            "display_name": "Email 轉發",
+            "description": "透過外部系統發送 Email",
+            "icon": f"{_ICON}/emailrelay.svg",
+            "category": "整合",
+            "config_schema": {
+                "to": "string",
+                "subject": "string",
+                "body": "string"
+            },
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        {
+            "node_type": "SqlExecutor",
+            "display_name": "SQL 執行",
+            "description": "執行 SQL 查詢",
+            "icon": f"{_ICON}/sqlexecutor.svg",
+            "category": "整合",
+            "config_schema": {
+                "sql": "string",
+                "connection": "string"
+            },
+            "is_active": True,
+            "require_system_admin": False,
+        },
+        # =================================================================
+        # 系統（部分僅系統管理員可見）
+        # =================================================================
+        {
+            "node_type": "SysTelegram",
+            "display_name": "系統 Telegram",
+            "description": "系統級 Telegram 通知",
+            "icon": f"{_ICON}/sys_telegram.svg",
+            "category": "系統",
+            "config_schema": {
+                "message": "string"
+            },
+            "is_active": True,
+            "require_system_admin": True,
+        },
+        {
+            "node_type": "Abandon",
+            "display_name": "中止",
+            "description": "強制中止流程",
+            "icon": f"{_ICON}/abandon.svg",
+            "category": "系統",
+            "config_schema": {},
+            "is_active": True,
+            "require_system_admin": False,
         },
     ]
 
@@ -697,8 +849,15 @@ def save_new_version(secure_code):
 @workflows_bp.route('/data/node-definitions')
 @login_required
 def get_node_definitions():
-    """取得節點定義列表（按分類分組）"""
+    """
+    取得節點定義列表（按分類分組）
+
+    過濾邏輯：
+    - Start 節點不出現在面板（由系統自動建立，一個流程只能有一個起點）
+    - require_system_admin=True 的節點僅系統管理員可見
+    """
     definitions = _get_node_definitions()
+    is_sys_admin = getattr(current_user, 'is_system_admin', False)
 
     # 將節點按分類分組
     category_map = {
@@ -709,11 +868,19 @@ def get_node_definitions():
         '變數': 'data',
         '操作': 'operation',
         '整合': 'integration',
-        '系統': 'system_admin'
+        '系統': 'system',
     }
 
     grouped = {}
     for node_def in definitions:
+        # 隱藏 Start 節點（由系統自動建立，避免用戶重複拖放）
+        if node_def['node_type'] == 'Start':
+            continue
+
+        # 權限過濾：非系統管理員看不到 require_system_admin 的節點
+        if node_def.get('require_system_admin') and not is_sys_admin:
+            continue
+
         category_zh = node_def.get('category', '基本')
         category_key = category_map.get(category_zh, 'basic')
 
