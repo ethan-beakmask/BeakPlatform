@@ -335,7 +335,7 @@ def publish_mapping(secure_code):
             existing_published.suspend(suspended_by=current_user.secure_code)
 
         # 建立發行版本
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
 
         published = FwPublishedFormWorkflow.create_from_mapping(
             mapping=mapping,
