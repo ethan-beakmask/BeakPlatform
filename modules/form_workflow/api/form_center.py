@@ -643,6 +643,70 @@ def get_my_form(secure_code):
 
 
 # =============================================================================
+# 欄位權限處理
+# =============================================================================
+
+def _apply_field_permissions_to_schema(schema, role_permissions):
+    """
+    根據欄位權限修改 form.io schema
+
+    role_permissions: {"field_key": "hidden"|"readonly"|"editable", ...}
+    未配置的欄位預設為 readonly
+
+    Returns: (modified_schema, has_editable)
+    """
+    import copy
+    schema = copy.deepcopy(schema)
+    has_editable = False
+
+    def process_components(components):
+        nonlocal has_editable
+        result = []
+        for comp in components:
+            comp = dict(comp)
+
+            # 處理容器元件 (panel, columns, fieldset, tabs, well 等)
+            if 'components' in comp:
+                comp['components'] = process_components(comp['components'])
+                result.append(comp)
+                continue
+
+            # 處理 columns 元件
+            if 'columns' in comp:
+                for col in comp.get('columns', []):
+                    if 'components' in col:
+                        col['components'] = process_components(col['components'])
+                result.append(comp)
+                continue
+
+            key = comp.get('key')
+            if not key:
+                result.append(comp)
+                continue
+
+            perm = role_permissions.get(key, 'readonly')
+
+            if perm == 'hidden':
+                # 跳過此欄位 (不加入結果)
+                continue
+            elif perm == 'editable':
+                comp['disabled'] = False
+                has_editable = True
+                result.append(comp)
+            else:
+                # readonly (預設)
+                comp['disabled'] = True
+                result.append(comp)
+
+        return result
+
+    if schema.get('components'):
+        schema['components'] = process_components(schema['components'])
+
+    return schema, has_editable
+
+
+# =============================================================================
 # 待簽核任務
 # =============================================================================
 
@@ -739,6 +803,20 @@ def get_pending_task(secure_code):
     require_comment = result_data.get('require_comment', False)
     min_comment_length = result_data.get('min_comment_length', 1 if require_comment else 0)
 
+    # 判斷用戶角色 (approver/reader) 並取得欄位權限
+    field_permissions = node_config.get('field_permissions', {})
+    is_approver = current_user.secure_code in (task_result_data.get('assignees', []))
+    user_role = 'approver' if is_approver else 'reader'
+    role_permissions = field_permissions.get(user_role, {})
+
+    # 根據欄位權限修改 form schema
+    form_schema = form_instance.schema_snapshot if form_instance else {}
+    has_editable = False
+    if role_permissions and form_schema:
+        form_schema, has_editable = _apply_field_permissions_to_schema(
+            form_schema, role_permissions
+        )
+
     # 取得簽核歷程
     approvals = []
     if task.workflow_instance_secure_code:
@@ -765,7 +843,7 @@ def get_pending_task(secure_code):
             'node_name': task.node_name,
             'node_config': node_config,
             'form_data': form_instance.form_data if form_instance else {},
-            'form_schema': form_instance.schema_snapshot if form_instance else {},
+            'form_schema': form_schema,
             'form_name': form_instance.form_name if form_instance else None,
             'serial_number': form_instance.serial_number if form_instance else None,
             'applicant_name': form_instance.applicant_name if form_instance else None,
@@ -776,6 +854,9 @@ def get_pending_task(secure_code):
             'require_comment': require_comment,
             'min_comment_length': min_comment_length,
             'approvals': approvals,
+            'field_permissions': role_permissions,
+            'has_editable_fields': has_editable,
+            'user_role': user_role,
         }
     })
 
@@ -812,6 +893,7 @@ def approve_task(secure_code):
     decision = data.get('decision', 'approved')  # approved, rejected
     selected_path = data.get('selected_path')
     comment = data.get('comment', '')
+    updated_form_data = data.get('form_data')  # 簽核者修改的表單資料
 
     # 驗證簽核意見最少字數
     min_comment_length = task_result_data.get('min_comment_length', 0)
@@ -819,6 +901,61 @@ def approve_task(secure_code):
         return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
 
     try:
+        # 處理表單欄位修改
+        from ..models import FwFormInstance, FwFormFieldChange
+        node_config = task.node_config or {}
+        field_permissions = node_config.get('field_permissions', {})
+        approver_permissions = field_permissions.get('approver', {})
+
+        if updated_form_data and approver_permissions:
+            form_instance = FwFormInstance.query.filter_by(
+                secure_code=task.form_instance_secure_code
+            ).first()
+
+            if form_instance:
+                old_form_data = form_instance.form_data or {}
+
+                # 驗證只有 editable 欄位被修改，並記錄變更
+                for field_key, new_value in updated_form_data.items():
+                    perm = approver_permissions.get(field_key, 'readonly')
+                    old_value = old_form_data.get(field_key)
+
+                    # 值沒變就跳過
+                    if old_value == new_value:
+                        continue
+
+                    # 只有 editable 欄位允許修改
+                    if perm != 'editable':
+                        return jsonify({
+                            'success': False,
+                            'error': f'欄位 {field_key} 不允許修改'
+                        }), 403
+
+                    # 記錄欄位變更
+                    field_change = FwFormFieldChange(
+                        secure_code=secrets.token_urlsafe(16),
+                        org_secure_code=org.secure_code,
+                        form_instance_secure_code=task.form_instance_secure_code,
+                        workflow_instance_secure_code=task.workflow_instance_secure_code,
+                        node_id=task.node_id,
+                        node_name=task.node_name,
+                        changed_by_secure_code=current_user.secure_code,
+                        changed_by_name=current_user.display_name or current_user.username,
+                        field_key=field_key,
+                        field_label=field_key,  # 可從 schema 取得更好的 label
+                        old_value=old_value,
+                        new_value=new_value,
+                        changed_at=datetime.utcnow(),
+                    )
+                    db.session.add(field_change)
+
+                # 更新 form_data (只更新 editable 欄位)
+                merged_data = dict(old_form_data)
+                for field_key, new_value in updated_form_data.items():
+                    if approver_permissions.get(field_key) == 'editable':
+                        merged_data[field_key] = new_value
+                form_instance.form_data = merged_data
+
         # 建立簽核記錄
         approval_record = FwApprovalRecord(
             secure_code=secrets.token_urlsafe(16),

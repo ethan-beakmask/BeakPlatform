@@ -535,14 +535,16 @@
                         <span style="margin-left: 16px;">關卡：<strong x-text="currentApproval?.node_name || '-'"></strong></span>
                     </div>
 
-                    <!-- 表單內容（唯讀） -->
+                    <!-- 表單內容 -->
                     <div style="margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                             <label style="font-size: 13px; font-weight: 500;">表單內容</label>
-                            <span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
+                            <span x-show="!currentApproval?.has_editable_fields" style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
+                            <span x-show="currentApproval?.has_editable_fields" style="font-size: 11px; color: #1d4ed8; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">部分欄位可編輯</span>
                         </div>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;">
-                            <div id="approval-form-container" class="fc-form-readonly"></div>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;"
+                             :class="{ 'fc-form-readonly': !currentApproval?.has_editable_fields }">
+                            <div id="approval-form-container"></div>
                         </div>
                     </div>
 
@@ -1485,6 +1487,7 @@ function formCenterManager() {
 
             const schema = this.currentApproval.form_schema;
             const formData = this.currentApproval.form_data;
+            const hasEditable = this.currentApproval.has_editable_fields;
 
             if (!schema) {
                 container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
@@ -1497,10 +1500,13 @@ function formCenterManager() {
                     this.approvalFormInstance = null;
                 }
 
-                this.approvalFormInstance = await Formio.createForm(container, schema, {
-                    readOnly: true,
-                    renderMode: 'html'
-                });
+                // 如果有可編輯欄位，不使用 readOnly 模式
+                // 後端已根據 field_permissions 設好各欄位的 disabled 屬性
+                const formOptions = hasEditable
+                    ? { noDefaultSubmitButton: true }
+                    : { readOnly: true, renderMode: 'html' };
+
+                this.approvalFormInstance = await Formio.createForm(container, schema, formOptions);
 
                 if (formData) {
                     this.approvalFormInstance.submission = { data: formData };
@@ -1550,14 +1556,22 @@ function formCenterManager() {
             this.submittingApproval = true;
 
             try {
+                // 組裝提交資料
+                const payload = {
+                    decision: 'approved',
+                    selected_path: this.selectedEdges[0],
+                    comment: this.approvalComment
+                };
+
+                // 如果有可編輯欄位，附帶修改後的 form_data
+                if (this.currentApproval?.has_editable_fields && this.approvalFormInstance) {
+                    payload.form_data = this.approvalFormInstance.submission.data;
+                }
+
                 const res = await fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/approve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        decision: 'approved',
-                        selected_path: this.selectedEdges[0],
-                        comment: this.approvalComment
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 

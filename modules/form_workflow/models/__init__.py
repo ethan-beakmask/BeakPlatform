@@ -17,6 +17,7 @@ from .node_execution_log import FwNodeExecutionLog
 from .form_workflow_mapping import FwFormWorkflowMapping
 from .published_form_workflow import FwPublishedFormWorkflow
 from .workflow_background import FwWorkflowBackground
+from .field_change import FwFormFieldChange
 
 __all__ = [
     'ModuleBaseModel',
@@ -32,4 +33,5 @@ __all__ = [
     'FwFormWorkflowMapping',
     'FwPublishedFormWorkflow',
     'FwWorkflowBackground',
+    'FwFormFieldChange',
 ]

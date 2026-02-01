@@ -3932,6 +3932,15 @@
                         <button class="btn-primary" onclick="applyFormAdapterConfig('${nodeId}')" style="width: 100%;">
                             <i class="fas fa-check"></i> 套用
                         </button>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <button class="btn-secondary" onclick="openFieldPermissionsModal('${nodeId}')" style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-shield-alt"></i> 欄位權限設定
+                            </button>
+                            <div style="margin-top: 4px; font-size: 11px; color: #888; text-align: center;">
+                                設定簽核者/閱讀者對各欄位的可見與編輯權限
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -13257,4 +13266,207 @@
 
             document.body.removeChild(textarea);
         }
+
+        // =============================================================================
+        // 欄位權限設定 Modal
+        // =============================================================================
+
+        let fieldPermCurrentNodeId = null;
+        let fieldPermFormFields = [];
+
+        /**
+         * 開啟欄位權限設定 Modal
+         */
+        async function openFieldPermissionsModal(nodeId) {
+            fieldPermCurrentNodeId = nodeId;
+            const node = cy.getElementById(nodeId);
+            if (!node || node.length === 0) return;
+
+            // 確保 Modal DOM 存在
+            ensureFieldPermissionsModal();
+
+            const modal = document.getElementById('fieldPermModal');
+            modal.style.display = 'flex';
+
+            const content = document.getElementById('fieldPermContent');
+            content.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;"><i class="fas fa-spinner fa-spin"></i> 載入表單欄位中...</div>';
+
+            // 載入配對表單的欄位
+            if (!currentMappedForms || currentMappedForms.length === 0) {
+                await loadMappedForms('design');
+            }
+
+            if (!currentMappedForms || currentMappedForms.length === 0) {
+                content.innerHTML = '<div style="text-align: center; padding: 40px; color: #e74c3c;"><i class="fas fa-exclamation-circle"></i> 此流程尚未配對任何表單，請先到「配對管理」建立配對。</div>';
+                return;
+            }
+
+            // 取得第一張配對表單的欄位
+            const form = currentMappedForms[0];
+            const formIdentifier = form.form_secure_code || form.form_id;
+            let url = `/api/workflows/data/forms/${formIdentifier}/fields?version_type=design`;
+            if (form.mapping_id) url += `&mapping_id=${form.mapping_id}`;
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (!result.success) throw new Error(result.message || '載入失敗');
+
+                fieldPermFormFields = result.data.fields || [];
+                renderFieldPermissionsTable(node, form.form_name);
+            } catch (error) {
+                content.innerHTML = `<div style="text-align: center; padding: 40px; color: #e74c3c;"><i class="fas fa-exclamation-circle"></i> ${error.message}</div>`;
+            }
+        }
+        window.openFieldPermissionsModal = openFieldPermissionsModal;
+
+        /**
+         * 確保 Modal DOM 存在
+         */
+        function ensureFieldPermissionsModal() {
+            if (document.getElementById('fieldPermModal')) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'fieldPermModal';
+            modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;';
+            modal.innerHTML = `
+                <div style="background:white; width:90%; max-width:900px; max-height:90vh; border-radius:8px; display:flex; flex-direction:column; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <div style="padding:16px 20px; border-bottom:1px solid #e0e0e0; display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; font-size:16px;"><i class="fas fa-shield-alt"></i> 欄位權限設定</h3>
+                        <button onclick="closeFieldPermissionsModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#666;">&times;</button>
+                    </div>
+                    <div id="fieldPermContent" style="padding:20px; overflow-y:auto; flex:1;"></div>
+                    <div style="padding:12px 20px; border-top:1px solid #e0e0e0; display:flex; justify-content:flex-end; gap:8px;">
+                        <button onclick="closeFieldPermissionsModal()" style="padding:8px 16px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:4px; cursor:pointer;">取消</button>
+                        <button onclick="saveFieldPermissions()" style="padding:8px 16px; background:#667eea; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-save"></i> 儲存</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeFieldPermissionsModal() {
+            const modal = document.getElementById('fieldPermModal');
+            if (modal) modal.style.display = 'none';
+            fieldPermCurrentNodeId = null;
+        }
+        window.closeFieldPermissionsModal = closeFieldPermissionsModal;
+
+        /**
+         * 渲染欄位權限表格
+         */
+        function renderFieldPermissionsTable(node, formName) {
+            const content = document.getElementById('fieldPermContent');
+            const currentConfig = node.data('config') || {};
+            const savedPerms = currentConfig.field_permissions || {};
+            const approverPerms = savedPerms.approver || {};
+            const readerPerms = savedPerms.reader || {};
+
+            if (fieldPermFormFields.length === 0) {
+                content.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">此表單沒有可設定的欄位</div>';
+                return;
+            }
+
+            const permOptions = [
+                { value: 'readonly', label: '唯讀' },
+                { value: 'editable', label: '可修改' },
+                { value: 'hidden', label: '隱藏' },
+            ];
+
+            function makeSelect(name, currentVal) {
+                return `<select data-perm="${name}" style="width:100%; padding:4px 6px; border:1px solid #d1d5db; border-radius:3px; font-size:12px; background:white;">
+                    ${permOptions.map(o => `<option value="${o.value}" ${currentVal === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+                </select>`;
+            }
+
+            let rows = '';
+            fieldPermFormFields.forEach(field => {
+                const aVal = approverPerms[field.key] || 'readonly';
+                const rVal = readerPerms[field.key] || 'readonly';
+                rows += `<tr style="border-bottom:1px solid #f3f4f6;">
+                    <td style="padding:8px 10px; font-size:12px; font-weight:500; white-space:nowrap;">${field.label || field.key}</td>
+                    <td style="padding:8px 10px; font-size:11px; color:#666;">${field.key}</td>
+                    <td style="padding:8px 10px; font-size:11px; color:#888;">${field.type}</td>
+                    <td style="padding:8px 10px;">${makeSelect('approver_' + field.key, aVal)}</td>
+                    <td style="padding:8px 10px;">${makeSelect('reader_' + field.key, rVal)}</td>
+                </tr>`;
+            });
+
+            content.innerHTML = `
+                <div style="margin-bottom:12px; font-size:13px; color:#374151;">
+                    <strong>表單：</strong>${formName}
+                    <span style="margin-left:16px; font-size:12px; color:#6b7280;">共 ${fieldPermFormFields.length} 個欄位</span>
+                </div>
+                <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <button onclick="fpBatchSet('approver', 'readonly')" style="padding:4px 10px; font-size:11px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:3px; cursor:pointer;">簽核者全部唯讀</button>
+                    <button onclick="fpBatchSet('approver', 'editable')" style="padding:4px 10px; font-size:11px; background:#dbeafe; border:1px solid #93c5fd; border-radius:3px; cursor:pointer;">簽核者全部可修改</button>
+                    <button onclick="fpBatchSet('reader', 'readonly')" style="padding:4px 10px; font-size:11px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:3px; cursor:pointer;">閱讀者全部唯讀</button>
+                    <button onclick="fpBatchSet('reader', 'hidden')" style="padding:4px 10px; font-size:11px; background:#fee2e2; border:1px solid #fca5a5; border-radius:3px; cursor:pointer;">閱讀者全部隱藏</button>
+                </div>
+                <div style="border:1px solid #e5e7eb; border-radius:4px; overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#f9fafb;">
+                                <th style="padding:10px; text-align:left; font-size:12px; border-bottom:1px solid #e5e7eb; white-space:nowrap;">欄位標籤</th>
+                                <th style="padding:10px; text-align:left; font-size:12px; border-bottom:1px solid #e5e7eb; white-space:nowrap;">Key</th>
+                                <th style="padding:10px; text-align:left; font-size:12px; border-bottom:1px solid #e5e7eb; white-space:nowrap;">類型</th>
+                                <th style="padding:10px; text-align:center; font-size:12px; border-bottom:1px solid #e5e7eb; white-space:nowrap; min-width:100px; background:#eff6ff;">簽核者</th>
+                                <th style="padding:10px; text-align:center; font-size:12px; border-bottom:1px solid #e5e7eb; white-space:nowrap; min-width:100px; background:#fefce8;">閱讀者</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+                <div style="margin-top:12px; font-size:11px; color:#6b7280;">
+                    <i class="fas fa-info-circle"></i>
+                    未設定的欄位預設為「唯讀」。簽核者 = FormAdapter 指定的簽核人，閱讀者 = 其他檢視者。
+                </div>
+            `;
+        }
+
+        /**
+         * 批次設定權限
+         */
+        function fpBatchSet(role, value) {
+            const selects = document.querySelectorAll(`select[data-perm^="${role}_"]`);
+            selects.forEach(sel => { sel.value = value; });
+        }
+        window.fpBatchSet = fpBatchSet;
+
+        /**
+         * 儲存欄位權限到節點 config
+         */
+        function saveFieldPermissions() {
+            if (!fieldPermCurrentNodeId) return;
+            const node = cy.getElementById(fieldPermCurrentNodeId);
+            if (!node || node.length === 0) return;
+
+            const approverPerms = {};
+            const readerPerms = {};
+
+            fieldPermFormFields.forEach(field => {
+                const aSelect = document.querySelector(`select[data-perm="approver_${field.key}"]`);
+                const rSelect = document.querySelector(`select[data-perm="reader_${field.key}"]`);
+                if (aSelect) approverPerms[field.key] = aSelect.value;
+                if (rSelect) readerPerms[field.key] = rSelect.value;
+            });
+
+            // 更新 node config
+            const currentConfig = node.data('config') || {};
+            currentConfig.field_permissions = {
+                approver: approverPerms,
+                reader: readerPerms,
+            };
+            node.data('config', currentConfig);
+
+            // 統計
+            const editableCount = Object.values(approverPerms).filter(v => v === 'editable').length;
+            const hiddenCount = Object.values(approverPerms).filter(v => v === 'hidden').length;
+            const readerHiddenCount = Object.values(readerPerms).filter(v => v === 'hidden').length;
+
+            closeFieldPermissionsModal();
+            updateStatus(`✅ 欄位權限已儲存 (簽核者: ${editableCount} 可修改, ${hiddenCount} 隱藏 / 閱讀者: ${readerHiddenCount} 隱藏)`, 'success');
+        }
+        window.saveFieldPermissions = saveFieldPermissions;
 
