@@ -354,6 +354,10 @@ def update_template(secure_code):
     if 'thumbnail_1x2' in data:
         template.thumbnail_1x2 = data['thumbnail_1x2']
 
+    # 有實質內容變更時遞增 revision
+    if 'schema' in data or 'builder_config' in data:
+        template.revision = (template.revision or 0) + 1
+
     template.updated_at = datetime.utcnow()
     db.session.commit()
 
@@ -805,7 +809,7 @@ def save_new_version(secure_code):
         new_version = 'AA'
 
     template.version = new_version
-    template.revision = (template.revision or 0) + 1
+    template.revision = 1
 
     if 'schema' in data:
         template.schema = data['schema']

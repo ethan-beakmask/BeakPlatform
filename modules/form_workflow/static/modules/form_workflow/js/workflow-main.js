@@ -2814,7 +2814,7 @@
                 updateStatus(`已載入流程：${workflow.name}`);
 
                 // 解鎖界面並顯示流程資訊
-                unlockInterface(workflow.name, workflow.version || '1.0', workflow.description || '', workflow.category || '');
+                unlockInterface(workflow.name, (workflow.version || 'AA') + (workflow.revision || ''), workflow.description || '', workflow.category || '');
 
                 // 初始化變更追蹤（載入完成後）
                 setTimeout(() => {
@@ -7099,6 +7099,12 @@
                 if (data) {
                     updateStatus('✅ 流程已儲存');
                     console.log('✅ 儲存成功');
+
+                    // 更新版本號顯示（含 revision）
+                    if (data.version) {
+                        document.getElementById('current-workflow-version').textContent =
+                            `版本 ${data.version}${data.revision || ''}`;
+                    }
 
                     // 標記為已成功儲存過
                     hasEverSaved = true;

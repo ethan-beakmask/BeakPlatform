@@ -104,6 +104,9 @@ def list_available_forms():
             # 跳過已經顯示的發行版本
             if mapping.id in seen_mapping_ids:
                 continue
+            # 已發行的配對不應出現在測試區
+            if mapping.is_published:
+                continue
 
             # 查詢表單和流程模板
             form_template = FwFormTemplate.query.filter_by(

@@ -594,9 +594,9 @@ def update_template(secure_code):
     if 'thumbnail_1x2' in data:
         template.thumbnail_1x2 = data['thumbnail_1x2']
 
-    # 首次儲存時遞增 revision
-    if old_revision == 0 and (data.get('graph') or data.get('cytoscape_config')):
-        template.revision = 1
+    # 有內容變更時遞增 revision
+    if data.get('graph') or data.get('cytoscape_config'):
+        template.revision = (template.revision or 0) + 1
 
     template.updated_at = datetime.utcnow()
 
@@ -752,7 +752,7 @@ def save_new_version(secure_code):
         new_version = 'AA'
 
     template.version = new_version
-    template.revision = old_revision + 1
+    template.revision = 1
 
     if 'graph' in data:
         template.graph = data['graph']

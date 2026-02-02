@@ -411,13 +411,59 @@ def publish_mapping(secure_code):
         return jsonify({'success': False, 'error': '工作流沒有節點，無法發行'}), 400
 
     try:
-        # 檢查並停用現有 Published 版本
+        # 檢查現有 Published 版本
         existing_published = FwPublishedFormWorkflow.query.filter_by(
             source_mapping_secure_code=secure_code,
             status='Published'
         ).first()
 
         if existing_published:
+            # 比對版本 + revision，判斷是否有變更
+            same_form = (
+                existing_published.source_form_version == form_template.version and
+                existing_published.source_form_revision == form_template.revision
+            )
+            same_workflow = (
+                existing_published.source_workflow_version == workflow_template.version and
+                existing_published.source_workflow_revision == workflow_template.revision
+            )
+
+            if same_form and same_workflow:
+                # 版本完全相同 → 不建新版，直接回傳現有版本
+                return jsonify({
+                    'success': True,
+                    'data': existing_published.to_dict(),
+                    'message': f'版本未變更，維持現有發行版本 (版本 {existing_published.publish_version})'
+                })
+
+            # 有變更 → 先查找是否有相同版本的 Suspended 記錄可重新啟用
+            reusable = FwPublishedFormWorkflow.query.filter_by(
+                source_mapping_secure_code=secure_code,
+                source_form_version=form_template.version,
+                source_form_revision=form_template.revision,
+                source_workflow_version=workflow_template.version,
+                source_workflow_revision=workflow_template.revision,
+                status='Suspended'
+            ).first()
+
+            if reusable:
+                # 停用現有 Published，重新啟用匹配的 Suspended 版本
+                existing_published.suspend(suspended_by=current_user.secure_code)
+                reusable.reopen()
+
+                # 更新配對狀態
+                mapping.is_published = True
+                mapping.form_template_version = form_template.version
+                mapping.workflow_template_version = workflow_template.version
+                db.session.commit()
+
+                return jsonify({
+                    'success': True,
+                    'data': reusable.to_dict(),
+                    'message': f'已重新啟用先前的發行版本 (版本 {reusable.publish_version})'
+                })
+
+            # 沒有可重用的版本 → 停用舊版，建立新版
             existing_published.suspend(suspended_by=current_user.secure_code)
 
         # 建立發行版本

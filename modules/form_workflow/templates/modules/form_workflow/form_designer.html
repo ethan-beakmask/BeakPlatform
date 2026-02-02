@@ -1702,10 +1702,10 @@
                     document.getElementById('form-description').value = formData.description || '';
                     currentFormId = formData.secure_code;
 
-                    // 顯示版本號
+                    // 顯示版本號（含 revision）
                     const versionBadge = document.getElementById('form-version-badge');
                     if (versionBadge && formData.version) {
-                        versionBadge.textContent = formData.version;
+                        versionBadge.textContent = formData.version + (formData.revision || '');
                         versionBadge.style.display = 'inline-block';
                     }
 
@@ -2271,6 +2271,14 @@
                     if (!currentFormId && result.data && result.data.secure_code) {
                         currentFormId = result.data.secure_code;
                         console.log('✅ 新表單 secure_code:', currentFormId);
+                    }
+
+                    // 更新版本號顯示（含 revision）
+                    if (result.data) {
+                        const vb = document.getElementById('form-version-badge');
+                        if (vb && result.data.version) {
+                            vb.textContent = result.data.version + (result.data.revision || '');
+                        }
                     }
 
                     // 縮圖背景生成中，記錄待更新的模板
