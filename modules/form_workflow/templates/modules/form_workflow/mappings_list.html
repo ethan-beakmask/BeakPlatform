@@ -129,7 +129,7 @@
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
                         <td class="actions">
-                            <button class="fw-btn success" @click="publishMapping(m)" :disabled="m.is_published">發行</button>
+                            <button class="fw-btn success" @click="publishMapping(m)" x-text="m.is_published ? '重新發行' : '發行'"></button>
                             <button class="fw-btn" @click="viewPublished(m)">版本</button>
                             <button class="fw-btn danger" @click="confirmDelete(m)" :disabled="m.is_published">刪除</button>
                         </td>
@@ -369,7 +369,8 @@ function mappingsManager() {
         },
 
         async publishMapping(m) {
-            if (!confirm(`確定要發行「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
+            const action = m.is_published ? '重新發行' : '發行';
+            if (!confirm(`確定要${action}「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
 
             try {
                 const res = await fetch(`/api/mappings/${m.secure_code}/publish`, {
@@ -379,7 +380,7 @@ function mappingsManager() {
                 const data = await res.json();
 
                 if (data.success) {
-                    this.showToast('發行成功');
+                    this.showToast(data.message || '發行成功');
                     await this.loadMappings();
                 } else {
                     this.showToast(data.error || '發行失敗', 'error');
