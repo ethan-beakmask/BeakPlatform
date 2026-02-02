@@ -284,37 +284,12 @@ systemctl restart beakplatform
   - 獨立 DB (beakform_data) + 專用帳號 (beakform)
   - 連線池 + converter + table_manager + sync_service
   - 自動化測試通過（建表/UPSERT/更新/安全模式）
-
----
-
-### ⏭ 下次對話：SQL Sync 實機測試
-
-**測試順序**（需先啟動 Flask 服務）：
-
-1. **配對頁面 SQL 開關**
-   - 開啟配對管理頁 → 確認 SQL 同步 toggle 顯示
-   - 選擇一個配對 → 開啟 SQL 同步 toggle
-   - 確認 API `PATCH /api/mappings/{sc}/sql-sync` 正常
-
-2. **發行 → 自動建表**
-   - 對已啟用 SQL 同步的配對點「發行」
-   - 確認 beakform_data 中自動建立 `fw_data_xxx_v{N}` 表
-   - 確認 fw_sql_form_registries 有對應記錄
-   - `psql -U beakform -d beakform_data -c "\dt fw_data_*"`
-
-3. **提交表單 → SQL 同步**
-   - 填寫表單並送出
-   - 確認 SQL 表出現對應資料
-   - `psql -U beakform -d beakform_data -c "SELECT * FROM fw_data_xxx_v1"`
-
-4. **簽核修改 → SQL 更新**
-   - 簽核時修改可編輯欄位
-   - 確認 SQL 表資料已更新
-
-5. **容錯驗證**
-   - 停止 beakform_data DB (`pg_ctl stop` 或 revoke beakform)
-   - 送出表單 → 確認仍成功（只有 sync warning 在日誌中）
-   - 恢復後再送一次 → 確認 sync 恢復正常
+- [x] SQL Sync 實機測試（2026-02-02）
+  - 配對頁面 SQL 開關：Toggle ON/OFF/Status API 正常
+  - 發行 → 自動建表：fw_data_vdz6ynxc_v2 自動建立，含動態欄位
+  - 提交表單 → SQL 同步：UPSERT 正確，所有欄位值吻合
+  - 簽核修改 → SQL 更新：approver 修改 textArea 後 SQL 表同步更新
+  - 容錯驗證：DB 故障不影響主流程 (HTTP 201)，恢復後自動復原
 
 ---
 
@@ -472,4 +447,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-02-02 (SQL Sync 功能實作完成，待實機測試)*
+*最後更新: 2026-02-02 (SQL Sync 實機測試全部通過)*
