@@ -628,7 +628,15 @@ def update_template(secure_code):
                 description=f'{template.name} 流程記錄單',
                 category=form_category,
                 schema={
-                    "components": [],
+                    "components": [
+                        {
+                            "type": "textfield",
+                            "key": "formSubject",
+                            "label": "表單主旨",
+                            "input": True,
+                            "tableView": True
+                        }
+                    ],
                     "display": "form"
                 },
                 is_active=True,
@@ -789,7 +797,15 @@ def save_new_version(secure_code):
                 description=f'{template.name} 流程記錄單',
                 category=form_category,
                 schema={
-                    "components": [],
+                    "components": [
+                        {
+                            "type": "textfield",
+                            "key": "formSubject",
+                            "label": "表單主旨",
+                            "input": True,
+                            "tableView": True
+                        }
+                    ],
                     "display": "form"
                 },
                 is_active=True,

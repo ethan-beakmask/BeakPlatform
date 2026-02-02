@@ -30,13 +30,52 @@ forms_bp = Blueprint(
 # 輔助函數
 # =============================================================================
 
+import re
+
+_CJK_RE = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
+
+
+def _apply_placeholder_as_label(schema):
+    """
+    CJK 標籤處理：form.io 的 camelCase key 生成不支援中文，
+    因此用戶以 placeholder 輸入中文欄位名稱，儲存時交換到 label。
+    僅處理 placeholder 含 CJK 字元的元件，英文 placeholder 保持原樣。
+    """
+    def _process(components):
+        for comp in (components or []):
+            placeholder = comp.get('placeholder', '')
+            if placeholder and _CJK_RE.search(placeholder):
+                comp['label'] = placeholder
+                comp['placeholder'] = ''
+            if 'components' in comp:
+                _process(comp['components'])
+            if 'columns' in comp:
+                for col in (comp.get('columns') or []):
+                    _process(col.get('components'))
+            if 'rows' in comp:
+                for row in (comp.get('rows') or []):
+                    for cell in (row or []):
+                        _process((cell or {}).get('components'))
+    if schema and 'components' in schema:
+        _process(schema['components'])
+    return schema
+
+
 def _get_default_schema():
     """
-    取得預設表單 schema（空表單）
+    取得預設表單 schema，包含一個「表單主旨」Text Field
     """
     return {
         "display": "form",
-        "components": []
+        "components": [
+            {
+                "type": "textfield",
+                "key": "formSubject",
+                "label": "表單主旨",
+                "input": True,
+                "tableView": True
+            }
+        ]
     }
 
 
@@ -285,13 +324,15 @@ def create_template():
     if existing:
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
+    schema = _apply_placeholder_as_label(data.get('schema')) or _get_default_schema()
+
     template = FwFormTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
         name=name,
         code=code,
         description=data.get('description', ''),
-        schema=data.get('schema') or _get_default_schema(),
+        schema=schema,
         is_active=data.get('is_active', True),
         owner_secure_code=current_user.secure_code
     )
@@ -339,7 +380,7 @@ def update_template(secure_code):
     if 'category' in data:
         template.category = data['category']
     if 'schema' in data:
-        template.schema = data['schema']
+        template.schema = _apply_placeholder_as_label(data['schema'])
         schema_changed = True
     if 'is_active' in data:
         template.is_active = data['is_active']

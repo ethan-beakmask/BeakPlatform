@@ -274,6 +274,15 @@ systemctl restart beakplatform
 **目前階段**: Step 5 完成 ✅ - 模組標準驗證通過
 
 **待辦**:
+
+### ⚠️ 下次對話優先處理（2026-02-03 標記）
+1. **ACE 錯誤調查** — 表單設計器拖入元件開啟編輯時出現 ACE/CDN 載入錯誤。建立 form.io 官方 demo 頁面，直接比對問題來源（是 form.io 本身行為 or 我們的環境造成）
+2. **新建時產生空白檔案** — 表單與流程進入編輯頁面後，即使按「放棄」仍會產生空白設計檔。改為第一次儲存時才建立記錄
+3. **流程自動建立對應表單** — 評估流程儲存時同時建立並配對表單的做法是否繼續保留
+4. **CI/CD 安全檢查移轉** — BeakMask 有 semgrep 程式碼安全檢查 CI/CD，需移轉到本專案
+
+---
+
 - 完善表單流程模組功能
 - [x] 驗證 WorkflowExecutor 背景服務正常運作（送出表單後流程自動推進）
   - 2026-01-30 端對端測試通過
@@ -290,6 +299,13 @@ systemctl restart beakplatform
   - 提交表單 → SQL 同步：UPSERT 正確，所有欄位值吻合
   - 簽核修改 → SQL 更新：approver 修改 textArea 後 SQL 表同步更新
   - 容錯驗證：DB 故障不影響主流程 (HTTP 201)，恢復後自動復原
+- [x] 表單設計器 CJK 中文標籤支援（2026-02-03）
+  - 根因：form.io 的 lodash camelCase 無法處理 CJK，產生空 key 觸發驗證錯誤
+  - 解法：placeholder 輸入中文 → saveComponent 事件即時交換到 label + 後端 API 雙重處理
+  - alertMessage 翻譯補齊（formio-i18n-zh-TW.json）
+  - form.io 5.2.6 升級測試後退回 5.2.3（5.2.6 未修 CJK 且引入 ACE CDN 問題）
+- [x] 新建表單預設「表單主旨」欄位（2026-02-03）
+  - _get_default_schema() + workflows.py 自動建立 + 前端新增模式統一預設 formSubject 欄位
 
 ---
 
@@ -447,4 +463,4 @@ systemctl restart beakplatform
 
 ---
 
-*最後更新: 2026-02-02 (SQL Sync 實機測試全部通過)*
+*最後更新: 2026-02-03 (CJK 中文標籤支援 + 預設表單主旨欄位)*

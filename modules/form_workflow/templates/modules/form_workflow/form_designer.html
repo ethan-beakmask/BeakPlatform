@@ -1747,12 +1747,16 @@
                 document.getElementById('form-name').value = formName;
                 document.getElementById('form-category').value = urlCategory;
                 document.getElementById('form-description').value = urlDescription;
-                return { components: [] };
+                return { components: [
+                    { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
+                ] };
             } else {
                 // 無參數 - 新增空白表單
                 console.log('📝 無參數，建立空白表單');
                 document.getElementById('form-name').value = '新表單';
-                return { components: [] };
+                return { components: [
+                    { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
+                ] };
             }
         }
 
@@ -1767,6 +1771,17 @@
                 .then(builder => {
                     formBuilder = builder;
                     console.log('✅ Form.io Builder 初始化成功');
+
+                    // CJK placeholder→label 即時交換
+                    // 元件設定儲存後，若 placeholder 含中文則立即替換 label 並重繪
+                    const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/;
+                    builder.on('saveComponent', (component) => {
+                        if (component.placeholder && CJK_RE.test(component.placeholder)) {
+                            component.label = component.placeholder;
+                            component.placeholder = '';
+                            setTimeout(() => builder.redraw(), 50);
+                        }
+                    });
 
                     // 監聽變更
                     builder.on('change', () => {
@@ -1995,7 +2010,7 @@
         document.getElementById('btn-preview').addEventListener('click', async () => {
             if (!formBuilder) return;
 
-            const schema = formBuilder.schema;
+            const schema = getProcessedSchema();
             console.log('👁️ 預覽表單:', schema);
 
             // 清空預覽容器
@@ -2095,7 +2110,7 @@
         document.getElementById('btn-print-preview').addEventListener('click', async () => {
             if (!formBuilder) return;
 
-            const schema = formBuilder.schema;
+            const schema = getProcessedSchema();
             console.log('🖨️ 列印預覽:', schema);
 
             // 清空容器
@@ -2179,6 +2194,31 @@
             }
         });
 
+        // ----------------------------------------------------------
+        // CJK 標籤處理：placeholder 含中文時，視為欄位名稱，儲存時交換到 label
+        // 這是為了繞過 form.io 的 camelCase key 生成無法處理 CJK 的限制
+        // ----------------------------------------------------------
+        const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/;
+
+        function applyPlaceholderAsLabel(components) {
+            (components || []).forEach(comp => {
+                if (comp.placeholder && CJK_RE.test(comp.placeholder)) {
+                    comp.label = comp.placeholder;
+                    comp.placeholder = '';
+                }
+                // 遞迴處理容器元件
+                if (comp.components) applyPlaceholderAsLabel(comp.components);
+                if (comp.columns) comp.columns.forEach(col => applyPlaceholderAsLabel(col.components));
+                if (comp.rows) comp.rows.forEach(row => (row || []).forEach(cell => applyPlaceholderAsLabel((cell || {}).components)));
+            });
+        }
+
+        function getProcessedSchema() {
+            const schema = JSON.parse(JSON.stringify(formBuilder.schema));
+            applyPlaceholderAsLabel(schema.components);
+            return schema;
+        }
+
         // 儲存按鈕
         document.getElementById('btn-save').addEventListener('click', async () => {
             if (!formBuilder) return;
@@ -2191,7 +2231,7 @@
 
             const formCategoryInput = document.getElementById('form-category').value;
             const formDescriptionInput = document.getElementById('form-description').value.trim();
-            const schema = formBuilder.schema;
+            const schema = getProcessedSchema();
             const builderConfig = {
                 formWidth: currentFormWidth,
                 background: BackgroundManager.getConfig()
@@ -2307,7 +2347,7 @@
 
             const formCategoryInput = document.getElementById('form-category').value;
             const formDescriptionInput = document.getElementById('form-description').value.trim();
-            const schema = formBuilder.schema;
+            const schema = getProcessedSchema();
             const builderConfig = {
                 formWidth: currentFormWidth,
                 background: BackgroundManager.getConfig()
@@ -2418,7 +2458,7 @@
 
             try {
                 // 先儲存目前的變更
-                const schema = formBuilder.schema;
+                const schema = getProcessedSchema();
                 const builderConfig = {
                     formWidth: currentFormWidth,
                     background: BackgroundManager.getConfig()
