@@ -16,6 +16,42 @@ from app import db, csrf
 
 logger = logging.getLogger(__name__)
 
+
+def extract_form_subject(schema_snapshot, form_data):
+    """
+    從 schema 中找 label=='表單主旨' 的欄位 key，再從 form_data 取值。
+    找不到回傳 None。
+    """
+    if not schema_snapshot or not form_data:
+        return None
+
+    def find_subject_key(components):
+        for comp in (components or []):
+            if comp.get('label') == '表單主旨':
+                key = comp.get('key')
+                if key:
+                    return key
+            # 遞迴搜尋容器元件
+            if 'components' in comp:
+                result = find_subject_key(comp['components'])
+                if result:
+                    return result
+            if 'columns' in comp:
+                for col in comp.get('columns', []):
+                    if 'components' in col:
+                        result = find_subject_key(col['components'])
+                        if result:
+                            return result
+        return None
+
+    key = find_subject_key(schema_snapshot.get('components', []))
+    if key:
+        value = form_data.get(key)
+        if value and str(value).strip():
+            return str(value).strip()
+    return None
+
+
 # 建立 API Blueprint
 form_center_bp = Blueprint(
     'form_workflow_form_center',
@@ -59,6 +95,7 @@ def list_available_forms():
 
     result = []
     seen_mapping_ids = set()
+    need_category_ids = []  # 需要 fallback 查 category 的 form_template_id
 
     # 1. 優先顯示已發行版本（從快照取得，設計稿刪除不影響）
     published_list = FwPublishedFormWorkflow.query.filter_by(
@@ -75,13 +112,14 @@ def list_available_forms():
 
         form_snapshot = p.form_snapshot or {}
         workflow_snapshot = p.workflow_snapshot or {}
+        category = form_snapshot.get('category')
 
-        result.append({
+        item = {
             'id': p.source_form_template_id,
             'secure_code': p.secure_code,
             'name': form_snapshot.get('name') or p.name,
             'description': form_snapshot.get('description') or p.description,
-            'category': form_snapshot.get('category'),
+            'category': category,
             'code': form_snapshot.get('code'),
             'version': form_snapshot.get('version'),
             'publish_version': p.publish_version,
@@ -90,7 +128,21 @@ def list_available_forms():
             'mapping_id': mapping_id,
             '_status': 'published',
             '_source': 'published',
-        })
+        }
+        result.append(item)
+
+        if not category and p.source_form_template_id:
+            need_category_ids.append((len(result) - 1, p.source_form_template_id))
+
+    # category fallback: 快照沒有 category 時查 FwFormTemplate
+    if need_category_ids:
+        ft_ids = list(set(fid for _, fid in need_category_ids))
+        templates = FwFormTemplate.query.filter(
+            FwFormTemplate.id.in_(ft_ids)
+        ).all()
+        ft_map = {t.id: t.category for t in templates}
+        for idx, ft_id in need_category_ids:
+            result[idx]['category'] = ft_map.get(ft_id)
 
     # 2. 管理員額外顯示未發行的配對（用於測試）
     if is_admin:
@@ -101,11 +153,8 @@ def list_available_forms():
         ).order_by(FwFormWorkflowMapping.created_at.desc()).all()
 
         for mapping in mappings:
-            # 跳過已經顯示的發行版本
+            # 跳過已有 Published 狀態發行版本的配對（已在上方列出）
             if mapping.id in seen_mapping_ids:
-                continue
-            # 已發行的配對不應出現在測試區
-            if mapping.is_published:
                 continue
 
             # 查詢表單和流程模板
@@ -545,7 +594,8 @@ def list_my_forms():
     - signed: 若為 1，顯示我簽核過的表單（而非我提交的表單）
     - limit: 回傳筆數上限（預設 50）
     """
-    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord
+    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord, FwFormTemplate
+    from sqlalchemy.orm import aliased
 
     org = get_current_org()
     if not org:
@@ -556,10 +606,15 @@ def list_my_forms():
     signed = request.args.get('signed', '0')
     limit = request.args.get('limit', 50, type=int)
 
-    # 建立基礎查詢（JOIN workflow_instance 以便根據流程狀態篩選）
-    base_query = db.session.query(FwFormInstance, FwWorkflowInstance).join(
+    FT = aliased(FwFormTemplate)
+
+    # 建立基礎查詢（JOIN workflow_instance + outerjoin form_template 取 category）
+    base_query = db.session.query(FwFormInstance, FwWorkflowInstance, FT.category).join(
         FwWorkflowInstance,
         FwFormInstance.workflow_instance_secure_code == FwWorkflowInstance.secure_code
+    ).outerjoin(
+        FT,
+        FwFormInstance.form_template_id == FT.id
     ).filter(
         FwFormInstance.org_secure_code == org.secure_code,
         FwFormInstance.is_deleted == False
@@ -594,7 +649,7 @@ def list_my_forms():
 
     # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
     from ..models import FwNodeExecutionQueue
-    workflow_secure_codes = [w.secure_code for f, w in rows]
+    workflow_secure_codes = [w.secure_code for f, w, _ in rows]
     waiting_nodes = {}
     if workflow_secure_codes:
         waiting_items = FwNodeExecutionQueue.query.filter(
@@ -604,9 +659,24 @@ def list_my_forms():
         for item in waiting_items:
             waiting_nodes[item.workflow_instance_secure_code] = item.node_name
 
+    # signed=1 時批次查 FwApprovalRecord 取當前用戶的 acted_at
+    acted_at_map = {}
+    if signed == '1':
+        form_scs = [f.secure_code for f, w, _ in rows]
+        if form_scs:
+            acted_records = FwApprovalRecord.query.filter(
+                FwApprovalRecord.form_instance_secure_code.in_(form_scs),
+                FwApprovalRecord.approver_secure_code == current_user.secure_code
+            ).all()
+            # 每張表單取最後一次簽核時間
+            for rec in acted_records:
+                existing = acted_at_map.get(rec.form_instance_secure_code)
+                if not existing or (rec.acted_at and rec.acted_at > existing):
+                    acted_at_map[rec.form_instance_secure_code] = rec.acted_at
+
     # 組裝結果
     result = []
-    for form_instance, workflow_instance in rows:
+    for form_instance, workflow_instance, ft_category in rows:
         data = form_instance.to_dict(include_form_data=False)
         data['is_test'] = data.get('serial_number', '').startswith('TEST-')
         # 附加流程資訊
@@ -616,6 +686,14 @@ def list_my_forms():
         data['workflow_instance_secure_code'] = workflow_instance.secure_code
         # 當前等待的簽核關卡
         data['current_approver'] = waiting_nodes.get(workflow_instance.secure_code, None)
+        # 新增欄位
+        data['category'] = ft_category
+        data['form_subject'] = extract_form_subject(form_instance.schema_snapshot, form_instance.form_data)
+        data['workflow_started_at'] = workflow_instance.started_at.isoformat() if workflow_instance.started_at else None
+        data['workflow_completed_at'] = workflow_instance.completed_at.isoformat() if workflow_instance.completed_at else None
+        if signed == '1':
+            acted = acted_at_map.get(form_instance.secure_code)
+            data['my_acted_at'] = acted.isoformat() if acted else None
         result.append(data)
 
     return jsonify({
@@ -722,7 +800,7 @@ def _apply_field_permissions_to_schema(schema, role_permissions):
 @login_required
 def list_pending_tasks():
     """取得我的待簽核任務"""
-    from ..models import FwNodeExecutionQueue, FwFormInstance
+    from ..models import FwNodeExecutionQueue, FwFormInstance, FwFormTemplate
 
     org = get_current_org()
     if not org:
@@ -736,32 +814,65 @@ def list_pending_tasks():
     ).order_by(FwNodeExecutionQueue.scheduled_at.asc()).all()
 
     user_code = current_user.secure_code
-    result = []
+
+    # 先過濾出指派給當前用戶的任務
+    my_tasks = []
+    form_sc_set = set()
     for task in tasks:
-        # 檢查當前用戶是否為指定簽核人
         task_result_data = (task.result or {}).get('data', {})
         assignee_type = task_result_data.get('assignee_type')
         assignees = task_result_data.get('assignees', [])
         if assignee_type and user_code not in assignees:
             continue
+        my_tasks.append(task)
+        if task.form_instance_secure_code:
+            form_sc_set.add(task.form_instance_secure_code)
 
-        # 取得表單資訊
-        form_instance = FwFormInstance.query.filter_by(
-            secure_code=task.form_instance_secure_code
-        ).first() if task.form_instance_secure_code else None
+    # 批次查 FwFormInstance
+    fi_map = {}
+    if form_sc_set:
+        fi_list = FwFormInstance.query.filter(
+            FwFormInstance.secure_code.in_(list(form_sc_set))
+        ).all()
+        fi_map = {fi.secure_code: fi for fi in fi_list}
 
-        serial_number = form_instance.serial_number if form_instance else None
+    # 批次查 FwFormTemplate 取 category (透過 form_template_id)
+    ft_ids = set()
+    for fi in fi_map.values():
+        if fi.form_template_id:
+            ft_ids.add(fi.form_template_id)
+    ft_cat_map = {}
+    if ft_ids:
+        ft_list = FwFormTemplate.query.filter(
+            FwFormTemplate.id.in_(list(ft_ids))
+        ).all()
+        ft_cat_map = {t.id: t.category for t in ft_list}
+
+    result = []
+    for task in my_tasks:
+        fi = fi_map.get(task.form_instance_secure_code)
+        serial_number = fi.serial_number if fi else None
+
+        # 萃取主旨
+        form_subject = None
+        category = None
+        if fi:
+            form_subject = extract_form_subject(fi.schema_snapshot, fi.form_data)
+            category = ft_cat_map.get(fi.form_template_id)
 
         result.append({
             'queue_secure_code': task.secure_code,
             'node_id': task.node_id,
             'node_type': task.node_type,
             'node_name': task.node_name,
-            'form_name': form_instance.form_name if form_instance else None,
+            'form_name': fi.form_name if fi else None,
             'serial_number': serial_number,
-            'applicant_name': form_instance.applicant_name if form_instance else None,
+            'applicant_name': fi.applicant_name if fi else None,
             'submitted_at': task.scheduled_at.isoformat() if task.scheduled_at else None,
+            'scheduled_at': task.scheduled_at.isoformat() if task.scheduled_at else None,
             'is_test': serial_number.startswith('TEST-') if serial_number else False,
+            'form_subject': form_subject,
+            'category': category,
         })
 
     return jsonify({

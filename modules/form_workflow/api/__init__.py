@@ -228,8 +228,13 @@ def update_template(secure_code):
 @csrf.exempt
 @require_permission('form_workflow.template.delete')
 def delete_template(secure_code):
-    """刪除表單模板（軟刪除）"""
-    from ..models import FwFormTemplate
+    """
+    刪除表單模板（軟刪除）
+
+    Query Parameters:
+        check: 若為 1，只回傳配對資訊不刪除（前端預檢用）
+    """
+    from ..models import FwFormTemplate, FwFormWorkflowMapping, FwWorkflowTemplate
     from app import db
 
     org = get_current_org()
@@ -244,6 +249,32 @@ def delete_template(secure_code):
 
     if not template:
         return jsonify({'success': False, 'error': 'Template not found'}), 404
+
+    # 查詢關聯的配對
+    mappings = FwFormWorkflowMapping.query.filter_by(
+        form_template_id=template.id,
+        is_deleted=False
+    ).all()
+
+    # 預檢模式：回傳配對資訊
+    if request.args.get('check') == '1':
+        mapping_info = []
+        if mappings:
+            wf_ids = [m.workflow_template_id for m in mappings]
+            wf_map = {}
+            if wf_ids:
+                wfs = FwWorkflowTemplate.query.filter(FwWorkflowTemplate.id.in_(wf_ids)).all()
+                wf_map = {w.id: w.name for w in wfs}
+            for m in mappings:
+                mapping_info.append({
+                    'workflow_name': wf_map.get(m.workflow_template_id, '未知流程'),
+                    'is_published': m.is_published,
+                })
+        return jsonify({
+            'success': True,
+            'has_mappings': len(mappings) > 0,
+            'mappings': mapping_info,
+        })
 
     template.is_deleted = True
     db.session.commit()
@@ -424,8 +455,13 @@ def update_workflow(secure_code):
 @csrf.exempt
 @require_permission('form_workflow.workflow.delete')
 def delete_workflow(secure_code):
-    """刪除工作流模板（軟刪除）"""
-    from ..models import FwWorkflowTemplate
+    """
+    刪除工作流模板（軟刪除）
+
+    Query Parameters:
+        check: 若為 1，只回傳配對資訊不刪除（前端預檢用）
+    """
+    from ..models import FwWorkflowTemplate, FwFormWorkflowMapping, FwFormTemplate
     from app import db
 
     org = get_current_org()
@@ -440,6 +476,32 @@ def delete_workflow(secure_code):
 
     if not workflow:
         return jsonify({'success': False, 'error': 'Workflow not found'}), 404
+
+    # 查詢關聯的配對
+    mappings = FwFormWorkflowMapping.query.filter_by(
+        workflow_template_id=workflow.id,
+        is_deleted=False
+    ).all()
+
+    # 預檢模式：回傳配對資訊
+    if request.args.get('check') == '1':
+        mapping_info = []
+        if mappings:
+            ft_ids = [m.form_template_id for m in mappings]
+            ft_map = {}
+            if ft_ids:
+                fts = FwFormTemplate.query.filter(FwFormTemplate.id.in_(ft_ids)).all()
+                ft_map = {f.id: f.name for f in fts}
+            for m in mappings:
+                mapping_info.append({
+                    'form_name': ft_map.get(m.form_template_id, '未知表單'),
+                    'is_published': m.is_published,
+                })
+        return jsonify({
+            'success': True,
+            'has_mappings': len(mappings) > 0,
+            'mappings': mapping_info,
+        })
 
     workflow.is_deleted = True
     db.session.commit()

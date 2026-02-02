@@ -299,6 +299,7 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
                 'schema': form_template.schema,
                 'description': form_template.description,
                 'builder_config': form_template.builder_config,
+                'category': form_template.category,
             },
             workflow_snapshot={
                 'name': workflow_template.name,

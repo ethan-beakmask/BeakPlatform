@@ -64,6 +64,13 @@
     .fc-tab:hover { background: #f3f4f6; }
     .fc-tab.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
 
+    /* 水平分類頁籤 */
+    .fc-cat-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .fc-cat-tab { padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; color: #6b7280; white-space: nowrap; }
+    .fc-cat-tab:hover { background: #f3f4f6; }
+    .fc-cat-tab.active { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+    .fc-cat-count { font-size: 10px; margin-left: 2px; }
+
     /* 分頁 */
     .fc-pagination { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7280; }
     .fc-pagination button { background: none; border: none; cursor: pointer; padding: 2px 6px; color: #3b82f6; }
@@ -174,28 +181,6 @@
 
     <!-- 左側邊欄 -->
     <div class="fc-sidebar">
-        <!-- 分類選單 -->
-        <div class="fc-sidebar-box">
-            <div class="fc-sidebar-title">表單分類</div>
-            <div x-show="loadingCategories" class="fc-loading" style="padding: 16px;">載入中...</div>
-            <div x-show="!loadingCategories">
-                <div class="fc-category-item" :class="{ active: selectedCategory === null }" @click="selectedCategory = null">
-                    <span>全部</span>
-                    <span class="fc-category-count" x-text="availableForms.length"></span>
-                </div>
-                <template x-for="cat in categories" :key="cat.id">
-                    <div class="fc-category-item" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name">
-                        <span x-text="cat.name"></span>
-                        <span class="fc-category-count" x-text="getFormCountByCategory(cat.name)"></span>
-                    </div>
-                </template>
-                <div class="fc-category-item" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'">
-                    <span>其他</span>
-                    <span class="fc-category-count" x-text="getOtherCount()"></span>
-                </div>
-            </div>
-        </div>
-
         <!-- 快速連結 -->
         <div class="fc-sidebar-box">
             <div class="fc-link-item">
@@ -220,12 +205,25 @@
             <div class="fc-section-header">
                 <div class="fc-section-title">
                     <span>新填表單</span>
-                    <span x-show="selectedCategory && selectedCategory !== '__other__'" style="font-weight: normal; color: #6b7280;">
-                        / <span x-text="selectedCategory"></span>
-                    </span>
-                    <span x-show="selectedCategory === '__other__'" style="font-weight: normal; color: #6b7280;">/ 其他</span>
                 </div>
                 <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
+            </div>
+            <!-- 水平分類頁籤 -->
+            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;">
+                <div class="fc-cat-tabs">
+                    <div class="fc-cat-tab" :class="{ active: selectedCategory === null }" @click="selectedCategory = null">
+                        全部<span class="fc-cat-count" x-text="'(' + availableForms.length + ')'"></span>
+                    </div>
+                    <template x-for="cat in categories" :key="cat.id">
+                        <div class="fc-cat-tab" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name">
+                            <span x-text="cat.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByCategory(cat.name) + ')'"></span>
+                        </div>
+                    </template>
+                    <div class="fc-cat-tab" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'"
+                         x-show="getOtherCount() > 0">
+                        其他<span class="fc-cat-count" x-text="'(' + getOtherCount() + ')'"></span>
+                    </div>
+                </div>
             </div>
             <div class="fc-section-body">
                 <div x-show="loadingForms" class="fc-loading">載入中...</div>
@@ -264,11 +262,14 @@
                 <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-pending">
                     <thead>
                         <tr>
-                            <th style="width: 140px;">單號</th>
+                            <th style="width: 120px;">單號</th>
                             <th>表單</th>
+                            <th>主旨</th>
+                            <th style="width: 80px;">類別</th>
                             <th style="width: 100px;">目前關卡</th>
-                            <th style="width: 100px;">發起人</th>
-                            <th style="width: 80px;">操作</th>
+                            <th style="width: 80px;">發起人</th>
+                            <th style="width: 110px;">等待時間</th>
+                            <th style="width: 60px;">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -280,8 +281,11 @@
                                     <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                 </td>
                                 <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
+                                <td style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                 <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
                                 <td x-text="item.applicant_name || '-'"></td>
+                                <td style="color: #92400e; font-size: 11px;" x-text="formatWaitTime(item.scheduled_at)"></td>
                                 <td>
                                     <button class="fc-btn fc-btn-warning fc-btn-sm" @click="openApprovalModal(item)">簽核</button>
                                 </td>
@@ -320,10 +324,12 @@
                     <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th style="width: 140px;">單號</th>
+                                <th style="width: 120px;">單號</th>
                                 <th>表單</th>
+                                <th>主旨</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 120px;">待簽關卡</th>
-                                <th style="width: 140px;">提交時間</th>
+                                <th style="width: 130px;">送單時間</th>
                                 <th style="width: 50px;"></th>
                             </tr>
                         </thead>
@@ -336,6 +342,8 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
@@ -358,10 +366,13 @@
                     <table x-show="!loadingSigned && signedList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th style="width: 140px;">單號</th>
+                                <th style="width: 120px;">單號</th>
                                 <th>表單</th>
-                                <th style="width: 100px;">發起人</th>
+                                <th>主旨</th>
+                                <th style="width: 80px;">類別</th>
+                                <th style="width: 80px;">發起人</th>
                                 <th style="width: 120px;">待簽關卡</th>
+                                <th style="width: 110px;">簽核後歷時</th>
                                 <th style="width: 50px;"></th>
                             </tr>
                         </thead>
@@ -372,8 +383,11 @@
                                         <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
+                                    <td style="color: #6b7280; font-size: 11px;" x-text="formatWaitTime(item.my_acted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -413,10 +427,12 @@
                     <table x-show="!loadingHistory && historyList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th style="width: 140px;">單號</th>
+                                <th style="width: 120px;">單號</th>
                                 <th>表單</th>
-                                <th style="width: 80px;">狀態</th>
-                                <th style="width: 140px;">結束時間</th>
+                                <th>主旨</th>
+                                <th style="width: 80px;">類別</th>
+                                <th style="width: 70px;">狀態</th>
+                                <th style="width: 110px;">流程耗時</th>
                                 <th style="width: 50px;"></th>
                             </tr>
                         </thead>
@@ -427,8 +443,10 @@
                                         <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
-                                    <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
-                                    <td style="color: #6b7280;" x-text="formatDate(item.completed_at || item.ended_at)"></td>
+                                    <td style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>
+                                    <td style="color: #6b7280; font-size: 11px;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -449,10 +467,13 @@
                     <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th style="width: 140px;">單號</th>
+                                <th style="width: 120px;">單號</th>
                                 <th>表單</th>
-                                <th style="width: 100px;">發起人</th>
-                                <th style="width: 80px;">狀態</th>
+                                <th>主旨</th>
+                                <th style="width: 80px;">類別</th>
+                                <th style="width: 80px;">發起人</th>
+                                <th style="width: 70px;">狀態</th>
+                                <th style="width: 110px;">流程耗時</th>
                                 <th style="width: 50px;"></th>
                             </tr>
                         </thead>
@@ -463,8 +484,11 @@
                                         <span style="color: #3b82f6; font-family: monospace; font-size: 11px;" x-text="getShortSerial(item.serial_number)"></span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
+                                    <td style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
-                                    <td><span class="fc-badge" :class="getStatusClass(item.status)" x-text="getStatusText(item.status)"></span></td>
+                                    <td><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>
+                                    <td style="color: #6b7280; font-size: 11px;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -1286,9 +1310,9 @@ function formCenterManager() {
         async loadCategories() {
             this.loadingCategories = true;
             try {
-                const res = await fetch('/api/forms/data/categories');
+                const res = await fetch('/api/form-workflow/categories?context=form_center');
                 const data = await res.json();
-                if (data.success) this.categories = data.categories || [];
+                if (data.success) this.categories = data.data || [];
             } catch (e) { /* 分類 API 可能不存在，忽略 */ }
             finally { this.loadingCategories = false; }
         },
@@ -1595,6 +1619,32 @@ function formCenterManager() {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
             return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        formatWaitTime(isoString) {
+            if (!isoString) return '-';
+            const diff = Date.now() - new Date(isoString).getTime();
+            if (diff < 0) return '-';
+            return this._formatMs(diff);
+        },
+
+        formatDuration(startIso, endIso) {
+            if (!startIso || !endIso) return '-';
+            const diff = new Date(endIso).getTime() - new Date(startIso).getTime();
+            if (diff < 0) return '-';
+            return this._formatMs(diff);
+        },
+
+        _formatMs(ms) {
+            const totalMin = Math.floor(ms / 60000);
+            const days = Math.floor(totalMin / 1440);
+            const hours = Math.floor((totalMin % 1440) / 60);
+            const mins = totalMin % 60;
+            const parts = [];
+            if (days > 0) parts.push(days + '天');
+            if (hours > 0) parts.push(hours + '小時');
+            parts.push(mins + '分鐘');
+            return parts.join('');
         },
 
         sortedApprovals(list) {
