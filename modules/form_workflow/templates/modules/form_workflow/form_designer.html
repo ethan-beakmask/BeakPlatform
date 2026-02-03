@@ -900,6 +900,11 @@
                         <i class="fas fa-code"></i> Schema
                     </button>
                     <span class="border-start ps-2 ms-1"></span>
+                    <label class="form-check form-check-inline mb-0 small" title="啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || 分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名">
+                        <input class="form-check-input" type="checkbox" id="chk-placeholder-to-label">
+                        <span class="form-check-label text-muted">提示→標籤</span>
+                    </label>
+                    <span class="border-start ps-2 ms-1"></span>
                     <span class="small text-muted">寬度:</span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button id="btn-width-narrow" class="btn btn-outline-secondary" title="窄版 900px">
@@ -1746,6 +1751,10 @@
                                 BackgroundManager.setConfig(formData.builder_config.background);
                             }, 500);
                         }
+                        // 恢復 placeholder→label 開關
+                        if (formData.builder_config.placeholderToLabel) {
+                            document.getElementById('chk-placeholder-to-label').checked = true;
+                        }
                     }
 
                     // 返回 schema
@@ -1786,15 +1795,26 @@
                     formBuilder = builder;
                     console.log('✅ Form.io Builder 初始化成功');
 
-                    // CJK placeholder→label 即時交換
-                    // 元件設定儲存後，若 placeholder 含中文則立即替換 label 並重繪
-                    const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/;
+                    // placeholder→label 自動填入（可由 checkbox 開關）
+                    // 非拉丁文字（CJK、日韓、泰文等）觸發
+                    // 支援 || 分隔符：前段→label，後段→placeholder
+                    const NON_LATIN_RE = /[^\u0000-\u024F\u1E00-\u1EFF]/;
                     builder.on('saveComponent', (component) => {
-                        if (component.placeholder && CJK_RE.test(component.placeholder)) {
+                        const chk = document.getElementById('chk-placeholder-to-label');
+                        if (!chk || !chk.checked) return;
+                        if (!component.placeholder || !NON_LATIN_RE.test(component.placeholder)) return;
+
+                        const sepIdx = component.placeholder.indexOf('||');
+                        if (sepIdx === -1) {
+                            // 沒有 || — 整段複製到 label，清空 placeholder
                             component.label = component.placeholder;
                             component.placeholder = '';
-                            setTimeout(() => builder.redraw(), 50);
+                        } else {
+                            // 有 || — 前段→label，後段→placeholder（只處理第一組 ||）
+                            component.label = component.placeholder.substring(0, sepIdx);
+                            component.placeholder = component.placeholder.substring(sepIdx + 2);
                         }
+                        setTimeout(() => builder.redraw(), 50);
                     });
 
                     // 監聽變更
@@ -2248,7 +2268,8 @@
             const schema = getProcessedSchema();
             const builderConfig = {
                 formWidth: currentFormWidth,
-                background: BackgroundManager.getConfig()
+                background: BackgroundManager.getConfig(),
+                placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
             };
 
             try {
@@ -2365,7 +2386,8 @@
             const schema = getProcessedSchema();
             const builderConfig = {
                 formWidth: currentFormWidth,
-                background: BackgroundManager.getConfig()
+                background: BackgroundManager.getConfig(),
+                placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
             };
 
             try {
