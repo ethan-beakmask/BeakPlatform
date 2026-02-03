@@ -430,7 +430,7 @@ function workflowListManager() {
                 if (data.success) {
                     if (!this.editingWorkflow && data.data && data.data.secure_code) {
                         // 新增成功後跳轉到設計器
-                        window.location.href = `/forms/workflows/${data.data.secure_code}`;
+                        window.location.href = `/forms/workflows/${data.data.secure_code}?created=1`;
                     } else {
                         this.closeModal();
                         this.loadWorkflows();

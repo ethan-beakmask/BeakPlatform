@@ -2213,7 +2213,7 @@
             clearStatusHistory();
 
             // 返回流程目錄頁
-            window.location.href = '/api/workflows/list';
+            window.location.href = '/forms/workflows';
 
             console.log('✅ 已儲存並返回流程目錄');
         }
@@ -2454,7 +2454,7 @@
             clearStatusHistory();
 
             // 返回流程目錄頁
-            window.location.href = '/api/workflows/list';
+            window.location.href = '/forms/workflows';
 
             console.log('✅ 已放棄變更並返回流程目錄');
         }
@@ -2737,7 +2737,7 @@
                 console.error('錯誤堆疊:', error.stack);
                 updateStatus('建立流程失敗：' + error.message, 'warning');
                 // 失敗時重定向回列表頁
-                window.location.href = '/api/workflows/list';
+                window.location.href = '/forms/workflows';
             } finally {
                 isCreatingWorkflow = false;
             }
@@ -11189,7 +11189,7 @@
                         if (confirmLeave) {
                             // 用戶確認離開
                             console.log('✅ 用戶確認離開');
-                            window.location.href = '/api/workflows/list';
+                            window.location.href = '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消離開');
                             updateStatus('已取消離開，繼續編輯', 'info');
@@ -11199,7 +11199,7 @@
                         const confirmLeave = confirm('確定要返回流程目錄嗎？');
                         if (confirmLeave) {
                             console.log('✅ 用戶確認返回目錄');
-                            window.location.href = '/api/workflows/list';
+                            window.location.href = '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消');
                             updateStatus('已取消返回，繼續編輯', 'info');
@@ -11329,8 +11329,9 @@
             // 判斷行為
             if (workflowId) {
                 // 有 id，直接開啟舊檔案進行編輯
-                console.log('📂 開啟現有流程:', workflowId);
-                hasEverSaved = true;  // 載入現有流程，標記為已儲存過
+                const wasJustCreated = urlParams.get('created') === '1';
+                console.log('📂 開啟現有流程:', workflowId, wasJustCreated ? '(剛建立)' : '');
+                hasEverSaved = !wasJustCreated;  // 剛建立的標記為未儲存
                 await enterDesignMode(workflowId);
                 updateStatus('載入流程中...');
             } else if (isNewWorkflow) {

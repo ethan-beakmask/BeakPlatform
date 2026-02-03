@@ -60,7 +60,8 @@ def template_new():
 @security_login_required
 def template_detail(secure_code):
     """表單設計器（重定向到查詢參數格式）"""
-    return redirect(f'/api/forms/designer/standalone?id={secure_code}')
+    created = request.args.get('created', '')
+    return redirect(f'/api/forms/designer/standalone?id={secure_code}{"&created=1" if created else ""}')
 
 
 # =============================================================================
@@ -86,7 +87,8 @@ def workflow_new():
 @security_login_required
 def workflow_detail(secure_code):
     """工作流設計器（重定向到查詢參數格式）"""
-    return redirect(f'/api/workflows/designer/standalone?id={secure_code}')
+    created = request.args.get('created', '')
+    return redirect(f'/api/workflows/designer/standalone?id={secure_code}{"&created=1" if created else ""}')
 
 
 # =============================================================================

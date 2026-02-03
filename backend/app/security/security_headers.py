@@ -46,6 +46,7 @@ def register_security_headers(app: Flask) -> None:
             "img-src 'self' data: https:",
             "font-src 'self'",
             "connect-src 'self'",
+            "worker-src 'self' blob:",  # ACE editor Web Worker 需要 blob:
             "frame-ancestors 'self'",
             "form-action 'self'",
             "base-uri 'self'",

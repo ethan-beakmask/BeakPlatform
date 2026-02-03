@@ -936,6 +936,14 @@
     <script src="/static/vendor/formio.full.min.js"></script>
 
     <script>
+        // 第一時間覆寫 CDN — 封閉網路環境，指向本地 vendor
+        // 必須用 setBaseUrl() 才會觸發 updateUrls() 重新計算所有路徑
+        if (Formio.cdn && typeof Formio.cdn.setBaseUrl === 'function') {
+            Formio.cdn.setBaseUrl('/static/vendor');
+            console.log('✅ Formio CDN 已覆寫，ACE 路徑:', Formio.cdn.ace);
+        }
+        Formio.ace = { basePath: '/static/vendor/ace' };
+
         console.log('🧪 Form.io 測試頁面 (Test6)');
         console.log('📦 Form.io 版本:', Formio.version || '未知');
 
@@ -1556,6 +1564,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const formId = urlParams.get('id');
         const isNewForm = urlParams.get('new') === '1';
+        const wasJustCreated = urlParams.get('created') === '1';
+        let hasEverSaved = false;  // 追蹤是否曾在設計器儲存過
         const formName = urlParams.get('name') || '';
         const urlCategory = urlParams.get('category') || '';
         const urlDescription = urlParams.get('description') || '';
@@ -1701,6 +1711,10 @@
                     document.getElementById('form-category').value = formData.category || '';
                     document.getElementById('form-description').value = formData.description || '';
                     currentFormId = formData.secure_code;
+                    // 只有非剛建立的才標記為已儲存
+                    if (!wasJustCreated) {
+                        hasEverSaved = true;
+                    }
 
                     // 顯示版本號（含 revision）
                     const versionBadge = document.getElementById('form-version-badge');
@@ -2305,6 +2319,7 @@
 
                 if (result.success) {
                     hasUnsavedChanges = false;
+                    hasEverSaved = true;
                     Toast.success('儲存成功');
 
                     // 如果是新增，更新 currentFormId
@@ -2517,15 +2532,30 @@
             }
         });
 
-        // 放棄按鈕
+        // 放棄按鈕 — 清理剛建立但從未儲存的空白記錄
+        async function cleanupAndRedirect() {
+            if (!hasEverSaved && currentFormId) {
+                try {
+                    await fetch(`/api/forms/data/templates/${currentFormId}`, {
+                        method: 'DELETE'
+                    });
+                    console.log('✅ 已刪除從未儲存的表單記錄:', currentFormId);
+                } catch (e) {
+                    console.error('刪除未儲存表單失敗:', e);
+                }
+            }
+            hasUnsavedChanges = false;
+            window.location.href = '/forms/templates';
+        }
+
         const discardModal = document.getElementById('discard-confirm-modal');
         document.getElementById('btn-discard').addEventListener('click', () => {
             if (hasUnsavedChanges) {
                 // 顯示確認 modal
                 discardModal.style.display = 'flex';
             } else {
-                // 沒有未儲存變更，直接離開
-                window.location.href = '/forms/templates';
+                // 沒有未儲存變更，清理並離開
+                cleanupAndRedirect();
             }
         });
 
@@ -2541,8 +2571,7 @@
 
         // 放棄 modal - 確認放棄按鈕
         document.getElementById('discard-confirm').addEventListener('click', () => {
-            hasUnsavedChanges = false;  // 清除未儲存標記
-            window.location.href = '/forms/templates';  // 跳轉到表單清單頁面
+            cleanupAndRedirect();
         });
 
         // ==================== 範本載入功能 ====================
