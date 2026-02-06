@@ -52,43 +52,18 @@ git commit -m "類型: 簡短摘要
 git push origin main
 ```
 
-### 2. 更新計劃文件
-如果完成了計劃中的項目，更新 `docs/PLATFORM_MODULARIZATION_PLAN.md` 的狀態。
+### 2. 更新追蹤
+- 完成 Forgejo Issue 時，用 API 關閉：`curl -X PATCH ... -d '{"state":"closed"}'`
+- 如果涉及架構變更，更新 `docs/PLATFORM_MODULARIZATION_PLAN.md`
 
 ---
 
 ## 🎯 當前開發階段
 
-### Step 1: 單純平台化 ← **目前**
-確保 BeakPlatform 可獨立運行，不含業務功能。
+Step 1~5 全部完成。目前處於**功能完善階段**。
 
-**待完成清單**:
-- [ ] 檢查所有檔案的表單流程引用
-- [ ] 清理前端模板的表單流程連結
-- [ ] 清理選單資料的表單流程項目
-- [ ] 建立獨立資料庫 `beakplatform_dev`
-- [ ] 建立資料庫初始化腳本
-- [ ] 驗證 Flask 可啟動
-- [ ] 驗證登入/登出正常
-- [ ] 驗證平台功能正常
-
-**驗收標準**:
-1. `flask run` 無 import 錯誤
-2. 可以登入系統
-3. 所有平台功能正常
-4. 沒有表單流程相關 UI/API
-
-### Step 2: 建立模組化標準
-詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`
-
-### Step 3: 依標準移轉表單流程系統
-將 `/opt/FormFlow/a6` 改造為模組
-
-### Step 4: 模擬用戶環境驗證
-在新 Ubuntu VM 驗證安裝流程
-
-### Step 5: 開發全新模組
-驗證模組標準通用性
+待辦事項追蹤在 [Forgejo Issues](http://192.168.0.16:3000/forgejoadmin/BeakPlatform/issues)。
+架構與模組化標準詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`。
 
 ---
 
