@@ -232,7 +232,7 @@ def delete_schedule(secure_code):
 
     # 檢查是否有用戶使用此班表
     from ..models import User
-    user_count = User.query.filter_by(  # nosemgrep: beakmask-direct-model-query-in-api
+    user_count = User.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         work_schedule_secure_code=schedule.secure_code,
         is_deleted=False
     ).count()
@@ -306,7 +306,7 @@ def list_holidays(secure_code):
     year = request.args.get('year', date.today().year, type=int)
 
     # 查詢指定年份的假日
-    holidays = ScheduleHoliday.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    holidays = ScheduleHoliday.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         ScheduleHoliday.schedule_secure_code == schedule.secure_code,
         ScheduleHoliday.is_deleted == False,
         db.extract('year', ScheduleHoliday.holiday_date) == year
@@ -367,7 +367,7 @@ def create_holiday(secure_code):
         return jsonify({'success': False, 'message': '補班日請設定工作時段'}), 400
 
     # 檢查日期是否重複
-    existing = ScheduleHoliday.query.filter_by(  # nosemgrep: beakmask-direct-model-query-in-api
+    existing = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         schedule_secure_code=schedule.secure_code,
         holiday_date=holiday_date,
         is_deleted=False
@@ -408,7 +408,7 @@ def update_holiday(secure_code, holiday_secure_code):
     if not schedule:
         return jsonify({'success': False, 'message': '班表不存在'}), 404
 
-    holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakmask-direct-model-query-in-api
+    holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         secure_code=holiday_secure_code,
         schedule_secure_code=schedule.secure_code,
         is_deleted=False
@@ -460,7 +460,7 @@ def delete_holiday(secure_code, holiday_secure_code):
     if not schedule:
         return jsonify({'success': False, 'message': '班表不存在'}), 404
 
-    holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakmask-direct-model-query-in-api
+    holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         secure_code=holiday_secure_code,
         schedule_secure_code=schedule.secure_code,
         is_deleted=False
@@ -527,7 +527,7 @@ def batch_import_holidays(secure_code):
 
         # 刪除這些年份的現有假日
         for year in years_to_replace:
-            ScheduleHoliday.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+            ScheduleHoliday.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
                 ScheduleHoliday.schedule_secure_code == schedule.secure_code,
                 ScheduleHoliday.is_deleted == False,
                 db.extract('year', ScheduleHoliday.holiday_date) == year
@@ -545,7 +545,7 @@ def batch_import_holidays(secure_code):
 
             # 檢查是否存在（非取代模式）
             if not replace_year:
-                existing = ScheduleHoliday.query.filter_by(  # nosemgrep: beakmask-direct-model-query-in-api
+                existing = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
                     schedule_secure_code=schedule.secure_code,
                     holiday_date=holiday_date,
                     is_deleted=False

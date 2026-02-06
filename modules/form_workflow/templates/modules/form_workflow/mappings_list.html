@@ -64,6 +64,12 @@
     .fw-toggle input:checked + .slider:before { transform: translateX(16px); }
     .fw-sync-info { font-size: 11px; color: #999; margin-top: 2px; }
     .fw-sync-info.active { color: #0066cc; }
+
+    .fw-help-section { margin-bottom: 16px; }
+    .fw-help-section:last-child { margin-bottom: 0; }
+    .fw-help-section h4 { font-size: 14px; font-weight: 600; margin: 0 0 8px 0; padding: 4px 8px; background: #f5f5f5; border-left: 3px solid #0066cc; }
+    .fw-help-section ul { margin: 0; padding: 0 0 0 20px; font-size: 13px; line-height: 1.8; }
+    .fw-help-section li { color: #333; }
 </style>
 {% endblock %}
 
@@ -77,6 +83,7 @@
             <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">設定表單與流程的對應關係</p>
         </div>
         <div class="fw-toolbar">
+            <button class="fw-btn" @click="showHelpModal = true">說明</button>
             <button class="fw-btn" @click="loadMappings()">重新載入</button>
             <button class="fw-btn primary" @click="openCreateModal()">+ 新增配對</button>
         </div>
@@ -253,6 +260,55 @@
         </div>
     </div>
 
+    <!-- 說明 Modal -->
+    <div x-show="showHelpModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 680px;">
+            <div class="fw-modal-header">
+                <h3>配對規則說明</h3>
+                <button @click="showHelpModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <div class="fw-help-section">
+                    <h4>基本規則</h4>
+                    <ul>
+                        <li>表單同一時間只能與一個流程配對。</li>
+                        <li>一個流程可被多個表單配對。</li>
+                        <li>同一組配對，限制單一發行版本。</li>
+                        <li>同一組配對，發佈新的發行之後，舊版的表單流程若已發動，會從配對庫的舊版設計繼續完成流程，不會與新版發行衝突。</li>
+                        <li>基於上一項，如果企業原則需要中斷舊版流程，請由企業級管理員強制中斷（可能需自行通知申請人），並於設計時考慮逾期簽核的時效不宜太久。</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>自動配對規則</h4>
+                    <ul>
+                        <li>用名稱配對，當新建立流程時，如果沒有同名稱的表單，儲存新流程時會建立同名稱的表單且自動配對（因為流程需要表單發動）。</li>
+                        <li>再度建立同名稱的流程時（ID不同，這是合規則的），若同名稱的表單已經存在，無論如何不會自動配對（避免自動建立非預期的配對）。</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>人工配對</h4>
+                    <ul>
+                        <li>在不違反上述規則下可順利配對，並有防呆提示。</li>
+                        <li>同一配對未發行時，直接採用設計圖發動，提供設計者可「邊改邊測試」的環境，永遠是最新版本（設計圖只有一個版本），所以修改設計後請遺忘該設計在表單中心的舊記錄，因為舊資料與新設計版本不同（未必會有明顯錯誤）。</li>
+                        <li>每一次發行，會從表單與流程的設計圖「複製」到發行庫，確保變更設計後在表單中心查詢舊發行的表單時，能真實呈現當時的表單與流程。</li>
+                        <li>基於上一項，當企業一般用戶以發行的版本運作時，設計者依然能邊修改邊測試，或另以新配對發行給指定用戶於真實環境進行封測，等設計完成後用原本的配對或新配對來發行新版本。</li>
+                    </ul>
+                </div>
+                <div class="fw-help-section">
+                    <h4>表單權限</h4>
+                    <ul>
+                        <li>未發行：只管理員可使用。</li>
+                        <li>封測：表單權限設定給測試組人員，可用真實環境封閉測試。</li>
+                        <li>公開：表單權限設定給一般用戶，企業使用環境。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showHelpModal = false">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div x-show="toast.show" x-cloak class="fw-toast" :class="toast.type" x-text="toast.message"
          x-transition:enter="transition ease-out duration-300"
@@ -276,6 +332,7 @@ function mappingsManager() {
         viewingMapping: null,
         publishedVersions: [],
 
+        showHelpModal: false,
         showDeleteModal: false,
         deletingMapping: null,
 

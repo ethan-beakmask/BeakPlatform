@@ -1,11 +1,11 @@
-# BeakMask Semgrep Security Rules
+# BeakPlatform Semgrep Security Rules
 # 用於檢測違反安全標準的程式碼
 
 rules:
   # ===========================================================================
   # AUTH-01: 禁止繞過認證攔截
   # ===========================================================================
-  - id: beakmask-missing-auth-decorator
+  - id: beakplatform-missing-auth-decorator
     patterns:
       - pattern: |
           @$BP.route(...)
@@ -31,7 +31,17 @@ rules:
           @system_admin_required
           def $FUNC(...):
             ...
-    message: "Route missing authentication decorator. Use @public_route, @login_required, @admin_required, or @system_admin_required"
+      - pattern-not: |
+          @$BP.route(...)
+          @require_permission(...)
+          def $FUNC(...):
+            ...
+      - pattern-not: |
+          @$BP.route(...)
+          @security_login_required
+          def $FUNC(...):
+            ...
+    message: "Route missing authentication decorator. Use @public_route, @login_required, @admin_required, @system_admin_required, @require_permission, or @security_login_required"
     languages: [python]
     severity: ERROR
     metadata:
@@ -41,7 +51,7 @@ rules:
   # ===========================================================================
   # TENANT-02: 禁止 API 層直接查詢資料庫
   # ===========================================================================
-  - id: beakmask-direct-model-query-in-api
+  - id: beakplatform-direct-model-query-in-api
     patterns:
       - pattern-either:
           - pattern: $MODEL.query.$METHOD(...)
@@ -63,7 +73,7 @@ rules:
   # ===========================================================================
   # INPUT-01: 禁止 SQL 字串拼接
   # ===========================================================================
-  - id: beakmask-sql-injection
+  - id: beakplatform-sql-injection
     patterns:
       - pattern-either:
           - pattern: db.engine.execute($SQL + ...)
@@ -87,7 +97,7 @@ rules:
   # ===========================================================================
   # INPUT-02: 禁止 Command Injection
   # ===========================================================================
-  - id: beakmask-command-injection
+  - id: beakplatform-command-injection
     patterns:
       - pattern-either:
           - pattern: subprocess.call($CMD, shell=True, ...)
@@ -106,7 +116,7 @@ rules:
   # ===========================================================================
   # 禁止硬編碼密鑰
   # ===========================================================================
-  - id: beakmask-hardcoded-secret
+  - id: beakplatform-hardcoded-secret
     patterns:
       - pattern-either:
           - pattern: SECRET_KEY = "..."
@@ -123,7 +133,7 @@ rules:
   # ===========================================================================
   # 禁止使用不安全的隨機數
   # ===========================================================================
-  - id: beakmask-insecure-random
+  - id: beakplatform-insecure-random
     patterns:
       - pattern-either:
           - pattern: random.random()
@@ -139,7 +149,7 @@ rules:
   # ===========================================================================
   # 禁止 Debug 模式在生產
   # ===========================================================================
-  - id: beakmask-debug-enabled
+  - id: beakplatform-debug-enabled
     pattern: app.run(..., debug=True, ...)
     message: "Debug mode should not be enabled in production"
     languages: [python]
@@ -150,7 +160,7 @@ rules:
   # ===========================================================================
   # 禁止不安全的 pickle
   # ===========================================================================
-  - id: beakmask-insecure-pickle
+  - id: beakplatform-insecure-pickle
     patterns:
       - pattern-either:
           - pattern: pickle.loads(...)
@@ -165,7 +175,7 @@ rules:
   # ===========================================================================
   # 禁止明文記錄敏感資訊
   # ===========================================================================
-  - id: beakmask-log-sensitive-data
+  - id: beakplatform-log-sensitive-data
     patterns:
       - pattern-either:
           - pattern: logger.$METHOD(..., password=..., ...)

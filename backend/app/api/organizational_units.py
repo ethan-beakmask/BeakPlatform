@@ -438,7 +438,7 @@ def get_unit_members(secure_code: str):
         return jsonify({'error': '組織單位不存在'}), 404
 
     # 查詢主要部門為此單位的用戶 (需要 order_by(display_name) 排序)
-    members = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    members = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == secure_code,
         User.is_deleted == False,
@@ -473,7 +473,7 @@ def get_unassigned_users():
     from ..models.user import User, UserType
 
     # 涉及 != 條件和 IS NULL 比較，無法使用 ResourceGateway
-    users = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == None,
         User.is_deleted == False,
@@ -522,7 +522,7 @@ def add_member_to_unit(secure_code: str):
         return jsonify({'error': '請提供用戶 ID'}), 400
 
     # 需要動態 data['user_id'] 參數，無法使用 ResourceGateway
-    user = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.secure_code == data['user_id'],
         User.org_secure_code == current_user.org_secure_code,
         User.is_deleted == False
@@ -572,7 +572,7 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
         return jsonify({'error': '組織單位不存在'}), 404
 
     # 需要多重動態參數比較，無法使用 ResourceGateway
-    user = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.secure_code == user_secure_code,
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == secure_code,
@@ -1097,7 +1097,7 @@ def get_cross_members(secure_code: str):
     membership_type = request.args.get('type')
 
     # 查詢跨部門成員
-    query = UserUnitMembership.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    query = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.unit_secure_code == secure_code,
         UserUnitMembership.is_deleted == False
@@ -1152,7 +1152,7 @@ def add_cross_member(secure_code: str):
         return jsonify({'error': '請提供用戶 ID'}), 400
 
     # 驗證用戶
-    user = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.secure_code == data['user_id'],
         User.org_secure_code == current_user.org_secure_code,
         User.is_deleted == False
@@ -1172,7 +1172,7 @@ def add_cross_member(secure_code: str):
         return jsonify({'error': '無效的成員類型'}), 400
 
     # 檢查是否已存在相同關係（包含已刪除的，因為唯一約束不考慮 is_deleted）
-    existing = UserUnitMembership.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    existing = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.user_secure_code == data['user_id'],
         UserUnitMembership.unit_secure_code == secure_code,
@@ -1270,7 +1270,7 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
     if not unit:
         return jsonify({'error': '組織單位不存在'}), 404
 
-    membership = UserUnitMembership.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    membership = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.secure_code == membership_secure_code,
         UserUnitMembership.unit_secure_code == secure_code,
@@ -1328,7 +1328,7 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
     if not unit:
         return jsonify({'error': '組織單位不存在'}), 404
 
-    membership = UserUnitMembership.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    membership = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.secure_code == membership_secure_code,
         UserUnitMembership.unit_secure_code == secure_code,
@@ -1368,7 +1368,7 @@ def get_user_cross_memberships(user_secure_code: str):
     返回該用戶所有的跨部門/社群成員關係
     """
     # 驗證用戶
-    user = User.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.secure_code == user_secure_code,
         User.org_secure_code == current_user.org_secure_code,
         User.is_deleted == False
@@ -1378,7 +1378,7 @@ def get_user_cross_memberships(user_secure_code: str):
         return jsonify({'error': '用戶不存在'}), 404
 
     # 查詢用戶的所有跨部門關係
-    memberships = UserUnitMembership.query.filter(  # nosemgrep: beakmask-direct-model-query-in-api
+    memberships = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.user_secure_code == user_secure_code,
         UserUnitMembership.is_deleted == False

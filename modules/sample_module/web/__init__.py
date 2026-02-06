@@ -2,6 +2,7 @@
 Sample Module - Web Routes
 """
 from flask import Blueprint, render_template_string
+from app.security.decorators import login_required as security_login_required
 
 # 建立 Web Blueprint
 web_bp = Blueprint(
@@ -48,6 +49,7 @@ DEMO_TEMPLATE = """
 
 
 @web_bp.route('/')
+@security_login_required
 def index():
     """範例模組首頁"""
     from .. import MODULE_INFO

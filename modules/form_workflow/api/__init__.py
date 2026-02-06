@@ -770,6 +770,7 @@ def approve_task(secure_code):
 # =============================================================================
 
 @api_bp.route('/stats')
+@require_permission('form_workflow.template.view')
 def get_stats():
     """取得模組統計資訊"""
     from ..models import FwFormTemplate, FwWorkflowTemplate, FwFormInstance

@@ -1,10 +1,10 @@
 #!/bin/bash
-# BeakMask 安全掃描腳本
+# BeakPlatform 安全掃描腳本
 # 用法: ./scripts/security_scan.sh [--full] [--json] [--sarif]
 #
 # 模式:
-#   預設     - Flask 專用規則 + 自定義規則 (27+9 條，無誤報)
-#   --full   - 全部社群規則 + 自定義規則 (454+9 條，已排除 Django 誤報)
+#   預設     - Flask 專用規則 + 自定義規則
+#   --full   - 全部社群規則 + 自定義規則 (已排除 Django 誤報)
 
 cd "$(dirname "$0")/.." || exit 1
 
@@ -30,10 +30,10 @@ if $FULL_MODE; then
     for rule in "${EXCLUDE_RULES[@]}"; do
         EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude-rule=$rule"
     done
-    echo "=== 完整掃描模式 (454+ 規則) ==="
-    semgrep --config=.semgrep/ --config=auto $EXCLUDE_ARGS $OUTPUT_FORMAT backend/
+    echo "=== 完整掃描模式 ==="
+    semgrep --config=.semgrep/ --config=auto $EXCLUDE_ARGS $OUTPUT_FORMAT backend/ modules/
 else
-    # 預設：Flask 專用規則
-    echo "=== Flask 專用掃描模式 (27+9 規則) ==="
-    semgrep --config=.semgrep/ --config=p/flask $OUTPUT_FORMAT backend/
+    # 預設：Flask 專用規則 + 自定義規則
+    echo "=== Flask 專用掃描模式 ==="
+    semgrep --config=.semgrep/ --config=p/flask $OUTPUT_FORMAT backend/ modules/
 fi

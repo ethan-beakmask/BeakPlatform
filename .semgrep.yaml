@@ -1,0 +1,13 @@
+# Semgrep Configuration
+# Run: semgrep --config .semgrep.yaml backend/ modules/
+
+# Local rules
+local_rules:
+  - .semgrep/
+
+# Community rules to include
+rules:
+  - p/python
+  - p/flask
+  - p/owasp-top-ten
+  - p/security-audit

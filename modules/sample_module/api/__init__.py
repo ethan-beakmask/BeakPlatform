@@ -51,6 +51,7 @@ def module_permissions():
 
 
 @api_bp.route('/demo')
+@require_permission('sample_module.view')
 def demo():
     """展示模組可以存取平台 API"""
     from app.platform.data import get_current_org

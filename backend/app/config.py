@@ -92,7 +92,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     DEBUG = True
 
-    SECRET_KEY = 'test-secret-key-for-testing-only'  # nosemgrep: beakmask-hardcoded-secret
+    SECRET_KEY = 'test-secret-key-for-testing-only'  # nosemgrep: beakplatform-hardcoded-secret
 
     # Use DATABASE_URL from environment if available (CI uses PostgreSQL)
     # Fall back to SQLite for local quick tests (may not support all features like JSONB)
