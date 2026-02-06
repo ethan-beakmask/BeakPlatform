@@ -55,7 +55,7 @@ def list_schedules():
 
     schedules = ResourceGateway.filter(
         WorkSchedule,
-        order_by='is_default DESC, name',
+        order_by='-is_default,name',
         **filters
     )
 

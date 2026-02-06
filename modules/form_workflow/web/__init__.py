@@ -130,7 +130,16 @@ def mappings():
 @security_login_required
 def center():
     """表單中心頁面"""
-    return render_template('modules/form_workflow/form_center.html')
+    # 取得用戶有效時區：個人設定 > 企業設定 > Asia/Taipei
+    user_tz = getattr(current_user, 'timezone', None)
+    if not user_tz and hasattr(current_user, 'organization') and current_user.organization:
+        user_tz = current_user.organization.get_setting('timezone', 'Asia/Taipei')
+    user_tz = user_tz or 'Asia/Taipei'
+
+    return render_template(
+        'modules/form_workflow/form_center.html',
+        user_timezone=user_tz
+    )
 
 
 # =============================================================================

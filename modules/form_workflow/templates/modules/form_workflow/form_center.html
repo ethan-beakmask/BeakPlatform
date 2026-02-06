@@ -3,6 +3,8 @@
 {% block title %}表單中心 - BeakPlatform{% endblock %}
 
 {% block head %}
+<!-- 用戶時區 (個人 > 企業 > Asia/Taipei) -->
+<script>window.__USER_TIMEZONE = '{{ user_timezone }}';</script>
 <!-- Form.io CSS -->
 <link rel="stylesheet" href="/static/vendor/formio.full.min.css">
 <style>
@@ -1615,22 +1617,33 @@ function formCenterManager() {
         },
 
         // 工具函式
+        // 將 ISO 字串當 UTC 解析（後端存 UTC，isoformat() 不帶 Z）
+        _parseUTC(dateStr) {
+            if (!dateStr) return null;
+            // 如果沒有時區標記，當作 UTC
+            if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !/\d{2}:\d{2}$/.test(dateStr.slice(-6))) {
+                dateStr = dateStr + 'Z';
+            }
+            return new Date(dateStr);
+        },
+
         formatDate(dateStr) {
             if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            const d = this._parseUTC(dateStr);
+            const tz = window.__USER_TIMEZONE || 'Asia/Taipei';
+            return d.toLocaleDateString('zh-TW', { timeZone: tz }) + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', timeZone: tz });
         },
 
         formatWaitTime(isoString) {
             if (!isoString) return '-';
-            const diff = Date.now() - new Date(isoString).getTime();
+            const diff = Date.now() - this._parseUTC(isoString).getTime();
             if (diff < 0) return '-';
             return this._formatMs(diff);
         },
 
         formatDuration(startIso, endIso) {
             if (!startIso || !endIso) return '-';
-            const diff = new Date(endIso).getTime() - new Date(startIso).getTime();
+            const diff = this._parseUTC(endIso).getTime() - this._parseUTC(startIso).getTime();
             if (diff < 0) return '-';
             return this._formatMs(diff);
         },
@@ -2162,8 +2175,9 @@ function formCenterManager() {
 
         formatHistoryTime(dateStr) {
             if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const d = this._parseUTC(dateStr);
+            const tz = window.__USER_TIMEZONE || 'Asia/Taipei';
+            return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz });
         },
 
         // =============================================================

@@ -266,12 +266,16 @@ class ResourceGateway:
             if hasattr(model_class, key) and value is not None:
                 query = query.filter(getattr(model_class, key) == value)
 
-        # Apply ordering
+        # Apply ordering (supports comma-separated fields, prefix '-' for DESC)
         if order_by:
-            if order_by.startswith('-'):
-                query = query.order_by(getattr(model_class, order_by[1:]).desc())
-            else:
-                query = query.order_by(getattr(model_class, order_by))
+            for field in order_by.split(','):
+                field = field.strip()
+                if not field:
+                    continue
+                if field.startswith('-'):
+                    query = query.order_by(getattr(model_class, field[1:]).desc())
+                else:
+                    query = query.order_by(getattr(model_class, field))
 
         # Apply limit
         if limit:
@@ -323,12 +327,16 @@ class ResourceGateway:
             if hasattr(model_class, key) and value is not None:
                 query = query.filter(getattr(model_class, key) == value)
 
-        # Apply ordering
+        # Apply ordering (supports comma-separated fields, prefix '-' for DESC)
         if order_by:
-            if order_by.startswith('-'):
-                query = query.order_by(getattr(model_class, order_by[1:]).desc())
-            else:
-                query = query.order_by(getattr(model_class, order_by))
+            for field in order_by.split(','):
+                field = field.strip()
+                if not field:
+                    continue
+                if field.startswith('-'):
+                    query = query.order_by(getattr(model_class, field[1:]).desc())
+                else:
+                    query = query.order_by(getattr(model_class, field))
 
         # Paginate
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
