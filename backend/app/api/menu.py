@@ -163,7 +163,8 @@ def update_menu_item(secure_code: str):
 
     # 允許更新的欄位
     allowed_fields = [
-        'title', 'icon', 'link_type', 'link_target',
+        'title', 'title_en', 'title_zh_cn',
+        'icon', 'link_type', 'link_target',
         'display_order', 'required_level', 'is_expanded',
         'open_in_new_tab', 'is_active'
     ]

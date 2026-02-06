@@ -84,6 +84,7 @@ class User(TenantBaseModel, UserMixin):
     mobile_phone_1 = Column(String(50), nullable=True, comment='手機號碼 1')
     mobile_phone_2 = Column(String(50), nullable=True, comment='手機號碼 2')
     interface_language = Column(String(10), nullable=True, comment='介面語言 (覆蓋企業設定)')
+    timezone = Column(String(50), nullable=True, comment='個人時區 IANA (覆蓋企業設定)')
 
     # 員工編號 (組織內唯一)
     employee_id = Column(String(50), nullable=True, comment='員工編號 (組織內唯一)')
@@ -274,6 +275,7 @@ class User(TenantBaseModel, UserMixin):
             'mobile_phone_1': self.mobile_phone_1,
             'mobile_phone_2': self.mobile_phone_2,
             'interface_language': self.interface_language,
+            'timezone': self.timezone,
             'employee_id': self.employee_id,
         })
 

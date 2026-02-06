@@ -9,6 +9,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user
 
 from ..security.decorators import admin_required
+from ..utils.timezone import get_timezone_choices
 from .. import db
 
 admin_bp = Blueprint('admin', __name__)
@@ -33,7 +34,10 @@ def settings():
     - 通知設定
     - 整合設定
     """
-    return render_template('pages/admin/settings.html')
+    return render_template(
+        'pages/admin/settings.html',
+        timezone_choices=get_timezone_choices()
+    )
 
 
 @admin_bp.route('/settings/general', methods=['GET', 'POST'])

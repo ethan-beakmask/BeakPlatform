@@ -120,6 +120,8 @@ def create_menu():
     if request.method == 'POST':
         code = request.form.get('code', '').strip()
         title = request.form.get('title', '').strip()
+        title_en = request.form.get('title_en', '').strip() or None
+        title_zh_cn = request.form.get('title_zh_cn', '').strip() or None
         icon = request.form.get('icon', '').strip() or None
         parent_secure_code = request.form.get('parent_secure_code', '').strip() or None
         link_type = request.form.get('link_type', 'route').strip()
@@ -153,6 +155,8 @@ def create_menu():
                         org_secure_code=current_user.org_secure_code,
                         code=code,
                         title=title,
+                        title_en=title_en,
+                        title_zh_cn=title_zh_cn,
                         icon=icon,
                         parent_secure_code=parent_secure_code,
                         link_type=link_type,
@@ -209,6 +213,8 @@ def edit_menu(secure_code: str):
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
+        title_en = request.form.get('title_en', '').strip() or None
+        title_zh_cn = request.form.get('title_zh_cn', '').strip() or None
         icon = request.form.get('icon', '').strip() or None
         new_parent_code = request.form.get('parent_secure_code', '').strip() or None
         link_type = request.form.get('link_type', 'route').strip()
@@ -225,6 +231,8 @@ def edit_menu(secure_code: str):
         else:
             try:
                 item.title = title
+                item.title_en = title_en
+                item.title_zh_cn = title_zh_cn
                 item.icon = icon
                 item.link_type = link_type
                 item.link_target = link_target

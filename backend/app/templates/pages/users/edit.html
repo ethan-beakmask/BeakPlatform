@@ -342,6 +342,26 @@
                     {% endif %}
                 </td>
             </tr>
+            <tr>
+                <td><label for="timezone">時區</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="timezone" name="timezone" style="width: 280px;">
+                        <option value="">-- 跟隨企業設定 --</option>
+                        {% for group_label, timezones in timezone_choices %}
+                        <optgroup label="{{ group_label }}">
+                            {% for tz_value, tz_display in timezones %}
+                            <option value="{{ tz_value }}" {% if user.timezone == tz_value %}selected{% endif %}>{{ tz_display }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">留空則使用企業預設時區</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.timezone or '跟隨企業設定' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
         </table>
 
         <div class="section-title optional">聯絡方式</div>

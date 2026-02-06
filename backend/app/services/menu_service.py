@@ -97,8 +97,13 @@ class MenuService:
             [item.secure_code for item in filtered_items]
         )
 
-        # 7. 建構樹狀結構
-        return cls._build_tree(filtered_items, menu_permissions_map=menu_permissions_map)
+        # 7. 取得企業語系
+        locale = 'zh-TW'
+        if hasattr(user, 'organization') and user.organization:
+            locale = user.organization.get_setting('locale', 'zh-TW')
+
+        # 8. 建構樹狀結構
+        return cls._build_tree(filtered_items, menu_permissions_map=menu_permissions_map, locale=locale)
 
     @classmethod
     def _get_allowed_menu_codes(cls, user) -> Set[str]:
@@ -197,7 +202,8 @@ class MenuService:
         cls,
         items: List[MenuItem],
         parent_code: Optional[str] = None,
-        menu_permissions_map: Optional[Dict[str, Set[str]]] = None
+        menu_permissions_map: Optional[Dict[str, Set[str]]] = None,
+        locale: str = 'zh-TW'
     ) -> List[Dict[str, Any]]:
         """
         建構選單樹
@@ -206,6 +212,7 @@ class MenuService:
             items: 所有選單項目
             parent_code: 父選單的 secure_code (None = 根層級)
             menu_permissions_map: 選單權限映射 {menu_secure_code: {user_types}}
+            locale: 語系代碼
 
         Returns:
             樹狀結構的字典列表
@@ -215,8 +222,8 @@ class MenuService:
         for item in items:
             if item.parent_secure_code == parent_code:
                 allowed_types = menu_permissions_map.get(item.secure_code, set()) if menu_permissions_map else set()
-                node = cls._item_to_dict(item, allowed_types)
-                node['children'] = cls._build_tree(items, item.secure_code, menu_permissions_map)
+                node = cls._item_to_dict(item, allowed_types, locale=locale)
+                node['children'] = cls._build_tree(items, item.secure_code, menu_permissions_map, locale=locale)
                 result.append(node)
 
         return result
@@ -225,7 +232,8 @@ class MenuService:
     def _item_to_dict(
         cls,
         item: MenuItem,
-        allowed_types: Optional[Set[str]] = None
+        allowed_types: Optional[Set[str]] = None,
+        locale: str = 'zh-TW'
     ) -> Dict[str, Any]:
         """
         將選單項目轉換為前端需要的格式
@@ -233,6 +241,7 @@ class MenuService:
         Args:
             item: MenuItem 物件
             allowed_types: 該選單允許的用戶類型集合
+            locale: 語系代碼
 
         Returns:
             字典格式的選單項目
@@ -288,7 +297,7 @@ class MenuService:
         return {
             'id': item.secure_code,
             'code': item.code,
-            'title': item.title,
+            'title': item.get_localized_title(locale),
             'icon': item.icon,
             'link_type': item.link_type,
             'link_target': item.link_target,

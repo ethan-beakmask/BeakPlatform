@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
+from ..utils.timezone import get_timezone_choices
 from .. import db
 
 main_bp = Blueprint('main', __name__)
@@ -83,6 +84,7 @@ def personal_settings():
             current_user.mobile_phone_1 = request.form.get('mobile_phone_1', '').strip() or None
             current_user.mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
             current_user.interface_language = request.form.get('interface_language', '').strip() or None
+            current_user.timezone = request.form.get('timezone', '').strip() or None
 
             db.session.commit()
             flash('個人設定已儲存', 'success')
@@ -94,7 +96,8 @@ def personal_settings():
 
     return render_template(
         'pages/personal_settings.html',
-        languages=SUPPORTED_LANGUAGES
+        languages=SUPPORTED_LANGUAGES,
+        timezone_choices=get_timezone_choices()
     )
 
 

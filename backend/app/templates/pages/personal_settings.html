@@ -189,6 +189,24 @@
                     <div class="help-text">覆蓋企業預設語言設定</div>
                 </td>
             </tr>
+            <tr>
+                <td><label for="timezone">時區</label></td>
+                <td>
+                    <select id="timezone" name="timezone" style="max-width: 300px;">
+                        <option value="">使用企業預設</option>
+                        {% for group_label, timezones in timezone_choices %}
+                        <optgroup label="{{ group_label }}">
+                            {% for tz_value, tz_display in timezones %}
+                            <option value="{{ tz_value }}" {% if current_user.timezone == tz_value %}selected{% endif %}>
+                                {{ tz_display }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">覆蓋企業預設時區設定</div>
+                </td>
+            </tr>
         </table>
 
         <div class="btn-row">

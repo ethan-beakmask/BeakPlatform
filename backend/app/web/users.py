@@ -20,6 +20,7 @@ from ..models.organizational_unit import OrganizationalUnit
 from ..models.user_numbering_rule import UsedUserNumber
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.work_schedule import WorkSchedule
+from ..utils.timezone import get_timezone_choices
 from .. import db
 
 users_bp = Blueprint('users', __name__)
@@ -399,6 +400,9 @@ def edit_user(secure_code: str):
         native_name = request.form.get('native_name', '').strip() or None
         nickname = request.form.get('nickname', '').strip() or None
 
+        # 個人偏好（允許編輯）
+        user_timezone = request.form.get('timezone', '').strip() or None
+
         # 聯絡方式（允許編輯）
         backup_email_1 = request.form.get('backup_email_1', '').strip() or None
         backup_email_2 = request.form.get('backup_email_2', '').strip() or None
@@ -442,6 +446,9 @@ def edit_user(secure_code: str):
                 user.native_name = native_name
                 user.nickname = nickname
 
+                # 個人偏好
+                user.timezone = user_timezone
+
                 # 聯絡方式
                 user.backup_email_1 = backup_email_1
                 user.backup_email_2 = backup_email_2
@@ -482,6 +489,7 @@ def edit_user(secure_code: str):
         user=user,
         departments=departments,
         work_schedules=work_schedules,
+        timezone_choices=get_timezone_choices(),
         **ctx
     )
 

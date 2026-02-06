@@ -85,6 +85,8 @@ class Organization(BaseModel):
     # 預設企業設定
     DEFAULT_SETTINGS = {
         'allow_user_self_edit': True,  # 允許用戶修改自己的資料
+        'locale': 'zh-TW',            # 企業常用語系
+        'timezone': 'Asia/Taipei',    # 企業主要時區
     }
 
     @property

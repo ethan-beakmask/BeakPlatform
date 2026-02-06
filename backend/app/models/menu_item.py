@@ -54,6 +54,10 @@ class MenuItem(TenantBaseModel):
     # 選單標題
     title = Column(String(100), nullable=False)
 
+    # 多語系標題
+    title_en = Column(String(100), nullable=True)
+    title_zh_cn = Column(String(100), nullable=True)
+
     # 選單圖標 (文字符號)
     icon = Column(String(10), nullable=True)
 
@@ -111,11 +115,37 @@ class MenuItem(TenantBaseModel):
         cascade='all, delete-orphan'
     )
 
+    # 語系代碼 → 欄位名映射
+    _LOCALE_FIELD_MAP = {
+        'zh-TW': 'title',
+        'zh-CN': 'title_zh_cn',
+        'en': 'title_en',
+    }
+
+    def get_localized_title(self, locale: str = 'zh-TW') -> str:
+        """
+        取得本地化標題，空值 fallback 到 title (zh-TW)
+
+        Args:
+            locale: 語系代碼 (zh-TW, zh-CN, en)
+
+        Returns:
+            本地化標題
+        """
+        field = self._LOCALE_FIELD_MAP.get(locale)
+        if field and field != 'title':
+            value = getattr(self, field, None)
+            if value:
+                return value
+        return self.title
+
     def to_dict(self, include_children: bool = False) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
             'code': self.code,
             'title': self.title,
+            'title_en': self.title_en,
+            'title_zh_cn': self.title_zh_cn,
             'icon': self.icon,
             'link_type': self.link_type,
             'link_target': self.link_target,

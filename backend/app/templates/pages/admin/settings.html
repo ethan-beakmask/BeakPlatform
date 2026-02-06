@@ -178,6 +178,40 @@
                         </div>
                     </td>
                 </tr>
+                <tr>
+                    <th style="text-align: left;">企業常用語系</th>
+                    <td>
+                        <select x-model="settings.locale" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            <option value="zh-TW">繁體中文 (zh-TW)</option>
+                            <option value="zh-CN">简体中文 (zh-CN)</option>
+                            <option value="en">English (en)</option>
+                            <option value="ja" disabled>日本語 (ja) - 尚未支援</option>
+                            <option value="ko" disabled>한국어 (ko) - 尚未支援</option>
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            影響選單標題等介面元素的顯示語言（需重新整理頁面生效）
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">企業主要時區</th>
+                    <td>
+                        <select x-model="settings.timezone" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px;">
+                            {% for group_label, timezones in timezone_choices %}
+                            <optgroup label="{{ group_label }}">
+                                {% for tz_value, tz_display in timezones %}
+                                <option value="{{ tz_value }}">{{ tz_display }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            IANA 時區，影響系統時間顯示（管理員設定一次即可）
+                        </div>
+                    </td>
+                </tr>
             </table>
 
             <p x-show="saveMessage" x-text="saveMessage"
@@ -1087,7 +1121,9 @@ function logoSettings() {
 function generalSettings() {
     return {
         settings: {
-            allow_user_self_edit: true
+            allow_user_self_edit: true,
+            locale: 'zh-TW',
+            timezone: 'Asia/Taipei'
         },
         saveMessage: '',
 
