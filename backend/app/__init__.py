@@ -9,6 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_babel import Babel
 
 from .security.auth_interceptor import register_auth_interceptor
 from .security.security_headers import register_security_headers
@@ -20,6 +21,7 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 session = Session()
 limiter = Limiter(key_func=get_remote_address)
+babel = Babel()
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -36,6 +38,10 @@ def create_app(config_name: str = None) -> Flask:
     csrf.init_app(app)
     session.init_app(app)
     limiter.init_app(app)
+
+    # Initialize Babel for i18n
+    from .i18n import get_locale
+    babel.init_app(app, locale_selector=get_locale)
 
     # Security: Configure login manager
     login_manager.login_view = 'auth.login'
@@ -87,6 +93,7 @@ def create_app(config_name: str = None) -> Flask:
 
 def register_context_processors(app: Flask) -> None:
     """註冊模板 context processors"""
+    from flask import g
     from flask_login import current_user
 
     @app.context_processor
@@ -100,6 +107,15 @@ def register_context_processors(app: Flask) -> None:
             except Exception:
                 return {'nav_menu': []}
         return {'nav_menu': []}
+
+    @app.context_processor
+    def inject_i18n():
+        """將 i18n 相關資料注入到所有模板"""
+        from .i18n import SUPPORTED_LANGUAGES
+        return {
+            'current_locale': getattr(g, 'locale', 'zh-TW'),
+            'supported_languages': SUPPORTED_LANGUAGES,
+        }
 
 
 def register_error_handlers(app: Flask) -> None:

@@ -130,6 +130,18 @@ def create_menu():
         is_expanded = request.form.get('is_expanded') == 'on'
         allowed_user_types = request.form.getlist('allowed_user_types')
 
+        # 組裝 title_i18n JSONB
+        title_i18n = {}
+        for lang_code in ('en', 'zh-CN', 'ja'):
+            val = request.form.get(f'title_{lang_code}', '').strip()
+            if val:
+                title_i18n[lang_code] = val
+        # 向下相容：也從舊欄位名讀取
+        if title_en and 'en' not in title_i18n:
+            title_i18n['en'] = title_en
+        if title_zh_cn and 'zh-CN' not in title_i18n:
+            title_i18n['zh-CN'] = title_zh_cn
+
         if not code or not title:
             flash('代碼和標題為必填', 'error')
         elif not allowed_user_types:
@@ -155,6 +167,7 @@ def create_menu():
                         org_secure_code=current_user.org_secure_code,
                         code=code,
                         title=title,
+                        title_i18n=title_i18n,
                         title_en=title_en,
                         title_zh_cn=title_zh_cn,
                         icon=icon,
@@ -224,6 +237,18 @@ def edit_menu(secure_code: str):
         is_active = request.form.get('is_active') == 'on'
         allowed_user_types = request.form.getlist('allowed_user_types')
 
+        # 組裝 title_i18n JSONB
+        title_i18n = {}
+        for lang_code in ('en', 'zh-CN', 'ja'):
+            val = request.form.get(f'title_{lang_code}', '').strip()
+            if val:
+                title_i18n[lang_code] = val
+        # 向下相容：也從舊欄位名讀取
+        if title_en and 'en' not in title_i18n:
+            title_i18n['en'] = title_en
+        if title_zh_cn and 'zh-CN' not in title_i18n:
+            title_i18n['zh-CN'] = title_zh_cn
+
         if not title:
             flash('標題為必填', 'error')
         elif not allowed_user_types:
@@ -231,6 +256,7 @@ def edit_menu(secure_code: str):
         else:
             try:
                 item.title = title
+                item.title_i18n = title_i18n
                 item.title_en = title_en
                 item.title_zh_cn = title_zh_cn
                 item.icon = icon

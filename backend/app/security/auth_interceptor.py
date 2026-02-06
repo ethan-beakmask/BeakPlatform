@@ -107,6 +107,11 @@ def register_auth_interceptor(app: Flask) -> None:
         g.current_org_secure_code = current_user.org_secure_code
         g.current_user_id = current_user.id
 
+        # Set locale: user preference > org setting > platform default
+        g.locale = current_user.interface_language or \
+            (current_user.organization.get_setting('locale', 'zh-TW')
+             if current_user.organization else 'zh-TW')
+
         return None
 
 

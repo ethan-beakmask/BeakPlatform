@@ -19,9 +19,11 @@ BeakMask JobFamily Model
 from typing import Dict, Any, List
 
 from sqlalchemy import Column, String, Integer, Boolean, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
+from .mixins import I18nMixin
 from .. import db
 
 
@@ -31,7 +33,7 @@ class JobFamilyType:
     PROFESSIONAL = 'PROFESSIONAL'  # 專業職 (Individual Contributor)
 
 
-class JobFamily(TenantBaseModel):
+class JobFamily(TenantBaseModel, I18nMixin):
     """
     職系 Model
 
@@ -58,8 +60,14 @@ class JobFamily(TenantBaseModel):
     # 職系名稱 (中文)
     name = Column(String(100), nullable=False)
 
-    # 職系名稱 (英文)
+    # 多語系名稱 (JSONB: {"en": "...", "zh-CN": "...", "ja": "..."})
+    name_i18n = Column(JSONB, nullable=True, default=dict)
+
+    # [向下相容] 舊欄位 — 新程式碼請用 name_i18n
     name_en = Column(String(100), nullable=True)
+
+    # I18nMixin 向下相容映射
+    _I18N_LEGACY_FIELD_MAP = {'en': 'name_en'}
 
     # 父職系 (用於細分，如 PROFESSIONAL 下有 SALES, CS, ADMIN, TECH)
     parent_secure_code = Column(
@@ -108,6 +116,7 @@ class JobFamily(TenantBaseModel):
             'family_type': self.family_type,
             'code': self.code,
             'name': self.name,
+            'name_i18n': self.name_i18n or {},
             'name_en': self.name_en,
             'description': self.description,
             'is_system_default': self.is_system_default,

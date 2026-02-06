@@ -8,7 +8,7 @@ BeakMask Menu Service
 - required_permission 設定的選單需要通過 RBAC 權限檢查
 """
 from typing import List, Dict, Any, Optional, Set
-from flask import url_for
+from flask import g, url_for
 
 from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
@@ -97,10 +97,12 @@ class MenuService:
             [item.secure_code for item in filtered_items]
         )
 
-        # 7. 取得企業語系
-        locale = 'zh-TW'
-        if hasattr(user, 'organization') and user.organization:
-            locale = user.organization.get_setting('locale', 'zh-TW')
+        # 7. 取得語系 (優先用 g.locale，由 auth_interceptor 設定)
+        locale = getattr(g, 'locale', None)
+        if not locale:
+            locale = 'zh-TW'
+            if hasattr(user, 'organization') and user.organization:
+                locale = user.organization.get_setting('locale', 'zh-TW')
 
         # 8. 建構樹狀結構
         return cls._build_tree(filtered_items, menu_permissions_map=menu_permissions_map, locale=locale)

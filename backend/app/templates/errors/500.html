@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="{{ current_locale|default('zh-TW') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - 伺服器錯誤 - BeakPlatform</title>
+    <title>500 - {{ _('伺服器錯誤') }} - BeakPlatform</title>
 </head>
 <body>
-    <h1>500 伺服器錯誤</h1>
-    <p>系統發生錯誤，請稍後再試。</p>
-    <p><a href="{{ url_for('main.dashboard') }}">返回儀表板</a></p>
+    <h1>500 {{ _('伺服器錯誤') }}</h1>
+    <p>{{ _('系統發生錯誤，請稍後再試。') }}</p>
+    <p><a href="{{ url_for('main.dashboard') }}">{{ _('返回儀表板') }}</a></p>
 </body>
 </html>

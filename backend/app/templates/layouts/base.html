@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="{{ current_locale|default('zh-TW') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -147,7 +147,7 @@
             <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}</span>
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">登出</button>
+                <button type="submit">{{ _('登出') }}</button>
             </form>
         </div>
     </div>
@@ -181,7 +181,7 @@
             {% endif %}
         {% else %}
         <!-- 無選單資料時的 fallback -->
-        <a href="{{ url_for('main.dashboard') }}">首頁</a>
+        <a href="{{ url_for('main.dashboard') }}">{{ _('首頁') }}</a>
         {% endfor %}
     </div>
     {% endif %}

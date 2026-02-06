@@ -5,6 +5,7 @@ BeakMask MenuItem Model
 from typing import Dict, Any, List, Optional
 
 from sqlalchemy import Column, String, Boolean, Integer, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
@@ -54,7 +55,10 @@ class MenuItem(TenantBaseModel):
     # 選單標題
     title = Column(String(100), nullable=False)
 
-    # 多語系標題
+    # 多語系標題 (JSONB: {"en": "...", "zh-CN": "...", "ja": "..."})
+    title_i18n = Column(JSONB, nullable=True, default=dict)
+
+    # [向下相容] 舊欄位 — 新程式碼請用 title_i18n
     title_en = Column(String(100), nullable=True)
     title_zh_cn = Column(String(100), nullable=True)
 
@@ -115,7 +119,7 @@ class MenuItem(TenantBaseModel):
         cascade='all, delete-orphan'
     )
 
-    # 語系代碼 → 欄位名映射
+    # [向下相容] 語系代碼 → 舊欄位名映射
     _LOCALE_FIELD_MAP = {
         'zh-TW': 'title',
         'zh-CN': 'title_zh_cn',
@@ -124,19 +128,37 @@ class MenuItem(TenantBaseModel):
 
     def get_localized_title(self, locale: str = 'zh-TW') -> str:
         """
-        取得本地化標題，空值 fallback 到 title (zh-TW)
+        取得本地化標題
+
+        查找順序：
+        1. title_i18n[locale]  (JSONB 新格式)
+        2. 舊欄位 title_en / title_zh_cn  (向下相容)
+        3. title (zh-TW 原文)
 
         Args:
-            locale: 語系代碼 (zh-TW, zh-CN, en)
+            locale: 語系代碼 (zh-TW, zh-CN, en, ja)
 
         Returns:
             本地化標題
         """
+        # zh-TW 直接返回 title
+        if locale == 'zh-TW':
+            return self.title
+
+        # 1. 優先查 JSONB
+        if self.title_i18n and isinstance(self.title_i18n, dict):
+            value = self.title_i18n.get(locale)
+            if value:
+                return value
+
+        # 2. Fallback 到舊欄位
         field = self._LOCALE_FIELD_MAP.get(locale)
         if field and field != 'title':
             value = getattr(self, field, None)
             if value:
                 return value
+
+        # 3. Fallback 到 title
         return self.title
 
     def to_dict(self, include_children: bool = False) -> Dict[str, Any]:
@@ -144,6 +166,7 @@ class MenuItem(TenantBaseModel):
         base.update({
             'code': self.code,
             'title': self.title,
+            'title_i18n': self.title_i18n or {},
             'title_en': self.title_en,
             'title_zh_cn': self.title_zh_cn,
             'icon': self.icon,

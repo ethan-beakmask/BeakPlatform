@@ -13,12 +13,14 @@ from typing import Dict, Any, Optional
 from decimal import Decimal
 
 from sqlalchemy import Column, String, Integer, Boolean, Text, Numeric
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
+from .mixins import I18nMixin
 
 
-class JobLevel(TenantBaseModel):
+class JobLevel(TenantBaseModel, I18nMixin):
     """
     職等 Model
 
@@ -46,8 +48,14 @@ class JobLevel(TenantBaseModel):
     # 職等名稱 (中文)
     name = Column(String(100), nullable=False)
 
-    # 職等名稱 (英文)
+    # 多語系名稱 (JSONB: {"en": "...", "zh-CN": "...", "ja": "..."})
+    name_i18n = Column(JSONB, nullable=True, default=dict)
+
+    # [向下相容] 舊欄位 — 新程式碼請用 name_i18n
     name_en = Column(String(100), nullable=True)
+
+    # I18nMixin 向下相容映射
+    _I18N_LEGACY_FIELD_MAP = {'en': 'name_en'}
 
     # 職等數值 (用於比較，數字越大職等越高)
     level_order = Column(Integer, nullable=False, index=True)
@@ -113,6 +121,7 @@ class JobLevel(TenantBaseModel):
         base.update({
             'code': self.code,
             'name': self.name,
+            'name_i18n': self.name_i18n or {},
             'name_en': self.name_en,
             'level_order': self.level_order,
             'approval_limit': float(self.approval_limit) if self.approval_limit else None,

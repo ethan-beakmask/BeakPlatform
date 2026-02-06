@@ -26,14 +26,12 @@
             <td><label for="title">選單標題 (繁中) *</label></td>
             <td><input type="text" id="title" name="title" size="40" value="{{ item.title }}" required></td>
         </tr>
+        {% for code, name in [('en','English'),('zh-CN','简体中文'),('ja','日本語')] %}
         <tr>
-            <td><label for="title_en">選單標題 (English)</label></td>
-            <td><input type="text" id="title_en" name="title_en" size="40" value="{{ item.title_en or '' }}"></td>
+            <td><label for="title_{{ code }}">{{ name }}</label></td>
+            <td><input type="text" id="title_{{ code }}" name="title_{{ code }}" size="40" value="{{ (item.title_i18n or {}).get(code, '') }}"></td>
         </tr>
-        <tr>
-            <td><label for="title_zh_cn">選單標題 (简体中文)</label></td>
-            <td><input type="text" id="title_zh_cn" name="title_zh_cn" size="40" value="{{ item.title_zh_cn or '' }}"></td>
-        </tr>
+        {% endfor %}
         <tr>
             <td><label for="icon">圖標</label></td>
             <td><input type="text" id="icon" name="icon" size="10" value="{{ item.icon or '' }}"></td>

@@ -320,6 +320,17 @@ class ModuleLoader:
             self.app.register_blueprint(static_bp)
             logger.info(f"Registered static files for {module.name}: /static/modules/{module.name}/")
 
+        # 註冊模組翻譯目錄
+        # 模組翻譯結構：modules/<name>/translations/{en,zh_CN,ja}/LC_MESSAGES/messages.po
+        translations_path = module.path / 'translations'
+        if translations_path.exists():
+            # 將模組翻譯目錄加入 Babel 的搜尋路徑（分號分隔多路徑）
+            current_dirs = self.app.config.get('BABEL_TRANSLATION_DIRECTORIES', 'translations')
+            module_trans_dir = str(translations_path)
+            if module_trans_dir not in current_dirs:
+                self.app.config['BABEL_TRANSLATION_DIRECTORIES'] = f"{current_dirs};{module_trans_dir}"
+                logger.info(f"Registered translations for {module.name}: {translations_path}")
+
         # 調用模組運行時初始化 hook（用於啟動背景服務等）
         self._call_init_runtime(module)
 

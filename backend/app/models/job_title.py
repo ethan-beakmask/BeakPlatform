@@ -17,13 +17,15 @@ BeakMask JobTitle Model
 from typing import Dict, Any
 
 from sqlalchemy import Column, String, Integer, Boolean, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
+from .mixins import I18nMixin
 from .. import db
 
 
-class JobTitle(TenantBaseModel):
+class JobTitle(TenantBaseModel, I18nMixin):
     """
     職稱 Model
 
@@ -42,8 +44,14 @@ class JobTitle(TenantBaseModel):
     # 職稱名稱 (中文)
     name = Column(String(100), nullable=False)
 
-    # 職稱名稱 (英文)
+    # 多語系名稱 (JSONB: {"en": "...", "zh-CN": "...", "ja": "..."})
+    name_i18n = Column(JSONB, nullable=True, default=dict)
+
+    # [向下相容] 舊欄位 — 新程式碼請用 name_i18n
     name_en = Column(String(100), nullable=True)
+
+    # I18nMixin 向下相容映射
+    _I18N_LEGACY_FIELD_MAP = {'en': 'name_en'}
 
     # 職稱簡稱 (用於顯示)
     short_name = Column(String(50), nullable=True)
@@ -108,6 +116,7 @@ class JobTitle(TenantBaseModel):
         base.update({
             'code': self.code,
             'name': self.name,
+            'name_i18n': self.name_i18n or {},
             'name_en': self.name_en,
             'short_name': self.short_name,
             'full_name': self.full_name,

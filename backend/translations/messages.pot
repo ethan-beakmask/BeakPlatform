@@ -1,0 +1,91 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-02-07 05:02+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: app/templates/auth/login.html:7 app/templates/auth/login.html:9
+#: app/templates/auth/login.html:18 app/templates/auth/login.html:20
+#: app/templates/auth/login.html:23 app/templates/auth/login.html:55
+#: app/templates/auth/login.html:83
+msgid "登入"
+msgstr ""
+
+#: app/templates/auth/login.html:43 app/templates/auth/login.html:70
+msgid "帳號"
+msgstr ""
+
+#: app/templates/auth/login.html:49 app/templates/auth/login.html:77
+msgid "密碼"
+msgstr ""
+
+#: app/templates/auth/login.html:62 app/templates/auth/login.html:90
+msgid "忘記密碼？"
+msgstr ""
+
+#: app/templates/auth/login.html:73
+msgid "格式：帳號@企業網域"
+msgstr ""
+
+#: app/templates/errors/401.html:6 app/templates/errors/401.html:9
+msgid "未授權"
+msgstr ""
+
+#: app/templates/errors/401.html:10
+msgid "您需要登入才能存取此頁面。"
+msgstr ""
+
+#: app/templates/errors/401.html:11
+msgid "前往登入"
+msgstr ""
+
+#: app/templates/errors/403.html:6 app/templates/errors/403.html:9
+msgid "禁止存取"
+msgstr ""
+
+#: app/templates/errors/403.html:10
+msgid "您沒有權限存取此頁面。"
+msgstr ""
+
+#: app/templates/errors/403.html:11 app/templates/errors/404.html:11
+#: app/templates/errors/500.html:11
+msgid "返回儀表板"
+msgstr ""
+
+#: app/templates/errors/404.html:6 app/templates/errors/404.html:9
+msgid "找不到頁面"
+msgstr ""
+
+#: app/templates/errors/404.html:10
+msgid "您要找的頁面不存在或已被移除。"
+msgstr ""
+
+#: app/templates/errors/500.html:6 app/templates/errors/500.html:9
+msgid "伺服器錯誤"
+msgstr ""
+
+#: app/templates/errors/500.html:10
+msgid "系統發生錯誤，請稍後再試。"
+msgstr ""
+
+#: app/templates/layouts/base.html:150
+msgid "登出"
+msgstr ""
+
+#: app/templates/layouts/base.html:184
+msgid "首頁"
+msgstr ""
+

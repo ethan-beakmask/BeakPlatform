@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="{{ current_locale|default('zh-TW') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if login_type == 'org' and org %}
-    <title>登入 - {{ org.name }}</title>
+    <title>{{ _('登入') }} - {{ org.name }}</title>
     {% else %}
-    <title>登入 - BeakPlatform</title>
+    <title>{{ _('登入') }} - BeakPlatform</title>
     {% endif %}
 </head>
 <body>
@@ -15,12 +15,12 @@
         <div style="text-align: center; margin-bottom: 16px;">
             <img src="{{ logo_url }}" alt="{{ org.name }}" style="max-width: 200px; max-height: 80px;">
         </div>
-        <h1>{{ org.name }} 登入</h1>
+        <h1>{{ org.name }} {{ _('登入') }}</h1>
         {% else %}
-        <h1>{{ org.name }} - BeakPlatform 登入</h1>
+        <h1>{{ org.name }} - BeakPlatform {{ _('登入') }}</h1>
         {% endif %}
     {% else %}
-    <h1>BeakPlatform 登入</h1>
+    <h1>BeakPlatform {{ _('登入') }}</h1>
     {% endif %}
 
     {% if error %}
@@ -40,26 +40,26 @@
     <form method="POST" action="{{ url_for('auth.org_login', domain_name=domain_name) }}">
         <table border="0" cellpadding="4" cellspacing="0">
             <tr>
-                <td><label for="username">帳號</label></td>
+                <td><label for="username">{{ _('帳號') }}</label></td>
                 <td>
                     <input type="text" id="username" name="username" size="20" required autocomplete="username">@{{ domain_name }}
                 </td>
             </tr>
             <tr>
-                <td><label for="password">密碼</label></td>
+                <td><label for="password">{{ _('密碼') }}</label></td>
                 <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
             </tr>
             <tr>
                 <td colspan="2">
                     <br>
-                    <button type="submit">登入</button>
+                    <button type="submit">{{ _('登入') }}</button>
                 </td>
             </tr>
         </table>
     </form>
 
     <p>
-        <a href="{{ url_for('auth.org_forgot_password', domain_name=domain_name) }}">忘記密碼？</a>
+        <a href="{{ url_for('auth.org_forgot_password', domain_name=domain_name) }}">{{ _('忘記密碼？') }}</a>
     </p>
 
     {% else %}
@@ -67,27 +67,27 @@
     <form method="POST" action="{{ url_for('auth.login') }}">
         <table border="0" cellpadding="4" cellspacing="0">
             <tr>
-                <td><label for="account">帳號</label></td>
+                <td><label for="account">{{ _('帳號') }}</label></td>
                 <td>
                     <input type="text" id="account" name="account" size="30" required autocomplete="username" placeholder="username@company.com">
-                    <br><small>格式：帳號@企業網域</small>
+                    <br><small>{{ _('格式：帳號@企業網域') }}</small>
                 </td>
             </tr>
             <tr>
-                <td><label for="password">密碼</label></td>
+                <td><label for="password">{{ _('密碼') }}</label></td>
                 <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
             </tr>
             <tr>
                 <td colspan="2">
                     <br>
-                    <button type="submit">登入</button>
+                    <button type="submit">{{ _('登入') }}</button>
                 </td>
             </tr>
         </table>
     </form>
 
     <p>
-        <a href="{{ url_for('auth.forgot_password') }}">忘記密碼？</a>
+        <a href="{{ url_for('auth.forgot_password') }}">{{ _('忘記密碼？') }}</a>
     </p>
     {% endif %}
 

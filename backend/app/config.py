@@ -46,6 +46,13 @@ class BaseConfig:
         'Referrer-Policy': 'strict-origin-when-cross-origin',
     }
 
+    # i18n (Flask-Babel)
+    BABEL_DEFAULT_LOCALE = 'zh-TW'
+    BABEL_DEFAULT_TIMEZONE = 'Asia/Taipei'
+    BABEL_TRANSLATION_DIRECTORIES = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'translations'
+    )
+
     # Rate Limiting
     RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() == 'true'
     RATELIMIT_STORAGE_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/1')

@@ -10,12 +10,14 @@ from typing import Dict, Any, Optional, List
 from decimal import Decimal
 
 from sqlalchemy import Column, String, Integer, Boolean, Text, Numeric, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
+from .mixins import I18nMixin
 
 
-class ApprovalCategory(TenantBaseModel):
+class ApprovalCategory(TenantBaseModel, I18nMixin):
     """
     核決權限類別
 
@@ -35,8 +37,14 @@ class ApprovalCategory(TenantBaseModel):
     # 類別名稱 (中文)
     name = Column(String(100), nullable=False)
 
-    # 類別名稱 (英文)
+    # 多語系名稱 (JSONB: {"en": "...", "zh-CN": "...", "ja": "..."})
+    name_i18n = Column(JSONB, nullable=True, default=dict)
+
+    # [向下相容] 舊欄位 — 新程式碼請用 name_i18n
     name_en = Column(String(100), nullable=True)
+
+    # I18nMixin 向下相容映射
+    _I18N_LEGACY_FIELD_MAP = {'en': 'name_en'}
 
     # 類別描述
     description = Column(Text, nullable=True)
@@ -65,6 +73,7 @@ class ApprovalCategory(TenantBaseModel):
         base.update({
             'code': self.code,
             'name': self.name,
+            'name_i18n': self.name_i18n or {},
             'name_en': self.name_en,
             'description': self.description,
             'currency': self.currency,
