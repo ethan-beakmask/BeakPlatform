@@ -48,9 +48,9 @@ git commit -m "類型: 簡短摘要
 - 完成項目 2
 
 🤖 Generated with Claude Code"
-
-git push origin main
 ```
+
+**注意：commit 和 push 是兩件事。只 commit，不主動 push。用戶說 push 才 push。**
 
 ### 2. 更新追蹤
 - 完成 Forgejo Issue 時，用 API 關閉：`curl -X PATCH ... -d '{"state":"closed"}'`
