@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}選單管理 - BeakMask{% endblock %}
+{% block title %}{{ _('選單管理') }} - BeakMask{% endblock %}
 
 {% block head %}
 <style>
@@ -70,24 +70,24 @@
 {% endblock %}
 
 {% block content %}
-<h1>選單管理</h1>
+<h1>{{ _('選單管理') }}</h1>
 
-<p><a href="{{ url_for('menu.create_menu') }}">[+ 新增選單項目]</a></p>
+<p><a href="{{ url_for('menu.create_menu') }}">[+ {{ _('新增選單項目') }}]</a></p>
 
 {% if menu_items %}
 <table border="1" cellpadding="8" cellspacing="0" class="menu-table">
     <thead>
         <tr>
-            <th>選單項目</th>
+            <th>{{ _('選單項目') }}</th>
             {% for user_type in user_types %}
             <th>{{ user_type_labels.get(user_type, user_type) }}</th>
             {% endfor %}
             <th></th>
-            <th>代碼</th>
-            <th>連結類型</th>
-            <th>連結目標</th>
-            <th>排序</th>
-            <th>狀態</th>
+            <th>{{ _('代碼') }}</th>
+            <th>{{ _('連結類型') }}</th>
+            <th>{{ _('連結目標') }}</th>
+            <th>{{ _('排序') }}</th>
+            <th>{{ _('狀態') }}</th>
             <th></th>
         </tr>
     </thead>
@@ -121,22 +121,22 @@
                 {% endif %}
             </td>
             {% endfor %}
-            <td><a href="{{ url_for('menu.edit_menu', secure_code=entry.item.secure_code) }}">[編輯]</a></td>
+            <td><a href="{{ url_for('menu.edit_menu', secure_code=entry.item.secure_code) }}">[{{ _('編輯') }}]</a></td>
             <td><code>{{ entry.item.code }}</code></td>
             <td>{{ entry.item.link_type }}</td>
             <td><code>{{ entry.item.link_target or '-' }}</code></td>
             <td>{{ entry.item.display_order }}</td>
             <td>
                 {% if entry.item.is_active %}
-                <span class="status-active">啟用</span>
+                <span class="status-active">{{ _('啟用') }}</span>
                 {% else %}
-                <span class="status-inactive">停用</span>
+                <span class="status-inactive">{{ _('停用') }}</span>
                 {% endif %}
             </td>
             <td>
-                <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=entry.item.secure_code) }}" style="display:inline" onsubmit="return confirm('確定要刪除此選單項目嗎？子項目也會一併刪除。');">
+                <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=entry.item.secure_code) }}" style="display:inline" onsubmit="return confirm('{{ _('確定要刪除此選單項目嗎？子項目也會一併刪除。') }}');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit">[刪除]</button>
+                    <button type="submit">[{{ _('刪除') }}]</button>
                 </form>
             </td>
         </tr>
@@ -144,47 +144,47 @@
     </tbody>
 </table>
 {% else %}
-<p>尚無選單項目。<a href="{{ url_for('menu.create_menu') }}">建立第一個選單項目</a></p>
+<p>{{ _('尚無選單項目。') }}<a href="{{ url_for('menu.create_menu') }}">{{ _('建立第一個選單項目') }}</a></p>
 {% endif %}
 
 <hr>
-<h2>說明</h2>
+<h2>{{ _('說明') }}</h2>
 
-<h3>連結類型</h3>
+<h3>{{ _('連結類型') }}</h3>
 <table border="1" cellpadding="6" cellspacing="0">
-    <tr><td><code>route</code></td><td>Flask 路由端點 或 URL 路徑 (以 / 開頭)</td></tr>
-    <tr><td><code>url</code></td><td>外部網址</td></tr>
-    <tr><td><code>page</code></td><td>動態頁面</td></tr>
-    <tr><td><code>header</code></td><td>區塊標題 (不可點擊)</td></tr>
-    <tr><td><code>divider</code></td><td>分隔線</td></tr>
+    <tr><td><code>route</code></td><td>{{ _('Flask 路由端點 或 URL 路徑 (以 / 開頭)') }}</td></tr>
+    <tr><td><code>url</code></td><td>{{ _('外部網址') }}</td></tr>
+    <tr><td><code>page</code></td><td>{{ _('動態頁面') }}</td></tr>
+    <tr><td><code>header</code></td><td>{{ _('區塊標題 (不可點擊)') }}</td></tr>
+    <tr><td><code>divider</code></td><td>{{ _('分隔線') }}</td></tr>
 </table>
 
-<h3>用戶類型說明</h3>
+<h3>{{ _('用戶類型說明') }}</h3>
 <table border="1" cellpadding="6" cellspacing="0">
     <thead>
         <tr>
-            <th>類型</th>
-            <th>說明</th>
+            <th>{{ _('類型') }}</th>
+            <th>{{ _('說明') }}</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>系統管理員</td>
-            <td>SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料</td>
+            <td>{{ _('系統管理員') }}</td>
+            <td>{{ _('SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料') }}</td>
         </tr>
         <tr>
-            <td>企業管理員</td>
-            <td>各企業內最高權限帳號，可管理該企業的所有設定</td>
+            <td>{{ _('企業管理員') }}</td>
+            <td>{{ _('各企業內最高權限帳號，可管理該企業的所有設定') }}</td>
         </tr>
         <tr>
-            <td>員工</td>
-            <td>企業內部員工帳號</td>
+            <td>{{ _('員工') }}</td>
+            <td>{{ _('企業內部員工帳號') }}</td>
         </tr>
         <tr>
-            <td>非公司成員</td>
-            <td>企業外部合作夥伴、客戶等，最小權限帳號</td>
+            <td>{{ _('非公司成員') }}</td>
+            <td>{{ _('企業外部合作夥伴、客戶等，最小權限帳號') }}</td>
         </tr>
     </tbody>
 </table>
-<p><small>每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。</small></p>
+<p><small>{{ _('每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。') }}</small></p>
 {% endblock %}

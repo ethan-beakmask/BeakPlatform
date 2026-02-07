@@ -1,22 +1,22 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}儀表板 - BeakMask{% endblock %}
+{% block title %}{{ _('儀表板') }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>儀表板</h1>
+<h1>{{ _('儀表板') }}</h1>
 
 {# 預設 admin@ 帳號提示：請建立正式管理員 #}
 {% if show_default_admin_warning %}
 <div style="padding: 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
-    <strong style="color: #92400e;">安全提醒</strong>
+    <strong style="color: #92400e;">{{ _('安全提醒') }}</strong>
     <p style="margin: 8px 0 0 0; color: #78350f;">
-        您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。<br>
-        建議步驟：
+        {{ _('您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。') }}<br>
+        {{ _('建議步驟：') }}
     </p>
     <ol style="margin: 8px 0 0 0; color: #78350f; padding-left: 20px;">
-        <li>建立您的員工帳號（需設定員工編號）</li>
-        <li>前往「<a href="{{ url_for('org_admins.create_admin') }}">新增企業管理員</a>」，建立正式管理員並綁定該員工帳號</li>
-        <li>使用新管理員帳號登入後，停用此預設帳號</li>
+        <li>{{ _('建立您的員工帳號（需設定員工編號）') }}</li>
+        <li>{{ _('前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該員工帳號', link_start='<a href="' + url_for('org_admins.create_admin') + '">', link_end='</a>') }}</li>
+        <li>{{ _('使用新管理員帳號登入後，停用此預設帳號') }}</li>
     </ol>
 </div>
 {% endif %}
@@ -24,29 +24,29 @@
 {# 提示停用預設 admin@ 帳號 #}
 {% if show_disable_default_admin_hint %}
 <div style="padding: 12px 16px; margin-bottom: 16px; background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px;">
-    <strong style="color: #1e40af;">提示</strong>
+    <strong style="color: #1e40af;">{{ _('提示') }}</strong>
     <span style="color: #1e3a8a;">
-        預設 admin 帳號容易被猜測攻擊，建議前往「<a href="{{ url_for('org_admins.list_admins') }}">企業管理員</a>」頁面將其停用。
+        {{ _('預設 admin 帳號容易被猜測攻擊，建議前往「%(link_start)s企業管理員%(link_end)s」頁面將其停用。', link_start='<a href="' + url_for('org_admins.list_admins') + '">', link_end='</a>') }}
     </span>
 </div>
 {% endif %}
 
-<p>歡迎，{{ current_user.display_name }}</p>
+<p>{{ _('歡迎，%(name)s', name=current_user.display_name) }}</p>
 
 <hr>
 
-<h2>快速連結</h2>
+<h2>{{ _('快速連結') }}</h2>
 <ul>
-    <li><a href="{{ url_for('profile.view') }}">個人資料</a></li>
+    <li><a href="{{ url_for('profile.view') }}">{{ _('個人資料') }}</a></li>
     {% if current_user.is_org_admin or current_user.is_system_admin %}
-    <li><a href="{{ url_for('users.list_users') }}">用戶管理</a></li>
-    <li><a href="{{ url_for('roles.list_roles') }}">角色管理</a></li>
-    <li><a href="{{ url_for('units.list_units') }}">組織單位</a></li>
+    <li><a href="{{ url_for('users.list_users') }}">{{ _('用戶管理') }}</a></li>
+    <li><a href="{{ url_for('roles.list_roles') }}">{{ _('角色管理') }}</a></li>
+    <li><a href="{{ url_for('units.list_units') }}">{{ _('組織單位') }}</a></li>
     {% endif %}
     {% if current_user.is_system_admin %}
-    <li><a href="{{ url_for('organizations.list_orgs') }}">企業與合約管理</a></li>
-    <li><a href="{{ url_for('menu.list_menu') }}">選單管理</a></li>
-    <li><a href="{{ url_for('modules.list_modules') }}">模組管理</a></li>
+    <li><a href="{{ url_for('organizations.list_orgs') }}">{{ _('企業與合約管理') }}</a></li>
+    <li><a href="{{ url_for('menu.list_menu') }}">{{ _('選單管理') }}</a></li>
+    <li><a href="{{ url_for('modules.list_modules') }}">{{ _('模組管理') }}</a></li>
     {% endif %}
 </ul>
 {% endblock %}

@@ -1,17 +1,17 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}一般用戶管理 - BeakMask{% endblock %}
+{% block title %}{{ _('一般用戶管理') }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <h1 style="margin: 0;">一般用戶管理</h1>
+    <h1 style="margin: 0;">{{ _('一般用戶管理') }}</h1>
     <div>
         <a href="{{ url_for('users.create_user') }}"
            style="padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;">
-            + 新增帳號
+            + {{ _('新增帳號') }}
         </a>
-        <a href="{{ url_for('users.import_users') }}" style="margin-left: 10px; color: #2563eb;">匯入CSV</a>
-        <a href="{{ url_for('users.download_csv_template') }}" style="margin-left: 10px; color: #6b7280;">下載範本</a>
+        <a href="{{ url_for('users.import_users') }}" style="margin-left: 10px; color: #2563eb;">{{ _('匯入CSV') }}</a>
+        <a href="{{ url_for('users.download_csv_template') }}" style="margin-left: 10px; color: #6b7280;">{{ _('下載範本') }}</a>
     </div>
 </div>
 
@@ -28,21 +28,21 @@
 {% endwith %}
 
 <div style="background: #eff6ff; padding: 12px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #bfdbfe;">
-    <span style="color: #1e40af;">此頁面管理一般用戶帳號。</span>
-    <span style="color: #6b7280;">企業管理員請至「企業管理員帳號」管理，外部人員請至「非公司成員帳號」管理。</span>
+    <span style="color: #1e40af;">{{ _('此頁面管理一般用戶帳號。') }}</span>
+    <span style="color: #6b7280;">{{ _('企業管理員請至「企業管理員帳號」管理，外部人員請至「非公司成員帳號」管理。') }}</span>
 </div>
 
 {% if users %}
 <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <thead>
         <tr style="background: #f9fafb;">
-            <th style="text-align: left;">姓名</th>
-            <th style="text-align: left;">帳號</th>
-            <th style="text-align: left;">用戶編號</th>
-            <th style="text-align: left;">部門</th>
-            <th style="text-align: center;">狀態</th>
-            <th style="text-align: left;">建立時間</th>
-            <th style="text-align: center;">操作</th>
+            <th style="text-align: left;">{{ _('姓名') }}</th>
+            <th style="text-align: left;">{{ _('帳號') }}</th>
+            <th style="text-align: left;">{{ _('用戶編號') }}</th>
+            <th style="text-align: left;">{{ _('部門') }}</th>
+            <th style="text-align: center;">{{ _('狀態') }}</th>
+            <th style="text-align: left;">{{ _('建立時間') }}</th>
+            <th style="text-align: center;">{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -54,26 +54,26 @@
             <td>{{ user.primary_unit.name if user.primary_unit else '-' }}</td>
             <td style="text-align: center;">
                 {% if user.is_active %}
-                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">啟用</span>
+                <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('啟用') }}</span>
                 {% else %}
-                <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">停用</span>
+                <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('停用') }}</span>
                 {% endif %}
             </td>
             <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
             <td style="text-align: center;">
-                <a href="{{ url_for('users.view_user', secure_code=user.secure_code) }}" style="color: #2563eb;">查看</a>
-                <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb; margin-left: 8px;">編輯</a>
+                <a href="{{ url_for('users.view_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('查看') }}</a>
+                <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb; margin-left: 8px;">{{ _('編輯') }}</a>
                 {% if user.secure_code != current_user.secure_code %}
                 <a href="#" style="color: #2563eb; margin-left: 8px;"
                    onclick="event.preventDefault(); document.getElementById('toggle-{{ user.secure_code }}').submit();">
-                    {% if user.is_active %}停用{% else %}啟用{% endif %}
+                    {% if user.is_active %}{{ _('停用') }}{% else %}{{ _('啟用') }}{% endif %}
                 </a>
                 <form id="toggle-{{ user.secure_code }}" method="POST" action="{{ url_for('users.toggle_status', secure_code=user.secure_code) }}" style="display: none;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
                 <a href="#" style="color: #dc2626; margin-left: 8px;"
-                   onclick="event.preventDefault(); if(confirm('確定要刪除用戶「{{ user.display_name }}」嗎？')) document.getElementById('delete-{{ user.secure_code }}').submit();">
-                    刪除
+                   onclick="event.preventDefault(); if(confirm('{{ _('確定要刪除用戶「%(name)s」嗎？', name=user.display_name) }}')) document.getElementById('delete-{{ user.secure_code }}').submit();">
+                    {{ _('刪除') }}
                 </a>
                 <form id="delete-{{ user.secure_code }}" method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" style="display: none;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -88,26 +88,26 @@
 {% if pagination.pages > 1 %}
 <p style="margin-top: 20px;">
     {% if pagination.page > 1 %}
-    <a href="?page={{ pagination.page - 1 }}">[上一頁]</a>
+    <a href="?page={{ pagination.page - 1 }}">[{{ _('上一頁') }}]</a>
     {% endif %}
-    第 {{ pagination.page }} / {{ pagination.pages }} 頁 （共 {{ pagination.total }} 筆）
+    {{ _('第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）', page=pagination.page, pages=pagination.pages, total=pagination.total) }}
     {% if pagination.page < pagination.pages %}
-    <a href="?page={{ pagination.page + 1 }}">[下一頁]</a>
+    <a href="?page={{ pagination.page + 1 }}">[{{ _('下一頁') }}]</a>
     {% endif %}
 </p>
 {% endif %}
 
 {% else %}
-<p style="color: #6b7280;">尚無一般用戶帳號。<a href="{{ url_for('users.create_user') }}">建立第一位用戶</a></p>
+<p style="color: #6b7280;">{{ _('尚無一般用戶帳號。') }}<a href="{{ url_for('users.create_user') }}">{{ _('建立第一位用戶') }}</a></p>
 {% endif %}
 
 <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-    <h3 style="margin-top: 0;">說明</h3>
+    <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
     <ul style="margin: 0; padding-left: 20px; color: #666;">
-        <li>此頁面只顯示一般用戶帳號</li>
-        <li>企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理</li>
-        <li>外部人員帳號請至「帳號管理 > 非公司成員帳號」管理</li>
-        <li>停用的用戶無法登入系統</li>
+        <li>{{ _('此頁面只顯示一般用戶帳號') }}</li>
+        <li>{{ _('企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理') }}</li>
+        <li>{{ _('外部人員帳號請至「帳號管理 > 非公司成員帳號」管理') }}</li>
+        <li>{{ _('停用的用戶無法登入系統') }}</li>
     </ul>
 </div>
 {% endblock %}

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-07 05:02+0800\n"
+"POT-Creation-Date: 2026-02-07 10:58+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,10 +25,13 @@ msgid "登入"
 msgstr ""
 
 #: app/templates/auth/login.html:43 app/templates/auth/login.html:70
+#: app/templates/pages/personal_settings.html:92
+#: app/templates/pages/users/list.html:40
 msgid "帳號"
 msgstr ""
 
 #: app/templates/auth/login.html:49 app/templates/auth/login.html:77
+#: app/templates/pages/personal_settings.html:104
 msgid "密碼"
 msgstr ""
 
@@ -87,5 +90,501 @@ msgstr ""
 
 #: app/templates/layouts/base.html:184
 msgid "首頁"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:3 app/templates/pages/dashboard.html:6
+msgid "儀表板"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:11
+msgid "安全提醒"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:13
+msgid "您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:14
+msgid "建議步驟："
+msgstr ""
+
+#: app/templates/pages/dashboard.html:17
+msgid "建立您的員工帳號（需設定員工編號）"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:18
+#, python-format
+msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該員工帳號"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:19
+msgid "使用新管理員帳號登入後，停用此預設帳號"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:27
+msgid "提示"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:29
+#, python-format
+msgid "預設 admin 帳號容易被猜測攻擊，建議前往「%(link_start)s企業管理員%(link_end)s」頁面將其停用。"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:34
+#, python-format
+msgid "歡迎，%(name)s"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:38
+msgid "快速連結"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:40
+#: app/templates/pages/personal_settings.html:112
+msgid "個人資料"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:42
+msgid "用戶管理"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:43
+msgid "角色管理"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:44
+msgid "組織單位"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:47
+msgid "企業與合約管理"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:48 app/templates/pages/menu/list.html:3
+#: app/templates/pages/menu/list.html:73
+msgid "選單管理"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:49
+msgid "模組管理"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:3
+#: app/templates/pages/personal_settings.html:76
+msgid "個人設定"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:89
+msgid "帳號資訊"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:96
+msgid "主要 Email"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:100
+msgid "顯示名稱"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:105
+msgid "變更密碼"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:115
+msgid "英文姓名"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:123
+msgid "本國姓名"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:127
+msgid "本國語言姓名"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:131
+msgid "暱稱"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:140
+msgid "聯絡方式"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:143
+msgid "備用 Email 1"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:148
+msgid "系統通知專用（空白時自動使用主要 Email）"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:152
+msgid "備用 Email 2"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:160
+msgid "手機號碼 1"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:168
+msgid "手機號碼 2"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:177
+msgid "介面設定"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:180
+msgid "介面語言"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:189
+msgid "覆蓋企業預設語言設定"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:193
+msgid "時區"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:196
+msgid "使用企業預設"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:207
+msgid "覆蓋企業預設時區設定"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:213
+msgid "儲存設定"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:3
+#: app/templates/pages/menu/create.html:8 app/templates/pages/menu/list.html:75
+msgid "新增選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:6 app/templates/pages/menu/edit.html:6
+msgid "返回選單管理"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:22
+#: app/templates/pages/menu/edit.html:22
+msgid "選單代碼"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:25
+msgid "唯一識別碼，只能使用小寫英文、數字、底線"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:29
+#: app/templates/pages/menu/edit.html:26
+msgid "選單標題 (繁中)"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:39
+#: app/templates/pages/menu/edit.html:36
+msgid "圖標"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:42
+msgid "文字符號或 emoji"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:46
+#: app/templates/pages/menu/edit.html:40
+msgid "父選單"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:49
+#: app/templates/pages/menu/edit.html:43
+msgid "根層級"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:57
+#: app/templates/pages/menu/edit.html:55 app/templates/pages/menu/list.html:87
+#: app/templates/pages/menu/list.html:153
+msgid "連結類型"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:61
+#: app/templates/pages/menu/edit.html:59
+msgid "外部 URL"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:62
+#: app/templates/pages/menu/edit.html:60 app/templates/pages/menu/list.html:157
+msgid "動態頁面"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:63
+#: app/templates/pages/menu/edit.html:61
+msgid "區塊標題"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:64
+#: app/templates/pages/menu/edit.html:62 app/templates/pages/menu/list.html:159
+msgid "分隔線"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:69
+#: app/templates/pages/menu/edit.html:67 app/templates/pages/menu/list.html:88
+msgid "連結目標"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:76
+#: app/templates/pages/menu/edit.html:71
+msgid "可見用戶類型"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:85
+#: app/templates/pages/menu/edit.html:80
+msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:89
+#: app/templates/pages/menu/edit.html:84
+msgid "顯示順序"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:93
+#: app/templates/pages/menu/edit.html:88
+msgid "預設展開"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:99
+msgid "建立選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:100
+#: app/templates/pages/menu/edit.html:99
+msgid "取消"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:3 app/templates/pages/menu/edit.html:8
+msgid "編輯選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:23
+msgid "不可變更"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:51
+msgid "變更父選單會自動更新層級深度"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:92 app/templates/pages/menu/list.html:131
+#: app/templates/pages/users/list.html:57
+#: app/templates/pages/users/list.html:69
+msgid "啟用"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:98
+msgid "儲存變更"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:106
+#: app/templates/pages/menu/edit.html:110
+msgid "刪除選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:107
+msgid "刪除此選單項目將連同子項目一起刪除。"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:108
+#: app/templates/pages/menu/list.html:137
+msgid "確定要刪除此選單項目嗎？子項目也會一併刪除。"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:81
+msgid "選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:86
+msgid "代碼"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:89
+msgid "排序"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:90 app/templates/pages/users/list.html:43
+msgid "狀態"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:124
+#: app/templates/pages/users/list.html:65
+msgid "編輯"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:133
+#: app/templates/pages/users/list.html:59
+#: app/templates/pages/users/list.html:69
+msgid "停用"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:139
+#: app/templates/pages/users/list.html:76
+msgid "刪除"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:147
+msgid "尚無選單項目。"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:147
+msgid "建立第一個選單項目"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:151
+#: app/templates/pages/menu/list.html:167
+#: app/templates/pages/users/list.html:105
+msgid "說明"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:155
+msgid "Flask 路由端點 或 URL 路徑 (以 / 開頭)"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:156
+msgid "外部網址"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:158
+msgid "區塊標題 (不可點擊)"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:162
+msgid "用戶類型說明"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:166
+msgid "類型"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:172
+msgid "系統管理員"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:173
+msgid "SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:176
+msgid "企業管理員"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:177
+msgid "各企業內最高權限帳號，可管理該企業的所有設定"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:180
+msgid "員工"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:181
+msgid "企業內部員工帳號"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:184
+msgid "非公司成員"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:185
+msgid "企業外部合作夥伴、客戶等，最小權限帳號"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:189
+msgid "每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。"
+msgstr ""
+
+#: app/templates/pages/users/list.html:3 app/templates/pages/users/list.html:7
+msgid "一般用戶管理"
+msgstr ""
+
+#: app/templates/pages/users/list.html:11
+msgid "新增帳號"
+msgstr ""
+
+#: app/templates/pages/users/list.html:13
+msgid "匯入CSV"
+msgstr ""
+
+#: app/templates/pages/users/list.html:14
+msgid "下載範本"
+msgstr ""
+
+#: app/templates/pages/users/list.html:31
+msgid "此頁面管理一般用戶帳號。"
+msgstr ""
+
+#: app/templates/pages/users/list.html:32
+msgid "企業管理員請至「企業管理員帳號」管理，外部人員請至「非公司成員帳號」管理。"
+msgstr ""
+
+#: app/templates/pages/users/list.html:39
+msgid "姓名"
+msgstr ""
+
+#: app/templates/pages/users/list.html:41
+msgid "用戶編號"
+msgstr ""
+
+#: app/templates/pages/users/list.html:42
+msgid "部門"
+msgstr ""
+
+#: app/templates/pages/users/list.html:44
+msgid "建立時間"
+msgstr ""
+
+#: app/templates/pages/users/list.html:45
+msgid "操作"
+msgstr ""
+
+#: app/templates/pages/users/list.html:64
+msgid "查看"
+msgstr ""
+
+#: app/templates/pages/users/list.html:75
+#, python-format
+msgid "確定要刪除用戶「%(name)s」嗎？"
+msgstr ""
+
+#: app/templates/pages/users/list.html:91
+msgid "上一頁"
+msgstr ""
+
+#: app/templates/pages/users/list.html:93
+#, python-format
+msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
+msgstr ""
+
+#: app/templates/pages/users/list.html:95
+msgid "下一頁"
+msgstr ""
+
+#: app/templates/pages/users/list.html:101
+msgid "尚無一般用戶帳號。"
+msgstr ""
+
+#: app/templates/pages/users/list.html:101
+msgid "建立第一位用戶"
+msgstr ""
+
+#: app/templates/pages/users/list.html:107
+msgid "此頁面只顯示一般用戶帳號"
+msgstr ""
+
+#: app/templates/pages/users/list.html:108
+msgid "企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理"
+msgstr ""
+
+#: app/templates/pages/users/list.html:109
+msgid "外部人員帳號請至「帳號管理 > 非公司成員帳號」管理"
+msgstr ""
+
+#: app/templates/pages/users/list.html:110
+msgid "停用的用戶無法登入系統"
 msgstr ""
 

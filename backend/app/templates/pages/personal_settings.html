@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}個人設定 - BeakMask{% endblock %}
+{% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
 
 {% block head %}
 <style>
@@ -73,7 +73,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>個人設定</h1>
+<h1>{{ _('個人設定') }}</h1>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -86,33 +86,33 @@
 {% endwith %}
 
 <div class="settings-form">
-    <div class="section-title">帳號資訊</div>
+    <div class="section-title">{{ _('帳號資訊') }}</div>
     <table>
         <tr>
-            <td>帳號</td>
+            <td>{{ _('帳號') }}</td>
             <td><span class="readonly-info">{{ current_user.username }}@{{ current_user.organization.domain_name }}</span></td>
         </tr>
         <tr>
-            <td>主要 Email</td>
+            <td>{{ _('主要 Email') }}</td>
             <td><span class="readonly-info">{{ current_user.email }}</span></td>
         </tr>
         <tr>
-            <td>顯示名稱</td>
+            <td>{{ _('顯示名稱') }}</td>
             <td><span class="readonly-info">{{ current_user.display_name }}</span></td>
         </tr>
         <tr>
-            <td>密碼</td>
-            <td><a href="{{ url_for('main.change_password') }}">[變更密碼]</a></td>
+            <td>{{ _('密碼') }}</td>
+            <td><a href="{{ url_for('main.change_password') }}">[{{ _('變更密碼') }}]</a></td>
         </tr>
     </table>
 
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="section-title">個人資料</div>
+        <div class="section-title">{{ _('個人資料') }}</div>
         <table>
             <tr>
-                <td><label for="english_name">英文姓名</label></td>
+                <td><label for="english_name">{{ _('英文姓名') }}</label></td>
                 <td>
                     <input type="text" id="english_name" name="english_name"
                            value="{{ current_user.english_name or '' }}"
@@ -120,15 +120,15 @@
                 </td>
             </tr>
             <tr>
-                <td><label for="native_name">本國姓名</label></td>
+                <td><label for="native_name">{{ _('本國姓名') }}</label></td>
                 <td>
                     <input type="text" id="native_name" name="native_name"
                            value="{{ current_user.native_name or '' }}"
-                           placeholder="本國語言姓名">
+                           placeholder="{{ _('本國語言姓名') }}">
                 </td>
             </tr>
             <tr>
-                <td><label for="nickname">暱稱</label></td>
+                <td><label for="nickname">{{ _('暱稱') }}</label></td>
                 <td>
                     <input type="text" id="nickname" name="nickname"
                            value="{{ current_user.nickname or '' }}"
@@ -137,19 +137,19 @@
             </tr>
         </table>
 
-        <div class="section-title">聯絡方式</div>
+        <div class="section-title">{{ _('聯絡方式') }}</div>
         <table>
             <tr>
-                <td><label for="backup_email_1">備用 Email 1</label></td>
+                <td><label for="backup_email_1">{{ _('備用 Email 1') }}</label></td>
                 <td>
                     <input type="email" id="backup_email_1" name="backup_email_1"
                            value="{{ current_user.backup_email_1 or '' }}"
                            placeholder="backup@example.com">
-                    <div class="help-text">系統通知專用（空白時自動使用主要 Email）</div>
+                    <div class="help-text">{{ _('系統通知專用（空白時自動使用主要 Email）') }}</div>
                 </td>
             </tr>
             <tr>
-                <td><label for="backup_email_2">備用 Email 2</label></td>
+                <td><label for="backup_email_2">{{ _('備用 Email 2') }}</label></td>
                 <td>
                     <input type="email" id="backup_email_2" name="backup_email_2"
                            value="{{ current_user.backup_email_2 or '' }}"
@@ -157,7 +157,7 @@
                 </td>
             </tr>
             <tr>
-                <td><label for="mobile_phone_1">手機號碼 1</label></td>
+                <td><label for="mobile_phone_1">{{ _('手機號碼 1') }}</label></td>
                 <td>
                     <input type="tel" id="mobile_phone_1" name="mobile_phone_1"
                            value="{{ current_user.mobile_phone_1 or '' }}"
@@ -165,7 +165,7 @@
                 </td>
             </tr>
             <tr>
-                <td><label for="mobile_phone_2">手機號碼 2</label></td>
+                <td><label for="mobile_phone_2">{{ _('手機號碼 2') }}</label></td>
                 <td>
                     <input type="tel" id="mobile_phone_2" name="mobile_phone_2"
                            value="{{ current_user.mobile_phone_2 or '' }}"
@@ -174,10 +174,10 @@
             </tr>
         </table>
 
-        <div class="section-title">介面設定</div>
+        <div class="section-title">{{ _('介面設定') }}</div>
         <table>
             <tr>
-                <td><label for="interface_language">介面語言</label></td>
+                <td><label for="interface_language">{{ _('介面語言') }}</label></td>
                 <td>
                     <select id="interface_language" name="interface_language">
                         {% for code, label in languages %}
@@ -186,14 +186,14 @@
                         </option>
                         {% endfor %}
                     </select>
-                    <div class="help-text">覆蓋企業預設語言設定</div>
+                    <div class="help-text">{{ _('覆蓋企業預設語言設定') }}</div>
                 </td>
             </tr>
             <tr>
-                <td><label for="timezone">時區</label></td>
+                <td><label for="timezone">{{ _('時區') }}</label></td>
                 <td>
                     <select id="timezone" name="timezone" style="max-width: 300px;">
-                        <option value="">使用企業預設</option>
+                        <option value="">{{ _('使用企業預設') }}</option>
                         {% for group_label, timezones in timezone_choices %}
                         <optgroup label="{{ group_label }}">
                             {% for tz_value, tz_display in timezones %}
@@ -204,13 +204,13 @@
                         </optgroup>
                         {% endfor %}
                     </select>
-                    <div class="help-text">覆蓋企業預設時區設定</div>
+                    <div class="help-text">{{ _('覆蓋企業預設時區設定') }}</div>
                 </td>
             </tr>
         </table>
 
         <div class="btn-row">
-            <button type="submit">儲存設定</button>
+            <button type="submit">{{ _('儲存設定') }}</button>
         </div>
     </form>
 </div>
