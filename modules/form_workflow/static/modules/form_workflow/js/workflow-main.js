@@ -2070,7 +2070,7 @@
             const categoryInput = document.getElementById('current-workflow-category');
             const newName = nameInput.value.trim();
             const newDescription = descInput.value.trim();
-            const newCategory = categoryInput ? categoryInput.value : '';
+            const newCategorySc = categoryInput ? categoryInput.value : '';
 
             if (!newName) {
                 updateStatus('流程名稱不能為空', 'warning');
@@ -2081,7 +2081,7 @@
             // 檢查是否有變更
             if (newName === currentWorkflow?.name &&
                 newDescription === (currentWorkflow?.description || '') &&
-                newCategory === (currentWorkflow?.category || '')) {
+                newCategorySc === (currentWorkflow?.category_secure_code || '')) {
                 return; // 沒有變更
             }
 
@@ -2094,7 +2094,7 @@
                     body: JSON.stringify({
                         name: newName,
                         description: newDescription,
-                        category: newCategory
+                        category_secure_code: newCategorySc
                     })
                 });
 
@@ -2105,15 +2105,15 @@
                 const result = await response.json();
                 currentWorkflow.name = newName;
                 currentWorkflow.description = newDescription;
-                currentWorkflow.category = newCategory;
+                currentWorkflow.category_secure_code = newCategorySc;
                 updateStatus(`✅ 已更新流程資訊`, 'info');
-                console.log('✅ 流程資訊已更新:', { name: newName, description: newDescription, category: newCategory });
+                console.log('✅ 流程資訊已更新:', { name: newName, description: newDescription, category_secure_code: newCategorySc });
             } catch (error) {
                 console.error('❌ 更新流程資訊失敗:', error);
                 updateStatus('更新流程資訊失敗', 'warning');
                 nameInput.value = currentWorkflow?.name || '未命名流程';
                 descInput.value = currentWorkflow?.description || '';
-                if (categoryInput) categoryInput.value = currentWorkflow?.category || '';
+                if (categoryInput) categoryInput.value = currentWorkflow?.category_secure_code || '';
             }
         }
 
@@ -2459,7 +2459,7 @@
             console.log('✅ 已放棄變更並返回流程目錄');
         }
 
-        // 載入分類列表
+        // 載入分類列表（二層結構）
         async function loadCategories() {
             try {
                 const response = await fetch('/api/forms/data/categories');
@@ -2468,15 +2468,13 @@
                 if (result.success) {
                     const categorySelect = document.getElementById('current-workflow-category');
                     if (categorySelect) {
-                        // 清空現有選項（保留「未分類」選項）
                         categorySelect.innerHTML = '<option value="">未分類</option>';
 
-                        // 加入分類選項（API 回傳 categories 而非 data）
-                        const categories = result.categories || result.data || [];
+                        const categories = result.data || [];
                         categories.forEach(cat => {
                             const option = document.createElement('option');
-                            option.value = cat.name;
-                            option.textContent = cat.name;
+                            option.value = cat.secure_code;
+                            option.textContent = cat.display || cat.name;
                             categorySelect.appendChild(option);
                         });
 
@@ -2485,17 +2483,9 @@
                 }
             } catch (error) {
                 console.error('❌ 載入分類失敗:', error);
-                // 失敗時使用預設分類
                 const categorySelect = document.getElementById('current-workflow-category');
                 if (categorySelect) {
-                    categorySelect.innerHTML = `
-                        <option value="">未分類</option>
-                        <option value="人事">人事</option>
-                        <option value="財務">財務</option>
-                        <option value="採購">採購</option>
-                        <option value="行政">行政</option>
-                        <option value="其他">其他</option>
-                    `;
+                    categorySelect.innerHTML = '<option value="">未分類</option>';
                 }
             }
         }
@@ -2676,7 +2666,7 @@
         let isCreatingWorkflow = false;
 
         // 從 URL 參數建立新流程並進入編輯模式
-        async function createNewWorkflowAndEnter(name, category, description) {
+        async function createNewWorkflowAndEnter(name, categorySc, description) {
             // 防止重複調用
             if (isCreatingWorkflow) {
                 console.log('⚠️ 已經在建立流程中，忽略重複調用');
@@ -2686,7 +2676,7 @@
             isCreatingWorkflow = true;
 
             try {
-                console.log('🆕 從 URL 建立新流程:', { name, category, description });
+                console.log('🆕 從 URL 建立新流程:', { name, category_secure_code: categorySc, description });
 
                 const response = await fetch('/api/workflows/data/templates', {
                     method: 'POST',
@@ -2695,7 +2685,7 @@
                     },
                     body: JSON.stringify({
                         name: name || '新流程',
-                        category: category || '',
+                        category_secure_code: categorySc || '',
                         description: description || ''
                     })
                 });
@@ -2814,7 +2804,7 @@
                 updateStatus(`已載入流程：${workflow.name}`);
 
                 // 解鎖界面並顯示流程資訊
-                unlockInterface(workflow.name, (workflow.version || 'AA') + (workflow.revision || ''), workflow.description || '', workflow.category || '');
+                unlockInterface(workflow.name, (workflow.version || 'AA') + (workflow.revision || ''), workflow.description || '', workflow.category_secure_code || '');
 
                 // 初始化變更追蹤（載入完成後）
                 setTimeout(() => {

@@ -197,7 +197,11 @@ def designer_standalone():
 @forms_bp.route('/data/categories')
 @login_required
 def list_categories():
-    """取得表單分類列表"""
+    """
+    取得表單分類列表（供設計器 select/optgroup 使用）
+
+    回傳扁平清單，每筆含 secure_code, name, parent_name, display
+    """
     from ..models import FwCategory
     from app.platform.data import get_current_org
     from app import db
@@ -206,24 +210,57 @@ def list_categories():
     if not org:
         return jsonify({'success': False, 'message': 'Organization not found'}), 400
 
+    context = request.args.get('context', 'form_design')
+
     # 查詢：系統分類 + 當前企業分類
     query = FwCategory.query.filter_by(is_deleted=False).filter(
         db.or_(
-            FwCategory.org_secure_code.is_(None),  # 系統分類
-            FwCategory.org_secure_code == org.secure_code  # 企業分類
+            FwCategory.org_secure_code.is_(None),
+            FwCategory.org_secure_code == org.secure_code
         )
-    ).filter(FwCategory.show_in_form_design == True)
+    )
 
-    categories = query.order_by(FwCategory.display_order, FwCategory.name).all()
+    # 情境過濾（對父分類生效）
+    if context == 'form_design':
+        query = query.filter(
+            db.or_(
+                FwCategory.parent_secure_code.isnot(None),
+                FwCategory.show_in_form_design == True
+            )
+        )
+    elif context == 'workflow_design':
+        query = query.filter(
+            db.or_(
+                FwCategory.parent_secure_code.isnot(None),
+                FwCategory.show_in_workflow_design == True
+            )
+        )
 
-    result = [
-        {'id': cat.name, 'name': cat.name, 'description': cat.description or ''}
-        for cat in categories
-    ]
+    all_cats = query.order_by(FwCategory.display_order, FwCategory.name).all()
+
+    # 建立父分類名稱映射
+    parent_map = {c.secure_code: c.name for c in all_cats if c.is_parent}
+
+    # 只回傳子分類（供 select 使用），按父分類分組
+    result = []
+    for cat in all_cats:
+        if cat.is_child:
+            parent_name = parent_map.get(cat.parent_secure_code, '')
+            result.append({
+                'secure_code': cat.secure_code,
+                'name': cat.name,
+                'parent_secure_code': cat.parent_secure_code,
+                'parent_name': parent_name,
+                'display': f'{parent_name} / {cat.name}' if parent_name else cat.name,
+            })
+
+    # 向後相容：也回傳 categories 欄位（舊格式，用 display 作為 name）
+    compat = [{'id': r['display'], 'name': r['display'], 'secure_code': r['secure_code']} for r in result]
+
     return jsonify({
         'success': True,
         'data': result,
-        'categories': result  # 向後相容
+        'categories': compat
     })
 
 
@@ -377,7 +414,21 @@ def update_template(secure_code):
         template.name = data['name'].strip()
     if 'description' in data:
         template.description = data['description']
-    if 'category' in data:
+    if 'category_secure_code' in data:
+        template.category_secure_code = data['category_secure_code']
+        # 同步更新舊 category 字串（過渡期向後相容）
+        from ..models import FwCategory
+        cat = FwCategory.query.filter_by(
+            secure_code=data['category_secure_code'], is_deleted=False
+        ).first()
+        if cat and cat.parent_secure_code:
+            parent = FwCategory.query.filter_by(
+                secure_code=cat.parent_secure_code, is_deleted=False
+            ).first()
+            template.category = parent.name if parent else cat.name
+        elif cat:
+            template.category = cat.name
+    elif 'category' in data:
         template.category = data['category']
     if 'schema' in data:
         template.schema = _apply_placeholder_as_label(data['schema'])

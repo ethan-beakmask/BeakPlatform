@@ -1575,7 +1575,7 @@
         const urlCategory = urlParams.get('category') || '';
         const urlDescription = urlParams.get('description') || '';
 
-        // 載入分類清單（使用與流程設計器相同的 API，讀取 categories 資料表）
+        // 載入分類清單（二層結構，optgroup 分組）
         async function loadCategories() {
             try {
                 const response = await fetch('/api/forms/data/categories?context=form_design');
@@ -1585,8 +1585,8 @@
                     select.innerHTML = '<option value="">未分類</option>';
                     result.data.forEach(cat => {
                         const option = document.createElement('option');
-                        option.value = cat.name;
-                        option.textContent = cat.name;
+                        option.value = cat.secure_code;
+                        option.textContent = cat.display || cat.name;
                         select.appendChild(option);
                     });
                 }
@@ -1713,7 +1713,7 @@
 
                     // 設定檔名、分類、描述
                     document.getElementById('form-name').value = formData.name;
-                    document.getElementById('form-category').value = formData.category || '';
+                    document.getElementById('form-category').value = formData.category_secure_code || '';
                     document.getElementById('form-description').value = formData.description || '';
                     currentFormId = formData.secure_code;
                     // 只有非剛建立的才標記為已儲存
@@ -2284,7 +2284,7 @@
                             body: JSON.stringify({
                                 name: formNameInput,
                                 schema: schema,
-                                category: formCategoryInput,
+                                category_secure_code: formCategoryInput,
                                 description: formDescriptionInput,
                                 builder_config: builderConfig,
                                 generate_thumbnail_async: true
@@ -2303,7 +2303,7 @@
                             body: JSON.stringify({
                                 name: formNameInput,
                                 schema: schema,
-                                category: formCategoryInput,
+                                category_secure_code: formCategoryInput,
                                 description: formDescriptionInput,
                                 builder_config: builderConfig,
                                 generate_thumbnail_async: true
@@ -2401,7 +2401,7 @@
                         body: JSON.stringify({
                             name: formNameInput,
                             schema: schema,
-                            category: formCategoryInput,
+                            category_secure_code: formCategoryInput,
                             description: formDescriptionInput,
                             builder_config: builderConfig,
                             generate_thumbnail_async: true  // 背景模式
@@ -2415,7 +2415,7 @@
                         body: JSON.stringify({
                             name: formNameInput,
                             schema: schema,
-                            category: formCategoryInput,
+                            category_secure_code: formCategoryInput,
                             description: formDescriptionInput,
                             builder_config: builderConfig,
                             generate_thumbnail_async: true  // 背景模式
@@ -2507,7 +2507,7 @@
                     body: JSON.stringify({
                         name: formNameInput,
                         schema: schema,
-                        category: formCategoryInput,
+                        category_secure_code: formCategoryInput,
                         description: formDescriptionInput,
                         builder_config: builderConfig,
                         generate_thumbnail_async: true
@@ -2770,12 +2770,11 @@
                         }
 
                         // 設定分類（如果有）
-                        if (templateData.category) {
+                        if (templateData.category_secure_code) {
                             const categorySelect = document.getElementById('form-category');
-                            // 檢查分類是否存在於選項中
-                            const optionExists = Array.from(categorySelect.options).some(opt => opt.value === templateData.category);
+                            const optionExists = Array.from(categorySelect.options).some(opt => opt.value === templateData.category_secure_code);
                             if (optionExists) {
-                                categorySelect.value = templateData.category;
+                                categorySelect.value = templateData.category_secure_code;
                             }
                         }
 

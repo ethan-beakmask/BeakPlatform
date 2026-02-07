@@ -159,6 +159,7 @@ def create_template():
         code=code,
         description=data.get('description', ''),
         category=data.get('category', '流程記錄'),
+        category_secure_code=data.get('category_secure_code'),
         schema=data.get('schema', {}),
         is_active=data.get('is_active', True)
     )
@@ -200,6 +201,8 @@ def update_template(secure_code):
         template.name = data['name'].strip()
     if 'description' in data:
         template.description = data['description']
+    if 'category_secure_code' in data:
+        template.category_secure_code = data['category_secure_code']
     if 'category' in data:
         template.category = data['category']
     if 'schema' in data:
@@ -386,6 +389,7 @@ def create_workflow():
         code=code,
         description=data.get('description', ''),
         category=data.get('category', '流程記錄'),
+        category_secure_code=data.get('category_secure_code'),
         graph=data.get('graph', {'nodes': [], 'edges': []}),
         is_active=data.get('is_active', True)
     )
@@ -427,6 +431,8 @@ def update_workflow(secure_code):
         workflow.name = data['name'].strip()
     if 'description' in data:
         workflow.description = data['description']
+    if 'category_secure_code' in data:
+        workflow.category_secure_code = data['category_secure_code']
     if 'category' in data:
         workflow.category = data['category']
     if 'graph' in data:

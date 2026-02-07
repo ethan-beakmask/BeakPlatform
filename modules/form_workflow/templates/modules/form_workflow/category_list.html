@@ -15,6 +15,7 @@
     .fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
     .fw-btn.primary:hover { background: #0055aa; }
     .fw-btn.danger { background: #dc2626; color: white; border-color: #dc2626; }
+    .fw-btn.sm { padding: 4px 8px; font-size: 11px; }
     .fw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .fw-card { background: white; border: 1px solid #ddd; }
@@ -25,9 +26,20 @@
     .fw-table .actions { text-align: center; white-space: nowrap; }
     .fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
 
+    /* 父分類列 */
+    .fw-table tr.parent-row { background: #fafbfc; }
+    .fw-table tr.parent-row td { font-weight: 500; border-bottom: 1px solid #ddd; }
+    .fw-table tr.parent-row .expand-btn { cursor: pointer; background: none; border: none; font-size: 14px; padding: 0 4px; color: #666; }
+    .fw-table tr.parent-row .expand-btn:hover { color: #333; }
+
+    /* 子分類列 */
+    .fw-table tr.child-row td { padding-left: 36px; background: white; }
+    .fw-table tr.child-row td:first-child { padding-left: 36px; }
+
     .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; }
     .fw-badge.system { background: #dbeafe; color: #1e40af; }
     .fw-badge.custom { background: #f3e8ff; color: #7c3aed; }
+    .fw-badge.child { background: #ecfdf5; color: #065f46; }
 
     .fw-empty { text-align: center; padding: 48px; color: #999; }
     .fw-loading { text-align: center; padding: 48px; color: #666; }
@@ -47,6 +59,8 @@
     .fw-checkbox-group { display: flex; gap: 16px; flex-wrap: wrap; }
     .fw-checkbox-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; cursor: pointer; }
     .fw-checkbox-group input[type="checkbox"] { width: auto; }
+
+    .child-count { color: #999; font-size: 11px; font-weight: normal; margin-left: 6px; }
 </style>
 {% endblock %}
 
@@ -57,11 +71,11 @@
     <div class="fw-header">
         <div>
             <h1>分類管理</h1>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理表單和流程的分類</p>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理表單和流程的二層分類</p>
         </div>
         <div class="fw-toolbar">
             <button class="fw-btn" @click="loadCategories()">重新載入</button>
-            <button class="fw-btn primary" @click="openCreateModal()">+ 新增分類</button>
+            <button class="fw-btn primary" @click="openCreateModal(null)">+ 新增父分類</button>
         </div>
     </div>
 
@@ -71,40 +85,63 @@
 
         <div x-show="!loading && categories.length === 0" class="fw-empty">
             <p style="font-size: 16px; margin-bottom: 8px;">尚無分類</p>
-            <p>點擊「新增分類」開始建立</p>
+            <p>點擊「新增父分類」開始建立</p>
         </div>
 
         <table x-show="!loading && categories.length > 0" class="fw-table">
             <thead>
                 <tr>
                     <th style="width: 60px;">排序</th>
-                    <th style="width: 180px;">名稱</th>
+                    <th style="width: 200px;">名稱</th>
                     <th>描述</th>
                     <th style="width: 80px;">類型</th>
                     <th style="width: 200px;">顯示範圍</th>
-                    <th style="width: 140px;" class="actions">操作</th>
+                    <th style="width: 180px;" class="actions">操作</th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="cat in categories" :key="cat.secure_code">
-                    <tr>
-                        <td style="text-align: center; color: #999;" x-text="cat.display_order"></td>
-                        <td style="font-weight: 500;" x-text="cat.name"></td>
-                        <td style="color: #666;" x-text="cat.description || '-'"></td>
-                        <td>
-                            <span class="fw-badge" :class="cat.is_system ? 'system' : 'custom'"
-                                  x-text="cat.is_system ? '系統' : '自訂'"></span>
-                        </td>
-                        <td style="font-size: 11px; color: #666;">
-                            <span x-show="cat.show_in_form_design" style="margin-right: 8px;">表單設計</span>
-                            <span x-show="cat.show_in_workflow_design" style="margin-right: 8px;">流程設計</span>
-                            <span x-show="cat.show_in_form_center">表單中心</span>
-                        </td>
-                        <td class="actions">
-                            <button class="fw-btn" @click="editCategory(cat)" :disabled="cat.is_system">編輯</button>
-                            <button class="fw-btn danger" @click="confirmDelete(cat)" :disabled="cat.is_system">刪除</button>
-                        </td>
-                    </tr>
+                    <template x-fragment>
+                        <!-- 父分類列 -->
+                        <tr class="parent-row">
+                            <td style="text-align: center; color: #999;" x-text="cat.display_order"></td>
+                            <td>
+                                <button class="expand-btn" @click="toggleExpand(cat.secure_code)"
+                                        x-text="expanded[cat.secure_code] ? '▼' : '▶'"></button>
+                                <span x-text="cat.name"></span>
+                                <span class="child-count" x-text="'(' + (cat.children || []).length + ')'"></span>
+                            </td>
+                            <td style="color: #666;" x-text="cat.description || '-'"></td>
+                            <td>
+                                <span class="fw-badge" :class="cat.is_system ? 'system' : 'custom'"
+                                      x-text="cat.is_system ? '系統' : '自訂'"></span>
+                            </td>
+                            <td style="font-size: 11px; color: #666;">
+                                <span x-show="cat.show_in_form_design" style="margin-right: 8px;">表單設計</span>
+                                <span x-show="cat.show_in_workflow_design" style="margin-right: 8px;">流程設計</span>
+                                <span x-show="cat.show_in_form_center">表單中心</span>
+                            </td>
+                            <td class="actions">
+                                <button class="fw-btn sm" @click="openCreateModal(cat.secure_code)">+ 子分類</button>
+                                <button class="fw-btn sm" @click="editCategory(cat)" :disabled="cat.is_system">編輯</button>
+                                <button class="fw-btn sm danger" @click="confirmDelete(cat)" :disabled="cat.is_system">刪除</button>
+                            </td>
+                        </tr>
+                        <!-- 子分類列 -->
+                        <template x-for="child in (cat.children || [])" :key="child.secure_code">
+                            <tr class="child-row" x-show="expanded[cat.secure_code]">
+                                <td style="text-align: center; color: #bbb;" x-text="child.display_order"></td>
+                                <td style="padding-left: 36px;" x-text="child.name"></td>
+                                <td style="color: #666;" x-text="child.description || '-'"></td>
+                                <td><span class="fw-badge child">子分類</span></td>
+                                <td style="font-size: 11px; color: #999;">繼承父分類</td>
+                                <td class="actions">
+                                    <button class="fw-btn sm" @click="editCategory(child)">編輯</button>
+                                    <button class="fw-btn sm danger" @click="confirmDelete(child)">刪除</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </template>
                 </template>
             </tbody>
         </table>
@@ -114,11 +151,16 @@
     <div x-show="showModal" x-cloak class="fw-modal">
         <div class="fw-modal-content">
             <div class="fw-modal-header">
-                <h3 x-text="editingCategory ? '編輯分類' : '新增分類'"></h3>
+                <h3 x-text="modalTitle"></h3>
                 <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <form @submit.prevent="saveCategory()">
                 <div class="fw-modal-body">
+                    <!-- 父分類提示 -->
+                    <div x-show="formData.parent_secure_code" class="fw-form-group">
+                        <label>父分類</label>
+                        <input type="text" :value="getParentName(formData.parent_secure_code)" disabled style="background: #f5f5f5;">
+                    </div>
                     <div class="fw-form-group">
                         <label>名稱 *</label>
                         <input type="text" x-model="formData.name" required placeholder="例：人事表單">
@@ -131,7 +173,8 @@
                         <label>排序</label>
                         <input type="number" x-model.number="formData.display_order" min="0" placeholder="數字越小越前面">
                     </div>
-                    <div class="fw-form-group">
+                    <!-- 顯示範圍（僅父分類） -->
+                    <div class="fw-form-group" x-show="!formData.parent_secure_code">
                         <label style="margin-bottom: 8px;">顯示範圍</label>
                         <div class="fw-checkbox-group">
                             <label>
@@ -180,8 +223,9 @@
 <script>
 function categoryManager() {
     return {
-        categories: [],
+        categories: [],  // 樹狀結構
         loading: true,
+        expanded: {},
 
         showModal: false,
         editingCategory: null,
@@ -189,6 +233,7 @@ function categoryManager() {
             name: '',
             description: '',
             display_order: 0,
+            parent_secure_code: null,
             show_in_form_design: true,
             show_in_workflow_design: true,
             show_in_form_center: true
@@ -197,6 +242,13 @@ function categoryManager() {
 
         showDeleteModal: false,
         deletingCategory: null,
+
+        get modalTitle() {
+            if (this.editingCategory) {
+                return this.editingCategory.parent_secure_code ? '編輯子分類' : '編輯父分類';
+            }
+            return this.formData.parent_secure_code ? '新增子分類' : '新增父分類';
+        },
 
         async init() {
             await this.loadCategories();
@@ -209,6 +261,12 @@ function categoryManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
+                    // 預設全部展開
+                    for (const cat of this.categories) {
+                        if (this.expanded[cat.secure_code] === undefined) {
+                            this.expanded[cat.secure_code] = true;
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('載入失敗:', e);
@@ -217,12 +275,23 @@ function categoryManager() {
             }
         },
 
-        openCreateModal() {
+        toggleExpand(sc) {
+            this.expanded[sc] = !this.expanded[sc];
+        },
+
+        getParentName(parentSc) {
+            if (!parentSc) return '';
+            const cat = this.categories.find(c => c.secure_code === parentSc);
+            return cat ? cat.name : '';
+        },
+
+        openCreateModal(parentSc) {
             this.editingCategory = null;
             this.formData = {
                 name: '',
                 description: '',
                 display_order: 0,
+                parent_secure_code: parentSc || null,
                 show_in_form_design: true,
                 show_in_workflow_design: true,
                 show_in_form_center: true
@@ -237,6 +306,7 @@ function categoryManager() {
                 name: cat.name,
                 description: cat.description || '',
                 display_order: cat.display_order || 0,
+                parent_secure_code: cat.parent_secure_code || null,
                 show_in_form_design: cat.show_in_form_design !== false,
                 show_in_workflow_design: cat.show_in_workflow_design !== false,
                 show_in_form_center: cat.show_in_form_center !== false

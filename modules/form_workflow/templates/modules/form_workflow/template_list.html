@@ -126,19 +126,16 @@
         </div>
     </div>
 
-    <!-- 分類篩選 -->
+    <!-- 分類篩選（父/子二層 chips） -->
     <div x-show="!loading" class="fw-filter-bar">
         <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('forms_filter_category', '')">
             全部 <span class="chip-count" x-text="templates.length"></span>
         </div>
-        <template x-for="cat in categories" :key="cat.secure_code">
-            <div class="fw-chip" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name; localStorage.setItem('forms_filter_category', cat.name)">
-                <span x-text="cat.name"></span> <span class="chip-count" x-text="getCategoryCount(cat.name)"></span>
+        <template x-for="cat in flatCategories" :key="cat.secure_code">
+            <div class="fw-chip" :class="{ active: selectedCategory === cat.secure_code }" @click="selectedCategory = cat.secure_code; localStorage.setItem('forms_filter_category', cat.secure_code)">
+                <span x-text="cat.display"></span> <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
             </div>
         </template>
-        <div class="fw-chip" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'; localStorage.setItem('forms_filter_category', '__other__')">
-            其他 <span class="chip-count" x-text="getOtherCount()"></span>
-        </div>
     </div>
 
     <!-- 表格 -->
@@ -229,9 +226,13 @@
                     </div>
                     <div class="fw-form-group">
                         <label>分類</label>
-                        <select x-model="formData.category">
-                            <template x-for="cat in categories" :key="cat.secure_code">
-                                <option :value="cat.name" x-text="cat.name"></option>
+                        <select x-model="formData.category_secure_code">
+                            <template x-for="parent in categories" :key="parent.secure_code">
+                                <optgroup :label="parent.name">
+                                    <template x-for="child in parent.children" :key="child.secure_code">
+                                        <option :value="child.secure_code" x-text="child.name"></option>
+                                    </template>
+                                </optgroup>
                             </template>
                         </select>
                     </div>
@@ -310,7 +311,7 @@ function templateListManager() {
         loading: true,
         searchQuery: '',
         viewMode: localStorage.getItem('forms_view_mode') || 'grid',
-        selectedCategory: null,
+        selectedCategory: null,  // 子分類 secure_code
         pagination: { page: 1, pages: 1, total: 0, has_prev: false, has_next: false },
         _thumbPendingTimer: null,
         _thumbPendingCount: 0,
@@ -319,8 +320,9 @@ function templateListManager() {
 
         showModal: false,
         editingTemplate: null,
-        formData: { name: '', code: '', description: '', category: '流程記錄', is_active: true },
-        categories: [],
+        formData: { name: '', code: '', description: '', category_secure_code: '', is_active: true },
+        categories: [],       // 樹狀 [{...parent, children: [...]}]
+        flatCategories: [],   // 展開的子分類 [{secure_code, name, display, parent_name}]
         saving: false,
 
         showSchemaModal: false,
@@ -334,9 +336,7 @@ function templateListManager() {
             await this.loadCategories();
             await this.loadTemplates();
             const saved = localStorage.getItem('forms_filter_category');
-            if (saved === '__other__') {
-                this.selectedCategory = '__other__';
-            } else if (saved && this.categories.some(c => c.name === saved)) {
+            if (saved && this.flatCategories.some(c => c.secure_code === saved)) {
                 this.selectedCategory = saved;
             }
             this.pollPendingThumbnail();
@@ -349,6 +349,23 @@ function templateListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
+                    // 展開為扁平子分類清單（給 chips 用）
+                    const flat = [];
+                    this.categories.forEach(parent => {
+                        (parent.children || []).forEach(child => {
+                            flat.push({
+                                secure_code: child.secure_code,
+                                name: child.name,
+                                parent_name: parent.name,
+                                display: parent.name + ' / ' + child.name
+                            });
+                        });
+                    });
+                    this.flatCategories = flat;
+                    // 設定 formData 預設分類（第一個子分類）
+                    if (flat.length > 0 && !this.formData.category_secure_code) {
+                        this.formData.category_secure_code = flat[0].secure_code;
+                    }
                 }
             } catch (e) {
                 console.error('載入分類失敗:', e);
@@ -432,7 +449,7 @@ function templateListManager() {
 
         openCreateModal() {
             this.editingTemplate = null;
-            this.formData = { name: '', code: '', description: '', category: '流程記錄', is_active: true };
+            this.formData = { name: '', code: '', description: '', category_secure_code: this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : '', is_active: true };
             this.showModal = true;
         },
 
@@ -530,20 +547,11 @@ function templateListManager() {
 
         get filteredTemplates() {
             if (this.selectedCategory === null) return this.templates;
-            if (this.selectedCategory === '__other__') {
-                const catNames = this.categories.map(c => c.name);
-                return this.templates.filter(t => !t.category || !catNames.includes(t.category));
-            }
-            return this.templates.filter(t => t.category === this.selectedCategory);
+            return this.templates.filter(t => t.category_secure_code === this.selectedCategory);
         },
 
-        getCategoryCount(name) {
-            return this.templates.filter(t => t.category === name).length;
-        },
-
-        getOtherCount() {
-            const catNames = this.categories.map(c => c.name);
-            return this.templates.filter(t => !t.category || !catNames.includes(t.category)).length;
+        getCategoryCount(sc) {
+            return this.templates.filter(t => t.category_secure_code === sc).length;
         },
 
         formatDate(dateStr) {

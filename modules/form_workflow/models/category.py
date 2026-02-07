@@ -1,6 +1,6 @@
 """
 FormWorkflow Module - Category Model
-表單流程分類
+表單流程分類（二層結構）
 """
 import secrets
 from sqlalchemy import Column, String, Text, Boolean, Integer, event
@@ -11,16 +11,18 @@ from app.models.base import BaseModel
 
 class FwCategory(BaseModel):
     """
-    表單流程分類
+    表單流程分類（二層結構）
 
-    用於分類表單範本和工作流程範本。
-    每個企業可以有自己的分類，也可以使用系統預設分類。
-    系統分類的 org_secure_code 為 NULL。
+    parent_secure_code 為 NULL → 第一層（父分類）
+    parent_secure_code 非 NULL → 第二層（子分類）
     """
     __tablename__ = 'fw_categories'
 
     # 企業識別碼（NULL = 系統分類，所有企業共用）
     org_secure_code = Column(String(32), nullable=True, index=True)
+
+    # 父分類 secure_code（NULL = 第一層）
+    parent_secure_code = Column(String(32), nullable=True, index=True)
 
     # 基本資訊
     name = Column(String(100), nullable=False)
@@ -30,19 +32,27 @@ class FwCategory(BaseModel):
     # 系統內建分類標記（無法刪除）
     is_system = Column(Boolean, default=False, nullable=False)
 
-    # 顯示開關
+    # 顯示開關（僅父分類使用）
     show_in_form_design = Column(Boolean, default=True, nullable=False)
     show_in_workflow_design = Column(Boolean, default=True, nullable=False)
     show_in_form_center = Column(Boolean, default=True, nullable=False)
 
-    # 唯一約束：同一企業內分類名稱唯一
     __table_args__ = (
-        # db.UniqueConstraint('name', 'org_secure_code', name='fw_categories_name_org_unique'),
         {'extend_existing': True},
     )
 
     def __repr__(self):
-        return f'<FwCategory {self.name}>'
+        return f'<FwCategory {self.name} (parent={self.parent_secure_code})>'
+
+    @property
+    def is_parent(self):
+        """是否為父分類"""
+        return self.parent_secure_code is None
+
+    @property
+    def is_child(self):
+        """是否為子分類"""
+        return self.parent_secure_code is not None
 
     def to_dict(self):
         """轉換為字典"""
@@ -52,6 +62,8 @@ class FwCategory(BaseModel):
             'description': self.description,
             'display_order': self.display_order,
             'is_system': self.is_system,
+            'parent_secure_code': self.parent_secure_code,
+            'is_parent': self.is_parent,
             'show_in_form_design': self.show_in_form_design,
             'show_in_workflow_design': self.show_in_workflow_design,
             'show_in_form_center': self.show_in_form_center,
@@ -59,19 +71,40 @@ class FwCategory(BaseModel):
         return data
 
     def can_delete(self, org_secure_code=None):
-        """檢查是否可刪除"""
+        """
+        檢查是否可刪除
+
+        父分類：須先刪除所有子分類
+        子分類：檢查 category_secure_code 外鍵引用
+        """
         if self.is_system:
             return False, '系統內建分類無法刪除'
 
-        # 檢查是否有表單或流程使用此分類
+        from app import db
+
+        if self.is_parent:
+            # 父分類：檢查是否有子分類
+            child_count = FwCategory.query.filter_by(
+                parent_secure_code=self.secure_code,
+                is_deleted=False
+            ).count()
+            if child_count > 0:
+                return False, f'此分類下有 {child_count} 個子分類，請先刪除子分類'
+            return True, 'OK'
+
+        # 子分類：檢查是否有表單/流程使用此分類的 secure_code
         from .form_template import FwFormTemplate
         from .workflow_template import FwWorkflowTemplate
 
-        # 建立查詢條件
-        form_query = FwFormTemplate.query.filter_by(category=self.name, is_deleted=False)
-        workflow_query = FwWorkflowTemplate.query.filter_by(category=self.name, is_deleted=False)
+        form_query = FwFormTemplate.query.filter_by(
+            category_secure_code=self.secure_code,
+            is_deleted=False
+        )
+        workflow_query = FwWorkflowTemplate.query.filter_by(
+            category_secure_code=self.secure_code,
+            is_deleted=False
+        )
 
-        # 如果有指定企業，只檢查同企業的表單/流程
         if org_secure_code:
             form_query = form_query.filter_by(org_secure_code=org_secure_code)
             workflow_query = workflow_query.filter_by(org_secure_code=org_secure_code)

@@ -581,7 +581,21 @@ def update_template(secure_code):
         template.graph = data['graph']
     if 'cytoscape_config' in data:
         template.cytoscape_config = data['cytoscape_config']
-    if 'category' in data:
+    if 'category_secure_code' in data:
+        template.category_secure_code = data['category_secure_code']
+        # 同步更新舊 category 字串（過渡期）
+        from ..models import FwCategory
+        cat = FwCategory.query.filter_by(
+            secure_code=data['category_secure_code'], is_deleted=False
+        ).first()
+        if cat and cat.parent_secure_code:
+            parent = FwCategory.query.filter_by(
+                secure_code=cat.parent_secure_code, is_deleted=False
+            ).first()
+            template.category = parent.name if parent else cat.name
+        elif cat:
+            template.category = cat.name
+    elif 'category' in data:
         template.category = data['category']
     if 'is_active' in data:
         template.is_active = data['is_active']

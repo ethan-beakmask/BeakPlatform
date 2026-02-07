@@ -21,6 +21,7 @@ class FwFormTemplate(ModuleBaseModel):
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     category = Column(String(100), nullable=True, index=True)
+    category_secure_code = Column(String(32), nullable=True, index=True)
 
     # form.io schema
     schema = Column(JSON, nullable=False)
@@ -59,6 +60,7 @@ class FwFormTemplate(ModuleBaseModel):
             'name': self.name,
             'description': self.description,
             'category': self.category,
+            'category_secure_code': self.category_secure_code,
             'version': self.version,
             'revision': self.revision,
             'thumbnail_2x1': self.thumbnail_2x1,

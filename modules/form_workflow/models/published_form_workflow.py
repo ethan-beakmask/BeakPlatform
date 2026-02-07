@@ -300,6 +300,7 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
                 'description': form_template.description,
                 'builder_config': form_template.builder_config,
                 'category': form_template.category,
+                'category_secure_code': form_template.category_secure_code,
             },
             workflow_snapshot={
                 'name': workflow_template.name,

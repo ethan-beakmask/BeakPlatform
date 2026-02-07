@@ -181,21 +181,21 @@
 {% block content %}
 <div class="fc-container" x-data="formCenterManager()">
 
-    <!-- 左側邊欄 -->
+    <!-- 左側邊欄：表單分類導航 -->
     <div class="fc-sidebar">
-        <!-- 快速連結 -->
         <div class="fc-sidebar-box">
-            <div class="fc-link-item">
-                <span>待簽核</span>
-                <span x-show="pendingApprovals.length > 0" class="fc-link-badge" x-text="pendingApprovals.length"></span>
+            <div style="padding: 8px 12px; font-weight: 600; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
+            <div class="fc-category-item" :class="{ active: selectedParent === null }" @click="selectedParent = null; selectedChild = null;" style="cursor: pointer;">
+                <span>全部</span>
+                <span class="fc-link-badge" x-text="availableForms.length"></span>
             </div>
-            <div class="fc-link-item">
-                <span>追蹤中</span>
-                <span x-show="trackingList.length > 0" class="fc-link-badge" style="background: #3b82f6;" x-text="trackingList.length"></span>
-            </div>
-            <div class="fc-link-item">
-                <span>歷史</span>
-            </div>
+            <template x-for="cat in parentCategories" :key="cat.secure_code">
+                <div class="fc-category-item" :class="{ active: selectedParent === cat.secure_code }"
+                     @click="selectedParent = cat.secure_code; selectedChild = null;" style="cursor: pointer;">
+                    <span x-text="cat.name"></span>
+                    <span class="fc-link-badge" style="background: #e5e7eb; color: #374151;" x-text="getFormCountByParent(cat.secure_code)"></span>
+                </div>
+            </template>
         </div>
     </div>
 
@@ -210,21 +210,17 @@
                 </div>
                 <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
             </div>
-            <!-- 水平分類頁籤 -->
-            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;">
+            <!-- 子分類頁籤（選中父分類且有多個子分類時顯示） -->
+            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;" x-show="selectedParent && currentChildren.length > 1">
                 <div class="fc-cat-tabs">
-                    <div class="fc-cat-tab" :class="{ active: selectedCategory === null }" @click="selectedCategory = null">
-                        全部<span class="fc-cat-count" x-text="'(' + availableForms.length + ')'"></span>
+                    <div class="fc-cat-tab" :class="{ active: selectedChild === null }" @click="selectedChild = null">
+                        全部<span class="fc-cat-count" x-text="'(' + getFormCountByParent(selectedParent) + ')'"></span>
                     </div>
-                    <template x-for="cat in categories" :key="cat.id">
-                        <div class="fc-cat-tab" :class="{ active: selectedCategory === cat.name }" @click="selectedCategory = cat.name">
-                            <span x-text="cat.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByCategory(cat.name) + ')'"></span>
+                    <template x-for="child in currentChildren" :key="child.secure_code">
+                        <div class="fc-cat-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
+                            <span x-text="child.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByChild(child.secure_code) + ')'"></span>
                         </div>
                     </template>
-                    <div class="fc-cat-tab" :class="{ active: selectedCategory === '__other__' }" @click="selectedCategory = '__other__'"
-                         x-show="getOtherCount() > 0">
-                        其他<span class="fc-cat-count" x-text="'(' + getOtherCount() + ')'"></span>
-                    </div>
                 </div>
             </div>
             <div class="fc-section-body">
@@ -1068,15 +1064,16 @@ function formCenterManager() {
     return {
         // 資料
         availableForms: [],
-        categories: [],
+        parentCategories: [],  // 樹狀分類 [{...parent, children: [...]}]
         pendingApprovals: [],
         trackingList: [],
         signedList: [],
         historyList: [],
         signedHistoryList: [],
 
-        // 分類選擇
-        selectedCategory: null,
+        // 分類選擇（二層）
+        selectedParent: null,   // 選中的父分類 secure_code
+        selectedChild: null,    // 選中的子分類 secure_code
 
         // 載入狀態
         loadingForms: true,
@@ -1192,22 +1189,35 @@ function formCenterManager() {
         },
 
         // 計算屬性
+        get currentChildren() {
+            if (!this.selectedParent) return [];
+            const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
+            return parent ? (parent.children || []) : [];
+        },
+
         get filteredForms() {
-            if (this.selectedCategory === null) return this.availableForms;
-            if (this.selectedCategory === '__other__') {
-                const catNames = this.categories.map(c => c.name);
-                return this.availableForms.filter(f => !f.category || !catNames.includes(f.category));
+            if (this.selectedParent === null) return this.availableForms;
+            // 取得該父分類下所有子分類的 secure_code
+            const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
+            if (!parent) return this.availableForms;
+            const childCodes = (parent.children || []).map(c => c.secure_code);
+            if (this.selectedChild) {
+                // 選了特定子分類
+                return this.availableForms.filter(f => f.category_secure_code === this.selectedChild);
             }
-            return this.availableForms.filter(f => f.category === this.selectedCategory);
+            // 選了父分類但沒選子分類 → 顯示該父下所有子分類的表單
+            return this.availableForms.filter(f => childCodes.includes(f.category_secure_code));
         },
 
-        getFormCountByCategory(name) {
-            return this.availableForms.filter(f => f.category === name).length;
+        getFormCountByParent(parentSc) {
+            const parent = this.parentCategories.find(c => c.secure_code === parentSc);
+            if (!parent) return 0;
+            const childCodes = (parent.children || []).map(c => c.secure_code);
+            return this.availableForms.filter(f => childCodes.includes(f.category_secure_code)).length;
         },
 
-        getOtherCount() {
-            const catNames = this.categories.map(c => c.name);
-            return this.availableForms.filter(f => !f.category || !catNames.includes(f.category)).length;
+        getFormCountByChild(childSc) {
+            return this.availableForms.filter(f => f.category_secure_code === childSc).length;
         },
 
         get pendingTotalPages() { return Math.ceil(this.pendingApprovals.length / this.pendingPageSize); },
@@ -1314,7 +1324,7 @@ function formCenterManager() {
             try {
                 const res = await fetch('/api/form-workflow/categories?context=form_center');
                 const data = await res.json();
-                if (data.success) this.categories = data.data || [];
+                if (data.success) this.parentCategories = data.data || [];
             } catch (e) { /* 分類 API 可能不存在，忽略 */ }
             finally { this.loadingCategories = false; }
         },

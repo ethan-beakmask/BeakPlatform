@@ -93,6 +93,34 @@ def list_available_forms():
         getattr(current_user, 'level', 0) >= 90  # ORG_ADMIN level
     )
 
+    # 預先載入分類映射（category_secure_code → parent info）
+    from ..models import FwCategory
+    all_cats = FwCategory.query.filter_by(is_deleted=False).filter(
+        db.or_(
+            FwCategory.org_secure_code.is_(None),
+            FwCategory.org_secure_code == org.secure_code
+        )
+    ).all()
+    cat_map = {c.secure_code: c for c in all_cats}
+
+    def _enrich_category(item, cat_sc):
+        """補充分類資訊到 item"""
+        item['category_secure_code'] = cat_sc
+        cat = cat_map.get(cat_sc) if cat_sc else None
+        if cat and cat.parent_secure_code:
+            parent = cat_map.get(cat.parent_secure_code)
+            item['parent_category_secure_code'] = cat.parent_secure_code
+            item['parent_category_name'] = parent.name if parent else ''
+            item['child_category_name'] = cat.name
+        elif cat:
+            item['parent_category_secure_code'] = cat.secure_code
+            item['parent_category_name'] = cat.name
+            item['child_category_name'] = None
+        else:
+            item['parent_category_secure_code'] = None
+            item['parent_category_name'] = None
+            item['child_category_name'] = None
+
     result = []
     seen_mapping_ids = set()
     need_category_ids = []  # 需要 fallback 查 category 的 form_template_id
@@ -113,6 +141,7 @@ def list_available_forms():
         form_snapshot = p.form_snapshot or {}
         workflow_snapshot = p.workflow_snapshot or {}
         category = form_snapshot.get('category')
+        cat_sc = form_snapshot.get('category_secure_code')
 
         item = {
             'id': p.source_form_template_id,
@@ -129,20 +158,33 @@ def list_available_forms():
             '_status': 'published',
             '_source': 'published',
         }
+
+        # 嘗試從快照取 category_secure_code
+        if cat_sc:
+            _enrich_category(item, cat_sc)
+        else:
+            # fallback 待後面批次處理
+            item['category_secure_code'] = None
+            item['parent_category_secure_code'] = None
+            item['parent_category_name'] = None
+            item['child_category_name'] = None
+            if p.source_form_template_id:
+                need_category_ids.append((len(result), p.source_form_template_id))
+
         result.append(item)
 
-        if not category and p.source_form_template_id:
-            need_category_ids.append((len(result) - 1, p.source_form_template_id))
-
-    # category fallback: 快照沒有 category 時查 FwFormTemplate
+    # category fallback: 快照沒有 category_secure_code 時查 FwFormTemplate
     if need_category_ids:
         ft_ids = list(set(fid for _, fid in need_category_ids))
         templates = FwFormTemplate.query.filter(
             FwFormTemplate.id.in_(ft_ids)
         ).all()
-        ft_map = {t.id: t.category for t in templates}
+        ft_map = {t.id: t for t in templates}
         for idx, ft_id in need_category_ids:
-            result[idx]['category'] = ft_map.get(ft_id)
+            ft = ft_map.get(ft_id)
+            if ft:
+                result[idx]['category'] = ft.category
+                _enrich_category(result[idx], ft.category_secure_code)
 
     # 2. 管理員額外顯示未發行的配對（用於測試）
     if is_admin:
@@ -153,11 +195,9 @@ def list_available_forms():
         ).order_by(FwFormWorkflowMapping.created_at.desc()).all()
 
         for mapping in mappings:
-            # 跳過已有 Published 狀態發行版本的配對（已在上方列出）
             if mapping.id in seen_mapping_ids:
                 continue
 
-            # 查詢表單和流程模板
             form_template = FwFormTemplate.query.filter_by(
                 id=mapping.form_template_id,
                 is_deleted=False,
@@ -173,7 +213,7 @@ def list_available_forms():
             if not form_template or not workflow_template:
                 continue
 
-            result.append({
+            item = {
                 'id': form_template.id,
                 'secure_code': form_template.secure_code,
                 'name': form_template.name,
@@ -188,7 +228,9 @@ def list_available_forms():
                 'workflow_template_secure_code': workflow_template.secure_code,
                 '_status': 'test',
                 '_source': 'mapping',
-            })
+            }
+            _enrich_category(item, form_template.category_secure_code)
+            result.append(item)
 
     return jsonify({
         'success': True,
@@ -608,8 +650,8 @@ def list_my_forms():
 
     FT = aliased(FwFormTemplate)
 
-    # 建立基礎查詢（JOIN workflow_instance + outerjoin form_template 取 category）
-    base_query = db.session.query(FwFormInstance, FwWorkflowInstance, FT.category).join(
+    # 建立基礎查詢（JOIN workflow_instance + outerjoin form_template 取 category + category_secure_code）
+    base_query = db.session.query(FwFormInstance, FwWorkflowInstance, FT.category, FT.category_secure_code).join(
         FwWorkflowInstance,
         FwFormInstance.workflow_instance_secure_code == FwWorkflowInstance.secure_code
     ).outerjoin(
@@ -676,7 +718,7 @@ def list_my_forms():
 
     # 組裝結果
     result = []
-    for form_instance, workflow_instance, ft_category in rows:
+    for form_instance, workflow_instance, ft_category, ft_category_sc in rows:
         data = form_instance.to_dict(include_form_data=False)
         data['is_test'] = data.get('serial_number', '').startswith('TEST-')
         # 附加流程資訊
@@ -688,6 +730,7 @@ def list_my_forms():
         data['current_approver'] = waiting_nodes.get(workflow_instance.secure_code, None)
         # 新增欄位
         data['category'] = ft_category
+        data['category_secure_code'] = ft_category_sc
         data['form_subject'] = extract_form_subject(form_instance.schema_snapshot, form_instance.form_data)
         data['workflow_started_at'] = workflow_instance.started_at.isoformat() if workflow_instance.started_at else None
         data['workflow_completed_at'] = workflow_instance.completed_at.isoformat() if workflow_instance.completed_at else None
@@ -842,11 +885,13 @@ def list_pending_tasks():
         if fi.form_template_id:
             ft_ids.add(fi.form_template_id)
     ft_cat_map = {}
+    ft_cat_sc_map = {}
     if ft_ids:
         ft_list = FwFormTemplate.query.filter(
             FwFormTemplate.id.in_(list(ft_ids))
         ).all()
         ft_cat_map = {t.id: t.category for t in ft_list}
+        ft_cat_sc_map = {t.id: t.category_secure_code for t in ft_list}
 
     result = []
     for task in my_tasks:
@@ -856,9 +901,11 @@ def list_pending_tasks():
         # 萃取主旨
         form_subject = None
         category = None
+        category_sc = None
         if fi:
             form_subject = extract_form_subject(fi.schema_snapshot, fi.form_data)
             category = ft_cat_map.get(fi.form_template_id)
+            category_sc = ft_cat_sc_map.get(fi.form_template_id)
 
         result.append({
             'queue_secure_code': task.secure_code,
@@ -873,6 +920,7 @@ def list_pending_tasks():
             'is_test': serial_number.startswith('TEST-') if serial_number else False,
             'form_subject': form_subject,
             'category': category,
+            'category_secure_code': category_sc,
         })
 
     return jsonify({
