@@ -1,5 +1,5 @@
 """
-BeakMask Group Settings Web Routes
+BeakPlatform Group Settings Web Routes
 社群設定網頁路由
 """
 from flask import Blueprint, render_template

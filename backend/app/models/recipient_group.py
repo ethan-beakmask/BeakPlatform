@@ -1,5 +1,5 @@
 """
-BeakMask Recipient Group Model
+BeakPlatform Recipient Group Model
 收件人群組
 
 用於系統通知的收件人群組設定，支援：

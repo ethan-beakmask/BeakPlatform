@@ -1,5 +1,5 @@
 """
-BeakMask ApprovalCategory Model
+BeakPlatform ApprovalCategory Model
 核決權限類別 - 定義各種費用類別及其核決金額上限
 
 用途：

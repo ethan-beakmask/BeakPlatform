@@ -1,5 +1,5 @@
 """
-BeakMask RolePermission Model
+BeakPlatform RolePermission Model
 角色權限關聯 Model
 
 RBAC + ABAC 權限系統 - 將角色與權限關聯，並支持 ABAC 條件

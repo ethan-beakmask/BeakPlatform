@@ -1,5 +1,5 @@
 """
-BeakMask Contract Model
+BeakPlatform Contract Model
 合約 Model
 """
 from datetime import date, datetime

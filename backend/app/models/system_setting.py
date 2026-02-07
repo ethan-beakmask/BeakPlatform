@@ -1,5 +1,5 @@
 """
-BeakMask SystemSetting Model
+BeakPlatform SystemSetting Model
 系統設定 Model - 儲存系統級設定值
 """
 import json

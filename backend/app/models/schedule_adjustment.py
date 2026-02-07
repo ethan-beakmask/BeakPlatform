@@ -1,5 +1,5 @@
 """
-BeakMask ScheduleAdjustment Model
+BeakPlatform ScheduleAdjustment Model
 排班調整 - 請假、加班、調班、取消班次
 
 參考：docs/knowledge/time-management-spec.md

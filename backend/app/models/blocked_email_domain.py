@@ -1,5 +1,5 @@
 """
-BeakMask Blocked Email Domain Model
+BeakPlatform Blocked Email Domain Model
 禁止註冊的公共信箱 Domain
 """
 from datetime import datetime

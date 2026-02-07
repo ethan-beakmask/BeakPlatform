@@ -1,5 +1,5 @@
 """
-BeakMask MenuItem Model
+BeakPlatform MenuItem Model
 選單項目 - 樹狀結構的動態選單
 """
 from typing import Dict, Any, List, Optional

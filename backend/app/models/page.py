@@ -1,5 +1,5 @@
 """
-BeakMask Page Model
+BeakPlatform Page Model
 頁面 - No-Code Builder 生成的網頁
 """
 from typing import Dict, Any

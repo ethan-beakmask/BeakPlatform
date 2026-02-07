@@ -1,5 +1,5 @@
 -- =============================================================================
--- BeakMask Menu System Migration
+-- BeakPlatform Menu System Migration
 -- Version: 001
 -- Description: 動態選單系統、模組、頁面
 -- =============================================================================
@@ -184,12 +184,12 @@ CREATE TRIGGER update_pages_updated_at
 -- =============================================================================
 -- 5. GRANT PERMISSIONS
 -- =============================================================================
-GRANT SELECT, INSERT, UPDATE, DELETE ON modules TO beakmask_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON menu_items TO beakmask_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON pages TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE modules_id_seq TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE menu_items_id_seq TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE pages_id_seq TO beakmask_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON modules TO beakplatform_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON menu_items TO beakplatform_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON pages TO beakplatform_app;
+GRANT USAGE, SELECT ON SEQUENCE modules_id_seq TO beakplatform_app;
+GRANT USAGE, SELECT ON SEQUENCE menu_items_id_seq TO beakplatform_app;
+GRANT USAGE, SELECT ON SEQUENCE pages_id_seq TO beakplatform_app;
 
 -- =============================================================================
 -- 6. SEED DATA

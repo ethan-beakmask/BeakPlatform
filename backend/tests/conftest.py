@@ -1,5 +1,5 @@
 """
-BeakMask Test Configuration
+BeakPlatform Test Configuration
 pytest fixtures and configuration
 """
 import pytest

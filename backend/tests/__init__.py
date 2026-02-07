@@ -1,3 +1,3 @@
 """
-BeakMask Tests
+BeakPlatform Tests
 """

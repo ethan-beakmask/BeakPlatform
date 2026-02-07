@@ -1,5 +1,5 @@
 """
-BeakMask Enterprise Admin Management Web Routes
+BeakPlatform Enterprise Admin Management Web Routes
 企業管理員帳號管理網頁路由
 
 功能：

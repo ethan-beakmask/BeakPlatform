@@ -1,5 +1,5 @@
 """
-BeakMask Role Model
+BeakPlatform Role Model
 角色/職務 Model
 
 RBAC + ABAC 權限系統核心模型

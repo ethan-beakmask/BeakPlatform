@@ -1,5 +1,5 @@
 """
-BeakMask Conglomerate Service
+BeakPlatform Conglomerate Service
 集團服務 - 負責集團的 CRUD 和企業歸屬管理
 """
 import secrets

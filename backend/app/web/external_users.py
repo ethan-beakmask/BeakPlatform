@@ -1,5 +1,5 @@
 """
-BeakMask External User Management Web Routes
+BeakPlatform External User Management Web Routes
 非公司成員帳號管理網頁路由
 
 功能：

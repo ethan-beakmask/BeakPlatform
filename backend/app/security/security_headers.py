@@ -1,5 +1,5 @@
 """
-BeakMask Security Headers
+BeakPlatform Security Headers
 安全 HTTP 標頭設定
 """
 from flask import Flask, Response

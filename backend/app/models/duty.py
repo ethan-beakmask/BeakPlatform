@@ -1,5 +1,5 @@
 """
-BeakMask Duty Model
+BeakPlatform Duty Model
 職務管理 Model
 
 職務（Duty）是組織架構中的職責標籤，用於標記用戶在部門中的特定職責。

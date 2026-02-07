@@ -1,5 +1,5 @@
 """
-BeakMask User Model
+BeakPlatform User Model
 用戶 Model
 """
 from datetime import datetime

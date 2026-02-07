@@ -1,5 +1,5 @@
 """
-BeakMask ScheduleHoliday Model
+BeakPlatform ScheduleHoliday Model
 班表假日/補班日
 
 參考：docs/knowledge/time-management-spec.md

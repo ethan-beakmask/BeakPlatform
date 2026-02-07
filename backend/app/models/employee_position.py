@@ -1,5 +1,5 @@
 """
-BeakMask EmployeePosition Model
+BeakPlatform EmployeePosition Model
 員工職位 Model - 紀錄員工的職位指派
 
 一個員工可以有多個職位：

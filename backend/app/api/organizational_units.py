@@ -1,5 +1,5 @@
 """
-BeakMask OrganizationalUnit API
+BeakPlatform OrganizationalUnit API
 組織單位 (部門/群組) API
 """
 import logging

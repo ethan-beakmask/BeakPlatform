@@ -1,5 +1,5 @@
 """
-BeakMask Security Utilities
+BeakPlatform Security Utilities
 安全相關工具函數
 """
 import secrets

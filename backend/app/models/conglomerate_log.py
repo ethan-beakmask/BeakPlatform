@@ -1,5 +1,5 @@
 """
-BeakMask Conglomerate Log Model
+BeakPlatform Conglomerate Log Model
 集團操作日誌 Model
 """
 from typing import Dict, Any

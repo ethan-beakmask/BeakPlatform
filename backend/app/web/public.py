@@ -1,5 +1,5 @@
 """
-BeakMask Public Routes
+BeakPlatform Public Routes
 對外公開區域 - 無需登入即可存取
 """
 from flask import Blueprint, render_template

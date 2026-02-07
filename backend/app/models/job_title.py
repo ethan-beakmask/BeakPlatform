@@ -1,5 +1,5 @@
 """
-BeakMask JobTitle Model
+BeakPlatform JobTitle Model
 職稱 Model - 定義具體的職位名稱
 
 參考：OG-01-01 公司職稱職等對照表

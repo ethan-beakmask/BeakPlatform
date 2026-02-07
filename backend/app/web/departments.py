@@ -1,5 +1,5 @@
 """
-BeakMask Department Settings Web Routes
+BeakPlatform Department Settings Web Routes
 部門設定網頁路由
 """
 from flask import Blueprint, render_template

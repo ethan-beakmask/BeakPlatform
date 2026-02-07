@@ -1,5 +1,5 @@
 """
-BeakMask Global Authentication Interceptor
+BeakPlatform Global Authentication Interceptor
 全域認證攔截器 - Deny by Default
 
 [標準 AUTH-01] 全域認證攔截

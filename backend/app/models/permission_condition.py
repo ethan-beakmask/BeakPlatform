@@ -1,5 +1,5 @@
 """
-BeakMask PermissionCondition Model
+BeakPlatform PermissionCondition Model
 權限條件 Model
 
 ABAC (Attribute-Based Access Control) 條件定義

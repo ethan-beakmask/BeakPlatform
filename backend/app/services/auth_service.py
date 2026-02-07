@@ -1,5 +1,5 @@
 """
-BeakMask Authentication Service
+BeakPlatform Authentication Service
 認證相關業務邏輯
 """
 import logging

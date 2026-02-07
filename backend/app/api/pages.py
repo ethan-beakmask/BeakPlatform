@@ -1,5 +1,5 @@
 """
-BeakMask Pages API
+BeakPlatform Pages API
 頁面管理 API
 """
 from flask import Blueprint, jsonify, request

@@ -1,5 +1,5 @@
 """
-BeakMask Configuration
+BeakPlatform Configuration
 Security-focused configuration for different environments
 """
 import os
@@ -32,7 +32,7 @@ class BaseConfig:
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_NAME = 'beakmask_session'
+    SESSION_COOKIE_NAME = 'beakplatform_session'
 
     # CSRF Protection
     WTF_CSRF_ENABLED = True
@@ -113,7 +113,7 @@ class TestingConfig(BaseConfig):
 
     # Use filesystem session for testing (no Redis dependency)
     SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/beakmask_test_sessions'
+    SESSION_FILE_DIR = '/tmp/beakplatform_test_sessions'
 
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False

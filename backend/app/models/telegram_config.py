@@ -1,5 +1,5 @@
 """
-BeakMask Telegram Config Model
+BeakPlatform Telegram Config Model
 Telegram Bot 設定
 """
 import json
@@ -141,7 +141,7 @@ class TelegramConfig(TenantBaseModel):
     def test_connection(
         bot_token: str,
         chat_id: Optional[str] = None,
-        test_message: str = '[BeakMask] Telegram 連線測試'
+        test_message: str = '[BeakPlatform] Telegram 連線測試'
     ) -> Dict[str, Any]:
         """
         測試 Telegram 連線

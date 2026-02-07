@@ -1,5 +1,5 @@
 """
-BeakMask Host Config
+BeakPlatform Host Config
 主機設定區 - 系統管理員專用
 
 用途：

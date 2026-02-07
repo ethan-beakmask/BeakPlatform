@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{% if action == 'add' %}新增合約{% else %}編輯合約{% endif %} - {{ organization.name }} - BeakMask{% endblock %}
+{% block title %}{% if action == 'add' %}新增合約{% else %}編輯合約{% endif %} - {{ organization.name }} - BeakPlatform{% endblock %}
 
 {% block content %}
 <p><a href="{{ url_for('organizations.org_contracts', org=organization.secure_code) }}">&lt; 返回企業合約管理</a></p>

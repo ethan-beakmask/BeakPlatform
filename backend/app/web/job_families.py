@@ -1,5 +1,5 @@
 """
-BeakMask Job Family Management Web Routes
+BeakPlatform Job Family Management Web Routes
 職系管理網頁路由
 
 職系代表職涯發展軌道：

@@ -1,5 +1,5 @@
 """
-BeakMask Role Management Web Routes
+BeakPlatform Role Management Web Routes
 角色權限管理網頁路由
 """
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for

@@ -1,5 +1,5 @@
 """
-BeakMask - Security-First Multi-tenant SaaS Platform
+BeakPlatform - Security-First Multi-tenant SaaS Platform
 """
 import os
 from flask import Flask

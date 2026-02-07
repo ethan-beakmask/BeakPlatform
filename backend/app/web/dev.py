@@ -1,5 +1,5 @@
 """
-BeakMask Development Tools
+BeakPlatform Development Tools
 開發工具 - 僅限內網 IP 存取
 
 路徑：/dev/*

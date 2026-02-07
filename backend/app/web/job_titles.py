@@ -1,5 +1,5 @@
 """
-BeakMask Job Title Management Web Routes
+BeakPlatform Job Title Management Web Routes
 職稱管理網頁路由
 
 職稱 = 職等 + 職系 的具體組合

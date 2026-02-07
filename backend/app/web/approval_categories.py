@@ -1,5 +1,5 @@
 """
-BeakMask Approval Category Management Web Routes
+BeakPlatform Approval Category Management Web Routes
 核決權限類別管理網頁路由
 
 路徑：/job-approval-categories/*

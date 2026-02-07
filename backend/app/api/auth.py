@@ -1,5 +1,5 @@
 """
-BeakMask Authentication API
+BeakPlatform Authentication API
 認證相關路由
 
 登入方式:
@@ -523,7 +523,7 @@ def logout():
 
     # 清除所有登入相關 cookie
     response.delete_cookie('remember_token')  # Flask-Login remember me
-    response.delete_cookie('beakmask_session')  # Flask session (自定義名稱)
+    response.delete_cookie('beakplatform_session')  # Flask session (自定義名稱)
     response.delete_cookie('session')  # 備用：預設 session 名稱
 
     return response
@@ -876,7 +876,7 @@ def verify_reset(token: str):
         EmailService.send_temp_password(
             to_email=reset_token.email,
             temp_password=temp_password,
-            org_name=org.name if org else 'BeakMask'
+            org_name=org.name if org else 'BeakPlatform'
         )
         logger.info(f"Temp password sent for: {reset_token.email}")
     else:

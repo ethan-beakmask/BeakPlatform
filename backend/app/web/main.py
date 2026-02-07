@@ -1,5 +1,5 @@
 """
-BeakMask Main Web Routes
+BeakPlatform Main Web Routes
 主要網頁路由
 """
 from datetime import datetime

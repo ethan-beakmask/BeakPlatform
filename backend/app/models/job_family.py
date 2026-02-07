@@ -1,5 +1,5 @@
 """
-BeakMask JobFamily Model
+BeakPlatform JobFamily Model
 職系 Model - 定義職涯發展軌道
 
 參考：OG-01-01 公司職稱職等對照表

@@ -1,5 +1,5 @@
 """
-BeakMask WorkSchedule Model
+BeakPlatform WorkSchedule Model
 共用班表 - 企業+地區+時區的標準工時
 
 參考：docs/knowledge/time-management-spec.md

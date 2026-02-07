@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-BeakMask Seed Data Script
+BeakPlatform Seed Data Script
 使用 Model 建立種子資料，secure_code 由 Model 自動生成
 
 使用方式:
-    cd /opt/BeakMask
+    cd /opt/BeakPlatform
     source venv/bin/activate
     python scripts/seed_data.py
 
@@ -113,7 +113,7 @@ def seed_organization():
     org = Organization(
         code='DEFAULT',
         name='預設企業',
-        domain_name='beakmask.local',
+        domain_name='beakplatform.local',
         customer_type='TRIAL',
         user_limit=100,
         description='系統預設測試企業',
@@ -143,7 +143,7 @@ def seed_admin_user(org):
     admin = User(
         org_secure_code='system.local',  # 重要：系統管理員必須歸屬系統管理組織
         username='admin',
-        email='admin@beakmask.local',
+        email='admin@beakplatform.local',
         display_name='系統管理員',
         user_type=UserType.SYSTEM_ADMIN,
         is_active=True
@@ -152,7 +152,7 @@ def seed_admin_user(org):
     db.session.add(admin)
     db.session.commit()
 
-    print(f"  帳號: admin@beakmask.local")
+    print(f"  帳號: admin@beakplatform.local")
     print(f"  密碼: admin123")
     print(f"  歸屬: system.local (系統管理)")
     print(f"  secure_code: {admin.secure_code}")
@@ -416,7 +416,7 @@ def seed_system_menus(system_org):
     # 共用選單資料：(code, title, link_type, link_target, order, is_shared, required_permission)
     menus_data = [
         # 說明中心 - 所有人可見
-        ('help_center', '說明中心', 'url', 'https://docs.beakmask.local/help', 100, True, None),
+        ('help_center', '說明中心', 'url', 'https://docs.beakplatform.local/help', 100, True, None),
         # 系統公告 - 所有人可見
         ('announcements', '系統公告', 'route', 'main.announcements', 101, True, None),
         # 伺服器設定 - 僅系統管理員可見 (is_shared=False，只在 system.local 顯示)
@@ -984,7 +984,7 @@ def seed_role_permissions(roles, permissions):
 def main():
     """主程式"""
     print("=" * 60)
-    print("BeakMask Seed Data Script")
+    print("BeakPlatform Seed Data Script")
     print("=" * 60)
     print()
 

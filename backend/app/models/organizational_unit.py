@@ -1,5 +1,5 @@
 """
-BeakMask OrganizationalUnit Model
+BeakPlatform OrganizationalUnit Model
 組織單位 Model (部門/群組)
 """
 from typing import Dict, Any, List, Optional

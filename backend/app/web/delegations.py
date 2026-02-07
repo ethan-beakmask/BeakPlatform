@@ -1,5 +1,5 @@
 """
-BeakMask Delegation Management Web Routes
+BeakPlatform Delegation Management Web Routes
 代理授權管理網頁路由
 
 代理授權用於：

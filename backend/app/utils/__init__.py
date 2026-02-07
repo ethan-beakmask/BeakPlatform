@@ -1,5 +1,5 @@
 """
-BeakMask Utilities
+BeakPlatform Utilities
 """
 from .security import generate_secure_code
 

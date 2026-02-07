@@ -1,5 +1,5 @@
 """
-BeakMask Password Reset Token Model
+BeakPlatform Password Reset Token Model
 密碼重設 Token
 """
 import secrets

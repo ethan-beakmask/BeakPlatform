@@ -1,5 +1,5 @@
 """
-BeakMask Security Decorators
+BeakPlatform Security Decorators
 統一認證裝飾器 - 所有路由必須使用
 
 [標準 AUTH-02] 統一認證 Decorator

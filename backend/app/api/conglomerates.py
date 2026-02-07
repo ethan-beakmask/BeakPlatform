@@ -1,5 +1,5 @@
 """
-BeakMask Conglomerate API
+BeakPlatform Conglomerate API
 集團管理 API
 
 僅限系統管理員存取

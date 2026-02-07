@@ -1,5 +1,5 @@
 """
-BeakMask Association Tables
+BeakPlatform Association Tables
 關聯表 Model (多對多關係)
 """
 from datetime import datetime

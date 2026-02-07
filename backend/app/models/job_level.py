@@ -1,5 +1,5 @@
 """
-BeakMask JobLevel Model
+BeakPlatform JobLevel Model
 職等 Model - 定義組織內的層級結構
 
 參考：OG-01-01 公司職稱職等對照表

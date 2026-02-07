@@ -1,5 +1,5 @@
 """
-BeakMask Organization Service
+BeakPlatform Organization Service
 企業管理服務
 """
 import logging
@@ -470,7 +470,7 @@ class OrganizationService:
         # 建立系統企業
         org = Organization(
             code='SYSTEM',
-            name='BeakMask System',
+            name='BeakPlatform System',
             domain_name='system.local',
             customer_type=CustomerType.FORMAL,
             user_limit=100,
