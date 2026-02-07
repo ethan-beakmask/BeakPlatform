@@ -99,51 +99,49 @@
                     <th style="width: 180px;" class="actions">操作</th>
                 </tr>
             </thead>
-            <tbody>
-                <template x-for="cat in categories" :key="cat.secure_code">
-                    <template x-fragment>
-                        <!-- 父分類列 -->
-                        <tr class="parent-row">
-                            <td style="text-align: center; color: #999;" x-text="cat.display_order"></td>
-                            <td>
-                                <button class="expand-btn" @click="toggleExpand(cat.secure_code)"
-                                        x-text="expanded[cat.secure_code] ? '▼' : '▶'"></button>
-                                <span x-text="cat.name"></span>
-                                <span class="child-count" x-text="'(' + (cat.children || []).length + ')'"></span>
-                            </td>
-                            <td style="color: #666;" x-text="cat.description || '-'"></td>
-                            <td>
-                                <span class="fw-badge" :class="cat.is_system ? 'system' : 'custom'"
-                                      x-text="cat.is_system ? '系統' : '自訂'"></span>
-                            </td>
-                            <td style="font-size: 11px; color: #666;">
-                                <span x-show="cat.show_in_form_design" style="margin-right: 8px;">表單設計</span>
-                                <span x-show="cat.show_in_workflow_design" style="margin-right: 8px;">流程設計</span>
-                                <span x-show="cat.show_in_form_center">表單中心</span>
-                            </td>
+            <template x-for="cat in categories" :key="cat.secure_code">
+                <tbody>
+                    <!-- 父分類列 -->
+                    <tr class="parent-row">
+                        <td style="text-align: center; color: #999;" x-text="cat.display_order"></td>
+                        <td>
+                            <button class="expand-btn" @click="toggleExpand(cat.secure_code)"
+                                    x-text="expanded[cat.secure_code] ? '▼' : '▶'"></button>
+                            <span x-text="cat.name"></span>
+                            <span class="child-count" x-text="'(' + (cat.children || []).length + ')'"></span>
+                        </td>
+                        <td style="color: #666;" x-text="cat.description || '-'"></td>
+                        <td>
+                            <span class="fw-badge" :class="cat.is_system ? 'system' : 'custom'"
+                                  x-text="cat.is_system ? '系統' : '自訂'"></span>
+                        </td>
+                        <td style="font-size: 11px; color: #666;">
+                            <span x-show="cat.show_in_form_design" style="margin-right: 8px;">表單設計</span>
+                            <span x-show="cat.show_in_workflow_design" style="margin-right: 8px;">流程設計</span>
+                            <span x-show="cat.show_in_form_center">表單中心</span>
+                        </td>
+                        <td class="actions">
+                            <button class="fw-btn sm" @click="openCreateModal(cat.secure_code)">+ 子分類</button>
+                            <button class="fw-btn sm" @click="editCategory(cat)" :disabled="cat.is_system">編輯</button>
+                            <button class="fw-btn sm danger" @click="confirmDelete(cat)" :disabled="cat.is_system">刪除</button>
+                        </td>
+                    </tr>
+                    <!-- 子分類列 -->
+                    <template x-for="child in (cat.children || [])" :key="child.secure_code">
+                        <tr class="child-row" x-show="expanded[cat.secure_code]">
+                            <td style="text-align: center; color: #bbb;" x-text="child.display_order"></td>
+                            <td style="padding-left: 36px;" x-text="child.name"></td>
+                            <td style="color: #666;" x-text="child.description || '-'"></td>
+                            <td><span class="fw-badge child">子分類</span></td>
+                            <td style="font-size: 11px; color: #999;">繼承父分類</td>
                             <td class="actions">
-                                <button class="fw-btn sm" @click="openCreateModal(cat.secure_code)">+ 子分類</button>
-                                <button class="fw-btn sm" @click="editCategory(cat)" :disabled="cat.is_system">編輯</button>
-                                <button class="fw-btn sm danger" @click="confirmDelete(cat)" :disabled="cat.is_system">刪除</button>
+                                <button class="fw-btn sm" @click="editCategory(child)">編輯</button>
+                                <button class="fw-btn sm danger" @click="confirmDelete(child)">刪除</button>
                             </td>
                         </tr>
-                        <!-- 子分類列 -->
-                        <template x-for="child in (cat.children || [])" :key="child.secure_code">
-                            <tr class="child-row" x-show="expanded[cat.secure_code]">
-                                <td style="text-align: center; color: #bbb;" x-text="child.display_order"></td>
-                                <td style="padding-left: 36px;" x-text="child.name"></td>
-                                <td style="color: #666;" x-text="child.description || '-'"></td>
-                                <td><span class="fw-badge child">子分類</span></td>
-                                <td style="font-size: 11px; color: #999;">繼承父分類</td>
-                                <td class="actions">
-                                    <button class="fw-btn sm" @click="editCategory(child)">編輯</button>
-                                    <button class="fw-btn sm danger" @click="confirmDelete(child)">刪除</button>
-                                </td>
-                            </tr>
-                        </template>
                     </template>
-                </template>
-            </tbody>
+                </tbody>
+            </template>
         </table>
     </div>
 
