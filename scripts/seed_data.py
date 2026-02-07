@@ -1057,8 +1057,8 @@ def main():
         print(f"  企業選單: {len(menus)} 個")
         print()
         print("登入資訊:")
-        print(f"  URL: http://localhost:5007/auth/login")
-        print(f"  帳號: admin@beakmask.local")
+        print(f"  URL: http://localhost:7000/auth/login")
+        print(f"  帳號: admin@system.local")
         print(f"  密碼: admin123")
 
 

@@ -182,7 +182,7 @@ modules/<module_name>/static/modules/<module_name>/
 cd /opt/BeakPlatform
 source venv/bin/activate  # 如果有 venv
 set -a && source .env && set +a
-cd backend && flask run --host=0.0.0.0 --port=5009
+cd backend && flask run --host=0.0.0.0 --port=7000
 ```
 
 ### 檔案輸出

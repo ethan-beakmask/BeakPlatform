@@ -5,7 +5,7 @@
 
 ## 背景
 
-BeakMask 定位為**跨系統整合中介平台**，用表單流程串接企業的行政和資安。
+BeakPlatform 定位為**跨系統整合中介平台**，用表單流程串接企業的行政和資安。
 
 「時間」是「人事時地物」五大元素中唯一形而上的抽象，需要設計統一的管理方式。
 
@@ -87,7 +87,7 @@ TimeContext
 ```
 Log 來源 → Kafka（緩衝 3 天）→ TimescaleDB
                               ↓
-                         BeakMask（關聯分析 + 流程觸發）
+                         BeakPlatform（關聯分析 + 流程觸發）
 ```
 
 ### Kafka 角色
@@ -95,13 +95,13 @@ Log 來源 → Kafka（緩衝 3 天）→ TimescaleDB
 - Kafka 是串流訂閱，不是查詢
 - 需要 **Kafka Consumer** 持續拉資料寫入 TimescaleDB
 - 建議用 **Kafka Connect + JDBC Sink**（設定檔驅動，不用寫程式）
-- BeakMask 只需要讀 TimescaleDB，不直接對接 Kafka
+- BeakPlatform 只需要讀 TimescaleDB，不直接對接 Kafka
 
 ### 資料訂閱策略
 
 - 不需要全量 log，只訂閱需要的 Kafka Topic
 - 過濾在 Kafka 端做（ksqlDB 或預處理）
-- BeakMask 只收精煉過的事件
+- BeakPlatform 只收精煉過的事件
 
 ### 儲存策略
 
@@ -117,9 +117,9 @@ Log 來源 → Kafka（緩衝 3 天）→ TimescaleDB
 
 ```
 PostgreSQL 實例
-├── beakmask_dev（主庫）
+├── beakplatform_dev（主庫）
 │   └── users, work_schedules, cases...
-└── beakmask_ts（TimescaleDB 庫）
+└── beakplatform_ts（TimescaleDB 庫）
     └── time_events (hypertable)
 ```
 
@@ -158,7 +158,7 @@ PostgreSQL 實例
 公司前端 log 申請麻煩，可用以下方式取得測試資料：
 
 1. **Python 產生假資料** - 用 Faker 產生模擬 log
-2. **從 SQL 讀** - 讀現有 BeakMask 資料送到 Kafka
+2. **從 SQL 讀** - 讀現有 BeakPlatform 資料送到 Kafka
 3. **從 ELK 讀** - Elasticsearch API 查詢後轉送
 4. **從檔案讀** - 讀 log 檔送進去
 

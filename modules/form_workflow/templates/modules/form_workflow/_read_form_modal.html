@@ -1,0 +1,73 @@
+{# 閱讀表單 Modal (partial) #}
+
+<!-- 閱讀表單 Modal -->
+<div x-show="showReadFormModal" x-cloak class="fc-modal">
+    <div class="fc-modal-content" :style="'width: ' + (readFormData?.builder_config?.formWidth ? Math.max(readFormData.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+        <div class="fc-modal-header">
+            <div>
+                <h3 x-text="'閱讀表單 - ' + (readFormData?.form_name || '')"></h3>
+                <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="readFormData?.serial_number ? getShortSerial(readFormData.serial_number) : ''"></p>
+            </div>
+            <button class="fc-close-btn" @click="closeReadForm()">&times;</button>
+        </div>
+        <div class="fc-modal-body">
+            <div x-show="loadingReadForm" class="fc-loading">載入表單中...</div>
+            <div x-show="!loadingReadForm && readFormData">
+                <!-- 申請人資訊 -->
+                <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+                    <span>申請人：<strong x-text="readFormData?.applicant_name || '-'"></strong></span>
+                    <span x-show="readFormData?.applicant_dept" style="margin-left: 16px;">部門：<strong x-text="readFormData?.applicant_dept || '-'"></strong></span>
+                    <span style="margin-left: 16px;">狀態：<span class="fc-badge" :class="getStatusClass(readFormData?.status)" x-text="getStatusText(readFormData?.status)"></span></span>
+                </div>
+
+                <!-- 表單內容（唯讀） -->
+                <div style="margin-bottom: 16px;">
+                    <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;">
+                        <div id="read-form-container" class="fc-form-readonly"></div>
+                    </div>
+                </div>
+
+                <!-- 簽核歷程 -->
+                <div x-show="readFormData?.approvals?.length > 0" style="margin-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                        <span style="font-size: 13px; font-weight: 600;">簽核歷程</span>
+                        <button @click="approvalSortAsc = !approvalSortAsc"
+                                style="padding: 2px 8px; font-size: 11px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                            <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                        </button>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">簽核者</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">動作</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                    簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                </th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">意見</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(approval, idx) in sortedApprovals(readFormData?.approvals)" :key="idx">
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                    <td style="padding: 6px 8px; white-space: nowrap;">
+                                        <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                    </td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                    <td style="padding: 6px 8px; color: #374151; white-space: pre-wrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                        x-text="approval.comment || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeReadForm()">關閉</button>
+        </div>
+    </div>
+</div>

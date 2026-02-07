@@ -1,0 +1,468 @@
+{# 執行詳情 - 監控 JS methods (partial, 注入到 formCenterManager return 物件內) #}
+
+        // =============================================================
+        // 執行監控
+        // =============================================================
+
+        async viewExecutionDetail(item) {
+            console.log('檢視執行:', item);
+            this.monitoringExecution = item;
+
+            // 重置監控狀態
+            this.monitorStatus = {
+                flowStatus: item.workflow_status || item.status || '-',
+                activeCount: 0,
+                completedCount: 0,
+                failedCount: 0,
+                waitingCount: 0,
+                executionHistory: []
+            };
+
+            this.workflowTabs = [];
+            this.activeWorkflowTab = null;
+            this.workflowGraphCache = {};
+            this.monitorPage = 'overview';
+            this.monitorData = null;
+            this.logSearchQuery = '';
+            this.formDetail = null;
+            this.loadingFormDetail = false;
+            this.showMonitorModal = true;
+
+            await this.$nextTick();
+
+            try {
+                // 同時載入 path（含 workflow_tabs）和 logs
+                const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
+                const [pathLoaded, logsLoaded] = await Promise.all([
+                    this.loadExecutionSnapshot(item),
+                    this.loadExecutionLogs(instanceId)
+                ]);
+
+                // 從快取取得主流程的圖並初始化 Cytoscape
+                const mainTab = this.workflowTabs.find(t => t.is_main);
+                if (mainTab && this.workflowGraphCache[mainTab.instance_id]) {
+                    this.initializeCytoscape(this.workflowGraphCache[mainTab.instance_id]);
+                } else if (this.workflowTabs.length > 0) {
+                    // 如果沒有標記為主流程，使用第一個
+                    const firstTab = this.workflowTabs[0];
+                    if (this.workflowGraphCache[firstTab.instance_id]) {
+                        this.initializeCytoscape(this.workflowGraphCache[firstTab.instance_id]);
+                    }
+                } else {
+                    console.warn('無法從追蹤資料取得流程圖');
+                }
+
+                // 啟動自動刷新
+                if (this.autoRefresh) {
+                    this.startAutoRefresh();
+                }
+            } catch (error) {
+                console.error('載入流程追蹤錯誤:', error);
+                this.showToast('載入流程圖失敗', 'error');
+            }
+        },
+
+        async loadExecutionLogs(instanceId) {
+            console.log('[LOGS] loadExecutionLogs 呼叫, instanceId:', instanceId);
+            try {
+                const url = `/api/form-center/executions/${instanceId}/logs`;
+                console.log('[LOGS] 請求 URL:', url);
+                const response = await fetch(url);
+                console.log('[LOGS] 回應狀態:', response.status);
+                const result = await response.json();
+                console.log('[LOGS] 回應內容:', result);
+
+                if (result.success) {
+                    this.monitorData = result.data;
+                    console.log('[LOGS] logs 數量:', result.data?.logs?.length || 0);
+                    console.log('[LOGS] variables:', result.data?.variables);
+                } else {
+                    console.error('[LOGS] 載入失敗:', result.error);
+                }
+            } catch (error) {
+                console.error('[LOGS] 載入錯誤:', error);
+            }
+        },
+
+        async loadExecutionSnapshot(item) {
+            try {
+                // 使用 execution_code 或 workflow_instance_secure_code
+                const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
+                const response = await fetch(`/api/form-center/executions/${instanceId}/path`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+
+                    // 更新監控狀態
+                    this.monitorStatus.flowStatus = data.instance_status || item.status;
+                    this.monitorStatus.activeCount = (data.active_nodes || []).length;
+                    this.monitorStatus.completedCount = (data.completed_nodes || []).length;
+                    this.monitorStatus.failedCount = (data.failed_nodes || []).length;
+                    this.monitorStatus.waitingCount = (data.waiting_nodes || []).length;
+                    this.monitorStatus.executionHistory = data.execution_history || [];
+
+                    // 更新 workflow_tabs（主流程 + 子流程）
+                    if (data.workflow_tabs && data.workflow_tabs.length > 0) {
+                        this.workflowTabs = data.workflow_tabs;
+                        // 快取每個流程的圖資料
+                        data.workflow_tabs.forEach(tab => {
+                            this.workflowGraphCache[tab.instance_id] = tab.graph;
+                        });
+                        // 如果尚未選擇 Tab，預設選擇主流程
+                        if (!this.activeWorkflowTab) {
+                            const mainTab = data.workflow_tabs.find(t => t.is_main);
+                            if (mainTab) {
+                                this.activeWorkflowTab = mainTab.instance_id;
+                            } else if (data.workflow_tabs.length > 0) {
+                                this.activeWorkflowTab = data.workflow_tabs[0].instance_id;
+                            }
+                        }
+                    }
+
+                    // 更新當前選中流程的節點樣式
+                    this.updateCurrentTabNodeStyles(data);
+
+                    console.log('執行快照已載入:', data);
+                } else {
+                    console.error('載入執行快照失敗:', result.error);
+                }
+            } catch (error) {
+                console.error('載入執行快照錯誤:', error);
+            }
+        },
+
+        updateCurrentTabNodeStyles(data) {
+            if (!this.cyInstance) return;
+
+            this.cyInstance.nodes().removeClass('node-running node-completed node-failed node-waiting');
+
+            // 找出當前 Tab 對應的節點執行記錄
+            const currentHistory = (data.execution_history || []).filter(
+                h => h.workflow_instance_id === this.activeWorkflowTab
+            );
+
+            currentHistory.forEach(h => {
+                const node = this.cyInstance.getElementById(h.node_id);
+                if (node.length > 0) {
+                    if (h.status === 'RUNNING') {
+                        node.addClass('node-running');
+                    } else if (h.status === 'SUCCESS') {
+                        node.addClass('node-completed');
+                    } else if (['FAILED', 'ERROR', 'TIMEOUT'].includes(h.status)) {
+                        node.addClass('node-failed');
+                    } else if (['WAITING', 'PENDING', 'INITIAL'].includes(h.status)) {
+                        node.addClass('node-waiting');
+                    }
+                }
+            });
+        },
+
+        async switchWorkflowTab(wf) {
+            if (this.activeWorkflowTab === wf.instance_id) return;
+
+            this.activeWorkflowTab = wf.instance_id;
+            console.log('切換到流程:', wf.name);
+
+            // 從快取載入流程圖
+            const graphData = this.workflowGraphCache[wf.instance_id];
+            if (graphData) {
+                this.initializeCytoscape(graphData);
+                // 重新載入快照以更新節點狀態
+                if (this.monitoringExecution) {
+                    await this.loadExecutionSnapshot(this.monitoringExecution);
+                }
+            } else {
+                console.warn('找不到流程圖資料:', wf.name);
+            }
+        },
+
+        initializeCytoscape(graphData) {
+            if (!graphData) {
+                console.error('無流程圖資料');
+                return;
+            }
+
+            // 銷毀舊實例
+            if (this.cyInstance) {
+                this.cyInstance.destroy();
+            }
+
+            // 轉換 graph 資料為 Cytoscape 格式
+            const elements = [];
+
+            // 添加節點
+            if (graphData.nodes) {
+                graphData.nodes.forEach(node => {
+                    elements.push({
+                        data: {
+                            id: node.id || node.data?.id,
+                            label: node.data?.label || node.label || node.id,
+                            type: node.data?.type || node.type
+                        },
+                        position: node.position || { x: 0, y: 0 }
+                    });
+                });
+            }
+
+            // 添加連線
+            if (graphData.edges) {
+                graphData.edges.forEach(edge => {
+                    elements.push({
+                        data: {
+                            id: edge.id,
+                            source: edge.source,
+                            target: edge.target,
+                            label: edge.label || edge.data?.label || ''
+                        }
+                    });
+                });
+            }
+
+            // 建立 Cytoscape 實例
+            this.cyInstance = cytoscape({
+                container: document.getElementById('cy-monitor'),
+                elements: elements,
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#E0E0E0',
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '11px',
+                            'width': 80,
+                            'height': 36,
+                            'border-width': 2,
+                            'border-color': '#999',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '70px'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#999',
+                            'target-arrow-color': '#999',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '9px',
+                            'text-rotation': 'autorotate'
+                        }
+                    },
+                    // 執行中節點
+                    {
+                        selector: '.node-running',
+                        style: {
+                            'background-color': '#FFC107',
+                            'border-color': '#FF9800',
+                            'border-width': 3
+                        }
+                    },
+                    // 已完成節點
+                    {
+                        selector: '.node-completed',
+                        style: {
+                            'background-color': '#4CAF50',
+                            'border-color': '#388E3C',
+                            'border-width': 2
+                        }
+                    },
+                    // 失敗節點
+                    {
+                        selector: '.node-failed',
+                        style: {
+                            'background-color': '#F44336',
+                            'border-color': '#D32F2F',
+                            'border-width': 3
+                        }
+                    },
+                    // 等待節點
+                    {
+                        selector: '.node-waiting',
+                        style: {
+                            'background-color': '#E3F2FD',
+                            'border-color': '#2196F3',
+                            'border-width': 3,
+                            'border-style': 'dashed'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'preset'
+                },
+                userZoomingEnabled: true,
+                userPanningEnabled: true,
+                boxSelectionEnabled: false
+            });
+
+            // 調整視圖以顯示所有節點
+            this.cyInstance.fit(null, 50);
+
+            console.log('Cytoscape 已初始化，節點數:', elements.filter(e => !e.data.source).length);
+        },
+
+        closeMonitorModal() {
+            this.stopAutoRefresh();
+
+            if (this.cyInstance) {
+                this.cyInstance.destroy();
+                this.cyInstance = null;
+            }
+
+            // 重置狀態
+            this.monitorStatus = {
+                flowStatus: '-',
+                activeCount: 0,
+                completedCount: 0,
+                failedCount: 0,
+                waitingCount: 0,
+                executionHistory: []
+            };
+
+            this.workflowTabs = [];
+            this.activeWorkflowTab = null;
+            this.workflowGraphCache = {};
+            this.monitorPage = 'overview';
+            this.monitorData = null;
+            this.logSearchQuery = '';
+            this.formDetail = null;
+            this.showMonitorModal = false;
+            this.monitoringExecution = null;
+
+            // 清理表單檢視器
+            if (this.formDetailViewer) {
+                this.formDetailViewer.destroy();
+                this.formDetailViewer = null;
+            }
+            this.cleanupFormBackground('formDetailViewer');
+        },
+
+        // 切換到表單內容頁籤
+        async switchToFormContent() {
+            this.monitorPage = 'formContent';
+            if (!this.formDetail) {
+                await this.loadFormDetail();
+            } else {
+                // 已載入，重新渲染表單
+                this.$nextTick(() => this.renderFormViewer());
+            }
+        },
+
+        // 切換到簽核歷史頁籤
+        async switchToApprovalHistory() {
+            this.monitorPage = 'approvals';
+            if (!this.formDetail) {
+                await this.loadFormDetail();
+            }
+        },
+
+        // 載入表單詳情
+        async loadFormDetail() {
+            if (!this.monitoringExecution) return;
+
+            this.loadingFormDetail = true;
+            try {
+                const secureCode = this.monitoringExecution.secure_code;
+                const response = await fetch(`/api/form-center/form-detail/${secureCode}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    this.formDetail = result.data;
+                    console.log('表單詳情載入完成:', this.formDetail);
+
+                    // 如果在表單內容頁，渲染表單
+                    if (this.monitorPage === 'formContent') {
+                        this.$nextTick(() => this.renderFormViewer());
+                    }
+                } else {
+                    console.error('載入表單詳情失敗:', result.error);
+                    this.showToast('載入表單詳情失敗', 'error');
+                }
+            } catch (error) {
+                console.error('載入表單詳情錯誤:', error);
+                this.showToast('載入表單詳情錯誤', 'error');
+            } finally {
+                this.loadingFormDetail = false;
+            }
+        },
+
+        // 渲染表單檢視器（只讀）
+        renderFormViewer() {
+            if (!this.formDetail?.schema) {
+                console.warn('沒有表單 schema');
+                return;
+            }
+
+            const container = document.getElementById('formDetailViewer');
+            if (!container) {
+                console.warn('找不到表單容器');
+                return;
+            }
+
+            // 清理舊的實例
+            if (this.formDetailViewer) {
+                this.formDetailViewer.destroy();
+            }
+
+            // 建立只讀表單
+            Formio.createForm(container, this.formDetail.schema, {
+                readOnly: true,
+                viewAsHtml: false
+            }).then(form => {
+                this.formDetailViewer = form;
+
+                // 填入資料
+                if (this.formDetail.form_data) {
+                    form.submission = { data: this.formDetail.form_data };
+                }
+
+                // 套用底圖和寬度
+                this.applyFormBackground('formDetailViewer', this.formDetail.builder_config);
+
+                console.log('表單檢視器已渲染');
+            }).catch(error => {
+                console.error('渲染表單失敗:', error);
+            });
+        },
+
+        toggleAutoRefresh() {
+            if (this.autoRefresh) {
+                this.startAutoRefresh();
+            } else {
+                this.stopAutoRefresh();
+            }
+        },
+
+        startAutoRefresh() {
+            this.stopAutoRefresh();
+            if (this.autoRefresh && this.monitoringExecution) {
+                this.autoRefreshTimer = setInterval(() => {
+                    this.refreshMonitor();
+                }, 5000);
+                console.log('自動刷新已啟動（每5秒）');
+            }
+        },
+
+        stopAutoRefresh() {
+            if (this.autoRefreshTimer) {
+                clearInterval(this.autoRefreshTimer);
+                this.autoRefreshTimer = null;
+                console.log('自動刷新已停止');
+            }
+        },
+
+        async refreshMonitor() {
+            if (!this.monitoringExecution) return;
+            await this.loadExecutionSnapshot(this.monitoringExecution);
+        },
+
+        formatHistoryTime(dateStr) {
+            if (!dateStr) return '-';
+            const d = this._parseUTC(dateStr);
+            const tz = window.__USER_TIMEZONE || 'Asia/Taipei';
+            return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz });
+        },

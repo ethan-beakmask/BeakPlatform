@@ -15,7 +15,7 @@
 | systemd 服務 | beakplatform.service (enabled) |
 | 訪問地址 | http://192.168.0.16:7000 |
 
-BeakMask 已停止（port 5007, beakmask_dev）
+BeakMask 已停止（舊專案，port 5007, beakmask_dev，不再使用）
 
 ---
 

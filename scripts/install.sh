@@ -23,7 +23,7 @@ INSTALL_DIR="/opt/BeakPlatform"
 DB_NAME="beakplatform_dev"
 DB_USER="beakplatform"
 DB_PASS="postgres123"
-FLASK_PORT=5009
+FLASK_PORT=7000
 SKIP_DB=false
 SKIP_NGINX=false
 DEV_MODE=true
@@ -157,7 +157,7 @@ set -a && source ../.env && set +a
 
 # 清除舊的 session 目錄（避免權限問題）
 echo "清除 session 目錄..."
-rm -rf /tmp/beakmask_sessions 2>/dev/null || true
+rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
 # 使用 Python 建立資料表（跳過模組同步，因為 system.local 還沒建立）
 echo "建立平台資料表..."

@@ -1,4 +1,4 @@
-# BeakMask Backend Dependencies
+# BeakPlatform Backend Dependencies
 
 # Web Framework
 Flask==3.0.0

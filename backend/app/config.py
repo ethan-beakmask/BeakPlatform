@@ -77,7 +77,7 @@ class DevelopmentConfig(BaseConfig):
 
     # Use filesystem session in development (no Redis required)
     SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/beakmask_sessions'
+    SESSION_FILE_DIR = '/tmp/beakplatform_sessions'
 
 
 class ProductionConfig(BaseConfig):

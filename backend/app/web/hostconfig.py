@@ -91,7 +91,7 @@ def restart_flask():
     try:
         # 使用 nohup 讓腳本在背景執行，避免被中斷
         subprocess.Popen(
-            ['nohup', '/opt/BeakMask/restart_flask.sh'],
+            ['nohup', '/opt/BeakPlatform/restart_flask.sh'],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True

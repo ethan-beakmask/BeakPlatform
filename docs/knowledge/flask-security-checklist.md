@@ -63,7 +63,7 @@ Blueprint('organizations', __name__)
 ```python
 class DevelopmentConfig:
     SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/beakmask_sessions'
+    SESSION_FILE_DIR = '/tmp/beakplatform_sessions'
     SESSION_COOKIE_SECURE = False  # 開發環境不強制 HTTPS
 ```
 

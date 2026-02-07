@@ -1,4 +1,4 @@
-# BeakMask RBAC/ABAC 需求問卷
+# BeakPlatform RBAC/ABAC 需求問卷
 
 請填寫以下問卷，協助設計權限系統。
 

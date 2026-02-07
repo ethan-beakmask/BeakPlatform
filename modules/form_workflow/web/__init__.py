@@ -142,20 +142,6 @@ def center():
     )
 
 
-@web_bp.route('/center/list')
-@security_login_required
-def center_list():
-    """表單中心 - 獨立清單頁面"""
-    user_tz = getattr(current_user, 'timezone', None)
-    if not user_tz and hasattr(current_user, 'organization') and current_user.organization:
-        user_tz = current_user.organization.get_setting('timezone', 'Asia/Taipei')
-    user_tz = user_tz or 'Asia/Taipei'
-
-    return render_template(
-        'modules/form_workflow/form_center_list.html',
-        user_timezone=user_tz
-    )
-
 
 # =============================================================================
 # 待簽核任務

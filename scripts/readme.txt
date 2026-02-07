@@ -1,4 +1,4 @@
-BeakMask Scripts 工具說明
+BeakPlatform Scripts 工具說明
 ==========================
 
 1. analyze_project.py - 專案分析工具
@@ -12,7 +12,7 @@ BeakMask Scripts 工具說明
    依賴：pip install openpyxl psycopg2-binary
 
 2. spec_check.py - 規格檢查工具
-   用途：檢查程式碼是否符合 BeakMask 安全規範
+   用途：檢查程式碼是否符合 BeakPlatform 安全規範
    用法：python scripts/spec_check.py .
    檢查項目：
      - AUTH-01: 全域認證攔截
@@ -32,4 +32,4 @@ BeakMask Scripts 工具說明
    用法：python scripts/seed_data.py
    注意：僅用於開發環境
 
-最後更新：2025-12-22
+最後更新：2026-02-08

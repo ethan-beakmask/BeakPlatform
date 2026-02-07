@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BeakMask 專案分析工具
+BeakPlatform 專案分析工具
 整合多種分析功能：路由分析、目錄結構、資料庫匯出、未使用檔案分析
 
 用法：
@@ -72,7 +72,7 @@ class ExcelStyles:
 class RouteAnalyzer:
     """Flask 路由分析器"""
 
-    # BeakMask 安全裝飾器
+    # BeakPlatform 安全裝飾器
     SECURITY_DECORATORS = {
         'public_route': '公開路由',
         'login_required': '需要登入',
@@ -360,7 +360,7 @@ class DirectoryAnalyzer:
 
     IGNORE_FILES = {'.DS_Store', 'Thumbs.db', '.gitkeep', '*.pyc'}
 
-    # BeakMask 專案目錄用途
+    # BeakPlatform 專案目錄用途
     BEAKMASK_PURPOSES = {
         'backend/app/security': '安全核心模組 (認證/授權/RBAC)',
         'backend/app/api': 'API 路由 (Blueprint)',
@@ -432,7 +432,7 @@ class DirectoryAnalyzer:
 
     def _guess_purpose(self, relative_path: str, files: List[str]) -> str:
         """猜測目錄用途"""
-        # 先檢查 BeakMask 專用目錄
+        # 先檢查 BeakPlatform 專用目錄
         for path, purpose in self.BEAKMASK_PURPOSES.items():
             if relative_path == path or relative_path.startswith(path + '/'):
                 return purpose
@@ -541,8 +541,8 @@ class DatabaseAnalyzer:
         config = {
             'host': 'localhost',
             'port': '5432',
-            'database': 'beakmask_dev',
-            'user': 'beakmask',
+            'database': 'beakplatform_dev',
+            'user': 'beakplatform',
             'password': 'postgres123',
         }
 
@@ -825,7 +825,7 @@ def run_routes_analysis(root_path: Path, output_dir: Path):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     if HAS_OPENPYXL:
-        excel_file = output_dir / f'BeakMask_路由分析_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_路由分析_{timestamp}.xlsx'
         analyzer.export_to_excel(str(excel_file))
 
     # 統計
@@ -849,7 +849,7 @@ def run_structure_analysis(root_path: Path, output_dir: Path):
 
     if HAS_OPENPYXL:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        excel_file = output_dir / f'BeakMask_目錄結構_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_目錄結構_{timestamp}.xlsx'
         analyzer.export_to_excel(str(excel_file))
 
 
@@ -864,7 +864,7 @@ def run_database_analysis(root_path: Path, output_dir: Path):
 
     if HAS_OPENPYXL and analyzer.tables_info:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        excel_file = output_dir / f'BeakMask_資料庫結構_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_資料庫結構_{timestamp}.xlsx'
         analyzer.export_to_excel(str(excel_file))
 
 
@@ -960,7 +960,7 @@ def run_unused_analysis(root_path: Path, output_dir: Path):
     # Issue #11: 匯出到 Excel
     if HAS_OPENPYXL:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        excel_file = output_dir / f'BeakMask_未使用分析_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_未使用分析_{timestamp}.xlsx'
         export_unused_to_excel(
             excel_file,
             unused_routes,
@@ -982,7 +982,7 @@ def export_unused_to_excel(output_file: Path, unused_routes: list, unmatched_cal
     ws = wb.active
     ws.title = "摘要"
 
-    ws['A1'] = "BeakMask 未使用分析報告"
+    ws['A1'] = "BeakPlatform 未使用分析報告"
     ws['A1'].font = Font(bold=True, size=16)
     ws['A3'] = f"分析時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
@@ -1127,7 +1127,7 @@ def run_duplicates_analysis(root_path: Path, output_dir: Path):
     # 匯出到 Excel
     if HAS_OPENPYXL:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        excel_file = output_dir / f'BeakMask_重複路由_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_重複路由_{timestamp}.xlsx'
         export_duplicates_to_excel(excel_file, multi_method_routes, true_duplicates)
 
 
@@ -1305,7 +1305,7 @@ def run_deadcode_analysis(root_path: Path, output_dir: Path):
     # 匯出到 Excel
     if HAS_OPENPYXL and orphan_modules:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        excel_file = output_dir / f'BeakMask_死代碼_{timestamp}.xlsx'
+        excel_file = output_dir / f'BeakPlatform_死代碼_{timestamp}.xlsx'
         export_deadcode_to_excel(excel_file, orphan_modules, all_modules, imported_modules)
 
 
@@ -1319,7 +1319,7 @@ def export_deadcode_to_excel(output_file: Path, orphan_modules: list, all_module
     ws = wb.active
     ws.title = "摘要"
 
-    ws['A1'] = "BeakMask 死代碼分析報告"
+    ws['A1'] = "BeakPlatform 死代碼分析報告"
     ws['A1'].font = Font(bold=True, size=16)
     ws['A3'] = f"分析時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 
@@ -1367,7 +1367,7 @@ def export_deadcode_to_excel(output_file: Path, orphan_modules: list, all_module
 def main():
     """主程式"""
     parser = argparse.ArgumentParser(
-        description='BeakMask 專案分析工具',
+        description='BeakPlatform 專案分析工具',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 範例:
@@ -1400,7 +1400,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 60)
-    print("  BeakMask 專案分析工具")
+    print("  BeakPlatform 專案分析工具")
     print("=" * 60)
     print(f"專案路徑: {root_path}")
     print(f"輸出目錄: {output_dir}")

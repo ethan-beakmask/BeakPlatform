@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BeakMask Specification Checker
+BeakPlatform Specification Checker
 規格檢查工具 - 確保程式碼符合設計規格
 
 檢查項目：
@@ -317,7 +317,7 @@ def check_file_structure(project_root: Path) -> List[CheckResult]:
         'backend/app/security/auth_interceptor.py',
         'backend/app/security/tenant_isolation.py',
         'backend/app/security/resource_gateway.py',
-        '.semgrep/beakmask-security.yaml',
+        '.semgrep/beakplatform-security.yaml',
     ]
 
     for dir_path in required_dirs:
@@ -422,7 +422,7 @@ def run_spec_check(project_root: str) -> SpecCheckReport:
 def print_report(report: SpecCheckReport):
     """印出檢查報告"""
     print("\n" + "=" * 60)
-    print("BeakMask Specification Check Report")
+    print("BeakPlatform Specification Check Report")
     print("=" * 60)
 
     if report.errors:

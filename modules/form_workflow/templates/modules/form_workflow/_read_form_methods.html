@@ -1,0 +1,80 @@
+{# 閱讀表單 JS methods (partial, 注入到 formCenterManager return 物件內) #}
+
+        // =============================================================
+        // 閱讀表單
+        // =============================================================
+
+        async openReadForm(item) {
+            this.readFormData = null;
+            this.showReadFormModal = true;
+            this.loadingReadForm = true;
+
+            try {
+                const secureCode = item.secure_code;
+                const response = await fetch(`/api/form-center/form-detail/${secureCode}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    this.readFormData = result.data;
+                    await this.$nextTick();
+                    this.renderReadForm();
+                } else {
+                    this.showToast(result.error || '載入失敗', 'error');
+                    this.closeReadForm();
+                }
+            } catch (e) {
+                console.error('載入閱讀表單失敗:', e);
+                this.showToast('載入失敗', 'error');
+                this.closeReadForm();
+            } finally {
+                this.loadingReadForm = false;
+            }
+        },
+
+        async renderReadForm() {
+            const container = document.getElementById('read-form-container');
+            if (!container || !this.readFormData) return;
+
+            const schema = this.readFormData.schema;
+            const formData = this.readFormData.form_data;
+
+            if (!schema) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
+                return;
+            }
+
+            try {
+                if (this.readFormInstance) {
+                    this.readFormInstance.destroy();
+                    this.readFormInstance = null;
+                }
+
+                this.readFormInstance = await Formio.createForm(container, schema, {
+                    readOnly: true,
+                    renderMode: 'html'
+                });
+
+                if (formData) {
+                    this.readFormInstance.submission = { data: formData };
+                }
+
+                // 套用底圖和寬度
+                this.applyFormBackground('read-form-container', this.readFormData.builder_config);
+            } catch (e) {
+                console.error('閱讀表單渲染失敗:', e);
+                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
+            }
+        },
+
+        closeReadForm() {
+            if (this.readFormInstance) {
+                this.readFormInstance.destroy();
+                this.readFormInstance = null;
+            }
+            this.cleanupFormBackground('read-form-container');
+            const container = document.getElementById('read-form-container');
+            if (container) container.innerHTML = '';
+
+            this.showReadFormModal = false;
+            this.readFormData = null;
+        },

@@ -37,7 +37,7 @@ echo "4. 授權..."
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 
 echo "5. 清除 session 目錄..."
-rm -rf /tmp/beakmask_sessions 2>/dev/null || true
+rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
 echo "6. 執行 Flask 資料庫遷移..."
 cd /opt/BeakPlatform/backend

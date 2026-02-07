@@ -104,10 +104,10 @@ flask seed init
 
 ```bash
 # 開發模式
-flask run --host=0.0.0.0 --port=5009
+flask run --host=0.0.0.0 --port=7000
 
 # 或使用 Gunicorn（生產模式）
-gunicorn -w 4 -b 0.0.0.0:5009 "app:create_app()"
+gunicorn -w 4 -b 0.0.0.0:7000 "app:create_app()"
 ```
 
 ---
@@ -143,7 +143,7 @@ flask module sync
 
 ```bash
 # 檢查 Flask 是否正常
-curl http://localhost:5009/api/form-workflow/info
+curl http://localhost:7000/api/form-workflow/info
 
 # 預期回應：
 # {"success": true, "data": {"name": "form_workflow", ...}}
@@ -166,10 +166,10 @@ psql -h localhost -U beakplatform -d beakplatform_dev -c "\dt fw_*"
 
 ### 登入測試
 
-1. 開啟瀏覽器訪問 `http://YOUR_IP:5009/dev/quick-login`
+1. 開啟瀏覽器訪問 `http://YOUR_IP:7000/dev/quick-login`
 2. 選擇企業和用戶
 3. 點擊登入
-4. 訪問 `http://YOUR_IP:5009/forms/` 確認模組頁面正常
+4. 訪問 `http://YOUR_IP:7000/forms/` 確認模組頁面正常
 
 ---
 
@@ -220,7 +220,7 @@ server {
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://127.0.0.1:5009;
+        proxy_pass http://127.0.0.1:7000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -255,7 +255,7 @@ Group=www-data
 WorkingDirectory=/opt/BeakPlatform/backend
 Environment="PATH=/opt/BeakPlatform/venv/bin"
 EnvironmentFile=/opt/BeakPlatform/.env
-ExecStart=/opt/BeakPlatform/venv/bin/gunicorn -w 4 -b 127.0.0.1:5009 "app:create_app()"
+ExecStart=/opt/BeakPlatform/venv/bin/gunicorn -w 4 -b 127.0.0.1:7000 "app:create_app()"
 Restart=always
 
 [Install]
