@@ -1,5 +1,5 @@
 """
-BeakPlatform System Accounts Management
+BeakMask System Accounts Management
 系統級帳號管理（僅限系統管理員）
 
 功能：

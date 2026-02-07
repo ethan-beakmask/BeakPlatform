@@ -1,5 +1,5 @@
 """
-BeakPlatform Organizations API
+BeakMask Organizations API
 企業/組織管理路由
 """
 import logging

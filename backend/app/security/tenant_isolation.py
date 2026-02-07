@@ -1,5 +1,5 @@
 """
-BeakPlatform Tenant Isolation
+BeakMask Tenant Isolation
 多租戶隔離機制
 
 [標準 TENANT-01] 強制企業隔離

@@ -1,5 +1,5 @@
 """
-BeakPlatform UserUnitMembership Model
+BeakMask UserUnitMembership Model
 用戶-組織單位成員關係 Model
 
 用於記錄：

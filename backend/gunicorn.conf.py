@@ -1,5 +1,5 @@
 """
-BeakPlatform Gunicorn Configuration
+BeakMask Gunicorn Configuration
 生產環境 WSGI 伺服器配置
 """
 import multiprocessing
@@ -36,7 +36,7 @@ loglevel = os.getenv('LOG_LEVEL', 'info')
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
 # Process naming
-proc_name = 'beakplatform'
+proc_name = 'beakmask'
 
 # Server mechanics
 daemon = False

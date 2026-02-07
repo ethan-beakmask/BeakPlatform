@@ -106,8 +106,8 @@ def update_emailrelay_settings():
     Request JSON:
     {
         "enabled": true,
-        "from_email": "system@beakplatform.local",
-        "from_name": "BeakPlatform System"
+        "from_email": "system@beakmask.local",
+        "from_name": "BeakMask System"
     }
     """
     data = request.get_json()

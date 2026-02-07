@@ -1,5 +1,5 @@
 """
-BeakPlatform Modules API
+BeakMask Modules API
 模組管理 API (No-Code Builder)
 """
 from flask import Blueprint, jsonify, request

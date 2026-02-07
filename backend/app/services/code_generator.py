@@ -1,5 +1,5 @@
 """
-BeakPlatform Code Generator Service
+BeakMask Code Generator Service
 自動代碼產生服務
 
 功能：

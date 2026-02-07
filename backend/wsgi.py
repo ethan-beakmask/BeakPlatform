@@ -1,5 +1,5 @@
 """
-BeakPlatform WSGI Entry Point
+BeakMask WSGI Entry Point
 """
 from app import create_app
 

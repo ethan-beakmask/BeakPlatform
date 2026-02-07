@@ -1,5 +1,5 @@
 """
-BeakPlatform Password History Model
+BeakMask Password History Model
 密碼歷史記錄
 """
 from sqlalchemy import Column, String, ForeignKey

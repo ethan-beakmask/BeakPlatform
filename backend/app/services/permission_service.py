@@ -1,5 +1,5 @@
 """
-BeakPlatform Permission Service
+BeakMask Permission Service
 權限檢查服務
 
 [標準 AUTHZ-01] 資源級權限檢查

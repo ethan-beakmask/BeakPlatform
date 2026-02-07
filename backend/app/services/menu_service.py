@@ -1,5 +1,5 @@
 """
-BeakPlatform Menu Service
+BeakMask Menu Service
 選單服務 - 負責建構用戶可見的選單樹
 
 權限設計：

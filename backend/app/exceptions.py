@@ -1,15 +1,15 @@
 """
-BeakPlatform Custom Exceptions
+BeakMask Custom Exceptions
 自定義例外
 """
 
 
-class BeakPlatformError(Exception):
-    """Base exception for BeakPlatform"""
+class BeakMaskError(Exception):
+    """Base exception for BeakMask"""
     pass
 
 
-class ResourceNotFoundError(BeakPlatformError):
+class ResourceNotFoundError(BeakMaskError):
     """Resource not found"""
 
     def __init__(self, resource_type: str, identifier: str):
@@ -18,7 +18,7 @@ class ResourceNotFoundError(BeakPlatformError):
         super().__init__(f"{resource_type} not found: {identifier}")
 
 
-class PermissionDeniedError(BeakPlatformError):
+class PermissionDeniedError(BeakMaskError):
     """Permission denied"""
 
     def __init__(self, message: str = None, action: str = None, resource_type: str = None):
@@ -32,7 +32,7 @@ class PermissionDeniedError(BeakPlatformError):
             super().__init__("Permission denied")
 
 
-class ValidationError(BeakPlatformError):
+class ValidationError(BeakMaskError):
     """Validation error"""
 
     def __init__(self, field: str, message: str):
@@ -41,16 +41,16 @@ class ValidationError(BeakPlatformError):
         super().__init__(f"Validation error on {field}: {message}")
 
 
-class TenantContextError(BeakPlatformError):
+class TenantContextError(BeakMaskError):
     """Tenant context missing or invalid"""
     pass
 
 
-class AuthenticationError(BeakPlatformError):
+class AuthenticationError(BeakMaskError):
     """Authentication failed"""
     pass
 
 
-class RateLimitError(BeakPlatformError):
+class RateLimitError(BeakMaskError):
     """Rate limit exceeded"""
     pass

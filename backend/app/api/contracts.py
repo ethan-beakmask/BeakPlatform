@@ -1,5 +1,5 @@
 """
-BeakPlatform Contract API
+BeakMask Contract API
 合約管理 API
 """
 import logging

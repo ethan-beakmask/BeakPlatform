@@ -1,5 +1,5 @@
 """
-BeakPlatform Job Level Management Web Routes
+BeakMask Job Level Management Web Routes
 職等管理網頁路由
 
 URL 安全設計：

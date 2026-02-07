@@ -1,5 +1,5 @@
 """
-BeakPlatform Page Permission Service
+BeakMask Page Permission Service
 頁面權限服務 - 檢查用戶對頁面的存取權限
 """
 from typing import Optional

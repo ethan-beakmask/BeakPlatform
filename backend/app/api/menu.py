@@ -1,5 +1,5 @@
 """
-BeakPlatform Menu API
+BeakMask Menu API
 選單管理 API
 """
 from flask import Blueprint, jsonify, request

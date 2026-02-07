@@ -1,5 +1,5 @@
 """
-BeakPlatform MenuPermission Model
+BeakMask MenuPermission Model
 選單權限交叉表 - 定義哪種用戶類型可以看到哪些選單
 
 設計理念：

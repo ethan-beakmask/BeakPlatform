@@ -1,5 +1,5 @@
 """
-BeakPlatform Admin Routes
+BeakMask Admin Routes
 企業管理員專區 - 各企業的管理功能
 
 路徑：/admin/*

@@ -1,5 +1,5 @@
 """
-BeakPlatform Resource Gateway
+BeakMask Resource Gateway
 統一資源存取閘道
 
 [標準 TENANT-02] 資源閘道

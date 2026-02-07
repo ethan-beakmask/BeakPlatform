@@ -1,5 +1,5 @@
 """
-BeakPlatform Base Model
+BeakMask Base Model
 所有 Model 的基類，包含共用欄位和方法
 """
 from datetime import datetime

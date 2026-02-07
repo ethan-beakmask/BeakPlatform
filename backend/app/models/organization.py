@@ -1,5 +1,5 @@
 """
-BeakPlatform Organization Model
+BeakMask Organization Model
 企業/組織 Model
 """
 import json

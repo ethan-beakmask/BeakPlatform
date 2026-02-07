@@ -1,5 +1,5 @@
 """
-BeakPlatform Module Model
+BeakMask Module Model
 功能模組 - No-Code Builder 的基礎單位
 """
 from typing import Dict, Any

@@ -784,7 +784,7 @@ def test_telegram_connection():
     result = TelegramConfig.test_connection(
         bot_token=data['bot_token'],
         chat_id=data.get('chat_id'),
-        test_message=data.get('test_message', '[BeakPlatform] Telegram 連線測試')
+        test_message=data.get('test_message', '[BeakMask] Telegram 連線測試')
     )
 
     return jsonify({
@@ -818,7 +818,7 @@ def test_saved_telegram_config(secure_code):
     result = TelegramConfig.test_connection(
         bot_token=config.bot_token,
         chat_id=chat_id,
-        test_message=data.get('test_message', '[BeakPlatform] Telegram 連線測試')
+        test_message=data.get('test_message', '[BeakMask] Telegram 連線測試')
     )
 
     return jsonify({

@@ -1,4 +1,4 @@
--- BeakPlatform Migration: 002_organization_contracts
+-- BeakMask Migration: 002_organization_contracts
 -- 企業客戶與合約管理系統
 -- 執行日期: 2025-12-19
 

@@ -1,5 +1,5 @@
 """
-BeakPlatform Module Builder Service
+BeakMask Module Builder Service
 模組建置服務 - No-Code Builder 核心
 """
 from typing import Dict, List, Optional, Any

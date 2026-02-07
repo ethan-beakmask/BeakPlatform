@@ -1,5 +1,5 @@
 """
-BeakPlatform Security Module
+BeakMask Security Module
 核心安全機制：認證攔截、租戶隔離、權限檢查
 """
 from .decorators import public_route, login_required, admin_required, system_admin_required

@@ -1,5 +1,5 @@
 """
-BeakPlatform Menu Management Web Routes
+BeakMask Menu Management Web Routes
 選單管理頁面路由
 """
 from datetime import datetime

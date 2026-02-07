@@ -1,5 +1,5 @@
 /**
- * BeakPlatform Frontend Application
+ * BeakMask Frontend Application
  * Core JavaScript functionality
  */
 

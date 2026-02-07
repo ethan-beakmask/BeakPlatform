@@ -1,5 +1,5 @@
 """
-BeakPlatform Modules Management Web Routes
+BeakMask Modules Management Web Routes
 模組管理頁面路由 (No-Code Builder)
 """
 from datetime import datetime

@@ -1,5 +1,5 @@
 """
-BeakPlatform URL Access Control
+BeakMask URL Access Control
 URL 層級存取控制
 
 [標準 URL-01] URL 層級存取控制

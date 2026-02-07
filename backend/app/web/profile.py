@@ -1,5 +1,5 @@
 """
-BeakPlatform Profile Web Routes
+BeakMask Profile Web Routes
 個人資料網頁路由
 
 注意：個人資料編輯功能已整合到 /users/me/edit

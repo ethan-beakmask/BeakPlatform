@@ -1,5 +1,5 @@
--- BeakPlatform 資料庫欄位註解
--- 執行方式: psql -U beakplatform -d beakplatform_dev -f scripts/add_column_comments.sql
+-- BeakMask 資料庫欄位註解
+-- 執行方式: psql -U beakmask -d beakmask_dev -f scripts/add_column_comments.sql
 -- 產生時間: 2025-12-20
 
 -- ============================================================================

@@ -1,5 +1,5 @@
 """
-BeakPlatform Password Policy Service
+BeakMask Password Policy Service
 密碼複雜度政策服務
 
 功能：

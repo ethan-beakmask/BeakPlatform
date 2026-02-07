@@ -1,5 +1,5 @@
 """
-BeakPlatform Conglomerate Model
+BeakMask Conglomerate Model
 集團 Model
 
 集團是多個企業的聯合體，用於：

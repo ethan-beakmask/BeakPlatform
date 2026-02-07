@@ -1,5 +1,5 @@
 """
-BeakPlatform Users API
+BeakMask Users API
 用戶管理路由
 """
 from flask import Blueprint, request, jsonify

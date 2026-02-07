@@ -1,5 +1,5 @@
 """
-BeakPlatform Role API
+BeakMask Role API
 角色/職務 API
 """
 import logging

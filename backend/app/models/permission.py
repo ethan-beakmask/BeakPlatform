@@ -1,5 +1,5 @@
 """
-BeakPlatform Permission Model
+BeakMask Permission Model
 權限 Model
 
 RBAC 權限系統 - 定義資源和操作的權限

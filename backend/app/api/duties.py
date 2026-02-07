@@ -1,5 +1,5 @@
 """
-BeakPlatform Duty API
+BeakMask Duty API
 職務管理 API
 
 職務（Duty）是部門內的職責標籤，用於標記用戶在部門中的特定職責。

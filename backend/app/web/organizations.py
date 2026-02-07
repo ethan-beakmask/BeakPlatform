@@ -1,5 +1,5 @@
 """
-BeakPlatform Organization Management Web Routes
+BeakMask Organization Management Web Routes
 企業管理網頁路由
 
 僅限系統管理員存取

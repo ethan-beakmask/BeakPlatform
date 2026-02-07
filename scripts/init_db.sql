@@ -1,4 +1,4 @@
--- BeakPlatform Database Initialization Script
+-- BeakMask Database Initialization Script
 -- Includes Row Level Security (RLS) for tenant isolation
 
 -- =============================================================================
@@ -13,8 +13,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- This role will be used by the application, with RLS enforced
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'beakplatform_app') THEN
-        CREATE ROLE beakplatform_app WITH LOGIN PASSWORD 'app_password_change_me';
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'beakmask_app') THEN
+        CREATE ROLE beakmask_app WITH LOGIN PASSWORD 'app_password_change_me';
     END IF;
 END
 $$;
@@ -137,10 +137,10 @@ CREATE TRIGGER update_users_updated_at
 -- =============================================================================
 
 -- Grant permissions to app role
-GRANT USAGE ON SCHEMA public TO beakplatform_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO beakplatform_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO beakplatform_app;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO beakplatform_app;
+GRANT USAGE ON SCHEMA public TO beakmask_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO beakmask_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO beakmask_app;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO beakmask_app;
 
 -- =============================================================================
 -- 8. SEED DATA

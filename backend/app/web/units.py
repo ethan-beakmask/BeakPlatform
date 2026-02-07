@@ -1,5 +1,5 @@
 """
-BeakPlatform Organizational Units Web Routes
+BeakMask Organizational Units Web Routes
 組織單位 (部門/群組) 網頁路由
 """
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for

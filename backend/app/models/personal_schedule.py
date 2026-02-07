@@ -1,5 +1,5 @@
 """
-BeakPlatform PersonalSchedule Model
+BeakMask PersonalSchedule Model
 個人排班 - 覆蓋共用班表的個人排班設定
 
 參考：docs/knowledge/time-management-spec.md

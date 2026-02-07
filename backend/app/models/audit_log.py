@@ -1,5 +1,5 @@
 """
-BeakPlatform Audit Log Model
+BeakMask Audit Log Model
 稽核日誌 Model
 """
 from sqlalchemy import Column, String, Text, ForeignKey

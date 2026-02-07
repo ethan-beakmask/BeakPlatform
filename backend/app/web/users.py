@@ -1,5 +1,5 @@
 """
-BeakPlatform User Management Web Routes
+BeakMask User Management Web Routes
 用戶管理網頁路由
 
 URL 安全設計：

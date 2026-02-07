@@ -1,5 +1,5 @@
 """
-BeakPlatform Delegation Model
+BeakMask Delegation Model
 代理授權 Model - 職務代理機制
 
 當主管出差、請假時，可授權代理人：
