@@ -195,9 +195,6 @@ def list_available_forms():
         ).order_by(FwFormWorkflowMapping.created_at.desc()).all()
 
         for mapping in mappings:
-            if mapping.id in seen_mapping_ids:
-                continue
-
             form_template = FwFormTemplate.query.filter_by(
                 id=mapping.form_template_id,
                 is_deleted=False,
