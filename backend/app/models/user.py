@@ -85,6 +85,7 @@ class User(TenantBaseModel, UserMixin):
     mobile_phone_2 = Column(String(50), nullable=True, comment='手機號碼 2')
     interface_language = Column(String(10), nullable=True, comment='介面語言 (覆蓋企業設定)')
     timezone = Column(String(50), nullable=True, comment='個人時區 IANA (覆蓋企業設定)')
+    navbar_display = Column(String(20), nullable=True, comment='Navbar 顯示偏好 (空=跟隨企業, nickname, employee_id, employee_id_dept)')
 
     # 員工編號 (組織內唯一)
     employee_id = Column(String(50), nullable=True, comment='員工編號 (組織內唯一)')

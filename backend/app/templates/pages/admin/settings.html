@@ -195,6 +195,37 @@
                     </td>
                 </tr>
                 <tr>
+                    <th style="text-align: left;">顯示名稱</th>
+                    <td>
+                        <select x-model="settings.display_name_field" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            <option value="native_name">本國姓名</option>
+                            <option value="english_name">英文姓名</option>
+                            <option value="nickname">暱稱</option>
+                            <option value="username">帳號</option>
+                            <option value="employee_id">用戶編號</option>
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            決定系統中用戶名稱的顯示方式
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left;">帳號姓名連接符號</th>
+                    <td>
+                        <select x-model="settings.name_connector" @change="saveSettings()"
+                                style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                            <option value=".">. (點) — first.last</option>
+                            <option value="_">_ (底線) — first_last</option>
+                            <option value="-">- (連字號) — first-last</option>
+                            <option value="">(無符號) — firstlast</option>
+                        </select>
+                        <div style="margin-top: 6px; color: #666; font-size: 12px;">
+                            建立帳號時，姓名之間使用的連接符號（帳號統一小寫）
+                        </div>
+                    </td>
+                </tr>
+                <tr>
                     <th style="text-align: left;">企業主要時區</th>
                     <td>
                         <select x-model="settings.timezone" @change="saveSettings()"
@@ -1123,7 +1154,9 @@ function generalSettings() {
         settings: {
             allow_user_self_edit: true,
             locale: 'zh-TW',
-            timezone: 'Asia/Taipei'
+            timezone: 'Asia/Taipei',
+            name_connector: '.',
+            display_name_field: 'native_name'
         },
         saveMessage: '',
 

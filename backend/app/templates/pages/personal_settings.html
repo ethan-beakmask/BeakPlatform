@@ -177,6 +177,18 @@
         <div class="section-title">{{ _('介面設定') }}</div>
         <table>
             <tr>
+                <td><label for="navbar_display">{{ _('Navbar 顯示') }}</label></td>
+                <td>
+                    <select id="navbar_display" name="navbar_display">
+                        <option value="">{{ _('跟隨企業設定') }}</option>
+                        <option value="nickname" {% if current_user.navbar_display == 'nickname' %}selected{% endif %}>{{ _('暱稱') }}</option>
+                        <option value="employee_id" {% if current_user.navbar_display == 'employee_id' %}selected{% endif %}>{{ _('用戶編號') }}</option>
+                        <option value="employee_id_dept" {% if current_user.navbar_display == 'employee_id_dept' %}selected{% endif %}>{{ _('用戶編號 + 部門') }}</option>
+                    </select>
+                    <div class="help-text">{{ _('在公開場所使用時，可改為不含真名的顯示方式') }}</div>
+                </td>
+            </tr>
+            <tr>
                 <td><label for="interface_language">{{ _('介面語言') }}</label></td>
                 <td>
                     <select id="interface_language" name="interface_language">

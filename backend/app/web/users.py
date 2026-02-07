@@ -10,7 +10,7 @@ URL 安全設計：
 import csv
 import io
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required
@@ -24,6 +24,27 @@ from ..utils.timezone import get_timezone_choices
 from .. import db
 
 users_bp = Blueprint('users', __name__)
+
+
+@users_bp.route('/check-username')
+@admin_required
+def check_username():
+    """即時檢查帳號是否可用（排除已刪除，保留停用）"""
+    username = request.args.get('username', '').strip().lower()
+    if not username:
+        return jsonify({'available': False})
+
+    org = current_user.organization
+    if not org:
+        return jsonify({'available': False})
+
+    email = f"{username}@{org.domain_name}"
+    existing = User.query.filter(
+        User.email == email,
+        User.is_deleted == False
+    ).first()
+
+    return jsonify({'available': existing is None})
 
 
 @users_bp.route('/')
@@ -200,7 +221,6 @@ def create_user():
     if request.method == 'POST':
         # 收集所有表單資料（用於錯誤時回填）
         form_data = {
-            'display_name': request.form.get('display_name', '').strip(),
             'username': request.form.get('username', '').strip(),
             'role': request.form.get('role', 'user'),
             'employee_id': request.form.get('employee_id', '').strip(),
@@ -212,10 +232,13 @@ def create_user():
             'backup_email_2': request.form.get('backup_email_2', '').strip(),
             'mobile_phone_1': request.form.get('mobile_phone_1', '').strip(),
             'mobile_phone_2': request.form.get('mobile_phone_2', '').strip(),
+            'interface_language': request.form.get('interface_language', '').strip(),
+            'timezone': request.form.get('timezone', '').strip(),
         }
 
         # 必填欄位
-        display_name = form_data['display_name']
+        english_name = form_data['english_name']
+        native_name = form_data['native_name']
         # 帳號正規化：移除所有空白、轉小寫
         username_raw = form_data['username']
         username = ''.join(username_raw.split()).lower()
@@ -225,17 +248,17 @@ def create_user():
         # 選填欄位
         employee_id = form_data['employee_id'] or None
         department_code = form_data['department_code']
-        english_name = form_data['english_name'] or None
-        native_name = form_data['native_name'] or None
         nickname = form_data['nickname'] or None
         backup_email_1 = form_data['backup_email_1'] or None
         backup_email_2 = form_data['backup_email_2'] or None
         mobile_phone_1 = form_data['mobile_phone_1'] or None
         mobile_phone_2 = form_data['mobile_phone_2'] or None
+        interface_language = form_data['interface_language'] or None
+        user_timezone = form_data['timezone'] or None
 
-        if not display_name or not username or not password:
-            flash('姓名、帳號、密碼為必填', 'error')
-        elif len(password) < 8:
+        if not english_name or not native_name or not username:
+            flash('英文姓名、本國姓名、帳號為必填', 'error')
+        elif password and len(password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
         else:
             org = current_user.organization
@@ -262,9 +285,31 @@ def create_user():
                         primary_unit = _find_department_by_code(org.secure_code, department_code)
                         if not primary_unit:
                             flash(f'找不到部門代碼 {department_code}', 'error')
-                            return render_template('pages/users/create.html', form_data=form_data)
+                            org_ctx = current_user.organization
+                            return render_template(
+                                'pages/users/create.html',
+                                form_data=form_data,
+                                org_settings=org_ctx.get_settings() if org_ctx else {},
+                                timezone_choices=get_timezone_choices()
+                            )
 
                     try:
+                        # 密碼：空白時自動產生強化密碼
+                        if not password:
+                            from ..services.password_policy_service import PasswordPolicyService
+                            password = PasswordPolicyService.generate_password(org.secure_code)
+
+                        # display_name 依企業設定自動衍生
+                        display_name_field = org.get_setting('display_name_field', 'native_name')
+                        display_name_map = {
+                            'native_name': native_name,
+                            'english_name': english_name,
+                            'nickname': nickname or native_name,
+                            'username': username,
+                            'employee_id': employee_id or username,
+                        }
+                        display_name = display_name_map.get(display_name_field, native_name)
+
                         user = User(
                             username=username,
                             email=email,
@@ -281,6 +326,8 @@ def create_user():
                             backup_email_2=backup_email_2,
                             mobile_phone_1=mobile_phone_1,
                             mobile_phone_2=mobile_phone_2,
+                            interface_language=interface_language,
+                            timezone=user_timezone,
                         )
                         user.set_password(password)
                         db.session.add(user)
@@ -295,13 +342,19 @@ def create_user():
                             )
                             db.session.commit()
 
-                        flash(f'已建立用戶 {display_name}', 'success')
+                        flash(f'已建立用戶 {native_name}', 'success')
                         return redirect(url_for('users.list_users'))
                     except Exception as e:
                         db.session.rollback()
                         flash(f'建立失敗: {str(e)}', 'error')
 
-    return render_template('pages/users/create.html', form_data=form_data)
+    org = current_user.organization
+    return render_template(
+        'pages/users/create.html',
+        form_data=form_data,
+        org_settings=org.get_settings() if org else {},
+        timezone_choices=get_timezone_choices()
+    )
 
 
 def _get_edit_context(user, is_self: bool) -> dict:
@@ -382,7 +435,6 @@ def edit_user(secure_code: str):
             return render_template('pages/users/edit.html', user=user, **ctx)
 
         # 取得表單資料
-        display_name = request.form.get('display_name', '').strip()
         new_password = request.form.get('new_password', '').strip()
 
         # 只有管理員可以修改的欄位
@@ -401,7 +453,9 @@ def edit_user(secure_code: str):
         nickname = request.form.get('nickname', '').strip() or None
 
         # 個人偏好（允許編輯）
+        interface_language = request.form.get('interface_language', '').strip() or None
         user_timezone = request.form.get('timezone', '').strip() or None
+        navbar_display = request.form.get('navbar_display', '').strip() or None
 
         # 聯絡方式（允許編輯）
         backup_email_1 = request.form.get('backup_email_1', '').strip() or None
@@ -410,8 +464,8 @@ def edit_user(secure_code: str):
         mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
 
         # 驗證
-        if not display_name:
-            flash('姓名為必填', 'error')
+        if not native_name or not english_name:
+            flash('本國姓名、英文姓名為必填', 'error')
         elif new_password and len(new_password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
         elif ctx['can_edit_org_info'] and not _check_employee_id_unique(user.org_secure_code, employee_id, exclude_user_id=user.id):
@@ -426,8 +480,17 @@ def edit_user(secure_code: str):
                     return render_template('pages/users/edit.html', user=user, **ctx)
 
             try:
-                # 更新資料
-                user.display_name = display_name
+                # display_name 依企業設定自動衍生
+                org = current_user.organization
+                display_name_field = org.get_setting('display_name_field', 'native_name') if org else 'native_name'
+                display_name_map = {
+                    'native_name': native_name,
+                    'english_name': english_name,
+                    'nickname': nickname or native_name,
+                    'username': user.username,
+                    'employee_id': (employee_id if ctx['can_edit_org_info'] else user.employee_id) or user.username,
+                }
+                user.display_name = display_name_map.get(display_name_field, native_name)
 
                 if ctx['can_edit_role']:
                     user.user_type = _get_user_type_from_role(role, current_user.is_system_admin)
@@ -447,7 +510,9 @@ def edit_user(secure_code: str):
                 user.nickname = nickname
 
                 # 個人偏好
+                user.interface_language = interface_language
                 user.timezone = user_timezone
+                user.navbar_display = navbar_display
 
                 # 聯絡方式
                 user.backup_email_1 = backup_email_1
@@ -490,6 +555,7 @@ def edit_user(secure_code: str):
         departments=departments,
         work_schedules=work_schedules,
         timezone_choices=get_timezone_choices(),
+        org_settings=current_user.organization.get_settings() if current_user.organization else {},
         **ctx
     )
 

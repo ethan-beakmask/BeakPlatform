@@ -144,7 +144,7 @@
     <div class="navbar">
         <div class="navbar-content">
             <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
-            <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}</span>
+            <span class="navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">{{ _('登出') }}</button>

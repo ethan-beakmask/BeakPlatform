@@ -213,40 +213,72 @@
     <div class="section-title">必填欄位</div>
     <table class="form-table" border="0" cellpadding="4" cellspacing="0">
         <tr>
-            <td><label for="display_name" class="required">姓名</label></td>
-            <td><input type="text" id="display_name" name="display_name" required
-                       x-model="displayName"
-                       @input="onDisplayNameChange()"></td>
+            <td><label for="native_name" class="required">本國姓名</label></td>
+            <td>
+                <input type="text" id="native_name" name="native_name" required
+                       x-model="nativeName"
+                       @input="onNativeNameChange()">
+                <div class="help-text">文件與流程使用的正式姓名</div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="english_name" class="required">英文姓名</label></td>
+            <td>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="english_name" name="english_name" required
+                           x-model="englishName"
+                           @input="onEnglishNameChange()"
+                           placeholder="English Name">
+                    <button type="button" @click="transliterateName()"
+                            :disabled="!nativeName || transliterating"
+                            style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                            :style="(!nativeName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                        <span x-show="!transliterating">自動翻譯</span>
+                        <span x-show="transliterating">翻譯中...</span>
+                    </button>
+                </div>
+                <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
+                    偵測語言: <span x-text="langNames[detectedLang] || detectedLang"></span>
+                </div>
+                <div class="help-text">帳號與 Email 的名稱來源，非 CJK 姓名可直接輸入</div>
+            </td>
         </tr>
         <tr>
             <td><label for="username" class="required">帳號</label></td>
             <td>
                 <input type="text" id="username" name="username" required style="width: 120px;"
                        x-model="usernameRaw"
-                       @input="onUsernameChange()">@{{ current_user.organization.domain_name if current_user.organization else 'unknown' }}
+                       @input="onUsernameManualChange()">@{{ current_user.organization.domain_name if current_user.organization else 'unknown' }}
                 <div class="help-text" x-show="usernameRaw && usernameRaw !== normalizedUsername">
                     儲存時將轉換為: <code x-text="normalizedUsername"></code>
+                </div>
+                <div style="font-size: 12px; margin-top: 4px;">
+                    <span x-show="usernameChecking" style="color: #666;">檢查帳號中...</span>
+                    <span x-show="usernameChecked && usernameAvailable && normalizedUsername" style="color: #16a34a;">帳號可用</span>
+                    <span x-show="usernameChecked && !usernameAvailable && normalizedUsername" style="color: #dc2626;">帳號已存在</span>
                 </div>
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: top;"><label for="password" class="required">密碼</label></td>
+            <td style="vertical-align: top;"><label for="password">密碼</label></td>
             <td>
                 <div style="display: flex; gap: 8px; align-items: start;">
                     <div style="flex: 1;">
                         <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
                                x-model="password" @input="validatePassword()"
-                               minlength="8" required style="width: 100%;">
+                               :placeholder="suggestedPassword"
+                               style="width: 100%;">
                     </div>
                     <button type="button" @click="showPassword = !showPassword"
                             style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
                             x-text="showPassword ? '隱藏' : '顯示'"></button>
-                    <button type="button" @click="generatePassword()"
+                    <button type="button" @click="useSuggestedPassword()"
                             style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        建議密碼
+                        使用建議密碼
                     </button>
                 </div>
                 <div class="help-text" x-text="passwordRequirements"></div>
+                <div class="help-text">留空將自動產生強化密碼（後續透過通知信件寄送）</div>
                 <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
@@ -256,7 +288,7 @@
                 <!-- 驗證通過 -->
                 <div x-show="password && passwordErrors.length === 0 && passwordChecked"
                      style="margin-top: 6px; color: #16a34a; font-size: 12px;">
-                    ✓ 密碼符合要求
+                    密碼符合要求
                 </div>
             </td>
         </tr>
@@ -320,35 +352,45 @@
             <div class="section-title optional">個人資料</div>
             <table class="form-table" border="0" cellpadding="4" cellspacing="0">
                 <tr>
-                    <td><label for="english_name">英文姓名</label></td>
+                    <td><label for="nickname">暱稱</label></td>
                     <td>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <input type="text" id="english_name" name="english_name"
-                                   x-model="englishName"
-                                   @input="englishNameManual = true"
-                                   :placeholder="usernameRaw || 'English Name'">
-                            <button type="button" @click="transliterateName()"
-                                    :disabled="!displayName || transliterating"
-                                    style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
-                                    :style="(!displayName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
-                                <span x-show="!transliterating">自動翻譯</span>
-                                <span x-show="transliterating">翻譯中...</span>
-                            </button>
-                        </div>
-                        <div class="help-text" x-show="!englishNameManual && usernameRaw && !detectedLang">
-                            預設採用帳號（保留大小寫）
-                        </div>
-                        <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
-                            偵測語言: <span x-text="langNames[detectedLang] || detectedLang"></span>
-                        </div>
+                        <input type="text" id="nickname" name="nickname"
+                               x-model="nickname"
+                               @input="onNicknameChange()"
+                               placeholder="自動遮罩">
+                        <div class="help-text">預設遮罩處理本國姓名，避免螢幕旁的窺視者識別身份或推測登入帳號</div>
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="nickname">暱稱</label></td>
-                    <td><input type="text" id="nickname" name="nickname" x-model="nickname" placeholder="Nickname"></td>
+                    <td><label for="interface_language">語系</label></td>
+                    <td>
+                        <select id="interface_language" name="interface_language"
+                                x-model="interfaceLanguage">
+                            <option value="">-- 跟隨企業設定 --</option>
+                            <option value="zh-TW">繁體中文 (zh-TW)</option>
+                            <option value="zh-CN">简体中文 (zh-CN)</option>
+                            <option value="en">English (en)</option>
+                        </select>
+                        <div class="help-text">留空則跟隨企業設定</div>
+                    </td>
                 </tr>
-                <!-- native_name 隱藏但保留，值同步自 display_name -->
-                <input type="hidden" name="native_name" :value="nativeName">
+                <tr>
+                    <td><label for="timezone">時區</label></td>
+                    <td>
+                        <select id="timezone" name="timezone"
+                                x-model="userTimezone" style="min-width: 280px;">
+                            <option value="">-- 跟隨企業設定 --</option>
+                            {% for group_label, timezones in timezone_choices %}
+                            <optgroup label="{{ group_label }}">
+                                {% for tz_value, tz_display in timezones %}
+                                <option value="{{ tz_value }}">{{ tz_display }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                        <div class="help-text">留空則跟隨企業設定</div>
+                    </td>
+                </tr>
             </table>
 
             <div class="section-title optional">聯絡方式</div>
@@ -381,28 +423,41 @@
 <script>
 // 從後端傳入的表單資料（錯誤時保留）
 const formData = {{ form_data | tojson | safe if form_data else '{}' }};
+const orgSettings = {{ org_settings | tojson | safe if org_settings is defined else '{}' }};
 
 function userForm() {
     return {
-        // 基本欄位
-        displayName: formData.display_name || '',
+        // 名稱欄位
+        nativeName: formData.native_name || '',
+        englishName: formData.english_name || '',
+        englishNameManual: !!formData.english_name,
         usernameRaw: formData.username || '',
+        usernameManual: !!formData.username,
+        nickname: formData.nickname || '',
+        nicknameManual: !!formData.nickname,
         role: formData.role || 'user',
+
+        // 名稱連接符號
+        nameConnector: orgSettings.name_connector != null ? orgSettings.name_connector : '.',
+
+        // 帳號即時檢查
+        usernameCheckTimer: null,
+        usernameAvailable: null,
+        usernameChecking: false,
+        usernameChecked: false,
 
         // 密碼欄位
         password: '',
+        suggestedPassword: '',
         showPassword: false,
         passwordErrors: [],
         passwordChecked: false,
         passwordRequirements: '載入中...',
         validateTimer: null,
 
-        // 個人資料
-        englishName: formData.english_name || '',
-        englishNameManual: !!formData.english_name,
-        nativeName: formData.native_name || '',
-        nativeNameManual: !!formData.native_name,
-        nickname: formData.nickname || '',
+        // 個人偏好
+        interfaceLanguage: formData.interface_language || '',
+        userTimezone: formData.timezone || '',
 
         // 聯絡方式
         backupEmail1: formData.backup_email_1 || '',
@@ -430,9 +485,103 @@ function userForm() {
             return this.usernameRaw.replace(/\s+/g, '').toLowerCase();
         },
 
-        async init() {
-            await Promise.all([this.loadRules(), this.loadPasswordRequirements()]);
+        get suggestedUsername() {
+            if (!this.englishName) return '';
+            return this.englishName.trim().replace(/\s+/g, this.nameConnector).toLowerCase();
         },
+
+        async init() {
+            await Promise.all([
+                this.loadRules(),
+                this.loadPasswordRequirements(),
+                this.loadSuggestedPassword()
+            ]);
+        },
+
+        // === 名稱連動 ===
+
+        hasCJK(text) {
+            return /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(text);
+        },
+
+        onNativeNameChange() {
+            // 本國姓名 → 暱稱 (遮罩)
+            this.updateNicknameMask();
+            // 非 CJK 本國姓名 → 英文姓名 (自動填入)
+            if (!this.englishNameManual && !this.hasCJK(this.nativeName)) {
+                this.englishName = this.nativeName;
+                if (!this.usernameManual) {
+                    this.usernameRaw = this.suggestedUsername;
+                    this.debouncedCheckUsername();
+                }
+            }
+        },
+
+        onEnglishNameChange() {
+            this.englishNameManual = true;
+            // 英文姓名 → 帳號
+            if (!this.usernameManual) {
+                this.usernameRaw = this.suggestedUsername;
+                this.debouncedCheckUsername();
+            }
+        },
+
+        onNicknameChange() {
+            this.nicknameManual = true;
+        },
+
+        onUsernameManualChange() {
+            this.usernameManual = true;
+            this.debouncedCheckUsername();
+        },
+
+        updateNicknameMask() {
+            if (!this.nicknameManual) {
+                this.nickname = this.maskName(this.nativeName || this.englishName || '');
+            }
+        },
+
+        maskName(name) {
+            if (!name) return '';
+            const chars = [...name];
+            const len = chars.length;
+            if (len <= 1) return '\u25CB';
+            if (len === 2) return chars[0] + '\u25CB';
+            return chars[0] + '\u25CB'.repeat(len - 2) + chars[len - 1];
+        },
+
+        // === 帳號即時檢查 ===
+
+        debouncedCheckUsername() {
+            clearTimeout(this.usernameCheckTimer);
+            const username = this.normalizedUsername;
+            if (!username) {
+                this.usernameChecked = false;
+                this.usernameChecking = false;
+                return;
+            }
+            this.usernameChecking = true;
+            this.usernameCheckTimer = setTimeout(() => this._checkUsername(), 500);
+        },
+
+        async _checkUsername() {
+            const username = this.normalizedUsername;
+            if (!username) return;
+            try {
+                const resp = await fetch(`/users/check-username?username=${encodeURIComponent(username)}`);
+                const data = await resp.json();
+                if (this.normalizedUsername === username) {
+                    this.usernameAvailable = data.available;
+                    this.usernameChecked = true;
+                    this.usernameChecking = false;
+                }
+            } catch (e) {
+                console.error('檢查帳號失敗:', e);
+                this.usernameChecking = false;
+            }
+        },
+
+        // === 密碼 ===
 
         async loadPasswordRequirements() {
             try {
@@ -456,10 +605,9 @@ function userForm() {
             }
         },
 
-        async generatePassword() {
+        async loadSuggestedPassword() {
             try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
-                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
                 const response = await fetch('/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
@@ -470,18 +618,23 @@ function userForm() {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        this.password = data.data.password;
-                        this.showPassword = true;
-                        this.validatePassword();
+                        this.suggestedPassword = data.data.password;
                     }
                 }
             } catch (err) {
-                console.error('生成密碼失敗:', err);
+                this.suggestedPassword = '';
+            }
+        },
+
+        useSuggestedPassword() {
+            if (this.suggestedPassword) {
+                this.password = this.suggestedPassword;
+                this.showPassword = true;
+                this.validatePassword();
             }
         },
 
         validatePassword() {
-            // 延遲驗證，避免頻繁請求
             clearTimeout(this.validateTimer);
             this.validateTimer = setTimeout(() => this._doValidate(), 300);
         },
@@ -516,14 +669,14 @@ function userForm() {
             }
         },
 
+        // === 用戶編號 ===
+
         async loadRules() {
             try {
-                // 只取得內部專用規則（員工帳號）
                 const response = await fetch('/api/numbering/rules?scope=INTERNAL_ONLY');
                 const data = await response.json();
                 if (data.success && data.data.length > 0) {
                     this.rules = data.data;
-                    // 優先使用員工預設規則
                     const defaultRule = this.rules.find(r => r.default_for === 'EMPLOYEE');
                     if (defaultRule) {
                         this.selectedRule = defaultRule.secure_code;
@@ -532,7 +685,6 @@ function userForm() {
                         this.selectedRule = this.rules[0].secure_code;
                         this.nextNumber = this.rules[0].preview;
                     }
-                    // 如果沒有手動輸入，自動填入編號
                     if (!this.employeeIdManual && this.nextNumber) {
                         this.employeeId = this.nextNumber;
                     }
@@ -549,7 +701,6 @@ function userForm() {
                 const data = await response.json();
                 if (data.success) {
                     this.nextNumber = data.data.number;
-                    // 自動更新編號（除非手動輸入過）
                     if (!this.employeeIdManual) {
                         this.employeeId = this.nextNumber;
                     }
@@ -559,20 +710,10 @@ function userForm() {
             }
         },
 
-        onDisplayNameChange() {
-            if (!this.nativeNameManual) {
-                this.nativeName = this.displayName;
-            }
-        },
-
-        onUsernameChange() {
-            if (!this.englishNameManual) {
-                this.englishName = this.usernameRaw;
-            }
-        },
+        // === 翻譯 ===
 
         async transliterateName() {
-            if (!this.displayName || this.transliterating) return;
+            if (!this.nativeName || this.transliterating) return;
 
             this.transliterating = true;
             this.detectedLang = '';
@@ -586,14 +727,19 @@ function userForm() {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ name: this.displayName })
+                    body: JSON.stringify({ name: this.nativeName })
                 });
 
                 const data = await response.json();
                 if (data.success) {
                     this.englishName = data.data.romanized;
-                    this.detectedLang = data.data.language;
                     this.englishNameManual = true;
+                    this.detectedLang = data.data.language;
+                    // 觸發帳號自動產生
+                    if (!this.usernameManual) {
+                        this.usernameRaw = this.suggestedUsername;
+                        this.debouncedCheckUsername();
+                    }
                 } else {
                     console.error('翻譯失敗:', data.message);
                 }

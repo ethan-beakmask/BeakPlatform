@@ -85,6 +85,7 @@ def personal_settings():
             current_user.mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
             current_user.interface_language = request.form.get('interface_language', '').strip() or None
             current_user.timezone = request.form.get('timezone', '').strip() or None
+            current_user.navbar_display = request.form.get('navbar_display', '').strip() or None
 
             db.session.commit()
             flash('個人設定已儲存', 'success')

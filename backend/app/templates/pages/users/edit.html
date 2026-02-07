@@ -156,12 +156,34 @@
                 </td>
             </tr>
             <tr>
-                <td><label for="display_name" class="required">姓名</label></td>
+                <td><label for="native_name" class="required">本國姓名</label></td>
                 <td>
                     {% if can_edit %}
-                    <input type="text" id="display_name" name="display_name" x-model="displayName" required>
+                    <input type="text" id="native_name" name="native_name" x-model="nativeName" required>
                     {% else %}
-                    <span class="readonly-info">{{ user.display_name }}</span>
+                    <span class="readonly-info">{{ user.native_name or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="english_name" class="required">英文姓名</label></td>
+                <td>
+                    {% if can_edit %}
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="english_name" name="english_name" x-model="englishName" required placeholder="English Name">
+                        <button type="button" @click="transliterateName()"
+                                :disabled="!nativeName || transliterating"
+                                style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                                :style="(!nativeName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
+                            <span x-show="!transliterating">自動翻譯</span>
+                            <span x-show="transliterating">翻譯中...</span>
+                        </button>
+                    </div>
+                    <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
+                        偵測語言: <span x-text="langNames[detectedLang] || detectedLang"></span>
+                    </div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.english_name or '-' }}</span>
                     {% endif %}
                 </td>
             </tr>
@@ -301,44 +323,50 @@
         <div class="section-title optional">個人資料</div>
         <table class="form-table" border="0">
             <tr>
-                <td><label for="english_name">英文姓名</label></td>
-                <td>
-                    {% if can_edit %}
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="text" id="english_name" name="english_name" x-model="englishName" placeholder="English Name">
-                        <button type="button" @click="transliterateName()"
-                                :disabled="!displayName || transliterating"
-                                style="padding: 6px 10px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
-                                :style="(!displayName || transliterating) ? 'opacity: 0.5; cursor: not-allowed;' : ''">
-                            <span x-show="!transliterating">自動翻譯</span>
-                            <span x-show="transliterating">翻譯中...</span>
-                        </button>
-                    </div>
-                    <div class="help-text" x-show="detectedLang" style="color: #8b5cf6;">
-                        偵測語言: <span x-text="langNames[detectedLang] || detectedLang"></span>
-                    </div>
-                    {% else %}
-                    <span class="readonly-info">{{ user.english_name or '-' }}</span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td><label for="native_name">本國姓名</label></td>
-                <td>
-                    {% if can_edit %}
-                    <input type="text" id="native_name" name="native_name" value="{{ user.native_name or '' }}" placeholder="本國語言姓名">
-                    {% else %}
-                    <span class="readonly-info">{{ user.native_name or '-' }}</span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
                 <td><label for="nickname">暱稱</label></td>
                 <td>
                     {% if can_edit %}
                     <input type="text" id="nickname" name="nickname" value="{{ user.nickname or '' }}" placeholder="Nickname">
+                    <div class="help-text">遮罩處理的姓名，避免螢幕旁的窺視者識別身份或推測登入帳號</div>
                     {% else %}
                     <span class="readonly-info">{{ user.nickname or '-' }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="navbar_display">Navbar 顯示</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="navbar_display" name="navbar_display">
+                        <option value="">-- 跟隨企業設定 --</option>
+                        <option value="nickname" {% if user.navbar_display == 'nickname' %}selected{% endif %}>暱稱</option>
+                        <option value="employee_id" {% if user.navbar_display == 'employee_id' %}selected{% endif %}>用戶編號</option>
+                        <option value="employee_id_dept" {% if user.navbar_display == 'employee_id_dept' %}selected{% endif %}>用戶編號 + 部門</option>
+                    </select>
+                    <div class="help-text">在公開場所使用時，可改為不含真名的顯示方式</div>
+                    {% else %}
+                    <span class="readonly-info">
+                        {% if user.navbar_display == 'nickname' %}暱稱
+                        {% elif user.navbar_display == 'employee_id' %}用戶編號
+                        {% elif user.navbar_display == 'employee_id_dept' %}用戶編號 + 部門
+                        {% else %}跟隨企業設定{% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="interface_language">語系</label></td>
+                <td>
+                    {% if can_edit %}
+                    <select id="interface_language" name="interface_language">
+                        <option value="">-- 跟隨企業設定 --</option>
+                        <option value="zh-TW" {% if user.interface_language == 'zh-TW' %}selected{% endif %}>繁體中文 (zh-TW)</option>
+                        <option value="zh-CN" {% if user.interface_language == 'zh-CN' %}selected{% endif %}>简体中文 (zh-CN)</option>
+                        <option value="en" {% if user.interface_language == 'en' %}selected{% endif %}>English (en)</option>
+                    </select>
+                    <div class="help-text">留空則跟隨企業設定</div>
+                    {% else %}
+                    <span class="readonly-info">{{ user.interface_language or '跟隨企業設定' }}</span>
                     {% endif %}
                 </td>
             </tr>
@@ -444,7 +472,7 @@ function passwordForm() {
         validateTimer: null,
 
         // 姓名與翻譯
-        displayName: '{{ user.display_name | e }}',
+        nativeName: '{{ user.native_name or "" | e }}',
         englishName: '{{ user.english_name or "" | e }}',
         transliterating: false,
         detectedLang: '',
@@ -536,7 +564,7 @@ function passwordForm() {
         },
 
         async transliterateName() {
-            if (!this.displayName || this.transliterating) return;
+            if (!this.nativeName || this.transliterating) return;
 
             this.transliterating = true;
             this.detectedLang = '';
@@ -550,7 +578,7 @@ function passwordForm() {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ name: this.displayName })
+                    body: JSON.stringify({ name: this.nativeName })
                 });
 
                 const data = await response.json();
