@@ -238,23 +238,40 @@ def list_categories():
 
     all_cats = query.order_by(FwCategory.display_order, FwCategory.name).all()
 
-    # 建立父分類名稱映射
-    parent_map = {c.secure_code: c.name for c in all_cats if c.is_parent}
+    # 分出父/子分類
+    parents = [c for c in all_cats if c.is_parent]
+    children = [c for c in all_cats if c.is_child]
+    parent_map = {c.secure_code: c.name for c in parents}
+    # 有子分類的父分類 set
+    parents_with_children = {c.parent_secure_code for c in children}
 
-    # 只回傳子分類（供 select 使用），按父分類分組
+    # 靈活結構：
+    # - 有子分類的父 → 列出子分類（display = "父 / 子"）
+    # - 無子分類的父 → 列出父分類自己（display = 父名）
     result = []
-    for cat in all_cats:
-        if cat.is_child:
-            parent_name = parent_map.get(cat.parent_secure_code, '')
+    for parent in parents:
+        if parent.secure_code in parents_with_children:
+            # 有子分類 → 列子分類
+            for child in children:
+                if child.parent_secure_code == parent.secure_code:
+                    result.append({
+                        'secure_code': child.secure_code,
+                        'name': child.name,
+                        'parent_secure_code': child.parent_secure_code,
+                        'parent_name': parent.name,
+                        'display': f'{parent.name} / {child.name}',
+                    })
+        else:
+            # 無子分類 → 直接列父分類
             result.append({
-                'secure_code': cat.secure_code,
-                'name': cat.name,
-                'parent_secure_code': cat.parent_secure_code,
-                'parent_name': parent_name,
-                'display': f'{parent_name} / {cat.name}' if parent_name else cat.name,
+                'secure_code': parent.secure_code,
+                'name': parent.name,
+                'parent_secure_code': None,
+                'parent_name': None,
+                'display': parent.name,
             })
 
-    # 向後相容：也回傳 categories 欄位（舊格式，用 display 作為 name）
+    # 向後相容：也回傳 categories 欄位（舊格式）
     compat = [{'id': r['display'], 'name': r['display'], 'secure_code': r['secure_code']} for r in result]
 
     return jsonify({

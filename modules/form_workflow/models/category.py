@@ -90,9 +90,9 @@ class FwCategory(BaseModel):
             ).count()
             if child_count > 0:
                 return False, f'此分類下有 {child_count} 個子分類，請先刪除子分類'
-            return True, 'OK'
+            # 父分類也可能被表單/流程直接引用（無子分類時），繼續往下檢查
 
-        # 子分類：檢查是否有表單/流程使用此分類的 secure_code
+        # 檢查是否有表單/流程使用此分類的 secure_code
         from .form_template import FwFormTemplate
         from .workflow_template import FwWorkflowTemplate
 

@@ -1197,23 +1197,34 @@ function formCenterManager() {
 
         get filteredForms() {
             if (this.selectedParent === null) return this.availableForms;
-            // 取得該父分類下所有子分類的 secure_code
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
             if (!parent) return this.availableForms;
-            const childCodes = (parent.children || []).map(c => c.secure_code);
+            const children = parent.children || [];
+            if (children.length === 0) {
+                // 無子分類 → 直接匹配父分類 sc
+                return this.availableForms.filter(f => f.category_secure_code === parent.secure_code);
+            }
             if (this.selectedChild) {
-                // 選了特定子分類
                 return this.availableForms.filter(f => f.category_secure_code === this.selectedChild);
             }
-            // 選了父分類但沒選子分類 → 顯示該父下所有子分類的表單
-            return this.availableForms.filter(f => childCodes.includes(f.category_secure_code));
+            // 有子分類 → 匹配所有子分類 sc + 直接指向父分類的
+            const childCodes = children.map(c => c.secure_code);
+            return this.availableForms.filter(f =>
+                childCodes.includes(f.category_secure_code) || f.category_secure_code === parent.secure_code
+            );
         },
 
         getFormCountByParent(parentSc) {
             const parent = this.parentCategories.find(c => c.secure_code === parentSc);
             if (!parent) return 0;
-            const childCodes = (parent.children || []).map(c => c.secure_code);
-            return this.availableForms.filter(f => childCodes.includes(f.category_secure_code)).length;
+            const children = parent.children || [];
+            if (children.length === 0) {
+                return this.availableForms.filter(f => f.category_secure_code === parentSc).length;
+            }
+            const childCodes = children.map(c => c.secure_code);
+            return this.availableForms.filter(f =>
+                childCodes.includes(f.category_secure_code) || f.category_secure_code === parentSc
+            ).length;
         },
 
         getFormCountByChild(childSc) {

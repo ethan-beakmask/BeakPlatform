@@ -232,11 +232,18 @@
                         <label>分類</label>
                         <select x-model="formData.category_secure_code">
                             <template x-for="parent in categories" :key="parent.secure_code">
-                                <optgroup :label="parent.name">
-                                    <template x-for="child in parent.children" :key="child.secure_code">
-                                        <option :value="child.secure_code" x-text="child.name"></option>
-                                    </template>
-                                </optgroup>
+                                <template x-if="(parent.children || []).length > 0">
+                                    <optgroup :label="parent.name">
+                                        <template x-for="child in parent.children" :key="child.secure_code">
+                                            <option :value="child.secure_code" x-text="child.name"></option>
+                                        </template>
+                                    </optgroup>
+                                </template>
+                            </template>
+                            <template x-for="parent in categories" :key="'solo-' + parent.secure_code">
+                                <template x-if="(parent.children || []).length === 0">
+                                    <option :value="parent.secure_code" x-text="parent.name"></option>
+                                </template>
                             </template>
                         </select>
                     </div>
@@ -363,20 +370,31 @@ function workflowListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
-                    // 展開為扁平子分類清單（給 chips 用）
+                    // 展開為扁平分類清單（給 chips 用）
+                    // 有子 → 列子分類；無子 → 列父分類自己
                     const flat = [];
                     this.categories.forEach(parent => {
-                        (parent.children || []).forEach(child => {
-                            flat.push({
-                                secure_code: child.secure_code,
-                                name: child.name,
-                                parent_name: parent.name,
-                                display: parent.name + ' / ' + child.name
+                        const children = parent.children || [];
+                        if (children.length > 0) {
+                            children.forEach(child => {
+                                flat.push({
+                                    secure_code: child.secure_code,
+                                    name: child.name,
+                                    parent_name: parent.name,
+                                    display: parent.name + ' / ' + child.name
+                                });
                             });
-                        });
+                        } else {
+                            flat.push({
+                                secure_code: parent.secure_code,
+                                name: parent.name,
+                                parent_name: null,
+                                display: parent.name
+                            });
+                        }
                     });
                     this.flatCategories = flat;
-                    // 設定 formData 預設分類（第一個子分類）
+                    // 設定 formData 預設分類
                     if (flat.length > 0 && !this.formData.category_secure_code) {
                         this.formData.category_secure_code = flat[0].secure_code;
                     }
