@@ -861,7 +861,6 @@
                     <input type="text" class="form-control form-control-sm" style="width: 180px;" placeholder="表單檔名" id="form-name">
                     <span id="form-version-badge" class="badge bg-secondary" style="display: none;">AA</span>
                     <select class="form-select form-select-sm" style="width: 140px;" id="form-category">
-                        <option value="">未分類</option>
                     </select>
                     <input type="text" class="form-control form-control-sm" style="width: 240px;" placeholder="描述（選填）" id="form-description">
                     <button id="btn-save" class="btn btn-sm btn-outline-primary">
@@ -1575,20 +1574,27 @@
         const urlCategory = urlParams.get('category') || '';
         const urlDescription = urlParams.get('description') || '';
 
-        // 載入分類清單（二層結構，optgroup 分組）
+        // 載入分類清單（二層結構）
         async function loadCategories() {
             try {
                 const response = await fetch('/api/forms/data/categories?context=form_design');
                 const result = await response.json();
                 if (result.success) {
                     const select = document.getElementById('form-category');
-                    select.innerHTML = '<option value="">未分類</option>';
+                    select.innerHTML = '';
                     result.data.forEach(cat => {
                         const option = document.createElement('option');
                         option.value = cat.secure_code;
                         option.textContent = cat.display || cat.name;
                         select.appendChild(option);
                     });
+                    // 如果 select 還沒被設定值，設定預設值
+                    if (!select.value && select.options.length > 0) {
+                        // 新表單用 URL 帶入的 category，否則不覆蓋
+                        if (urlCategory) {
+                            select.value = urlCategory;
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('載入分類失敗:', error);

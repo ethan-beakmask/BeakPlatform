@@ -2468,7 +2468,7 @@
                 if (result.success) {
                     const categorySelect = document.getElementById('current-workflow-category');
                     if (categorySelect) {
-                        categorySelect.innerHTML = '<option value="">未分類</option>';
+                        categorySelect.innerHTML = '';
 
                         const categories = result.data || [];
                         categories.forEach(cat => {
@@ -2483,10 +2483,6 @@
                 }
             } catch (error) {
                 console.error('❌ 載入分類失敗:', error);
-                const categorySelect = document.getElementById('current-workflow-category');
-                if (categorySelect) {
-                    categorySelect.innerHTML = '<option value="">未分類</option>';
-                }
             }
         }
 

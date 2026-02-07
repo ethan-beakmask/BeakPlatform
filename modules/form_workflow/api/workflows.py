@@ -631,7 +631,7 @@ def update_template(secure_code):
         if not existing_form:
             # 建立空白表單（流程記錄單）
             form_code = f"FORM_{template.code}_{secrets.token_hex(2).upper()}"
-            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄單'
+            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄'
 
             form_template = FwFormTemplate(
                 secure_code=secrets.token_urlsafe(16),
@@ -641,6 +641,7 @@ def update_template(secure_code):
                 version='AA',
                 description=f'{template.name} 流程記錄單',
                 category=form_category,
+                category_secure_code='SYS_CAT_WORKFLOW_REC',
                 schema={
                     "components": [
                         {
@@ -800,7 +801,7 @@ def save_new_version(secure_code):
         if not existing_form:
             # 建立空白表單（流程記錄單）
             form_code = f"FORM_{template.code}_{secrets.token_hex(2).upper()}"
-            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄單'
+            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄'
 
             form_template = FwFormTemplate(
                 secure_code=secrets.token_urlsafe(16),
@@ -810,6 +811,7 @@ def save_new_version(secure_code):
                 version='AA',
                 description=f'{template.name} 流程記錄單',
                 category=form_category,
+                category_secure_code='SYS_CAT_WORKFLOW_REC',
                 schema={
                     "components": [
                         {

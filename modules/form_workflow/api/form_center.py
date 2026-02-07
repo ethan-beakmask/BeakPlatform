@@ -691,7 +691,7 @@ def list_my_forms():
 
     # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
     from ..models import FwNodeExecutionQueue
-    workflow_secure_codes = [w.secure_code for f, w, _ in rows]
+    workflow_secure_codes = [w.secure_code for f, w, _, _ in rows]
     waiting_nodes = {}
     if workflow_secure_codes:
         waiting_items = FwNodeExecutionQueue.query.filter(
@@ -704,7 +704,7 @@ def list_my_forms():
     # signed=1 時批次查 FwApprovalRecord 取當前用戶的 acted_at
     acted_at_map = {}
     if signed == '1':
-        form_scs = [f.secure_code for f, w, _ in rows]
+        form_scs = [f.secure_code for f, w, _, _ in rows]
         if form_scs:
             acted_records = FwApprovalRecord.query.filter(
                 FwApprovalRecord.form_instance_secure_code.in_(form_scs),

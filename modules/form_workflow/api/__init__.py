@@ -158,8 +158,8 @@ def create_template():
         name=name,
         code=code,
         description=data.get('description', ''),
-        category=data.get('category', '流程記錄'),
-        category_secure_code=data.get('category_secure_code'),
+        category=data.get('category', '其他'),
+        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_OTHER',
         schema=data.get('schema', {}),
         is_active=data.get('is_active', True)
     )
@@ -388,8 +388,8 @@ def create_workflow():
         name=name,
         code=code,
         description=data.get('description', ''),
-        category=data.get('category', '流程記錄'),
-        category_secure_code=data.get('category_secure_code'),
+        category=data.get('category', '其他'),
+        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_OTHER',
         graph=data.get('graph', {'nodes': [], 'edges': []}),
         is_active=data.get('is_active', True)
     )
