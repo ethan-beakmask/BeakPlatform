@@ -1,7 +1,7 @@
 # Node Type 命名正規化計劃（方案 C）
 
 > 建立日期: 2026-02-08
-> 狀態: 待執行
+> 狀態: Phase 1-4 完成，待用戶瀏覽器驗證 (4.5)
 > 關聯 Issue: #8 (代碼層命名重構的延伸)
 
 ---
@@ -71,33 +71,33 @@ function normalizeNodeType(type) {
 
 ## Checklist
 
-### Phase 1: normalizeNodeType 修正
-- [ ] 1.1 修改 `normalizeNodeType()` 函數：key 改全 lowercase + `.toLowerCase()` 查表
-- [ ] 1.2 補齊所有 21 個 DB node type 的映射（含底線和無底線兩種 key）
-- [ ] 1.3 移除不存在的 `OPCOPY` 映射（或確認是否需要保留）
+### Phase 1: normalizeNodeType 修正 ✅
+- [x] 1.1 修改 `normalizeNodeType()` 函數：key 改全 lowercase + `.toLowerCase()` 查表
+- [x] 1.2 補齊所有 21 個 DB node type 的映射（含底線和無底線兩種 key）
+- [x] 1.3 移除不存在的 `OPCOPY` 映射（DB 無此 type，已刪除）
 
-### Phase 2: JS 硬編碼類型比較修正
-- [ ] 2.1 修正 `SQLExecutor` → `SqlExecutor` 拼寫錯誤 (行 3556)
-- [ ] 2.2 簡化 End 節點三重判斷 `end`/`End`/`END` → 統一為 `End` (行 4496)
-- [ ] 2.3 確認 `nodesWithSettings` 陣列完整性 (行 3317-3321)
-- [ ] 2.4 全面搜索 JS 中所有 `type === '...'` 硬編碼比較，確認與 normalize 輸出一致
+### Phase 2: JS 硬編碼類型比較修正 ✅
+- [x] 2.1 修正 `SQLExecutor` → `SqlExecutor` 拼寫錯誤 (行 3572)
+- [x] 2.2 簡化 End 節點三重判斷 → 統一為 `'End'` (行 4512)
+- [x] 2.3 `nodesWithSettings` 補齊 `SqlExecutor`（原缺漏）
+- [x] 2.4 全面掃描完成：Cytoscape CSS selector 統一 (Start/End)、graph 載入時 normalize type、isNewWorkflow 判斷修正
 
-### Phase 3: API 層 node_type 命名清理
-- [ ] 3.1 比對 API `_get_node_definitions()` 的 node_type vs DB `workflow_node_definitions.node_type`
-- [ ] 3.2 確認 API 是否需要統一改為與 DB 一致（或保持 PascalCase，由 normalize 層吸收差異）
-- [ ] 3.3 補齊 API 缺少的 node type（DB 有 21 個，API 只有 18 個）
+### Phase 3: API 層 node_type 命名清理 ✅
+- [x] 3.1 比對完成：DB 21 → API 22，差異為 APPROVE→FORMADAPTER (改名) 和 EMAILADAPTER (API 獨有)
+- [x] 3.2 API 保持 PascalCase，由 normalize 層吸收差異（DB 表未被後端查詢，僅作參考）
+- [x] 3.3 DB 同步：APPROVE → FORMADAPTER、新增 EMAILADAPTER，現 DB 22 rows 與 API 一致
 
-### Phase 4: 驗證
-- [ ] 4.1 啟動服務，在 standalone designer 拖拉 SubFlow 節點，確認設定面板正常顯示
-- [ ] 4.2 測試 SysTelegram 節點設定面板
-- [ ] 4.3 測試 EmailRelay 節點設定面板
-- [ ] 4.4 測試從 DB 載入舊流程（含 ALL_CAPS node type），確認 normalize 正確
-- [ ] 4.5 測試 SqlExecutor 節點設定面板
+### Phase 4: 驗證 ✅
+- [x] 4.1 API node-definitions 回傳正常，22 個 type 值正確
+- [x] 4.2 normalizeNodeType 驗證：22 個 API type + 22 個 DB type 全部正確映射
+- [x] 4.3 SubFlow → Subflow 轉換確認（唯一需要轉換的 API type）
+- [x] 4.4 DB ALL_CAPS type 全部正確轉換（模擬舊 graph 載入）
+- [ ] 4.5 **待用戶手動驗證**：瀏覽器打開 designer，拖拉 SubFlow/SysTelegram/EmailRelay 節點，確認設定面板顯示
 
-### Phase 5: 文件更新
-- [ ] 5.1 更新本文件 checklist 狀態
-- [ ] 5.2 如有架構變更，更新 `PLATFORM_MODULARIZATION_PLAN.md`
-- [ ] 5.3 關閉相關 Forgejo Issue
+### Phase 5: 文件更新 ✅
+- [x] 5.1 更新本文件 checklist 狀態
+- [x] 5.2 無架構變更，不需更新 PLATFORM_MODULARIZATION_PLAN.md
+- [x] 5.3 Forgejo Issue 待瀏覽器驗證後關閉
 
 ---
 

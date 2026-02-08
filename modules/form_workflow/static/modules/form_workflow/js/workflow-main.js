@@ -268,7 +268,7 @@
                         }
                     },
                     {
-                        selector: 'node[type="start"]',
+                        selector: 'node[type="Start"]',
                         style: {
                             'background-color': '#4CAF50',
                             'shape': 'round-rectangle'
@@ -276,7 +276,7 @@
                     },
                     // End 節點預設樣式（藍色 - detach 模式）
                     {
-                        selector: 'node[type="end"], node[type="End"], node[type="END"]',
+                        selector: 'node[type="End"]',
                         style: {
                             'background-color': '#3B82F6',
                             'shape': 'round-rectangle'
@@ -284,21 +284,21 @@
                     },
                     // End 節點 - Detach 模式（藍色）
                     {
-                        selector: 'node[type="end"][finishMode="detach"], node[type="End"][finishMode="detach"], node[type="END"][finishMode="detach"]',
+                        selector: 'node[type="End"][finishMode="detach"]',
                         style: {
                             'background-color': '#3B82F6'
                         }
                     },
                     // End 節點 - Cancel 模式（橘色）
                     {
-                        selector: 'node[type="end"][finishMode="cancel"], node[type="End"][finishMode="cancel"], node[type="END"][finishMode="cancel"]',
+                        selector: 'node[type="End"][finishMode="cancel"]',
                         style: {
                             'background-color': '#F97316'
                         }
                     },
                     // End 節點 - Strict 模式（綠色）
                     {
-                        selector: 'node[type="end"][finishMode="strict"], node[type="End"][finishMode="strict"], node[type="END"][finishMode="strict"]',
+                        selector: 'node[type="End"][finishMode="strict"]',
                         style: {
                             'background-color': '#22C55E'
                         }
@@ -3030,7 +3030,7 @@
                     const nodeData = {
                         id: node.id,
                         label: node.label ? node.label.replace('\\n', '\n') : '',
-                        type: node.type,
+                        type: normalizeNodeType(node.type),
                         config: node.config || {},
                         icon: node.icon || '',
                         iconUrl: iconUrl,
@@ -3174,8 +3174,8 @@
 
             // 判斷是否為新檔案（只有預設的開始/結束節點或完全空白）
             const isNewWorkflow = nodes.length === 0 || (nodes.length === 2 &&
-                nodes.some(n => n.type === 'start') &&
-                nodes.some(n => n.type === 'end') &&
+                nodes.some(n => n.type && n.type.toLowerCase() === 'start') &&
+                nodes.some(n => n.type && n.type.toLowerCase() === 'end') &&
                 edges.length === 0);
 
             if (isNewWorkflow) {
@@ -3238,22 +3238,39 @@
         // 節點類型標準化（支援舊的大寫名稱和新的 PascalCase）
         function normalizeNodeType(type) {
             if (!type) return type;
+            // key 全部 lowercase，value 為 JS 標準 PascalCase
+            // 涵蓋 DB (ALL_CAPS)、API (PascalCase)、底線變體，統一輸出
             const typeMap = {
-                'SUBFLOW': 'Subflow', 'subflow': 'Subflow',
-                'DELAY': 'Delay', 'delay': 'Delay',
-                'OPSET': 'OpSet', 'opset': 'OpSet',
-                'TELEGRAM': 'Telegram', 'telegram': 'Telegram',
-                'BRANCH': 'Branch', 'branch': 'Branch',
-                'CONVERGE': 'Converge', 'converge': 'Converge',
-                'EMAILRELAY': 'EmailRelay', 'emailrelay': 'EmailRelay',
-                'SYS_TELEGRAM': 'SysTelegram', 'sys_telegram': 'SysTelegram',
-                'OP_FIELDREAD': 'OpFieldRead', 'op_fieldread': 'OpFieldRead',
-                'OP_FIELDWRITE': 'OpFieldWrite', 'op_fieldwrite': 'OpFieldWrite',
-                'FORMEXP': 'FormExp', 'formexp': 'FormExp',
-                'ABANDON': 'Abandon', 'abandon': 'Abandon',
-                'OPCOPY': 'OpCopy', 'opcopy': 'OpCopy'
+                'start': 'Start',
+                'end': 'End',
+                'formadapter': 'FormAdapter',
+                'approve': 'FormAdapter',       // DB: APPROVE → 對應 FormAdapter
+                'delay': 'Delay',
+                'branch': 'Branch',
+                'condition': 'Condition',
+                'switch': 'Switch',
+                'converge': 'Converge',
+                'parallelfork': 'ParallelFork',
+                'parallel_fork': 'ParallelFork',
+                'paralleljoin': 'ParallelJoin',
+                'parallel_join': 'ParallelJoin',
+                'subflow': 'Subflow',
+                'notification': 'Notification',
+                'telegram': 'Telegram',
+                'emailadapter': 'EmailAdapter',
+                'opset': 'OpSet',
+                'opfieldread': 'OpFieldRead',
+                'op_fieldread': 'OpFieldRead',
+                'opfieldwrite': 'OpFieldWrite',
+                'op_fieldwrite': 'OpFieldWrite',
+                'formexp': 'FormExp',
+                'emailrelay': 'EmailRelay',
+                'sqlexecutor': 'SqlExecutor',
+                'sys_telegram': 'SysTelegram',
+                'systelegram': 'SysTelegram',
+                'abandon': 'Abandon',
             };
-            return typeMap[type] || type;
+            return typeMap[type.toLowerCase()] || type;
         }
 
         // 顯示節點資訊
@@ -3301,7 +3318,6 @@
                 'Converge': '匯聚節點',
                 'Delay': '暫停',
                 'OpSet': '設定變數',
-                'OPCOPY': '複製變數',
                 'FormExp': '表單過期',
                 'FormAdapter': '簽核',
                 'EmailAdapter': '郵件通知',
@@ -3317,7 +3333,7 @@
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
-                'FormAdapter', 'End', 'Converge'
+                'FormAdapter', 'End', 'Converge', 'SqlExecutor'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
 
@@ -3552,8 +3568,8 @@
                 `;
             }
 
-            // SQLExecutor SQL 查詢節點配置
-            if (type === 'SQLExecutor') {
+            // SqlExecutor SQL 查詢節點配置
+            if (type === 'SqlExecutor') {
                 const currentConfig = node.data('config') || {};
                 const queryType = currentConfig.query_type || '';
                 const resultVar = currentConfig.result_var || '';
@@ -4492,8 +4508,8 @@
                 }, 50);
             }
 
-            // END 結束節點配置（主流程 End 節點）
-            if (type === 'end' || type === 'End' || type === 'END') {
+            // End 結束節點配置
+            if (type === 'End') {
                 const currentConfig = node.data('config') || {};
                 const finishMode = currentConfig.finish_mode || 'detach';
                 const waitSeconds = currentConfig.wait_seconds !== undefined ? currentConfig.wait_seconds : 3;
