@@ -11,7 +11,7 @@ import os
 import sys
 import argparse
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 設定 logging
 logging.basicConfig(
@@ -110,6 +110,10 @@ def update_result(queue_item, result):
         # 保持 WAITING 狀態
         queue_item.wait()
         queue_item.result = result
+        # 如果有 retry_after_seconds，設定下次輪詢時間（用於 strict 模式 End 節點等）
+        retry_after = result.get('data', {}).get('retry_after_seconds')
+        if retry_after:
+            queue_item.scheduled_at = datetime.utcnow() + timedelta(seconds=retry_after)
         db.session.commit()
 
     elif status == 'pending':
@@ -138,9 +142,22 @@ def update_result(queue_item, result):
         queue_item.success(result)
         db.session.commit()
 
+        finish_mode = result.get('data', {}).get('finish_mode', 'detach')
+        has_failures = result.get('data', {}).get('has_failures', False)
+
+        # cancel 模式：主動取消所有未完成節點
+        if finish_mode == 'cancel':
+            WorkflowEngine.cancel_pending_nodes(
+                queue_item.workflow_instance_secure_code,
+                exclude_queue_item_id=queue_item.id
+            )
+
+        # strict 模式且有節點失敗 → 標記為 FAILED
+        wf_status = 'FAILED' if (finish_mode == 'strict' and has_failures) else 'COMPLETED'
+
         WorkflowEngine.complete_workflow(
             queue_item.workflow_instance_secure_code,
-            status='COMPLETED',
+            status=wf_status,
             end_message=result.get('message')
         )
 

@@ -5,10 +5,13 @@ FormWorkflow Module - Workflow Engine
 負責啟動工作流、處理節點執行、推進流程。
 適配 BeakPlatform 模組化架構。
 """
+import logging
 import secrets
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy import and_, or_
+
+logger = logging.getLogger(__name__)
 
 from app import db
 from app.platform.auth import current_user
@@ -441,6 +444,36 @@ class WorkflowEngine:
             form_instance.completed_at = datetime.utcnow()
 
         db.session.commit()
+
+    @staticmethod
+    def cancel_pending_nodes(
+        workflow_instance_secure_code: str,
+        exclude_queue_item_id: int = None
+    ):
+        """
+        取消工作流中所有未完成的節點（cancel 模式用）
+
+        Args:
+            workflow_instance_secure_code: 工作流實例 secure_code
+            exclude_queue_item_id: 排除的佇列項目 ID（End 節點自己）
+        """
+        query = FwNodeExecutionQueue.query.filter(
+            FwNodeExecutionQueue.workflow_instance_secure_code == workflow_instance_secure_code,
+            FwNodeExecutionQueue.status.in_(['PENDING', 'RUNNING', 'WAITING'])
+        )
+
+        if exclude_queue_item_id:
+            query = query.filter(FwNodeExecutionQueue.id != exclude_queue_item_id)
+
+        pending_nodes = query.all()
+
+        for node in pending_nodes:
+            node.cancel()
+
+        if pending_nodes:
+            db.session.commit()
+            logger.info(f'cancel 模式：已取消 {len(pending_nodes)} 個未完成節點 '
+                        f'(workflow={workflow_instance_secure_code})')
 
     @staticmethod
     def process_approval(
