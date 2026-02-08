@@ -66,7 +66,7 @@ def module_permissions():
 @require_permission('form_workflow.template.view')
 def list_templates():
     """取得表單模板列表"""
-    from ..models import FwFormTemplate
+    from ..models import FwFormTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
     if not org:
@@ -87,10 +87,24 @@ def list_templates():
 
     templates = query.order_by(FwFormTemplate.updated_at.desc()).all()
 
+    # 查詢已配對的表單 ID 集合
+    from app import db
+    mapped_form_ids = set(
+        r[0] for r in db.session.query(FwFormWorkflowMapping.form_template_id).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).all()
+    )
+
+    result = []
+    for t in templates:
+        d = t.to_dict(include_schema=False)
+        d['is_mapped'] = t.id in mapped_form_ids
+        result.append(d)
+
     return jsonify({
         'success': True,
         'data': {
-            'templates': [t.to_dict(include_schema=False) for t in templates]
+            'templates': result
         }
     })
 
@@ -227,6 +241,106 @@ def update_template(secure_code):
     })
 
 
+@api_bp.route('/templates/batch/delete', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.delete')
+def batch_delete_templates():
+    """批次刪除表單模板（軟刪除）"""
+    from ..models import FwFormTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    results = []
+    succeeded = 0
+    for sc in secure_codes:
+        tpl = FwFormTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not tpl:
+            results.append({'secure_code': sc, 'success': False, 'message': '找不到表單'})
+            continue
+        tpl.is_deleted = True
+        results.append({'secure_code': sc, 'success': True, 'message': '已刪除'})
+        succeeded += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'results': results,
+        'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
+    })
+
+
+@api_bp.route('/templates/batch/save-new-version', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.edit')
+def batch_save_new_version_templates():
+    """批次另存新版表單模板（複製出新記錄，版本號遞增）"""
+    from ..models import FwFormTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    results = []
+    succeeded = 0
+    for sc in secure_codes:
+        tpl = FwFormTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not tpl:
+            results.append({'secure_code': sc, 'success': False, 'message': '找不到表單'})
+            continue
+        current_version = tpl.version or 'AA'
+        if len(current_version) >= 2:
+            first, second = current_version[0], current_version[1]
+            new_version = (chr(ord(first) + 1) + 'A') if second == 'Z' else (first + chr(ord(second) + 1))
+        else:
+            new_version = 'AA'
+        new_tpl = FwFormTemplate(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=tpl.org_secure_code,
+            code=f'FT{secrets.token_hex(4).upper()}',
+            name=tpl.name,
+            description=tpl.description,
+            category=tpl.category,
+            category_secure_code=tpl.category_secure_code,
+            schema=tpl.schema,
+            builder_config=tpl.builder_config,
+            version=new_version,
+            revision=1,
+            thumbnail_2x1=tpl.thumbnail_2x1,
+            thumbnail_1x1=tpl.thumbnail_1x1,
+            thumbnail_1x2=tpl.thumbnail_1x2,
+            is_active=tpl.is_active,
+            owner_secure_code=current_user.secure_code,
+        )
+        db.session.add(new_tpl)
+        results.append({'secure_code': sc, 'success': True, 'message': f'已另存為版本 {new_version}', 'new_secure_code': new_tpl.secure_code})
+        succeeded += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'results': results,
+        'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
+    })
+
+
 @api_bp.route('/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @require_permission('form_workflow.template.delete')
@@ -296,7 +410,7 @@ def delete_template(secure_code):
 @require_permission('form_workflow.workflow.view')
 def list_workflows():
     """取得工作流模板列表"""
-    from ..models import FwWorkflowTemplate
+    from ..models import FwWorkflowTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
     if not org:
@@ -317,10 +431,28 @@ def list_workflows():
 
     workflows = query.order_by(FwWorkflowTemplate.updated_at.desc()).all()
 
+    # 查詢每個流程的配對數量
+    from app import db
+    from sqlalchemy import func
+    mapping_counts = dict(
+        db.session.query(
+            FwFormWorkflowMapping.workflow_template_id,
+            func.count(FwFormWorkflowMapping.id)
+        ).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).group_by(FwFormWorkflowMapping.workflow_template_id).all()
+    )
+
+    result = []
+    for w in workflows:
+        d = w.to_dict(include_graph=False)
+        d['mapping_count'] = mapping_counts.get(w.id, 0)
+        result.append(d)
+
     return jsonify({
         'success': True,
         'data': {
-            'workflows': [w.to_dict(include_graph=False) for w in workflows]
+            'workflows': result
         }
     })
 
@@ -454,6 +586,107 @@ def update_workflow(secure_code):
         'success': True,
         'data': workflow.to_dict(include_graph=True),
         'message': '工作流模板已更新'
+    })
+
+
+@api_bp.route('/workflows/batch/delete', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.workflow.delete')
+def batch_delete_workflows():
+    """批次刪除工作流模板（軟刪除）"""
+    from ..models import FwWorkflowTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    results = []
+    succeeded = 0
+    for sc in secure_codes:
+        wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not wf:
+            results.append({'secure_code': sc, 'success': False, 'message': '找不到流程'})
+            continue
+        wf.is_deleted = True
+        results.append({'secure_code': sc, 'success': True, 'message': '已刪除'})
+        succeeded += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'results': results,
+        'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
+    })
+
+
+@api_bp.route('/workflows/batch/save-new-version', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.workflow.edit')
+def batch_save_new_version_workflows():
+    """批次另存新版工作流模板（複製出新記錄，版本號遞增）"""
+    from ..models import FwWorkflowTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    results = []
+    succeeded = 0
+    for sc in secure_codes:
+        wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not wf:
+            results.append({'secure_code': sc, 'success': False, 'message': '找不到流程'})
+            continue
+        current_version = wf.version or 'AA'
+        if len(current_version) >= 2:
+            first, second = current_version[0], current_version[1]
+            new_version = (chr(ord(first) + 1) + 'A') if second == 'Z' else (first + chr(ord(second) + 1))
+        else:
+            new_version = 'AA'
+        new_wf = FwWorkflowTemplate(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=wf.org_secure_code,
+            code=f'WF{secrets.token_hex(4).upper()}',
+            name=wf.name,
+            description=wf.description,
+            category=wf.category,
+            category_secure_code=wf.category_secure_code,
+            graph=wf.graph,
+            cytoscape_config=wf.cytoscape_config,
+            version=new_version,
+            revision=1,
+            thumbnail_2x1=wf.thumbnail_2x1,
+            thumbnail_1x1=wf.thumbnail_1x1,
+            thumbnail_1x2=wf.thumbnail_1x2,
+            is_active=wf.is_active,
+            is_subprocess=wf.is_subprocess,
+            owner_secure_code=current_user.secure_code,
+        )
+        db.session.add(new_wf)
+        results.append({'secure_code': sc, 'success': True, 'message': f'已另存為版本 {new_version}', 'new_secure_code': new_wf.secure_code})
+        succeeded += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'results': results,
+        'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
     })
 
 

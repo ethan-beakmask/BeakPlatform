@@ -56,7 +56,7 @@ def list_mappings():
 
     mappings = query.order_by(FwFormWorkflowMapping.updated_at.desc()).all()
 
-    # 批次查詢表單和流程名稱
+    # 批次查詢表單和流程（含名稱、版本）
     form_ids = [m.form_template_id for m in mappings]
     workflow_ids = [m.workflow_template_id for m in mappings]
 
@@ -65,18 +65,24 @@ def list_mappings():
 
     if form_ids:
         forms = FwFormTemplate.query.filter(FwFormTemplate.id.in_(form_ids)).all()
-        form_map = {f.id: f.name for f in forms}
+        form_map = {f.id: {'name': f.name, 'version': f.version, 'revision': f.revision} for f in forms}
 
     if workflow_ids:
         workflows = FwWorkflowTemplate.query.filter(FwWorkflowTemplate.id.in_(workflow_ids)).all()
-        workflow_map = {w.id: w.name for w in workflows}
+        workflow_map = {w.id: {'name': w.name, 'version': w.version, 'revision': w.revision} for w in workflows}
 
     # 組合結果
     result = []
     for m in mappings:
         data = m.to_dict()
-        data['form_template_name'] = form_map.get(m.form_template_id, m.form_template_code)
-        data['workflow_template_name'] = workflow_map.get(m.workflow_template_id, m.workflow_template_code)
+        fi = form_map.get(m.form_template_id, {})
+        wi = workflow_map.get(m.workflow_template_id, {})
+        data['form_template_name'] = fi.get('name', m.form_template_code)
+        data['form_current_version'] = fi.get('version', 'AA')
+        data['form_current_revision'] = fi.get('revision', 0)
+        data['workflow_template_name'] = wi.get('name', m.workflow_template_code)
+        data['workflow_current_version'] = wi.get('version', 'AA')
+        data['workflow_current_revision'] = wi.get('revision', 0)
         result.append(data)
 
     return jsonify({
@@ -725,7 +731,8 @@ def list_unmapped_forms():
             'secure_code': f.secure_code,
             'name': f.name,
             'code': f.code,
-            'version': f.version
+            'version': f.version,
+            'revision': f.revision
         } for f in unmapped]
     })
 
@@ -754,7 +761,8 @@ def list_workflows_for_mapping():
             'secure_code': w.secure_code,
             'name': w.name,
             'code': w.code,
-            'version': w.version
+            'version': w.version,
+            'revision': w.revision
         } for w in workflows]
     })
 

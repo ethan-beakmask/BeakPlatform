@@ -27,6 +27,7 @@
     .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; }
     .fw-badge.active { background: #dcfce7; color: #166534; }
     .fw-badge.inactive { background: #fee2e2; color: #991b1b; }
+    .fw-badge.info { background: #dbeafe; color: #1e40af; }
 
     .fw-empty { text-align: center; padding: 48px; color: #999; }
     .fw-loading { text-align: center; padding: 48px; color: #666; }
@@ -98,6 +99,7 @@
     .fw-chip.active { background: #0066cc; color: white; border-color: #0066cc; }
     .fw-chip .chip-count { font-size: 10px; background: rgba(0,0,0,0.1); padding: 1px 5px; border-radius: 8px; }
     .fw-chip.active .chip-count { background: rgba(255,255,255,0.3); }
+    .fw-table tr.bg-blue-50 { background: #eff6ff; }
 </style>
 {% endblock %}
 
@@ -149,14 +151,29 @@
             <p>點擊「新增工作流」開始建立</p>
         </div>
 
+        <!-- 批次工具列 -->
+        <div x-show="!loading && selectedItems.length > 0 && viewMode === 'list'"
+             style="padding: 8px 12px; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px; font-size: 13px;">
+            <span style="font-weight: 500;">已選 <strong x-text="selectedItems.length"></strong> 項</span>
+            <button class="fw-btn" @click="invertSelection()" style="padding: 4px 10px;">反選</button>
+            <button class="fw-btn primary" @click="batchSaveNewVersion()" :disabled="batchProcessing" style="padding: 4px 10px;">另存新版</button>
+            <button class="fw-btn danger" @click="batchDelete()" :disabled="batchProcessing" style="padding: 4px 10px;">刪除</button>
+            <span x-show="batchProcessing" style="color: #666;">處理中...</span>
+        </div>
+
         <!-- 清單模式 -->
         <table x-show="!loading && filteredWorkflows.length > 0 && viewMode === 'list'" class="fw-table">
             <thead>
                 <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" @change="toggleSelectAll()" :checked="selectedItems.length > 0 && selectedItems.length === filteredWorkflows.length">
+                    </th>
                     <th style="width: 200px;">名稱</th>
                     <th style="width: 120px;">代碼</th>
                     <th>描述</th>
+                    <th style="width: 60px;">版本</th>
                     <th style="width: 80px;">節點數</th>
+                    <th style="width: 60px; text-align: center;">配對</th>
                     <th style="width: 80px;">狀態</th>
                     <th style="width: 140px;">更新時間</th>
                     <th style="width: 150px;" class="actions">操作</th>
@@ -164,11 +181,19 @@
             </thead>
             <tbody>
                 <template x-for="w in filteredWorkflows" :key="w.secure_code">
-                    <tr>
+                    <tr :class="selectedItems.includes(w.secure_code) ? 'bg-blue-50' : ''">
+                        <td style="text-align: center;">
+                            <input type="checkbox" :value="w.secure_code" :checked="selectedItems.includes(w.secure_code)" @change="toggleSelect(w.secure_code)">
+                        </td>
                         <td style="font-weight: 500;" x-text="w.name"></td>
                         <td style="font-family: monospace; color: #666;" x-text="w.code || '-'"></td>
                         <td style="color: #666;" x-text="truncate(w.description, 50)"></td>
+                        <td style="font-family: monospace; color: #999; font-size: 12px;" x-text="(w.version || 'AA') + (w.revision || '')"></td>
                         <td style="text-align: center;" x-text="w.node_count || 0"></td>
+                        <td style="text-align: center;">
+                            <span x-show="w.mapping_count > 0" class="fw-badge info" x-text="w.mapping_count"></span>
+                            <span x-show="!w.mapping_count" style="color: #999; font-size: 12px;">-</span>
+                        </td>
                         <td>
                             <span class="fw-badge" :class="w.is_active ? 'active' : 'inactive'"
                                   x-text="w.is_active ? '啟用' : '停用'"></span>
@@ -339,6 +364,8 @@ function workflowListManager() {
         searchQuery: '',
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
+        selectedItems: [],
+        batchProcessing: false,
         pagination: { page: 1, pages: 1, total: 0, has_prev: false, has_next: false },
 
         showModal: false,
@@ -545,6 +572,75 @@ function workflowListManager() {
         truncate(str, len) {
             if (!str) return '-';
             return str.length > len ? str.substring(0, len) + '...' : str;
+        },
+
+        toggleSelect(sc) {
+            const idx = this.selectedItems.indexOf(sc);
+            if (idx >= 0) this.selectedItems.splice(idx, 1);
+            else this.selectedItems.push(sc);
+        },
+
+        toggleSelectAll() {
+            if (this.selectedItems.length === this.filteredWorkflows.length) {
+                this.selectedItems = [];
+            } else {
+                this.selectedItems = this.filteredWorkflows.map(w => w.secure_code);
+            }
+        },
+
+        invertSelection() {
+            const all = this.filteredWorkflows.map(w => w.secure_code);
+            this.selectedItems = all.filter(sc => !this.selectedItems.includes(sc));
+        },
+
+        async batchSaveNewVersion() {
+            if (this.batchProcessing || this.selectedItems.length === 0) return;
+            if (!confirm(`確定要將選取的 ${this.selectedItems.length} 個流程另存新版？`)) return;
+            this.batchProcessing = true;
+            try {
+                const res = await fetch('/api/form-workflow/workflows/batch/save-new-version', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secure_codes: this.selectedItems })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`完成：成功 ${data.summary.succeeded}，失敗 ${data.summary.failed}`);
+                    this.selectedItems = [];
+                    this.loadWorkflows();
+                } else {
+                    alert('操作失敗: ' + (data.error || data.message));
+                }
+            } catch (e) {
+                alert('操作失敗: ' + e.message);
+            } finally {
+                this.batchProcessing = false;
+            }
+        },
+
+        async batchDelete() {
+            if (this.batchProcessing || this.selectedItems.length === 0) return;
+            if (!confirm(`確定要刪除選取的 ${this.selectedItems.length} 個流程？此操作無法復原。`)) return;
+            this.batchProcessing = true;
+            try {
+                const res = await fetch('/api/form-workflow/workflows/batch/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secure_codes: this.selectedItems })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`完成：成功 ${data.summary.succeeded}，失敗 ${data.summary.failed}`);
+                    this.selectedItems = [];
+                    this.loadWorkflows();
+                } else {
+                    alert('操作失敗: ' + (data.error || data.message));
+                }
+            } catch (e) {
+                alert('操作失敗: ' + e.message);
+            } finally {
+                this.batchProcessing = false;
+            }
         }
     };
 }

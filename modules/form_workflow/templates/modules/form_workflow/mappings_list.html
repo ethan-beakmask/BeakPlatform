@@ -115,12 +115,12 @@
                     <tr>
                         <td>
                             <div style="font-weight: 500;" x-text="m.form_template_name || m.form_template_code"></div>
-                            <span class="fw-version" x-text="'v' + (m.form_template_version || 'AA')"></span>
+                            <span class="fw-version" x-text="(m.form_current_version || m.form_template_version || 'AA') + (m.form_current_revision || '')"></span>
                         </td>
                         <td class="fw-arrow">→</td>
                         <td>
                             <div style="font-weight: 500;" x-text="m.workflow_template_name || m.workflow_template_code"></div>
-                            <span class="fw-version" x-text="'v' + (m.workflow_template_version || 'AA')"></span>
+                            <span class="fw-version" x-text="(m.workflow_current_version || m.workflow_template_version || 'AA') + (m.workflow_current_revision || '')"></span>
                         </td>
                         <td style="text-align: center;">
                             <span class="fw-badge" :class="m.is_published ? 'active' : 'secondary'"
@@ -160,7 +160,7 @@
                         <select x-model="newMapping.form_template_secure_code" required>
                             <option value="">-- 請選擇表單 --</option>
                             <template x-for="f in unmappedForms" :key="f.secure_code">
-                                <option :value="f.secure_code" x-text="f.name + ' (' + f.code + ')'"></option>
+                                <option :value="f.secure_code" x-text="f.name + ' (' + f.code + ') ' + (f.version || 'AA') + (f.revision || '')"></option>
                             </template>
                         </select>
                         <p x-show="unmappedForms.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
@@ -172,7 +172,7 @@
                         <select x-model="newMapping.workflow_template_secure_code" required>
                             <option value="">-- 請選擇流程 --</option>
                             <template x-for="w in workflows" :key="w.secure_code">
-                                <option :value="w.secure_code" x-text="w.name + ' (' + w.code + ')'"></option>
+                                <option :value="w.secure_code" x-text="w.name + ' (' + w.code + ') ' + (w.version || 'AA') + (w.revision || '')"></option>
                             </template>
                         </select>
                         <p x-show="workflows.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
@@ -389,9 +389,10 @@ function mappingsManager() {
             }
         },
 
-        openCreateModal() {
+        async openCreateModal() {
             this.newMapping = { form_template_secure_code: '', workflow_template_secure_code: '' };
             this.showCreateModal = true;
+            await Promise.all([this.loadUnmappedForms(), this.loadWorkflows()]);
         },
 
         closeCreateModal() {
