@@ -19,6 +19,7 @@ from .published_form_workflow import FwPublishedFormWorkflow
 from .workflow_background import FwWorkflowBackground
 from .field_change import FwFormFieldChange
 from .sql_form_registry import FwSqlFormRegistry
+from .node_definition import WorkflowNodeDefinition
 
 __all__ = [
     'ModuleBaseModel',
@@ -36,4 +37,5 @@ __all__ = [
     'FwWorkflowBackground',
     'FwFormFieldChange',
     'FwSqlFormRegistry',
+    'WorkflowNodeDefinition',
 ]
