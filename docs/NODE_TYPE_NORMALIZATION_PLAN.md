@@ -116,10 +116,81 @@ function normalizeNodeType(type) {
 
 ---
 
+## Issue #10: Node Type 定義改為 DB 驅動 (2026-02-08)
+
+> 關聯 Issue: #10
+> 狀態: 完成 ✅
+> Commit: `8bce008`
+
+### 背景
+
+Issue #8 完成正規化後，API 端的 `_get_node_definitions()` 仍是 287 行硬編碼。
+Issue #10 將其改為 DB 驅動，`workflow_node_definitions` 表成為 **single source of truth**。
+
+### 架構
+
+```
+workflow_node_definitions (DB)
+    ↓ ORM 查詢
+WorkflowNodeDefinition Model → to_api_dict()
+    ↓
+GET /api/workflows/data/node-definitions
+    ↓ JSON
+前端 JS (normalizeNodeType 仍負責大小寫轉換)
+```
+
+### 改動摘要
+
+| 項目 | 說明 |
+|------|------|
+| 新增 ORM Model | `modules/form_workflow/models/node_definition.py` → `WorkflowNodeDefinition` |
+| DB Migration | `modules/form_workflow/migrations/007_normalize_node_definitions.sql` — 22 筆正規化（PascalCase node_type、中文 category、icon 路徑、config_schema JSONB） |
+| API 改查 DB | `get_node_definitions()` 改為 `WorkflowNodeDefinition.query.filter_by(is_active=True)` |
+| API schema | `get_node_schema()` 支援大小寫不敏感查詢 (`func.lower()`) |
+| 刪除硬編碼 | `_get_node_definitions()` 287 行硬編碼函數已刪除 |
+
+### WorkflowNodeDefinition 欄位
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| `node_type` | String(100), unique | PascalCase，如 `SubFlow`、`ParallelFork` |
+| `category` | String(100) | 中文分類，如「流程控制」「資料操作」|
+| `display_name` | String(200) | 中文名稱 |
+| `description` | Text | 說明 |
+| `icon` | String(200) | SVG 圖示路徑 |
+| `execution_handler` | String(200) | 執行處理器類別名 |
+| `config_schema` | JSONB | 節點設定面板的欄位定義 |
+| `canvas_shape` | String(50) | Cytoscape 形狀 |
+| `canvas_color` | String(50) | 畫布顯示顏色 |
+| `canvas_width` / `canvas_height` | Integer | 畫布尺寸 |
+| `max_input_connections` / `max_output_connections` | Integer | 連線限制 (-1=無限) |
+| `default_timeout_seconds` / `max_timeout_seconds` | Integer | 逾時設定 |
+| `require_system_admin` | Boolean | 是否需要系統管理員權限 |
+| `scope` | String(20) | `SYSTEM` 或 `ORG` |
+| `org_secure_code` | String(32), nullable | ORG scope 時綁定的企業 |
+
+### 新增 Node Type 流程
+
+1. 在 `workflow_node_definitions` 表新增一筆記錄（透過 migration SQL 或管理介面）
+2. 前端 `normalizeNodeType()` 的 typeMap 中新增對應的 lowercase→PascalCase 映射
+3. 前端 `showNodeInfo()` 中新增對應的設定面板渲染邏輯
+4. （選）新增 execution_handler 後端實作
+
+### 注意事項
+
+- **禁止在 API 程式碼中硬編碼 node type 定義**，一律透過 DB 查詢
+- DB 的 `node_type` 欄位使用 PascalCase（如 `SubFlow`，不是 `SUBFLOW` 或 `subflow`）
+- `config_schema` JSONB 定義該節點的可設定欄位，供前端設定面板使用
+- `scope='SYSTEM'` 的節點所有企業共用；未來可支援 `scope='ORG'` 企業自訂節點
+
+---
+
 ## 相關檔案定位
 
 - DB 定義: `workflow_node_definitions` 表
-- API 定義: `modules/form_workflow/api/workflows.py` → `_get_node_definitions()` (行 62-348)
-- JS normalize: `modules/form_workflow/static/modules/form_workflow/js/workflow-main.js` → `normalizeNodeType()` (行 3239-3257)
-- JS 面板渲染: 同上 → `showNodeInfo()` (行 3260-4540)
-- JS 硬編碼比較位置: 行 3272, 3286, 3317, 3347, 3454, 3509, 3556, 3610, 3687, 3795, 3935, 4102, 4182, 4281, 4393, 4496, 4550
+- ORM Model: `modules/form_workflow/models/node_definition.py` → `WorkflowNodeDefinition`
+- API 查詢: `modules/form_workflow/api/workflows.py` → `get_node_definitions()` (查 DB)
+- API schema: `modules/form_workflow/api/workflows.py` → `get_node_schema()` (大小寫不敏感)
+- DB Migration: `modules/form_workflow/migrations/007_normalize_node_definitions.sql`
+- JS normalize: `modules/form_workflow/static/modules/form_workflow/js/workflow-main.js` → `normalizeNodeType()`
+- JS 面板渲染: 同上 → `showNodeInfo()`

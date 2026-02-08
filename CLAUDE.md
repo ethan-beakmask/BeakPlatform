@@ -140,6 +140,37 @@ modules/<module_name>/static/modules/<module_name>/
 
 ---
 
+## 🎨 前端開發規範
+
+### FRONT-01: JS/CSS 分離原則
+
+**HTML 模板中禁止大量內嵌 JS/CSS。** 邏輯和樣式應盡量抽為獨立檔案。
+
+| 類型 | 規範 | 說明 |
+|------|------|------|
+| CSS | 抽為 `.css` 靜態檔 | 放在 `static/` 目錄，用 `<link>` 引入 |
+| JS 邏輯 | 抽為 `.js` 靜態檔 | 放在 `static/js/`，用 `<script src>` 引入 |
+| 小段膠水代碼 | 可留在 HTML | 如初始化呼叫、Jinja2 變數注入（不超過 30 行） |
+| Alpine.js 元件 | Jinja2 partial 可接受 | 因為需要 `{% include %}` 注入到 `return {}` 中 |
+
+**平台層靜態檔位置：** `backend/app/static/js/`、`backend/app/static/css/`
+**模組層靜態檔位置：** `modules/<name>/static/modules/<name>/js/`、`modules/<name>/static/modules/<name>/css/`
+
+### FRONT-02: HTML 模板行數上限
+
+- 單一 HTML 模板不應超過 **500 行**（含 HTML + 內嵌 JS/CSS）
+- 超過時必須拆分：CSS → 靜態檔、模態框 → `_*_modals.html`、JS → `.js` 靜態檔或 `_*_methods.html` partial
+- 參考已完成的拆分模式：`form_center.html`、`departments.html`、`form_designer.html`
+
+### FRONT-03: Node Type 定義禁止硬編碼
+
+- **禁止**在 API 程式碼中硬編碼 node type 定義
+- `workflow_node_definitions` DB 表是 **single source of truth**
+- API 透過 `WorkflowNodeDefinition` ORM Model 查詢
+- 新增 node type 流程見 `docs/NODE_TYPE_NORMALIZATION_PLAN.md`
+
+---
+
 ## 🚫 禁止事項
 
 1. **禁止** 繞過認證攔截器
@@ -149,6 +180,8 @@ modules/<module_name>/static/modules/<module_name>/
 5. **禁止** SQL 字串拼接
 6. **禁止** 在平台內實作業務功能（應透過模組）
 7. **禁止** 將模組靜態檔案複製到 `backend/app/static/`（會造成雙份不同步）
+8. **禁止** 在 API 程式碼中硬編碼 node type 定義（應查 DB）
+9. **禁止** HTML 模板內嵌大量 JS/CSS（應抽為獨立靜態檔或 partial）
 
 ---
 

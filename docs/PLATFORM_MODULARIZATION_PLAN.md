@@ -97,6 +97,8 @@ flask module enable/disable <name>
 |------|------|------|
 | 2026-01-23 | 平台+模組架構（取代融入式移轉） | 舊 BeakMask 定位是平台而非產品 |
 | 2026-01-23 | 資料庫表名前綴（非獨立 schema） | 相容性較好，無 cross-schema join 問題 |
+| 2026-02-08 | Node Type 定義改為 DB 驅動 (Issue #10) | 消除 API 287 行硬編碼，DB 為 single source of truth |
+| 2026-02-08 | 前端 JS/CSS 分離規範 (Issue #7) | HTML 模板瘦身，單檔不超過 500 行 |
 
 ---
 
