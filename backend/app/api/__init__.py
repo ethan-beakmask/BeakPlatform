@@ -62,6 +62,10 @@ def register_blueprints(app: Flask) -> None:
     from .enterprise_settings import api_enterprise_settings
     app.register_blueprint(api_enterprise_settings)
 
+    # Enterprise data queries (available configs for workflow designer, etc.)
+    from .enterprise_data import api_enterprise_data
+    app.register_blueprint(api_enterprise_data)
+
     # User numbering rules
     from .user_numbering import api_numbering_bp
     app.register_blueprint(api_numbering_bp, url_prefix='/api')
