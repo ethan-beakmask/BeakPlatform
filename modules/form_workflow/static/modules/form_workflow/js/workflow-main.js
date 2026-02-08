@@ -68,7 +68,66 @@
         let currentVersionType = 'design';  // 當前版本類型 (design/published)
         let variableMapping = null;    // 變數映射表（新式變數 <-> 舊式變數）
 
-        // 監聽修飾鍵
+        // ==================== Undo 系統 ====================
+        const undoStack = [];
+        const UNDO_MAX = 50;
+
+        function pushUndoState() {
+            if (!cy || cy.elements().length === 0) return;
+            const state = cy.json().elements;
+            undoStack.push(JSON.stringify(state));
+            if (undoStack.length > UNDO_MAX) undoStack.shift();
+        }
+
+        function undo() {
+            if (undoStack.length === 0) {
+                updateStatus('沒有可復原的操作', 'warning');
+                return;
+            }
+            const state = JSON.parse(undoStack.pop());
+            cy.elements().remove();
+            cy.add(state);
+
+            // 重新套用所有節點的圖示樣式
+            cy.nodes().forEach(node => {
+                let iconUrl = node.data('iconUrl') || '';
+                if (!iconUrl && node.data('icon')) {
+                    const icon = node.data('icon');
+                    if (icon.startsWith('/static/') || icon.startsWith('http')) {
+                        iconUrl = icon;
+                    } else {
+                        iconUrl = getSvgDataUrl(icon, '#333333');
+                    }
+                    node.data('iconUrl', iconUrl);
+                }
+                if (iconUrl) {
+                    node.style({
+                        'background-image': iconUrl,
+                        'background-fit': 'contain',
+                        'background-clip': 'none'
+                    });
+                }
+                if (!globalNodeBorder) {
+                    node.style('border-width', 0);
+                }
+            });
+
+            cy.style().update();
+            updateMinimap();
+            updateGridOccupancy();
+            updateEdgeSelector();
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+            updateStatus(`已復原 (剩餘 ${undoStack.length} 步)`);
+        }
+
+        function clearUndoState() {
+            undoStack.length = 0;
+            replaceNodeUndoBuffer = null;
+        }
+        // ==================== Undo 系統結束 ====================
+
+        // 監聯修飾鍵
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Shift' && !shiftPressed) {
                 shiftPressed = true;
@@ -520,6 +579,8 @@
         // 綁定事件
         function bindEvents() {
             // 節點 mousedown 事件 - 用於區分畫線和拖動
+            let undoSavedForDrag = false; // 避免拖曳期間重複存 undo
+
             cy.on('mousedown', 'node', function(evt) {
                 const node = evt.target;
 
@@ -527,6 +588,8 @@
                 if (node.data('type') === 'relay') {
                     return;
                 }
+
+                undoSavedForDrag = false;
 
                 // Alt 模式：標記節點以便脫離群組
                 if (altPressed) {
@@ -539,6 +602,12 @@
             // 節點 drag 事件 - 偵測拖動並立即脫離群組（視覺更即時）
             cy.on('drag', 'node', function(evt) {
                 const node = evt.target;
+
+                // 實際開始拖曳時才存 undo（避免單純點擊也存）
+                if (!undoSavedForDrag && node.data('type') !== 'relay') {
+                    pushUndoState();
+                    undoSavedForDrag = true;
+                }
 
                 if (nodePressedForDrag && altPressed && nodePressedForDrag.id() === node.id()) {
                     hasMoved = true;
@@ -939,6 +1008,7 @@
                         return;
                     }
 
+                    pushUndoState();
                     e.preventDefault();
                     isPasting = true; // 設定貼上標記
                     pasteCount++; // 累計貼上次數
@@ -1100,9 +1170,16 @@
                     }, 10);
                 }
 
+                // Ctrl+Z 復原
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !isInputField) {
+                    e.preventDefault();
+                    undo();
+                }
+
                 if (e.key === 'Delete' && !isInputField) {
                     const selected = cy.$(':selected');
                     if (selected.length > 0) {
+                        pushUndoState();
                         let deletedCount = 0;
                         let blockedCount = 0;
                         let deletedSubflow = false;
@@ -1864,6 +1941,7 @@
 
         // 新增節點
         function addNode(type, label, position, icon) {
+            pushUndoState();
             nodeCounter++;
             const nodeId = `node-${type}-${nodeCounter}`;
 
@@ -1928,6 +2006,7 @@
             }
 
             // 通過驗證，建立連線
+            pushUndoState();
             edgeCounter++;
             const edgeId = `edge-${edgeCounter}`;
 
@@ -2769,6 +2848,9 @@
                 lockInterface();
                 return;
             }
+
+            // 切換流程時清除 undo stack
+            clearUndoState();
 
             try {
                 console.log(`📥 載入流程: ${currentWorkflowId}`);
@@ -7150,6 +7232,9 @@
                     // 標記為已成功儲存過
                     hasEverSaved = true;
 
+                    // 儲存後清除 undo stack 和替換 buffer
+                    clearUndoState();
+
                     // 更新初始狀態（儲存後沒有未儲存的變更）
                     updateInitialState();
 
@@ -9394,6 +9479,7 @@
                 return;
             }
 
+            pushUndoState();
             const edgeId = currentSelectedEdge.id();
             const sourceLabel = currentSelectedEdge.source().data('label') || currentSelectedEdge.source().id();
             const targetLabel = currentSelectedEdge.target().data('label') || currentSelectedEdge.target().id();
@@ -10150,6 +10236,7 @@
         // ==================== 替換節點功能 ====================
         let replaceNodeTarget = null;  // 要被替換的節點
         let replaceNodeDefinitions = null;  // 快取節點定義
+        let replaceNodeUndoBuffer = null;  // 最後一次替換的舊節點資料（記憶體保留，不在畫布上）
 
         // 顯示替換節點面板
         async function showReplaceNodePanel() {
@@ -10234,37 +10321,23 @@
             // 填充節點列表
             const listContainer = document.getElementById('replaceNodeList');
 
-            // 先檢查是否有被替換的舊節點可供還原
-            const replacedNodes = cy.nodes().filter(n => {
-                const nodeId = n.id();
-                return nodeId.includes('-replaced-') && n.data('type') !== 'relay';
-            });
-
-            if (replacedNodes.length > 0) {
+            // 先檢查是否有 undo buffer 可供還原
+            if (replaceNodeUndoBuffer) {
+                const buf = replaceNodeUndoBuffer;
                 const restoreDiv = document.createElement('div');
                 restoreDiv.className = 'replace-node-category';
                 restoreDiv.innerHTML = `
                     <div class="replace-node-category-header replace-node-restore-header">
-                        <i class="fas fa-undo"></i> 還原為舊節點
+                        <i class="fas fa-undo"></i> 還原上次替換
                     </div>
                     <div class="replace-node-category-items">
-                        ${replacedNodes.map(node => {
-                            const nodeId = node.id();
-                            const nodeLabel = node.data('label') || node.data('type');
-                            const nodeType = node.data('type');
-                            const nodeIcon = node.data('icon') || '';
-                            // 用單引號包裹並轉義
-                            const safeNodeId = nodeId.replace(/'/g, "\\'");
-                            return `
-                                <div class="replace-node-item replace-node-restore-item" onclick="executeRestoreNode('${safeNodeId}')">
-                                    <img src="${nodeIcon}" class="replace-node-icon" alt="">
-                                    <div class="replace-node-item-info">
-                                        <div class="replace-node-item-label">${nodeLabel}</div>
-                                        <div class="replace-node-item-desc">${nodeType} (已替換)</div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
+                        <div class="replace-node-item replace-node-restore-item" onclick="executeRestoreNode()">
+                            <img src="${buf.icon || ''}" class="replace-node-icon" alt="">
+                            <div class="replace-node-item-info">
+                                <div class="replace-node-item-label">${buf.label || buf.type}</div>
+                                <div class="replace-node-item-desc">${buf.type} → 還原到 ${buf.newNodeId}</div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 listContainer.appendChild(restoreDiv);
@@ -10305,127 +10378,110 @@
             });
         }
 
-        // 還原為舊節點
-        function executeRestoreNode(replacedNodeId) {
-            if (!replaceNodeTarget) {
-                updateStatus('⚠️ 替換目標遺失', 'warning');
+        // 還原上次替換（從記憶體 buffer 還原）
+        function executeRestoreNode() {
+            if (!replaceNodeUndoBuffer) {
+                updateStatus('⚠️ 沒有可還原的替換記錄', 'warning');
                 closeReplaceNodeModal();
                 return;
             }
 
-            const replacedNode = cy.getElementById(replacedNodeId);
-            if (!replacedNode || replacedNode.length === 0) {
-                updateStatus('⚠️ 找不到舊節點', 'warning');
+            pushUndoState();
+            const buf = replaceNodeUndoBuffer;
+
+            // 找到當前佔位的新節點
+            const currentNode = cy.getElementById(buf.newNodeId);
+            if (!currentNode || currentNode.length === 0) {
+                updateStatus('⚠️ 找不到替換後的節點，可能已被刪除', 'warning');
+                replaceNodeUndoBuffer = null;
                 closeReplaceNodeModal();
                 return;
             }
-
-            // 先保存目標節點的參照
-            const currentNode = replaceNodeTarget;
 
             // 關閉選單
-            const modal = document.getElementById('replaceNodeModal');
-            if (modal) {
-                modal.remove();
-            }
-            replaceNodeTarget = null;
+            closeReplaceNodeModal();
 
             const currentId = currentNode.id();
             const currentLabel = currentNode.data('label') || currentId;
-            const currentPosition = { ...currentNode.position() };
-            const currentParent = currentNode.parent();
-            const currentIcon = currentNode.data('icon');
-
-            const replacedLabel = replacedNode.data('label') || replacedNodeId;
-            const replacedIcon = replacedNode.data('icon');
-            const replacedPosition = { ...replacedNode.position() };
 
             // 1. 收集當前節點的所有連線資料
             const connectedEdges = currentNode.connectedEdges();
             const edgeInfoList = [];
             connectedEdges.forEach(edge => {
                 edgeInfoList.push({
-                    edge: edge,
                     sourceId: edge.data('source'),
                     targetId: edge.data('target'),
                     label: edge.data('label') || ''
                 });
             });
 
-            // 2. 將當前節點移到舊節點的位置（左下角），並重命名
-            const newCurrentId = `${currentId}-replaced-${Date.now()}`;
-            const currentNodeCopy = cy.add({
-                group: 'nodes',
-                data: {
-                    ...currentNode.data(),
-                    id: newCurrentId
-                },
-                position: replacedPosition
-            });
-            if (currentIcon) {
-                currentNodeCopy.style({
-                    'background-image': currentIcon,
-                    'background-fit': 'contain',
-                    'background-clip': 'none'
-                });
-            }
-
-            // 3. 移除當前節點
-            const parentId = (currentParent && currentParent.length > 0) ? currentParent.id() : null;
+            // 2. 移除當前節點
+            const parentId = (currentNode.parent() && currentNode.parent().length > 0) ? currentNode.parent().id() : null;
             cy.remove(currentNode);
 
-            // 4. 將舊節點移到原位置，並產生新 ID（去掉 replaced 標記）
-            const originalType = replacedNode.data('type');
-            const newNodeId = `node-${originalType}-${Date.now()}`;
+            // 3. 從 buffer 還原舊節點到原位置
+            const restoredNodeId = `node-${buf.type}-${Date.now()}`;
             const restoredNode = cy.add({
                 group: 'nodes',
                 data: {
-                    ...replacedNode.data(),
-                    id: newNodeId
+                    ...buf.data,
+                    id: restoredNodeId
                 },
-                position: currentPosition
+                position: buf.position
             });
-            if (replacedIcon) {
+
+            // 套用圖示
+            let iconUrl = buf.data.iconUrl || '';
+            if (!iconUrl && buf.icon) {
+                if (buf.icon.startsWith('/static/') || buf.icon.startsWith('http')) {
+                    iconUrl = buf.icon;
+                } else {
+                    iconUrl = getSvgDataUrl(buf.icon, '#333333');
+                }
+            }
+            if (iconUrl) {
                 restoredNode.style({
-                    'background-image': replacedIcon,
+                    'background-image': iconUrl,
                     'background-fit': 'contain',
                     'background-clip': 'none'
                 });
             }
-            if (parentId) {
-                restoredNode.move({ parent: parentId });
+            if (!globalNodeBorder) {
+                restoredNode.style('border-width', 0);
+            }
+            if (parentId || buf.parentId) {
+                restoredNode.move({ parent: parentId || buf.parentId });
             }
 
-            // 5. 移除舊的 replaced 節點
-            cy.remove(replacedNode);
-
-            // 6. 重建連線，指向還原的節點
+            // 4. 重建連線
             edgeInfoList.forEach(info => {
-                const newEdgeData = {
-                    source: info.sourceId === currentId ? newNodeId : info.sourceId,
-                    target: info.targetId === currentId ? newNodeId : info.targetId,
-                    label: info.label
-                };
                 cy.add({
                     group: 'edges',
-                    data: newEdgeData
+                    data: {
+                        source: info.sourceId === currentId ? restoredNodeId : info.sourceId,
+                        target: info.targetId === currentId ? restoredNodeId : info.targetId,
+                        label: info.label
+                    }
                 });
             });
 
-            // 7. 更新畫布
+            // 5. 清除 buffer
+            replaceNodeUndoBuffer = null;
+
+            // 6. 更新畫布
             cy.style().update();
             updateMinimap();
             updateGridOccupancy();
 
-            // 8. 選取還原的節點
+            // 7. 選取還原的節點
             cy.nodes().unselect();
             restoredNode.select();
 
-            // 9. 標記為未儲存
+            // 8. 標記為未儲存
             hasUnsavedChanges = true;
             updateSaveButtonState();
 
-            updateStatus(`✅ 節點已還原：${currentLabel} → ${replacedLabel}`);
+            updateStatus(`✅ 節點已還原：${currentLabel} → ${buf.label}`);
         }
 
         // 關閉替換節點面板
@@ -10445,61 +10501,42 @@
                 return;
             }
 
+            pushUndoState();
+
             // 先保存目標節點的參照，再關閉選單
             const oldNode = replaceNodeTarget;
+            closeReplaceNodeModal();
 
-            // 關閉選單（這會清除 replaceNodeTarget，所以要先保存）
-            const modal = document.getElementById('replaceNodeModal');
-            if (modal) {
-                modal.remove();
-            }
-            replaceNodeTarget = null;
             const oldId = oldNode.id();
             const oldLabel = oldNode.data('label') || oldId;
             const oldPosition = { ...oldNode.position() };
             const oldParent = oldNode.parent();
+            const parentId = (oldParent && oldParent.length > 0) ? oldParent.id() : null;
 
-            // 1. 收集舊節點的所有連線資料（來向、去向）
+            // 1. 收集舊節點的所有連線資料
             const connectedEdges = oldNode.connectedEdges();
             const edgeInfoList = [];
             connectedEdges.forEach(edge => {
                 edgeInfoList.push({
-                    edge: edge,
                     sourceId: edge.data('source'),
-                    targetId: edge.data('target')
+                    targetId: edge.data('target'),
+                    label: edge.data('label') || ''
                 });
             });
-            console.log(`🔗 收集到 ${edgeInfoList.length} 條連線`);
 
-            // 2. 在左下角建立舊節點的複本（保留舊資料供用戶參考）
-            const bottomLeftPos = calculateBottomLeftPosition();
-            const copiedNodeId = `${oldId}-replaced-${Date.now()}`;
-            const oldIcon = oldNode.data('icon');
-            const copiedNode = cy.add({
-                group: 'nodes',
-                data: {
-                    ...oldNode.data(),
-                    id: copiedNodeId
-                },
-                position: bottomLeftPos
-            });
-
-            // 套用舊節點的圖示
-            if (oldIcon) {
-                copiedNode.style({
-                    'background-image': oldIcon,
-                    'background-fit': 'contain',
-                    'background-clip': 'none'
-                });
-            }
-            console.log(`📋 舊節點複製到左下角: ${copiedNodeId}`);
-
-            // 3. 用新節點資料覆蓋原位置的節點
+            // 2. 將舊節點完整資料存入 undo buffer（記憶體保留，不在畫布上）
             const newNodeId = `node-${newType}-${Date.now()}`;
-            oldNode.data('id', newNodeId);  // 這不會生效，id 是不可變的
-            // 所以改用：移除舊節點，在原位置建立新節點
-            const parentId = (oldParent && oldParent.length > 0) ? oldParent.id() : null;
+            replaceNodeUndoBuffer = {
+                data: JSON.parse(JSON.stringify(oldNode.data())),
+                position: oldPosition,
+                parentId: parentId,
+                type: oldNode.data('type'),
+                label: oldLabel,
+                icon: oldNode.data('icon') || '',
+                newNodeId: newNodeId  // 記錄替換後的新節點 ID，供還原時找到目標
+            };
 
+            // 3. 移除舊節點，在原位置建立新節點
             cy.remove(oldNode);
 
             const newNode = cy.add({
@@ -10516,84 +10553,57 @@
 
             // 套用新節點的圖示
             if (newIcon) {
+                let iconUrl = newIcon;
+                if (!newIcon.startsWith('/static/') && !newIcon.startsWith('http')) {
+                    iconUrl = getSvgDataUrl(newIcon, '#333333');
+                }
                 newNode.style({
-                    'background-image': newIcon,
+                    'background-image': iconUrl,
                     'background-fit': 'contain',
                     'background-clip': 'none'
                 });
+            }
+            if (!globalNodeBorder) {
+                newNode.style('border-width', 0);
             }
 
             // 如果原節點在群組內，新節點也加入同一群組
             if (parentId) {
                 newNode.move({ parent: parentId });
             }
-            console.log(`✨ 新節點建立: ${newNodeId} at (${oldPosition.x}, ${oldPosition.y})`);
 
-            // 4. 更新所有連線，將 oldId 替換成 newNodeId
+            // 4. 重建所有連線
             edgeInfoList.forEach(info => {
-                const edge = info.edge;
-
-                // 檢查邊是否還存在（因為移除 oldNode 時邊也會被移除）
-                if (edge.removed()) {
-                    // 邊已被移除，需要重建
-                    const newEdgeData = {
+                cy.add({
+                    group: 'edges',
+                    data: {
                         source: info.sourceId === oldId ? newNodeId : info.sourceId,
                         target: info.targetId === oldId ? newNodeId : info.targetId,
-                        label: edge.data('label') || ''
-                    };
-
-                    cy.add({
-                        group: 'edges',
-                        data: newEdgeData
-                    });
-                    console.log(`🔗 重建連線: ${newEdgeData.source} → ${newEdgeData.target}`);
-                }
+                        label: info.label
+                    }
+                });
             });
 
             // 5. 更新畫布
             cy.style().update();
             updateMinimap();
-
-            // 6. 更新網格佔用映射（清除舊節點的佔用記錄）
             updateGridOccupancy();
 
-            // 7. 選取新節點
+            // 6. 選取新節點
             cy.nodes().unselect();
             newNode.select();
 
-            // 8. 標記為未儲存
+            // 7. 標記為未儲存
             hasUnsavedChanges = true;
             updateSaveButtonState();
 
-            updateStatus(`✅ 節點已替換：${oldLabel} → ${newLabel}\n舊節點已移至左下角`);
-        }
-
-        // 計算畫布左下角空位位置
-        function calculateBottomLeftPosition() {
-            const allNodes = cy.nodes().filter(n => n.data('type') !== 'relay');
-
-            if (allNodes.length === 0) {
-                return { x: -300, y: 300 };
-            }
-
-            // 找出所有節點的邊界
-            let minX = Infinity, maxY = -Infinity;
-            allNodes.forEach(node => {
-                const pos = node.position();
-                if (pos.x < minX) minX = pos.x;
-                if (pos.y > maxY) maxY = pos.y;
-            });
-
-            // 左下角位置，留出間距
-            return {
-                x: minX - 200,
-                y: maxY + 150
-            };
+            updateStatus(`✅ 節點已替換：${oldLabel} → ${newLabel}`);
         }
         // ==================== 替換節點功能結束 ====================
 
         // 建立群組
         function createGroup() {
+            pushUndoState();
             const selectedNodes = cy.nodes(':selected').filter(node => {
                 // 排除中繼點和已經是群組的節點
                 return node.data('type') !== 'relay' && !node.isParent();
@@ -10636,6 +10646,7 @@
 
         // 加入節點到現有群組
         function addToGroup() {
+            pushUndoState();
             const selected = cy.nodes(':selected');
 
             // 分離出節點和群組
@@ -10676,6 +10687,7 @@
 
         // 從群組移出節點
         function removeFromGroup() {
+            pushUndoState();
             const selectedNodes = cy.nodes(':selected').filter(node => {
                 return node.data('type') !== 'relay' && !node.isParent() && node.parent().length > 0;
             });
@@ -10701,6 +10713,7 @@
 
         // 解散群組
         function dissolveGroup() {
+            pushUndoState();
             const selectedGroups = cy.nodes(':selected').filter(node => node.isParent());
 
             if (selectedGroups.length === 0) {
