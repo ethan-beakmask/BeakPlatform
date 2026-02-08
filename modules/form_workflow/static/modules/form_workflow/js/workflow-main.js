@@ -868,6 +868,7 @@
             // 剪貼簿變數
             let clipboard = null;
             let isPasting = false; // 標記是否正在貼上
+            let pasteCount = 0;   // 連續貼上次數（用於累計偏移）
 
             // 按鍵事件：Delete 刪除、Ctrl+C 複製、Ctrl+V 貼上
             document.addEventListener('keydown', function(e) {
@@ -879,8 +880,8 @@
                     activeElement.isContentEditable
                 );
 
-                // Alt+C 複製 (複製所有選中的元素)
-                if (e.altKey && e.key === 'c' && !isInputField) {
+                // Ctrl+C 複製 (複製所有選中的元素)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !isInputField) {
                     const selected = cy.$(':selected');
                     if (selected.length > 0) {
                         // 過濾掉中繼點、中繼線段、Start 節點
@@ -918,6 +919,9 @@
                             }))
                         };
 
+                        // 重置連續貼上計數
+                        pasteCount = 0;
+
                         console.log('複製內容:', {
                             nodes: clipboard.nodes.map(n => ({ id: n.data.id, label: n.data.label, isGroup: n.data.isGroup, parent: n.data.parent })),
                             edges: clipboard.edges.map(e => ({ id: e.data.id, source: e.data.source, target: e.data.target }))
@@ -928,8 +932,8 @@
                     }
                 }
 
-                // Alt+V 貼上
-                if (e.altKey && e.key === 'v' && !isInputField) {
+                // Ctrl+V 貼上（連續按 V 時累計偏移，避免重疊）
+                if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !isInputField) {
                     if (!clipboard || (clipboard.nodes.length === 0 && clipboard.edges.length === 0)) {
                         updateStatus('剪貼簿為空', 'warning');
                         return;
@@ -937,6 +941,9 @@
 
                     e.preventDefault();
                     isPasting = true; // 設定貼上標記
+                    pasteCount++; // 累計貼上次數
+
+                    const offset = 150 * pasteCount; // 每次貼上遞增偏移
 
                     // 先記錄原本選取的元素 ID (準備取消選取)
                     const originalSelected = cy.$(':selected').map(elem => elem.id());
@@ -977,8 +984,8 @@
                             group: 'nodes',
                             data: newNodeData,
                             position: {
-                                x: nodeData.position.x + 150, // 偏移 150px (3倍距離)
-                                y: nodeData.position.y + 150
+                                x: nodeData.position.x + offset,
+                                y: nodeData.position.y + offset
                             },
                             classes: nodeData.classes
                         });
@@ -1016,6 +1023,8 @@
                     });
 
                     console.log('準備貼上的元素:', {
+                        pasteCount: pasteCount,
+                        offset: offset,
                         nodes: newElements.filter(e => e.group === 'nodes').map(n => ({
                             id: n.data.id,
                             label: n.data.label,
@@ -1032,6 +1041,30 @@
 
                     // 添加新元素到圖中
                     const addedElements = cy.add(newElements);
+
+                    // 重新套用節點圖示樣式（cy.add 不會自動套用 background-image）
+                    addedElements.nodes().forEach(node => {
+                        let iconUrl = node.data('iconUrl') || '';
+                        if (!iconUrl && node.data('icon')) {
+                            const icon = node.data('icon');
+                            if (icon.startsWith('/static/') || icon.startsWith('http')) {
+                                iconUrl = icon;
+                            } else {
+                                iconUrl = getSvgDataUrl(icon, '#333333');
+                            }
+                            node.data('iconUrl', iconUrl);
+                        }
+                        if (iconUrl) {
+                            node.style({
+                                'background-image': iconUrl,
+                                'background-fit': 'contain',
+                                'background-clip': 'none'
+                            });
+                        }
+                        if (!globalNodeBorder) {
+                            node.style('border-width', 0);
+                        }
+                    });
 
                     // 使用 setTimeout 確保選取狀態正確更新
                     setTimeout(() => {
@@ -1058,7 +1091,7 @@
                             ids: nowSelected.map(e => e.id())
                         });
 
-                        updateStatus(`已貼上 ${addedElements.nodes().length} 個節點和 ${addedElements.edges().length} 條線段 (已選取)`);
+                        updateStatus(`已貼上 ${addedElements.nodes().length} 個節點和 ${addedElements.edges().length} 條線段 (第 ${pasteCount} 次貼上)`);
 
                         // 重置貼上標記
                         setTimeout(() => {
@@ -9568,6 +9601,9 @@
             const ctx = canvas.getContext('2d');
             const zoom = cy.zoom();
             const pan = cy.pan();
+
+            // 縮放低於 75% 時不繪製網格
+            if (zoom < 0.75) return;
 
             // 計算可視範圍（模型座標）
             const extent = cy.extent();

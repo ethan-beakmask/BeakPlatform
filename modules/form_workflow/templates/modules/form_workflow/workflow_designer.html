@@ -315,8 +315,8 @@
                     <i class="fas fa-map"></i> 鷹眼
                 </div>
                 <div style="display: flex; gap: 5px;">
-                    <button onclick="fitToView()" title="將所有節點置中顯示">
-                        <i class="fas fa-compress-arrows-alt"></i> 置中
+                    <button onclick="fitToView()" title="自動縮放以顯示所有節點">
+                        <i class="fas fa-compress-arrows-alt"></i> 適應
                     </button>
                     <button onclick="toggleControlPanel()" id="toggle-panel-btn-temp" class="toggle-panel-btn" style="padding: 3px 8px; font-size: 10px; background: #667eea; color: white; border: 1px solid #5568d3; border-radius: 4px; cursor: pointer; white-space: nowrap;">
                         <i class="fas fa-chevron-up"></i> 展開
@@ -420,6 +420,7 @@
                             <div style="display: flex; gap: 5px; align-items: center;">
                                 <button onclick="zoomTo(0.25)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="25%">25%</button>
                                 <button onclick="zoomTo(0.5)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="50%">50%</button>
+                                <button onclick="zoomTo(0.75)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="75%">75%</button>
                                 <button onclick="zoomTo(1)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="100%">100%</button>
                                 <button onclick="zoomTo(1.25)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="125%">125%</button>
                                 <button onclick="zoomTo(1.5)" style="padding: 4px 6px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px;" title="150%">150%</button>
