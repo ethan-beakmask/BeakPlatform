@@ -20,43 +20,29 @@
 
     <!-- 表單設計器樣式 -->
     <link rel="stylesheet" href="/static/modules/form_workflow/css/form-designer.css">
+
+    <!-- Navbar CSS (與 base.html 共用風格) -->
+    <style>
+        .navbar { background: white; border-bottom: 1px solid #ccc; padding: 8px 16px; width: 100%; }
+        .navbar a { text-decoration: none; }
+        .navbar-content { display: flex; align-items: center; width: 100%; }
+        .navbar-logo { font-weight: bold; font-size: 16px; color: #333; margin-right: auto; }
+        .navbar-user { margin-left: 16px; color: #666; white-space: nowrap; }
+    </style>
 </head>
 <body>
     <!-- Toast 容器 -->
     <div id="toast-container"></div>
 
-    <!-- Navbar -->
-    <div class="navbar-custom">
-        <div class="navbar-left">
-            <a href="/" class="navbar-logo">
-                <i class="fas fa-file-signature"></i>
-                <span>BeakPlatform</span>
-            </a>
-            <div class="navbar-title">表單設計器</div>
-        </div>
-        <div class="navbar-right">
-            <!-- 帳號選單 -->
-            <button class="user-menu-button" id="user-menu-button">
-                <i class="fas fa-user-circle"></i>
-                <span class="user-display-name" data-user-info="displayName">載入中...</span>
-                <i class="fas fa-chevron-down"></i>
-            </button>
-
-            <!-- 下拉選單 -->
-            <div class="user-dropdown" id="user-dropdown">
-                <div class="user-dropdown-header">
-                    <p class="user-dropdown-name" data-user-info="fullName">載入中...</p>
-                    <p class="user-dropdown-account" data-user-info="account">-</p>
-                </div>
-                <button class="user-dropdown-item" id="settings-button">
-                    <i class="fas fa-user-cog"></i>個人設定
-                </button>
-            </div>
-
-            <!-- 登出按鈕 -->
-            <button class="logout-button" id="logout-button">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
+    <!-- Navbar (與 base.html 共用風格) -->
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+            <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}</span>
+            <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">登出</button>
+            </form>
         </div>
     </div>
 
