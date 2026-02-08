@@ -108,7 +108,7 @@
                     });
                 }
                 if (!globalNodeBorder) {
-                    node.style('border-width', 0);
+                    node.addClass('no-border');
                 }
             });
 
@@ -480,7 +480,14 @@
                             'z-index': 999
                         }
                     },
-                    // 連續畫線模式高亮節點
+                    // 全域邊框隱藏 class
+                    {
+                        selector: 'node.no-border',
+                        style: {
+                            'border-width': 0
+                        }
+                    },
+                    // 連續畫線模式高亮節點（優先級高於 no-border）
                     {
                         selector: 'node.continuous-line-highlight',
                         style: {
@@ -1132,7 +1139,7 @@
                             });
                         }
                         if (!globalNodeBorder) {
-                            node.style('border-width', 0);
+                            node.addClass('no-border');
                         }
                     });
 
@@ -1261,7 +1268,9 @@
                 }
                 // ESC 取消連線模式
                 if (e.key === 'Escape' && connectingSourceNode) {
-                    connectingSourceNode.style('border-width', 0);
+                    if (!globalNodeBorder) {
+                        connectingSourceNode.addClass('no-border');
+                    }
                     connectingSourceNode = null;
                     updateStatus('已取消連線');
                 }
@@ -1979,9 +1988,9 @@
                 });
             }
 
-            // 套用全域節點邊框設定
+            // 套用全域邊框隱藏 class
             if (!globalNodeBorder) {
-                newNode.style('border-width', 0);
+                newNode.addClass('no-border');
             }
 
             updateStatus(`已新增節點: ${label} (${nodeId})`);
@@ -3351,6 +3360,15 @@
 
             // 初始化網格佔用映射
             updateGridOccupancy();
+
+            // 套用全域邊框設定（使用 class，不用 bypass style）
+            if (!globalNodeBorder) {
+                cy.nodes('[type!="relay"][type!="paper"]').forEach(node => {
+                    if (!node.isParent()) node.addClass('no-border');
+                });
+            }
+            const borderCheckbox = document.getElementById('global-node-border');
+            if (borderCheckbox) borderCheckbox.checked = globalNodeBorder;
 
             console.log(`✅ 渲染完成 (nodeCounter=${nodeCounter}, edgeCounter=${edgeCounter}, groupCounter=${groupCounter})`);
         }
@@ -7818,9 +7836,9 @@
                 if (node.isParent()) return;
 
                 if (globalNodeBorder) {
-                    node.style('border-width', 1); // 使用最細的線
+                    node.removeClass('no-border');
                 } else {
-                    node.style('border-width', 0);
+                    node.addClass('no-border');
                 }
             });
 
@@ -10447,7 +10465,7 @@
                 });
             }
             if (!globalNodeBorder) {
-                restoredNode.style('border-width', 0);
+                restoredNode.addClass('no-border');
             }
             if (parentId || buf.parentId) {
                 restoredNode.move({ parent: parentId || buf.parentId });
@@ -10564,7 +10582,7 @@
                 });
             }
             if (!globalNodeBorder) {
-                newNode.style('border-width', 0);
+                newNode.addClass('no-border');
             }
 
             // 如果原節點在群組內，新節點也加入同一群組
