@@ -395,6 +395,21 @@ def update_template(secure_code):
 
     db.session.commit()
 
+    # 自動建立的表單 → 背景生成縮圖
+    if auto_created_form and auto_created_form.schema:
+        try:
+            from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
+            if is_available():
+                from flask import current_app
+                generate_form_thumbnails_async(
+                    current_app._get_current_object(),
+                    auto_created_form.id,
+                    auto_created_form.schema,
+                    auto_created_form.name
+                )
+        except Exception as e:
+            print(f"[thumbnail] 自動建立表單縮圖觸發失敗: {e}")
+
     # 建立回應
     response_data = {
         'success': True,
@@ -564,6 +579,21 @@ def save_new_version(secure_code):
             auto_created_mapping = mapping
 
     db.session.commit()
+
+    # 自動建立的表單 → 背景生成縮圖
+    if auto_created_form and auto_created_form.schema:
+        try:
+            from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
+            if is_available():
+                from flask import current_app
+                generate_form_thumbnails_async(
+                    current_app._get_current_object(),
+                    auto_created_form.id,
+                    auto_created_form.schema,
+                    auto_created_form.name
+                )
+        except Exception as e:
+            print(f"[thumbnail] 自動建立表單縮圖觸發失敗: {e}")
 
     # 建立回應
     response_data = {
