@@ -1,0 +1,174 @@
+        <!-- Telegram 設定 -->
+        <section id="telegram" class="settings-section" x-data="telegramManager()" x-init="init()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; border: none; padding: 0;">Telegram 通知設定</h2>
+                <button @click="openCreateModal()"
+                        style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                    + 新增設定
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                設定 Telegram Bot 用於發送即時通知
+            </p>
+
+            <!-- 載入中 -->
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+
+            <!-- 空狀態 -->
+            <div x-show="!loading && configs.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無 Telegram 設定</p>
+                <p style="color: #999;">點擊「新增設定」開始建立</p>
+            </div>
+
+            <!-- 設定列表 -->
+            <div x-show="!loading && configs.length > 0" style="background: white; border: 1px solid #ddd;">
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left;">名稱</th>
+                            <th style="padding: 10px; text-align: left;">Bot Token</th>
+                            <th style="padding: 10px; text-align: left;">頻道數</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">狀態</th>
+                            <th style="padding: 10px; text-align: center; width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="config in configs" :key="config.id">
+                            <tr style="border-top: 1px solid #eee;">
+                                <td style="padding: 10px;" x-text="config.name"></td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 12px;" x-text="config.bot_token"></td>
+                                <td style="padding: 10px;">
+                                    <span x-text="Object.keys(config.channels || {}).length"></span> 個頻道
+                                    <span x-show="config.default_channel" style="color: #666; font-size: 11px;">
+                                        (預設: <span x-text="config.default_channel"></span>)
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span x-show="config.is_active" style="color: #059669;">啟用</span>
+                                    <span x-show="!config.is_active" style="color: #dc2626;">停用</span>
+                                </td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button @click="testConfig(config)" title="測試"
+                                            style="padding: 4px 8px; background: #d1fae5; color: #065f46; border: none; cursor: pointer; margin-right: 4px;">
+                                        測試
+                                    </button>
+                                    <button @click="openEditModal(config)" title="編輯"
+                                            style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
+                                        編輯
+                                    </button>
+                                    <button @click="confirmDelete(config)" title="刪除"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
+                                        刪除
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Telegram Modal -->
+            <div x-show="showModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 550px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯 Telegram 設定' : '新增 Telegram 設定'"></h3>
+                        <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+
+                    <form @submit.prevent="saveConfig()">
+                        <!-- 名稱 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">設定名稱 *</label>
+                            <input type="text" x-model="formData.name" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
+                                   placeholder="例如: 告警通知群組">
+                        </div>
+
+                        <!-- 描述 -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">描述</label>
+                            <input type="text" x-model="formData.description"
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
+                        </div>
+
+                        <!-- Bot Token -->
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">Bot Token *</label>
+                            <input type="text" x-model="formData.bot_token" required
+                                   style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; font-family: monospace;"
+                                   placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                            <p style="margin: 4px 0 0; font-size: 11px; color: #666;">
+                                從 @BotFather 取得的 Token
+                            </p>
+                        </div>
+
+                        <!-- 頻道設定 -->
+                        <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <label style="font-size: 13px; font-weight: 500;">頻道設定</label>
+                                <button type="button" @click="addChannel()"
+                                        style="padding: 4px 12px; background: #e0e0e0; border: none; cursor: pointer; font-size: 12px;">
+                                    + 新增頻道
+                                </button>
+                            </div>
+
+                            <template x-if="formData.channels.length === 0">
+                                <p style="color: #999; font-size: 12px; text-align: center; padding: 16px;">
+                                    尚無頻道，點擊「新增頻道」開始設定
+                                </p>
+                            </template>
+
+                            <template x-for="(channel, index) in formData.channels" :key="index">
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                                    <input type="text" x-model="channel.name" placeholder="頻道名稱"
+                                           style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px;">
+                                    <input type="text" x-model="channel.chat_id" placeholder="Chat ID"
+                                           style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px; font-family: monospace;">
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap;">
+                                        <input type="radio" name="default_channel" :value="channel.name"
+                                               x-model="formData.default_channel"> 預設
+                                    </label>
+                                    <button type="button" @click="removeChannel(index)"
+                                            style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer; font-size: 12px;">
+                                        ✕
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- 狀態 -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" x-model="formData.is_active"> 啟用
+                            </label>
+                        </div>
+
+                        <!-- 按鈕 -->
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button type="button" @click="closeModal()"
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                            <button type="submit"
+                                    style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
+                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 刪除確認 Modal -->
+            <div x-show="showDeleteModal" x-cloak
+                 style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
+                    <p style="margin: 0 0 16px;">確定要刪除 Telegram 設定「<span style="font-weight: 600;" x-text="configToDelete?.name"></span>」嗎？</p>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button @click="showDeleteModal = false"
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                        <button @click="deleteConfig()"
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                    </div>
+                </div>
+            </div>
+        </section>

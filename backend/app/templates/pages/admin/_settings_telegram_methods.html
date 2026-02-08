@@ -1,0 +1,208 @@
+<script>
+// Telegram 設定管理
+function telegramManager() {
+    return {
+        configs: [],
+        loading: true,
+        showModal: false,
+        showDeleteModal: false,
+        isEditing: false,
+        configToDelete: null,
+        formData: {
+            name: '',
+            description: '',
+            bot_token: '',
+            channels: [],
+            default_channel: '',
+            is_active: true
+        },
+
+        async init() {
+            await this.loadConfigs();
+        },
+
+        async loadConfigs() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/admin/settings/telegram');
+                const result = await response.json();
+                if (result.success) {
+                    this.configs = result.data;
+                }
+            } catch (error) {
+                console.error('載入 Telegram 設定失敗:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        openCreateModal() {
+            this.isEditing = false;
+            this.formData = {
+                name: '',
+                description: '',
+                bot_token: '',
+                channels: [],
+                default_channel: '',
+                is_active: true
+            };
+            this.showModal = true;
+        },
+
+        async openEditModal(config) {
+            this.isEditing = true;
+            // 取得完整資料（含 token）
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${config.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    const data = result.data;
+                    // 將 channels object 轉為 array
+                    const channelsArray = Object.entries(data.channels || {}).map(([name, chat_id]) => ({
+                        name, chat_id
+                    }));
+                    this.formData = {
+                        id: data.id,
+                        name: data.name,
+                        description: data.description || '',
+                        bot_token: data.bot_token,
+                        channels: channelsArray,
+                        default_channel: data.default_channel || '',
+                        is_active: data.is_active
+                    };
+                    this.showModal = true;
+                }
+            } catch (error) {
+                alert('載入設定失敗：' + error.message);
+            }
+        },
+
+        closeModal() {
+            this.showModal = false;
+        },
+
+        addChannel() {
+            this.formData.channels.push({ name: '', chat_id: '' });
+        },
+
+        removeChannel(index) {
+            const removed = this.formData.channels.splice(index, 1)[0];
+            if (this.formData.default_channel === removed.name) {
+                this.formData.default_channel = '';
+            }
+        },
+
+        async saveConfig() {
+            // 將 channels array 轉為 object
+            const channels = {};
+            for (const ch of this.formData.channels) {
+                if (ch.name && ch.chat_id) {
+                    channels[ch.name] = ch.chat_id;
+                }
+            }
+
+            const data = {
+                name: this.formData.name,
+                description: this.formData.description,
+                bot_token: this.formData.bot_token,
+                channels: channels,
+                default_channel: this.formData.default_channel,
+                is_active: this.formData.is_active
+            };
+
+            try {
+                const url = this.isEditing
+                    ? `/api/admin/settings/telegram/${this.formData.id}`
+                    : '/api/admin/settings/telegram';
+                const method = this.isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.closeModal();
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '操作失敗');
+                }
+            } catch (error) {
+                alert('操作失敗：' + error.message);
+            }
+        },
+
+        async testConfig(config) {
+            // 選擇要測試的頻道
+            const channels = config.channels || {};
+            const channelNames = Object.keys(channels);
+
+            let chatId = null;
+            if (channelNames.length === 0) {
+                alert('此設定沒有頻道，請先新增頻道');
+                return;
+            } else if (channelNames.length === 1) {
+                chatId = channels[channelNames[0]];
+            } else {
+                const choice = prompt(`選擇測試頻道 (${channelNames.join(', ')})：`, config.default_channel || channelNames[0]);
+                if (!choice) return;
+                chatId = channels[choice];
+                if (!chatId) {
+                    alert('找不到該頻道');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${config.id}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ chat_id: chatId })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('測試失敗：' + error.message);
+            }
+        },
+
+        confirmDelete(config) {
+            this.configToDelete = config;
+            this.showDeleteModal = true;
+        },
+
+        async deleteConfig() {
+            if (!this.configToDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/settings/telegram/${this.configToDelete.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    this.showDeleteModal = false;
+                    this.configToDelete = null;
+                    await this.loadConfigs();
+                } else {
+                    alert(result.message || '刪除失敗');
+                }
+            } catch (error) {
+                alert('刪除失敗：' + error.message);
+            }
+        }
+    };
+}
+</script>

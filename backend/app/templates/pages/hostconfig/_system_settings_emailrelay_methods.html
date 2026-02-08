@@ -1,0 +1,98 @@
+        // ==================== E-MailRelay ====================
+        async loadEmailrelaySettings() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.emailrelay.service = data.data.service;
+                    if (data.data.auth && data.data.auth.configured) {
+                        this.emailrelay.auth.email = data.data.auth.email || '';
+                        this.emailrelay.auth.password = data.data.auth.password || '';
+                    }
+                    this.emailrelay.from_email = data.data.from_email || '';
+                    this.emailrelay.from_name = data.data.from_name || '';
+                }
+            } catch (e) {
+                this.showMessage('emailrelay', '載入設定失敗: ' + e.message, true);
+            }
+        },
+
+        async saveEmailrelayAuth() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/auth`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        email: this.emailrelay.auth.email,
+                        password: this.emailrelay.auth.password
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
+            }
+        },
+
+        async saveEmailrelaySender() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        from_email: this.emailrelay.from_email,
+                        from_name: this.emailrelay.from_name
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
+            }
+        },
+
+        async testEmailrelay() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        recipient: this.emailrelay.testRecipient
+                    })
+                });
+                const data = await res.json();
+                this.showMessage('emailrelay', data.message, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', '發送失敗: ' + e.message, true);
+            }
+        },
+
+        async controlEmailrelayService(action) {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay/service/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                const data = await res.json();
+                if (data.success && data.data) {
+                    this.emailrelay.service = data.data;
+                }
+                this.showMessage('emailrelay', data.message || `服務已 ${action}`, !data.success);
+            } catch (e) {
+                this.showMessage('emailrelay', '操作失敗: ' + e.message, true);
+            }
+        },

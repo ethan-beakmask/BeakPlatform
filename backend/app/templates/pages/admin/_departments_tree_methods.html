@@ -1,0 +1,361 @@
+        // jstree 初始化
+        initJsTree() {
+            const self = this;
+            const $tree = $('#dept-tree');
+
+            // 銷毀舊實例
+            if ($tree.jstree(true)) {
+                $tree.jstree('destroy');
+            }
+
+            $tree.jstree({
+                core: {
+                    data: this.buildJsTreeData(),
+                    themes: { dots: true, icons: true },
+                    check_callback: (op, node, parent) => {
+                        // 允許拖放操作
+                        if (op === 'move_node') {
+                            // 人員只能放到部門節點
+                            if (node.data?.type === 'person') {
+                                return parent.data?.type === 'dept';
+                            }
+                            // 部門不能放到人員節點或自己的子節點下
+                            if (node.data?.type === 'dept') {
+                                return parent.id === '#' || parent.data?.type === 'dept' || parent.data?.type === 'root';
+                            }
+                        }
+                        return true;
+                    },
+                    worker: false  // 停用 Worker 避免 CSP 警告
+                },
+                plugins: ['wholerow', 'dnd'],
+                dnd: {
+                    // 部門和人員都可拖動
+                    is_draggable: (nodes) => {
+                        const type = nodes[0].data?.type;
+                        return type === 'dept' || type === 'person';
+                    },
+                    copy: false
+                }
+            });
+
+            // 選擇事件
+            $tree.on('select_node.jstree', (e, data) => {
+                if (data.node.data?.type === 'dept') {
+                    const dept = self.findDeptById(data.node.id);
+                    if (dept) self.selectDepartment(dept);
+                }
+            });
+
+            // 拖放事件
+            $tree.on('move_node.jstree', async (e, data) => {
+                const movedNode = data.node;
+                const newParentId = data.parent === '#' ? null : data.parent;
+                const oldParentId = data.old_parent === '#' ? null : data.old_parent;
+
+                // 人員節點移動 = 調部門
+                if (movedNode.data?.type === 'person' && movedNode.data?.userId) {
+                    const userId = movedNode.data.userId;
+                    const oldDeptId = movedNode.data.deptId;
+                    const role = movedNode.data.role;
+                    const newDeptId = newParentId;
+
+                    // 如果是管理層，先移除職位
+                    if (role && role !== 'member' && oldDeptId) {
+                        await fetch(`/api/units/${oldDeptId}/leadership/${role}`, {
+                            method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                        });
+                    }
+
+                    if (oldDeptId && oldDeptId !== newDeptId) {
+                        // 從原部門移除
+                        await fetch(`/api/units/${oldDeptId}/members/${userId}`, {
+                            method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                        });
+                    }
+                    if (newDeptId && newDeptId !== 'root') {
+                        // 加入新部門
+                        await fetch(`/api/units/${newDeptId}/members`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                            body: JSON.stringify({ user_id: userId })
+                        });
+                        const targetDept = self.findDeptById(newDeptId);
+                        self.showToast(`已調至 ${targetDept?.name || newDeptId}`, 'success');
+                    }
+                    await self.loadAllPeople();
+                }
+                // 部門節點移動 = 改父部門
+                else if (movedNode.data?.type === 'dept') {
+                    await fetch(`/api/units/${movedNode.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ parent_id: newParentId === 'root' ? null : newParentId })
+                    });
+                    self.showToast('部門已移動', 'success');
+                    await self.loadDepartments();
+                }
+                self.refreshJsTree();
+            });
+
+            // jstree 拖動開始/結束事件 - 用於拖到外部區域
+            $(document).on('dnd_start.vakata', (e, data) => {
+                const node = data.data.nodes[0];
+                const $tree = $('#dept-tree');
+                const nodeData = $tree.jstree(true).get_node(node)?.data;
+                if (nodeData?.type === 'person') {
+                    self.draggedTreePerson = {
+                        id: nodeData.userId,
+                        deptId: nodeData.deptId,
+                        role: nodeData.role
+                    };
+                }
+            });
+            $(document).on('dnd_stop.vakata', (e, data) => {
+                // 延遲清除，讓 drop 事件有機會處理
+                setTimeout(() => {
+                    self.draggedTreePerson = null;
+                    $('.jstree-drop-target').removeClass('jstree-drop-target');
+                }, 100);
+            });
+
+            // jstree 拖動中 - 檢測是否在外部目標上
+            $(document).on('dnd_move.vakata', (e, data) => {
+                if (!self.draggedTreePerson) return;
+                const $target = $(data.event.target);
+
+                // 清除之前的標記
+                $('.jstree-drop-target').removeClass('jstree-drop-target');
+
+                // 檢測目標區域 (優先檢測代理人區)
+                const $proxy = $target.closest('.proxy-section');
+                const $col = $target.closest('.staff-column');
+                const $unassigned = $target.closest('.unassigned-content');
+                const $cross = $target.closest('.cross-drop-zone');
+
+                if ($proxy.length) {
+                    $proxy.addClass('jstree-drop-target');
+                } else if ($col.length) {
+                    $col.addClass('jstree-drop-target');
+                } else if ($cross.length) {
+                    $cross.addClass('jstree-drop-target');
+                } else if ($unassigned.length) {
+                    $unassigned.addClass('jstree-drop-target');
+                }
+            });
+
+            // 滑鼠放開時處理外部區域的 drop
+            $(document).on('mouseup', '.staff-column, .proxy-section, .employee-zone, .unassigned-content, .cross-drop-zone', async function(e) {
+                if (!self.draggedTreePerson) return;
+
+                const $this = $(this);
+
+                // 跨部門區
+                if ($this.hasClass('cross-drop-zone')) {
+                    self.dropToCross(e);
+                }
+                // 代理人區
+                else if ($this.hasClass('proxy-section')) {
+                    const labelText = $this.find('.proxy-label').text();
+                    const position = labelText.includes('(一)') ? 'proxy1' : 'proxy2';
+                    self.dropToLeadership(e, position);
+                }
+                // 主管/副主管欄
+                else if ($this.hasClass('staff-column') && !$this.hasClass('employee-col')) {
+                    let position = 'manager';
+                    if ($this.hasClass('deputy-col')) position = 'deputy';
+                    self.dropToLeadership(e, position);
+                }
+                // 員工欄
+                else if ($this.hasClass('employee-zone') || $this.hasClass('employee-col')) {
+                    self.dropToEmployee(e);
+                }
+                // 未分配區
+                else if ($this.hasClass('unassigned-content')) {
+                    self.dropToUnassigned(e);
+                }
+            });
+
+            // 允許外部拖入 (只能拖到部門節點)
+            // 使用 #dept-tree 作為事件容器，避免冒泡問題
+            $('#dept-tree').on('dragover', (e) => {
+                e.preventDefault();
+                if (self.draggedMember || self.draggedLeader || self.draggedUser) {
+                    // 找到實際的目標節點
+                    const $node = $(e.target).closest('li.jstree-node');
+                    const nodeId = $node.attr('id');
+                    // 清除所有 hover 狀態
+                    $('#dept-tree .jstree-hovered').removeClass('jstree-hovered');
+                    // 只對部門節點加 hover
+                    if (nodeId && nodeId !== 'root' && !nodeId.startsWith('p_')) {
+                        $node.addClass('jstree-hovered');
+                    }
+                }
+            });
+
+            $('#dept-tree').on('dragleave', (e) => {
+                // 只有真正離開樹才清除
+                if (!$.contains($('#dept-tree')[0], e.relatedTarget)) {
+                    $('#dept-tree .jstree-hovered').removeClass('jstree-hovered');
+                }
+            });
+
+            $('#dept-tree').on('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                $('#dept-tree .jstree-hovered').removeClass('jstree-hovered');
+
+                // 找到實際的目標節點
+                const $node = $(e.target).closest('li.jstree-node');
+                const targetId = $node.attr('id');
+                const person = self.draggedMember || self.draggedLeader || self.draggedUser;
+
+                // 只處理部門節點 (排除根節點和人員節點)
+                if (person && targetId && targetId !== 'root' && !targetId.startsWith('p_')) {
+                    const targetDept = self.findDeptById(targetId);
+                    if (targetDept) {
+                        if (self.draggedLeader && self.selectedDept) {
+                            await fetch(`/api/units/${self.selectedDept.id}/leadership/${self.draggedLeaderType}`, {
+                                method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                            });
+                        }
+                        await fetch(`/api/units/${targetId}/members`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                            body: JSON.stringify({ user_id: person.id })
+                        });
+                        self.showToast(`已調至 ${targetDept.name}`, 'success');
+                        await self.refresh();
+                        await self.refreshTreePeople(targetId);
+                        if (self.selectedDept) await self.refreshTreePeople(self.selectedDept.id);
+                        self.refreshJsTree();
+                    }
+                }
+                self.clearDrag();
+            });
+        },
+
+        buildJsTreeData() {
+            const self = this;
+            const build = (items) => items.map(item => {
+                const node = {
+                    id: item.id,
+                    text: item.name,
+                    icon: 'icon-dept',
+                    state: { opened: true },
+                    data: { type: 'dept', ...item },
+                    children: []
+                };
+                // 成員模式：加入人員節點 (包含 userId 和 deptId 供拖放使用)
+                if (self.showPeopleInTree && item._leadership) {
+                    const l = item._leadership;
+                    if (l.manager) node.children.push({ id: 'p_m_' + item.id, text: `<span class="role-tag leader">主</span>${l.manager.native_name || l.manager.display_name}`, icon: false, data: { type: 'person', userId: l.manager.id, deptId: item.id, role: 'manager' } });
+                    if (l.deputy) node.children.push({ id: 'p_d_' + item.id, text: `<span class="role-tag leader">副</span>${l.deputy.native_name || l.deputy.display_name}`, icon: false, data: { type: 'person', userId: l.deputy.id, deptId: item.id, role: 'deputy' } });
+                    if (l.proxy1) node.children.push({ id: 'p_1_' + item.id, text: `<span class="role-tag leader">代</span>${l.proxy1.native_name || l.proxy1.display_name}`, icon: false, data: { type: 'person', userId: l.proxy1.id, deptId: item.id, role: 'proxy1' } });
+                    if (l.proxy2) node.children.push({ id: 'p_2_' + item.id, text: `<span class="role-tag leader">代</span>${l.proxy2.native_name || l.proxy2.display_name}`, icon: false, data: { type: 'person', userId: l.proxy2.id, deptId: item.id, role: 'proxy2' } });
+                    if (item._members) {
+                        const leaderIds = [l.manager?.id, l.deputy?.id, l.proxy1?.id, l.proxy2?.id].filter(Boolean);
+                        item._members.filter(m => !leaderIds.includes(m.id)).forEach((m, i) => {
+                            node.children.push({ id: 'p_e_' + item.id + '_' + m.id, text: `<span class="role-tag employee">員</span>${m.native_name || m.display_name}`, icon: false, data: { type: 'person', userId: m.id, deptId: item.id, role: 'member' } });
+                        });
+                    }
+                }
+                // 子部門
+                if (item.children?.length > 0) {
+                    node.children = node.children.concat(build(item.children));
+                }
+                return node;
+            });
+            // 根節點
+            return [{
+                id: 'root',
+                text: '{{ organization.name if organization else "企業" }}',
+                icon: 'icon-company',
+                state: { opened: true },
+                data: { type: 'root' },
+                children: build(this.departments)
+            }];
+        },
+
+        refreshJsTree() {
+            const $tree = $('#dept-tree');
+            if ($tree.jstree(true)) {
+                $tree.jstree(true).settings.core.data = this.buildJsTreeData();
+                $tree.jstree(true).refresh();
+            }
+        },
+
+        findDeptById(id) {
+            const find = (items) => {
+                for (const item of items) {
+                    if (item.id === id) return item;
+                    if (item.children) {
+                        const found = find(item.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+            return find(this.departments);
+        },
+
+        // 計算屬性
+        get allDepartmentsFlat() {
+            const result = [];
+            const flatten = (items, level) => {
+                for (const item of items) {
+                    result.push({ ...item, level });
+                    if (item.children?.length > 0) flatten(item.children, level + 1);
+                }
+            };
+            flatten(this.departments, 0);
+            return result;
+        },
+
+        get availableParents() {
+            if (this.isCreating || !this.selectedDept) return this.allDepartmentsFlat;
+            const excludeIds = new Set([this.selectedDept.id]);
+            const collectDescendants = (items) => {
+                for (const item of items) {
+                    excludeIds.add(item.id);
+                    if (item.children) collectDescendants(item.children);
+                }
+            };
+            if (this.selectedDept.children) collectDescendants(this.selectedDept.children);
+            return this.allDepartmentsFlat.filter(d => !excludeIds.has(d.id));
+        },
+
+        get leaderIds() {
+            return [
+                this.leadership.manager?.id,
+                this.leadership.deputy?.id,
+                this.leadership.proxy1?.id,
+                this.leadership.proxy2?.id
+            ].filter(Boolean);
+        },
+
+        get membersExcludeLeaders() {
+            return this.members.filter(m => !this.leaderIds.includes(m.id));
+        },
+
+        get totalCount() {
+            const leaderCount = this.leaderIds.length;
+            const empCount = this.membersExcludeLeaders.length;
+            return leaderCount + empCount;
+        },
+
+        // 可新增為跨部門人員的用戶（只排除本部門正式成員）
+        // 注意：已是跨部門的人也顯示，因為可能要加入其他部門
+        get availableCrossUsers() {
+            if (!this.selectedDept) return [];
+            // 只排除本部門的正式成員（他們已經在部門裡了）
+            const memberIds = new Set(this.members.map(m => m.id));
+            // 已加入本部門跨部門的人也排除（避免重複加入同部門）
+            const crossIds = new Set(this.crossMembers.map(cm => cm.user_secure_code));
+            return this.allUsers.filter(u =>
+                !u.is_deleted &&
+                u.is_active &&
+                !memberIds.has(u.id) &&
+                !crossIds.has(u.id)
+            );
+        },

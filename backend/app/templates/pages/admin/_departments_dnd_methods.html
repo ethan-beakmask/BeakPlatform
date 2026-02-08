@@ -1,0 +1,287 @@
+        // 拖拉：部門
+        dragStartDept(e, dept) {
+            if (this.draggedMember || this.draggedLeader) return;
+            this.draggedDept = dept;
+            e.dataTransfer.effectAllowed = 'move';
+        },
+
+        dragOverDeptHandler(e, dept) {
+            if (this.draggedDept) {
+                if (this.draggedDept.id !== dept.id) this.dragOverDept = dept.id;
+            } else if (this.draggedMember || this.draggedLeader || this.draggedUser) {
+                if (!this.selectedDept || this.selectedDept.id !== dept.id) this.dragOverDept = dept.id;
+            }
+        },
+
+        async dropOnDept(e, targetDept) {
+            this.dragOverDept = null;
+
+            if (this.draggedDept) {
+                if (this.draggedDept.id !== targetDept.id) {
+                    await fetch(`/api/units/${this.draggedDept.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ parent_id: targetDept.id })
+                    });
+                    this.showToast(`已移動「${this.draggedDept.name}」`, 'success');
+                    await this.loadDepartments();
+                }
+                this.draggedDept = null;
+                return;
+            }
+
+            // 員工/管理層轉移到其他部門
+            const person = this.draggedMember || this.draggedLeader || this.draggedUser;
+            if (person && (!this.selectedDept || this.selectedDept.id !== targetDept.id)) {
+                // 先移除原角色
+                if (this.draggedLeader && this.selectedDept) {
+                    await fetch(`/api/units/${this.selectedDept.id}/leadership/${this.draggedLeaderType}`, {
+                        method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                    });
+                }
+                // 加入新部門
+                await fetch(`/api/units/${targetDept.id}/members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ user_id: person.id })
+                });
+                this.showToast(`已調至 ${targetDept.name}`, 'success');
+                await this.refresh();
+                // 更新成員模式的組織樹
+                await this.refreshTreePeople(targetDept.id);
+                if (this.selectedDept) await this.refreshTreePeople(this.selectedDept.id);
+            }
+            this.clearDrag();
+        },
+
+        // 拖拉：未分配
+        dragStartUnassigned(e, user) {
+            this.draggedUser = user;
+            e.dataTransfer.effectAllowed = 'move';
+        },
+
+        // 拖拉：成員
+        dragStartMember(e, member) {
+            this.draggedMember = member;
+            e.dataTransfer.effectAllowed = 'move';
+        },
+
+        // 拖拉：管理層
+        dragStartLeader(e, leader, type) {
+            this.draggedLeader = leader;
+            this.draggedLeaderType = type;
+            e.dataTransfer.effectAllowed = 'move';
+        },
+
+        // Drop 到管理層
+        async dropToLeadership(e, position) {
+            e.preventDefault();
+            this.dragOverZone = null;
+            if (!this.selectedDept) return;
+
+            // 支援從 jstree 拖入的人員
+            let person = this.draggedUser || this.draggedMember || this.draggedLeader;
+            let fromTree = false;
+            if (!person && this.draggedTreePerson) {
+                person = { id: this.draggedTreePerson.id };
+                fromTree = true;
+            }
+            if (!person) return;
+
+            // 如果是從 jstree 拖入，先處理原部門
+            if (fromTree && this.draggedTreePerson.deptId) {
+                const oldDeptId = this.draggedTreePerson.deptId;
+                const oldRole = this.draggedTreePerson.role;
+                // 移除原管理層職位
+                if (oldRole && oldRole !== 'member') {
+                    await fetch(`/api/units/${oldDeptId}/leadership/${oldRole}`, {
+                        method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                    });
+                }
+                // 如果是不同部門，從原部門移除
+                if (oldDeptId !== this.selectedDept.id) {
+                    await fetch(`/api/units/${oldDeptId}/members/${person.id}`, {
+                        method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                    });
+                }
+            }
+            // 如果是從其他位置移過來，先移除原位置
+            else if (this.draggedLeader && this.draggedLeaderType !== position) {
+                await fetch(`/api/units/${this.selectedDept.id}/leadership/${this.draggedLeaderType}`, {
+                    method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+            }
+
+            // 設定新位置
+            const res = await fetch(`/api/units/${this.selectedDept.id}/leadership/${position}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ user_id: person.id })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // 如果此人是跨部門支援人員，移除跨部門關係（轉正式員工）
+                await this.removeCrossIfExists(person.id);
+                this.showToast(data.message, 'success');
+                await this.refresh();
+                if (fromTree) await this.loadAllPeople();
+                await this.refreshTreePeople(this.selectedDept.id);
+                this.refreshJsTree();
+            }
+            this.clearDrag();
+        },
+
+        // Drop 到員工區
+        async dropToEmployee(e) {
+            e.preventDefault();
+            this.dragOverZone = null;
+            if (!this.selectedDept) return;
+
+            // 支援從 jstree 拖入的人員
+            let person = this.draggedUser || this.draggedLeader;
+            let fromTree = false;
+            if (!person && this.draggedTreePerson) {
+                person = { id: this.draggedTreePerson.id };
+                fromTree = true;
+            }
+            if (!person) return;
+
+            // 如果是從 jstree 拖入
+            if (fromTree && this.draggedTreePerson.deptId) {
+                const oldDeptId = this.draggedTreePerson.deptId;
+                const oldRole = this.draggedTreePerson.role;
+                // 移除原管理層職位
+                if (oldRole && oldRole !== 'member') {
+                    await fetch(`/api/units/${oldDeptId}/leadership/${oldRole}`, {
+                        method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                    });
+                }
+                // 如果是不同部門，需要調動
+                if (oldDeptId !== this.selectedDept.id) {
+                    await fetch(`/api/units/${oldDeptId}/members/${person.id}`, {
+                        method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                    });
+                    await fetch(`/api/units/${this.selectedDept.id}/members`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ user_id: person.id })
+                    });
+                    // 如果此人是跨部門支援人員，移除跨部門關係（轉正式員工）
+                    await this.removeCrossIfExists(person.id);
+                    this.showToast('已調至此部門', 'success');
+                } else {
+                    this.showToast('已移除管理層角色', 'success');
+                }
+            }
+            // 如果從管理層降為員工
+            else if (this.draggedLeader) {
+                await fetch(`/api/units/${this.selectedDept.id}/leadership/${this.draggedLeaderType}`, {
+                    method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+                this.showToast('已移除管理層角色', 'success');
+            }
+            // 如果是未分配員工
+            else if (this.draggedUser) {
+                await fetch(`/api/units/${this.selectedDept.id}/members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ user_id: person.id })
+                });
+                // 如果此人是跨部門支援人員，移除跨部門關係（轉正式員工）
+                await this.removeCrossIfExists(person.id);
+                this.showToast('已加入部門', 'success');
+            }
+
+            await this.refresh();
+            if (fromTree) await this.loadAllPeople();
+            await this.refreshTreePeople(this.selectedDept.id);
+            this.refreshJsTree();
+            this.clearDrag();
+        },
+
+        // Drop 到未分配區
+        async dropToUnassigned(e) {
+            e.preventDefault();
+            this.dragOverZone = null;
+
+            // 支援從 jstree 拖入的人員
+            let person = this.draggedMember || this.draggedLeader;
+            let fromTree = false;
+            let deptId = this.selectedDept?.id;
+
+            if (!person && this.draggedTreePerson) {
+                person = { id: this.draggedTreePerson.id };
+                deptId = this.draggedTreePerson.deptId;
+                fromTree = true;
+            }
+            if (!person || !deptId) return;
+
+            // 如果是從 jstree 拖入
+            if (fromTree && this.draggedTreePerson.role && this.draggedTreePerson.role !== 'member') {
+                await fetch(`/api/units/${deptId}/leadership/${this.draggedTreePerson.role}`, {
+                    method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+            }
+            // 如果是管理層，先移除角色
+            else if (this.draggedLeader) {
+                await fetch(`/api/units/${deptId}/leadership/${this.draggedLeaderType}`, {
+                    method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+            }
+
+            // 從部門移除
+            await fetch(`/api/units/${deptId}/members/${person.id}`, {
+                method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() }
+            });
+
+            this.showToast('已移出部門', 'success');
+            await this.refresh();
+            await this.loadUnassignedUsers();
+            if (fromTree) await this.loadAllPeople();
+            await this.refreshTreePeople(deptId);
+            this.refreshJsTree();
+            this.clearDrag();
+        },
+
+        async refresh() {
+            if (this.selectedDept) {
+                await Promise.all([
+                    this.loadMembers(this.selectedDept.id),
+                    this.loadLeadership(this.selectedDept.id),
+                    this.loadUnassignedUsers()
+                ]);
+                // 強制觸發 Alpine.js 響應式更新
+                this.members = [...this.members];
+                this.leadership = { ...this.leadership };
+            }
+        },
+
+        async refreshTreePeople(deptId) {
+            // 找到該部門在 departments 樹中的原始物件並更新其人員資料
+            const findAndUpdate = async (items) => {
+                for (const dept of items) {
+                    if (dept.id === deptId) {
+                        const [membersRes, leadershipRes] = await Promise.all([
+                            fetch(`/api/units/${dept.id}/members`),
+                            fetch(`/api/units/${dept.id}/leadership`)
+                        ]);
+                        if (membersRes.ok) dept._members = (await membersRes.json()).members || [];
+                        if (leadershipRes.ok) dept._leadership = await leadershipRes.json();
+                        return true;
+                    }
+                    if (dept.children && await findAndUpdate(dept.children)) return true;
+                }
+                return false;
+            };
+            await findAndUpdate(this.departments);
+            // 觸發響應式更新
+            this.departments = [...this.departments];
+        },
+
+        clearDrag() {
+            this.draggedUser = null;
+            this.draggedMember = null;
+            this.draggedLeader = null;
+            this.draggedLeaderType = null;
+        },

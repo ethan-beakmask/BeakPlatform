@@ -1,0 +1,342 @@
+        // API
+        async loadDepartments() {
+            try {
+                const res = await fetch('/api/units/departments?tree=true');
+                const data = await res.json();
+                if (res.ok) {
+                    this.departments = data.units || [];
+                    this.allDepartmentsFlat.forEach(d => {
+                        if (this.expandedNodes[d.id] === undefined) this.expandedNodes[d.id] = true;
+                    });
+                    if (this.showPeopleInTree) await this.loadAllPeople();
+                }
+            } catch (err) {
+                this.showToast('載入失敗', 'error');
+            }
+        },
+
+        async loadAllPeople() {
+            // 遞迴載入每個部門的人員資料到原始物件
+            const loadForDept = async (dept) => {
+                try {
+                    const [membersRes, leadershipRes] = await Promise.all([
+                        fetch(`/api/units/${dept.id}/members`),
+                        fetch(`/api/units/${dept.id}/leadership`)
+                    ]);
+                    if (membersRes.ok) dept._members = (await membersRes.json()).members || [];
+                    if (leadershipRes.ok) dept._leadership = await leadershipRes.json();
+                } catch (e) {}
+                // 遞迴處理子部門
+                if (dept.children) {
+                    for (const child of dept.children) {
+                        await loadForDept(child);
+                    }
+                }
+            };
+            for (const dept of this.departments) {
+                await loadForDept(dept);
+            }
+        },
+
+        switchToDeptMode() {
+            this.showPeopleInTree = false;
+            this.refreshJsTree();
+        },
+
+        async switchToDetailMode() {
+            this.showPeopleInTree = true;
+            const firstDept = this.departments[0];
+            if (firstDept && !firstDept._leadership) {
+                await this.loadAllPeople();
+                this.departments = [...this.departments];
+            }
+            this.refreshJsTree();
+        },
+
+        async loadUnassignedUsers() {
+            try {
+                const res = await fetch('/api/units/unassigned-users');
+                const data = await res.json();
+                if (res.ok) this.unassignedUsers = data.users || [];
+            } catch (err) {}
+        },
+
+        async loadMembers(code) {
+            try {
+                const res = await fetch(`/api/units/${code}/members`);
+                const data = await res.json();
+                this.members = res.ok ? data.members || [] : [];
+            } catch (err) { this.members = []; }
+        },
+
+        async loadLeadership(code) {
+            try {
+                const res = await fetch(`/api/units/${code}/leadership`);
+                const data = await res.json();
+                if (res.ok) this.leadership = data;
+            } catch (err) {
+                this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
+            }
+        },
+
+        async loadCrossMembers(code) {
+            try {
+                const res = await fetch(`/api/units/${code}/cross-members`);
+                const data = await res.json();
+                if (res.ok) {
+                    // 標記是否為管理層
+                    this.crossMembers = (data.cross_members || []).map(cm => ({
+                        ...cm,
+                        is_leader: ['MANAGER', 'DEPUTY'].includes(cm.role_type)
+                    }));
+                }
+            } catch (err) { this.crossMembers = []; }
+        },
+
+        // 移除跨部門關係（支援人員轉正式員工時呼叫）
+        async removeCrossIfExists(userId) {
+            const crossMember = this.crossMembers.find(cm => cm.user_secure_code === userId);
+            if (crossMember) {
+                await fetch(`/api/units/${this.selectedDept.id}/cross-members/${crossMember.id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+                // 從本地列表移除
+                this.crossMembers = this.crossMembers.filter(cm => cm.id !== crossMember.id);
+            }
+        },
+
+        // 選擇
+        toggleExpand(dept) { this.expandedNodes[dept.id] = !this.expandedNodes[dept.id]; },
+
+        selectRoot() {
+            this.selectedDept = null;
+            this.isCreating = false;
+            this.members = [];
+            this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
+            this.crossMembers = [];
+        },
+
+        async selectDepartment(dept) {
+            this.selectedDept = dept;
+            this.isCreating = false;
+            this.formData = { code: dept.code, name: dept.name, parent_id: dept.parent_id || '' };
+            this.newCrossMember = { user_id: '', role_type: 'MEMBER' };
+            await Promise.all([
+                this.loadMembers(dept.id),
+                this.loadLeadership(dept.id),
+                this.loadCrossMembers(dept.id)
+            ]);
+        },
+
+        startCreate() {
+            // 預設父部門為當前選中的部門
+            const parentId = this.selectedDept ? this.selectedDept.id : '';
+            this.isCreating = true;
+            this.formData = { code: '', name: '', parent_id: parentId };
+        },
+
+        cancelEdit() {
+            this.isCreating = false;
+            if (this.selectedDept) {
+                this.formData = { code: this.selectedDept.code, name: this.selectedDept.name, parent_id: this.selectedDept.parent_id || '' };
+            }
+        },
+
+        // CRUD
+        async createDepartment() {
+            try {
+                const res = await fetch('/api/units', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ ...this.formData, unit_type: 'DEPARTMENT' })
+                });
+                if (res.ok) {
+                    this.showToast('部門建立成功', 'success');
+                    this.isCreating = false;
+                    await this.loadDepartments();
+                    this.refreshJsTree();
+                } else {
+                    const data = await res.json();
+                    this.showToast(data.error || '建立失敗', 'error');
+                }
+            } catch (err) { this.showToast('建立失敗', 'error'); }
+        },
+
+        async updateDepartment() {
+            if (!this.selectedDept) return;
+            try {
+                const res = await fetch(`/api/units/${this.selectedDept.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ name: this.formData.name, parent_id: this.formData.parent_id || null })
+                });
+                if (res.ok) {
+                    this.showToast('更新成功', 'success');
+                    await this.loadDepartments();
+                } else {
+                    const data = await res.json();
+                    this.showToast(data.error || '更新失敗', 'error');
+                }
+            } catch (err) { this.showToast('更新失敗', 'error'); }
+        },
+
+        async deleteDepartment() {
+            if (!this.selectedDept) return;
+
+            // 先檢查子單位和成員數量
+            const checkRes = await fetch(`/api/units/${this.selectedDept.id}?check_only=true&cascade=true`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': getCsrfToken() }
+            });
+            const checkData = await checkRes.json();
+
+            // 組合確認訊息
+            let msgs = [`確定刪除「${this.selectedDept.name}」？`];
+            if (checkData.children_count > 0) {
+                msgs.push(`\n包含 ${checkData.children_count} 個子部門`);
+            }
+            if (checkData.members_count > 0) {
+                msgs.push(`\n共 ${checkData.members_count} 位成員將移至「未分配員工」`);
+            }
+
+            if (!confirm(msgs.join(''))) {
+                return;
+            }
+
+            try {
+                // 總是帶 cascade 和 confirm_members（API 會處理成員移動）
+                const url = `/api/units/${this.selectedDept.id}?cascade=true&confirm_members=true`;
+                const res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
+                const data = await res.json();
+
+                if (res.ok) {
+                    this.showToast(data.message || '刪除成功', 'success');
+                    this.selectedDept = null;
+                    await this.loadDepartments();
+                    await this.loadUnassignedUsers();
+                    this.refreshJsTree();
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (err) { this.showToast('刪除失敗', 'error'); }
+        },
+
+        formatPersonFull(p) {
+            // 顯示格式：員工編號 本國姓名 英文姓名
+            const parts = [];
+            if (p.employee_id) parts.push(p.employee_id);
+            if (p.native_name) parts.push(p.native_name);
+            else if (p.display_name) parts.push(p.display_name);
+            if (p.english_name) parts.push(p.english_name);
+            return parts.join(' ');
+        },
+
+        // 跨部門人員管理
+        async addCrossMember() {
+            if (!this.selectedDept || !this.newCrossMember.user_id) return;
+
+            try {
+                const res = await fetch(`/api/units/${this.selectedDept.id}/cross-members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({
+                        user_id: this.newCrossMember.user_id,
+                        role_type: this.newCrossMember.role_type
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    this.showToast(data.message || '已新增跨部門人員', 'success');
+                    this.newCrossMember = { user_id: '', role_type: 'MEMBER' };
+                    await this.loadCrossMembers(this.selectedDept.id);
+                } else {
+                    const data = await res.json();
+                    this.showToast(data.error || '新增失敗', 'error');
+                }
+            } catch (err) {
+                this.showToast('新增失敗', 'error');
+            }
+        },
+
+        // 從組織樹拖人到跨部門區域
+        async dropToCross(e) {
+            e.preventDefault();
+            this.dragOverZone = null;
+            if (!this.selectedDept) return;
+
+            // 支援從 jstree 拖入或從未分配區拖入
+            let userId = null;
+            let fromDeptId = null;
+
+            if (this.draggedTreePerson) {
+                userId = this.draggedTreePerson.id;
+                fromDeptId = this.draggedTreePerson.deptId;
+            } else if (this.draggedUser) {
+                userId = this.draggedUser.id;
+            }
+
+            if (!userId) return;
+
+            // 不能把本部門的人拖成跨部門（他已經是正式成員了）
+            if (fromDeptId === this.selectedDept.id) {
+                this.showToast('此人已是本部門正式成員', 'error');
+                this.clearDrag();
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/units/${this.selectedDept.id}/cross-members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        role_type: 'MEMBER'
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    this.showToast(data.message || '已新增跨部門人員', 'success');
+                    await this.loadCrossMembers(this.selectedDept.id);
+                } else {
+                    const data = await res.json();
+                    this.showToast(data.error || '新增失敗', 'error');
+                }
+            } catch (err) {
+                this.showToast('新增失敗', 'error');
+            }
+            this.clearDrag();
+        },
+
+        async removeCrossMember(cm) {
+            if (!this.selectedDept) return;
+            const userName = cm.user?.native_name || cm.user?.display_name || '此人員';
+            if (!confirm(`確定移除 ${userName} 的跨部門關係？`)) return;
+
+            try {
+                const res = await fetch(`/api/units/${this.selectedDept.id}/cross-members/${cm.id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+
+                if (res.ok) {
+                    this.showToast('已移除跨部門關係', 'success');
+                    await this.loadCrossMembers(this.selectedDept.id);
+                } else {
+                    const data = await res.json();
+                    this.showToast(data.error || '移除失敗', 'error');
+                }
+            } catch (err) {
+                this.showToast('移除失敗', 'error');
+            }
+        },
+
+        showToast(msg, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
