@@ -1,7 +1,7 @@
 # Node Type 命名正規化計劃（方案 C）
 
 > 建立日期: 2026-02-08
-> 狀態: Phase 1-4 完成，待用戶瀏覽器驗證 (4.5)
+> 狀態: 完成 ✅ (2026-02-08 用戶瀏覽器驗證通過)
 > 關聯 Issue: #8 (代碼層命名重構的延伸)
 
 ---
@@ -92,12 +92,12 @@ function normalizeNodeType(type) {
 - [x] 4.2 normalizeNodeType 驗證：22 個 API type + 22 個 DB type 全部正確映射
 - [x] 4.3 SubFlow → Subflow 轉換確認（唯一需要轉換的 API type）
 - [x] 4.4 DB ALL_CAPS type 全部正確轉換（模擬舊 graph 載入）
-- [ ] 4.5 **待用戶手動驗證**：瀏覽器打開 designer，拖拉 SubFlow/SysTelegram/EmailRelay 節點，確認設定面板顯示
+- [x] 4.5 用戶瀏覽器驗證：SubFlow 設定面板正常顯示 ✅
 
 ### Phase 5: 文件更新 ✅
 - [x] 5.1 更新本文件 checklist 狀態
 - [x] 5.2 無架構變更，不需更新 PLATFORM_MODULARIZATION_PLAN.md
-- [x] 5.3 Forgejo Issue 待瀏覽器驗證後關閉
+- [x] 5.3 Forgejo Issue #8 已關閉
 
 ---
 
