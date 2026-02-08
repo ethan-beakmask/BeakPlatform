@@ -3037,6 +3037,11 @@
                         description: node.description || ''
                     };
 
+                    // End 節點：從 config 恢復 finishMode 供 CSS selector 變色
+                    if (nodeData.type === 'End' && node.config && node.config.finish_mode) {
+                        nodeData.finishMode = node.config.finish_mode;
+                    }
+
                     // 如果節點有父群組，設定父子關係
                     if (node.parent) {
                         nodeData.parent = node.parent;
@@ -6882,6 +6887,7 @@
             };
 
             node.data('config', updatedConfig);
+            node.data('finishMode', finishMode);
 
             // 根據模式顯示不同訊息
             const modeNames = {
