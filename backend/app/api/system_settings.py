@@ -61,8 +61,8 @@ api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/ap
 # E-MailRelay 設定
 # =============================================================================
 
-EMAILRELAY_AUTH_FILE = '/opt/BeakPlatform/E-MailRelay/emailrelay.auth'
-EMAILRELAY_SPOOL_DIR = '/opt/BeakPlatform/E-MailRelay/spool'
+EMAILRELAY_AUTH_FILE = '/opt/E-MailRelay/etc/emailrelay.auth'
+EMAILRELAY_SPOOL_DIR = '/opt/E-MailRelay/spool'
 
 
 @api_system_settings.route('/emailrelay', methods=['GET'])
@@ -329,7 +329,7 @@ BeakPlatform System
             tmp_filepath = tmp_file.name
 
         cmd = [
-            '/usr/sbin/emailrelay-submit',
+            '/opt/E-MailRelay/sbin/emailrelay-submit',
             '--spool-dir', spool_dir,
             '--from', from_email,
             '--input-file', tmp_filepath,
@@ -559,7 +559,7 @@ def _get_emailrelay_service_status() -> dict:
     # 取得版本
     try:
         version_result = subprocess.run(
-            ['/usr/sbin/emailrelay', '--version'],
+            ['/opt/E-MailRelay/sbin/emailrelay', '--version'],
             capture_output=True,
             text=True,
             timeout=5

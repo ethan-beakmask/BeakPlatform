@@ -21,8 +21,8 @@ from .base import BaseNodeHandler
 logger = logging.getLogger(__name__)
 
 # emailrelay-submit 路徑與 spool 目錄
-EMAILRELAY_SUBMIT = '/usr/sbin/emailrelay-submit'
-SPOOL_DIR = '/opt/BeakPlatform/E-MailRelay/spool'
+EMAILRELAY_SUBMIT = '/opt/E-MailRelay/sbin/emailrelay-submit'
+SPOOL_DIR = '/opt/E-MailRelay/spool'
 DEFAULT_FROM = 'beakmask@beakplatform.local'
 
 # 郵件優先級對應 X-Priority 值

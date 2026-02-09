@@ -17,8 +17,8 @@ from typing import Optional, List
 logger = logging.getLogger(__name__)
 
 # E-MailRelay 設定
-EMAILRELAY_SPOOL_DIR = '/opt/BeakPlatform/E-MailRelay/spool'
-EMAILRELAY_SUBMIT = '/usr/sbin/emailrelay-submit'
+EMAILRELAY_SPOOL_DIR = '/opt/E-MailRelay/spool'
+EMAILRELAY_SUBMIT = '/opt/E-MailRelay/sbin/emailrelay-submit'
 
 # 預設發件人設定
 DEFAULT_FROM_EMAIL = 'system@beakplatform.local'
