@@ -1092,7 +1092,8 @@ def get_org_users():
                 User.display_name.ilike(search_pattern),
                 User.native_name.ilike(search_pattern),
                 User.english_name.ilike(search_pattern),
-                User.email.ilike(search_pattern)
+                User.email.ilike(search_pattern),
+                User.backup_email_1.ilike(search_pattern),
             )
         )
 

@@ -4381,13 +4381,13 @@
 
                         <!-- 主旨 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨</label>
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span></label>
                             <input type="text" id="emailRelaySubject" placeholder="支援變數 \${var}, \${form.field}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                         </div>
 
                         <!-- 內容 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容</label>
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span></label>
                             <textarea id="emailRelayBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
                         </div>
 
@@ -4490,13 +4490,13 @@
 
                         <!-- 主旨 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨</label>
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span></label>
                             <input type="text" id="emailAdapterSubject" placeholder="支援變數 \${var}, \${form.field}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                         </div>
 
                         <!-- 內容 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容</label>
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span></label>
                             <textarea id="emailAdapterBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
                         </div>
 
@@ -5629,8 +5629,9 @@
                 data.data.configs.forEach(config => {
                     const isSystemLabel = config.is_system ? ' (系統)' : '';
                     const selected = selectedConfigId && config.id == selectedConfigId ? 'selected' : '';
-                    // 同時儲存頻道列表和預設頻道
-                    options += `<option value="${config.id}" data-channels='${JSON.stringify(config.channels)}' data-default-channel="${config.default_channel || ''}" ${selected}>${config.name}${isSystemLabel}</option>`;
+                    // 從 channels 物件取得頻道名稱陣列（與系統級一致）
+                    const channelNames = Object.keys(config.channels || {});
+                    options += `<option value="${config.id}" data-channels='${JSON.stringify(channelNames)}' data-default-channel="${config.default_channel || ''}" ${selected}>${config.name}${isSystemLabel}</option>`;
                 });
                 configSelect.innerHTML = options;
 
@@ -5722,11 +5723,11 @@
                 return;
             }
 
-            // 更新節點 config
+            // 更新節點 config（config_id 是 secure_code 字串，不能 parseInt）
             const currentConfig = node.data('config') || {};
             const updatedConfig = {
                 ...currentConfig,
-                config_id: parseInt(configId, 10),
+                config_id: configId,
                 channel_name: channelName,
                 message: message.trim(),
                 parse_mode: parseMode,
@@ -5851,11 +5852,11 @@
                 return;
             }
 
-            // 更新節點 config
+            // 更新節點 config（config_id 是 secure_code 字串，不能 parseInt）
             const currentConfig = node.data('config') || {};
             const updatedConfig = {
                 ...currentConfig,
-                config_id: parseInt(configId, 10),
+                config_id: configId,
                 channel_name: channelName,
                 message: message.trim(),
                 parse_mode: parseMode,
@@ -5990,7 +5991,7 @@
             if (recipientType === 'group') {
                 const groupSelect = document.getElementById('emailRelayGroups');
                 if (groupSelect) {
-                    recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => parseInt(opt.value, 10));
+                    recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => opt.value);
                 }
                 if (recipientGroups.length === 0) {
                     updateStatus('請選擇至少一個收件人群組', 'warning');
@@ -6175,7 +6176,7 @@
             if (recipientType === 'group') {
                 const groupSelect = document.getElementById('emailAdapterGroups');
                 if (groupSelect) {
-                    recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => parseInt(opt.value, 10));
+                    recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => opt.value);
                 }
                 if (recipientGroups.length === 0) {
                     updateStatus('請選擇至少一個收件人群組', 'warning');
@@ -6193,7 +6194,7 @@
             const currentConfig = node.data('config') || {};
             const updatedConfig = {
                 ...currentConfig,
-                smtp_config_id: smtpConfigId ? parseInt(smtpConfigId, 10) : null,
+                smtp_config_id: smtpConfigId || null,
                 recipient_type: recipientType,
                 recipient_groups: recipientGroups,
                 recipient_manual: recipientManual.trim(),

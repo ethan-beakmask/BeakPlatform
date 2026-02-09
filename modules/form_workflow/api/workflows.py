@@ -650,7 +650,7 @@ def get_node_definitions():
         '變數': 'data',
         '操作': 'operation',
         '整合': 'integration',
-        '系統': 'system',
+        '系統': 'system_admin',
     }
 
     grouped = {}

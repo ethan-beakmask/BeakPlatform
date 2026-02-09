@@ -121,7 +121,21 @@ def register_context_processors(app: Flask) -> None:
 def register_error_handlers(app: Flask) -> None:
     """註冊錯誤處理器"""
     from flask import render_template, request, jsonify
+    from flask_wtf.csrf import CSRFError
     from app.exceptions import ResourceNotFoundError
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': f'CSRF 驗證失敗: {error.description}'}), 400
+        return render_template('errors/400.html'), 400
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        if request.is_json or request.path.startswith('/api/'):
+            desc = getattr(error, 'description', 'Bad request')
+            return jsonify({'success': False, 'error': str(desc)}), 400
+        return render_template('errors/400.html'), 400
 
     @app.errorhandler(ResourceNotFoundError)
     def handle_resource_not_found(error):

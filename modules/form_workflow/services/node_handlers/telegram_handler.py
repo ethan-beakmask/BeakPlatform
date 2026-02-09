@@ -19,17 +19,55 @@ class TelegramHandler(BaseNodeHandler):
     # Telegram Bot API 基礎 URL
     TELEGRAM_API_BASE = "https://api.telegram.org/bot"
 
+    def _resolve_telegram_config(self):
+        """
+        從 config_id + channel_name 解析出 bot_token 和 chat_id
+
+        節點 config 格式：
+            config_id: TelegramConfig 的 secure_code
+            channel_name: 頻道名稱（對應 channels dict 的 key）
+
+        Returns:
+            tuple: (bot_token, chat_id)
+        """
+        from app.models import TelegramConfig
+
+        config_id = self.get_config_value('config_id')
+        channel_name = self.get_config_value('channel_name')
+
+        if not config_id:
+            raise ValueError('未設定 Telegram Bot 設定組')
+        if not channel_name:
+            raise ValueError('未設定 Telegram 頻道')
+
+        # 查詢 TelegramConfig（企業級或系統級）
+        telegram_config = TelegramConfig.query.filter_by(
+            secure_code=config_id,
+            is_deleted=False,
+            is_active=True,
+        ).first()
+
+        if not telegram_config:
+            raise ValueError(f'找不到 Telegram 設定 (config_id={config_id})')
+
+        bot_token = telegram_config.bot_token
+        if not bot_token:
+            raise ValueError('Telegram Bot Token 未設定')
+
+        # 從 channels dict 取得 chat_id
+        channels = telegram_config.get_channels()
+        chat_id = channels.get(channel_name)
+        if not chat_id:
+            available = ', '.join(channels.keys()) if channels else '無'
+            raise ValueError(
+                f'頻道 "{channel_name}" 不存在於此設定組 (可用: {available})'
+            )
+
+        return bot_token, chat_id
+
     def validate(self) -> bool:
         """驗證節點配置"""
-        # 必須指定 bot_token 和 chat_id
-        bot_token = self.get_config_value('bot_token')
-        chat_id = self.get_config_value('chat_id')
-
-        if not bot_token:
-            raise ValueError('必須設定 Telegram Bot Token')
-
-        if not chat_id:
-            raise ValueError('必須設定 Telegram Chat ID')
+        bot_token, chat_id = self._resolve_telegram_config()
 
         # 檢查訊息內容
         message = self.get_config_value('message')
@@ -43,9 +81,8 @@ class TelegramHandler(BaseNodeHandler):
         self.report_running()
 
         try:
-            # 取得設定
-            bot_token = self.get_config_value('bot_token')
-            chat_id = self.get_config_value('chat_id')
+            # 從 TelegramConfig 解析 bot_token 和 chat_id
+            bot_token, chat_id = self._resolve_telegram_config()
 
             # 取得並處理訊息內容（支援變數替換）
             message = self._process_message()
