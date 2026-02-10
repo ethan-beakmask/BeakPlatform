@@ -68,6 +68,73 @@
         let currentVersionType = 'design';  // 當前版本類型 (design/published)
         let variableMapping = null;    // 變數映射表（新式變數 <-> 舊式變數）
 
+        // ==================== 群組 Helper ====================
+        function isGroupNode(node) {
+            return node.isParent() || node.data('type') === 'group';
+        }
+
+        // 群組顏色色盤（30色，6排5列）
+        const GROUP_COLORS = [
+            // Row 1: 紅橙黃系
+            { r: 200, g: 80, b: 80, label: '紅' },
+            { r: 200, g: 120, b: 60, label: '橙紅' },
+            { r: 200, g: 160, b: 50, label: '橙' },
+            { r: 200, g: 190, b: 50, label: '金黃' },
+            { r: 180, g: 200, b: 50, label: '黃綠' },
+            // Row 2: 綠系
+            { r: 100, g: 200, b: 80, label: '亮綠' },
+            { r: 60, g: 180, b: 100, label: '翠綠' },
+            { r: 50, g: 180, b: 140, label: '薄荷' },
+            { r: 50, g: 175, b: 175, label: '青' },
+            { r: 60, g: 160, b: 200, label: '湖藍' },
+            // Row 3: 藍紫系
+            { r: 80, g: 130, b: 200, label: '天藍' },
+            { r: 100, g: 100, b: 200, label: '藍' },
+            { r: 120, g: 80, b: 200, label: '靛藍' },
+            { r: 150, g: 70, b: 200, label: '紫' },
+            { r: 180, g: 60, b: 190, label: '洋紫' },
+            // Row 4: 粉棕系
+            { r: 200, g: 60, b: 160, label: '桃粉' },
+            { r: 200, g: 80, b: 120, label: '玫瑰' },
+            { r: 200, g: 100, b: 100, label: '珊瑚' },
+            { r: 180, g: 120, b: 90, label: '棕' },
+            { r: 160, g: 140, b: 80, label: '橄欖' },
+            // Row 5: 淡色系
+            { r: 160, g: 180, b: 200, label: '淡藍' },
+            { r: 180, g: 200, b: 180, label: '淡綠' },
+            { r: 200, g: 180, b: 160, label: '淡橙' },
+            { r: 200, g: 160, b: 180, label: '淡粉' },
+            { r: 180, g: 170, b: 200, label: '淡紫' },
+            // Row 6: 灰系
+            { r: 180, g: 180, b: 180, label: '淺灰' },
+            { r: 140, g: 140, b: 140, label: '灰' },
+            { r: 100, g: 100, b: 100, label: '深灰' },
+            { r: 140, g: 160, b: 170, label: '藍灰' },
+            { r: 160, g: 150, b: 140, label: '暖灰' },
+        ];
+
+        // 根據群組顏色計算邊框色
+        function groupBorderColor(r, g, b) {
+            return `rgb(130, ${Math.round(g * 0.7)}, ${b})`;
+        }
+
+        // 套用群組顏色
+        function applyGroupColor(node, colorObj) {
+            if (!colorObj) return;
+            const { r, g, b } = colorObj;
+            node.data('groupColor', { r, g, b });
+            node.style('background-color', `rgb(${r}, ${g}, ${b})`);
+
+            // 如果有邊框，同步更新邊框色
+            const borderWidth = node.numericStyle('border-width');
+            if (borderWidth > 0) {
+                node.style('border-color', groupBorderColor(r, g, b));
+            }
+
+            updateGroupSettingsPanel();
+            updateMinimap();
+        }
+
         // ==================== Undo 系統 ====================
         const undoStack = [];
         const UNDO_MAX = 50;
@@ -88,8 +155,32 @@
             cy.elements().remove();
             cy.add(state);
 
-            // 重新套用所有節點的圖示樣式
+            // 重新套用所有節點的樣式
             cy.nodes().forEach(node => {
+                // 群組節點：恢復顏色、框線、圓角
+                if (isGroupNode(node)) {
+                    const gc = node.data('groupColor');
+                    const borderStyle = node.data('borderStyle') || 'none';
+                    const cornerStyle = node.data('cornerStyle') || 'round';
+                    const styleObj = {
+                        'shape': cornerStyle === 'round' ? 'roundrectangle' : 'rectangle'
+                    };
+                    if (gc) {
+                        styleObj['background-color'] = `rgb(${gc.r}, ${gc.g}, ${gc.b})`;
+                    }
+                    if (borderStyle === 'none') {
+                        styleObj['border-width'] = 0;
+                        styleObj['background-opacity'] = 0.3;
+                    } else {
+                        styleObj['border-width'] = 2;
+                        styleObj['border-style'] = borderStyle;
+                        styleObj['background-opacity'] = 0.15;
+                        styleObj['border-color'] = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
+                    }
+                    node.style(styleObj);
+                    return;
+                }
+
                 let iconUrl = node.data('iconUrl') || '';
                 if (!iconUrl && node.data('icon')) {
                     const icon = node.data('icon');
@@ -203,8 +294,8 @@
 
                 // 恢復到預設的選取模式（根據當前按住的鍵）
                 if (cy) {
-                    // 恢復平移功能
-                    cy.userPanningEnabled(true);
+                    // 恢復平移為 false（本系統用右鍵平移，左鍵用於框選）
+                    cy.userPanningEnabled(false);
 
                     if (shiftPressed) {
                         // 如果 Shift 仍按著,切換到 Shift 模式
@@ -537,14 +628,14 @@
                         }
                     },
                     {
-                        selector: ':parent',
+                        selector: 'node[type="group"]',
                         style: {
                             'background-opacity': 0.15,
                             'shape': 'roundrectangle',
                             'border-width': 0,
-                            'min-width': 150,  // 最小 3x3 node (50*3)
+                            'min-width': 150,
                             'min-height': 150,
-                            'text-halign': 'center',  // 標題置中
+                            'text-halign': 'center',
                             'text-valign': 'top',
                             'text-margin-y': 5,
                             'padding': 15
@@ -552,7 +643,7 @@
                     },
                     // 巢狀群組（群組中的群組）使用不同顏色
                     {
-                        selector: ':parent:child',
+                        selector: 'node[type="group"]:child',
                         style: {
                             'background-color': 'rgba(255, 152, 0, 0.08)',
                             'border-color': '#ff9800',
@@ -560,7 +651,7 @@
                         }
                     },
                     {
-                        selector: ':parent:selected',
+                        selector: 'node[type="group"]:selected',
                         style: {
                             'border-width': 3,
                             'border-color': '#4CAF50'
@@ -627,7 +718,7 @@
                             cy.style().update();
                             alreadyLeftGroup = true;
 
-                            const isGroup = node.isParent && node.isParent();
+                            const isGroup = isGroupNode(node);
                             const nodeType = isGroup ? '群組' : '節點';
                             updateStatus(`🔓 ${nodeType}正在脫離群組 ${currentParent.data('label')}...`);
                         }
@@ -742,8 +833,8 @@
             cy.on('mouseup', function(evt) {
                 if (trackingMouseOnEdge) {
                     trackingMouseOnEdge = false;
-                    // 恢復畫布平移
-                    cy.userPanningEnabled(true);
+                    // 不恢復 userPanningEnabled，保持 false
+                    // 左鍵用於框選，右鍵用於平移（由自訂代碼控制）
                     updateStatus('就緒');
                 }
             });
@@ -933,9 +1024,8 @@
 
             cy.on('mouseup', function(evt) {
                 if (draggingMiddleSegment) {
-                    // 重新啟用畫布平移
-                    cy.userPanningEnabled(true);
-
+                    // 不恢復 userPanningEnabled，保持 false
+                    // 左鍵用於框選，右鍵用於平移（由自訂代碼控制）
                     draggingMiddleSegment = null;
                     updateStatus('中間線段位置已更新');
                 }
@@ -1121,6 +1211,30 @@
 
                     // 重新套用節點圖示樣式（cy.add 不會自動套用 background-image）
                     addedElements.nodes().forEach(node => {
+                        // 群組節點：恢復樣式（顏色、框線、圓角）
+                        if (isGroupNode(node)) {
+                            const gc = node.data('groupColor');
+                            const borderStyle = node.data('borderStyle') || 'none';
+                            const cornerStyle = node.data('cornerStyle') || 'round';
+                            const styleObj = {
+                                'shape': cornerStyle === 'round' ? 'roundrectangle' : 'rectangle'
+                            };
+                            if (gc) {
+                                styleObj['background-color'] = `rgb(${gc.r}, ${gc.g}, ${gc.b})`;
+                            }
+                            if (borderStyle === 'none') {
+                                styleObj['border-width'] = 0;
+                                styleObj['background-opacity'] = 0.3;
+                            } else {
+                                styleObj['border-width'] = 2;
+                                styleObj['border-style'] = borderStyle;
+                                styleObj['background-opacity'] = 0.15;
+                                styleObj['border-color'] = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
+                            }
+                            node.style(styleObj);
+                            return;
+                        }
+
                         let iconUrl = node.data('iconUrl') || '';
                         if (!iconUrl && node.data('icon')) {
                             const icon = node.data('icon');
@@ -1215,7 +1329,7 @@
                                 if (elem.isNode() && (elemId === 'node-Start' || elemType === 'Start')) {
                                     blockedCount++;
                                     updateStatus('⚠️ Start 節點不允許刪除', 'warning');
-                                } else if (elem.isNode() && elem.isParent()) {
+                                } else if (elem.isNode() && isGroupNode(elem)) {
                                     // 刪除群組時，先將 Start 節點移出群組
                                     const children = elem.children();
                                     children.forEach(child => {
@@ -1323,7 +1437,7 @@
                 // 完全不處理中繼點和paper
                 if (node.data('type') === 'relay' || node.data('type') === 'paper') return;
 
-                const isGroup = node.isParent();
+                const isGroup = isGroupNode(node);
 
                 // 網格對齊（只對普通節點，群組不對齊避免影響內部節點）
                 if (!isGroup && gridEnabled) {
@@ -1367,7 +1481,7 @@
 
                 // 自動加入群組：檢測節點是否被拖到群組範圍內（支援巢狀群組）
                 // 包括群組節點本身也可以加入其他群組
-                const groups = cy.nodes(':parent');
+                const groups = cy.nodes('[type="group"]');
 
                 if (groups.length > 0) {
                     const nodeBB = node.boundingBox();
@@ -2005,8 +2119,8 @@
             }
 
             // 驗證 2：防止異類連接（node ↔ group）
-            const sourceIsCompound = sourceNode.isParent && sourceNode.isParent();
-            const targetIsCompound = targetNode.isParent && targetNode.isParent();
+            const sourceIsCompound = isGroupNode(sourceNode);
+            const targetIsCompound = isGroupNode(targetNode);
 
             // 檢查是否為異類連接
             if (sourceIsCompound !== targetIsCompound) {
@@ -3090,34 +3204,48 @@
                 try {
                     console.log(`  [${index + 1}/${groupNodes.length}] 渲染群組:`, node.id, node.label);
 
+                    const groupData = {
+                        id: node.id,
+                        label: node.label ? node.label.replace('\\n', '\n') : '',
+                        type: node.type || 'group',
+                        borderStyle: node.borderStyle || 'dashed',
+                        cornerStyle: node.cornerStyle || 'round'
+                    };
+                    // 恢復群組顏色
+                    if (node.groupColor) {
+                        groupData.groupColor = node.groupColor;
+                    }
+
                     const groupNode = cy.add({
-                        data: {
-                            id: node.id,
-                            label: node.label ? node.label.replace('\\n', '\n') : '',
-                            type: node.type || 'group',
-                            borderStyle: node.borderStyle || 'dashed',
-                            cornerStyle: node.cornerStyle || 'round'
-                        },
+                        data: groupData,
                         position: node.position || { x: 0, y: 0 }
                     });
 
                     // 應用群組樣式
                     const borderStyle = node.borderStyle || 'dashed';
                     const cornerStyle = node.cornerStyle || 'round';
+                    const gc = node.groupColor;
 
                     if (borderStyle === 'none') {
-                        groupNode.style({
+                        const styleObj = {
                             'border-width': 0,
                             'background-opacity': 0.3,
                             'shape': cornerStyle === 'round' ? 'roundrectangle' : 'rectangle'
-                        });
+                        };
+                        if (gc) styleObj['background-color'] = `rgb(${gc.r}, ${gc.g}, ${gc.b})`;
+                        groupNode.style(styleObj);
                     } else {
-                        groupNode.style({
+                        const styleObj = {
                             'border-width': 2,
                             'border-style': borderStyle,
                             'background-opacity': 0.15,
                             'shape': cornerStyle === 'round' ? 'roundrectangle' : 'rectangle'
-                        });
+                        };
+                        if (gc) {
+                            styleObj['background-color'] = `rgb(${gc.r}, ${gc.g}, ${gc.b})`;
+                            styleObj['border-color'] = groupBorderColor(gc.r, gc.g, gc.b);
+                        }
+                        groupNode.style(styleObj);
                     }
 
                     successCount++;
@@ -3347,8 +3475,8 @@
             // 找出最大的群組 ID 數字（包括 type='group' 的節點）
             let maxGroupNum = 0;
             cy.nodes().forEach(node => {
-                // 檢查是否為群組：使用 :parent 選擇器或 type='group'
-                if (node.isParent() || node.data('type') === 'group') {
+                // 檢查是否為群組
+                if (isGroupNode(node)) {
                     const match = node.id().match(/^group_(\d+)$/);
                     if (match) {
                         maxGroupNum = Math.max(maxGroupNum, parseInt(match[1]));
@@ -3364,7 +3492,7 @@
             // 套用全域邊框設定（使用 class，不用 bypass style）
             if (!globalNodeBorder) {
                 cy.nodes('[type!="relay"][type!="paper"]').forEach(node => {
-                    if (!node.isParent()) node.addClass('no-border');
+                    if (!isGroupNode(node)) node.addClass('no-border');
                 });
             }
             const borderCheckbox = document.getElementById('global-node-border');
@@ -7132,10 +7260,14 @@
                         };
 
                         // 如果是群組節點，保存樣式資訊
-                        if (node.isParent()) {
+                        if (isGroupNode(node)) {
                             nodeData.isGroup = true;
                             nodeData.borderStyle = node.data('borderStyle') || 'dashed';
                             nodeData.cornerStyle = node.data('cornerStyle') || 'round';
+                            // 保存群組顏色
+                            if (node.data('groupColor')) {
+                                nodeData.groupColor = node.data('groupColor');
+                            }
                         }
 
                         // 如果節點屬於某個群組，保存父群組ID
@@ -7842,7 +7974,7 @@
             // 套用到所有現有節點（排除relay和paper類型）
             cy.nodes('[type!="relay"][type!="paper"]').forEach(node => {
                 // 群組節點不處理（它們有自己的邊框樣式）
-                if (node.isParent()) return;
+                if (isGroupNode(node)) return;
 
                 if (globalNodeBorder) {
                     node.removeClass('no-border');
@@ -7952,7 +8084,7 @@
 
             cy.nodes('[type!="relay"][type!="paper"]').forEach(node => {
                 // 群組節點不參與網格佔用計算
-                if (node.isParent()) return;
+                if (isGroupNode(node)) return;
 
                 const grids = getOccupiedGridsForNode(node);
                 grids.forEach(coord => {
@@ -10040,10 +10172,16 @@
                 return;
             }
 
-            const isGroup = isNode && target.isParent();
+            const isGroup = isNode && isGroupNode(target);
             const isInGroup = isNode && target.parent().length > 0;
 
             if (isGroup) {
+                // 建立色盤格子 HTML
+                let colorGridItems = '';
+                GROUP_COLORS.forEach(c => {
+                    colorGridItems += `<div onclick="setGroupColorFromMenu(${c.r}, ${c.g}, ${c.b})" title="${c.label}" style="width: 16px; height: 16px; background: rgb(${c.r}, ${c.g}, ${c.b}); border: 1px solid #aaa; border-radius: 2px; cursor: pointer;"></div>`;
+                });
+
                 // 群組節點的右鍵選單
                 menu.innerHTML = `
                     <div class="context-menu-item" onclick="editGroupLabel()">
@@ -10051,6 +10189,20 @@
                         <span>編輯群組名稱</span>
                     </div>
                     <div class="context-menu-separator"></div>
+                    <div class="context-menu-item context-menu-submenu">
+                        <i class="fas fa-palette"></i>
+                        <span>群組顏色</span>
+                        <div class="submenu-content context-menu" style="padding: 8px; min-width: auto;">
+                            <div style="display: grid; grid-template-columns: repeat(10, 16px); gap: 3px;">
+                                ${colorGridItems}
+                            </div>
+                            <div class="context-menu-separator" style="margin: 6px 0;"></div>
+                            <div class="context-menu-item" onclick="clearGroupColorFromMenu()" style="font-size: 11px;">
+                                <i class="fas fa-undo"></i>
+                                <span>重設顏色</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="context-menu-item context-menu-submenu">
                         <i class="fas fa-border-style"></i>
                         <span>框線樣式</span>
@@ -10192,7 +10344,10 @@
                 const newLabel = prompt('輸入群組名稱:', currentLabel);
                 if (newLabel !== null && newLabel.trim() !== '') {
                     contextMenuTarget.data('label', newLabel.trim());
+                    updateGroupSettingsPanel();
                     updateStatus('群組名稱已更新');
+                    hasUnsavedChanges = true;
+                    updateSaveButtonState();
                 }
             }
             hideContextMenu();
@@ -10201,13 +10356,8 @@
         // 右鍵選單：設定群組框線樣式
         function setGroupBorderStyle(style) {
             if (contextMenuTarget) {
-                const styleMap = {
-                    'solid': 'solid',
-                    'dashed': 'dashed',
-                    'none': 'solid' // 無框線用透明邊框
-                };
-
                 contextMenuTarget.data('borderStyle', style);
+                const gc = contextMenuTarget.data('groupColor');
 
                 if (style === 'none') {
                     contextMenuTarget.style({
@@ -10215,14 +10365,19 @@
                         'background-opacity': 0.3
                     });
                 } else {
+                    const borderColor = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
                     contextMenuTarget.style({
                         'border-width': 2,
-                        'border-style': styleMap[style],
-                        'background-opacity': 0.15
+                        'border-style': style,
+                        'background-opacity': 0.15,
+                        'border-color': borderColor
                     });
                 }
 
                 updateStatus(`群組框線已設為: ${style === 'solid' ? '實線' : style === 'dashed' ? '虛線' : '無框線'}`);
+                updateGroupSettingsPanel();
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
             }
             hideContextMenu();
         }
@@ -10231,17 +10386,45 @@
         function setGroupCornerStyle(style) {
             if (contextMenuTarget) {
                 contextMenuTarget.data('cornerStyle', style);
-
-                const shapeMap = {
-                    'round': 'roundrectangle',
-                    'square': 'rectangle'
-                };
-
                 contextMenuTarget.style({
-                    'shape': shapeMap[style]
+                    'shape': style === 'round' ? 'roundrectangle' : 'rectangle'
                 });
 
                 updateStatus(`群組形狀已設為: ${style === 'round' ? '圓角' : '直角'}`);
+                updateGroupSettingsPanel();
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
+            }
+            hideContextMenu();
+        }
+
+        // 右鍵選單：設定群組顏色
+        function setGroupColorFromMenu(r, g, b) {
+            if (contextMenuTarget && isGroupNode(contextMenuTarget)) {
+                pushUndoState();
+                applyGroupColor(contextMenuTarget, { r, g, b });
+                updateStatus(`群組顏色已更新`);
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
+            }
+            hideContextMenu();
+        }
+
+        // 右鍵選單：清除群組顏色
+        function clearGroupColorFromMenu() {
+            if (contextMenuTarget && isGroupNode(contextMenuTarget)) {
+                pushUndoState();
+                contextMenuTarget.removeData('groupColor');
+                contextMenuTarget.style('background-color', 'rgba(102, 126, 234, 0.08)');
+                const borderWidth = contextMenuTarget.numericStyle('border-width');
+                if (borderWidth > 0) {
+                    contextMenuTarget.style('border-color', '#667eea');
+                }
+                updateGroupSettingsPanel();
+                updateMinimap();
+                updateStatus('群組顏色已重設');
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
             }
             hideContextMenu();
         }
@@ -10634,7 +10817,7 @@
             pushUndoState();
             const selectedNodes = cy.nodes(':selected').filter(node => {
                 // 排除中繼點和已經是群組的節點
-                return node.data('type') !== 'relay' && !node.isParent();
+                return node.data('type') !== 'relay' && !isGroupNode(node);
             });
 
             if (selectedNodes.length === 0) {
@@ -10678,8 +10861,8 @@
             const selected = cy.nodes(':selected');
 
             // 分離出節點和群組
-            const nodes = selected.filter(n => !n.isParent() && n.data('type') !== 'relay');
-            const groups = selected.filter(n => n.isParent());
+            const nodes = selected.filter(n => !isGroupNode(n) && n.data('type') !== 'relay');
+            const groups = selected.filter(n => isGroupNode(n));
 
             if (nodes.length === 0) {
                 updateStatus('請先選取要加入的節點', 'warning');
@@ -10717,7 +10900,7 @@
         function removeFromGroup() {
             pushUndoState();
             const selectedNodes = cy.nodes(':selected').filter(node => {
-                return node.data('type') !== 'relay' && !node.isParent() && node.parent().length > 0;
+                return node.data('type') !== 'relay' && !isGroupNode(node) && node.parent().length > 0;
             });
 
             if (selectedNodes.length === 0) {
@@ -10742,7 +10925,7 @@
         // 解散群組
         function dissolveGroup() {
             pushUndoState();
-            const selectedGroups = cy.nodes(':selected').filter(node => node.isParent());
+            const selectedGroups = cy.nodes(':selected').filter(node => isGroupNode(node));
 
             if (selectedGroups.length === 0) {
                 updateStatus('請選取要解散的群組節點', 'warning');
@@ -10857,61 +11040,174 @@
             }
         }
 
-        // 更新群組資訊顯示
-        function updateGroupInfoDisplay() {
-            const infoDisplay = document.getElementById('group-info-display');
-            if (!infoDisplay || !cy) return;
+        // 更新群組設定面板
+        function updateGroupSettingsPanel() {
+            const panel = document.getElementById('group-settings-content');
+            if (!panel || !cy) return;
 
-            const selectedGroups = cy.$(':selected').filter(node => node.isParent && node.isParent());
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
 
             if (selectedGroups.length === 0) {
-                infoDisplay.innerHTML = '<div style="color: #999; font-style: italic;">點擊群組可查看詳細資訊</div>';
+                panel.innerHTML = '<div style="color: #999; font-style: italic; padding: 8px 0;">選取群組後可在此調整設定</div>';
                 return;
             }
 
             if (selectedGroups.length > 1) {
-                infoDisplay.innerHTML = `<div style="color: #666;">已選擇 ${selectedGroups.length} 個群組</div>`;
+                panel.innerHTML = `<div style="color: #666; padding: 8px 0;">已選擇 ${selectedGroups.length} 個群組</div>`;
                 return;
             }
 
-            // 顯示單個群組的詳細資訊
             const group = selectedGroups[0];
-            const bb = group.boundingBox();
-            const children = group.children('[type != "relay"]');
+            const currentLabel = group.data('label') || '';
+            const currentBorderStyle = group.data('borderStyle') || 'none';
+            const currentCornerStyle = group.data('cornerStyle') || 'round';
+            const currentColor = group.data('groupColor');
+
+            // 建立色盤 HTML (6行5列)
+            let colorGridHtml = '';
+            GROUP_COLORS.forEach((c, i) => {
+                const isActive = currentColor && currentColor.r === c.r && currentColor.g === c.g && currentColor.b === c.b;
+                const borderMark = isActive ? '2px solid #333' : '1px solid #ccc';
+                colorGridHtml += `<div onclick="setGroupColor(${c.r}, ${c.g}, ${c.b})" title="${c.label}" style="width: 18px; height: 18px; background: rgb(${c.r}, ${c.g}, ${c.b}); border: ${borderMark}; border-radius: 2px; cursor: pointer; display: inline-block;"></div>`;
+            });
 
             const html = `
-                <div style="line-height: 1.6;">
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: #0066cc;">${group.data('label') || group.id()}</strong>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <!-- 群組名稱 -->
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="white-space: nowrap; color: #666;">名稱:</span>
+                        <input type="text" id="group-name-input" value="${currentLabel.replace(/"/g, '&quot;')}"
+                            onblur="updateGroupNameFromPanel()"
+                            onkeypress="if(event.key==='Enter') this.blur()"
+                            style="flex: 1; padding: 3px 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;">
                     </div>
 
-                    <div style="margin-bottom: 6px;">
-                        <span style="color: #666;">ID:</span>
-                        <span style="font-family: monospace; font-size: 10px;">${group.id()}</span>
+                    <!-- 顏色 -->
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <span style="color: #666;">顏色:</span>
+                            <span onclick="clearGroupColor()" title="清除顏色" style="cursor: pointer; font-size: 10px; color: #999; text-decoration: underline;">重設</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(10, 18px); gap: 2px;">
+                            ${colorGridHtml}
+                        </div>
                     </div>
 
-                    <div style="margin-bottom: 6px;">
-                        <span style="color: #666;">座標:</span>
-                        <span style="font-family: monospace;">(${Math.round(group.position().x)}, ${Math.round(group.position().y)})</span>
-                    </div>
-
-                    <div style="margin-bottom: 6px;">
-                        <span style="color: #666;">目前尺寸:</span>
-                        <span style="font-family: monospace;">${Math.round(bb.w)} × ${Math.round(bb.h)} px</span>
-                    </div>
-
-                    <div style="margin-bottom: 6px;">
-                        <span style="color: #666;">子節點數:</span>
-                        <span style="font-weight: bold;">${children.length}</span>
-                    </div>
-
-                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee; font-size: 10px; color: #999;">
-                        💡 右鍵點擊群組可進行更多操作
+                    <!-- 框線 + 圓角 -->
+                    <div style="display: flex; gap: 12px;">
+                        <div>
+                            <span style="color: #666;">框線:</span>
+                            <span onclick="setGroupBorderStyleFromPanel('none')" style="cursor: pointer; padding: 2px 5px; border-radius: 3px; font-size: 10px; ${currentBorderStyle === 'none' ? 'background: #667eea; color: white;' : 'background: #eee;'}">無</span>
+                            <span onclick="setGroupBorderStyleFromPanel('solid')" style="cursor: pointer; padding: 2px 5px; border-radius: 3px; font-size: 10px; ${currentBorderStyle === 'solid' ? 'background: #667eea; color: white;' : 'background: #eee;'}">實線</span>
+                            <span onclick="setGroupBorderStyleFromPanel('dashed')" style="cursor: pointer; padding: 2px 5px; border-radius: 3px; font-size: 10px; ${currentBorderStyle === 'dashed' ? 'background: #667eea; color: white;' : 'background: #eee;'}">虛線</span>
+                        </div>
+                        <div>
+                            <span style="color: #666;">圓角:</span>
+                            <span onclick="setGroupCornerStyleFromPanel('round')" style="cursor: pointer; padding: 2px 5px; border-radius: 3px; font-size: 10px; ${currentCornerStyle === 'round' ? 'background: #667eea; color: white;' : 'background: #eee;'}">圓角</span>
+                            <span onclick="setGroupCornerStyleFromPanel('square')" style="cursor: pointer; padding: 2px 5px; border-radius: 3px; font-size: 10px; ${currentCornerStyle === 'square' ? 'background: #667eea; color: white;' : 'background: #eee;'}">直角</span>
+                        </div>
                     </div>
                 </div>
             `;
 
-            infoDisplay.innerHTML = html;
+            panel.innerHTML = html;
+        }
+
+        // 舊名稱相容
+        function updateGroupInfoDisplay() {
+            updateGroupSettingsPanel();
+        }
+
+        // 從面板設定群組顏色
+        function setGroupColor(r, g, b) {
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
+            if (selectedGroups.length === 0) return;
+            pushUndoState();
+            selectedGroups.forEach(group => {
+                applyGroupColor(group, { r, g, b });
+            });
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+        }
+
+        // 清除群組顏色（恢復預設）
+        function clearGroupColor() {
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
+            if (selectedGroups.length === 0) return;
+            pushUndoState();
+            selectedGroups.forEach(group => {
+                group.removeData('groupColor');
+                group.style('background-color', 'rgba(102, 126, 234, 0.08)');
+                const borderWidth = group.numericStyle('border-width');
+                if (borderWidth > 0) {
+                    group.style('border-color', '#667eea');
+                }
+            });
+            updateGroupSettingsPanel();
+            updateMinimap();
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+        }
+
+        // 從面板更新群組名稱
+        function updateGroupNameFromPanel() {
+            const input = document.getElementById('group-name-input');
+            if (!input) return;
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
+            if (selectedGroups.length !== 1) return;
+            const group = selectedGroups[0];
+            const newLabel = input.value.trim();
+            if (newLabel !== group.data('label')) {
+                pushUndoState();
+                group.data('label', newLabel);
+                hasUnsavedChanges = true;
+                updateSaveButtonState();
+                updateMinimap();
+            }
+        }
+
+        // 從面板設定群組框線樣式
+        function setGroupBorderStyleFromPanel(style) {
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
+            if (selectedGroups.length === 0) return;
+            pushUndoState();
+            selectedGroups.forEach(group => {
+                group.data('borderStyle', style);
+                const gc = group.data('groupColor');
+                if (style === 'none') {
+                    group.style({
+                        'border-width': 0,
+                        'background-opacity': 0.3
+                    });
+                } else {
+                    const borderColor = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
+                    group.style({
+                        'border-width': 2,
+                        'border-style': style,
+                        'background-opacity': 0.15,
+                        'border-color': borderColor
+                    });
+                }
+            });
+            updateGroupSettingsPanel();
+            updateMinimap();
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
+        }
+
+        // 從面板設定群組圓角樣式
+        function setGroupCornerStyleFromPanel(style) {
+            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
+            if (selectedGroups.length === 0) return;
+            pushUndoState();
+            selectedGroups.forEach(group => {
+                group.data('cornerStyle', style);
+                group.style('shape', style === 'round' ? 'roundrectangle' : 'rectangle');
+            });
+            updateGroupSettingsPanel();
+            updateMinimap();
+            hasUnsavedChanges = true;
+            updateSaveButtonState();
         }
 
         // 鷹眼（縮略圖）功能
@@ -11077,7 +11373,7 @@
                 const nodeHeight = node.height() * scale;
 
                 // 檢查是否為群組（parent node）
-                const isGroup = node.isParent();
+                const isGroup = isGroupNode(node);
 
                 // 根據節點類型設置顏色
                 let color = '#667eea';
@@ -11094,7 +11390,21 @@
                 }
 
                 if (isGroup) {
-                    // 群組：只繪製邊框，不填滿，讓內部節點可見
+                    // 群組：使用群組自訂顏色或預設色
+                    const gc = node.data('groupColor');
+                    if (gc) {
+                        color = `rgb(${gc.r}, ${gc.g}, ${gc.b})`;
+                    }
+                    // 繪製半透明填滿 + 邊框
+                    minimapCtx.fillStyle = color;
+                    minimapCtx.globalAlpha = 0.2;
+                    minimapCtx.fillRect(
+                        pos.x * scale + offsetX - nodeWidth / 2,
+                        pos.y * scale + offsetY - nodeHeight / 2,
+                        Math.max(nodeWidth, 3),
+                        Math.max(nodeHeight, 3)
+                    );
+                    minimapCtx.globalAlpha = 1.0;
                     minimapCtx.strokeStyle = color;
                     minimapCtx.lineWidth = 2;
                     minimapCtx.strokeRect(

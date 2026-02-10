@@ -243,37 +243,24 @@
                     </fieldset>
 
                     <!-- 群組管理 -->
-                    <fieldset class="canvas-control-panel" style="min-width: 320px; max-width: 370px; margin: 0;">
+                    <fieldset class="canvas-control-panel" style="min-width: 360px; max-width: 420px; margin: 0;">
                         <legend style="font-size: 13px; font-weight: 600; padding: 0 8px; margin: 0 0 0 1em;"><i class="fas fa-object-group"></i> 群組管理</legend>
 
-                        <div style="display: flex; gap: 15px;">
-                            <!-- 左側：按鈕區 -->
-                            <div style="flex: 0 0 80px;">
-                                <button class="btn-primary" onclick="createGroup()" style="margin-bottom: 8px; width: 100%;">
-                                    <i class="fas fa-plus-circle"></i> 建立群組
-                                </button>
+                        <!-- 按鈕列 -->
+                        <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                            <button class="btn-primary" onclick="createGroup()" style="padding: 4px 10px; font-size: 11px;">
+                                <i class="fas fa-plus-circle"></i> 建立群組
+                            </button>
+                            <button class="btn-danger" onclick="dissolveGroup()" style="padding: 4px 10px; font-size: 11px;">
+                                <i class="fas fa-times-circle"></i> 解散群組
+                            </button>
+                        </div>
 
-                                <button class="btn-info" onclick="addToGroup()" style="margin-bottom: 8px; width: 100%;">
-                                    <i class="fas fa-arrow-down"></i> 加入群組
-                                </button>
-
-                                <button class="btn-danger" onclick="removeFromGroup()" style="margin-bottom: 8px; width: 100%;">
-                                    <i class="fas fa-arrow-up"></i> 移出群組
-                                </button>
-
-                                <button class="btn-danger" onclick="dissolveGroup()" style="width: 100%;">
-                                    <i class="fas fa-times-circle"></i> 解散群組
-                                </button>
-                            </div>
-
-                            <!-- 右側：群組資訊顯示區 -->
-                            <div style="flex: 1; border-left: 1px solid #ddd; padding-left: 15px;">
-                                <div style="font-size: 11px; color: #333;">
-                                    <div id="group-info-display" style="min-height: 100px;">
-                                        <div style="color: #999; font-style: italic;">
-                                            點擊群組可查看詳細資訊
-                                        </div>
-                                    </div>
+                        <!-- 群組設定面板 -->
+                        <div id="group-settings-panel" style="font-size: 11px; color: #333;">
+                            <div id="group-settings-content">
+                                <div style="color: #999; font-style: italic; padding: 8px 0;">
+                                    選取群組後可在此調整設定
                                 </div>
                             </div>
                         </div>
