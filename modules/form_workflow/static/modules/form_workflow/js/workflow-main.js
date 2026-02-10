@@ -67,6 +67,8 @@
         let selectedFormSecureCode = '';  // 當前選中的表單 secure_code
         let currentVersionType = 'design';  // 當前版本類型 (design/published)
         let variableMapping = null;    // 變數映射表（新式變數 <-> 舊式變數）
+        let currentEditingNodeId = null;   // 當前開啟設定面板的節點 ID
+        let currentEditingNodeType = null; // 當前開啟設定面板的節點類型
 
         // ==================== 群組 Helper ====================
         function isGroupNode(node) {
@@ -3541,10 +3543,17 @@
 
         // 顯示節點資訊
         function showNodeInfo(node) {
+            // 切換節點前，先自動套用前一個面板的設定
+            autoApplyCurrentPanel();
+
             const rawType = node.data('type');
             const type = normalizeNodeType(rawType);  // 標準化節點類型
             const label = node.data('label');
             const nodeId = node.id();
+
+            // 追蹤當前編輯的節點
+            currentEditingNodeId = nodeId;
+            currentEditingNodeType = type;
 
             // 隱藏線段編輯面板，顯示節點設定
             document.getElementById('edge-editing-panel').style.display = 'none';
@@ -7201,8 +7210,250 @@
             });
         }
 
+        // ==================== 儲存前自動套用面板設定 ====================
+
+        /**
+         * 自動套用當前開啟面板的節點設定
+         * 解決用戶在面板填值後忘記按「套用」就直接按「儲存」的問題
+         * 此函數靜默執行，不顯示驗證警告、不搶 focus
+         */
+        function autoApplyCurrentPanel() {
+            if (!currentEditingNodeId) return;
+
+            const node = cy.getElementById(currentEditingNodeId);
+            if (!node || node.length === 0) return;
+
+            const type = currentEditingNodeType;
+            const config = node.data('config') || {};
+            let changed = false;
+
+            // 自動套用基本資訊（名稱、描述）
+            const labelInput = document.getElementById('node-label-input');
+            const descInput = document.getElementById('node-description-input');
+            if (labelInput) {
+                const newLabel = labelInput.value.trim();
+                if (newLabel && newLabel !== node.data('label')) {
+                    node.data('label', newLabel);
+                }
+            }
+            if (descInput) {
+                const newDesc = descInput.value.trim();
+                if (newDesc !== (node.data('description') || '')) {
+                    node.data('description', newDesc);
+                }
+            }
+
+            // 各節點類型的專用設定
+            switch (type) {
+                case 'OpFieldWrite': {
+                    const target = document.getElementById('fieldWriteTargetField');
+                    const content = document.getElementById('fieldWriteContent');
+                    const contentTypeRadio = document.querySelector('input[name="fieldWriteContentType"]:checked');
+                    if (target && content && target.value.trim()) {
+                        config.target_field = target.value.trim();
+                        config.content = content.value;
+                        config.content_type = contentTypeRadio ? contentTypeRadio.value : 'text';
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'OpSet': {
+                    if (typeof opsetOperationsTemp !== 'undefined' && opsetOperationsTemp.length > 0) {
+                        config.operations = [...opsetOperationsTemp];
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'Delay': {
+                    const delayInput = document.getElementById('delaySeconds');
+                    if (delayInput && delayInput.value) {
+                        config.delay_seconds = parseInt(delayInput.value) || 0;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'Subflow': {
+                    const childSelect = document.getElementById('childFlowSelect');
+                    if (childSelect && childSelect.value) {
+                        config.childFlowId = childSelect.value;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'End': {
+                    const finishMode = document.querySelector('input[name="finishMode"]:checked');
+                    const waitSeconds = document.getElementById('endWaitSeconds');
+                    if (finishMode) {
+                        config.finish_mode = finishMode.value;
+                        changed = true;
+                    }
+                    if (waitSeconds && waitSeconds.value) {
+                        config.wait_seconds = parseInt(waitSeconds.value) || 3;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'FormAdapter': {
+                    const assigneeType = document.getElementById('formAdapterAssigneeType');
+                    const selectionMode = document.querySelector('input[name="selectionMode"]:checked');
+                    const allowComment = document.getElementById('formAdapterAllowComment');
+                    const minCommentLen = document.getElementById('formAdapterMinCommentLength');
+                    if (assigneeType && assigneeType.value) {
+                        config.assignee_type = assigneeType.value;
+                        if (assigneeType.value === 'ROLE') {
+                            const roleSelect = document.getElementById('formAdapterRoleValue');
+                            if (roleSelect && roleSelect.value) {
+                                config.assignee_value = roleSelect.value;
+                                config.assignee_label = roleSelect.options[roleSelect.selectedIndex]?.text || '';
+                            }
+                        } else if (assigneeType.value === 'DYNAMIC') {
+                            const dynInput = document.getElementById('formAdapterDynamicValue');
+                            if (dynInput) config.assignee_value = dynInput.value.trim();
+                        }
+                        if (typeof selectedAssigneeList !== 'undefined' && selectedAssigneeList.length > 0) {
+                            config.assignee_list = [...selectedAssigneeList];
+                        }
+                        if (selectionMode) config.selection_mode = selectionMode.value;
+                        if (allowComment) config.allow_comment = allowComment.checked;
+                        if (minCommentLen) config.min_comment_length = parseInt(minCommentLen.value) || 0;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'Branch': {
+                    const fallbackAction = document.getElementById('branchFallbackAction');
+                    const fallbackMsg = document.getElementById('branchFallbackMessage');
+                    const fallbackTarget = document.getElementById('branchFallbackTarget');
+                    if (typeof branchRulesData !== 'undefined' && branchRulesData.length > 0) {
+                        config.rules = [...branchRulesData];
+                        changed = true;
+                    }
+                    if (fallbackAction) {
+                        config.fallback = {
+                            action: fallbackAction.value,
+                            message: fallbackMsg ? fallbackMsg.value : '',
+                            target: fallbackTarget ? fallbackTarget.value : ''
+                        };
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'SqlExecutor': {
+                    const queryType = document.getElementById('sqlQueryType');
+                    const resultVar = document.getElementById('sqlResultVar');
+                    if (queryType && queryType.value && resultVar && resultVar.value.trim()) {
+                        config.query_type = queryType.value;
+                        config.result_var = resultVar.value.trim();
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'Telegram': {
+                    const cfgId = document.getElementById('telegramConfigId');
+                    const channel = document.getElementById('telegramChannelName');
+                    const msg = document.getElementById('telegramMessage');
+                    const parseMode = document.getElementById('telegramParseMode');
+                    const disableNotif = document.getElementById('telegramDisableNotification');
+                    const disablePreview = document.getElementById('telegramDisableWebPagePreview');
+                    if (cfgId && msg) {
+                        config.config_id = cfgId.value;
+                        config.channel_name = channel ? channel.value : '';
+                        config.message = msg.value;
+                        if (parseMode) config.parse_mode = parseMode.value;
+                        if (disableNotif) config.disable_notification = disableNotif.checked;
+                        if (disablePreview) config.disable_web_page_preview = disablePreview.checked;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'SysTelegram': {
+                    const cfgId = document.getElementById('sysTelegramConfigId');
+                    const channel = document.getElementById('sysTelegramChannelName');
+                    const msg = document.getElementById('sysTelegramMessage');
+                    const parseMode = document.getElementById('sysTelegramParseMode');
+                    const disableNotif = document.getElementById('sysTelegramDisableNotification');
+                    const disablePreview = document.getElementById('sysTelegramDisableWebPagePreview');
+                    if (cfgId && msg) {
+                        config.config_id = cfgId.value;
+                        config.channel_name = channel ? channel.value : '';
+                        config.message = msg.value;
+                        if (parseMode) config.parse_mode = parseMode.value;
+                        if (disableNotif) config.disable_notification = disableNotif.checked;
+                        if (disablePreview) config.disable_web_page_preview = disablePreview.checked;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'EmailRelay': {
+                    const recipType = document.getElementById('emailRelayRecipientType');
+                    const subject = document.getElementById('emailRelaySubject');
+                    const body = document.getElementById('emailRelayBody');
+                    const bodyType = document.getElementById('emailRelayBodyType');
+                    const priority = document.getElementById('emailRelayPriority');
+                    const ccManual = document.getElementById('emailRelayCcManual');
+                    if (recipType && subject && body) {
+                        config.recipient_type = recipType.value;
+                        config.subject = subject.value;
+                        config.body = body.value;
+                        if (bodyType) config.body_type = bodyType.value;
+                        if (priority) config.priority = priority.value;
+                        if (ccManual) config.cc_manual = ccManual.value.trim();
+                        if (recipType.value === 'GROUP') {
+                            const groupSelect = document.getElementById('emailRelayGroups');
+                            if (groupSelect) {
+                                config.recipient_groups = Array.from(groupSelect.selectedOptions).map(o => o.value);
+                            }
+                        } else if (recipType.value === 'MANUAL') {
+                            const manualInput = document.getElementById('emailRelayRecipientManual');
+                            if (manualInput) config.recipient_manual = manualInput.value.trim();
+                        }
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'EmailAdapter': {
+                    const smtpCfg = document.getElementById('emailAdapterSmtpConfig');
+                    const recipType = document.getElementById('emailAdapterRecipientType');
+                    const subject = document.getElementById('emailAdapterSubject');
+                    const body = document.getElementById('emailAdapterBody');
+                    const bodyType = document.getElementById('emailAdapterBodyType');
+                    const priority = document.getElementById('emailAdapterPriority');
+                    const ccManual = document.getElementById('emailAdapterCcManual');
+                    if (recipType && subject && body) {
+                        if (smtpCfg) config.smtp_config_id = smtpCfg.value;
+                        config.recipient_type = recipType.value;
+                        config.subject = subject.value;
+                        config.body = body.value;
+                        if (bodyType) config.body_type = bodyType.value;
+                        if (priority) config.priority = priority.value;
+                        if (ccManual) config.cc_manual = ccManual.value.trim();
+                        if (recipType.value === 'GROUP') {
+                            const groupSelect = document.getElementById('emailAdapterGroups');
+                            if (groupSelect) {
+                                config.recipient_groups = Array.from(groupSelect.selectedOptions).map(o => o.value);
+                            }
+                        } else if (recipType.value === 'MANUAL') {
+                            const manualInput = document.getElementById('emailAdapterRecipientManual');
+                            if (manualInput) config.recipient_manual = manualInput.value.trim();
+                        }
+                        changed = true;
+                    }
+                    break;
+                }
+                // Converge: 即時寫入 config，不需要在此處理
+            }
+
+            if (changed) {
+                node.data('config', config);
+                console.log('💾 autoApply: 自動套用面板設定到', currentEditingNodeId, type);
+            }
+        }
+
         // 儲存流程
         async function saveWorkflow() {
+            // 儲存前自動套用當前面板的設定
+            autoApplyCurrentPanel();
+
             console.log('💾 saveWorkflow 被調用');
             console.log('  currentWorkflowId:', currentWorkflowId);
             console.log('  currentWorkflowId 類型:', typeof currentWorkflowId);
