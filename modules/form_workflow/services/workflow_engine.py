@@ -10,6 +10,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy import and_, or_
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -351,6 +352,7 @@ class WorkflowEngine:
             return []
 
         # 為每個下一節點建立佇列項目
+        # 逐筆 commit，配合 partial unique index 防止 race condition 重複建立
         new_items = []
         for next_node_id in next_node_ids:
             node_info = WorkflowEngine.get_node_info(graph, next_node_id)
@@ -378,6 +380,7 @@ class WorkflowEngine:
             ).first()
 
             if existing:
+                logger.debug(f'[advance_workflow] 節點 {next_node_id} 已有 {existing.status} 項目，跳過')
                 continue
 
             queue_item = FwNodeExecutionQueue(
@@ -391,7 +394,16 @@ class WorkflowEngine:
                 status='PENDING',
                 scheduled_at=datetime.utcnow()
             )
-            db.session.add(queue_item)
+            try:
+                with db.session.begin_nested():
+                    db.session.add(queue_item)
+                    db.session.flush()
+            except IntegrityError:
+                # Race condition：另一個 executor 已為此節點建立了 queue item
+                # begin_nested 只回滾 savepoint，不影響整個 session
+                logger.info(f'[advance_workflow] 節點 {next_node_id} 已被其他 executor 建立，跳過')
+                continue
+
             new_items.append(queue_item)
 
             # 更新當前節點

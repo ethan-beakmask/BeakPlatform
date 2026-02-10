@@ -179,7 +179,15 @@ def init_runtime(app):
     logger = logging.getLogger(__name__)
 
     # 僅在非測試環境且未使用獨立 executor 進程時啟動
-    if not app.config.get('TESTING', False) and not os.environ.get('EXECUTOR_STANDALONE'):
+    # Flask debug reloader 會產生父+子兩個進程，只在子進程（WERKZEUG_RUN_MAIN=true）啟動
+    is_reloader_parent = (
+        app.debug and
+        os.environ.get('WERKZEUG_RUN_MAIN') != 'true'
+    )
+
+    if is_reloader_parent:
+        logger.info('FormWorkflow: Reloader 父進程，跳過啟動執行器')
+    elif not app.config.get('TESTING', False) and not os.environ.get('EXECUTOR_STANDALONE'):
         try:
             from .services.workflow_executor import start_executor
             start_executor(app=app)

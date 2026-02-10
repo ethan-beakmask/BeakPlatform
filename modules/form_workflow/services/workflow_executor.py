@@ -104,13 +104,18 @@ class WorkflowExecutor:
                 time.sleep(self.poll_interval)
 
     def _poll_and_execute(self):
-        """輪詢並執行待處理的節點"""
+        """
+        輪詢並執行待處理的節點
+
+        使用 FOR UPDATE SKIP LOCKED 確保多個 executor 實例不會搶同一筆 queue item。
+        逐筆鎖定 → 狀態變更 → 啟動 subprocess，避免 race condition。
+        """
         from ..models import FwNodeExecutionQueue, FwWorkflowInstance
 
         now = datetime.utcnow()
 
         # 查詢 PENDING 狀態的節點，或 Delay 類型的 WAITING 節點且 scheduled_at 已到期
-        # 注意：FormAdapter 的 WAITING 是等待用戶簽核，不應該被自動恢復
+        # 使用 with_for_update(skip_locked=True) 避免多 executor 搶同一筆
         pending_nodes = FwNodeExecutionQueue.query.filter(
             or_(
                 # PENDING 節點（無排程或已到期）
@@ -132,6 +137,8 @@ class WorkflowExecutor:
             )
         ).order_by(
             FwNodeExecutionQueue.scheduled_at.asc()
+        ).with_for_update(
+            skip_locked=True
         ).limit(10).all()
 
         if not pending_nodes:
@@ -187,14 +194,25 @@ class WorkflowExecutor:
 
         logger.info(f'啟動節點: {queue_item.node_type} ({queue_item.node_id})')
 
-        # 更新狀態為 RUNNING
-        queue_item.start()
-
-        # 如果是恢復 WAITING 節點，保留原來的 started_at
+        # 原子性狀態切換：只有狀態仍為 PENDING 才能切到 RUNNING
+        # 防止多個 executor 同時搶到同一筆（FOR UPDATE SKIP LOCKED 之外的備援）
+        expected_status = 'PENDING'
+        update_values = {
+            'status': 'RUNNING',
+            'started_at': datetime.utcnow(),
+        }
         if preserve_started_at is not None:
-            queue_item.started_at = preserve_started_at
+            update_values['started_at'] = preserve_started_at
 
+        rows_updated = FwNodeExecutionQueue.query.filter_by(
+            id=queue_item.id,
+            status=expected_status
+        ).update(update_values)
         db.session.commit()
+
+        if rows_updated == 0:
+            logger.info(f'節點 {queue_item.node_id} 已被其他 executor 處理，跳過')
+            return
 
         # 啟動 subprocess 執行 node_runner
         # 需要設定 PYTHONPATH 以便找到 app 模組
@@ -222,13 +240,17 @@ class WorkflowExecutor:
 
             logger.info(f'節點程序已啟動: queue_code={queue_item.secure_code}, PID={process.pid}')
 
-            # 更新 process_id
-            queue_item.process_id = process.pid
+            # 更新 process_id（用 UPDATE 避免 ORM 髒物件覆蓋狀態）
+            FwNodeExecutionQueue.query.filter_by(id=queue_item.id).update(
+                {'process_id': process.pid}
+            )
             db.session.commit()
 
         except Exception as e:
             logger.error(f'啟動 subprocess 失敗: {str(e)}')
-            queue_item.fail(str(e))
+            FwNodeExecutionQueue.query.filter_by(id=queue_item.id).update(
+                {'status': 'FAILED', 'error_message': str(e)}
+            )
             db.session.commit()
 
     def _poll_waiting_nodes(self):
