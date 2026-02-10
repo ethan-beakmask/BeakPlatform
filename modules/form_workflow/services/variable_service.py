@@ -9,6 +9,8 @@ import logging
 import secrets
 from typing import Any, Dict, Optional
 
+from sqlalchemy.exc import IntegrityError
+
 from app import db
 from ..models import FwWorkflowVariable
 
@@ -82,11 +84,26 @@ class VariableService:
         Returns:
             FwWorkflowVariable 物件
         """
+        return VariableService._set_var(
+            instance_code, var_name, value, 'GLOBAL', org_code, source_node_id
+        )
+
+    @staticmethod
+    def _set_var(instance_code: str, var_name: str, value: Any, var_type: str,
+                 org_code: str = None, source_node_id: str = None) -> FwWorkflowVariable:
+        """
+        內部共用：設定變數（GLOBAL 或 LOCAL），處理並行寫入的 race condition
+
+        採用 "先查後插，衝突時 rollback 改 update" 的模式，
+        確保即使多個 executor 同時對同一變數寫入也不會因 UniqueViolation 而崩潰。
+        """
+        type_label = '全域' if var_type == 'GLOBAL' else '區域'
+
         # 1. 查詢是否已存在
         var = FwWorkflowVariable.query.filter_by(
             workflow_instance_secure_code=instance_code,
             var_name=var_name,
-            var_type='GLOBAL'
+            var_type=var_type
         ).first()
 
         if var:
@@ -94,10 +111,10 @@ class VariableService:
             var.var_value = value
             if source_node_id:
                 var.source_node_id = source_node_id
+            db.session.commit()
         else:
             # 新增變數
             if not org_code:
-                # 嘗試從 workflow_instance 取得 org_code
                 from ..models import FwWorkflowInstance
                 instance = FwWorkflowInstance.query.filter_by(secure_code=instance_code).first()
                 if instance:
@@ -109,19 +126,36 @@ class VariableService:
                 org_secure_code=org_code,
                 var_name=var_name,
                 var_value=value,
-                var_type='GLOBAL',
+                var_type=var_type,
                 source_node_id=source_node_id
             )
             db.session.add(var)
 
-        # 2. 立即寫入資料庫（持久化）
-        db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                # Race condition：另一個 executor 搶先插入了同一筆變數
+                db.session.rollback()
+                var = FwWorkflowVariable.query.filter_by(
+                    workflow_instance_secure_code=instance_code,
+                    var_name=var_name,
+                    var_type=var_type
+                ).first()
+                if var:
+                    var.var_value = value
+                    if source_node_id:
+                        var.source_node_id = source_node_id
+                    db.session.commit()
+                else:
+                    logger.error(f'[VariableService] 無法設定{type_label}變數 {var_name}：'
+                                 f'IntegrityError 後仍找不到記錄')
+                    return None
 
-        # 3. 更新快取
-        cache_key = VariableService._cache_key(instance_code, var_name, 'GLOBAL')
+        # 更新快取
+        cache_key = VariableService._cache_key(instance_code, var_name, var_type)
         VariableService._cache[cache_key] = value
 
-        logger.info(f'[VariableService] 設定全域變數: {var_name}={value} (instance={instance_code})')
+        logger.info(f'[VariableService] 設定{type_label}變數: {var_name}={value} (instance={instance_code})')
         return var
 
     @staticmethod
@@ -172,47 +206,9 @@ class VariableService:
         Returns:
             FwWorkflowVariable 物件
         """
-        # 1. 查詢是否已存在
-        var = FwWorkflowVariable.query.filter_by(
-            workflow_instance_secure_code=instance_code,
-            var_name=var_name,
-            var_type='LOCAL'
-        ).first()
-
-        if var:
-            # 更新現有變數
-            var.var_value = value
-            if source_node_id:
-                var.source_node_id = source_node_id
-        else:
-            # 新增變數
-            if not org_code:
-                # 嘗試從 workflow_instance 取得 org_code
-                from ..models import FwWorkflowInstance
-                instance = FwWorkflowInstance.query.filter_by(secure_code=instance_code).first()
-                if instance:
-                    org_code = instance.org_secure_code
-
-            var = FwWorkflowVariable(
-                secure_code=secrets.token_urlsafe(16),
-                workflow_instance_secure_code=instance_code,
-                org_secure_code=org_code,
-                var_name=var_name,
-                var_value=value,
-                var_type='LOCAL',
-                source_node_id=source_node_id
-            )
-            db.session.add(var)
-
-        # 2. 立即寫入資料庫（持久化）
-        db.session.commit()
-
-        # 3. 更新快取
-        cache_key = VariableService._cache_key(instance_code, var_name, 'LOCAL')
-        VariableService._cache[cache_key] = value
-
-        logger.info(f'[VariableService] 設定區域變數: {var_name}={value} (instance={instance_code})')
-        return var
+        return VariableService._set_var(
+            instance_code, var_name, value, 'LOCAL', org_code, source_node_id
+        )
 
     @staticmethod
     def get_all_vars(instance_code: str) -> Dict[str, Any]:
