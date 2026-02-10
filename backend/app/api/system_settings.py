@@ -400,7 +400,7 @@ def control_emailrelay_service(action):
             'message': f'不支援的操作: {action}'
         }), 400
 
-    service_name = 'beakplatform-emailrelay'
+    service_name = 'emailrelay'
 
     try:
         if action == 'status':
@@ -524,7 +524,7 @@ def _read_emailrelay_auth() -> dict:
 
 def _get_emailrelay_service_status() -> dict:
     """取得 E-MailRelay 服務狀態"""
-    service_name = 'beakplatform-emailrelay'
+    service_name = 'emailrelay'
 
     result = {
         'name': service_name,

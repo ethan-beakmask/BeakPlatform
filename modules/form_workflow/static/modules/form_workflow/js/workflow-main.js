@@ -7162,29 +7162,37 @@
                         hasRelays: hasRelays
                     };
 
-                    // 保存線段樣式屬性（如果有的話）
-                    const curveStyle = edge.style('curve-style');
-                    if (curveStyle && curveStyle !== 'straight') {
-                        edgeData.style = {
-                            'curve-style': curveStyle,
-                            'width': parseFloat(edge.style('width')) || 3,
-                            'line-color': edge.style('line-color') || '#95a5a6',
-                            'line-style': edge.style('line-style') || 'solid',
-                            'target-arrow-shape': edge.style('target-arrow-shape') || 'triangle'
-                        };
+                    // 保存線段樣式屬性（所有線條類型都儲存）
+                    const curveStyle = edge.style('curve-style') || 'straight';
+                    const lineColor = edge.style('line-color') || '#95a5a6';
 
-                        // 保存曲線特定參數
-                        if (curveStyle === 'bezier') {
-                            const controlDistance = edge.style('control-point-step-size');
-                            const controlWeight = edge.style('control-point-weight');
-                            if (controlDistance) edgeData.style['control-point-step-size'] = parseFloat(controlDistance);
-                            if (controlWeight) edgeData.style['control-point-weight'] = parseFloat(controlWeight);
-                        } else if (curveStyle === 'taxi') {
-                            const taxiDirection = edge.style('taxi-direction');
-                            const taxiTurn = edge.style('taxi-turn');
-                            if (taxiDirection) edgeData.style['taxi-direction'] = taxiDirection;
-                            if (taxiTurn) edgeData.style['taxi-turn'] = parseFloat(taxiTurn);
+                    edgeData.style = {
+                        'curve-style': curveStyle,
+                        'width': parseFloat(edge.style('width')) || 3,
+                        'line-color': lineColor,
+                        'line-style': edge.style('line-style') || 'solid',
+                        'target-arrow-shape': edge.style('target-arrow-shape') || 'triangle',
+                        'target-arrow-color': edge.style('target-arrow-color') || lineColor,
+                        'arrow-scale': parseFloat(edge.style('arrow-scale')) || 1
+                    };
+
+                    // 保存曲線特定參數
+                    if (curveStyle === 'bezier' || curveStyle === 'unbundled-bezier') {
+                        const distances = edge.style('control-point-distances');
+                        const weights = edge.style('control-point-weights');
+                        if (distances) {
+                            const distStr = String(distances).replace(/[\[\]px]/g, '');
+                            edgeData.style['control-point-distances'] = [parseFloat(distStr) || 0];
                         }
+                        if (weights) {
+                            const weightStr = String(weights).replace(/[\[\]]/g, '');
+                            edgeData.style['control-point-weights'] = [parseFloat(weightStr) || 0.5];
+                        }
+                    } else if (curveStyle === 'taxi') {
+                        const taxiDirection = edge.style('taxi-direction');
+                        const taxiTurn = edge.style('taxi-turn');
+                        if (taxiDirection) edgeData.style['taxi-direction'] = taxiDirection;
+                        if (taxiTurn) edgeData.style['taxi-turn'] = parseFloat(taxiTurn);
                     }
 
                     edges.push(edgeData);
@@ -9208,7 +9216,8 @@
             const lineStyle = {
                 'width': width,
                 'line-color': color,
-                'line-style': style
+                'line-style': style,
+                'target-arrow-color': color
             };
 
             // 更新原始邊
