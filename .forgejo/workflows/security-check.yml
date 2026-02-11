@@ -1,7 +1,8 @@
-# BeakPlatform Security Check Workflow
-# Runs on every push and PR
+# BeakPlatform CI/CD Pipeline
+# CI: Runs on every push and PR
+# CD: Auto-deploy to 192.168.0.15 after CI passes (push to main only)
 
-name: Security Check
+name: CI/CD
 
 on:
   push:
@@ -79,3 +80,18 @@ jobs:
         run: |
           cd backend
           pytest tests/ -v --tb=short
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [security-scan, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 192.168.0.15
+          username: ethan
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: /opt/BeakPlatform/deploy/deploy-remote.sh

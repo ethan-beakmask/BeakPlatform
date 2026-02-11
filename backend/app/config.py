@@ -5,6 +5,8 @@ Security-focused configuration for different environments
 import os
 from datetime import timedelta
 
+import redis
+
 
 class BaseConfig:
     """Base configuration with security defaults."""
@@ -26,7 +28,8 @@ class BaseConfig:
 
     # Session Security
     SESSION_TYPE = 'redis'
-    SESSION_REDIS = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    _redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+    SESSION_REDIS = redis.from_url(_redis_url) if _redis_url else None
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     SESSION_COOKIE_SECURE = True
@@ -86,8 +89,8 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
 
-    # Enforce secure cookies
-    SESSION_COOKIE_SECURE = True
+    # Secure cookies (can be disabled via env for non-SSL staging)
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'true').lower() == 'true'
 
     # Stricter session lifetime
     PERMANENT_SESSION_LIFETIME = timedelta(hours=4)
