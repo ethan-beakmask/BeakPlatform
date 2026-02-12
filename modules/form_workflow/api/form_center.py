@@ -633,7 +633,7 @@ def list_my_forms():
     - signed: 若為 1，顯示我簽核過的表單（而非我提交的表單）
     - limit: 回傳筆數上限（預設 50）
     """
-    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord, FwFormTemplate
+    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord, FwFormTemplate, FwPublishedFormWorkflow
     from sqlalchemy.orm import aliased
 
     org = get_current_org()
@@ -646,14 +646,20 @@ def list_my_forms():
     limit = request.args.get('limit', 50, type=int)
 
     FT = aliased(FwFormTemplate)
+    P = aliased(FwPublishedFormWorkflow)
 
-    # 建立基礎查詢（JOIN workflow_instance + outerjoin form_template 取 category + category_secure_code）
-    base_query = db.session.query(FwFormInstance, FwWorkflowInstance, FT.category, FT.category_secure_code).join(
+    # 建立基礎查詢（JOIN workflow_instance + outerjoin form_template 取 category + outerjoin published 取 publish_version）
+    base_query = db.session.query(
+        FwFormInstance, FwWorkflowInstance, FT.category, FT.category_secure_code, P.publish_version
+    ).join(
         FwWorkflowInstance,
         FwFormInstance.workflow_instance_secure_code == FwWorkflowInstance.secure_code
     ).outerjoin(
         FT,
         FwFormInstance.form_template_id == FT.id
+    ).outerjoin(
+        P,
+        FwFormInstance.published_secure_code == P.secure_code
     ).filter(
         FwFormInstance.org_secure_code == org.secure_code,
         FwFormInstance.is_deleted == False
@@ -688,7 +694,7 @@ def list_my_forms():
 
     # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
     from ..models import FwNodeExecutionQueue
-    workflow_secure_codes = [w.secure_code for f, w, _, _ in rows]
+    workflow_secure_codes = [w.secure_code for f, w, _, _, _ in rows]
     waiting_nodes = {}
     if workflow_secure_codes:
         waiting_items = FwNodeExecutionQueue.query.filter(
@@ -701,7 +707,7 @@ def list_my_forms():
     # signed=1 時批次查 FwApprovalRecord 取當前用戶的 acted_at
     acted_at_map = {}
     if signed == '1':
-        form_scs = [f.secure_code for f, w, _, _ in rows]
+        form_scs = [f.secure_code for f, w, _, _, _ in rows]
         if form_scs:
             acted_records = FwApprovalRecord.query.filter(
                 FwApprovalRecord.form_instance_secure_code.in_(form_scs),
@@ -713,9 +719,12 @@ def list_my_forms():
                 if not existing or (rec.acted_at and rec.acted_at > existing):
                     acted_at_map[rec.form_instance_secure_code] = rec.acted_at
 
+    # 判斷當前用戶是否為管理員（用於 can_force_end 判斷）
+    is_org_admin = getattr(current_user, 'is_org_admin', False)
+
     # 組裝結果
     result = []
-    for form_instance, workflow_instance, ft_category, ft_category_sc in rows:
+    for form_instance, workflow_instance, ft_category, ft_category_sc, pub_version in rows:
         data = form_instance.to_dict(include_form_data=False)
         data['is_test'] = data.get('serial_number', '').startswith('TEST-')
         # 附加流程資訊
@@ -731,6 +740,16 @@ def list_my_forms():
         data['form_subject'] = extract_form_subject(form_instance.schema_snapshot, form_instance.form_data)
         data['workflow_started_at'] = workflow_instance.started_at.isoformat() if workflow_instance.started_at else None
         data['workflow_completed_at'] = workflow_instance.completed_at.isoformat() if workflow_instance.completed_at else None
+        # 版本資訊
+        data['workflow_version'] = workflow_instance.workflow_version
+        data['publish_version'] = pub_version
+        # 強制結束權限：RUNNING 狀態 + (發起人 or 管理員)
+        data['can_force_end'] = (
+            workflow_instance.status == 'RUNNING' and (
+                form_instance.applicant_secure_code == current_user.secure_code
+                or is_org_admin
+            )
+        )
         if signed == '1':
             acted = acted_at_map.get(form_instance.secure_code)
             data['my_acted_at'] = acted.isoformat() if acted else None
@@ -1303,6 +1322,98 @@ def get_form_detail(secure_code):
             'approvals': approvals
         }
     })
+
+
+# =============================================================================
+# 強制結束流程
+# =============================================================================
+
+@form_center_bp.route('/force-end/<secure_code>', methods=['POST'])
+@csrf.exempt
+@login_required
+def force_end_workflow(secure_code):
+    """
+    強制結束流程
+
+    權限：發起人 / 企業管理員 / 系統管理員
+    條件：流程狀態為 RUNNING
+    """
+    from ..models import FwFormInstance, FwWorkflowInstance, FwApprovalRecord
+    from ..services.workflow_engine import WorkflowEngine
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 查詢表單實例
+    form_instance = FwFormInstance.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not form_instance:
+        return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+
+    # 查詢流程實例
+    workflow_instance = FwWorkflowInstance.query.filter_by(
+        secure_code=form_instance.workflow_instance_secure_code,
+        org_secure_code=org.secure_code
+    ).first()
+
+    if not workflow_instance:
+        return jsonify({'success': False, 'error': '找不到關聯的流程'}), 404
+
+    # 權限檢查：發起人 or 管理員
+    is_applicant = form_instance.applicant_secure_code == current_user.secure_code
+    is_admin = getattr(current_user, 'is_org_admin', False)
+    if not is_applicant and not is_admin:
+        return jsonify({'success': False, 'error': '無權限執行此操作'}), 403
+
+    # 狀態檢查
+    if workflow_instance.status != 'RUNNING':
+        return jsonify({'success': False, 'error': f'流程狀態為 {workflow_instance.status}，無法強制結束'}), 400
+
+    try:
+        # 取消所有未完成節點
+        WorkflowEngine.cancel_pending_nodes(workflow_instance.secure_code)
+
+        # 完成工作流（狀態設為 CANCELLED）
+        operator_name = current_user.display_name or current_user.username
+        WorkflowEngine.complete_workflow(
+            workflow_instance.secure_code,
+            status='CANCELLED',
+            end_message=f'由 {operator_name} 強制結束'
+        )
+
+        # 建立簽核記錄
+        approval_record = FwApprovalRecord(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=org.secure_code,
+            workflow_instance_secure_code=workflow_instance.secure_code,
+            form_instance_secure_code=form_instance.secure_code,
+            node_id='FORCE_END',
+            node_name='強制結束',
+            approver_secure_code=current_user.secure_code,
+            approver_name=operator_name,
+            action='FORCE_END',
+            comment=f'由 {operator_name} 強制結束流程',
+            acted_at=datetime.utcnow(),
+        )
+        db.session.add(approval_record)
+        db.session.commit()
+
+        logger.info(f'流程 {workflow_instance.execution_code} 已被 {operator_name} 強制結束')
+
+        return jsonify({
+            'success': True,
+            'message': '流程已強制結束'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'強制結束流程失敗: {e}')
+        return jsonify({'success': False, 'error': f'操作失敗: {str(e)}'}), 500
 
 
 # =============================================================================

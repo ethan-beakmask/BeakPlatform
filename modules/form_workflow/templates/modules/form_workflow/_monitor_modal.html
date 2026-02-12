@@ -9,10 +9,17 @@
                 <!-- 標題 -->
                 <div>
                     <h3 style="margin: 0; font-size: 16px; font-weight: 600;">流程監控</h3>
-                    <p x-show="monitoringExecution" style="margin: 2px 0 0; font-size: 11px; color: #6b7280;">
+                    <p x-show="monitoringExecution" style="margin: 2px 0 0; font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <span style="font-family: monospace; background: #e5e7eb; padding: 2px 6px; border-radius: 3px;" x-text="monitoringExecution?.execution_code"></span>
-                        <span style="margin: 0 4px;">|</span>
-                        <span x-text="monitoringExecution?.form_name"></span>
+                        <span style="color: #d1d5db;">|</span>
+                        <span x-show="monitoringExecution?.publish_version" style="background: #dbeafe; color: #1d4ed8; padding: 1px 6px; border-radius: 3px;">
+                            v<span x-text="monitoringExecution?.publish_version"></span>
+                        </span>
+                        <span style="font-weight: 500; color: #374151;" x-text="monitoringExecution?.form_name"></span>
+                        <span style="color: #6b7280;" x-text="'v' + (monitoringExecution?.form_version || '-')"></span>
+                        <span style="color: #d1d5db;">&rarr;</span>
+                        <span style="color: #7c3aed;" x-text="monitoringExecution?.workflow_name || '-'"></span>
+                        <span style="color: #6b7280;" x-text="'v' + (monitoringExecution?.workflow_version || '-')"></span>
                     </p>
                 </div>
                 <!-- 狀態徽章 -->
@@ -34,7 +41,15 @@
                     </span>
                 </div>
             </div>
-            <button @click="closeMonitorModal()" class="fc-close-btn">&times;</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button x-show="monitoringExecution?.can_force_end && monitorStatus.flowStatus === 'RUNNING'"
+                        x-cloak
+                        @click="confirmForceEnd()"
+                        style="padding: 4px 12px; font-size: 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    強制結束
+                </button>
+                <button @click="closeMonitorModal()" class="fc-close-btn">&times;</button>
+            </div>
         </div>
 
         <!-- 主分頁切換 -->

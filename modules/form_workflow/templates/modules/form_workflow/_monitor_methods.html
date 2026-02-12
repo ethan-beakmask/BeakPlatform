@@ -460,6 +460,38 @@
             await this.loadExecutionSnapshot(this.monitoringExecution);
         },
 
+        async confirmForceEnd() {
+            if (!confirm('確定要強制結束此流程？此操作將取消所有執行中的節點並結束流程。')) return;
+            await this.executeForceEnd();
+        },
+
+        async executeForceEnd() {
+            const secureCode = this.monitoringExecution?.secure_code;
+            if (!secureCode) return;
+            try {
+                const res = await fetch(`/api/form-center/force-end/${secureCode}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
+                    }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    this.showToast('流程已強制結束', 'success');
+                    await this.refreshMonitor();
+                    this.loadTracking();
+                    this.loadSigned();
+                    this.loadHistory();
+                    this.loadSignedHistory();
+                } else {
+                    this.showToast(result.error || '操作失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('操作失敗', 'error');
+            }
+        },
+
         formatHistoryTime(dateStr) {
             if (!dateStr) return '-';
             const d = this._parseUTC(dateStr);

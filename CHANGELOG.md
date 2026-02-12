@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### Added
+- 流程監控模態框標題列顯示五欄版本資訊（發行版本、表單名稱、表單版本、流程名稱、流程版本）
+- 強制結束流程功能（發起人/企業管理員可在監控畫面強制取消 RUNNING 流程）
+- 歷史列表納入 CANCELLED 和 REJECTED 狀態的表單
 - Docker 化 CI/CD 部署環境 (PostgreSQL 16 + Redis 7 + Gunicorn + Nginx)
 - CI 通過後自動部署到 staging 環境 (192.168.0.15:8000)
 - CI/CD 環境建置文件 (`docs/CICD_SETUP.md`)

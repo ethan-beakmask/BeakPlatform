@@ -1142,8 +1142,8 @@ function formCenterManager() {
                 safeFetch('/api/form-center/pending-tasks'),
                 safeFetch('/api/form-center/my-forms?status=RUNNING'),
                 safeFetch('/api/form-center/my-forms?signed=1&status=RUNNING'),
-                safeFetch('/api/form-center/my-forms?status=COMPLETED,ERROR'),
-                safeFetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR')
+                safeFetch('/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED'),
+                safeFetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED')
             ]);
             if (forms?.success) this.availableForms = forms.data || [];
             if (approvals?.success) this.pendingApprovals = approvals.data || [];
@@ -1357,7 +1357,7 @@ function formCenterManager() {
         async loadHistory() {
             this.loadingHistory = true;
             try {
-                const res = await fetch('/api/form-center/my-forms?status=COMPLETED,ERROR');
+                const res = await fetch('/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED');
                 const data = await res.json();
                 if (data.success) this.historyList = data.data || [];
             } catch (e) { console.error('載入歷史失敗:', e); }
@@ -1367,7 +1367,7 @@ function formCenterManager() {
         async loadSignedHistory() {
             this.loadingSignedHistory = true;
             try {
-                const res = await fetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR');
+                const res = await fetch('/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED');
                 const data = await res.json();
                 if (data.success) this.signedHistoryList = data.data || [];
             } catch (e) { console.error('載入簽核歷史失敗:', e); }
@@ -1675,13 +1675,13 @@ function formCenterManager() {
         },
 
         getActionText(action) {
-            const map = { 'approved': '核准', 'rejected': '退回', 'PENDING': '待簽' };
+            const map = { 'approved': '核准', 'rejected': '退回', 'PENDING': '待簽', 'FORCE_END': '強制結束' };
             return map[action] || action;
         },
 
         getActionBadgeClass(action) {
             if (action === 'approved') return 'fc-badge-completed';
-            if (action === 'rejected') return 'fc-badge-error';
+            if (action === 'rejected' || action === 'FORCE_END') return 'fc-badge-error';
             return 'fc-badge-pending';
         },
 
@@ -1700,7 +1700,8 @@ function formCenterManager() {
         getStatusText(status) {
             const map = {
                 'INITIAL': '草稿', 'PENDING': '待處理', 'RUNNING': '進行中',
-                'COMPLETED': '已完成', 'REJECTED': '已退回', 'ERROR': '錯誤', 'TERMINATED': '已終止'
+                'COMPLETED': '已完成', 'REJECTED': '已退回', 'ERROR': '錯誤',
+                'TERMINATED': '已終止', 'CANCELLED': '已取消'
             };
             return map[status] || status;
         },
@@ -1708,7 +1709,8 @@ function formCenterManager() {
         getStatusClass(status) {
             const map = {
                 'RUNNING': 'fc-badge-running', 'COMPLETED': 'fc-badge-completed',
-                'ERROR': 'fc-badge-error', 'REJECTED': 'fc-badge-error', 'TERMINATED': 'fc-badge-error'
+                'ERROR': 'fc-badge-error', 'REJECTED': 'fc-badge-error',
+                'TERMINATED': 'fc-badge-error', 'CANCELLED': 'fc-badge-error'
             };
             return map[status] || '';
         },
