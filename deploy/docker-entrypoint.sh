@@ -69,7 +69,14 @@ with app.app_context():
         print(f"Database has {len(tables)} tables, skipping init.")
 PYEOF
 
-# Sync modules
+# Initialize platform menus (runs before module sync to avoid menu count conflict)
+# init_menus.py is idempotent — skips if platform menus already exist
+echo "Initializing platform menus..."
+cd /opt/BeakPlatform
+python3 scripts/init_menus.py || echo "Menu init skipped"
+cd /opt/BeakPlatform/backend
+
+# Sync modules (registers module menus, permissions, etc.)
 echo "Syncing modules..."
 FLASK_ENV=${FLASK_ENV:-production} flask module sync 2>/dev/null || echo "Module sync skipped"
 

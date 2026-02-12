@@ -42,6 +42,7 @@
 - 代碼內品牌引用恢復為 BeakMask
 
 ### Fixed
+- Docker 部署缺少平台級選單初始化 (init_menus.py)
 - 修復工作流節點重複執行的 race condition
 - 修復 VariableService 並行寫入變數的 race condition
 - 儲存流程前自動套用當前面板設定，避免 config 遺失
