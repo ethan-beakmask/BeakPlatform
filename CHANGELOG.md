@@ -33,6 +33,7 @@
 - 模組化標準驗證 (Step 5)
 
 ### Changed
+- restart_flask.sh 改為確認 executor/emailrelay 服務運行，移除舊的 disable 邏輯
 - ProductionConfig SESSION_REDIS 改用 redis.from_url() 建立連線物件
 - CI workflow 升級為 CI/CD pipeline
 - E-MailRelay 從系統安裝改為自包含安裝 /opt/E-MailRelay
