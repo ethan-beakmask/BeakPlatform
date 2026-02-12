@@ -89,7 +89,7 @@ fi
 # --- 驗證 ---
 echo ""
 echo "等待服務啟動..."
-sleep 3
+sleep 7
 
 MAIN_OK=false
 DEV_OK=false
