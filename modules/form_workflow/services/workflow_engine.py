@@ -32,6 +32,21 @@ class WorkflowEngine:
     """工作流執行引擎"""
 
     @staticmethod
+    def get_effective_graph(workflow_instance) -> dict:
+        """取得工作流的有效流程圖（快照優先，設計圖 fallback）"""
+        if workflow_instance.graph_snapshot:
+            return workflow_instance.graph_snapshot
+        # 向下相容：舊實例無 graph_snapshot，回退到設計圖
+        from ..models import FwWorkflowTemplate
+        template = FwWorkflowTemplate.query.filter_by(
+            secure_code=workflow_instance.workflow_template_secure_code,
+            is_deleted=False
+        ).first()
+        if template:
+            return template.graph or {}
+        return {}
+
+    @staticmethod
     def generate_execution_code(org_secure_code: str) -> str:
         """
         生成流程執行代碼
@@ -99,12 +114,12 @@ class WorkflowEngine:
         if not workflow_template:
             raise ValueError(f'工作流模板不存在')
 
-        # 3. 取得流程定義
+        # 3. 取得流程定義並保存快照
         graph = workflow_template.graph
         if not graph or 'nodes' not in graph:
             raise ValueError('工作流模板缺少 graph 資料')
 
-        # 4. 創建工作流實例
+        # 4. 創建工作流實例（保存 graph_snapshot，確保流程執行期間使用發行時的圖）
         timeout_at = None
         if workflow_template.timeout_minutes:
             timeout_at = datetime.utcnow() + timedelta(minutes=workflow_template.timeout_minutes)
@@ -119,6 +134,7 @@ class WorkflowEngine:
             execution_code=execution_code,
             status='RUNNING',
             current_node_id=None,
+            graph_snapshot=graph,
             timeout_at=timeout_at,
             created_by_secure_code=form_instance.applicant_secure_code
         )
@@ -328,16 +344,8 @@ class WorkflowEngine:
         if not workflow_instance:
             return []
 
-        # 取得工作流模板
-        workflow_template = FwWorkflowTemplate.query.filter_by(
-            secure_code=workflow_instance.workflow_template_secure_code,
-            is_deleted=False
-        ).first()
-
-        if not workflow_template:
-            return []
-
-        graph = workflow_template.graph
+        # 取得有效流程圖（快照優先）
+        graph = WorkflowEngine.get_effective_graph(workflow_instance)
         if not graph:
             return []
 

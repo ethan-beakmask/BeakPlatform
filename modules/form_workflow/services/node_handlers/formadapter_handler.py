@@ -160,20 +160,11 @@ class FormAdapterHandler(BaseNodeHandler):
         return available_paths
 
     def _get_workflow_graph(self) -> Dict:
-        """取得工作流圖形定義"""
+        """取得工作流圖形定義（快照優先，設計圖 fallback）"""
         if not self.workflow_instance:
             return {}
-
-        # 優先使用 workflow_instance 的 graph_snapshot（執行時快照）
-        if hasattr(self.workflow_instance, 'graph_snapshot') and self.workflow_instance.graph_snapshot:
-            return self.workflow_instance.graph_snapshot
-
-        # 嘗試從 workflow_template 取得
-        if hasattr(self.workflow_instance, 'workflow_template') and self.workflow_instance.workflow_template:
-            template = self.workflow_instance.workflow_template
-            return template.graph or template.cytoscape_config or {}
-
-        return {}
+        from ..workflow_engine import WorkflowEngine
+        return WorkflowEngine.get_effective_graph(self.workflow_instance)
 
     def _resolve_assignees(self, assignee_type: str, assignee_value: str) -> List[str]:
         """
@@ -380,13 +371,9 @@ def _create_next_nodes(queue_item, selected_edges: List[str], available_paths: L
     if not workflow_instance:
         return
 
-    # 取得流程定義（優先使用執行快照）
-    graph = None
-    if hasattr(workflow_instance, 'graph_snapshot') and workflow_instance.graph_snapshot:
-        graph = workflow_instance.graph_snapshot
-    elif hasattr(workflow_instance, 'workflow_template') and workflow_instance.workflow_template:
-        graph = workflow_instance.workflow_template.graph or workflow_instance.workflow_template.cytoscape_config or {}
-
+    # 取得有效流程圖（快照優先，設計圖 fallback）
+    from ..workflow_engine import WorkflowEngine
+    graph = WorkflowEngine.get_effective_graph(workflow_instance)
     if not graph:
         return
 

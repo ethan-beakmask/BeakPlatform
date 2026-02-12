@@ -146,19 +146,15 @@ class ConvergeHandler(BaseNodeHandler):
 
     def _get_predecessor_node_ids(self) -> List[str]:
         """從 graph 中取得前驅節點 ID 列表"""
-        from ...models import FwWorkflowTemplate
-
         if not self.workflow_instance:
             return []
 
-        workflow_template = FwWorkflowTemplate.query.filter_by(
-            secure_code=self.workflow_instance.workflow_template_secure_code
-        ).first()
-
-        if not workflow_template or not workflow_template.graph:
+        from ..workflow_engine import WorkflowEngine
+        graph = WorkflowEngine.get_effective_graph(self.workflow_instance)
+        if not graph:
             return []
 
-        edges = workflow_template.graph.get('edges', [])
+        edges = graph.get('edges', [])
         current_node_id = self.queue_item.node_id
 
         predecessor_ids = []

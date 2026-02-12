@@ -117,28 +117,15 @@ class FieldReadHandler(BaseNodeHandler):
         if not self.workflow_instance:
             return []
 
-        # 優先使用 graph_snapshot 中的配置
-        graph_snapshot = self.workflow_instance.graph_snapshot
-        if graph_snapshot:
-            field_read_config = graph_snapshot.get('fieldReadConfig', {})
-            if field_read_config:
-                form_key = f'formId_{form_template_id}'
-                form_field_config = field_read_config.get(form_key, {})
-                return form_field_config.get('fields', [])
+        from ..workflow_engine import WorkflowEngine
+        graph = WorkflowEngine.get_effective_graph(self.workflow_instance)
+        if not graph:
+            return []
 
-        # 若無快照，嘗試查詢流程模板
-        if self.workflow_instance.workflow_template_secure_code:
-            from ...models import FwWorkflowTemplate
-            workflow_template = FwWorkflowTemplate.query.filter_by(
-                secure_code=self.workflow_instance.workflow_template_secure_code,
-                is_deleted=False
-            ).first()
-
-            if workflow_template:
-                cytoscape_config = workflow_template.cytoscape_config or {}
-                field_read_config = cytoscape_config.get('fieldReadConfig', {})
-                form_key = f'formId_{form_template_id}'
-                form_field_config = field_read_config.get(form_key, {})
-                return form_field_config.get('fields', [])
+        field_read_config = graph.get('fieldReadConfig', {})
+        if field_read_config:
+            form_key = f'formId_{form_template_id}'
+            form_field_config = field_read_config.get(form_key, {})
+            return form_field_config.get('fields', [])
 
         return []

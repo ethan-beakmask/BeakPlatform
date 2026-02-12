@@ -29,8 +29,8 @@ mappings_bp = Blueprint(
 @mappings_bp.route('/')
 @login_required
 def list_mappings():
-    """取得配對列表（含表單和流程名稱）"""
-    from ..models import FwFormWorkflowMapping, FwFormTemplate, FwWorkflowTemplate
+    """取得配對列表（含表單和流程名稱、發行版本資訊）"""
+    from ..models import FwFormWorkflowMapping, FwFormTemplate, FwWorkflowTemplate, FwPublishedFormWorkflow
 
     org = get_current_org()
     if not org:
@@ -71,6 +71,49 @@ def list_mappings():
         workflows = FwWorkflowTemplate.query.filter(FwWorkflowTemplate.id.in_(workflow_ids)).all()
         workflow_map = {w.id: {'name': w.name, 'version': w.version, 'revision': w.revision} for w in workflows}
 
+    # 批次查詢每個配對的發行版本資訊
+    mapping_codes = [m.secure_code for m in mappings]
+    publish_map = {}  # mapping_secure_code -> {active_version, total_versions, published_form_name}
+
+    if mapping_codes:
+        published_all = FwPublishedFormWorkflow.query.filter(
+            FwPublishedFormWorkflow.source_mapping_secure_code.in_(mapping_codes),
+            FwPublishedFormWorkflow.is_deleted == False
+        ).all()
+
+        # 按 mapping 分組
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        for p in published_all:
+            grouped[p.source_mapping_secure_code].append(p)
+
+        for mcode, versions in grouped.items():
+            total = len(versions)
+            published_ones = [v for v in versions if v.status == 'Published']
+            if len(published_ones) == 1:
+                active = published_ones[0]
+                publish_map[mcode] = {
+                    'active_version': active.publish_version,
+                    'total_versions': total,
+                    'published_form_name': active.form_snapshot.get('name', '') if active.form_snapshot else '',
+                    'version_error': None,
+                }
+            elif len(published_ones) > 1:
+                publish_map[mcode] = {
+                    'active_version': 0,
+                    'total_versions': total,
+                    'published_form_name': '',
+                    'version_error': f'異常：{len(published_ones)} 個版本同時為 Published',
+                }
+            else:
+                # 有版本但無 Published（全部暫停或封存）
+                publish_map[mcode] = {
+                    'active_version': 0,
+                    'total_versions': total,
+                    'published_form_name': '',
+                    'version_error': None,
+                }
+
     # 組合結果
     result = []
     for m in mappings:
@@ -83,6 +126,14 @@ def list_mappings():
         data['workflow_template_name'] = wi.get('name', m.workflow_template_code)
         data['workflow_current_version'] = wi.get('version', 'AA')
         data['workflow_current_revision'] = wi.get('revision', 0)
+
+        # 發行版本資訊
+        pi = publish_map.get(m.secure_code, {})
+        data['active_version'] = pi.get('active_version', 0)
+        data['total_versions'] = pi.get('total_versions', 0)
+        data['published_form_name'] = pi.get('published_form_name', '')
+        data['version_error'] = pi.get('version_error')
+
         result.append(data)
 
     return jsonify({

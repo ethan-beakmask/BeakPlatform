@@ -130,6 +130,10 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
             'archived_at': self.archived_at.isoformat() if self.archived_at else None,
         }
 
+        # 快照名稱（不論 include_snapshots 都回傳，用於列表顯示）
+        data['snapshot_form_name'] = self.form_snapshot.get('name', '') if self.form_snapshot else ''
+        data['snapshot_workflow_name'] = self.workflow_snapshot.get('name', '') if self.workflow_snapshot else ''
+
         if include_snapshots:
             data['form_snapshot'] = self.form_snapshot
             data['workflow_snapshot'] = self.workflow_snapshot

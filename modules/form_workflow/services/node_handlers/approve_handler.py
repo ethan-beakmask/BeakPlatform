@@ -92,19 +92,13 @@ class ApproveHandler(BaseNodeHandler):
 
     def _get_available_paths(self) -> List[Dict[str, Any]]:
         """取得此節點的所有出線選項"""
-        from ...models import FwWorkflowTemplate
-
         if not self.workflow_instance:
             return []
 
-        workflow_template = FwWorkflowTemplate.query.filter_by(
-            secure_code=self.workflow_instance.workflow_template_secure_code
-        ).first()
-
-        if not workflow_template or not workflow_template.graph:
+        from ..workflow_engine import WorkflowEngine
+        graph = WorkflowEngine.get_effective_graph(self.workflow_instance)
+        if not graph:
             return []
-
-        graph = workflow_template.graph
         edges = graph.get('edges', [])
         nodes = graph.get('nodes', [])
 

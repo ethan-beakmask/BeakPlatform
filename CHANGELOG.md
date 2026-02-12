@@ -12,6 +12,7 @@
 - CI/CD 環境建置文件 (`docs/CICD_SETUP.md`)
 - 群組功能優化：空群組修正、自訂顏色、管理面板重構
 - 流程設計器所需的企業資料查詢 API
+- 配對列表顯示發行版本資訊（運作版本、發行名稱、快照名稱）
 - 列表多選批次操作與配對資訊顯示
 - Ctrl+Z Undo 系統，替換節點改為記憶體保留
 - 流程設計器快捷鍵與畫布改善
@@ -42,6 +43,7 @@
 - 代碼內品牌引用恢復為 BeakMask
 
 ### Fixed
+- 工作流引擎統一使用發行快照 (graph_snapshot) 而非設計圖，避免版本間節點 ID 不匹配導致流程中斷
 - CD deploy 改用直接 SSH 取代 appleboy/ssh-action (data.forgejo.org 無此 mirror)
 - Docker entrypoint 表名檢查錯誤 (`user` → `organizations`)，導致重複建立 system.local
 - Docker 部署缺少平台級選單初始化 (init_menus.py)
