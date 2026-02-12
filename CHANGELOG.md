@@ -9,6 +9,7 @@
 ### Added
 - Docker 化 CI/CD 部署環境 (PostgreSQL 16 + Redis 7 + Gunicorn + Nginx)
 - CI 通過後自動部署到 staging 環境 (192.168.0.15:8000)
+- CI/CD 環境建置文件 (`docs/CICD_SETUP.md`)
 - 群組功能優化：空群組修正、自訂顏色、管理面板重構
 - 流程設計器所需的企業資料查詢 API
 - 列表多選批次操作與配對資訊顯示
