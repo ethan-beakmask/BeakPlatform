@@ -42,6 +42,7 @@
 - 代碼內品牌引用恢復為 BeakMask
 
 ### Fixed
+- CD deploy 改用直接 SSH 取代 appleboy/ssh-action (data.forgejo.org 無此 mirror)
 - Docker 部署缺少平台級選單初始化 (init_menus.py)
 - 修復工作流節點重複執行的 race condition
 - 修復 VariableService 並行寫入變數的 race condition

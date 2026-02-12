@@ -89,9 +89,9 @@ jobs:
 
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: 192.168.0.15
-          username: ethan
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: /opt/BeakPlatform/deploy/deploy-remote.sh
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ethan@192.168.0.15 /opt/BeakPlatform/deploy/deploy-remote.sh
+          rm -f ~/.ssh/deploy_key
