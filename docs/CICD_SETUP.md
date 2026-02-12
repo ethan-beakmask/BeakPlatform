@@ -64,6 +64,22 @@
 | Tests | pytest (PostgreSQL 16 容器) | 是 |
 | Deploy | SSH 到 0.15 執行部署腳本 | CI 通過後 |
 
+### CD Deploy 方式
+
+Deploy job 使用直接 SSH 命令（非第三方 action）：
+
+```yaml
+- name: Deploy via SSH
+  run: |
+    mkdir -p ~/.ssh
+    echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+    chmod 600 ~/.ssh/deploy_key
+    ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ethan@192.168.0.15 /opt/BeakPlatform/deploy/deploy-remote.sh
+    rm -f ~/.ssh/deploy_key
+```
+
+> **注意**：不使用 `appleboy/ssh-action`，因為 Forgejo 的 action mirror (`data.forgejo.org`) 沒有收錄此 action。
+
 ### Semgrep 自訂規則 (`.semgrep/beakplatform-security.yaml`)
 
 9 條規則，4 條 ERROR 級（會阻斷 pipeline）：
@@ -84,12 +100,12 @@
 
 ```
 .dockerignore                              # Docker build 排除規則
-.forgejo/workflows/security-check.yml      # CI → CI/CD 升級
+.forgejo/workflows/security-check.yml      # CI/CD pipeline (直接 SSH deploy)
 backend/app/config.py                      # SESSION_REDIS 修正
 deploy/Dockerfile                          # App image 定義
 deploy/docker-compose.yml                  # 4 容器 stack
 deploy/.env.production                     # 生產環境變數
-deploy/docker-entrypoint.sh                # DB init + module sync + Gunicorn
+deploy/docker-entrypoint.sh                # DB init + menu init + module sync + Gunicorn
 deploy/init-db.sh                          # PostgreSQL 額外 DB
 deploy/nginx/default.conf                  # Nginx reverse proxy
 deploy/deploy-remote.sh                    # CD 自動拉取+部署腳本
@@ -138,6 +154,18 @@ CHANGELOG.md                               # Keep a Changelog 格式
 | `deploy_pgdata` | PostgreSQL 資料持久化 |
 | `deploy_app-sessions` | Flask session 檔案 |
 
+### App 容器啟動流程 (`docker-entrypoint.sh`)
+
+1. 等待 PostgreSQL 就緒（最多 60 秒）
+2. 檢查 `organizations` 表是否存在
+   - 不存在 → `db.create_all()` + 建立 system.local 企業 + admin 帳號
+   - 存在 → 跳過
+3. 執行 `scripts/init_menus.py`（平台選單初始化，冪等操作）
+4. 執行 `flask module sync`（模組選單/權限同步）
+5. 啟動 Gunicorn
+
+> **注意**：`init_menus.py` 必須在 `flask module sync` 之前執行，否則模組選單會先佔位，導致 init_menus 誤判「已有選單」而跳過平台級選單。
+
 ### 部署流程
 
 CD 觸發後執行 `deploy/deploy-remote.sh`：
@@ -152,6 +180,16 @@ CD 觸發後執行 `deploy/deploy-remote.sh`：
 | 帳號 | 密碼 | 說明 |
 |------|------|------|
 | admin@system.local | admin123 | 系統管理員（首次登入強制改密碼） |
+
+---
+
+## 已知問題與修復記錄
+
+| 問題 | 原因 | 修復 |
+|------|------|------|
+| Deploy job 失敗 (6s) | `appleboy/ssh-action@v1` 不在 `data.forgejo.org` mirror | 改用 `run:` 直接 SSH 命令 |
+| App 重啟循環 (IntegrityError) | entrypoint 檢查 `'user'` 表名，實際為 `'users'` | 改為檢查 `'organizations'` 表 |
+| 系統管理選單缺失 | entrypoint 未執行 `init_menus.py` | 加入 init_menus.py 步驟，排在 module sync 之前 |
 
 ---
 
