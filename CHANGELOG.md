@@ -7,6 +7,10 @@
 ## [Unreleased]
 
 ### Added
+- SubFlow 子流程功能：引擎核心支援子流程呼叫、前端列表子流程 Tab
+- 工作流列表頁「專屬子流程」Tab：以流程樹系卡片展示主流程與其引用的子流程階層
+- 工作流列表頁「子流程」Tab 改名為「通用子流程」
+- 流程樹系 API (`GET /api/form-workflow/workflows/flow-trees`)
 - 流程監控模態框標題列顯示五欄版本資訊（發行版本、表單名稱、表單版本、流程名稱、流程版本）
 - 強制結束流程功能（發起人/企業管理員可在監控畫面強制取消 RUNNING 流程）
 - 歷史列表納入 CANCELLED 和 REJECTED 狀態的表單

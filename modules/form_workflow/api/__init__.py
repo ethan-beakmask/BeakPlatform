@@ -603,6 +603,102 @@ def update_workflow(secure_code):
     })
 
 
+@api_bp.route('/workflows/flow-trees')
+@require_permission('form_workflow.workflow.view')
+def list_flow_trees():
+    """取得流程樹系（主流程及其引用的子流程樹）"""
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    org_code = org.secure_code
+
+    # 查詢所有非刪除的流程（主流程 + 子流程）
+    all_workflows = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org_code,
+        is_deleted=False
+    ).all()
+
+    # 分離主流程與子流程，建立 code → workflow 映射
+    main_flows = []
+    subflow_by_code = {}
+    for wf in all_workflows:
+        if wf.is_subprocess:
+            subflow_by_code[wf.code] = wf
+        else:
+            main_flows.append(wf)
+
+    def extract_child_flow_ids(graph):
+        """從 graph 中提取所有 SubFlow 節點的 childFlowId"""
+        if not graph or not isinstance(graph, dict):
+            return []
+        nodes = graph.get('nodes', [])
+        child_ids = []
+        for node in nodes:
+            # 支援兩種格式: node.data.config 或 node.config
+            node_data = node.get('data', {}) if isinstance(node.get('data'), dict) else {}
+            node_type = (node_data.get('type') or node.get('type') or '').lower()
+            if node_type == 'subflow':
+                config = node_data.get('config') or node.get('config') or {}
+                child_id = config.get('childFlowId')
+                if child_id:
+                    child_ids.append(child_id)
+        return child_ids
+
+    def build_tree_node(wf, depth=0, visited=None):
+        """遞迴建構樹節點"""
+        if visited is None:
+            visited = set()
+        if depth > 10 or wf.code in visited:
+            return None
+        visited.add(wf.code)
+
+        node_count = len(wf.graph.get('nodes', [])) if wf.graph else 0
+        tree_node = {
+            'secure_code': wf.secure_code,
+            'name': wf.name,
+            'code': wf.code,
+            'thumbnail_2x1': wf.thumbnail_2x1,
+            'node_count': node_count,
+            'is_subprocess': wf.is_subprocess,
+            'children': []
+        }
+
+        # 提取子流程引用
+        child_codes = extract_child_flow_ids(wf.graph)
+        for code in child_codes:
+            child_wf = subflow_by_code.get(code)
+            if child_wf and child_wf.code not in visited:
+                child_node = build_tree_node(child_wf, depth + 1, visited.copy())
+                if child_node:
+                    tree_node['children'].append(child_node)
+
+        return tree_node
+
+    # 為每個主流程建構樹，只保留有子流程引用的
+    trees = []
+    for mf in main_flows:
+        child_codes = extract_child_flow_ids(mf.graph)
+        if not child_codes:
+            continue
+        tree = build_tree_node(mf)
+        if tree and tree['children']:
+            trees.append(tree)
+
+    # 按名稱排序
+    trees.sort(key=lambda t: t['name'])
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'trees': trees,
+            'total': len(trees)
+        }
+    })
+
+
 @api_bp.route('/workflows/batch/delete', methods=['POST'])
 @csrf.exempt
 @require_permission('form_workflow.workflow.delete')

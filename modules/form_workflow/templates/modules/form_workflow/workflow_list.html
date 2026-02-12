@@ -110,6 +110,86 @@
 
     .fw-badge.subflow { background: #fef3c7; color: #92400e; }
     .fw-badge.main { background: #e0e7ff; color: #3730a3; }
+
+    /* 流程樹卡片 */
+    .flow-tree-card {
+        background: white;
+        border: 1px solid #ddd;
+        margin-bottom: 16px;
+        padding: 16px;
+    }
+    .flow-tree-header {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    .flow-tree-title { font-weight: 600; font-size: 14px; }
+    .flow-tree-code { font-family: monospace; color: #999; font-size: 12px; margin-left: 8px; }
+    .flow-tree-thumbnails {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+    .flow-tree-node {
+        cursor: pointer;
+        text-align: center;
+        width: 160px;
+    }
+    .flow-tree-node:hover { opacity: 0.8; }
+    .flow-tree-thumb {
+        width: 160px;
+        height: 80px;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .flow-tree-thumb img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    .flow-tree-node.root .flow-tree-thumb {
+        border-color: #0066cc;
+        border-width: 2px;
+    }
+    .flow-tree-label {
+        font-size: 11px;
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .flow-tree-branch {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    .flow-tree-connector {
+        width: 2px;
+        height: 12px;
+        background: #ccc;
+        margin-bottom: 4px;
+    }
+    .flow-tree-loading {
+        text-align: center;
+        padding: 48px;
+        color: #666;
+    }
+    .flow-tree-empty {
+        text-align: center;
+        padding: 48px;
+        color: #999;
+    }
+    .flow-tree-node-count {
+        font-size: 10px;
+        color: #999;
+        margin-top: 2px;
+    }
 </style>
 {% endblock %}
 
@@ -123,9 +203,11 @@
             <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理流程定義與節點配置</p>
         </div>
         <div class="fw-toolbar">
-            <input type="text" x-model="searchQuery" @input.debounce.300ms="loadWorkflows()"
-                   placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
-            <div class="view-toggle">
+            <template x-if="flowType !== 'tree'">
+                <input type="text" x-model="searchQuery" @input.debounce.300ms="loadWorkflows()"
+                       placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
+            </template>
+            <div x-show="flowType !== 'tree'" class="view-toggle">
                 <button @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
                         :class="viewMode === 'list' ? 'active' : ''" title="清單模式">
                     <i class="ri-list-unordered"></i>
@@ -135,7 +217,7 @@
                     <i class="ri-layout-grid-fill"></i>
                 </button>
             </div>
-            <button class="fw-btn" @click="loadWorkflows()">重新載入</button>
+            <button class="fw-btn" @click="flowType === 'tree' ? loadFlowTrees() : loadWorkflows()">重新載入</button>
             <button class="fw-btn primary" @click="openCreateModal()">+ 新增工作流</button>
         </div>
     </div>
@@ -152,12 +234,16 @@
         </div>
         <div class="fw-tab" :class="{ active: flowType === 'subflow' }"
              @click="flowType = 'subflow'; loadWorkflows()">
-            子流程 <span class="tab-count" x-text="'(' + totalCounts.subflow + ')'"></span>
+            通用子流程 <span class="tab-count" x-text="'(' + totalCounts.subflow + ')'"></span>
+        </div>
+        <div class="fw-tab" :class="{ active: flowType === 'tree' }"
+             @click="flowType = 'tree'; loadFlowTrees()">
+            專屬子流程 <span class="tab-count" x-text="'(' + totalCounts.tree + ')'"></span>
         </div>
     </div>
 
-    <!-- 分類篩選（父/子二層 chips） -->
-    <div x-show="!loading" class="fw-filter-bar">
+    <!-- 分類篩選（父/子二層 chips）- 專屬子流程 Tab 時隱藏 -->
+    <div x-show="!loading && flowType !== 'tree'" class="fw-filter-bar">
         <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('workflows_filter_category', '')">
             全部 <span class="chip-count" x-text="workflows.length"></span>
         </div>
@@ -168,8 +254,66 @@
         </template>
     </div>
 
+    <!-- 專屬子流程 - 流程樹視圖 -->
+    <template x-if="flowType === 'tree'">
+        <div>
+            <div x-show="treeLoading" class="flow-tree-loading">載入中...</div>
+            <div x-show="!treeLoading && flowTrees.length === 0" class="flow-tree-empty">
+                <p style="font-size: 16px; margin-bottom: 8px;">尚無流程樹系</p>
+                <p>在設計器中為主流程新增 SubFlow 節點並配置子流程後，此處會自動顯示</p>
+            </div>
+            <template x-for="tree in flowTrees" :key="tree.secure_code">
+                <div class="flow-tree-card">
+                    <div class="flow-tree-header">
+                        <span class="flow-tree-title" x-text="tree.name"></span>
+                        <span class="flow-tree-code" x-text="tree.code"></span>
+                    </div>
+                    <div class="flow-tree-thumbnails">
+                        <!-- 根節點（主流程） -->
+                        <div class="flow-tree-node root" @click="editWorkflow(tree)">
+                            <div class="flow-tree-thumb">
+                                <img x-show="tree.thumbnail_2x1" :src="tree.thumbnail_2x1">
+                                <i x-show="!tree.thumbnail_2x1" class="ri-flow-chart" style="font-size: 24px; color: #ccc;"></i>
+                            </div>
+                            <div class="flow-tree-label">主流程</div>
+                            <div class="flow-tree-node-count" x-text="tree.node_count + ' 節點'"></div>
+                        </div>
+                        <!-- L1 子流程 -->
+                        <template x-for="child in tree.children" :key="child.secure_code">
+                            <div class="flow-tree-branch">
+                                <div class="flow-tree-connector"></div>
+                                <div class="flow-tree-node" @click="editWorkflow(child)">
+                                    <div class="flow-tree-thumb">
+                                        <img x-show="child.thumbnail_2x1" :src="child.thumbnail_2x1">
+                                        <i x-show="!child.thumbnail_2x1" class="ri-flow-chart" style="font-size: 24px; color: #ccc;"></i>
+                                    </div>
+                                    <div class="flow-tree-label" x-text="child.name"></div>
+                                    <div class="flow-tree-node-count" x-text="child.node_count + ' 節點'"></div>
+                                </div>
+                                <!-- L2 子流程 -->
+                                <template x-for="grandchild in (child.children || [])" :key="grandchild.secure_code">
+                                    <div class="flow-tree-branch" style="margin-top: 4px;">
+                                        <div class="flow-tree-connector"></div>
+                                        <div class="flow-tree-node" @click="editWorkflow(grandchild)">
+                                            <div class="flow-tree-thumb">
+                                                <img x-show="grandchild.thumbnail_2x1" :src="grandchild.thumbnail_2x1">
+                                                <i x-show="!grandchild.thumbnail_2x1" class="ri-flow-chart" style="font-size: 24px; color: #ccc;"></i>
+                                            </div>
+                                            <div class="flow-tree-label" x-text="grandchild.name"></div>
+                                            <div class="flow-tree-node-count" x-text="grandchild.node_count + ' 節點'"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+
     <!-- 表格 -->
-    <div class="fw-card">
+    <div class="fw-card" x-show="flowType !== 'tree'">
         <div x-show="loading" class="fw-loading">載入中...</div>
 
         <div x-show="!loading && filteredWorkflows.length === 0" class="fw-empty">
@@ -215,7 +359,7 @@
                         <td style="font-weight: 500;" x-text="w.name"></td>
                         <td>
                             <span class="fw-badge" :class="w.is_subprocess ? 'subflow' : 'main'"
-                                  x-text="w.is_subprocess ? '子流程' : '主流程'"></span>
+                                  x-text="w.is_subprocess ? '通用子流程' : '主流程'"></span>
                         </td>
                         <td style="font-family: monospace; color: #666;" x-text="w.code || '-'"></td>
                         <td style="color: #666;" x-text="truncate(w.description, 50)"></td>
@@ -253,7 +397,7 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && filteredWorkflows.length > 0 && viewMode === 'grid'">
+    <template x-if="!loading && filteredWorkflows.length > 0 && viewMode === 'grid' && flowType !== 'tree'">
         <div class="thumb-grid">
             <template x-for="w in filteredWorkflows" :key="w.secure_code">
                 <div class="thumb-card" @click="editWorkflow(w)">
@@ -399,8 +543,10 @@ function workflowListManager() {
         workflows: [],
         loading: true,
         searchQuery: '',
-        flowType: '',  // '' | 'main' | 'subflow'
-        totalCounts: { all: 0, main: 0, subflow: 0 },
+        flowType: '',  // '' | 'main' | 'subflow' | 'tree'
+        totalCounts: { all: 0, main: 0, subflow: 0, tree: 0 },
+        flowTrees: [],
+        treeLoading: false,
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
         selectedItems: [],
@@ -504,6 +650,34 @@ function workflowListManager() {
                     this.totalCounts.subflow = all.filter(w => w.is_subprocess).length;
                 }
             } catch (e) { /* silent */ }
+            // 同時更新流程樹計數
+            this._updateTreeCount();
+        },
+
+        async _updateTreeCount() {
+            try {
+                const res = await fetch('/api/form-workflow/workflows/flow-trees');
+                const data = await res.json();
+                if (data.success) {
+                    this.totalCounts.tree = data.data.total || 0;
+                }
+            } catch (e) { /* silent */ }
+        },
+
+        async loadFlowTrees() {
+            this.treeLoading = true;
+            try {
+                const res = await fetch('/api/form-workflow/workflows/flow-trees');
+                const data = await res.json();
+                if (data.success) {
+                    this.flowTrees = data.data.trees || [];
+                    this.totalCounts.tree = data.data.total || 0;
+                }
+            } catch (e) {
+                console.error('載入流程樹失敗:', e);
+            } finally {
+                this.treeLoading = false;
+            }
         },
 
         goToPage(page) {
