@@ -91,6 +91,13 @@ def workflow_detail(secure_code):
     return redirect(f'/api/workflows/designer/standalone?id={secure_code}{"&created=1" if created else ""}')
 
 
+@web_bp.route('/workflows/<secure_code>/tree')
+@security_login_required
+def workflow_tree(secure_code):
+    """工作流樹系圖（獨立分頁）"""
+    return render_template('modules/form_workflow/workflow_tree.html', secure_code=secure_code)
+
+
 # =============================================================================
 # 表單實例（我的表單）
 # =============================================================================

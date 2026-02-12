@@ -109,30 +109,9 @@
     .fw-tab.active .tab-count { color: #0066cc; }
 
     .fw-badge.subflow { background: #fef3c7; color: #92400e; }
+    .fw-badge.dedicated { background: #fce7f3; color: #9d174d; }
     .fw-badge.main { background: #e0e7ff; color: #3730a3; }
 
-    /* 流程樹容器 */
-    .flow-tree-chart-wrap {
-        background: white;
-        border: 1px solid #ddd;
-        min-height: 400px;
-        position: relative;
-    }
-    .flow-tree-chart-wrap .chart-container {
-        width: 100%;
-        height: calc(100vh - 260px);
-        min-height: 400px;
-    }
-    .flow-tree-loading {
-        text-align: center;
-        padding: 48px;
-        color: #666;
-    }
-    .flow-tree-empty {
-        text-align: center;
-        padding: 48px;
-        color: #999;
-    }
 </style>
 {% endblock %}
 
@@ -146,11 +125,9 @@
             <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理流程定義與節點配置</p>
         </div>
         <div class="fw-toolbar">
-            <template x-if="flowType !== 'tree'">
-                <input type="text" x-model="searchQuery" @input.debounce.300ms="loadWorkflows()"
-                       placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
-            </template>
-            <div x-show="flowType !== 'tree'" class="view-toggle">
+            <input type="text" x-model="searchQuery" @input.debounce.300ms="loadWorkflows()"
+                   placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
+            <div class="view-toggle">
                 <button @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
                         :class="viewMode === 'list' ? 'active' : ''" title="清單模式">
                     <i class="ri-list-unordered"></i>
@@ -160,7 +137,7 @@
                     <i class="ri-layout-grid-fill"></i>
                 </button>
             </div>
-            <button class="fw-btn" @click="flowType === 'tree' ? loadFlowTrees() : loadWorkflows()">重新載入</button>
+            <button class="fw-btn" @click="loadWorkflows()">重新載入</button>
             <button class="fw-btn primary" @click="openCreateModal()">+ 新增工作流</button>
         </div>
     </div>
@@ -179,14 +156,10 @@
              @click="flowType = 'subflow'; loadWorkflows()">
             通用子流程 <span class="tab-count" x-text="'(' + totalCounts.subflow + ')'"></span>
         </div>
-        <div class="fw-tab" :class="{ active: flowType === 'tree' }"
-             @click="flowType = 'tree'; loadFlowTrees()">
-            專屬子流程 <span class="tab-count" x-text="'(' + totalCounts.tree + ')'"></span>
-        </div>
     </div>
 
-    <!-- 分類篩選（父/子二層 chips）- 專屬子流程 Tab 時隱藏 -->
-    <div x-show="!loading && flowType !== 'tree'" class="fw-filter-bar">
+    <!-- 分類篩選（父/子二層 chips）-->
+    <div x-show="!loading" class="fw-filter-bar">
         <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('workflows_filter_category', '')">
             全部 <span class="chip-count" x-text="workflows.length"></span>
         </div>
@@ -197,22 +170,8 @@
         </template>
     </div>
 
-    <!-- 專屬子流程 - d3-org-chart 視圖 -->
-    <template x-if="flowType === 'tree'">
-        <div>
-            <div x-show="treeLoading" class="flow-tree-loading">載入中...</div>
-            <div x-show="!treeLoading && flowTrees.length === 0" class="flow-tree-empty">
-                <p style="font-size: 16px; margin-bottom: 8px;">尚無流程樹系</p>
-                <p>在設計器中為主流程新增 SubFlow 節點並配置子流程後，此處會自動顯示</p>
-            </div>
-            <div x-show="!treeLoading && flowTrees.length > 0" class="flow-tree-chart-wrap">
-                <div id="flow-tree-chart" class="chart-container"></div>
-            </div>
-        </div>
-    </template>
-
     <!-- 表格 -->
-    <div class="fw-card" x-show="flowType !== 'tree'">
+    <div class="fw-card">
         <div x-show="loading" class="fw-loading">載入中...</div>
 
         <div x-show="!loading && filteredWorkflows.length === 0" class="fw-empty">
@@ -257,8 +216,8 @@
                         </td>
                         <td style="font-weight: 500;" x-text="w.name"></td>
                         <td>
-                            <span class="fw-badge" :class="w.is_subprocess ? 'subflow' : 'main'"
-                                  x-text="w.is_subprocess ? '通用子流程' : '主流程'"></span>
+                            <span class="fw-badge" :class="w.is_subprocess ? (w.parent_workflow_secure_code ? 'dedicated' : 'subflow') : 'main'"
+                                  x-text="w.is_subprocess ? (w.parent_workflow_secure_code ? '專屬子流程' : '通用子流程') : '主流程'"></span>
                         </td>
                         <td style="font-family: monospace; color: #666;" x-text="w.code || '-'"></td>
                         <td style="color: #666;" x-text="truncate(w.description, 50)"></td>
@@ -275,7 +234,7 @@
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(w.updated_at)"></td>
                         <td class="actions">
                             <button class="fw-btn" @click="editWorkflow(w)">編輯</button>
-                            <button class="fw-btn" @click="viewGraph(w)">流程圖</button>
+                            <button class="fw-btn" @click="openTree(w)">樹系圖</button>
                             <button class="fw-btn danger" @click="confirmDelete(w)">刪除</button>
                         </td>
                     </tr>
@@ -296,7 +255,7 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && filteredWorkflows.length > 0 && viewMode === 'grid' && flowType !== 'tree'">
+    <template x-if="!loading && filteredWorkflows.length > 0 && viewMode === 'grid'">
         <div class="thumb-grid">
             <template x-for="w in filteredWorkflows" :key="w.secure_code">
                 <div class="thumb-card" @click="editWorkflow(w)">
@@ -373,39 +332,6 @@
         </div>
     </div>
 
-    <!-- 流程圖查看 Modal -->
-    <div x-show="showGraphModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content" style="width: 800px;">
-            <div class="fw-modal-header">
-                <h3>流程圖 - <span x-text="viewingWorkflow?.name"></span></h3>
-                <button @click="showGraphModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-            </div>
-            <div class="fw-modal-body">
-                <div class="fw-graph-preview">
-                    <div x-show="!viewingWorkflow?.graph">尚無流程定義</div>
-                    <div x-show="viewingWorkflow?.graph">
-                        <p style="margin: 0 0 8px 0;">節點數：<strong x-text="(viewingWorkflow?.graph?.nodes || []).length"></strong></p>
-                        <p style="margin: 0;">連線數：<strong x-text="(viewingWorkflow?.graph?.edges || []).length"></strong></p>
-                    </div>
-                </div>
-                <div style="margin-top: 16px;">
-                    <h4 style="margin: 0 0 8px 0; font-size: 14px;">節點列表</h4>
-                    <div style="max-height: 200px; overflow-y: auto; background: #f5f5f5; padding: 12px;">
-                        <template x-for="node in (viewingWorkflow?.graph?.nodes || [])" :key="node.id">
-                            <div style="padding: 4px 0; border-bottom: 1px solid #eee; font-size: 12px;">
-                                <strong x-text="node.data?.label || node.id"></strong>
-                                <span style="color: #666; margin-left: 8px;" x-text="'(' + (node.type || 'unknown') + ')'"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-            <div class="fw-modal-footer">
-                <button class="fw-btn" @click="showGraphModal = false">關閉</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 刪除確認 Modal -->
     <div x-show="showDeleteModal" x-cloak class="fw-modal">
         <div class="fw-modal-content" style="width: 450px;">
@@ -436,21 +362,14 @@
 
 </div>
 
-<script src="/static/vendor/d3.min.js"></script>
-<script src="/static/vendor/d3-flextree.min.js"></script>
-<script src="/static/vendor/d3-org-chart.min.js"></script>
-<script src="/static/modules/form_workflow/js/workflow-tree-chart.js"></script>
-
 <script>
 function workflowListManager() {
     return {
         workflows: [],
         loading: true,
         searchQuery: '',
-        flowType: '',  // '' | 'main' | 'subflow' | 'tree'
-        totalCounts: { all: 0, main: 0, subflow: 0, tree: 0 },
-        flowTrees: [],
-        treeLoading: false,
+        flowType: '',  // '' | 'main' | 'subflow'
+        totalCounts: { all: 0, main: 0, subflow: 0 },
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
         selectedItems: [],
@@ -463,9 +382,6 @@ function workflowListManager() {
         categories: [],       // 樹狀 [{...parent, children: [...]}]
         flatCategories: [],   // 展開的子分類 [{secure_code, name, display, parent_name}]
         saving: false,
-
-        showGraphModal: false,
-        viewingWorkflow: null,
 
         showDeleteModal: false,
         deletingWorkflow: null,
@@ -554,53 +470,6 @@ function workflowListManager() {
                     this.totalCounts.subflow = all.filter(w => w.is_subprocess).length;
                 }
             } catch (e) { /* silent */ }
-            // 同時更新流程樹計數
-            this._updateTreeCount();
-        },
-
-        async _updateTreeCount() {
-            try {
-                const res = await fetch('/api/form-workflow/workflows/flow-trees');
-                const data = await res.json();
-                if (data.success) {
-                    this.totalCounts.tree = data.data.total || 0;
-                }
-            } catch (e) { /* silent */ }
-        },
-
-        _treeChart: null,
-
-        async loadFlowTrees() {
-            this.treeLoading = true;
-            try {
-                const res = await fetch('/api/form-workflow/workflows/flow-trees');
-                const data = await res.json();
-                if (data.success) {
-                    this.flowTrees = data.data.trees || [];
-                    this.totalCounts.tree = data.data.total || 0;
-                }
-            } catch (e) {
-                console.error('載入流程樹失敗:', e);
-            } finally {
-                this.treeLoading = false;
-            }
-            // 等 DOM 更新後渲染 org chart
-            if (this.flowTrees.length > 0) {
-                const self = this;
-                this.$nextTick(() => {
-                    setTimeout(() => {
-                        self._treeChart = WorkflowTreeChart.render(
-                            '#flow-tree-chart',
-                            self.flowTrees,
-                            {
-                                onNodeClick: function (nodeData) {
-                                    window.location.href = '/forms/workflows/' + nodeData.id;
-                                }
-                            }
-                        );
-                    }, 50);
-                });
-            }
         },
 
         goToPage(page) {
@@ -665,17 +534,8 @@ function workflowListManager() {
             }
         },
 
-        async viewGraph(w) {
-            try {
-                const res = await fetch(`/api/form-workflow/workflows/${w.secure_code}`);
-                const data = await res.json();
-                if (data.success) {
-                    this.viewingWorkflow = data.data;
-                    this.showGraphModal = true;
-                }
-            } catch (e) {
-                console.error('載入失敗:', e);
-            }
+        openTree(w) {
+            window.open('/forms/workflows/' + w.secure_code + '/tree', '_blank');
         },
 
         async confirmDelete(w) {

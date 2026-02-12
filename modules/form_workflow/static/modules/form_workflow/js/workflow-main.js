@@ -2449,10 +2449,18 @@
             // 清空狀態歷史記錄
             clearStatusHistory();
 
-            // 返回流程目錄頁
-            window.location.href = '/forms/workflows';
+            // 判斷來源：從樹系圖來的回到樹系圖，否則回清單
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromTree = urlParams.get('from') === 'tree';
+            const rootCode = urlParams.get('root');
 
-            console.log('✅ 已儲存並返回流程目錄');
+            if (fromTree && rootCode) {
+                window.location.href = '/forms/workflows/' + rootCode + '/tree';
+            } else {
+                window.location.href = '/forms/workflows';
+            }
+
+            console.log('✅ 已儲存並返回');
         }
 
         // 儲存新版本

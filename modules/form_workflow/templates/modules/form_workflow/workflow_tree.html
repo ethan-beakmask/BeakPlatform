@@ -1,0 +1,143 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}流程樹系圖 - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+    [x-cloak] { display: none !important; }
+
+    .tree-page { padding: 0; height: calc(100vh - 50px); display: flex; flex-direction: column; }
+
+    .tree-toolbar {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    .tree-toolbar .tree-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .tree-toolbar .tree-subtitle {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+    .tree-toolbar .spacer { flex: 1; }
+    .tree-toolbar .tb-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+    }
+    .tree-toolbar .tb-btn:hover { background: #f9fafb; }
+
+    .tree-chart-area {
+        flex: 1;
+        overflow: hidden;
+        background: #fafafa;
+    }
+    .tree-chart-area .chart-container {
+        width: 100%;
+        height: 100%;
+    }
+
+    .tree-loading, .tree-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6b7280;
+        font-size: 14px;
+    }
+    .tree-error { color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tree-page" x-data="workflowTreePage()" x-cloak>
+
+    <div class="tree-toolbar">
+        <div>
+            <div class="tree-title" x-text="treeName || '載入中...'"></div>
+            <div class="tree-subtitle" x-show="treeCode" x-text="treeCode"></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="tb-btn" @click="fitChart()">置中</button>
+        <button class="tb-btn" @click="window.close()">關閉</button>
+    </div>
+
+    <div class="tree-chart-area">
+        <div x-show="loading" class="tree-loading">載入中...</div>
+        <div x-show="error" class="tree-error" x-text="error"></div>
+        <div x-show="!loading && !error" id="workflow-tree-chart" class="chart-container"></div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/d3.min.js"></script>
+<script src="/static/vendor/d3-flextree.min.js"></script>
+<script src="/static/vendor/d3-org-chart.min.js"></script>
+<script src="/static/modules/form_workflow/js/workflow-tree-chart.js"></script>
+
+<script>
+function workflowTreePage() {
+    return {
+        secureCode: '{{ secure_code }}',
+        loading: true,
+        error: '',
+        treeName: '',
+        treeCode: '',
+        _chart: null,
+
+        async init() {
+            try {
+                const res = await fetch('/api/form-workflow/workflows/flow-trees/' + this.secureCode);
+                const data = await res.json();
+                if (!data.success) {
+                    this.error = data.error || '載入失敗';
+                    return;
+                }
+                const tree = data.data.tree;
+                this.treeName = tree.name;
+                this.treeCode = tree.code;
+
+                // 渲染樹系圖
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this._chart = WorkflowTreeChart.render(
+                            '#workflow-tree-chart',
+                            [tree],
+                            {
+                                onNodeClick: (function(rootCode) {
+                                    return function (nodeData) {
+                                        window.location.href = '/api/workflows/designer/standalone?id=' + nodeData.id + '&from=tree&root=' + rootCode;
+                                    };
+                                })(this.secureCode)
+                            }
+                        );
+                    }, 50);
+                });
+            } catch (e) {
+                this.error = '載入失敗: ' + e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        fitChart() {
+            if (this._chart) {
+                this._chart.fit();
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

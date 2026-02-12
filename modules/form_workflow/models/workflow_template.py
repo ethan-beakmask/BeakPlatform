@@ -74,6 +74,7 @@ class FwWorkflowTemplate(ModuleBaseModel):
             'is_active': self.is_active,
             'is_protected': self.is_protected,
             'is_subprocess': self.is_subprocess,
+            'parent_workflow_secure_code': self.parent_workflow_secure_code,
             'form_template_secure_code': self.form_template_secure_code,
             'owner_secure_code': self.owner_secure_code,
         })
