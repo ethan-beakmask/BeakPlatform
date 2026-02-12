@@ -7,6 +7,8 @@
 ## [Unreleased]
 
 ### Added
+- Docker 化 CI/CD 部署環境 (PostgreSQL 16 + Redis 7 + Gunicorn + Nginx)
+- CI 通過後自動部署到 staging 環境 (192.168.0.15:8000)
 - 群組功能優化：空群組修正、自訂顏色、管理面板重構
 - 流程設計器所需的企業資料查詢 API
 - 列表多選批次操作與配對資訊顯示
@@ -29,6 +31,8 @@
 - 模組化標準驗證 (Step 5)
 
 ### Changed
+- ProductionConfig SESSION_REDIS 改用 redis.from_url() 建立連線物件
+- CI workflow 升級為 CI/CD pipeline
 - E-MailRelay 從系統安裝改為自包含安裝 /opt/E-MailRelay
 - 表單設計器與流程設計器 navbar 改為共用風格
 - HTML 模板瘦身：4 個大檔拆為 Jinja2 partial
