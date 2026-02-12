@@ -121,7 +121,7 @@ class SubFlowHandler(BaseNodeHandler):
             node_suffix = self.queue_item.node_id.split('-')[-1] if self.queue_item.node_id else '0'
             execution_code = f"{base_code}-SUB{child_depth}-{node_suffix}"
 
-            # 5. 創建子流程實例
+            # 5. 創建子流程實例（保存 graph_snapshot，確保子流程執行期間使用啟動時的圖）
             child_instance = FwWorkflowInstance(
                 secure_code=secrets.token_urlsafe(16),
                 org_secure_code=self.queue_item.org_secure_code,
@@ -133,6 +133,7 @@ class SubFlowHandler(BaseNodeHandler):
                 parent_instance_code=parent_instance.secure_code,
                 root_instance_code=root_code,
                 workflow_depth=child_depth,
+                graph_snapshot=child_graph,
                 created_by='system'
             )
             db.session.add(child_instance)

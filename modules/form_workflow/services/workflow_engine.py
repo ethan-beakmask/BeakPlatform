@@ -445,7 +445,14 @@ class WorkflowEngine:
         workflow_instance.status = status
         workflow_instance.completed_at = datetime.utcnow()
 
-        # 更新表單實例狀態
+        # 子流程不更新 form_instance 狀態（form_instance 由主流程管理）
+        if workflow_instance.parent_instance_code:
+            logger.info(f'子流程完成，跳過 form_instance 狀態更新 '
+                        f'(child={workflow_instance.secure_code}, parent={workflow_instance.parent_instance_code})')
+            db.session.commit()
+            return
+
+        # 更新表單實例狀態（僅主流程）
         form_instance = FwFormInstance.query.filter_by(
             secure_code=workflow_instance.form_instance_secure_code,
             is_deleted=False

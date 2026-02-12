@@ -4924,10 +4924,17 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('建立子流程 API 錯誤:', response.status, text.substring(0, 200));
+                    updateStatus(`建立子流程失敗：HTTP ${response.status}`, 'warning');
+                    return;
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    updateStatus(`✅ 子流程「${result.data.name}」已建立`, 'success');
+                    updateStatus(`子流程「${result.data.name}」已建立`, 'success');
 
                     // 重新載入子流程清單
                     await loadAvailableSubflows(nodeId);

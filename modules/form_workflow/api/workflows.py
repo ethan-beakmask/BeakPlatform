@@ -162,10 +162,17 @@ def list_templates():
             FwWorkflowTemplate.code.ilike(f'%{q}%')
         )
 
-    # 排除子流程
-    include_subprocess = request.args.get('include_subprocess', 'false').lower() == 'true'
-    if not include_subprocess:
+    # flow_type 篩選：main=主流程, subflow=子流程, 不傳=全部
+    # 保留 include_subprocess 向下相容
+    flow_type = request.args.get('flow_type', '').strip().lower()
+    if flow_type == 'main':
         query = query.filter(FwWorkflowTemplate.is_subprocess == False)
+    elif flow_type == 'subflow':
+        query = query.filter(FwWorkflowTemplate.is_subprocess == True)
+    else:
+        include_subprocess = request.args.get('include_subprocess', 'false').lower() == 'true'
+        if not include_subprocess:
+            query = query.filter(FwWorkflowTemplate.is_subprocess == False)
 
     templates = query.order_by(FwWorkflowTemplate.updated_at.desc()).all()
 
@@ -732,13 +739,13 @@ def list_available_subflows():
 
     return jsonify({
         'success': True,
-        'subflows': [
+        'data': [
             {
                 'secure_code': sf.secure_code,
                 'code': sf.code,
                 'name': sf.name,
                 'description': sf.description,
-                'is_exclusive': sf.parent_workflow_id is not None
+                'is_bound': sf.parent_workflow_id is not None
             }
             for sf in subflows
         ]
@@ -758,12 +765,23 @@ def create_subflow():
 
     data = request.get_json() or {}
     name = data.get('name', '').strip()
-    parent_id = data.get('parent_id')
+    parent_id = data.get('parent_id')  # secure_code of parent workflow
 
     if not name:
         return jsonify({'success': False, 'error': 'Name is required'}), 400
 
     code = f'SF{secrets.token_hex(4).upper()}'
+
+    # 如果有 parent_id（secure_code），查詢實際的數值 ID
+    parent_workflow_id = None
+    if parent_id:
+        parent_wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=parent_id,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+        if parent_wf:
+            parent_workflow_id = parent_wf.id
 
     subflow = FwWorkflowTemplate(
         secure_code=secrets.token_urlsafe(16),
@@ -775,7 +793,8 @@ def create_subflow():
         cytoscape_config=data.get('cytoscape_config') or _get_default_graph(),
         is_active=True,
         is_subprocess=True,
-        parent_workflow_id=parent_id,
+        parent_workflow_secure_code=parent_id,
+        parent_workflow_id=parent_workflow_id,
         owner_secure_code=current_user.secure_code
     )
 
@@ -784,9 +803,12 @@ def create_subflow():
 
     return jsonify({
         'success': True,
-        'secure_code': subflow.secure_code,
-        'code': subflow.code,
-        **subflow.to_dict(include_graph=True),
+        'data': {
+            'secure_code': subflow.secure_code,
+            'code': subflow.code,
+            'name': subflow.name,
+            'description': subflow.description,
+        },
         'message': '子流程已建立'
     })
 

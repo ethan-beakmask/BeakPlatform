@@ -100,6 +100,16 @@
     .fw-chip .chip-count { font-size: 10px; background: rgba(0,0,0,0.1); padding: 1px 5px; border-radius: 8px; }
     .fw-chip.active .chip-count { background: rgba(255,255,255,0.3); }
     .fw-table tr.bg-blue-50 { background: #eff6ff; }
+
+    .fw-tab-bar { display: flex; gap: 0; border-bottom: 2px solid #ddd; margin-bottom: 12px; }
+    .fw-tab { padding: 8px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: #666; }
+    .fw-tab:hover { color: #333; }
+    .fw-tab.active { color: #0066cc; border-bottom-color: #0066cc; font-weight: 600; }
+    .fw-tab .tab-count { font-size: 11px; color: #999; margin-left: 4px; }
+    .fw-tab.active .tab-count { color: #0066cc; }
+
+    .fw-badge.subflow { background: #fef3c7; color: #92400e; }
+    .fw-badge.main { background: #e0e7ff; color: #3730a3; }
 </style>
 {% endblock %}
 
@@ -127,6 +137,22 @@
             </div>
             <button class="fw-btn" @click="loadWorkflows()">重新載入</button>
             <button class="fw-btn primary" @click="openCreateModal()">+ 新增工作流</button>
+        </div>
+    </div>
+
+    <!-- 流程類型 Tab -->
+    <div x-show="!loading" class="fw-tab-bar">
+        <div class="fw-tab" :class="{ active: flowType === '' }"
+             @click="flowType = ''; loadWorkflows()">
+            全部 <span class="tab-count" x-text="'(' + totalCounts.all + ')'"></span>
+        </div>
+        <div class="fw-tab" :class="{ active: flowType === 'main' }"
+             @click="flowType = 'main'; loadWorkflows()">
+            主流程 <span class="tab-count" x-text="'(' + totalCounts.main + ')'"></span>
+        </div>
+        <div class="fw-tab" :class="{ active: flowType === 'subflow' }"
+             @click="flowType = 'subflow'; loadWorkflows()">
+            子流程 <span class="tab-count" x-text="'(' + totalCounts.subflow + ')'"></span>
         </div>
     </div>
 
@@ -169,6 +195,7 @@
                         <input type="checkbox" @change="toggleSelectAll()" :checked="selectedItems.length > 0 && selectedItems.length === filteredWorkflows.length">
                     </th>
                     <th style="width: 200px;">名稱</th>
+                    <th style="width: 70px;">類型</th>
                     <th style="width: 120px;">代碼</th>
                     <th>描述</th>
                     <th style="width: 60px;">版本</th>
@@ -186,6 +213,10 @@
                             <input type="checkbox" :value="w.secure_code" :checked="selectedItems.includes(w.secure_code)" @change="toggleSelect(w.secure_code)">
                         </td>
                         <td style="font-weight: 500;" x-text="w.name"></td>
+                        <td>
+                            <span class="fw-badge" :class="w.is_subprocess ? 'subflow' : 'main'"
+                                  x-text="w.is_subprocess ? '子流程' : '主流程'"></span>
+                        </td>
                         <td style="font-family: monospace; color: #666;" x-text="w.code || '-'"></td>
                         <td style="color: #666;" x-text="truncate(w.description, 50)"></td>
                         <td style="font-family: monospace; color: #999; font-size: 12px;" x-text="(w.version || 'AA') + (w.revision || '')"></td>
@@ -276,6 +307,12 @@
                         <label>描述</label>
                         <textarea x-model="formData.description" placeholder="簡述此工作流的用途"></textarea>
                     </div>
+                    <div class="fw-form-group" x-show="!editingWorkflow">
+                        <label>
+                            <input type="checkbox" x-model="formData.is_subprocess"> 設為子流程
+                        </label>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #999;">子流程可被其他主流程的 SubFlow 節點呼叫</p>
+                    </div>
                     <div class="fw-form-group">
                         <label>
                             <input type="checkbox" x-model="formData.is_active"> 啟用
@@ -362,6 +399,8 @@ function workflowListManager() {
         workflows: [],
         loading: true,
         searchQuery: '',
+        flowType: '',  // '' | 'main' | 'subflow'
+        totalCounts: { all: 0, main: 0, subflow: 0 },
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
         selectedItems: [],
@@ -370,7 +409,7 @@ function workflowListManager() {
 
         showModal: false,
         editingWorkflow: null,
-        formData: { name: '', code: '', description: '', category_secure_code: '', is_active: true },
+        formData: { name: '', code: '', description: '', category_secure_code: '', is_active: true, is_subprocess: false },
         categories: [],       // 樹狀 [{...parent, children: [...]}]
         flatCategories: [],   // 展開的子分類 [{secure_code, name, display, parent_name}]
         saving: false,
@@ -436,6 +475,7 @@ function workflowListManager() {
             try {
                 let url = `/api/form-workflow/workflows?page=${this.pagination.page}`;
                 if (this.searchQuery) url += `&q=${encodeURIComponent(this.searchQuery)}`;
+                if (this.flowType) url += `&flow_type=${this.flowType}`;
 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -443,11 +483,27 @@ function workflowListManager() {
                     this.workflows = data.data.workflows || [];
                     this.pagination = data.data.pagination || this.pagination;
                 }
+
+                // 更新 Tab 計數（不帶 flow_type，取得全部再計算）
+                this._updateTabCounts();
             } catch (e) {
                 console.error('載入失敗:', e);
             } finally {
                 this.loading = false;
             }
+        },
+
+        async _updateTabCounts() {
+            try {
+                const res = await fetch(`/api/form-workflow/workflows?${this.searchQuery ? 'q=' + encodeURIComponent(this.searchQuery) : ''}`);
+                const data = await res.json();
+                if (data.success) {
+                    const all = data.data.workflows || [];
+                    this.totalCounts.all = all.length;
+                    this.totalCounts.main = all.filter(w => !w.is_subprocess).length;
+                    this.totalCounts.subflow = all.filter(w => w.is_subprocess).length;
+                }
+            } catch (e) { /* silent */ }
         },
 
         goToPage(page) {
@@ -458,7 +514,12 @@ function workflowListManager() {
 
         openCreateModal() {
             this.editingWorkflow = null;
-            this.formData = { name: '', code: '', description: '', category_secure_code: this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : '', is_active: true };
+            this.formData = {
+                name: '', code: '', description: '',
+                category_secure_code: this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : '',
+                is_active: true,
+                is_subprocess: this.flowType === 'subflow'
+            };
             this.showModal = true;
         },
 

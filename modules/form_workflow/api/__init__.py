@@ -429,6 +429,13 @@ def list_workflows():
             FwWorkflowTemplate.code.ilike(f'%{q}%')
         )
 
+    # flow_type 篩選：main=主流程, subflow=子流程, 不傳=全部
+    flow_type = request.args.get('flow_type', '').strip().lower()
+    if flow_type == 'main':
+        query = query.filter(FwWorkflowTemplate.is_subprocess == False)
+    elif flow_type == 'subflow':
+        query = query.filter(FwWorkflowTemplate.is_subprocess == True)
+
     workflows = query.order_by(FwWorkflowTemplate.updated_at.desc()).all()
 
     # 查詢每個流程的配對數量
@@ -514,6 +521,12 @@ def create_workflow():
     if existing:
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
+    is_subprocess = data.get('is_subprocess', False)
+
+    # 子流程自動使用 SF 前綴的 code
+    if is_subprocess and not data.get('code', '').strip():
+        code = f'SF{secrets.token_hex(4).upper()}'
+
     workflow = FwWorkflowTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
@@ -523,7 +536,8 @@ def create_workflow():
         category=data.get('category', '其他'),
         category_secure_code=data.get('category_secure_code') or 'SYS_CAT_OTHER',
         graph=data.get('graph', {'nodes': [], 'edges': []}),
-        is_active=data.get('is_active', True)
+        is_active=data.get('is_active', True),
+        is_subprocess=is_subprocess
     )
 
     db.session.add(workflow)

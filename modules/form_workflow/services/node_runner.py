@@ -129,6 +129,13 @@ def update_result(queue_item, result):
         db.session.commit()
         logger.info(f'FormAdapter 進入等待簽核狀態')
 
+    elif status == 'waiting_subflow':
+        # SubFlow 節點等待子流程完成（由子流程 End handler 喚醒）
+        queue_item.wait()
+        queue_item.result = result
+        db.session.commit()
+        logger.info(f'SubFlow 節點進入等待狀態，child={result.get("data", {}).get("child_instance_code")}')
+
     elif status == 'success':
         # 執行完成
         queue_item.success(result)
