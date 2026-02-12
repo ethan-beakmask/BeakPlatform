@@ -32,7 +32,7 @@ with app.app_context():
     inspector = inspect(db.engine)
     tables = inspector.get_table_names()
 
-    if not tables or 'user' not in tables:
+    if not tables or 'organizations' not in tables:
         print("Creating database tables...")
         db.create_all()
 
