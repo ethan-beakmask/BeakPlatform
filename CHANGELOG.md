@@ -7,10 +7,11 @@
 ## [Unreleased]
 
 ### Added
-- SubFlow 子流程功能：引擎核心支援子流程呼叫、前端列表子流程 Tab
-- 專屬子流程階層圖：使用 d3-org-chart 繪製組織架構式的子流程樹狀圖，支援縮圖、任意深度、自動佈局
-- 工作流列表頁「子流程」Tab 改名為「通用子流程」
-- 流程樹系 API (`GET /api/form-workflow/workflows/flow-trees`)
+- SubFlow 子流程功能：引擎核心支援子流程呼叫
+- 流程樹系圖獨立分頁 (`/forms/workflows/<id>/tree`)，橫向佈局含原尺寸縮圖
+- 單一流程樹 API (`GET /api/form-workflow/workflows/flow-trees/<secure_code>`)
+- SubFlow 節點建立/選擇子流程後自動套用並重整流程樹系
+- 儲存並關閉依來源返回：從樹系圖來的回樹系圖，從清單來的回清單
 - 流程監控模態框標題列顯示五欄版本資訊（發行版本、表單名稱、表單版本、流程名稱、流程版本）
 - 強制結束流程功能（發起人/企業管理員可在監控畫面強制取消 RUNNING 流程）
 - 歷史列表納入 CANCELLED 和 REJECTED 狀態的表單
@@ -40,6 +41,11 @@
 - 模組化標準驗證 (Step 5)
 
 ### Changed
+- 工作流列表頁 Tab 精簡為「主流程」與「通用子流程」，移除全部 Tab
+- 專屬子流程從列表頁隱藏，改為透過主流程的樹系圖查看
+- 分類篩選移除「全部」chip，預設選第一個分類，無分類歸入「其他」
+- 列表 badge 三態顯示：主流程 / 通用子流程 / 專屬子流程
+- API `flow_type=subflow` 改為只回傳通用子流程（排除專屬）
 - restart_flask.sh 改為確認 executor/emailrelay 服務運行，移除舊的 disable 邏輯
 - ProductionConfig SESSION_REDIS 改用 redis.from_url() 建立連線物件
 - CI workflow 升級為 CI/CD pipeline
@@ -51,6 +57,8 @@
 - 代碼內品牌引用恢復為 BeakMask
 
 ### Fixed
+- 專屬子流程被歸類為通用的 bug（to_dict 補回 parent_workflow_secure_code）
+- 分類 chip 重複「其他」問題（DB 已有時不再追加）
 - 工作流引擎統一使用發行快照 (graph_snapshot) 而非設計圖，避免版本間節點 ID 不匹配導致流程中斷
 - CD deploy 改用直接 SSH 取代 appleboy/ssh-action (data.forgejo.org 無此 mirror)
 - Docker entrypoint 表名檢查錯誤 (`user` → `organizations`)，導致重複建立 system.local

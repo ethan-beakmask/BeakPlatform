@@ -429,12 +429,25 @@ def list_workflows():
             FwWorkflowTemplate.code.ilike(f'%{q}%')
         )
 
-    # flow_type 篩選：main=主流程, subflow=子流程, 不傳=全部
+    # flow_type 篩選（專屬子流程不在列表中顯示，只從樹系圖查看）
     flow_type = request.args.get('flow_type', '').strip().lower()
     if flow_type == 'main':
         query = query.filter(FwWorkflowTemplate.is_subprocess == False)
     elif flow_type == 'subflow':
-        query = query.filter(FwWorkflowTemplate.is_subprocess == True)
+        # 通用子流程：is_subprocess=True 且無父流程
+        query = query.filter(
+            FwWorkflowTemplate.is_subprocess == True,
+            FwWorkflowTemplate.parent_workflow_secure_code == None
+        )
+    else:
+        # 全部：排除專屬子流程
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                FwWorkflowTemplate.is_subprocess == False,
+                FwWorkflowTemplate.parent_workflow_secure_code == None
+            )
+        )
 
     workflows = query.order_by(FwWorkflowTemplate.updated_at.desc()).all()
 
@@ -450,10 +463,25 @@ def list_workflows():
         ).group_by(FwFormWorkflowMapping.workflow_template_id).all()
     )
 
+    # 收集專屬子流程的父流程名稱
+    parent_codes = set()
+    for w in workflows:
+        if w.parent_workflow_secure_code:
+            parent_codes.add(w.parent_workflow_secure_code)
+
+    parent_names = {}
+    if parent_codes:
+        parents = FwWorkflowTemplate.query.filter(
+            FwWorkflowTemplate.secure_code.in_(parent_codes),
+            FwWorkflowTemplate.org_secure_code == org.secure_code
+        ).all()
+        parent_names = {p.secure_code: p.name for p in parents}
+
     result = []
     for w in workflows:
         d = w.to_dict(include_graph=False)
         d['mapping_count'] = mapping_counts.get(w.id, 0)
+        d['parent_workflow_name'] = parent_names.get(w.parent_workflow_secure_code) if w.parent_workflow_secure_code else None
         result.append(d)
 
     return jsonify({

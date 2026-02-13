@@ -144,10 +144,6 @@
 
     <!-- 流程類型 Tab -->
     <div x-show="!loading" class="fw-tab-bar">
-        <div class="fw-tab" :class="{ active: flowType === '' }"
-             @click="flowType = ''; loadWorkflows()">
-            全部 <span class="tab-count" x-text="'(' + totalCounts.all + ')'"></span>
-        </div>
         <div class="fw-tab" :class="{ active: flowType === 'main' }"
              @click="flowType = 'main'; loadWorkflows()">
             主流程 <span class="tab-count" x-text="'(' + totalCounts.main + ')'"></span>
@@ -160,9 +156,6 @@
 
     <!-- 分類篩選（父/子二層 chips）-->
     <div x-show="!loading" class="fw-filter-bar">
-        <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('workflows_filter_category', '')">
-            全部 <span class="chip-count" x-text="workflows.length"></span>
-        </div>
         <template x-for="cat in flatCategories" :key="cat.secure_code">
             <div class="fw-chip" :class="{ active: selectedCategory === cat.secure_code }" @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
                 <span x-text="cat.display"></span> <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
@@ -234,7 +227,14 @@
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(w.updated_at)"></td>
                         <td class="actions">
                             <button class="fw-btn" @click="editWorkflow(w)">編輯</button>
-                            <button class="fw-btn" @click="openTree(w)">樹系圖</button>
+                            <template x-if="!w.is_subprocess">
+                                <button class="fw-btn" @click="openTree(w)">樹系圖</button>
+                            </template>
+                            <template x-if="w.is_subprocess">
+                                <button class="fw-btn" @click="openTree(w)">
+                                    樹系圖 <span style="color:#9ca3af;" x-text="w.parent_workflow_name || '通用'"></span>
+                                </button>
+                            </template>
                             <button class="fw-btn danger" @click="confirmDelete(w)">刪除</button>
                         </td>
                     </tr>
@@ -368,8 +368,8 @@ function workflowListManager() {
         workflows: [],
         loading: true,
         searchQuery: '',
-        flowType: '',  // '' | 'main' | 'subflow'
-        totalCounts: { all: 0, main: 0, subflow: 0 },
+        flowType: 'main',  // 'main' | 'subflow'
+        totalCounts: { main: 0, subflow: 0 },
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
         selectedItems: [],
@@ -389,11 +389,14 @@ function workflowListManager() {
 
         async init() {
             await this.loadCategories();
-            await this.loadWorkflows();
+            // 預設選分類：localStorage > 第一個分類
             const saved = localStorage.getItem('workflows_filter_category');
             if (saved && this.flatCategories.some(c => c.secure_code === saved)) {
                 this.selectedCategory = saved;
+            } else if (this.flatCategories.length > 0) {
+                this.selectedCategory = this.flatCategories[0].secure_code;
             }
+            await this.loadWorkflows();
         },
 
         async loadCategories() {
@@ -425,9 +428,14 @@ function workflowListManager() {
                             });
                         }
                     });
+                    // 若分類中沒有「其他」，自動追加以收納無分類流程
+                    const hasOther = flat.some(c => c.name === '其他');
+                    if (!hasOther) {
+                        flat.push({ secure_code: '__uncategorized__', name: '其他', parent_name: null, display: '其他' });
+                    }
                     this.flatCategories = flat;
                     // 設定 formData 預設分類
-                    if (flat.length > 0 && !this.formData.category_secure_code) {
+                    if (flat.length > 1 && !this.formData.category_secure_code) {
                         this.formData.category_secure_code = flat[0].secure_code;
                     }
                 }
@@ -465,9 +473,8 @@ function workflowListManager() {
                 const data = await res.json();
                 if (data.success) {
                     const all = data.data.workflows || [];
-                    this.totalCounts.all = all.length;
                     this.totalCounts.main = all.filter(w => !w.is_subprocess).length;
-                    this.totalCounts.subflow = all.filter(w => w.is_subprocess).length;
+                    this.totalCounts.subflow = all.filter(w => w.is_subprocess && !w.parent_workflow_secure_code).length;
                 }
             } catch (e) { /* silent */ }
         },
@@ -535,7 +542,9 @@ function workflowListManager() {
         },
 
         openTree(w) {
-            window.open('/forms/workflows/' + w.secure_code + '/tree', '_blank');
+            // 專屬子流程開父流程的樹，主流程開自己的樹
+            const rootCode = w.parent_workflow_secure_code || w.secure_code;
+            window.open('/forms/workflows/' + rootCode + '/tree', '_blank');
         },
 
         async confirmDelete(w) {
@@ -573,11 +582,19 @@ function workflowListManager() {
         },
 
         get filteredWorkflows() {
-            if (this.selectedCategory === null) return this.workflows;
+            if (!this.selectedCategory) return this.workflows;
+            if (this.selectedCategory === '__uncategorized__') {
+                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
+                return this.workflows.filter(w => !w.category_secure_code || !knownCodes.includes(w.category_secure_code));
+            }
             return this.workflows.filter(w => w.category_secure_code === this.selectedCategory);
         },
 
         getCategoryCount(sc) {
+            if (sc === '__uncategorized__') {
+                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
+                return this.workflows.filter(w => !w.category_secure_code || !knownCodes.includes(w.category_secure_code)).length;
+            }
             return this.workflows.filter(w => w.category_secure_code === sc).length;
         },
 

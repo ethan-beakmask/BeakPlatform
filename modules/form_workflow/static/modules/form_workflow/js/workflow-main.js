@@ -3670,7 +3670,7 @@
                         </h4>
                         <div style="margin-bottom: 15px;">
                             <strong>選擇子流程：</strong><br>
-                            <select id="childFlowSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
+                            <select id="childFlowSelect" onchange="if(this.value) applySubprocessConfig('${nodeId}')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
                                 <option value="">載入中...</option>
                             </select>
                             <p style="font-size: 11px; color: #999; margin-top: 5px;">
@@ -4947,10 +4947,11 @@
                     // 重新載入子流程清單
                     await loadAvailableSubflows(nodeId);
 
-                    // 自動選擇新建立的子流程
+                    // 自動選擇新建立的子流程並套用
                     const selectElement = document.getElementById('childFlowSelect');
                     if (selectElement) {
                         selectElement.value = result.data.code;
+                        applySubprocessConfig(nodeId);
                     }
                 } else {
                     updateStatus('建立子流程失敗：' + (result.message || '未知錯誤'), 'warning');
