@@ -323,10 +323,6 @@ def update_template(secure_code):
     # 縮圖
     if 'thumbnail_2x1' in data:
         template.thumbnail_2x1 = data['thumbnail_2x1']
-    if 'thumbnail_1x1' in data:
-        template.thumbnail_1x1 = data['thumbnail_1x1']
-    if 'thumbnail_1x2' in data:
-        template.thumbnail_1x2 = data['thumbnail_1x2']
 
     # 有內容變更時遞增 revision
     if data.get('graph') or data.get('cytoscape_config'):
@@ -719,21 +715,75 @@ def get_node_schema(node_type):
 @workflows_bp.route('/data/subflows/available')
 @login_required
 def list_available_subflows():
-    """取得可用的子流程列表"""
+    """取得可用的子流程列表
+
+    只回傳：
+    1. 通用子流程（無 parent，任何流程都能用）
+    2. 同一根主流程下的專屬子流程
+    """
     from ..models import FwWorkflowTemplate
+    from sqlalchemy import or_
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    parent_id = request.args.get('parent_id')
+    parent_id = request.args.get('parent_id')  # 當前流程的 secure_code
 
-    # 查詢子流程
+    # 追溯到最頂端主流程
+    root_code = parent_id
+    if parent_id:
+        visited = set()
+        current = parent_id
+        for _ in range(10):
+            if current in visited:
+                break
+            visited.add(current)
+            wf = FwWorkflowTemplate.query.filter_by(
+                secure_code=current,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).first()
+            if not wf or not wf.parent_workflow_secure_code:
+                root_code = current
+                break
+            current = wf.parent_workflow_secure_code
+        else:
+            root_code = current
+
+    # 收集同一根主流程下所有流程的 secure_code（遞迴向下）
+    family_codes = set()
+    if root_code:
+        family_codes.add(root_code)
+        queue = [root_code]
+        while queue:
+            code = queue.pop(0)
+            children = FwWorkflowTemplate.query.filter_by(
+                parent_workflow_secure_code=code,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).all()
+            for child in children:
+                if child.secure_code not in family_codes:
+                    family_codes.add(child.secure_code)
+                    queue.append(child.secure_code)
+
+    # 查詢可用子流程：通用（無 parent）+ 同家族專屬
     query = FwWorkflowTemplate.query.filter_by(
         org_secure_code=org.secure_code,
         is_subprocess=True,
         is_deleted=False
     )
+
+    if family_codes:
+        query = query.filter(
+            or_(
+                FwWorkflowTemplate.parent_workflow_secure_code == None,
+                FwWorkflowTemplate.parent_workflow_secure_code.in_(family_codes)
+            )
+        )
+    else:
+        query = query.filter(FwWorkflowTemplate.parent_workflow_secure_code == None)
 
     subflows = query.order_by(FwWorkflowTemplate.name).all()
 
@@ -745,7 +795,7 @@ def list_available_subflows():
                 'code': sf.code,
                 'name': sf.name,
                 'description': sf.description,
-                'is_bound': sf.parent_workflow_id is not None
+                'is_bound': sf.parent_workflow_secure_code is not None
             }
             for sf in subflows
         ]

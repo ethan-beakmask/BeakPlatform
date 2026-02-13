@@ -40,7 +40,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
         form_name: 表單名稱
 
     Returns:
-        tuple: (thumbnail_2x1,) 是 base64 data URI 或 None
+        str: thumbnail_2x1 的 base64 data URI 或 None
     """
     if not is_available():
         return None
@@ -94,7 +94,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
         with tempfile.TemporaryDirectory() as tmpdir:
             hti = Html2Image(
                 output_path=tmpdir,
-                size=(800, 1000),
+                size=(800, 800),
                 browser='chrome',
                 browser_executable='/usr/bin/google-chrome'
             )
@@ -111,9 +111,25 @@ def generate_form_thumbnails(schema, form_name="表單"):
             if not screenshot_path.exists():
                 raise Exception(f'截圖檔案不存在: {screenshot_path}')
 
-            # 使用 PIL 生成縮圖 (400x600 直式)
+            # 使用 PIL 裁切空白後生成縮圖 (600x900 直式, 2:3)
             img = Image.open(screenshot_path)
-            img_2x1 = img.resize((400, 600), Image.Resampling.LANCZOS)
+
+            # 自動裁切周圍空白
+            bg = Image.new(img.mode, img.size, (248, 249, 250))  # #f8f9fa 背景色
+            diff = Image.composite(img, bg, img.convert('L').point(lambda x: 0 if x > 245 else 255))
+            bbox = diff.getbbox()
+            if bbox:
+                # 留一點邊距
+                margin = 10
+                bbox = (
+                    max(0, bbox[0] - margin),
+                    max(0, bbox[1] - margin),
+                    min(img.width, bbox[2] + margin),
+                    min(img.height, bbox[3] + margin)
+                )
+                img = img.crop(bbox)
+
+            img_2x1 = img.resize((600, 900), Image.Resampling.LANCZOS)
             img_2x1_path = Path(tmpdir) / 'thumbnail_2x1.png'
             img_2x1.save(img_2x1_path, 'PNG')
 

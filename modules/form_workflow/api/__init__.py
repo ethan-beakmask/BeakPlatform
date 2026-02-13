@@ -227,10 +227,6 @@ def update_template(secure_code):
     # 縮圖
     if 'thumbnail_2x1' in data:
         template.thumbnail_2x1 = data['thumbnail_2x1']
-    if 'thumbnail_1x1' in data:
-        template.thumbnail_1x1 = data['thumbnail_1x1']
-    if 'thumbnail_1x2' in data:
-        template.thumbnail_1x2 = data['thumbnail_1x2']
 
     db.session.commit()
 
@@ -324,8 +320,6 @@ def batch_save_new_version_templates():
             version=new_version,
             revision=1,
             thumbnail_2x1=tpl.thumbnail_2x1,
-            thumbnail_1x1=tpl.thumbnail_1x1,
-            thumbnail_1x2=tpl.thumbnail_1x2,
             is_active=tpl.is_active,
             owner_secure_code=current_user.secure_code,
         )
@@ -617,10 +611,6 @@ def update_workflow(secure_code):
     # 縮圖
     if 'thumbnail_2x1' in data:
         workflow.thumbnail_2x1 = data['thumbnail_2x1']
-    if 'thumbnail_1x1' in data:
-        workflow.thumbnail_1x1 = data['thumbnail_1x1']
-    if 'thumbnail_1x2' in data:
-        workflow.thumbnail_1x2 = data['thumbnail_1x2']
 
     db.session.commit()
 
@@ -893,8 +883,6 @@ def batch_save_new_version_workflows():
             version=new_version,
             revision=1,
             thumbnail_2x1=wf.thumbnail_2x1,
-            thumbnail_1x1=wf.thumbnail_1x1,
-            thumbnail_1x2=wf.thumbnail_1x2,
             is_active=wf.is_active,
             is_subprocess=wf.is_subprocess,
             owner_secure_code=current_user.secure_code,

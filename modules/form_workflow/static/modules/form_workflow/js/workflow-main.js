@@ -7694,8 +7694,8 @@
             try {
                 console.log('📸 開始生成縮圖...');
 
-                // 先調整視圖以顯示所有內容
-                cy.fit(cy.elements(), 50);
+                // 先調整視圖以顯示所有內容（padding 縮小讓節點更大）
+                cy.fit(cy.elements(), 20);
 
                 // 使用 Cytoscape 的 PNG 導出功能，獲取 base64 字串
                 const pngBase64Raw = cy.png({
@@ -7706,89 +7706,43 @@
                 });
 
                 console.log('✓ Cytoscape PNG 已生成');
-                console.log('  PNG 資料長度:', pngBase64Raw ? pngBase64Raw.length : 0);
 
                 // cy.png() 回傳的是純 base64，需要加上 data URI 前綴
                 const pngBase64 = `data:image/png;base64,${pngBase64Raw}`;
-                console.log('✓ 已加上 data URI 前綴');
 
-                // 在前端使用 Canvas 生成不同尺寸的縮圖
+                // 使用 Canvas 生成 600x400 (3:2 橫式) 縮圖
                 const img = new Image();
                 img.onload = async function() {
-                    console.log('✓ 圖片已載入，開始調整尺寸...');
                     console.log(`  原始尺寸: ${img.width}x${img.height}`);
 
-                    // 生成 2:1 縮圖 (400x200)
-                    const canvas2x1 = document.createElement('canvas');
-                    canvas2x1.width = 400;
-                    canvas2x1.height = 200;
-                    const ctx2x1 = canvas2x1.getContext('2d');
-                    ctx2x1.fillStyle = 'white';
-                    ctx2x1.fillRect(0, 0, 400, 200);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 600;
+                    canvas.height = 400;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, 600, 400);
 
-                    // 計算縮放以適應 2:1 比例
-                    const scale2x1 = Math.min(400 / img.width, 200 / img.height);
-                    const scaledWidth = img.width * scale2x1;
-                    const scaledHeight = img.height * scale2x1;
-                    const x = (400 - scaledWidth) / 2;
-                    const y = (200 - scaledHeight) / 2;
+                    // 圖片內容內縮，保留白邊
+                    const pad = 24;
+                    const drawW = 600 - pad * 2;
+                    const drawH = 400 - pad * 2;
+                    const scale = Math.min(drawW / img.width, drawH / img.height);
+                    const scaledWidth = img.width * scale;
+                    const scaledHeight = img.height * scale;
+                    const x = pad + (drawW - scaledWidth) / 2;
+                    const y = pad + (drawH - scaledHeight) / 2;
 
-                    ctx2x1.drawImage(img, x, y, scaledWidth, scaledHeight);
-                    const thumbnail_2x1 = canvas2x1.toDataURL('image/png');
+                    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                    const thumbnail_2x1 = canvas.toDataURL('image/png');
 
-                    console.log('✓ 2:1 縮圖已生成 (400x200) - 橫向');
+                    console.log('✓ 3:2 縮圖已生成 (600x400)');
 
-                    // 生成 1:1 縮圖 (400x400) - 正方
-                    const canvas1x1 = document.createElement('canvas');
-                    canvas1x1.width = 400;
-                    canvas1x1.height = 400;
-                    const ctx1x1 = canvas1x1.getContext('2d');
-
-                    ctx1x1.fillStyle = 'white';
-                    ctx1x1.fillRect(0, 0, 400, 400);
-
-                    // 計算縮放以適應 1:1 比例
-                    const scale1x1 = Math.min(400 / img.width, 400 / img.height);
-                    const scaledWidth1x1 = img.width * scale1x1;
-                    const scaledHeight1x1 = img.height * scale1x1;
-                    const x1x1 = (400 - scaledWidth1x1) / 2;
-                    const y1x1 = (400 - scaledHeight1x1) / 2;
-
-                    ctx1x1.drawImage(img, x1x1, y1x1, scaledWidth1x1, scaledHeight1x1);
-                    const thumbnail_1x1 = canvas1x1.toDataURL('image/png');
-
-                    console.log('✓ 1:1 縮圖已生成 (400x400) - 正方');
-
-                    // 生成 1:2 縮圖 (200x400) - 直向
-                    const canvas1x2 = document.createElement('canvas');
-                    canvas1x2.width = 200;
-                    canvas1x2.height = 400;
-                    const ctx1x2 = canvas1x2.getContext('2d');
-
-                    ctx1x2.fillStyle = 'white';
-                    ctx1x2.fillRect(0, 0, 200, 400);
-
-                    // 計算縮放以適應 1:2 比例
-                    const scale1x2 = Math.min(200 / img.width, 400 / img.height);
-                    const scaledWidth1x2 = img.width * scale1x2;
-                    const scaledHeight1x2 = img.height * scale1x2;
-                    const x1x2 = (200 - scaledWidth1x2) / 2;
-                    const y1x2 = (400 - scaledHeight1x2) / 2;
-
-                    ctx1x2.drawImage(img, x1x2, y1x2, scaledWidth1x2, scaledHeight1x2);
-                    const thumbnail_1x2 = canvas1x2.toDataURL('image/png');
-
-                    console.log('✓ 1:2 縮圖已生成 (200x400) - 直向');
-
-                    // 更新流程，儲存三種尺寸的縮圖
-                    console.log('📤 上傳三種尺寸縮圖到後端...');
+                    // 上傳縮圖到後端
                     const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            thumbnail_2x1: thumbnail_2x1,
-                            thumbnail_1x1: thumbnail_1x1,
-                            thumbnail_1x2: thumbnail_1x2
+                            thumbnail_2x1: thumbnail_2x1
                         })
                     });
 
@@ -12040,7 +11994,45 @@
                 rootWorkflowId = secureCode;
                 rootWorkflowName = name;
                 console.log('🌳 設定根主流程:', name, secureCode);
+                updateFlowTreeRootLabel();
             }
+        }
+
+        /**
+         * 更新流程樹系標題旁的根流程名稱
+         */
+        function updateFlowTreeRootLabel() {
+            const el = document.getElementById('flow-tree-root-name');
+            if (el) {
+                el.textContent = rootWorkflowName || '';
+            }
+        }
+
+        /**
+         * 向上追溯到最頂端主流程
+         */
+        async function resolveTopRoot(secureCode) {
+            const visited = new Set();
+            let current = secureCode;
+            let name = '';
+            for (let i = 0; i < 10; i++) {
+                if (visited.has(current)) break;
+                visited.add(current);
+                try {
+                    const res = await fetch(`/api/workflows/data/templates/${current}`);
+                    const data = await res.json();
+                    const wf = data.data || data;
+                    name = wf.name;
+                    if (wf.parent_workflow_secure_code) {
+                        current = wf.parent_workflow_secure_code;
+                    } else {
+                        break;
+                    }
+                } catch (e) {
+                    break;
+                }
+            }
+            return { secureCode: current, name: name };
         }
 
         /**
@@ -12051,14 +12043,11 @@
             const container = document.getElementById('flow-tree-list');
             if (!container) return;
 
-            // 如果沒有根主流程，使用當前流程作為根
+            // 如果沒有根主流程，追溯到最頂端
             if (!rootWorkflowId && currentWorkflowId) {
-                // 第一次載入，先取得當前流程資訊來設定根
                 try {
-                    const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`);
-                    const result = await response.json();
-                    const workflowData = result.data || result;
-                    setRootWorkflow(workflowData.secure_code, workflowData.name);
+                    const top = await resolveTopRoot(currentWorkflowId);
+                    setRootWorkflow(top.secureCode, top.name);
                 } catch (error) {
                     console.error('❌ 取得流程資訊失敗:', error);
                 }

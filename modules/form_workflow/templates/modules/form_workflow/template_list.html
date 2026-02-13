@@ -6,7 +6,7 @@
 <style>
     [x-cloak] { display: none !important; }
 
-    .fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .fw-container { max-width: 1800px; margin: 0 auto; padding: 16px; }
     .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
     .fw-header h1 { margin: 0; font-size: 20px; }
     .fw-toolbar { display: flex; gap: 12px; align-items: center; }
@@ -45,11 +45,11 @@
 
     .fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
 
-    /* 縮圖 Grid 佈局 */
+    /* 縮圖 Grid 佈局 — 表單 2:3 直式 */
     .thumb-grid {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
     }
     .thumb-card {
         background: white;
@@ -61,12 +61,12 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .thumb-img {
-        height: 200px;
+        aspect-ratio: 2 / 3;
         background: #f5f5f5;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 6px;
+        padding: 8px;
         box-sizing: border-box;
     }
     .thumb-img img {
@@ -77,8 +77,8 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .thumb-name {
-        padding: 4px 6px;
-        font-size: 11px;
+        padding: 6px 8px;
+        font-size: 12px;
         font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
@@ -129,9 +129,6 @@
 
     <!-- 分類篩選（父/子二層 chips） -->
     <div x-show="!loading" class="fw-filter-bar">
-        <div class="fw-chip" :class="{ active: selectedCategory === null }" @click="selectedCategory = null; localStorage.setItem('forms_filter_category', '')">
-            全部 <span class="chip-count" x-text="templates.length"></span>
-        </div>
         <template x-for="cat in flatCategories" :key="cat.secure_code">
             <div class="fw-chip" :class="{ active: selectedCategory === cat.secure_code }" @click="selectedCategory = cat.secure_code; localStorage.setItem('forms_filter_category', cat.secure_code)">
                 <span x-text="cat.display"></span> <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
@@ -371,6 +368,8 @@ function templateListManager() {
             const saved = localStorage.getItem('forms_filter_category');
             if (saved && this.flatCategories.some(c => c.secure_code === saved)) {
                 this.selectedCategory = saved;
+            } else if (this.flatCategories.length > 0) {
+                this.selectedCategory = this.flatCategories[0].secure_code;
             }
             this.pollPendingThumbnail();
             this.startPeriodicRefresh();
@@ -405,6 +404,11 @@ function templateListManager() {
                             });
                         }
                     });
+                    // 沒分類的歸「其他」
+                    const hasOther = flat.some(c => c.name === '其他');
+                    if (!hasOther) {
+                        flat.push({ secure_code: '__uncategorized__', name: '其他', parent_name: null, display: '其他' });
+                    }
                     this.flatCategories = flat;
                     // 設定 formData 預設分類
                     if (flat.length > 0 && !this.formData.category_secure_code) {
@@ -591,10 +595,18 @@ function templateListManager() {
 
         get filteredTemplates() {
             if (this.selectedCategory === null) return this.templates;
+            if (this.selectedCategory === '__uncategorized__') {
+                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
+                return this.templates.filter(t => !t.category_secure_code || !knownCodes.includes(t.category_secure_code));
+            }
             return this.templates.filter(t => t.category_secure_code === this.selectedCategory);
         },
 
         getCategoryCount(sc) {
+            if (sc === '__uncategorized__') {
+                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
+                return this.templates.filter(t => !t.category_secure_code || !knownCodes.includes(t.category_secure_code)).length;
+            }
             return this.templates.filter(t => t.category_secure_code === sc).length;
         },
 

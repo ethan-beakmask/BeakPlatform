@@ -6,7 +6,7 @@
 <style>
     [x-cloak] { display: none !important; }
 
-    .fw-container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .fw-container { max-width: 1800px; margin: 0 auto; padding: 16px; }
     .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
     .fw-header h1 { margin: 0; font-size: 20px; }
     .fw-toolbar { display: flex; gap: 12px; align-items: center; }
@@ -48,11 +48,11 @@
 
     .fw-graph-preview { height: 300px; background: #f5f5f5; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #999; }
 
-    /* 縮圖 Grid 佈局 */
+    /* 縮圖 Grid 佈局 — 流程 3:2 橫式 */
     .thumb-grid {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
     }
     .thumb-card {
         background: white;
@@ -64,12 +64,12 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .thumb-img {
-        height: 200px;
+        aspect-ratio: 3 / 2;
         background: #f5f5f5;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 6px;
+        padding: 8px;
         box-sizing: border-box;
     }
     .thumb-img img {
@@ -80,8 +80,8 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .thumb-name {
-        padding: 4px 6px;
-        font-size: 11px;
+        padding: 6px 8px;
+        font-size: 12px;
         font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
@@ -112,14 +112,57 @@
     .fw-badge.dedicated { background: #fce7f3; color: #9d174d; }
     .fw-badge.main { background: #e0e7ff; color: #3730a3; }
 
+    /* 樹系圖內嵌視圖 */
+    .tree-view-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #fff;
+        border: 1px solid #ddd;
+        margin-bottom: 0;
+    }
+    .tree-view-toolbar .tb-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    .tree-view-toolbar .tb-sub {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+    .tree-view-wrap {
+        background: #fafafa;
+        border: 1px solid #ddd;
+        border-top: none;
+    }
+    .tree-view-wrap .chart-container {
+        width: 100%;
+        height: calc(100vh - 220px);
+        min-height: 400px;
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="fw-container" x-data="workflowListManager()">
 
+    <!-- 樹系圖內嵌視圖 -->
+    <div x-show="treeView.active" x-cloak>
+        <div class="tree-view-toolbar">
+            <button class="fw-btn" @click="fitTree()">置中</button>
+            <button class="fw-btn" @click="closeTree()">關閉</button>
+            <span class="tb-label" x-text="treeView.name || ''"></span>
+            <span class="tb-sub" x-text="treeView.code || ''"></span>
+        </div>
+        <div class="tree-view-wrap">
+            <div id="inline-tree-chart" class="chart-container"></div>
+        </div>
+    </div>
+
     <!-- 頁首 -->
-    <div class="fw-header">
+    <div class="fw-header" x-show="!treeView.active">
         <div>
             <h1>工作流模板管理</h1>
             <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理流程定義與節點配置</p>
@@ -143,7 +186,7 @@
     </div>
 
     <!-- 流程類型 Tab -->
-    <div x-show="!loading" class="fw-tab-bar">
+    <div x-show="!loading && !treeView.active" class="fw-tab-bar">
         <div class="fw-tab" :class="{ active: flowType === 'main' }"
              @click="flowType = 'main'; loadWorkflows()">
             主流程 <span class="tab-count" x-text="'(' + totalCounts.main + ')'"></span>
@@ -155,7 +198,7 @@
     </div>
 
     <!-- 分類篩選（父/子二層 chips）-->
-    <div x-show="!loading" class="fw-filter-bar">
+    <div x-show="!loading && !treeView.active" class="fw-filter-bar">
         <template x-for="cat in flatCategories" :key="cat.secure_code">
             <div class="fw-chip" :class="{ active: selectedCategory === cat.secure_code }" @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
                 <span x-text="cat.display"></span> <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
@@ -164,7 +207,7 @@
     </div>
 
     <!-- 表格 -->
-    <div class="fw-card">
+    <div class="fw-card" x-show="!treeView.active">
         <div x-show="loading" class="fw-loading">載入中...</div>
 
         <div x-show="!loading && filteredWorkflows.length === 0" class="fw-empty">
@@ -255,7 +298,7 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && filteredWorkflows.length > 0 && viewMode === 'grid'">
+    <template x-if="!loading && !treeView.active && filteredWorkflows.length > 0 && viewMode === 'grid'">
         <div class="thumb-grid">
             <template x-for="w in filteredWorkflows" :key="w.secure_code">
                 <div class="thumb-card" @click="editWorkflow(w)">
@@ -362,6 +405,11 @@
 
 </div>
 
+<script src="/static/vendor/d3.min.js"></script>
+<script src="/static/vendor/d3-flextree.min.js"></script>
+<script src="/static/vendor/d3-org-chart.min.js"></script>
+<script src="/static/modules/form_workflow/js/workflow-tree-chart.js"></script>
+
 <script>
 function workflowListManager() {
     return {
@@ -370,6 +418,7 @@ function workflowListManager() {
         searchQuery: '',
         flowType: 'main',  // 'main' | 'subflow'
         totalCounts: { main: 0, subflow: 0 },
+        treeView: { active: false, name: '', code: '', chart: null },
         viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
         selectedCategory: null,  // 子分類 secure_code
         selectedItems: [],
@@ -541,10 +590,45 @@ function workflowListManager() {
             }
         },
 
-        openTree(w) {
-            // 專屬子流程開父流程的樹，主流程開自己的樹
+        async openTree(w) {
             const rootCode = w.parent_workflow_secure_code || w.secure_code;
-            window.open('/forms/workflows/' + rootCode + '/tree', '_blank');
+            try {
+                const res = await fetch('/api/form-workflow/workflows/flow-trees/' + rootCode);
+                const data = await res.json();
+                if (!data.success) return;
+                const tree = data.data.tree;
+                this.treeView.name = tree.name;
+                this.treeView.code = tree.code;
+                this.treeView.active = true;
+
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.treeView.chart = WorkflowTreeChart.render(
+                            '#inline-tree-chart',
+                            [tree],
+                            {
+                                onNodeClick: function (nodeData) {
+                                    window.location.href = '/api/workflows/designer/standalone?id=' + nodeData.id + '&from=tree&root=' + rootCode;
+                                }
+                            }
+                        );
+                    }, 50);
+                });
+            } catch (e) {
+                console.error('載入樹系圖失敗:', e);
+            }
+        },
+
+        closeTree() {
+            this.treeView.active = false;
+            this.treeView.chart = null;
+            document.getElementById('inline-tree-chart').innerHTML = '';
+        },
+
+        fitTree() {
+            if (this.treeView.chart) {
+                this.treeView.chart.fit();
+            }
         },
 
         async confirmDelete(w) {

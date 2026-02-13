@@ -223,13 +223,9 @@
     <div class="fc-sidebar" x-show="viewMode === 'dashboard'">
         <div class="fc-sidebar-box">
             <div style="padding: 8px 12px; font-weight: 600; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
-            <div class="fc-category-item" :class="{ active: selectedParent === null }" @click="selectedParent = null; selectedChild = null;" style="cursor: pointer;">
-                <span>全部</span>
-                <span class="fc-link-badge" x-text="availableForms.length"></span>
-            </div>
             <template x-for="cat in parentCategories" :key="cat.secure_code">
                 <div class="fc-category-item" :class="{ active: selectedParent === cat.secure_code }"
-                     @click="selectedParent = cat.secure_code; selectedChild = null;" style="cursor: pointer;">
+                     @click="selectParent(cat.secure_code)" style="cursor: pointer;">
                     <span x-text="cat.name"></span>
                     <span class="fc-link-badge" style="background: #e5e7eb; color: #374151;" x-text="getFormCountByParent(cat.secure_code)"></span>
                 </div>
@@ -248,12 +244,9 @@
                 </div>
                 <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
             </div>
-            <!-- 子分類頁籤（選中父分類且有多個子分類時顯示） -->
-            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;" x-show="selectedParent && currentChildren.length > 1">
+            <!-- 子分類頁籤 -->
+            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;" x-show="selectedParent && currentChildren.length > 0">
                 <div class="fc-cat-tabs">
-                    <div class="fc-cat-tab" :class="{ active: selectedChild === null }" @click="selectedChild = null">
-                        全部<span class="fc-cat-count" x-text="'(' + getFormCountByParent(selectedParent) + ')'"></span>
-                    </div>
                     <template x-for="child in currentChildren" :key="child.secure_code">
                         <div class="fc-cat-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
                             <span x-text="child.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByChild(child.secure_code) + ')'"></span>
@@ -1155,24 +1148,44 @@ function formCenterManager() {
 
         // 計算屬性
         get currentChildren() {
-            if (!this.selectedParent) return [];
+            if (!this.selectedParent || this.selectedParent === '__uncategorized__') return [];
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
-            return parent ? (parent.children || []) : [];
+            if (!parent) return [];
+            const children = [...(parent.children || [])];
+            // 追加「其他」收納沒有子分類的表單
+            children.push({ secure_code: '__child_uncategorized__', name: '其他' });
+            return children;
+        },
+
+        _allKnownCodes() {
+            const codes = [];
+            this.parentCategories.forEach(p => {
+                if (p.secure_code !== '__uncategorized__') {
+                    codes.push(p.secure_code);
+                    (p.children || []).forEach(c => codes.push(c.secure_code));
+                }
+            });
+            return codes;
         },
 
         get filteredForms() {
             if (this.selectedParent === null) return this.availableForms;
+            if (this.selectedParent === '__uncategorized__') {
+                const known = this._allKnownCodes();
+                return this.availableForms.filter(f => !f.category_secure_code || !known.includes(f.category_secure_code));
+            }
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
             if (!parent) return this.availableForms;
             const children = parent.children || [];
-            if (children.length === 0) {
-                // 無子分類 → 直接匹配父分類 sc
+
+            // 選了「其他」子分類 → 直接指向父分類的表單（未歸入任何子分類）
+            if (this.selectedChild === '__child_uncategorized__') {
                 return this.availableForms.filter(f => f.category_secure_code === parent.secure_code);
             }
             if (this.selectedChild) {
                 return this.availableForms.filter(f => f.category_secure_code === this.selectedChild);
             }
-            // 有子分類 → 匹配所有子分類 sc + 直接指向父分類的
+            // 沒選子分類 → 匹配所有子分類 + 直接指向父分類的
             const childCodes = children.map(c => c.secure_code);
             return this.availableForms.filter(f =>
                 childCodes.includes(f.category_secure_code) || f.category_secure_code === parent.secure_code
@@ -1180,6 +1193,10 @@ function formCenterManager() {
         },
 
         getFormCountByParent(parentSc) {
+            if (parentSc === '__uncategorized__') {
+                const known = this._allKnownCodes();
+                return this.availableForms.filter(f => !f.category_secure_code || !known.includes(f.category_secure_code)).length;
+            }
             const parent = this.parentCategories.find(c => c.secure_code === parentSc);
             if (!parent) return 0;
             const children = parent.children || [];
@@ -1192,7 +1209,18 @@ function formCenterManager() {
             ).length;
         },
 
+        selectParent(parentSc) {
+            this.selectedParent = parentSc;
+            // 自動選第一個子分類
+            const children = this.currentChildren;
+            this.selectedChild = children.length > 0 ? children[0].secure_code : null;
+        },
+
         getFormCountByChild(childSc) {
+            if (childSc === '__child_uncategorized__') {
+                // 直接指向父分類的表單數量
+                return this.availableForms.filter(f => f.category_secure_code === this.selectedParent).length;
+            }
             return this.availableForms.filter(f => f.category_secure_code === childSc).length;
         },
 
@@ -1319,7 +1347,17 @@ function formCenterManager() {
             try {
                 const res = await fetch('/api/form-workflow/categories?context=form_center');
                 const data = await res.json();
-                if (data.success) this.parentCategories = data.data || [];
+                if (data.success) {
+                    const cats = data.data || [];
+                    const hasOther = cats.some(c => c.name === '其他');
+                    if (!hasOther) {
+                        cats.push({ secure_code: '__uncategorized__', name: '其他', children: [] });
+                    }
+                    this.parentCategories = cats;
+                    if (!this.selectedParent && cats.length > 0) {
+                        this.selectParent(cats[0].secure_code);
+                    }
+                }
             } catch (e) { /* 分類 API 可能不存在，忽略 */ }
             finally { this.loadingCategories = false; }
         },

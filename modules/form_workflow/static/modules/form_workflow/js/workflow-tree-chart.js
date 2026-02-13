@@ -5,11 +5,11 @@
 (function () {
     'use strict';
 
-    // 節點尺寸 (卡片式：上方縮圖 + 下方資訊)
-    var NODE_WIDTH = 200;
-    var NODE_HEIGHT = 130;
-    var THUMB_WIDTH = 180;
-    var THUMB_HEIGHT = 90;
+    // 節點尺寸 (卡片式：上方 3:2 橫式縮圖 + 下方資訊)
+    var NODE_WIDTH = 240;
+    var NODE_HEIGHT = 195;
+    var THUMB_WIDTH = 224;
+    var THUMB_HEIGHT = 150;
 
     /**
      * 將巢狀樹結構攤平為 d3-org-chart 所需的扁平陣列

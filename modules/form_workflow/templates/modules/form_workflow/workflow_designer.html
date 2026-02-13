@@ -56,8 +56,9 @@
         <!-- 流程樹（父子流程導航） -->
         <div class="flow-tree-container">
             <div class="flow-tree-header">
-                <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
                     <i class="fas fa-sitemap"></i> 流程樹系
+                    <span id="flow-tree-root-name" style="color: #9ca3af; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
                 </div>
                 <div style="display: flex; gap: 5px;">
                     <button onclick="refreshFlowTree()" title="重新載入流程樹">

@@ -458,10 +458,6 @@ def update_template(secure_code):
     # 縮圖（前端直接傳遞的優先）
     if 'thumbnail_2x1' in data:
         template.thumbnail_2x1 = data['thumbnail_2x1']
-    if 'thumbnail_1x1' in data:
-        template.thumbnail_1x1 = data['thumbnail_1x1']
-    if 'thumbnail_1x2' in data:
-        template.thumbnail_1x2 = data['thumbnail_1x2']
 
     # 有實質內容變更時遞增 revision
     if 'schema' in data or 'builder_config' in data:
