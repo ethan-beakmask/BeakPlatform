@@ -9,6 +9,7 @@
     <!-- Font Awesome Icons (本地) -->
     <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
     <!-- Workflow Designer CSS (模組靜態檔案) -->
+    <!-- 注意：本頁禁止引入 Bulma CSS，會與設計器的裸元素選擇器和 .btn-* 等類名全面衝突 -->
     <link rel="stylesheet" href="/static/modules/form_workflow/css/workflow-designer.css">
 
     <!-- Navbar CSS (與 base.html 共用風格) -->
@@ -98,34 +99,47 @@
 
     <div class="main">
         <div class="header" id="workflow-header">
-            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
-                <button id="btn-save-workflow" class="btn-success" onclick="saveWorkflow()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
-                    <i class="fas fa-save"></i> 儲存
-                </button>
-                <button id="btn-save-and-close" class="btn-success" onclick="saveAndClose()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
-                    <i class="fas fa-save"></i> 儲存並關閉
-                </button>
-                <button id="btn-save-new-version" class="btn-primary" onclick="saveNewVersion()" data-permission="workflow:create,workflow:update" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0; width: auto; margin-bottom: 0;">
-                    <i class="fas fa-code-branch"></i> 另存新版
-                </button>
-                <button id="btn-discard" class="btn-danger" onclick="discardAndClose()" style="display: none; padding: 2px 6px; font-size: 11px; white-space: nowrap; flex-shrink: 0;">
-                    <i class="fas fa-times"></i> 放棄
-                </button>
-                <div id="workflow-info" style="display: none; margin-left: 50px;">
-                    <input type="text" id="current-workflow-name" value="未開啟流程"
-                           style="font-size: 1.2rem; font-weight: bold; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white; min-width: 200px;"
-                           onblur="updateWorkflowInfo()"
-                           onkeypress="if(event.key==='Enter') this.blur()">
-                    <span style="margin-left: 10px; color: var(--text-tertiary); font-size: 0.9rem;" id="current-workflow-version"></span>
-                    <select id="current-workflow-category"
-                            style="margin-left: 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white;"
-                            onchange="updateWorkflowInfo()">
-                        <!-- 由 loadCategories() 動態載入 -->
-                    </select>
-                    <input type="text" id="current-workflow-description" placeholder="描述（選填）"
-                           style="margin-left: 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; background: white; min-width: 300px; color: var(--text-secondary);"
-                           onblur="updateWorkflowInfo()"
-                           onkeypress="if(event.key==='Enter') this.blur()">
+            <button id="btn-save-workflow" class="btn-success" onclick="saveWorkflow()" data-permission="workflow:create,workflow:update" style="display: none;">
+                <i class="fas fa-save"></i> 儲存
+            </button>
+            <button id="btn-save-and-close" class="btn-success" onclick="saveAndClose()" data-permission="workflow:create,workflow:update" style="display: none;">
+                <i class="fas fa-save"></i> 儲存並關閉
+            </button>
+            <button id="btn-save-new-version" class="btn-primary" onclick="saveNewVersion()" data-permission="workflow:create,workflow:update" style="display: none;">
+                <i class="fas fa-code-branch"></i> 另存新版
+            </button>
+            <button id="btn-discard" class="btn-danger" onclick="discardAndClose()" style="display: none;">
+                <i class="fas fa-times"></i> 放棄
+            </button>
+            <div id="workflow-info" style="display: none; margin-left: 8px; align-items: center; gap: 8px;">
+                <div class="header-sep"></div>
+                <input type="text" id="current-workflow-name" class="wf-name-input" value="未開啟流程"
+                       onblur="updateWorkflowInfo()"
+                       onkeypress="if(event.key==='Enter') this.blur()">
+                <span class="wf-version" id="current-workflow-version"></span>
+                <select id="current-workflow-category" class="wf-meta-select"
+                        onchange="updateWorkflowInfo()">
+                </select>
+                <input type="text" id="current-workflow-description" class="wf-meta-input"
+                       placeholder="描述（選填）" readonly
+                       onclick="openDescriptionModal()">
+                <button onclick="openDescriptionModal()" style="background: transparent; border: none; color: #485fc7; font-size: 12px; padding: 0 4px; cursor: pointer;">edit</button>
+            </div>
+        </div>
+
+        <!-- 描述編輯 Modal -->
+        <div id="description-modal" class="wf-desc-modal-overlay" style="display: none;">
+            <div class="wf-desc-modal">
+                <div class="wf-desc-modal-header">
+                    <span>編輯描述</span>
+                    <button onclick="closeDescriptionModal()">&times;</button>
+                </div>
+                <div class="wf-desc-modal-body">
+                    <textarea id="description-modal-textarea" rows="8" placeholder="輸入流程描述..."></textarea>
+                </div>
+                <div class="wf-desc-modal-footer">
+                    <button onclick="closeDescriptionModal()">取消</button>
+                    <button class="btn-primary" onclick="saveDescription()" style="width: auto; margin-bottom: 0;">確定</button>
                 </div>
             </div>
         </div>

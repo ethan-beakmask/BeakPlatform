@@ -471,11 +471,56 @@ def list_workflows():
         ).all()
         parent_names = {p.secure_code: p.name for p in parents}
 
+    # 專屬子流程計數（per parent workflow）
+    dedicated_counts = dict(
+        db.session.query(
+            FwWorkflowTemplate.parent_workflow_secure_code,
+            func.count(FwWorkflowTemplate.id)
+        ).filter(
+            FwWorkflowTemplate.org_secure_code == org.secure_code,
+            FwWorkflowTemplate.is_deleted == False,
+            FwWorkflowTemplate.is_subprocess == True,
+            FwWorkflowTemplate.parent_workflow_secure_code != None
+        ).group_by(FwWorkflowTemplate.parent_workflow_secure_code).all()
+    )
+
+    # 通用子流程計數：解析每個流程 graph 中的 SubFlow 節點
+    all_child_codes = set()
+    workflow_child_flows = {}
+    for w in workflows:
+        child_codes = []
+        if w.graph:
+            for node in w.graph.get('nodes', []):
+                node_data = node.get('data', {})
+                node_type = (node_data.get('type') or node.get('type') or '').lower()
+                if node_type == 'subflow':
+                    config = node_data.get('config') or node.get('config') or {}
+                    child_id = config.get('childFlowId')
+                    if child_id:
+                        child_codes.append(child_id)
+                        all_child_codes.add(child_id)
+        workflow_child_flows[w.secure_code] = child_codes
+
+    # 批次查詢哪些是通用子流程
+    common_sf_codes = set()
+    if all_child_codes:
+        common_sfs = FwWorkflowTemplate.query.filter(
+            FwWorkflowTemplate.code.in_(all_child_codes),
+            FwWorkflowTemplate.org_secure_code == org.secure_code,
+            FwWorkflowTemplate.is_deleted == False,
+            FwWorkflowTemplate.is_subprocess == True,
+            FwWorkflowTemplate.parent_workflow_secure_code == None
+        ).all()
+        common_sf_codes = {sf.code for sf in common_sfs}
+
     result = []
     for w in workflows:
         d = w.to_dict(include_graph=False)
         d['mapping_count'] = mapping_counts.get(w.id, 0)
         d['parent_workflow_name'] = parent_names.get(w.parent_workflow_secure_code) if w.parent_workflow_secure_code else None
+        d['dedicated_subflow_count'] = dedicated_counts.get(w.secure_code, 0)
+        child_codes = workflow_child_flows.get(w.secure_code, [])
+        d['common_subflow_count'] = len([c for c in child_codes if c in common_sf_codes])
         result.append(d)
 
     return jsonify({

@@ -3,159 +3,50 @@
 {% block title %}工作流模板 - BeakPlatform{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/vendor/bulma.min.css">
 <style>
     [x-cloak] { display: none !important; }
 
-    .fw-container { max-width: 1800px; margin: 0 auto; padding: 16px; }
-    .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-    .fw-header h1 { margin: 0; font-size: 20px; }
-    .fw-toolbar { display: flex; gap: 12px; align-items: center; }
-    .fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
-    .fw-btn:hover { background: #e9e9e9; }
-    .fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
-    .fw-btn.primary:hover { background: #0055aa; }
-    .fw-btn.danger { background: #dc2626; color: white; border-color: #dc2626; }
+    .wf-container { max-width: 1800px; margin: 0 auto; padding: 16px; }
 
-    .fw-card { background: white; border: 1px solid #ddd; }
-    .fw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
-    .fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
-    .fw-table tr:hover { background: #fafafa; }
-    .fw-table .actions { text-align: center; white-space: nowrap; }
-    .fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
+    /* 分類 chips */
+    .wf-filter-bar { display: flex; gap: 6px; padding: 0 0 12px 0; flex-wrap: wrap; }
+    .wf-chip { padding: 5px 12px; font-size: 12px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    .wf-chip:hover { background: #e9e9e9; }
+    .wf-chip.active { background: #0066cc; color: white; border-color: #0066cc; }
+    .wf-chip .chip-count { font-size: 10px; background: rgba(0,0,0,0.1); padding: 1px 5px; border-radius: 8px; }
+    .wf-chip.active .chip-count { background: rgba(255,255,255,0.3); }
 
-    .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; }
-    .fw-badge.active { background: #dcfce7; color: #166534; }
-    .fw-badge.inactive { background: #fee2e2; color: #991b1b; }
-    .fw-badge.info { background: #dbeafe; color: #1e40af; }
+    /* 縮圖 Grid */
+    .thumb-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .thumb-card { background: white; border: 1px solid #ddd; cursor: pointer; overflow: hidden; }
+    .thumb-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .thumb-img { aspect-ratio: 3 / 2; background: #f5f5f5; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; }
+    .thumb-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .thumb-name { padding: 6px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid #eee; }
 
-    .fw-empty { text-align: center; padding: 48px; color: #999; }
-    .fw-loading { text-align: center; padding: 48px; color: #666; }
+    /* 樹系圖 */
+    .tree-view-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border: 1px solid #ddd; }
+    .tree-view-wrap { background: #fafafa; border: 1px solid #ddd; border-top: none; }
+    .tree-view-wrap .chart-container { width: 100%; height: calc(100vh - 220px); min-height: 400px; }
 
-    .fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .fw-modal-content { background: white; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
-    .fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-    .fw-modal-header h3 { margin: 0; font-size: 16px; }
-    .fw-modal-body { padding: 20px; }
-    .fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
-
-    .fw-form-group { margin-bottom: 16px; }
-    .fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-    .fw-form-group input:not([type="checkbox"]), .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
-    .fw-form-group input[type="checkbox"] { width: auto; }
-    .fw-form-group textarea { min-height: 80px; resize: vertical; }
-
-    .fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
-
-    .fw-graph-preview { height: 300px; background: #f5f5f5; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; color: #999; }
-
-    /* 縮圖 Grid 佈局 — 流程 3:2 橫式 */
-    .thumb-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
-    }
-    .thumb-card {
-        background: white;
-        border: 1px solid #ddd;
-        cursor: pointer;
-        overflow: hidden;
-    }
-    .thumb-card:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .thumb-img {
-        aspect-ratio: 3 / 2;
-        background: #f5f5f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px;
-        box-sizing: border-box;
-    }
-    .thumb-img img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .thumb-name {
-        padding: 6px 8px;
-        font-size: 12px;
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        border-top: 1px solid #eee;
-    }
-
-    .view-toggle { display: flex; background: #f0f0f0; padding: 2px; }
-    .view-toggle button { padding: 4px 8px; border: none; font-size: 14px; cursor: pointer; background: transparent; line-height: 1; }
-    .view-toggle button.active { background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-
-    .fw-filter-bar { display: flex; gap: 6px; padding: 0 0 12px 0; flex-wrap: wrap; }
-    .fw-chip { padding: 5px 12px; font-size: 12px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-    .fw-chip:hover { background: #e9e9e9; }
-    .fw-chip.active { background: #0066cc; color: white; border-color: #0066cc; }
-    .fw-chip .chip-count { font-size: 10px; background: rgba(0,0,0,0.1); padding: 1px 5px; border-radius: 8px; }
-    .fw-chip.active .chip-count { background: rgba(255,255,255,0.3); }
-    .fw-table tr.bg-blue-50 { background: #eff6ff; }
-
-    .fw-tab-bar { display: flex; gap: 0; border-bottom: 2px solid #ddd; margin-bottom: 12px; }
-    .fw-tab { padding: 8px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: #666; }
-    .fw-tab:hover { color: #333; }
-    .fw-tab.active { color: #0066cc; border-bottom-color: #0066cc; font-weight: 600; }
-    .fw-tab .tab-count { font-size: 11px; color: #999; margin-left: 4px; }
-    .fw-tab.active .tab-count { color: #0066cc; }
-
-    .fw-badge.subflow { background: #fef3c7; color: #92400e; }
-    .fw-badge.dedicated { background: #fce7f3; color: #9d174d; }
-    .fw-badge.main { background: #e0e7ff; color: #3730a3; }
-
-    /* 樹系圖內嵌視圖 */
-    .tree-view-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        background: #fff;
-        border: 1px solid #ddd;
-        margin-bottom: 0;
-    }
-    .tree-view-toolbar .tb-label {
-        font-size: 14px;
-        font-weight: 600;
-        color: #1f2937;
-    }
-    .tree-view-toolbar .tb-sub {
-        font-size: 12px;
-        color: #9ca3af;
-    }
-    .tree-view-wrap {
-        background: #fafafa;
-        border: 1px solid #ddd;
-        border-top: none;
-    }
-    .tree-view-wrap .chart-container {
-        width: 100%;
-        height: calc(100vh - 220px);
-        min-height: 400px;
-    }
-
+    /* Bulma table 微調 */
+    .table td, .table th { font-size: 13px; vertical-align: middle; }
+    .table td.actions { white-space: nowrap; }
+    .table tr.is-selected { background: #eff6ff; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="fw-container" x-data="workflowListManager()">
+<div class="wf-container" x-data="workflowListManager()">
 
     <!-- 樹系圖內嵌視圖 -->
     <div x-show="treeView.active" x-cloak>
         <div class="tree-view-toolbar">
-            <button class="fw-btn" @click="fitTree()">置中</button>
-            <button class="fw-btn" @click="closeTree()">關閉</button>
-            <span class="tb-label" x-text="treeView.name || ''"></span>
-            <span class="tb-sub" x-text="treeView.code || ''"></span>
+            <button class="button is-small" @click="fitTree()">置中</button>
+            <button class="button is-small" @click="closeTree()">關閉</button>
+            <span class="has-text-weight-semibold" x-text="treeView.name || ''"></span>
+            <span class="has-text-grey-light is-size-7" x-text="treeView.code || ''"></span>
         </div>
         <div class="tree-view-wrap">
             <div id="inline-tree-chart" class="chart-container"></div>
@@ -163,123 +54,151 @@
     </div>
 
     <!-- 頁首 -->
-    <div class="fw-header" x-show="!treeView.active">
-        <div>
-            <h1>工作流模板管理</h1>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理流程定義與節點配置</p>
-        </div>
-        <div class="fw-toolbar">
-            <input type="text" x-model="searchQuery" @input.debounce.300ms="loadWorkflows()"
-                   placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
-            <div class="view-toggle">
-                <button @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
-                        :class="viewMode === 'list' ? 'active' : ''" title="清單模式">
-                    <i class="ri-list-unordered"></i>
-                </button>
-                <button @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
-                        :class="viewMode === 'grid' ? 'active' : ''" title="縮圖模式">
-                    <i class="ri-layout-grid-fill"></i>
-                </button>
+    <div class="level mb-4" x-show="!treeView.active">
+        <div class="level-left">
+            <div class="level-item">
+                <div>
+                    <h1 class="title is-5 mb-1">工作流模板管理</h1>
+                    <p class="is-size-7 has-text-grey">管理流程定義與節點配置</p>
+                </div>
             </div>
-            <button class="fw-btn" @click="loadWorkflows()">重新載入</button>
-            <button class="fw-btn primary" @click="openCreateModal()">+ 新增工作流</button>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <input class="input is-small" type="text" x-model="searchQuery"
+                       @input.debounce.300ms="loadWorkflows()" placeholder="搜尋..."
+                       style="width: 200px;">
+            </div>
+            <div class="level-item">
+                <div class="buttons has-addons mb-0">
+                    <button class="button is-small" :class="viewMode === 'list' ? 'is-info is-selected' : ''"
+                            @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
+                            title="清單模式">
+                        <span class="icon is-small"><i class="ri-list-unordered"></i></span>
+                    </button>
+                    <button class="button is-small" :class="viewMode === 'grid' ? 'is-info is-selected' : ''"
+                            @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
+                            title="縮圖模式">
+                        <span class="icon is-small"><i class="ri-layout-grid-fill"></i></span>
+                    </button>
+                </div>
+            </div>
+            <div class="level-item">
+                <button class="button is-small" @click="loadWorkflows()">重新載入</button>
+            </div>
+            <div class="level-item">
+                <button class="button is-small is-link" @click="openCreateModal()">+ 新增工作流</button>
+            </div>
         </div>
     </div>
 
     <!-- 流程類型 Tab -->
-    <div x-show="!loading && !treeView.active" class="fw-tab-bar">
-        <div class="fw-tab" :class="{ active: flowType === 'main' }"
-             @click="flowType = 'main'; loadWorkflows()">
-            主流程 <span class="tab-count" x-text="'(' + totalCounts.main + ')'"></span>
-        </div>
-        <div class="fw-tab" :class="{ active: flowType === 'subflow' }"
-             @click="flowType = 'subflow'; loadWorkflows()">
-            通用子流程 <span class="tab-count" x-text="'(' + totalCounts.subflow + ')'"></span>
-        </div>
+    <div x-show="!loading && !treeView.active" class="tabs is-small mb-3">
+        <ul>
+            <li :class="{ 'is-active': flowType === 'main' }">
+                <a @click.prevent="flowType = 'main'; loadWorkflows()">
+                    主流程 <span class="has-text-grey ml-1" x-text="'(' + totalCounts.main + ')'"></span>
+                </a>
+            </li>
+            <li :class="{ 'is-active': flowType === 'subflow' }">
+                <a @click.prevent="flowType = 'subflow'; loadWorkflows()">
+                    通用子流程 <span class="has-text-grey ml-1" x-text="'(' + totalCounts.subflow + ')'"></span>
+                </a>
+            </li>
+        </ul>
     </div>
 
-    <!-- 分類篩選（父/子二層 chips）-->
-    <div x-show="!loading && !treeView.active" class="fw-filter-bar">
+    <!-- 分類篩選 chips -->
+    <div x-show="!loading && !treeView.active" class="wf-filter-bar">
         <template x-for="cat in flatCategories" :key="cat.secure_code">
-            <div class="fw-chip" :class="{ active: selectedCategory === cat.secure_code }" @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
-                <span x-text="cat.display"></span> <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
+            <div class="wf-chip" :class="{ active: selectedCategory === cat.secure_code }"
+                 @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
+                <span x-text="cat.display"></span>
+                <span class="chip-count" x-text="getCategoryCount(cat.secure_code)"></span>
             </div>
         </template>
     </div>
 
-    <!-- 表格 -->
-    <div class="fw-card" x-show="!treeView.active">
-        <div x-show="loading" class="fw-loading">載入中...</div>
+    <!-- 主內容區 -->
+    <div class="box p-0" x-show="!treeView.active">
+        <div x-show="loading" class="has-text-centered p-6 has-text-grey">載入中...</div>
 
-        <div x-show="!loading && filteredWorkflows.length === 0" class="fw-empty">
-            <p style="font-size: 16px; margin-bottom: 8px;">尚無工作流模板</p>
+        <div x-show="!loading && filteredWorkflows.length === 0" class="has-text-centered p-6 has-text-grey">
+            <p class="is-size-6 mb-2">尚無工作流模板</p>
             <p>點擊「新增工作流」開始建立</p>
         </div>
 
         <!-- 批次工具列 -->
         <div x-show="!loading && selectedItems.length > 0 && viewMode === 'list'"
-             style="padding: 8px 12px; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px; font-size: 13px;">
-            <span style="font-weight: 500;">已選 <strong x-text="selectedItems.length"></strong> 項</span>
-            <button class="fw-btn" @click="invertSelection()" style="padding: 4px 10px;">反選</button>
-            <button class="fw-btn primary" @click="batchSaveNewVersion()" :disabled="batchProcessing" style="padding: 4px 10px;">另存新版</button>
-            <button class="fw-btn danger" @click="batchDelete()" :disabled="batchProcessing" style="padding: 4px 10px;">刪除</button>
-            <span x-show="batchProcessing" style="color: #666;">處理中...</span>
+             class="px-3 py-2" style="background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px;">
+            <span class="is-size-7 has-text-weight-medium">已選 <strong x-text="selectedItems.length"></strong> 項</span>
+            <button class="button is-small" @click="invertSelection()">反選</button>
+            <button class="button is-small is-link" @click="batchSaveNewVersion()" :disabled="batchProcessing">另存新版</button>
+            <button class="button is-small is-danger" @click="batchDelete()" :disabled="batchProcessing">刪除</button>
+            <span x-show="batchProcessing" class="is-size-7 has-text-grey">處理中...</span>
         </div>
 
         <!-- 清單模式 -->
-        <table x-show="!loading && filteredWorkflows.length > 0 && viewMode === 'list'" class="fw-table">
+        <table x-show="!loading && filteredWorkflows.length > 0 && viewMode === 'list'"
+               class="table is-fullwidth is-hoverable is-narrow mb-0">
             <thead>
                 <tr>
                     <th style="width: 40px; text-align: center;">
-                        <input type="checkbox" @change="toggleSelectAll()" :checked="selectedItems.length > 0 && selectedItems.length === filteredWorkflows.length">
+                        <input type="checkbox" @change="toggleSelectAll()"
+                               :checked="selectedItems.length > 0 && selectedItems.length === filteredWorkflows.length">
                     </th>
-                    <th style="width: 200px;">名稱</th>
-                    <th style="width: 70px;">類型</th>
+                    <th style="width: 300px;">名稱</th>
                     <th style="width: 120px;">代碼</th>
                     <th>描述</th>
-                    <th style="width: 60px;">版本</th>
-                    <th style="width: 80px;">節點數</th>
-                    <th style="width: 60px; text-align: center;">配對</th>
-                    <th style="width: 80px;">狀態</th>
-                    <th style="width: 140px;">更新時間</th>
-                    <th style="width: 150px;" class="actions">操作</th>
+                    <th style="width: 55px;">版本</th>
+                    <th style="width: 50px; text-align: center;">專屬</th>
+                    <th style="width: 50px; text-align: center;">通用</th>
+                    <th style="width: 55px; text-align: center;">配對</th>
+                    <th style="width: 70px;">狀態</th>
+                    <th style="width: 130px;">更新時間</th>
+                    <th style="width: 220px; text-align: center;">操作</th>
                 </tr>
             </thead>
             <tbody>
                 <template x-for="w in filteredWorkflows" :key="w.secure_code">
-                    <tr :class="selectedItems.includes(w.secure_code) ? 'bg-blue-50' : ''">
+                    <tr :class="selectedItems.includes(w.secure_code) ? 'is-selected' : ''">
                         <td style="text-align: center;">
-                            <input type="checkbox" :value="w.secure_code" :checked="selectedItems.includes(w.secure_code)" @change="toggleSelect(w.secure_code)">
+                            <input type="checkbox" :value="w.secure_code"
+                                   :checked="selectedItems.includes(w.secure_code)"
+                                   @change="toggleSelect(w.secure_code)">
                         </td>
-                        <td style="font-weight: 500;" x-text="w.name"></td>
-                        <td>
-                            <span class="fw-badge" :class="w.is_subprocess ? (w.parent_workflow_secure_code ? 'dedicated' : 'subflow') : 'main'"
-                                  x-text="w.is_subprocess ? (w.parent_workflow_secure_code ? '專屬子流程' : '通用子流程') : '主流程'"></span>
-                        </td>
-                        <td style="font-family: monospace; color: #666;" x-text="w.code || '-'"></td>
-                        <td style="color: #666;" x-text="truncate(w.description, 50)"></td>
-                        <td style="font-family: monospace; color: #999; font-size: 12px;" x-text="(w.version || 'AA') + (w.revision || '')"></td>
-                        <td style="text-align: center;" x-text="w.node_count || 0"></td>
+                        <td class="has-text-weight-medium" x-text="w.name"></td>
+                        <td style="font-family: monospace;" class="has-text-grey" x-text="w.code || '-'"></td>
+                        <td class="has-text-grey" style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="firstLine(w.description)"></td>
+                        <td style="font-family: monospace;" class="has-text-grey-light is-size-7"
+                            x-text="(w.version || 'AA') + (w.revision || '')"></td>
                         <td style="text-align: center;">
-                            <span x-show="w.mapping_count > 0" class="fw-badge info" x-text="w.mapping_count"></span>
-                            <span x-show="!w.mapping_count" style="color: #999; font-size: 12px;">-</span>
+                            <span x-show="w.dedicated_subflow_count > 0" class="tag is-small is-danger is-light"
+                                  x-text="w.dedicated_subflow_count"></span>
+                            <span x-show="!w.dedicated_subflow_count" class="has-text-grey-lighter is-size-7">-</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span x-show="w.common_subflow_count > 0" class="tag is-small is-warning is-light"
+                                  x-text="w.common_subflow_count"></span>
+                            <span x-show="!w.common_subflow_count" class="has-text-grey-lighter is-size-7">-</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span x-show="w.mapping_count > 0" class="tag is-small is-link is-light"
+                                  x-text="w.mapping_count"></span>
+                            <span x-show="!w.mapping_count" class="has-text-grey-lighter is-size-7">-</span>
                         </td>
                         <td>
-                            <span class="fw-badge" :class="w.is_active ? 'active' : 'inactive'"
+                            <span class="tag is-small"
+                                  :class="w.is_active ? 'is-success is-light' : 'is-danger is-light'"
                                   x-text="w.is_active ? '啟用' : '停用'"></span>
                         </td>
-                        <td style="color: #999; font-size: 12px;" x-text="formatDate(w.updated_at)"></td>
-                        <td class="actions">
-                            <button class="fw-btn" @click="editWorkflow(w)">編輯</button>
-                            <template x-if="!w.is_subprocess">
-                                <button class="fw-btn" @click="openTree(w)">樹系圖</button>
-                            </template>
-                            <template x-if="w.is_subprocess">
-                                <button class="fw-btn" @click="openTree(w)">
-                                    樹系圖 <span style="color:#9ca3af;" x-text="w.parent_workflow_name || '通用'"></span>
-                                </button>
-                            </template>
-                            <button class="fw-btn danger" @click="confirmDelete(w)">刪除</button>
+                        <td class="has-text-grey is-size-7" x-text="formatDate(w.updated_at)"></td>
+                        <td class="actions" style="text-align: center;">
+                            <div class="buttons are-small is-centered mb-0">
+                                <button class="button is-small" @click="editWorkflow(w)">編輯</button>
+                                <button class="button is-small" @click="openTree(w)">樹系圖</button>
+                                <button class="button is-small is-danger is-light" @click="confirmDelete(w)">刪除</button>
+                            </div>
                         </td>
                     </tr>
                 </template>
@@ -287,13 +206,19 @@
         </table>
 
         <!-- 分頁 -->
-        <div x-show="!loading && pagination.pages > 1 && viewMode === 'list'" class="fw-pagination">
-            <span style="font-size: 12px; color: #666;">
-                共 <strong x-text="pagination.total"></strong> 項，第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
-            </span>
-            <div style="display: flex; gap: 4px;">
-                <button class="fw-btn" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
-                <button class="fw-btn" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
+        <div x-show="!loading && pagination.pages > 1 && viewMode === 'list'"
+             class="level px-4 py-3" style="background: #f9f9f9; border-top: 1px solid #eee;">
+            <div class="level-left">
+                <span class="is-size-7 has-text-grey">
+                    共 <strong x-text="pagination.total"></strong> 項，
+                    第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
+                </span>
+            </div>
+            <div class="level-right">
+                <div class="buttons are-small mb-0">
+                    <button class="button is-small" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
+                    <button class="button is-small" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
+                </div>
             </div>
         </div>
     </div>
@@ -314,94 +239,107 @@
     </template>
 
     <!-- 新增/編輯 Modal -->
-    <div x-show="showModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content">
-            <div class="fw-modal-header">
-                <h3 x-text="editingWorkflow ? '編輯工作流' : '新增工作流'"></h3>
-                <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-            </div>
+    <div class="modal" :class="showModal ? 'is-active' : ''" x-cloak>
+        <div class="modal-background"></div>
+        <div class="modal-card" style="width: 500px; max-width: 90%;">
+            <header class="modal-card-head py-3">
+                <p class="modal-card-title is-size-6" x-text="editingWorkflow ? '編輯工作流' : '新增工作流'"></p>
+                <button class="delete" @click="closeModal()"></button>
+            </header>
             <form @submit.prevent="saveWorkflow()">
-                <div class="fw-modal-body">
-                    <div class="fw-form-group">
-                        <label>名稱 *</label>
-                        <input type="text" x-model="formData.name" required placeholder="例：請假審批流程">
+                <section class="modal-card-body">
+                    <div class="field">
+                        <label class="label is-small">名稱 *</label>
+                        <div class="control">
+                            <input class="input is-small" type="text" x-model="formData.name" required placeholder="例：請假審批流程">
+                        </div>
                     </div>
-                    <div class="fw-form-group">
-                        <label>代碼</label>
-                        <input type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
+                    <div class="field">
+                        <label class="label is-small">代碼</label>
+                        <div class="control">
+                            <input class="input is-small" type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
+                        </div>
                     </div>
-                    <div class="fw-form-group">
-                        <label>分類</label>
-                        <select x-model="formData.category_secure_code">
-                            <template x-for="parent in categories" :key="parent.secure_code">
-                                <template x-if="(parent.children || []).length > 0">
-                                    <optgroup :label="parent.name">
-                                        <template x-for="child in parent.children" :key="child.secure_code">
-                                            <option :value="child.secure_code" x-text="child.name"></option>
+                    <div class="field">
+                        <label class="label is-small">分類</label>
+                        <div class="control">
+                            <div class="select is-small is-fullwidth">
+                                <select x-model="formData.category_secure_code">
+                                    <template x-for="parent in categories" :key="parent.secure_code">
+                                        <template x-if="(parent.children || []).length > 0">
+                                            <optgroup :label="parent.name">
+                                                <template x-for="child in parent.children" :key="child.secure_code">
+                                                    <option :value="child.secure_code" x-text="child.name"></option>
+                                                </template>
+                                            </optgroup>
                                         </template>
-                                    </optgroup>
-                                </template>
-                            </template>
-                            <template x-for="parent in categories" :key="'solo-' + parent.secure_code">
-                                <template x-if="(parent.children || []).length === 0">
-                                    <option :value="parent.secure_code" x-text="parent.name"></option>
-                                </template>
-                            </template>
-                        </select>
+                                    </template>
+                                    <template x-for="parent in categories" :key="'solo-' + parent.secure_code">
+                                        <template x-if="(parent.children || []).length === 0">
+                                            <option :value="parent.secure_code" x-text="parent.name"></option>
+                                        </template>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="fw-form-group">
-                        <label>描述</label>
-                        <textarea x-model="formData.description" placeholder="簡述此工作流的用途"></textarea>
+                    <div class="field">
+                        <label class="label is-small">描述</label>
+                        <div class="control">
+                            <textarea class="textarea is-small" x-model="formData.description" placeholder="簡述此工作流的用途" rows="3"></textarea>
+                        </div>
                     </div>
-                    <div class="fw-form-group" x-show="!editingWorkflow">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <div class="field" x-show="!editingWorkflow">
+                        <label class="checkbox is-size-7">
                             <input type="checkbox" x-model="formData.is_subprocess">
-                            <span>設為通用子流程</span>
+                            設為通用子流程
                         </label>
                     </div>
-                    <div class="fw-form-group">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <div class="field">
+                        <label class="checkbox is-size-7">
                             <input type="checkbox" x-model="formData.is_active">
-                            <span>啟用</span>
+                            啟用
                         </label>
                     </div>
-                </div>
-                <div class="fw-modal-footer">
-                    <button type="button" class="fw-btn" @click="closeModal()">取消</button>
-                    <button type="submit" class="fw-btn primary" :disabled="saving">
+                </section>
+                <footer class="modal-card-foot py-3" style="justify-content: flex-end;">
+                    <button type="button" class="button is-small" @click="closeModal()">取消</button>
+                    <button type="submit" class="button is-small is-link" :disabled="saving">
                         <span x-show="!saving" x-text="editingWorkflow ? '儲存變更' : '建立工作流'"></span>
                         <span x-show="saving">處理中...</span>
                     </button>
-                </div>
+                </footer>
             </form>
         </div>
     </div>
 
     <!-- 刪除確認 Modal -->
-    <div x-show="showDeleteModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content" style="width: 450px;">
-            <div class="fw-modal-header">
-                <h3>確認刪除</h3>
-                <button @click="showDeleteModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-            </div>
-            <div class="fw-modal-body">
+    <div class="modal" :class="showDeleteModal ? 'is-active' : ''" x-cloak>
+        <div class="modal-background"></div>
+        <div class="modal-card" style="width: 450px;">
+            <header class="modal-card-head py-3">
+                <p class="modal-card-title is-size-6">確認刪除</p>
+                <button class="delete" @click="showDeleteModal = false"></button>
+            </header>
+            <section class="modal-card-body">
                 <p>確定要刪除「<strong x-text="deletingWorkflow?.name"></strong>」嗎？</p>
-                <div x-show="deleteWarnings.length > 0" style="margin: 12px 0; padding: 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px;">
-                    <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 8px;">此流程已被以下配對使用：</p>
+                <div x-show="deleteWarnings.length > 0"
+                     class="notification is-warning is-light is-size-7 mt-3 p-3">
+                    <p class="has-text-weight-semibold mb-2">此流程已被以下配對使用：</p>
                     <template x-for="(w, i) in deleteWarnings" :key="i">
-                        <p style="color: #92400e; font-size: 12px; margin: 4px 0; padding-left: 8px;">
+                        <p class="ml-3">
                             - 表單：<span x-text="w.form_name"></span>
-                            <span x-show="w.is_published" style="color: #dc2626; font-weight: 500;">（已發行）</span>
+                            <span x-show="w.is_published" class="has-text-danger has-text-weight-medium">（已發行）</span>
                         </p>
                     </template>
-                    <p style="color: #b45309; font-size: 12px; margin: 8px 0 0;">刪除後配對將無法重新發行，但不影響已執行的流程。</p>
+                    <p class="mt-2 has-text-warning-dark">刪除後配對將無法重新發行，但不影響已執行的流程。</p>
                 </div>
-                <p style="color: #dc2626; font-size: 13px;">此操作無法復原。</p>
-            </div>
-            <div class="fw-modal-footer">
-                <button class="fw-btn" @click="showDeleteModal = false">取消</button>
-                <button class="fw-btn danger" @click="deleteWorkflow()">確認刪除</button>
-            </div>
+                <p class="has-text-danger is-size-7 mt-3">此操作無法復原。</p>
+            </section>
+            <footer class="modal-card-foot py-3" style="justify-content: flex-end;">
+                <button class="button is-small" @click="showDeleteModal = false">取消</button>
+                <button class="button is-small is-danger" @click="deleteWorkflow()">確認刪除</button>
+            </footer>
         </div>
     </div>
 
@@ -418,11 +356,11 @@ function workflowListManager() {
         workflows: [],
         loading: true,
         searchQuery: '',
-        flowType: 'main',  // 'main' | 'subflow'
+        flowType: 'main',
         totalCounts: { main: 0, subflow: 0 },
         treeView: { active: false, name: '', code: '', chart: null },
-        viewMode: localStorage.getItem('workflows_view_mode') || 'grid',
-        selectedCategory: null,  // 子分類 secure_code
+        viewMode: localStorage.getItem('workflows_view_mode') || 'list',
+        selectedCategory: null,
         selectedItems: [],
         batchProcessing: false,
         pagination: { page: 1, pages: 1, total: 0, has_prev: false, has_next: false },
@@ -430,8 +368,8 @@ function workflowListManager() {
         showModal: false,
         editingWorkflow: null,
         formData: { name: '', code: '', description: '', category_secure_code: '', is_active: true, is_subprocess: false },
-        categories: [],       // 樹狀 [{...parent, children: [...]}]
-        flatCategories: [],   // 展開的子分類 [{secure_code, name, display, parent_name}]
+        categories: [],
+        flatCategories: [],
         saving: false,
 
         showDeleteModal: false,
@@ -440,7 +378,6 @@ function workflowListManager() {
 
         async init() {
             await this.loadCategories();
-            // 預設選分類：localStorage > 第一個分類
             const saved = localStorage.getItem('workflows_filter_category');
             if (saved && this.flatCategories.some(c => c.secure_code === saved)) {
                 this.selectedCategory = saved;
@@ -456,8 +393,6 @@ function workflowListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
-                    // 展開為扁平分類清單（給 chips 用）
-                    // 有子 → 列子分類；無子 → 列父分類自己
                     const flat = [];
                     this.categories.forEach(parent => {
                         const children = parent.children || [];
@@ -479,13 +414,11 @@ function workflowListManager() {
                             });
                         }
                     });
-                    // 若分類中沒有「其他」，自動追加以收納無分類流程
                     const hasOther = flat.some(c => c.name === '其他');
                     if (!hasOther) {
                         flat.push({ secure_code: '__uncategorized__', name: '其他', parent_name: null, display: '其他' });
                     }
                     this.flatCategories = flat;
-                    // 設定 formData 預設分類
                     if (flat.length > 1 && !this.formData.category_secure_code) {
                         this.formData.category_secure_code = flat[0].secure_code;
                     }
@@ -508,8 +441,6 @@ function workflowListManager() {
                     this.workflows = data.data.workflows || [];
                     this.pagination = data.data.pagination || this.pagination;
                 }
-
-                // 更新 Tab 計數（不帶 flow_type，取得全部再計算）
                 this._updateTabCounts();
             } catch (e) {
                 console.error('載入失敗:', e);
@@ -548,7 +479,6 @@ function workflowListManager() {
         },
 
         editWorkflow(w) {
-            // 直接跳轉到設計器頁面
             window.location.href = `/forms/workflows/${w.secure_code}`;
         },
 
@@ -560,23 +490,19 @@ function workflowListManager() {
         async saveWorkflow() {
             if (this.saving) return;
             this.saving = true;
-
             try {
                 const url = this.editingWorkflow
                     ? `/api/form-workflow/workflows/${this.editingWorkflow.secure_code}`
                     : '/api/form-workflow/workflows';
                 const method = this.editingWorkflow ? 'PUT' : 'POST';
-
                 const res = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.formData)
                 });
                 const data = await res.json();
-
                 if (data.success) {
                     if (!this.editingWorkflow && data.data && data.data.secure_code) {
-                        // 新增成功後跳轉到設計器
                         window.location.href = `/forms/workflows/${data.data.secure_code}?created=1`;
                     } else {
                         this.closeModal();
@@ -602,17 +528,13 @@ function workflowListManager() {
                 this.treeView.name = tree.name;
                 this.treeView.code = tree.code;
                 this.treeView.active = true;
-
                 this.$nextTick(() => {
                     setTimeout(() => {
                         this.treeView.chart = WorkflowTreeChart.render(
-                            '#inline-tree-chart',
-                            [tree],
-                            {
-                                onNodeClick: function (nodeData) {
-                                    window.location.href = '/api/workflows/designer/standalone?id=' + nodeData.id + '&from=tree&root=' + rootCode;
-                                }
-                            }
+                            '#inline-tree-chart', [tree],
+                            { onNodeClick: function (nodeData) {
+                                window.location.href = '/api/workflows/designer/standalone?id=' + nodeData.id + '&from=tree&root=' + rootCode;
+                            }}
                         );
                     }, 50);
                 });
@@ -628,9 +550,7 @@ function workflowListManager() {
         },
 
         fitTree() {
-            if (this.treeView.chart) {
-                this.treeView.chart.fit();
-            }
+            if (this.treeView.chart) this.treeView.chart.fit();
         },
 
         async confirmDelete(w) {
@@ -648,13 +568,9 @@ function workflowListManager() {
 
         async deleteWorkflow() {
             if (!this.deletingWorkflow) return;
-
             try {
-                const res = await fetch(`/api/form-workflow/workflows/${this.deletingWorkflow.secure_code}`, {
-                    method: 'DELETE'
-                });
+                const res = await fetch(`/api/form-workflow/workflows/${this.deletingWorkflow.secure_code}`, { method: 'DELETE' });
                 const data = await res.json();
-
                 if (data.success) {
                     this.showDeleteModal = false;
                     this.deletingWorkflow = null;
@@ -693,6 +609,11 @@ function workflowListManager() {
         truncate(str, len) {
             if (!str) return '-';
             return str.length > len ? str.substring(0, len) + '...' : str;
+        },
+
+        firstLine(str) {
+            if (!str) return '-';
+            return str.split('\n')[0] || '-';
         },
 
         toggleSelect(sc) {

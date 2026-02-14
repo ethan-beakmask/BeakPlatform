@@ -2287,14 +2287,15 @@
             console.log('  ✓ 顯示操作按鈕並啟用');
 
             // 顯示流程資訊
-            document.getElementById('workflow-info').style.display = 'block';
+            document.getElementById('workflow-info').style.display = 'flex';
             document.getElementById('current-workflow-name').value = workflowName || '未命名流程';
             document.getElementById('current-workflow-version').textContent = workflowVersion ? `版本 ${workflowVersion}` : 'v1.0';
             const categorySelect = document.getElementById('current-workflow-category');
             if (categorySelect) {
                 categorySelect.value = workflowCategory || '';
             }
-            document.getElementById('current-workflow-description').value = workflowDescription || '';
+            const descPreview = (workflowDescription || '').split('\n')[0];
+            document.getElementById('current-workflow-description').value = descPreview;
             console.log('  ✓ 更新流程資訊顯示');
         }
 
@@ -2303,10 +2304,9 @@
             if (!currentWorkflowId) return;
 
             const nameInput = document.getElementById('current-workflow-name');
-            const descInput = document.getElementById('current-workflow-description');
             const categoryInput = document.getElementById('current-workflow-category');
             const newName = nameInput.value.trim();
-            const newDescription = descInput.value.trim();
+            const newDescription = currentWorkflow?.description || '';
             const newCategorySc = categoryInput ? categoryInput.value : '';
 
             if (!newName) {
@@ -2349,8 +2349,45 @@
                 console.error('❌ 更新流程資訊失敗:', error);
                 updateStatus('更新流程資訊失敗', 'warning');
                 nameInput.value = currentWorkflow?.name || '未命名流程';
-                descInput.value = currentWorkflow?.description || '';
+                document.getElementById('current-workflow-description').value = (currentWorkflow?.description || '').split('\n')[0];
                 if (categoryInput) categoryInput.value = currentWorkflow?.category_secure_code || '';
+            }
+        }
+
+        // 描述編輯 Modal
+        window.openDescriptionModal = openDescriptionModal;
+        window.closeDescriptionModal = closeDescriptionModal;
+        window.saveDescription = saveDescription;
+
+        function openDescriptionModal() {
+            const textarea = document.getElementById('description-modal-textarea');
+            textarea.value = currentWorkflow?.description || '';
+            document.getElementById('description-modal').style.display = 'flex';
+            textarea.focus();
+        }
+
+        function closeDescriptionModal() {
+            document.getElementById('description-modal').style.display = 'none';
+        }
+
+        async function saveDescription() {
+            const fullText = document.getElementById('description-modal-textarea').value;
+            closeDescriptionModal();
+            document.getElementById('current-workflow-description').value = fullText.split('\n')[0];
+            if (!currentWorkflowId) return;
+            try {
+                const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: fullText })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                currentWorkflow.description = fullText;
+                updateStatus('✅ 已更新描述', 'info');
+            } catch (error) {
+                console.error('❌ 更新描述失敗:', error);
+                updateStatus('更新描述失敗', 'warning');
+                document.getElementById('current-workflow-description').value = (currentWorkflow?.description || '').split('\n')[0];
             }
         }
 
@@ -2487,7 +2524,7 @@
 
                 const requestBody = {
                     name: document.getElementById('current-workflow-name')?.value,
-                    description: document.getElementById('current-workflow-description')?.value
+                    description: currentWorkflow?.description || ''
                 };
 
                 // 如果有指定目標節點
@@ -3045,6 +3082,14 @@
                 console.log('  配置來源:', workflow.cytoscape_config ? 'cytoscape_config' : (workflow.graph ? 'graph' : '空配置'));
 
                 renderWorkflow(config);
+
+                // 新建流程（版本 AA 且未儲存過）自動適應視圖
+                const ver = workflow.version || 'AA';
+                const rev = workflow.revision || 0;
+                if (ver === 'AA' && !rev) {
+                    cy.fit(cy.elements(), 80);
+                }
+
                 updateStatus(`已載入流程：${workflow.name}`);
 
                 // 解鎖界面並顯示流程資訊
@@ -7694,10 +7739,7 @@
             try {
                 console.log('📸 開始生成縮圖...');
 
-                // 先調整視圖以顯示所有內容（padding 縮小讓節點更大）
-                cy.fit(cy.elements(), 20);
-
-                // 使用 Cytoscape 的 PNG 導出功能，獲取 base64 字串
+                // 使用 Cytoscape 的 PNG 導出功能，full: true 會自動涵蓋所有元素範圍
                 const pngBase64Raw = cy.png({
                     output: 'base64',
                     bg: 'white',
