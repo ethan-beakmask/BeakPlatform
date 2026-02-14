@@ -128,6 +128,27 @@
 - [x] `numbering-edit.css` 移除 .help-text 重複 (161→156 行)
 - [x] `.help-text` 顏色統一為 #666（原 common.css #999, user-form/numbering-edit #888）
 
+## 剩餘小型模板 — 不處理（均 <300 行，無須抽離）
+
+| 內嵌 CSS | 總行數 | 檔案 |
+|---:|---:|:---|
+| 85 | 186 | `admin/numbering/list.html` |
+| 83 | 150 | `auth/org_public_login.html` |
+| 67 | 229 | `personal_settings.html` |
+| 64 | 190 | `menu/list.html` |
+| 59 | 183 | `users/import.html` |
+| 59 | 80 | `public/index.html` |
+| 58 | 91 | `auth/org_public.html` |
+| 56 | 101 | `public/about.html` |
+| 49 | 103 | `change_password.html` |
+| 48 | 183 | `job_titles/list.html` |
+| 34 | 65 | `dev/index.html` |
+| 14 | 37 | `test_grid.html` |
+| 3 | 298 | `roles/edit.html` |
+| 3 | 145 | `roles/list.html` |
+
+> 決策：檔案規模太小，抽離效益不高，標記為不處理。(2026-02-15)
+
 ---
 
 ## 共用靜態檔案清單

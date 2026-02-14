@@ -35,35 +35,35 @@
             opacity: 0.5;
         }
 
-        .navbar {
+        .bk-navbar {
             background: white;
             border-bottom: 1px solid #ccc;
             padding: 8px 16px;
         }
-        .navbar a { text-decoration: none; }
-        .navbar-content {
+        .bk-navbar a { text-decoration: none; }
+        .bk-navbar-content {
             display: flex;
             align-items: center;
         }
-        .navbar-logo {
+        .bk-navbar-logo {
             font-weight: bold;
             font-size: 16px;
             color: #333;
             margin-right: auto;
         }
-        .navbar-user { margin-left: 16px; color: #666; }
+        .bk-navbar-user { margin-left: 16px; color: #666; }
 
-        .menubar {
+        .bk-menubar {
             background: #333;
             padding: 4px 16px;
         }
-        .menubar a {
+        .bk-menubar a {
             color: #ccc;
             text-decoration: none;
             padding: 8px 12px;
             display: inline-block;
         }
-        .menubar a:hover { color: white; background: #444; }
+        .bk-menubar a:hover { color: white; background: #444; }
 
         /* ========================================
            權限等級視覺標記
@@ -73,52 +73,52 @@
            ======================================== */
 
         /* 系統級選單：紅底 */
-        .menubar a.bg-system,
-        .menu-trigger.bg-system {
+        .bk-menubar a.bg-system,
+        .bk-menu-trigger.bg-system {
             background: #c62828;
             color: white;
         }
-        .menubar a.bg-system:hover,
-        .menu-trigger.bg-system:hover {
+        .bk-menubar a.bg-system:hover,
+        .bk-menu-trigger.bg-system:hover {
             background: #b71c1c;
             color: white;
         }
 
         /* 企業管理員選單：藍底 */
-        .menubar a.bg-admin,
-        .menu-trigger.bg-admin {
+        .bk-menubar a.bg-admin,
+        .bk-menu-trigger.bg-admin {
             background: #1565c0;
             color: white;
         }
-        .menubar a.bg-admin:hover,
-        .menu-trigger.bg-admin:hover {
+        .bk-menubar a.bg-admin:hover,
+        .bk-menu-trigger.bg-admin:hover {
             background: #0d47a1;
             color: white;
         }
 
         /* 跨權限：黃色字體 (優先級高於底色的字體設定) */
-        .menubar a.cross-level,
-        .menu-trigger.cross-level {
+        .bk-menubar a.cross-level,
+        .bk-menu-trigger.cross-level {
             color: #ffd600 !important;
         }
-        .menubar a.cross-level:hover,
-        .menu-trigger.cross-level:hover {
+        .bk-menubar a.cross-level:hover,
+        .bk-menu-trigger.cross-level:hover {
             color: #ffea00 !important;
         }
 
-        .menubar-sep { color: #666; margin: 0 4px; }
-        .menu-dropdown {
+        .bk-menubar-sep { color: #666; margin: 0 4px; }
+        .bk-menu-dropdown {
             display: inline-block;
             position: relative;
         }
-        .menu-trigger {
+        .bk-menu-trigger {
             color: #ccc;
             padding: 8px 12px;
             display: inline-block;
             cursor: pointer;
         }
-        .menu-trigger:hover { color: white; background: #444; }
-        .menu-dropdown-content {
+        .bk-menu-trigger:hover { color: white; background: #444; }
+        .bk-menu-dropdown-content {
             display: none;
             position: absolute;
             top: 100%;
@@ -128,8 +128,8 @@
             z-index: 100;
             border-radius: 0 0 4px 4px;
         }
-        .menu-dropdown:hover .menu-dropdown-content { display: block; }
-        .menu-dropdown-content a {
+        .bk-menu-dropdown:hover .bk-menu-dropdown-content { display: block; }
+        .bk-menu-dropdown-content a {
             display: block;
             padding: 8px 12px;
         }
@@ -144,10 +144,10 @@
 <body>
     {% if current_user.is_authenticated %}
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="navbar-content">
-            <a href="{{ url_for('main.dashboard') }}" class="navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
-            <span class="navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
+    <div class="bk-navbar">
+        <div class="bk-navbar-content">
+            <a href="{{ url_for('main.dashboard') }}" class="bk-navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+            <span class="bk-navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">{{ _('登出') }}</button>
@@ -156,7 +156,7 @@
     </div>
 
     <!-- Menu Bar (動態選單) -->
-    <div class="menubar">
+    <div class="bk-menubar">
         {% for item in nav_menu %}
             {# 計算權限等級 class: bg-system/bg-admin + cross-level #}
             {% set bg_class = 'bg-' ~ (item.bg_level or 'user') %}
@@ -164,9 +164,9 @@
             {% set item_class = (bg_class ~ ' ' ~ cross_class) | trim %}
 
             {% if item.children %}
-            <div class="menu-dropdown">
-                <span class="menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
-                <div class="menu-dropdown-content">
+            <div class="bk-menu-dropdown">
+                <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
+                <div class="bk-menu-dropdown-content">
                     {% for child in item.children %}
                     {% set child_bg = 'bg-' ~ (child.bg_level or 'user') %}
                     {% set child_cross = 'cross-level' if child.is_cross_level else '' %}

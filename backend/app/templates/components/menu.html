@@ -19,7 +19,7 @@ Variables:
 <div x-data="menuComponent()" x-init="loadMenu()">
     {% if layout == 'navbar' %}
     <!-- 橫式選單 (Navbar) -->
-    <nav class="menubar">
+    <nav class="bk-menubar">
         <ul class="menu-list">
             <template x-for="item in menuTree" :key="item.id">
                 <li class="menu-item-wrapper" x-html="renderNavbarItem(item)"></li>

@@ -1,21 +1,21 @@
 /* menu.css - 動態選單元件樣式 */
 
 /* 橫式選單樣式 */
-.menubar {
+.bk-menubar {
     background: #1f2937;
     padding: 0 16px;
 }
-.menubar .menu-list {
+.bk-menubar .menu-list {
     display: flex;
     list-style: none;
     margin: 0;
     padding: 0;
     gap: 4px;
 }
-.menubar .menu-item {
+.bk-menubar .menu-item {
     position: relative;
 }
-.menubar .menu-link {
+.bk-menubar .menu-link {
     display: block;
     padding: 12px 16px;
     color: #d1d5db;
@@ -23,19 +23,19 @@
     font-size: 14px;
     cursor: pointer;
 }
-.menubar .menu-link:hover {
+.bk-menubar .menu-link:hover {
     color: white;
     background: #374151;
 }
-.menubar .menu-item.active > .menu-link {
+.bk-menubar .menu-item.active > .menu-link {
     color: white;
     background: #374151;
 }
-.menubar .submenu-arrow {
+.bk-menubar .submenu-arrow {
     margin-left: 4px;
     font-size: 10px;
 }
-.menubar .submenu {
+.bk-menubar .submenu {
     position: absolute;
     top: 100%;
     left: 0;
@@ -47,15 +47,15 @@
     border-radius: 0 0 4px 4px;
     z-index: 100;
 }
-.menubar .submenu .menu-link {
+.bk-menubar .submenu .menu-link {
     padding: 8px 16px;
 }
-.menubar .menu-divider-h {
+.bk-menubar .menu-divider-h {
     width: 1px;
     background: #4b5563;
     margin: 8px 0;
 }
-.menubar .menu-header-h {
+.bk-menubar .menu-header-h {
     padding: 8px 16px;
     color: #9ca3af;
     font-size: 12px;
