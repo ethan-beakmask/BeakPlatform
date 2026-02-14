@@ -41,7 +41,8 @@
 
     .fw-form-group { margin-bottom: 16px; }
     .fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-    .fw-form-group input, .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+    .fw-form-group input:not([type="checkbox"]), .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+    .fw-form-group input[type="checkbox"] { width: auto; }
     .fw-form-group textarea { min-height: 80px; resize: vertical; }
 
     .fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
@@ -353,14 +354,15 @@
                         <textarea x-model="formData.description" placeholder="簡述此工作流的用途"></textarea>
                     </div>
                     <div class="fw-form-group" x-show="!editingWorkflow">
-                        <label>
-                            <input type="checkbox" x-model="formData.is_subprocess"> 設為子流程
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" x-model="formData.is_subprocess">
+                            <span>設為通用子流程</span>
                         </label>
-                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #999;">子流程可被其他主流程的 SubFlow 節點呼叫</p>
                     </div>
                     <div class="fw-form-group">
-                        <label>
-                            <input type="checkbox" x-model="formData.is_active"> 啟用
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" x-model="formData.is_active">
+                            <span>啟用</span>
                         </label>
                     </div>
                 </div>

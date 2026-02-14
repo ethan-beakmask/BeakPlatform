@@ -906,10 +906,20 @@ def delete_workflow(secure_code):
     """
     刪除工作流模板（軟刪除）
 
+    刪除邏輯：
+    - 遞迴軟刪除所有專屬子流程（有 parent_workflow_secure_code 的）
+    - 連帶軟刪除相關的表單-流程配對（fw_form_workflow_mappings）
+    - 通用子流程（parent_workflow_secure_code 為 NULL）不受影響
+    - 已發行版本（有快照）和歷史實例保留不動
+    - 若有運行中的流程實例則阻擋刪除
+
     Query Parameters:
-        check: 若為 1，只回傳配對資訊不刪除（前端預檢用）
+        check: 若為 1，只回傳影響範圍不刪除（前端預檢用）
     """
-    from ..models import FwWorkflowTemplate, FwFormWorkflowMapping, FwFormTemplate
+    from ..models import (
+        FwWorkflowTemplate, FwFormWorkflowMapping, FwFormTemplate,
+        FwWorkflowInstance
+    )
     from app import db
 
     org = get_current_org()
@@ -925,14 +935,43 @@ def delete_workflow(secure_code):
     if not workflow:
         return jsonify({'success': False, 'error': 'Workflow not found'}), 404
 
-    # 查詢關聯的配對
-    mappings = FwFormWorkflowMapping.query.filter_by(
-        workflow_template_id=workflow.id,
-        is_deleted=False
+    # 遞迴收集所有專屬子流程（BFS）
+    exclusive_subflows = []
+    queue_bfs = [workflow.secure_code]
+    visited = {workflow.secure_code}
+    while queue_bfs:
+        parent_code = queue_bfs.pop(0)
+        children = FwWorkflowTemplate.query.filter_by(
+            parent_workflow_secure_code=parent_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).all()
+        for child in children:
+            if child.secure_code not in visited:
+                visited.add(child.secure_code)
+                exclusive_subflows.append(child)
+                queue_bfs.append(child.secure_code)
+
+    # 要刪除的所有 secure_code（主流程 + 專屬子流程）
+    all_codes = [workflow.secure_code] + [sf.secure_code for sf in exclusive_subflows]
+
+    # 查詢所有相關配對
+    mappings = FwFormWorkflowMapping.query.filter(
+        FwFormWorkflowMapping.workflow_template_secure_code.in_(all_codes),
+        FwFormWorkflowMapping.org_secure_code == org.secure_code,
+        FwFormWorkflowMapping.is_deleted == False
     ).all()
 
-    # 預檢模式：回傳配對資訊
+    # 預檢模式：回傳影響範圍
     if request.args.get('check') == '1':
+        # 檢查運行中實例
+        running_count = FwWorkflowInstance.query.filter(
+            FwWorkflowInstance.workflow_template_secure_code.in_(all_codes),
+            FwWorkflowInstance.org_secure_code == org.secure_code,
+            FwWorkflowInstance.status.in_(['PENDING', 'RUNNING']),
+            FwWorkflowInstance.is_deleted == False
+        ).count()
+
         mapping_info = []
         if mappings:
             ft_ids = [m.form_template_id for m in mappings]
@@ -945,18 +984,58 @@ def delete_workflow(secure_code):
                     'form_name': ft_map.get(m.form_template_id, '未知表單'),
                     'is_published': m.is_published,
                 })
+
+        subflow_info = [{'name': sf.name, 'code': sf.code} for sf in exclusive_subflows]
+
         return jsonify({
             'success': True,
             'has_mappings': len(mappings) > 0,
             'mappings': mapping_info,
+            'exclusive_subflows': subflow_info,
+            'running_instances': running_count,
         })
 
+    # 檢查運行中實例
+    running_count = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.workflow_template_secure_code.in_(all_codes),
+        FwWorkflowInstance.org_secure_code == org.secure_code,
+        FwWorkflowInstance.status.in_(['PENDING', 'RUNNING']),
+        FwWorkflowInstance.is_deleted == False
+    ).count()
+
+    if running_count > 0:
+        return jsonify({
+            'success': False,
+            'error': f'無法刪除：尚有 {running_count} 個運行中的流程實例'
+        }), 409
+
+    now = datetime.utcnow()
+
+    # 軟刪除主流程
     workflow.is_deleted = True
+    workflow.updated_at = now
+
+    # 軟刪除所有專屬子流程
+    for sf in exclusive_subflows:
+        sf.is_deleted = True
+        sf.updated_at = now
+
+    # 軟刪除相關的表單-流程配對
+    for mapping in mappings:
+        mapping.is_deleted = True
+        mapping.updated_at = now
+
     db.session.commit()
+
+    deleted_names = [workflow.name] + [sf.name for sf in exclusive_subflows]
 
     return jsonify({
         'success': True,
-        'message': '工作流模板已刪除'
+        'message': '工作流模板已刪除',
+        'details': {
+            'deleted_workflows': deleted_names,
+            'deleted_mappings': len(mappings)
+        }
     })
 
 

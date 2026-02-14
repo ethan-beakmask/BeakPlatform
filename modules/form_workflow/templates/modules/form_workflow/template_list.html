@@ -40,7 +40,8 @@
 
     .fw-form-group { margin-bottom: 16px; }
     .fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-    .fw-form-group input, .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+    .fw-form-group input:not([type="checkbox"]), .fw-form-group textarea, .fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+    .fw-form-group input[type="checkbox"] { width: auto; }
     .fw-form-group textarea { min-height: 80px; resize: vertical; }
 
     .fw-pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-top: 1px solid #ddd; }
@@ -123,7 +124,7 @@
                 </button>
             </div>
             <button class="fw-btn" @click="loadTemplates()">重新載入</button>
-            <button class="fw-btn primary" @click="openCreateModal()">+ 新增模板</button>
+            <button class="fw-btn primary" @click="openCreateModal()">+ 新增表單模板</button>
         </div>
     </div>
 
@@ -269,15 +270,16 @@
                         <textarea x-model="formData.description" placeholder="簡述此表單的用途"></textarea>
                     </div>
                     <div class="fw-form-group">
-                        <label>
-                            <input type="checkbox" x-model="formData.is_active"> 啟用
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" x-model="formData.is_active">
+                            <span>啟用</span>
                         </label>
                     </div>
                 </div>
                 <div class="fw-modal-footer">
                     <button type="button" class="fw-btn" @click="closeModal()">取消</button>
                     <button type="submit" class="fw-btn primary" :disabled="saving">
-                        <span x-show="!saving" x-text="editingTemplate ? '儲存變更' : '建立模板'"></span>
+                        <span x-show="!saving" x-text="editingTemplate ? '儲存變更' : '建立表單模板'"></span>
                         <span x-show="saving">處理中...</span>
                     </button>
                 </div>

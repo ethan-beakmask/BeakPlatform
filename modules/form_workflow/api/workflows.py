@@ -441,8 +441,18 @@ def update_template(secure_code):
 @csrf.exempt
 @login_required
 def delete_template(secure_code):
-    """刪除流程模板（軟刪除）"""
-    from ..models import FwWorkflowTemplate
+    """刪除流程模板（軟刪除）
+
+    刪除邏輯：
+    - 遞迴軟刪除所有專屬子流程（有 parent_workflow_secure_code 的）
+    - 連帶軟刪除相關的表單-流程配對（fw_form_workflow_mappings）
+    - 通用子流程（parent_workflow_secure_code 為 NULL）不受影響
+    - 已發行版本（有快照）和歷史實例保留不動
+    - 若有運行中的流程實例則阻擋刪除
+    """
+    from ..models import (
+        FwWorkflowTemplate, FwWorkflowInstance, FwFormWorkflowMapping
+    )
 
     org = get_current_org()
     if not org:
@@ -457,14 +467,73 @@ def delete_template(secure_code):
     if not template:
         return jsonify({'success': False, 'error': 'Template not found'}), 404
 
+    # 遞迴收集所有專屬子流程（BFS）
+    exclusive_subflows = []
+    queue = [template.secure_code]
+    visited = {template.secure_code}
+    while queue:
+        parent_code = queue.pop(0)
+        children = FwWorkflowTemplate.query.filter_by(
+            parent_workflow_secure_code=parent_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).all()
+        for child in children:
+            if child.secure_code not in visited:
+                visited.add(child.secure_code)
+                exclusive_subflows.append(child)
+                queue.append(child.secure_code)
+
+    # 要刪除的所有 secure_code（主流程 + 專屬子流程）
+    all_codes = [template.secure_code] + [sf.secure_code for sf in exclusive_subflows]
+
+    # 檢查是否有運行中的流程實例
+    running_count = FwWorkflowInstance.query.filter(
+        FwWorkflowInstance.workflow_template_secure_code.in_(all_codes),
+        FwWorkflowInstance.org_secure_code == org.secure_code,
+        FwWorkflowInstance.status.in_(['PENDING', 'RUNNING']),
+        FwWorkflowInstance.is_deleted == False
+    ).count()
+
+    if running_count > 0:
+        return jsonify({
+            'success': False,
+            'error': f'無法刪除：尚有 {running_count} 個運行中的流程實例'
+        }), 409
+
+    now = datetime.utcnow()
+
+    # 軟刪除主流程
     template.is_deleted = True
-    # template.updated_by = current_user.secure_code  # Model 沒有此欄位
-    template.updated_at = datetime.utcnow()
+    template.updated_at = now
+
+    # 軟刪除所有專屬子流程
+    for sf in exclusive_subflows:
+        sf.is_deleted = True
+        sf.updated_at = now
+
+    # 軟刪除相關的表單-流程配對
+    related_mappings = FwFormWorkflowMapping.query.filter(
+        FwFormWorkflowMapping.workflow_template_secure_code.in_(all_codes),
+        FwFormWorkflowMapping.org_secure_code == org.secure_code,
+        FwFormWorkflowMapping.is_deleted == False
+    ).all()
+    for mapping in related_mappings:
+        mapping.is_deleted = True
+        mapping.updated_at = now
+
     db.session.commit()
+
+    deleted_names = [template.name] + [sf.name for sf in exclusive_subflows]
+    mapping_count = len(related_mappings)
 
     return jsonify({
         'success': True,
-        'message': '流程模板已刪除'
+        'message': '流程模板已刪除',
+        'details': {
+            'deleted_workflows': deleted_names,
+            'deleted_mappings': mapping_count
+        }
     })
 
 
