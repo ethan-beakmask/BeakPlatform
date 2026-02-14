@@ -151,10 +151,43 @@ modules/<module_name>/static/modules/<module_name>/
 | CSS | 抽為 `.css` 靜態檔 | 放在 `static/` 目錄，用 `<link>` 引入 |
 | JS 邏輯 | 抽為 `.js` 靜態檔 | 放在 `static/js/`，用 `<script src>` 引入 |
 | 小段膠水代碼 | 可留在 HTML | 如初始化呼叫、Jinja2 變數注入（不超過 30 行） |
-| Alpine.js 元件 | Jinja2 partial 可接受 | 因為需要 `{% include %}` 注入到 `return {}` 中 |
 
 **平台層靜態檔位置：** `backend/app/static/js/`、`backend/app/static/css/`
 **模組層靜態檔位置：** `modules/<name>/static/modules/<name>/js/`、`modules/<name>/static/modules/<name>/css/`
+
+#### JS 抽離三種模式（依 Jinja2 耦合程度選擇）
+
+**模式 A：直接搬移**（JS 零 Jinja2 變數）
+```html
+<!-- HTML: 只留引入 -->
+<script src="/static/.../page.js"></script>
+<div x-data="pageManager()">...</div>
+```
+範例：`template-list.js`、`workflow-list.js`
+
+**模式 B：Window Bridge**（少量 Jinja2 變數需注入）
+```html
+<!-- HTML: 變數橋接 + 引入 -->
+<script>
+window.__PAGE_CONFIG = {
+    scheduleId: '{{ schedule.secure_code }}',
+    year: {{ year }}
+};
+</script>
+<script src="/static/.../page.js"></script>
+```
+```js
+// page.js: 讀取橋接變數
+const config = window.__PAGE_CONFIG || {};
+function pageManager() {
+    return { scheduleId: config.scheduleId, year: config.year, ... };
+}
+```
+範例：`holidays.js`、`schedules.js`、`form-center.js`
+
+**模式 C：保留 Partial**（JS 與 Jinja2 深度交織）
+維持 `{% include "_xxx_methods.html" %}` 模式，僅抽離 CSS。
+此模式僅用於 JS 和 Jinja2 無法乾淨分離的情況，應盡量避免。
 
 ### FRONT-02: HTML 模板行數上限
 
@@ -224,4 +257,4 @@ cd backend && flask run --host=0.0.0.0 --port=7000
 
 ---
 
-*最後更新: 2026-01-23*
+*最後更新: 2026-02-15*

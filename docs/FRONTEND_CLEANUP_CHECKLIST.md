@@ -36,11 +36,15 @@
 - 已刪除: `_designer_toast_init.html`, `_designer_background.html`, `_designer_preview_print.html`, `_designer_save_template.html` (合併入 form-designer-main.js)
 
 ## Phase 3: 高難度（多 Jinja2，需解耦）
-| 模板 | 原始行數 | Jinja2 變數 | 產出 | 狀態 |
-|------|----------|------------|------|------|
-| `groups.html` | 1305 | 2 | `groups.js` + `org-tree.css` | [ ] |
-| `users/create.html` | 930 | 4+ | `user-form.js` + `user-form.css` | [ ] |
-| `departments.html` | — | — | `_departments_styles.html` → `org-tree.css` | [ ] |
+| 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
+|------|----------|-----------|--------|-------|------|
+| `groups.html` | 1305 | 238 | `org-tree.css` (共用) | `groups.js` | [x] |
+| `users/create.html` | 930 | 256 | `user-form.css` | `user-form.js` | [x] |
+| `departments.html` | 351 (含 393 行 CSS partial) | 351 | `org-tree.css` (共用) | — (保留 partial) | [x] |
+
+### Phase 3 額外產出
+- `org-tree.css` (467 行) — 部門/社群共用樣式（tree-panel, jstree, staff-layout, 拖放等）
+- 已刪除: `_departments_styles.html` (搬入 org-tree.css)
 
 ## Phase 4: 批量處理剩餘 HIGH 檔案
 | 模板 | 原始行數 | 狀態 |
@@ -78,10 +82,14 @@
 | `css/themes.css` | 主題色系 |
 | `css/holidays.css` | 假日設定頁 |
 | `css/schedules.css` | 班表頁 |
+| `css/org-tree.css` | 部門/社群共用樣式 |
+| `css/user-form.css` | 新增/編輯用戶頁 |
 | `js/app.js` | 原有應用 JS |
 | `js/auth.js` | 認證相關 JS |
 | `js/holidays.js` | 假日設定頁 |
 | `js/schedules.js` | 班表頁 |
+| `js/groups.js` | 社群設定頁 |
+| `js/user-form.js` | 新增用戶頁 |
 
 ### 模組層 (`modules/form_workflow/static/modules/form_workflow/`)
 | 檔案 | 用途 |

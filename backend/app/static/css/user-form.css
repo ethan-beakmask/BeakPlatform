@@ -1,0 +1,178 @@
+/* user-form.css — 新增/編輯用戶頁面共用樣式 */
+
+.form-section {
+    margin-bottom: 20px;
+}
+.section-title {
+    background: #f0f0f0;
+    padding: 8px 12px;
+    margin: 20px 0 10px 0;
+    font-weight: bold;
+    border-left: 4px solid #0066cc;
+}
+.section-title.optional {
+    border-left-color: #888;
+    color: #666;
+}
+.form-table td {
+    padding: 4px 8px;
+    vertical-align: top;
+}
+.form-table td:first-child {
+    width: 120px;
+    text-align: right;
+    padding-right: 12px;
+}
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="tel"],
+.form-table input[type="password"],
+.form-table select {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+}
+.form-table input:focus,
+.form-table select:focus {
+    border-color: #0066cc;
+    outline: none;
+}
+.help-text {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+.required::after {
+    content: " *";
+    color: #dc2626;
+}
+details {
+    margin-top: 10px;
+}
+details summary {
+    cursor: pointer;
+    padding: 8px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+details summary:hover {
+    background: #f0f0f0;
+}
+details[open] summary {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+details .detail-content {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+/* 部門選擇器樣式 - 組織樹版本 */
+.dept-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dept-display {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f9f9f9;
+    min-width: 200px;
+    cursor: pointer;
+}
+.dept-display:hover {
+    background: #f0f0f0;
+    border-color: #0066cc;
+}
+.dept-display.empty {
+    color: #888;
+    font-style: italic;
+}
+.dept-tree-picker {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    min-width: 300px;
+    max-width: 400px;
+}
+.dept-tree-header {
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.dept-tree-header .btn-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 4px;
+}
+.dept-tree-header .btn-close:hover {
+    color: #333;
+}
+.dept-tree-content {
+    padding: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+.dept-tree-empty {
+    padding: 20px;
+    color: #888;
+    text-align: center;
+}
+/* jstree 自訂樣式 */
+#dept-tree-select { padding: 5px; }
+#dept-tree-select .jstree-default .jstree-clicked { background: #0066cc !important; color: white !important; }
+#dept-tree-select .jstree-default .jstree-hovered { background: #e8f4fc !important; }
+#dept-tree-select .jstree-default .jstree-node { margin-left: 12px; }
+#dept-tree-select .jstree-default .jstree-icon:empty { width: 12px; }
+.jstree-icon.icon-company { font-style: normal !important; color: #2c3e50; }
+.jstree-icon.icon-company::before { content: '\25A0'; }
+.jstree-icon.icon-dept { font-style: normal !important; color: #3498db; }
+.jstree-icon.icon-dept::before { content: '\25A1'; }
+
+/* 用戶編號選擇器 */
+.number-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.number-field input[type="text"] {
+    width: 150px !important;
+}
+.number-field select {
+    width: 120px !important;
+}
+.number-field .btn-use {
+    padding: 6px 12px;
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.number-field .btn-use:hover {
+    background: #0052a3;
+}
+.next-number {
+    font-family: monospace;
+    background: #e8f4fc;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #0066cc;
+}
