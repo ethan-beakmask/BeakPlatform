@@ -3713,19 +3713,26 @@
                         <h4 style="margin: 0 0 10px 0; color: #667eea;">
                             <i class="fas fa-cog"></i> 子流程配置
                         </h4>
-                        <div style="margin-bottom: 15px;">
-                            <strong>選擇子流程：</strong><br>
-                            <select id="childFlowSelect" onchange="if(this.value) applySubprocessConfig('${nodeId}')" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
-                                <option value="">載入中...</option>
-                            </select>
-                            <p style="font-size: 11px; color: #999; margin-top: 5px;">
-                                <i class="fas fa-info-circle"></i> 只顯示可用的子流程
-                            </p>
+                        <div id="currentSubflowDisplay" style="margin-bottom: 12px; padding: 8px 12px; background: #f0f4ff; border-radius: 4px; font-size: 13px;">
+                            目前：<strong>${currentChildFlowId ? '載入中...' : '未選擇'}</strong>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <button class="btn-secondary" onclick="createNewSubflow('${nodeId}')" style="width: 100%;">
-                                <i class="fas fa-plus"></i> 建立新子流程
-                            </button>
+                        <input type="hidden" id="childFlowSelect" value="${currentChildFlowId}">
+                        <div style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <strong style="font-size: 13px;">專屬子流程</strong>
+                                <button class="btn-secondary" onclick="createNewSubflow('${nodeId}')" style="padding: 2px 10px; font-size: 12px;">
+                                    <i class="fas fa-plus"></i> 新增
+                                </button>
+                            </div>
+                            <div id="dedicatedSubflowList" style="border: 1px solid #e0e0e0; border-radius: 4px; max-height: 180px; overflow-y: auto;">
+                                <div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">載入中...</div>
+                            </div>
+                        </div>
+                        <div>
+                            <strong style="font-size: 13px; display: block; margin-bottom: 6px;">通用子流程</strong>
+                            <div id="commonSubflowList" style="border: 1px solid #e0e0e0; border-radius: 4px; max-height: 220px; overflow-y: auto;">
+                                <div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">載入中...</div>
+                            </div>
                         </div>
                     </div>
 
@@ -4898,10 +4905,9 @@
             updateStatus(`選中節點：${nodeId}`);
         }
 
-        // 載入可用子流程清單到下拉選單
+        // 載入可用子流程清單（分區面板）
         async function loadAvailableSubflows(nodeId) {
             try {
-                // 取得當前工作流程 ID
                 const parentId = currentWorkflowId;
                 if (!parentId) {
                     console.error('無法取得當前工作流程 ID');
@@ -4912,42 +4918,149 @@
                 const response = await fetch(`/api/workflows/data/subflows/available?parent_id=${parentId}`);
                 const result = await response.json();
 
-                const selectElement = document.getElementById('childFlowSelect');
-                if (!selectElement) {
-                    console.error('找不到子流程下拉選單元素');
-                    return;
-                }
+                const dedicatedList = document.getElementById('dedicatedSubflowList');
+                const commonList = document.getElementById('commonSubflowList');
+                const hiddenInput = document.getElementById('childFlowSelect');
+                if (!dedicatedList || !commonList) return;
 
-                // 取得當前配置的子流程
+                // 取得當前選中的子流程
                 const node = cy.getElementById(nodeId);
                 const currentConfig = node.data('config') || {};
                 const currentChildFlowId = currentConfig.childFlowId || '';
 
-                // 清空並填充選項
-                selectElement.innerHTML = '<option value="">請選擇子流程...</option>';
-
-                if (result.success && result.data) {
-                    result.data.forEach(subflow => {
-                        const option = document.createElement('option');
-                        option.value = subflow.code;
-                        option.textContent = `${subflow.name}${subflow.is_bound ? ' (專屬)' : ' (通用)'}`;
-                        if (subflow.code === currentChildFlowId) {
-                            option.selected = true;
-                        }
-                        selectElement.appendChild(option);
-                    });
-                    console.log(`已載入 ${result.data.length} 個子流程到下拉選單`);
-                } else {
-                    console.error('載入子流程清單失敗:', result.message);
-                    updateStatus('載入子流程清單失敗：' + (result.message || '未知錯誤'), 'warning');
+                if (!result.success || !result.data) {
+                    dedicatedList.innerHTML = '<div style="padding: 10px; color: #c33; font-size: 12px;">載入失敗</div>';
+                    commonList.innerHTML = '<div style="padding: 10px; color: #c33; font-size: 12px;">載入失敗</div>';
+                    return;
                 }
+
+                const { dedicated, common_categories } = result.data;
+
+                // 渲染專屬子流程列表
+                if (dedicated.length === 0) {
+                    dedicatedList.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">尚無專屬子流程</div>';
+                } else {
+                    let html = '';
+                    dedicated.forEach(sf => {
+                        const isSelected = sf.code === currentChildFlowId;
+                        const bgColor = isSelected ? '#e8f0fe' : 'transparent';
+                        const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
+                        html += `<div style="display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}')">
+                            <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>`;
+                        if (sf.is_referenced) {
+                            html += `<span style="font-size: 11px; color: #667eea; margin-left: 8px; white-space: nowrap;">使用中</span>`;
+                        } else {
+                            html += `<button onclick="event.stopPropagation(); deleteSubflow('${sf.secure_code}', '${sf.name.replace(/'/g, "\\'")}', '${nodeId}')" style="background: none; border: none; color: #c33; cursor: pointer; padding: 2px 6px; font-size: 13px; margin-left: 8px;" title="刪除此子流程"><i class="fas fa-trash-alt"></i></button>`;
+                        }
+                        html += '</div>';
+                    });
+                    dedicatedList.innerHTML = html;
+                }
+
+                // 渲染通用子流程列表（按分類分組）
+                if (common_categories.length === 0) {
+                    commonList.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px; text-align: center;">尚無通用子流程</div>';
+                } else {
+                    let html = '';
+                    common_categories.forEach(cat => {
+                        const catId = 'cat_' + cat.category_name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_');
+                        html += `<div>
+                            <div onclick="const body=document.getElementById('${catId}'); const arrow=this.querySelector('.cat-arrow'); if(body.style.display==='none'){body.style.display='block';arrow.textContent='▾';}else{body.style.display='none';arrow.textContent='▸';}" style="padding: 7px 10px; background: #f5f5f5; cursor: pointer; font-size: 13px; font-weight: 600; border-bottom: 1px solid #e0e0e0; user-select: none;">
+                                <span class="cat-arrow">▾</span> ${cat.category_name}
+                                <span style="font-size: 11px; color: #999; font-weight: normal; margin-left: 4px;">(${cat.subflows.length})</span>
+                            </div>
+                            <div id="${catId}">`;
+                        cat.subflows.forEach(sf => {
+                            const isSelected = sf.code === currentChildFlowId;
+                            const bgColor = isSelected ? '#e8f0fe' : 'transparent';
+                            const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
+                            html += `<div style="display: flex; align-items: center; padding: 6px 10px 6px 24px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}')">
+                                <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>
+                            </div>`;
+                        });
+                        html += '</div></div>';
+                    });
+                    commonList.innerHTML = html;
+                }
+
+                // 更新「目前」顯示
+                _updateCurrentSubflowDisplay(currentChildFlowId, dedicated, common_categories);
 
                 // 載入參數映射配置
                 loadParamMapping(nodeId);
 
+                console.log(`已載入子流程面板：${dedicated.length} 個專屬, ${common_categories.length} 個分類`);
+
             } catch (error) {
                 console.error('載入子流程清單失敗:', error);
                 updateStatus('無法載入子流程清單：' + error.message, 'warning');
+            }
+        }
+
+        // 更新「目前」顯示文字
+        function _updateCurrentSubflowDisplay(currentCode, dedicated, common_categories) {
+            const display = document.getElementById('currentSubflowDisplay');
+            if (!display) return;
+            if (!currentCode) {
+                display.innerHTML = '目前：<strong style="color: #999;">未選擇</strong>';
+                return;
+            }
+            // 在專屬和通用中查找名稱
+            let name = currentCode;
+            for (const sf of dedicated) {
+                if (sf.code === currentCode) { name = sf.name; break; }
+            }
+            if (name === currentCode) {
+                for (const cat of common_categories) {
+                    for (const sf of cat.subflows) {
+                        if (sf.code === currentCode) { name = sf.name; break; }
+                    }
+                    if (name !== currentCode) break;
+                }
+            }
+            display.innerHTML = `目前：<strong>${name}</strong>`;
+        }
+
+        // 選擇子流程
+        function selectSubflow(nodeId, code, name) {
+            const hiddenInput = document.getElementById('childFlowSelect');
+            if (hiddenInput) hiddenInput.value = code;
+
+            // 更新「目前」顯示
+            const display = document.getElementById('currentSubflowDisplay');
+            if (display) display.innerHTML = `目前：<strong>${name}</strong>`;
+
+            // 套用配置
+            applySubprocessConfig(nodeId);
+
+            // 重新載入列表以更新高亮
+            setTimeout(() => loadAvailableSubflows(nodeId), 600);
+        }
+
+        // 刪除專屬子流程
+        async function deleteSubflow(secureCode, name, nodeId) {
+            if (!confirm(`確定要刪除子流程「${name}」嗎？\n此操作無法復原。`)) return;
+
+            try {
+                const response = await fetch(`/api/workflows/data/subflows/${secureCode}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    updateStatus(`已刪除子流程「${name}」`, 'success');
+                    // 如果刪除的是當前選中的，清空選擇
+                    const hiddenInput = document.getElementById('childFlowSelect');
+                    if (hiddenInput) {
+                        // 需要根據 code 判斷，但 API 用 secure_code，所以直接重新載入
+                    }
+                    await loadAvailableSubflows(nodeId);
+                } else {
+                    updateStatus('刪除失敗：' + (result.error || '未知錯誤'), 'warning');
+                }
+            } catch (error) {
+                console.error('刪除子流程失敗:', error);
+                updateStatus('刪除子流程失敗：' + error.message, 'warning');
             }
         }
 
@@ -4989,15 +5102,9 @@
                 if (result.success) {
                     updateStatus(`子流程「${result.data.name}」已建立`, 'success');
 
-                    // 重新載入子流程清單
+                    // 重新載入子流程清單並自動選擇新建立的子流程
                     await loadAvailableSubflows(nodeId);
-
-                    // 自動選擇新建立的子流程並套用
-                    const selectElement = document.getElementById('childFlowSelect');
-                    if (selectElement) {
-                        selectElement.value = result.data.code;
-                        applySubprocessConfig(nodeId);
-                    }
+                    selectSubflow(nodeId, result.data.code, result.data.name);
                 } else {
                     updateStatus('建立子流程失敗：' + (result.message || '未知錯誤'), 'warning');
                 }
@@ -5197,9 +5304,10 @@
                 return;
             }
 
-            // 取得選中的子流程名稱（用於顯示）
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-            const childFlowName = selectedOption ? selectedOption.textContent : childFlowId;
+            // 取得選中的子流程名稱（從目前顯示區取）
+            const displayEl = document.getElementById('currentSubflowDisplay');
+            const strongEl = displayEl ? displayEl.querySelector('strong') : null;
+            const childFlowName = (strongEl && strongEl.textContent !== '未選擇') ? strongEl.textContent : childFlowId;
 
             // 取得現有的 config，更新 childFlowId
             const currentConfig = node.data('config') || {};
@@ -12203,7 +12311,14 @@
                     // 從後端取得子流程的詳細資訊（用於取得 secure_code、name 等）
                     const subflowsResponse = await fetch(`/api/workflows/data/subflows/available?parent_id=${wfId}`);
                     const subflowsResult = await subflowsResponse.json();
-                    const availableSubflows = (subflowsResult.success && subflowsResult.data) ? subflowsResult.data : [];
+                    // API 回傳 { dedicated: [...], common_categories: [{category_name, subflows: [...]}] }
+                    let availableSubflows = [];
+                    if (subflowsResult.success && subflowsResult.data) {
+                        const d = subflowsResult.data;
+                        availableSubflows = (d.dedicated || []).concat(
+                            (d.common_categories || []).flatMap(cat => cat.subflows || [])
+                        );
+                    }
 
                     // 遞迴載入每個「實際被引用」的子流程（但要檢查深度限制）
                     for (const code of subflowCodes) {
@@ -12363,6 +12478,14 @@
             newUrl.searchParams.set('id', secureCode);
             newUrl.searchParams.delete('new');
             window.history.pushState(null, '', newUrl);
+
+            // 重置節點設定面板
+            currentEditingNodeId = null;
+            const nodeSettingsEl = document.getElementById('nodeSettings');
+            if (nodeSettingsEl) {
+                nodeSettingsEl.innerHTML = '';
+                nodeSettingsEl.style.display = 'none';
+            }
 
             // 重置表單欄位分頁狀態
             resetFormFieldsTab();

@@ -107,6 +107,7 @@
                     <th style="width: 55px;">版本</th>
                     <th style="width: 50px; text-align: center;">專屬</th>
                     <th style="width: 50px; text-align: center;">通用</th>
+                    <th style="width: 50px; text-align: center;">未用</th>
                     <th style="width: 55px; text-align: center;">配對</th>
                     <th style="width: 70px;">狀態</th>
                     <th style="width: 130px;">更新時間</th>
@@ -135,6 +136,11 @@
                             <span x-show="w.common_subflow_count > 0" class="badge bg-warning-subtle text-warning"
                                   x-text="w.common_subflow_count"></span>
                             <span x-show="!w.common_subflow_count" class="text-muted small">-</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span x-show="w.unused_subflow_count > 0" class="badge bg-secondary-subtle text-secondary"
+                                  x-text="w.unused_subflow_count"></span>
+                            <span x-show="!w.unused_subflow_count" class="text-muted small">-</span>
                         </td>
                         <td style="text-align: center;">
                             <span x-show="w.mapping_count > 0" class="badge bg-primary-subtle text-primary"

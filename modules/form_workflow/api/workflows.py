@@ -802,14 +802,15 @@ def get_node_schema(node_type):
 @workflows_bp.route('/data/subflows/available')
 @login_required
 def list_available_subflows():
-    """取得可用的子流程列表
+    """取得可用的子流程列表（分區結構）
 
-    只回傳：
-    1. 通用子流程（無 parent，任何流程都能用）
-    2. 同一根主流程下的專屬子流程
+    回傳：
+    - dedicated: 同一根主流程下的專屬子流程（含 is_referenced 標記）
+    - common_categories: 通用子流程按 category 分組
     """
     from ..models import FwWorkflowTemplate
     from sqlalchemy import or_
+    from collections import OrderedDict
 
     org = get_current_org()
     if not org:
@@ -838,10 +839,18 @@ def list_available_subflows():
         else:
             root_code = current
 
-    # 收集同一根主流程下所有流程的 secure_code（遞迴向下）
+    # 收集同一根主流程下所有流程的 secure_code（遞迴向下）+ 載入 graph
     family_codes = set()
+    family_workflows = []  # 儲存所有家族流程物件
     if root_code:
         family_codes.add(root_code)
+        root_wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=root_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+        if root_wf:
+            family_workflows.append(root_wf)
         queue = [root_code]
         while queue:
             code = queue.pop(0)
@@ -853,39 +862,73 @@ def list_available_subflows():
             for child in children:
                 if child.secure_code not in family_codes:
                     family_codes.add(child.secure_code)
+                    family_workflows.append(child)
                     queue.append(child.secure_code)
 
-    # 查詢可用子流程：通用（無 parent）+ 同家族專屬
-    query = FwWorkflowTemplate.query.filter_by(
-        org_secure_code=org.secure_code,
-        is_subprocess=True,
-        is_deleted=False
-    )
+    # 掃描家族所有流程的 graph，收集被引用的 childFlowId（用 code 比對）
+    referenced_codes = set()
+    for wf in family_workflows:
+        graph = wf.graph or {}
+        for node in graph.get('nodes', []):
+            config = node.get('config') or {}
+            child_flow_id = config.get('childFlowId')
+            if child_flow_id:
+                referenced_codes.add(child_flow_id)
 
+    # 查詢專屬子流程（同家族）
+    dedicated_subflows = []
     if family_codes:
-        query = query.filter(
-            or_(
-                FwWorkflowTemplate.parent_workflow_secure_code == None,
-                FwWorkflowTemplate.parent_workflow_secure_code.in_(family_codes)
-            )
-        )
-    else:
-        query = query.filter(FwWorkflowTemplate.parent_workflow_secure_code == None)
+        dedicated_subflows = FwWorkflowTemplate.query.filter(
+            FwWorkflowTemplate.org_secure_code == org.secure_code,
+            FwWorkflowTemplate.is_subprocess == True,
+            FwWorkflowTemplate.is_deleted == False,
+            FwWorkflowTemplate.parent_workflow_secure_code.in_(family_codes)
+        ).order_by(FwWorkflowTemplate.name).all()
 
-    subflows = query.order_by(FwWorkflowTemplate.name).all()
+    # 查詢通用子流程（無 parent）
+    common_subflows = FwWorkflowTemplate.query.filter(
+        FwWorkflowTemplate.org_secure_code == org.secure_code,
+        FwWorkflowTemplate.is_subprocess == True,
+        FwWorkflowTemplate.is_deleted == False,
+        FwWorkflowTemplate.parent_workflow_secure_code == None
+    ).order_by(FwWorkflowTemplate.category, FwWorkflowTemplate.name).all()
+
+    # 專屬子流程回傳
+    dedicated_data = [
+        {
+            'secure_code': sf.secure_code,
+            'code': sf.code,
+            'name': sf.name,
+            'description': sf.description,
+            'is_referenced': sf.code in referenced_codes
+        }
+        for sf in dedicated_subflows
+    ]
+
+    # 通用子流程按 category 分組
+    category_map = OrderedDict()
+    for sf in common_subflows:
+        cat_name = sf.category or '其他'
+        if cat_name not in category_map:
+            category_map[cat_name] = []
+        category_map[cat_name].append({
+            'secure_code': sf.secure_code,
+            'code': sf.code,
+            'name': sf.name,
+            'description': sf.description
+        })
+
+    common_categories = [
+        {'category_name': cat_name, 'subflows': subflows}
+        for cat_name, subflows in category_map.items()
+    ]
 
     return jsonify({
         'success': True,
-        'data': [
-            {
-                'secure_code': sf.secure_code,
-                'code': sf.code,
-                'name': sf.name,
-                'description': sf.description,
-                'is_bound': sf.parent_workflow_secure_code is not None
-            }
-            for sf in subflows
-        ]
+        'data': {
+            'dedicated': dedicated_data,
+            'common_categories': common_categories
+        }
     })
 
 
@@ -947,6 +990,120 @@ def create_subflow():
             'description': subflow.description,
         },
         'message': '子流程已建立'
+    })
+
+
+@workflows_bp.route('/data/subflows/<secure_code>', methods=['DELETE'])
+@csrf.exempt
+@login_required
+def delete_subflow(secure_code):
+    """刪除專屬子流程
+
+    只能刪除專屬子流程（有 parent_workflow_secure_code 的）。
+    若被家族其他流程的 graph 引用則回 409。
+    遞迴軟刪除其下層專屬子流程。
+    """
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    subflow = FwWorkflowTemplate.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not subflow:
+        return jsonify({'success': False, 'error': '找不到子流程'}), 404
+
+    # 只能刪專屬子流程
+    if not subflow.parent_workflow_secure_code:
+        return jsonify({'success': False, 'error': '無法刪除通用子流程'}), 403
+
+    # 追溯到根主流程，收集整個家族
+    root_code = subflow.parent_workflow_secure_code
+    visited = set()
+    current = root_code
+    for _ in range(10):
+        if current in visited:
+            break
+        visited.add(current)
+        wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=current,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).first()
+        if not wf or not wf.parent_workflow_secure_code:
+            root_code = current
+            break
+        current = wf.parent_workflow_secure_code
+
+    # BFS 收集家族所有流程
+    family_codes = {root_code}
+    family_workflows = []
+    root_wf = FwWorkflowTemplate.query.filter_by(
+        secure_code=root_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+    if root_wf:
+        family_workflows.append(root_wf)
+    queue = [root_code]
+    while queue:
+        code = queue.pop(0)
+        children = FwWorkflowTemplate.query.filter_by(
+            parent_workflow_secure_code=code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).all()
+        for child in children:
+            if child.secure_code not in family_codes:
+                family_codes.add(child.secure_code)
+                family_workflows.append(child)
+                queue.append(child.secure_code)
+
+    # 檢查此子流程的 code 是否被家族任何流程的 graph 引用
+    for wf in family_workflows:
+        graph = wf.graph or {}
+        for node in graph.get('nodes', []):
+            config = node.get('config') or {}
+            if config.get('childFlowId') == subflow.code:
+                return jsonify({
+                    'success': False,
+                    'error': f'此子流程正被「{wf.name}」引用，無法刪除'
+                }), 409
+
+    # 遞迴收集要刪除的子流程（此子流程 + 其下層專屬子流程）
+    to_delete = [subflow]
+    del_queue = [subflow.secure_code]
+    del_visited = {subflow.secure_code}
+    while del_queue:
+        parent_code = del_queue.pop(0)
+        children = FwWorkflowTemplate.query.filter_by(
+            parent_workflow_secure_code=parent_code,
+            org_secure_code=org.secure_code,
+            is_deleted=False
+        ).all()
+        for child in children:
+            if child.secure_code not in del_visited:
+                del_visited.add(child.secure_code)
+                to_delete.append(child)
+                del_queue.append(child.secure_code)
+
+    # 軟刪除
+    deleted_names = []
+    for wf in to_delete:
+        wf.is_deleted = True
+        deleted_names.append(wf.name)
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'已刪除 {len(to_delete)} 個子流程',
+        'deleted': deleted_names
     })
 
 

@@ -769,6 +769,7 @@
         .flow-tree-item .name {
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 13px;
         }
 
         /* ==================== 鷹眼（縮略圖）==================== */

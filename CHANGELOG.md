@@ -12,8 +12,14 @@
 - 新增表單與新增流程的預設分類改為「流程記錄」
 - 表單填寫端載入 `formio-theme.css`，實現與設計器 WYSIWYG 視覺同步
 - 填寫/簽核/閱讀 Modal 灰色畫布背景 + 白色表單區域 + 陰影（匹配設計器 preview）
+- 子流程刪除 API (`DELETE /api/workflows/data/subflows/<secure_code>`)：僅限專屬子流程，引用中回 409，遞迴軟刪除下層
 
 ### Changed
+- SubFlow 節點配置面板重新設計：從單一下拉選單改為分區面板（專屬區含引用狀態 + 刪除按鈕、通用區按分類分組）
+- 流程樹系名稱字體放大 (13px)
+- 切換流程時自動重置節點設定面板至未選取狀態
+- 工作流列表新增「未用」欄位顯示未被引用的專屬子流程數量
+- 表單中心表單網格改為自適應排列 (`auto-fill, 240px`)
 - 平台 navbar/menubar CSS class 改名 `.navbar` → `.bk-navbar`、`.menubar` → `.bk-menubar`，避免與 Bootstrap 衝突（影響 base.html、menu.html、menu.css、themes.css）
 - `.bk-navbar` / `.bk-menubar` 明確設定 font-family/font-size/line-height，防止 Bootstrap body reset 覆蓋
 - 前端 HTML 瘦身 Phase 0-3：大型模板抽離內嵌 JS/CSS 為獨立靜態檔，符合 FRONT-01/02 規範

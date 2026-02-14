@@ -535,6 +535,17 @@ def list_workflows():
         ).all()
         common_sf_codes = {sf.code for sf in common_sfs}
 
+    # 專屬子流程 code 清單（per parent workflow），用於計算未用數
+    dedicated_sf_codes = {}
+    dedicated_sfs = FwWorkflowTemplate.query.filter(
+        FwWorkflowTemplate.org_secure_code == org.secure_code,
+        FwWorkflowTemplate.is_deleted == False,
+        FwWorkflowTemplate.is_subprocess == True,
+        FwWorkflowTemplate.parent_workflow_secure_code != None
+    ).all()
+    for sf in dedicated_sfs:
+        dedicated_sf_codes.setdefault(sf.parent_workflow_secure_code, set()).add(sf.code)
+
     result = []
     for w in workflows:
         d = w.to_dict(include_graph=False)
@@ -543,6 +554,10 @@ def list_workflows():
         d['dedicated_subflow_count'] = dedicated_counts.get(w.secure_code, 0)
         child_codes = workflow_child_flows.get(w.secure_code, [])
         d['common_subflow_count'] = len([c for c in child_codes if c in common_sf_codes])
+        # 未用專屬子流程：有 parent 指向此流程，但未被 graph SubFlow 節點引用
+        my_dedicated_codes = dedicated_sf_codes.get(w.secure_code, set())
+        used_dedicated_codes = set(child_codes) & my_dedicated_codes
+        d['unused_subflow_count'] = len(my_dedicated_codes - used_dedicated_codes)
         result.append(d)
 
     return jsonify({

@@ -34,7 +34,7 @@
 .fc-section-body { padding: 16px; }
 
 /* 表單網格 */
-.fc-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 140px; overflow-y: auto; }
+.fc-form-grid { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 10px; max-height: 140px; overflow-y: auto; }
 .fc-form-card { border: 1px solid #e5e7eb; padding: 12px; cursor: pointer; transition: all 0.2s; border-radius: 4px; }
 .fc-form-card:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .fc-form-card h4 { font-size: 14px; font-weight: 600; margin: 0; color: #1f2937; display: flex; align-items: center; gap: 6px; }
