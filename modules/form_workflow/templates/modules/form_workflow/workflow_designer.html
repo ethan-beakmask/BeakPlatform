@@ -10,15 +10,6 @@
     <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
     <!-- Workflow Designer CSS (模組靜態檔案) -->
     <link rel="stylesheet" href="/static/modules/form_workflow/css/workflow-designer.css">
-
-    <!-- Navbar CSS (與 base.html 共用風格) -->
-    <style>
-        .navbar { background: white; border-bottom: 1px solid #ccc; padding: 8px 16px; width: 100%; }
-        .navbar a { text-decoration: none; }
-        .navbar-content { display: flex; align-items: center; width: 100%; }
-        .navbar-logo { font-weight: bold; font-size: 16px; color: #333; margin-right: auto; }
-        .navbar-user { margin-left: 16px; color: #666; white-space: nowrap; }
-    </style>
 </head>
 <body>
     <!-- Navbar (與 base.html 共用風格) -->
@@ -826,79 +817,11 @@
 
     <!-- 注入全域變數 (在載入 workflow-main.js 之前) -->
     <script>
-        // 從 Flask 模板注入全域變數
         window.orgCode = '{{ org_secure_code }}';
     </script>
 
-    <!-- Workflow Designer JavaScript -->
     <!-- Workflow Designer JS (模組靜態檔案) -->
     <script src="/static/modules/form_workflow/js/workflow-main.js"></script>
-    <script>
-        // Workflow Designer 专用主題管理
-        (function() {
-            const WORKFLOW_THEME_KEY = 'workflow_designer_theme';
-
-            // 獲取workflow-designer特定主題
-            function getWorkflowTheme() {
-                // 1. 先檢查用戶是否設定「跟隨系統主題」
-                const followSystemTheme = localStorage.getItem('workflow_designer_follow_theme');
-
-                // 2. 如果設定為 false (關閉跟隨)，就使用 workflow-designer 專屬主題（預設淺色）
-                if (followSystemTheme === 'false') {
-                    return localStorage.getItem(WORKFLOW_THEME_KEY) || 'light';
-                }
-
-                // 3. 預設或設定為 true 時，跟隨系統主題
-                const systemTheme = localStorage.getItem('theme');
-                if (systemTheme) {
-                    return systemTheme;
-                }
-
-                // 4. 如果都沒有設定，預設使用淺色（因為大部分用戶繪圖偏好淺色）
-                return 'light';
-            }
-
-            // 設置workflow-designer特定主題
-            function setWorkflowTheme(theme) {
-                localStorage.setItem(WORKFLOW_THEME_KEY, theme);
-                applyWorkflowTheme(theme);
-            }
-
-            // 應用主題
-            function applyWorkflowTheme(theme) {
-                document.documentElement.setAttribute('data-theme', theme);
-
-                // 更新按鈕狀態
-                document.querySelectorAll('[data-workflow-theme]').forEach(btn => {
-                    if (btn.dataset.workflowTheme === theme) {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-            }
-
-            // 頁面載入時應用workflow-designer特定主題
-            document.addEventListener('DOMContentLoaded', () => {
-                const theme = getWorkflowTheme();
-                applyWorkflowTheme(theme);
-
-                // 設置主題切換器
-                document.querySelectorAll('[data-workflow-theme]').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const theme = btn.dataset.workflowTheme;
-                        setWorkflowTheme(theme);
-                    });
-                });
-            });
-
-            // 立即應用主題（在DOM載入前）
-            const theme = getWorkflowTheme();
-            if (document.documentElement) {
-                document.documentElement.setAttribute('data-theme', theme);
-            }
-        })();
-    </script>
 
     <!-- 右鍵選單 -->
     <div id="contextMenu" class="context-menu">
@@ -910,167 +833,8 @@
     <!-- 認證腳本 -->
     <script src="/static/js/auth.js"></script>
 
-    <!-- 初始化主題切換器 -->
-    <script>
-        // 分類名稱對應
-        const CATEGORY_NAMES = {
-            'basic': '基本節點',
-            'form': '表單處理',
-            'notification': '通知機制',
-            'flow_control': '流程控制',
-            'data': '資料處理',
-            'operation': '運算操作',
-            'integration': '系統整合',
-            'system_admin': '系統專用'
-        };
-
-        // 分類圖示對應
-        const CATEGORY_ICONS = {
-            'basic': 'fas fa-circle-dot',
-            'form': 'fas fa-file-signature',
-            'notification': 'fas fa-bell',
-            'flow_control': 'fas fa-route',
-            'data': 'fas fa-database',
-            'operation': 'fas fa-calculator',
-            'integration': 'fas fa-plug',
-            'system_admin': 'fas fa-shield-alt'
-        };
-
-        // 載入節點定義
-        async function loadNodeDefinitions() {
-            try {
-                const response = await fetch('/api/workflows/data/node-definitions');
-                const result = await response.json();
-
-                if (!result.success) {
-                    throw new Error(result.message || '載入節點定義失敗');
-                }
-
-                const container = document.getElementById('node-categories-container');
-                container.innerHTML = '';
-
-                const grouped = result.data;
-
-                // 依序渲染各分類（system_admin 放最後，僅系統管理員可見）
-                const categoryOrder = ['basic', 'form', 'notification', 'flow_control', 'data', 'operation', 'integration', 'system_admin'];
-
-                categoryOrder.forEach(categoryKey => {
-                    if (!grouped[categoryKey] || grouped[categoryKey].length === 0) {
-                        return;
-                    }
-
-                    // 節點顯示由資料庫 require_system_admin 欄位控制，後端 API 已根據用戶身份過濾
-                    const nodes = grouped[categoryKey];
-
-                    const categoryName = CATEGORY_NAMES[categoryKey] || categoryKey;
-                    const categoryIcon = CATEGORY_ICONS[categoryKey] || 'fas fa-folder';
-                    const categoryId = `${categoryKey}-nodes`;
-
-                    // 建立分類區塊
-                    const categoryDiv = document.createElement('div');
-                    categoryDiv.className = 'node-category';
-
-                    // 分類標題
-                    const headerDiv = document.createElement('div');
-                    headerDiv.className = 'category-header';
-                    headerDiv.onclick = () => toggleCategory(categoryId);
-                    headerDiv.innerHTML = `
-                        <span><i class="${categoryIcon}"></i> ${categoryName}</span>
-                        <span id="${categoryId}-icon" class="category-icon open">▶</span>
-                    `;
-
-                    // 分類內容（預設展開）
-                    const contentDiv = document.createElement('div');
-                    contentDiv.id = categoryId;
-                    contentDiv.className = 'category-content open';
-
-                    const paletteDiv = document.createElement('div');
-                    paletteDiv.className = 'node-palette';
-
-                    // 建立節點
-                    nodes.forEach(node => {
-                        const nodeDiv = document.createElement('div');
-                        nodeDiv.className = `palette-node ${categoryKey}`;
-                        nodeDiv.draggable = true;
-                        nodeDiv.setAttribute('data-node-type', node.type);
-                        nodeDiv.setAttribute('data-node-label', node.label);  // 保存 display_name
-                        nodeDiv.setAttribute('data-node-icon', node.icon || '');  // 保存 icon class
-
-                        nodeDiv.innerHTML = `
-                            <div class="node-icon">
-                                <img src="${node.icon}" class="node-svg-icon" alt="">
-                            </div>
-                            <div class="node-info">
-                                <div class="node-title">${node.label}</div>
-                                <div class="node-description">${node.description || ''}</div>
-                            </div>
-                        `;
-
-                        // 綁定拖拽事件（如果 workflow-main.js 有提供 setupNodeDragEvents）
-                        if (typeof setupNodeDragEvents === 'function') {
-                            setupNodeDragEvents(nodeDiv);
-                        } else {
-                            // 基本拖拽事件
-                            nodeDiv.addEventListener('dragstart', function(e) {
-                                const nodeType = this.getAttribute('data-node-type');
-                                const nodeLabel = this.getAttribute('data-node-label');
-                                const nodeIcon = this.getAttribute('data-node-icon');
-                                e.dataTransfer.setData('nodeType', nodeType);
-                                e.dataTransfer.setData('nodeLabel', nodeLabel);
-                                e.dataTransfer.setData('nodeIcon', nodeIcon);
-                                e.dataTransfer.effectAllowed = 'copy';
-                            });
-                        }
-
-                        paletteDiv.appendChild(nodeDiv);
-                    });
-
-                    contentDiv.appendChild(paletteDiv);
-                    categoryDiv.appendChild(headerDiv);
-                    categoryDiv.appendChild(contentDiv);
-                    container.appendChild(categoryDiv);
-                });
-
-                console.log('節點定義載入完成');
-            } catch (error) {
-                console.error('載入節點定義失敗:', error);
-                const container = document.getElementById('node-categories-container');
-                container.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #EF4444;">
-                        <i class="fas fa-exclamation-triangle"></i> 載入節點失敗: ${error.message}
-                    </div>
-                `;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // 載入節點定義
-            loadNodeDefinitions();
-
-            // 初始化主題切換器
-            setTimeout(() => {
-                const themeSwitcherContainer = document.getElementById('themeSwitcherContainer');
-                if (themeSwitcherContainer && window.ThemeManager) {
-                    const switcher = ThemeManager.createThemeSwitcher();
-                    themeSwitcherContainer.appendChild(switcher);
-                }
-            }, 300);
-        });
-    </script>
-
-    <!-- Badge 樣式 -->
-    <style>
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .badge-danger { background: #e74c3c; }
-        .badge-primary { background: #3498db; }
-        .badge-info { background: #1abc9c; }
-        .badge-secondary { background: #95a5a6; }
-    </style>
+    <!-- 主題管理 + 節點定義載入 -->
+    <script src="/static/modules/form_workflow/js/workflow-designer-init.js"></script>
 
     <!-- Debug Footer 容器 (組件會自動載入) -->
     <div class="container-fluid" style="padding: 3px 15px; min-height: 10px;">

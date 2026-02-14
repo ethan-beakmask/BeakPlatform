@@ -83,9 +83,23 @@
 - [x] 更新本文件標記完成
 
 ### Phase 5 審計結果
-- **超過 500 行**（後續待辦）：`organizations/list.html` (1004 行)、`workflow_designer.html` (1081 行)
+- ~~**超過 500 行**（後續待辦）：`organizations/list.html` (1004 行)、`workflow_designer.html` (1081 行)~~ → Phase 6 已完成
 - **密碼模態框 CSS 重複**（後續可優化）：`user-view.css` 和 `org-admins.css` 有高度重複的密碼重設樣式，可抽為共用 class
 - **模態框 / 按鈕 CSS 重複**（後續可優化）：`holidays.css`、`schedules.css`、`org-tree.css` 有重複的 `.modal-*` 和 `.btn-*` 定義
+
+## Phase 6: 優先級 1 超限模板處理
+| 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
+|------|----------|-----------|--------|-------|------|
+| `organizations/list.html` | 1004 | 309 | `organizations.css` | `organizations.js` (Mode B) | [x] |
+| `workflow_designer.html` | 1081 | 845 | 合併至 `workflow-designer.css` | `workflow-designer-init.js` | [x] |
+
+> `workflow_designer.html` 845 行仍超 500，但為獨立頁面（不用 base.html），剩餘均為 HTML 結構（5 個 Tab 面板），已無大段內嵌 JS/CSS。如需進一步瘦身需拆 HTML partial。
+
+### Phase 6 額外產出
+- `organizations.css` — 企業管理頁面樣式（376 行）
+- `organizations.js` — 企業管理頁面邏輯（Mode B Window Bridge，326 行）
+- `workflow-designer-init.js` — 主題管理 IIFE + 節點定義載入器（165 行）
+- `workflow-designer.css` 新增 navbar + badge 樣式
 
 ---
 
@@ -106,6 +120,7 @@
 | `css/user-view.css` | 用戶詳情頁 |
 | `css/numbering-edit.css` | 編號規則編輯頁 |
 | `css/org-admins.css` | 企業管理員列表 |
+| `css/organizations.css` | 企業管理頁 |
 | `js/app.js` | 原有應用 JS |
 | `js/auth.js` | 認證相關 JS |
 | `js/holidays.js` | 假日設定頁 |
@@ -117,6 +132,7 @@
 | `js/settings.js` | 系統設定頁 |
 | `js/user-view.js` | 用戶詳情頁 |
 | `js/org-admins.js` | 企業管理員列表 |
+| `js/organizations.js` | 企業管理頁 |
 
 ### 模組層 (`modules/form_workflow/static/modules/form_workflow/`)
 | 檔案 | 用途 |
@@ -136,5 +152,6 @@
 | `js/mappings.js` | 表單流程配對列表 |
 | `css/category-list.css` | 分類管理 |
 | `js/category-list.js` | 分類管理 |
+| `js/workflow-designer-init.js` | 流程設計器初始化（主題+節點定義） |
 
-*最後更新: 2026-02-15*
+*最後更新: 2026-02-16*

@@ -1415,3 +1415,22 @@
             background: #fff3cd;
             border-color: #e0a800;
         }
+
+        /* Navbar (與 base.html 共用風格) */
+        .navbar { background: white; border-bottom: 1px solid #ccc; padding: 8px 16px; width: 100%; }
+        .navbar a { text-decoration: none; }
+        .navbar-content { display: flex; align-items: center; width: 100%; }
+        .navbar-logo { font-weight: bold; font-size: 16px; color: #333; margin-right: auto; }
+        .navbar-user { margin-left: 16px; color: #666; white-space: nowrap; }
+
+        /* Badge */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-danger { background: #e74c3c; }
+        .badge-primary { background: #3498db; }
+        .badge-info { background: #1abc9c; }
+        .badge-secondary { background: #95a5a6; }
