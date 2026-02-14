@@ -23,6 +23,7 @@
   - Phase 5: 全模板合規審計完成，CSS 去重（移除 app.css / user-form.css 中 common.css 重複定義）
   - Phase 6: `organizations/list.html` (1004→309)、`workflow_designer.html` (1081→845，獨立頁面)
   - Phase 7: `menu.html` (406→45)、`hostconfig/index.html` (295→111)
+  - Phase 8: CSS 去重 — 模態框/密碼重設/password-field/form-hint/alert/help-text 抽至 `common.css`，6 個 CSS 檔移除重複
 - 部門/社群頁面共用 `org-tree.css` (467 行)，消除 CSS 重複
 - CLAUDE.md FRONT-01 新增 JS 抽離三種模式說明 (A: 直接搬移 / B: Window Bridge / C: 保留 Partial)
 - 表單設計器工具列「表單檔名」欄位寬度 180→210px、「分類」欄位寬度 140→170px
