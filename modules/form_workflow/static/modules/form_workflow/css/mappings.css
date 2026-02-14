@@ -1,0 +1,66 @@
+/* mappings.css — 表單流程配對列表頁 */
+
+.fw-container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+.fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.fw-header h1 { margin: 0; font-size: 20px; }
+.fw-toolbar { display: flex; gap: 12px; align-items: center; }
+.fw-btn { padding: 8px 16px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 13px; }
+.fw-btn:hover { background: #e9e9e9; }
+.fw-btn.primary { background: #0066cc; color: white; border-color: #0066cc; }
+.fw-btn.primary:hover { background: #0055aa; }
+.fw-btn.success { background: #16a34a; color: white; border-color: #16a34a; }
+.fw-btn.success:hover { background: #15803d; }
+.fw-btn.danger { background: #dc2626; color: white; border-color: #dc2626; }
+.fw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fw-card { background: white; border: 1px solid #ddd; }
+.fw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
+.fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+.fw-table tr:hover { background: #fafafa; }
+.fw-table .actions { text-align: center; white-space: nowrap; }
+.fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
+
+.fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; display: inline-block; }
+.fw-badge.active { background: #dcfce7; color: #166534; }
+.fw-badge.warning { background: #fef3c7; color: #92400e; }
+.fw-badge.secondary { background: #e5e7eb; color: #374151; }
+.fw-badge.info { background: #dbeafe; color: #1e40af; }
+
+.fw-empty { text-align: center; padding: 48px; color: #999; }
+.fw-loading { text-align: center; padding: 48px; color: #666; }
+
+.fw-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.fw-modal-content { background: white; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+.fw-modal-header { padding: 16px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+.fw-modal-header h3 { margin: 0; font-size: 16px; }
+.fw-modal-body { padding: 20px; }
+.fw-modal-footer { padding: 16px 20px; border-top: 1px solid #ddd; display: flex; justify-content: flex-end; gap: 8px; }
+
+.fw-form-group { margin-bottom: 16px; }
+.fw-form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.fw-form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; font-size: 13px; box-sizing: border-box; }
+
+.fw-hint { font-size: 12px; color: #666; background: #f5f5f5; padding: 8px 12px; margin-top: 12px; }
+.fw-arrow { color: #999; margin: 0 8px; }
+.fw-version { font-size: 11px; color: #999; font-family: monospace; }
+
+.fw-toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 4px; color: white; z-index: 2000; }
+.fw-toast.success { background: #16a34a; }
+.fw-toast.error { background: #dc2626; }
+
+/* SQL Sync Toggle */
+.fw-toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+.fw-toggle input { opacity: 0; width: 0; height: 0; }
+.fw-toggle .slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; transition: 0.2s; border-radius: 10px; }
+.fw-toggle .slider:before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: 0.2s; border-radius: 50%; }
+.fw-toggle input:checked + .slider { background: #0066cc; }
+.fw-toggle input:checked + .slider:before { transform: translateX(16px); }
+.fw-sync-info { font-size: 11px; color: #999; margin-top: 2px; }
+.fw-sync-info.active { color: #0066cc; }
+
+.fw-help-section { margin-bottom: 16px; }
+.fw-help-section:last-child { margin-bottom: 0; }
+.fw-help-section h4 { font-size: 14px; font-weight: 600; margin: 0 0 8px 0; padding: 4px 8px; background: #f5f5f5; border-left: 3px solid #0066cc; }
+.fw-help-section ul { margin: 0; padding: 0 0 0 20px; font-size: 13px; line-height: 1.8; }
+.fw-help-section li { color: #333; }

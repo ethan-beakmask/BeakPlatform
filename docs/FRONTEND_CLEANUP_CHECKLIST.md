@@ -47,22 +47,30 @@
 - 已刪除: `_departments_styles.html` (搬入 org-tree.css)
 
 ## Phase 4: 批量處理剩餘 HIGH 檔案
-| 模板 | 原始行數 | 狀態 |
-|------|----------|------|
-| `users/edit.html` | ~600 | [ ] |
-| `users/view.html` | ~497 | [ ] |
-| `numbering/edit.html` | ~451 | [ ] |
-| `system_settings.html` | ~434 | [ ] |
-| `org-admins/list.html` | ~391 | [ ] |
-| `job_levels/matrix.html` | ~390 | [ ] |
-| `external-users/edit.html` | ~373 | [ ] |
-| `roles/create.html` | ~336 | [ ] |
-| `pending_list.html` | ~317 | [ ] |
-| `roles/edit.html` | ~298 | [ ] |
-| `category_list.html` | ~379 | [ ] |
-| `mappings_list.html` | ~623 | [ ] |
-| `dashboard.html` | ~389 | [ ] |
-| `dev/quick_login.html` | ~709 | [ ] |
+
+### 超過 500 行（已完成）
+| 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
+|------|----------|-----------|--------|-------|------|
+| `users/edit.html` | 600 | 361 | `user-form.css` (共用) | `user-edit.js` | [x] |
+| `mappings_list.html` | 623 | 276 | `mappings.css` | `mappings.js` | [x] |
+| `dev/quick_login.html` | 709 | 215 | `quick-login.css` | `quick-login.js` | [x] |
+| `admin/settings.html` | 640 | 319 | `settings.css` | `settings.js` | [x] |
+
+### 500 行以下（已合規，可選優化）
+| 模板 | 行數 | 內嵌 CSS+JS | 狀態 |
+|------|------|------------|------|
+| `users/view.html` | ~497 | ~279 行 | [ ] |
+| `numbering/edit.html` | ~451 | ~185 行 | [ ] |
+| `org-admins/list.html` | ~391 | ~231 行 | [ ] |
+| `category_list.html` | ~380 | ~217 行 | [ ] |
+
+> 以下檔案已不存在（已從專案移除或改名），從清單移除：
+> `job_levels/matrix.html`, `external-users/edit.html`, `roles/create.html`,
+> `pending_list.html`, `roles/edit.html`, `dashboard.html`
+
+### Phase 4 額外產出
+- `user-form.css` 新增編輯頁面特有樣式（edit-form, readonly-info, btn-row, danger-zone, readonly-notice）
+- `settings.css` + `settings.js` — 系統設定頁（Logo/一般設定/密碼政策/左側選單高亮）
 
 ## Phase 5: 收尾
 - [ ] 刪除已轉為外部 .js 的死 partial 檔案
@@ -84,12 +92,17 @@
 | `css/schedules.css` | 班表頁 |
 | `css/org-tree.css` | 部門/社群共用樣式 |
 | `css/user-form.css` | 新增/編輯用戶頁 |
+| `css/quick-login.css` | 開發快速登入頁 |
+| `css/settings.css` | 系統設定頁 |
 | `js/app.js` | 原有應用 JS |
 | `js/auth.js` | 認證相關 JS |
 | `js/holidays.js` | 假日設定頁 |
 | `js/schedules.js` | 班表頁 |
 | `js/groups.js` | 社群設定頁 |
 | `js/user-form.js` | 新增用戶頁 |
+| `js/user-edit.js` | 編輯用戶頁 |
+| `js/quick-login.js` | 開發快速登入頁 |
+| `js/settings.js` | 系統設定頁 |
 
 ### 模組層 (`modules/form_workflow/static/modules/form_workflow/`)
 | 檔案 | 用途 |
@@ -99,11 +112,13 @@
 | `css/form-designer.css` | 表單設計器 |
 | `css/form-center.css` | 表單中心 |
 | `css/workflow-designer.css` | 工作流設計器 |
+| `css/mappings.css` | 表單流程配對列表 |
 | `js/template-list.js` | 表單模板列表 |
 | `js/workflow-list.js` | 工作流列表 |
 | `js/form-center.js` | 表單中心 |
 | `js/form-designer-main.js` | 表單設計器主邏輯 |
 | `js/workflow-main.js` | 工作流設計器主邏輯 |
 | `js/workflow-tree-chart.js` | 樹系圖 |
+| `js/mappings.js` | 表單流程配對列表 |
 
 *最後更新: 2026-02-15*

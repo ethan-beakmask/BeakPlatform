@@ -1,0 +1,138 @@
+/* user-edit.js — 編輯用戶頁面 (passwordForm + transliterateName) */
+
+const __userEditConfig = window.__USER_EDIT_CONFIG || {};
+
+function passwordForm() {
+    return {
+        password: '',
+        showPassword: false,
+        passwordErrors: [],
+        passwordChecked: false,
+        passwordRequirements: '載入中...',
+        validateTimer: null,
+
+        // 姓名與翻譯
+        nativeName: __userEditConfig.nativeName || '',
+        englishName: __userEditConfig.englishName || '',
+        transliterating: false,
+        detectedLang: '',
+        langNames: { 'zh': '中文', 'ja': '日文', 'ko': '韓文', 'unknown': '未知', 'mixed': '混合' },
+
+        async init() {
+            await this.loadRequirements();
+        },
+
+        async loadRequirements() {
+            try {
+                const response = await fetch('/auth/password-policy');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.policy.enabled) {
+                        const p = data.data.policy;
+                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        if (p.require_uppercase) reqs.push('包含大寫字母');
+                        if (p.require_lowercase) reqs.push('包含小寫字母');
+                        if (p.require_digit) reqs.push('包含數字');
+                        if (p.require_special) reqs.push('包含特殊符號');
+                        this.passwordRequirements = reqs.join('、') + '（留空則不變更）';
+                    } else {
+                        this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+                    }
+                }
+            } catch (err) {
+                this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+            }
+        },
+
+        async generatePassword() {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.password = data.data.password;
+                        this.showPassword = true;
+                        this.validatePassword();
+                    }
+                }
+            } catch (err) {
+                console.error('生成密碼失敗:', err);
+            }
+        },
+
+        validatePassword() {
+            clearTimeout(this.validateTimer);
+            this.validateTimer = setTimeout(() => this._doValidate(), 300);
+        },
+
+        async _doValidate() {
+            if (!this.password) {
+                this.passwordErrors = [];
+                this.passwordChecked = false;
+                return;
+            }
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/auth/password-policy/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ password: this.password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        this.passwordErrors = data.data.errors || [];
+                        this.passwordChecked = true;
+                    }
+                }
+            } catch (err) {
+                console.error('驗證密碼失敗:', err);
+            }
+        },
+
+        async transliterateName() {
+            if (!this.nativeName || this.transliterating) return;
+
+            this.transliterating = true;
+            this.detectedLang = '';
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                                  document.querySelector('input[name="csrf_token"]')?.value;
+                const response = await fetch('/api/transliterate/name', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ name: this.nativeName })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.englishName = data.data.romanized;
+                    this.detectedLang = data.data.language;
+                } else {
+                    console.error('翻譯失敗:', data.message);
+                }
+            } catch (err) {
+                console.error('翻譯請求失敗:', err);
+            } finally {
+                this.transliterating = false;
+            }
+        }
+    };
+}

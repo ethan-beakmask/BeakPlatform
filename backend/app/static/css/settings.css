@@ -1,0 +1,66 @@
+/* settings.css — 系統設定頁面 */
+
+.settings-layout {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+/* 左側選單 */
+.settings-nav {
+    width: 180px;
+    flex-shrink: 0;
+}
+.settings-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: sticky;
+    top: 20px;
+}
+.settings-nav li {
+    border-bottom: 1px solid #eee;
+}
+.settings-nav a {
+    display: block;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: #333;
+}
+.settings-nav a:hover {
+    background: #f5f5f5;
+}
+.settings-nav a.active {
+    background: #e3f2fd;
+    color: #0066cc;
+    border-left: 3px solid #0066cc;
+    padding-left: 9px;
+}
+
+/* 右側內容 */
+.settings-content {
+    flex: 1;
+    min-width: 0;
+}
+.settings-section {
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #eee;
+}
+.settings-section:last-child {
+    border-bottom: none;
+}
+.settings-section h2 {
+    margin-top: 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #0066cc;
+}
+
+/* 分類管理樣式 */
+.category-row { transition: background-color 0.15s; }
+.category-row:hover { background-color: #f9fafb; }
+.color-dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+.checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.unit-tree { max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; padding: 8px; }
+.unit-item { padding: 4px 0; }
+.unit-item label { display: flex; align-items: center; gap: 6px; cursor: pointer; }

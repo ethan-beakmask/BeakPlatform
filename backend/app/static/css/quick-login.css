@@ -1,0 +1,361 @@
+/* quick-login.css — 開發環境快速登入頁面 */
+
+[x-cloak] { display: none !important; }
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 警告橫幅 */
+.warning-banner {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.warning-banner h1 {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.warning-banner .subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.warning-banner .logout-btn {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.warning-banner .logout-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* 主內容區 */
+.main-content {
+    background: white;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+/* 左側選擇區 */
+.select-panel {
+    padding: 24px;
+    border-right: 1px solid #e5e7eb;
+}
+
+.select-panel h2 {
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 訊息區 */
+.message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message.success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.message.error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.message .goto-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: #166534;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+/* 列表項目 */
+.list-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.list-box.org-list {
+    max-height: 243px;
+}
+
+.list-box.user-list {
+    max-height: 720px;
+}
+
+.list-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item:hover {
+    background: #f9fafb;
+}
+
+.list-item.selected {
+    background: #eff6ff;
+}
+
+.list-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.list-item.disabled:hover {
+    background: transparent;
+}
+
+.list-item .radio {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.list-item.selected .radio {
+    border-color: #2563eb;
+}
+
+.list-item.selected .radio::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #2563eb;
+    border-radius: 50%;
+}
+
+.list-item .item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.list-item .item-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.list-item .item-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.list-item .badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.badge.system { background: #fef3c7; color: #92400e; }
+.badge.org-admin { background: #dbeafe; color: #1e40af; }
+.badge.member { background: #f3f4f6; color: #6b7280; }
+.badge.inactive { background: #fee2e2; color: #991b1b; }
+
+/* 空狀態 */
+.empty-state {
+    text-align: center;
+    padding: 24px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* 載入中 */
+.loading-state {
+    text-align: center;
+    padding: 24px;
+    color: #6b7280;
+}
+
+/* 右側資訊區 */
+.info-panel {
+    padding: 24px;
+    background: #f9fafb;
+}
+
+.info-panel h2 {
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-section {
+    margin-bottom: 20px;
+}
+
+.info-item {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: white;
+}
+
+.info-label {
+    font-weight: 600;
+    font-size: 12px;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.info-content {
+    font-size: 13px;
+}
+
+.info-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.info-link:hover {
+    text-decoration: underline;
+}
+
+.info-hint {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.credential {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.cred-label {
+    font-size: 11px;
+    color: #6b7280;
+    min-width: 36px;
+}
+
+.info-content code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.cred-note {
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+/* 當前登入狀態 */
+.current-user-bar {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 12px 16px;
+    margin: 16px 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.current-user-bar i {
+    color: #059669;
+    font-size: 20px;
+}
+
+.current-user-bar .info {
+    flex: 1;
+}
+
+.current-user-bar .info strong {
+    color: #065f46;
+}
+
+.current-user-bar .info span {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .select-panel {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+}
