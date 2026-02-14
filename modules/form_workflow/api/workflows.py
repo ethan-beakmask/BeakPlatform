@@ -905,10 +905,40 @@ def list_available_subflows():
         for sf in dedicated_subflows
     ]
 
-    # 通用子流程按 category 分組
+    # 預載分類名稱對照表（透過 category_secure_code 查 FwCategory）
+    from ..models import FwCategory
+    cat_codes = {sf.category_secure_code for sf in common_subflows if sf.category_secure_code}
+    cat_name_map = {}
+    if cat_codes:
+        cats = FwCategory.query.filter(
+            FwCategory.secure_code.in_(cat_codes),
+            FwCategory.is_deleted == False
+        ).all()
+        # 建立 secure_code → FwCategory 物件的映射
+        cat_obj_map = {c.secure_code: c for c in cats}
+        # 收集所有 parent_secure_code 以便查詢父分類名稱
+        parent_codes = {c.parent_secure_code for c in cats if c.parent_secure_code}
+        parent_codes -= cat_codes  # 排除已查過的
+        if parent_codes:
+            parent_cats = FwCategory.query.filter(
+                FwCategory.secure_code.in_(parent_codes),
+                FwCategory.is_deleted == False
+            ).all()
+            for pc in parent_cats:
+                cat_obj_map[pc.secure_code] = pc
+        # 組合分類名稱（二層：parent > child，一層：直接用名稱）
+        for sc, cat in cat_obj_map.items():
+            if sc not in cat_codes:
+                continue
+            if cat.parent_secure_code and cat.parent_secure_code in cat_obj_map:
+                cat_name_map[sc] = f'{cat_obj_map[cat.parent_secure_code].name} > {cat.name}'
+            else:
+                cat_name_map[sc] = cat.name
+
+    # 通用子流程按分類分組
     category_map = OrderedDict()
     for sf in common_subflows:
-        cat_name = sf.category or '其他'
+        cat_name = cat_name_map.get(sf.category_secure_code, '其他')
         if cat_name not in category_map:
             category_map[cat_name] = []
         category_map[cat_name].append({

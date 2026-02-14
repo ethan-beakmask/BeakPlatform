@@ -455,6 +455,20 @@
                             'background-color': '#22C55E'
                         }
                     },
+                    // Subflow 節點 - 通用子流程（藍色）
+                    {
+                        selector: 'node[type="Subflow"][subflowKind="common"]',
+                        style: {
+                            'background-color': '#6196ea'
+                        }
+                    },
+                    // Subflow 節點 - 專屬子流程（綠色）
+                    {
+                        selector: 'node[type="Subflow"][subflowKind="dedicated"]',
+                        style: {
+                            'background-color': '#64aa89'
+                        }
+                    },
                     {
                         selector: 'node[type="sql_executor"]',
                         style: {
@@ -2067,6 +2081,7 @@
         // 新增節點
         function addNode(type, label, position, icon) {
             pushUndoState();
+            type = normalizeNodeType(type) || type;
             nodeCounter++;
             const nodeId = `node-${type}-${nodeCounter}`;
 
@@ -3347,6 +3362,11 @@
                     // End 節點：從 config 恢復 finishMode 供 CSS selector 變色
                     if (nodeData.type === 'End' && node.config && node.config.finish_mode) {
                         nodeData.finishMode = node.config.finish_mode;
+                    }
+
+                    // Subflow 節點：從 config 恢復 subflowKind 供 CSS selector 變色
+                    if (nodeData.type === 'Subflow' && node.config && node.config.subflowKind) {
+                        nodeData.subflowKind = node.config.subflowKind;
                     }
 
                     // 如果節點有父群組，設定父子關係
@@ -4945,7 +4965,7 @@
                         const isSelected = sf.code === currentChildFlowId;
                         const bgColor = isSelected ? '#e8f0fe' : 'transparent';
                         const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
-                        html += `<div style="display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}')">
+                        html += `<div style="display: flex; align-items: center; padding: 7px 10px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}', true)">
                             <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>`;
                         if (sf.is_referenced) {
                             html += `<span style="font-size: 11px; color: #667eea; margin-left: 8px; white-space: nowrap;">使用中</span>`;
@@ -4974,7 +4994,7 @@
                             const isSelected = sf.code === currentChildFlowId;
                             const bgColor = isSelected ? '#e8f0fe' : 'transparent';
                             const borderLeft = isSelected ? '3px solid #667eea' : '3px solid transparent';
-                            html += `<div style="display: flex; align-items: center; padding: 6px 10px 6px 24px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}')">
+                            html += `<div style="display: flex; align-items: center; padding: 6px 10px 6px 24px; border-bottom: 1px solid #f0f0f0; background: ${bgColor}; border-left: ${borderLeft}; cursor: pointer;" onmouseover="this.style.background='${isSelected ? '#e8f0fe' : '#f8f9fa'}'" onmouseout="this.style.background='${bgColor}'" onclick="selectSubflow('${nodeId}', '${sf.code}', '${sf.name.replace(/'/g, "\\'")}', false)">
                                 <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sf.name}</span>
                             </div>`;
                         });
@@ -4985,6 +5005,16 @@
 
                 // 更新「目前」顯示
                 _updateCurrentSubflowDisplay(currentChildFlowId, dedicated, common_categories);
+
+                // 自動補齊舊資料的 subflowKind（載入時節點已有 childFlowId 但沒有 subflowKind）
+                if (currentChildFlowId && node.length > 0 && !node.data('subflowKind')) {
+                    const isDed = dedicated.some(sf => sf.code === currentChildFlowId);
+                    const kind = isDed ? 'dedicated' : 'common';
+                    node.data('subflowKind', kind);
+                    const cfg = node.data('config') || {};
+                    cfg.subflowKind = kind;
+                    node.data('config', cfg);
+                }
 
                 // 載入參數映射配置
                 loadParamMapping(nodeId);
@@ -5022,13 +5052,23 @@
         }
 
         // 選擇子流程
-        function selectSubflow(nodeId, code, name) {
+        function selectSubflow(nodeId, code, name, isDedicated) {
             const hiddenInput = document.getElementById('childFlowSelect');
             if (hiddenInput) hiddenInput.value = code;
 
             // 更新「目前」顯示
             const display = document.getElementById('currentSubflowDisplay');
             if (display) display.innerHTML = `目前：<strong>${name}</strong>`;
+
+            // 設定 subflowKind 供節點變色
+            const kind = isDedicated ? 'dedicated' : 'common';
+            const node = cy.getElementById(nodeId);
+            if (node && node.length > 0) {
+                node.data('subflowKind', kind);
+                const config = node.data('config') || {};
+                config.subflowKind = kind;
+                node.data('config', config);
+            }
 
             // 套用配置
             applySubprocessConfig(nodeId);
@@ -5104,7 +5144,7 @@
 
                     // 重新載入子流程清單並自動選擇新建立的子流程
                     await loadAvailableSubflows(nodeId);
-                    selectSubflow(nodeId, result.data.code, result.data.name);
+                    selectSubflow(nodeId, result.data.code, result.data.name, true);
                 } else {
                     updateStatus('建立子流程失敗：' + (result.message || '未知錯誤'), 'warning');
                 }
