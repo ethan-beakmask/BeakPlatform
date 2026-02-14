@@ -10,14 +10,17 @@
 - 表單設計器左側面板新增「表單標題」元件（HTML Element h3 置中），拖入即用
 - 新建表單模板/流程連帶表單自動帶入標題元件，content 為表單名稱
 - 新增表單與新增流程的預設分類改為「流程記錄」
+- 表單填寫端載入 `formio-theme.css`，實現與設計器 WYSIWYG 視覺同步
+- 填寫/簽核/閱讀 Modal 灰色畫布背景 + 白色表單區域 + 陰影（匹配設計器 preview）
 
 ### Changed
 - 表單設計器工具列「表單檔名」欄位寬度 180→210px、「分類」欄位寬度 140→170px
-- 工作流列表頁 Bulma CSS 風格統一化（表格、按鈕、標籤、Tab、Modal 全面改用 Bulma）
 - 工作流列表新增「專屬」「通用」子流程數量欄位，API 批次計算
 - 流程設計器描述欄位改為多行編輯 Modal，支援換行儲存
 - 新建流程自動適應視圖，預設 Start/End 節點進入視野
-- 引入 Bulma CSS 1.0.3 框架（`vendor/bulma.min.css`），表單中心 POC 測試通過
+- CSS 框架統一為 Bootstrap 5.3.2，移除 Bulma（`form_center.html`、`workflow_list.html`、`workflow_designer.html`）
+- 刪除 `bulma.min.css`，消除 Bulma 與 Bootstrap/Form.io 的 CSS 衝突（heading 大小、columns 佈局、input 樣式）
+- 工作流列表頁 Bulma → Bootstrap 改寫（表格、按鈕、標籤、Tab、Modal）
 - 表單中心主旨欄位超長文字自動截斷顯示 `...`（純視覺，不影響資料）
 - 刪除主流程時遞迴軟刪除所有專屬子流程及相關配對，通用子流程保留
 - 刪除前檢查運行中實例，有則阻擋刪除

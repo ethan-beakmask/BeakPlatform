@@ -5,12 +5,19 @@
 {% block head %}
 <!-- 用戶時區 (個人 > 企業 > Asia/Taipei) -->
 <script>window.__USER_TIMEZONE = '{{ user_timezone }}';</script>
-<!-- Bulma CSS -->
-<link rel="stylesheet" href="/static/vendor/bulma.min.css">
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
 <!-- Form.io CSS -->
 <link rel="stylesheet" href="/static/vendor/formio.full.min.css">
+<link rel="stylesheet" href="/static/css/formio-theme.css">
 <style>
     [x-cloak] { display: none !important; }
+
+    /* 畫布呈現：灰色背景 + 白色表單區域 */
+    .fc-modal-body.fc-form-canvas {
+        background: #f0f1f3;
+        padding: 24px;
+    }
 
     /* 主容器 */
     .fc-container { display: flex; gap: 16px; padding: 16px; min-height: calc(100vh - 120px); }
@@ -852,7 +859,7 @@
 
     <!-- 填寫表單 Modal -->
     <div x-show="showFillModal" x-cloak class="fc-modal">
-        <div class="fc-modal-content" :style="'width: ' + (selectedForm?.builder_config?.formWidth ? Math.max(selectedForm.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+        <div class="fc-modal-content" :style="'width: ' + (selectedForm?.builder_config?.formWidth ? Math.max(selectedForm.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
             <div class="fc-modal-header">
                 <div>
                     <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
@@ -862,7 +869,7 @@
                 </div>
                 <button class="fc-close-btn" @click="closeFillModal()">&times;</button>
             </div>
-            <div class="fc-modal-body">
+            <div class="fc-modal-body fc-form-canvas">
                 <div x-show="loadingFormSchema" class="fc-loading">載入表單結構中...</div>
                 <div x-show="!loadingFormSchema && formSchema">
                     <div id="form-fill-container"></div>
@@ -884,7 +891,7 @@
 
     <!-- 簽核 Modal -->
     <div x-show="showApprovalModal" x-cloak class="fc-modal">
-        <div class="fc-modal-content" :style="'width: ' + (currentApproval?.builder_config?.formWidth ? Math.max(currentApproval.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+        <div class="fc-modal-content" :style="'width: ' + (currentApproval?.builder_config?.formWidth ? Math.max(currentApproval.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
             <div class="fc-modal-header">
                 <div>
                     <h3>簽核表單</h3>
@@ -909,7 +916,7 @@
                             <span x-show="!currentApproval?.has_editable_fields" style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
                             <span x-show="currentApproval?.has_editable_fields" style="font-size: 11px; color: #1d4ed8; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">部分欄位可編輯</span>
                         </div>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;"
+                        <div style="background: #f0f1f3; border-radius: 4px; padding: 16px; min-height: 150px;"
                              :class="{ 'fc-form-readonly': !currentApproval?.has_editable_fields }">
                             <div id="approval-form-container"></div>
                         </div>
@@ -1772,6 +1779,12 @@ function formCenterManager() {
             const container = document.getElementById(containerId);
             if (!container) return;
 
+            // 白色表單區域 + 陰影（匹配設計器 preview 行為）
+            container.style.backgroundColor = '#ffffff';
+            container.style.padding = '20px';
+            container.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+            container.style.minHeight = '400px';
+
             // 套用寬度
             const formWidth = builderConfig?.formWidth;
             if (formWidth) {
@@ -1848,6 +1861,10 @@ function formCenterManager() {
                 container.classList.remove('has-background');
                 container.style.maxWidth = '';
                 container.style.margin = '';
+                container.style.backgroundColor = '';
+                container.style.padding = '';
+                container.style.boxShadow = '';
+                container.style.minHeight = '';
             }
             const styleEl = document.getElementById(containerId + '-bg-style');
             if (styleEl) styleEl.remove();

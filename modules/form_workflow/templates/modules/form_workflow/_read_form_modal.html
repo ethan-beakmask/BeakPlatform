@@ -2,7 +2,7 @@
 
 <!-- 閱讀表單 Modal -->
 <div x-show="showReadFormModal" x-cloak class="fc-modal">
-    <div class="fc-modal-content" :style="'width: ' + (readFormData?.builder_config?.formWidth ? Math.max(readFormData.builder_config.formWidth + 80, 600) + 'px' : '700px')">
+    <div class="fc-modal-content" :style="'width: ' + (readFormData?.builder_config?.formWidth ? Math.max(readFormData.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
         <div class="fc-modal-header">
             <div>
                 <h3 x-text="'閱讀表單 - ' + (readFormData?.form_name || '')"></h3>
@@ -22,7 +22,7 @@
 
                 <!-- 表單內容（唯讀） -->
                 <div style="margin-bottom: 16px;">
-                    <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; background: white; min-height: 150px;">
+                    <div style="background: #f0f1f3; border-radius: 4px; padding: 16px; min-height: 150px;">
                         <div id="read-form-container" class="fc-form-readonly"></div>
                     </div>
                 </div>

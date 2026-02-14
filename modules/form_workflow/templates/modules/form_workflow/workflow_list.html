@@ -3,7 +3,7 @@
 {% block title %}工作流模板 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/vendor/bulma.min.css">
+<link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
 <style>
     [x-cloak] { display: none !important; }
 
@@ -30,10 +30,20 @@
     .tree-view-wrap { background: #fafafa; border: 1px solid #ddd; border-top: none; }
     .tree-view-wrap .chart-container { width: 100%; height: calc(100vh - 220px); min-height: 400px; }
 
-    /* Bulma table 微調 */
+    /* 表格微調 */
     .table td, .table th { font-size: 13px; vertical-align: middle; }
     .table td.actions { white-space: nowrap; }
-    .table tr.is-selected { background: #eff6ff; }
+    .table tr.table-active { background: #eff6ff; }
+
+    /* 流程類型 Tab */
+    .wf-tabs { display: flex; gap: 0; border-bottom: 2px solid #dee2e6; margin-bottom: 12px; }
+    .wf-tab {
+        padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+        color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px;
+        background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .wf-tab:hover { color: #374151; }
+    .wf-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
 </style>
 {% endblock %}
 
@@ -43,10 +53,10 @@
     <!-- 樹系圖內嵌視圖 -->
     <div x-show="treeView.active" x-cloak>
         <div class="tree-view-toolbar">
-            <button class="button is-small" @click="fitTree()">置中</button>
-            <button class="button is-small" @click="closeTree()">關閉</button>
-            <span class="has-text-weight-semibold" x-text="treeView.name || ''"></span>
-            <span class="has-text-grey-light is-size-7" x-text="treeView.code || ''"></span>
+            <button class="btn btn-sm btn-secondary" @click="fitTree()">置中</button>
+            <button class="btn btn-sm btn-secondary" @click="closeTree()">關閉</button>
+            <span class="fw-semibold" x-text="treeView.name || ''"></span>
+            <span class="text-muted small" x-text="treeView.code || ''"></span>
         </div>
         <div class="tree-view-wrap">
             <div id="inline-tree-chart" class="chart-container"></div>
@@ -54,58 +64,42 @@
     </div>
 
     <!-- 頁首 -->
-    <div class="level mb-4" x-show="!treeView.active">
-        <div class="level-left">
-            <div class="level-item">
-                <div>
-                    <h1 class="title is-5 mb-1">工作流模板管理</h1>
-                    <p class="is-size-7 has-text-grey">管理流程定義與節點配置</p>
-                </div>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-3" x-show="!treeView.active">
+        <div>
+            <h1 class="h5 mb-1">工作流模板管理</h1>
+            <p class="small text-secondary mb-0">管理流程定義與節點配置</p>
         </div>
-        <div class="level-right">
-            <div class="level-item">
-                <input class="input is-small" type="text" x-model="searchQuery"
-                       @input.debounce.300ms="loadWorkflows()" placeholder="搜尋..."
-                       style="width: 200px;">
+        <div class="d-flex align-items-center gap-2">
+            <input class="form-control form-control-sm" type="text" x-model="searchQuery"
+                   @input.debounce.300ms="loadWorkflows()" placeholder="搜尋..."
+                   style="width: 200px;">
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-sm" :class="viewMode === 'list' ? 'btn-info' : 'btn-outline-secondary'"
+                        @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
+                        title="清單模式">
+                    <i class="ri-list-unordered"></i>
+                </button>
+                <button class="btn btn-sm" :class="viewMode === 'grid' ? 'btn-info' : 'btn-outline-secondary'"
+                        @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
+                        title="縮圖模式">
+                    <i class="ri-layout-grid-fill"></i>
+                </button>
             </div>
-            <div class="level-item">
-                <div class="buttons has-addons mb-0">
-                    <button class="button is-small" :class="viewMode === 'list' ? 'is-info is-selected' : ''"
-                            @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
-                            title="清單模式">
-                        <span class="icon is-small"><i class="ri-list-unordered"></i></span>
-                    </button>
-                    <button class="button is-small" :class="viewMode === 'grid' ? 'is-info is-selected' : ''"
-                            @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
-                            title="縮圖模式">
-                        <span class="icon is-small"><i class="ri-layout-grid-fill"></i></span>
-                    </button>
-                </div>
-            </div>
-            <div class="level-item">
-                <button class="button is-small" @click="loadWorkflows()">重新載入</button>
-            </div>
-            <div class="level-item">
-                <button class="button is-small is-link" @click="openCreateModal()">+ 新增工作流</button>
-            </div>
+            <button class="btn btn-sm btn-secondary" @click="loadWorkflows()">重新載入</button>
+            <button class="btn btn-sm btn-primary" @click="openCreateModal()">+ 新增工作流</button>
         </div>
     </div>
 
     <!-- 流程類型 Tab -->
-    <div x-show="!loading && !treeView.active" class="tabs is-small mb-3">
-        <ul>
-            <li :class="{ 'is-active': flowType === 'main' }">
-                <a @click.prevent="flowType = 'main'; loadWorkflows()">
-                    主流程 <span class="has-text-grey ml-1" x-text="'(' + totalCounts.main + ')'"></span>
-                </a>
-            </li>
-            <li :class="{ 'is-active': flowType === 'subflow' }">
-                <a @click.prevent="flowType = 'subflow'; loadWorkflows()">
-                    通用子流程 <span class="has-text-grey ml-1" x-text="'(' + totalCounts.subflow + ')'"></span>
-                </a>
-            </li>
-        </ul>
+    <div x-show="!loading && !treeView.active" class="wf-tabs">
+        <button class="wf-tab" :class="{ active: flowType === 'main' }"
+                @click="flowType = 'main'; loadWorkflows()">
+            主流程 <span class="text-secondary ms-1" x-text="'(' + totalCounts.main + ')'"></span>
+        </button>
+        <button class="wf-tab" :class="{ active: flowType === 'subflow' }"
+                @click="flowType = 'subflow'; loadWorkflows()">
+            通用子流程 <span class="text-secondary ms-1" x-text="'(' + totalCounts.subflow + ')'"></span>
+        </button>
     </div>
 
     <!-- 分類篩選 chips -->
@@ -120,27 +114,27 @@
     </div>
 
     <!-- 主內容區 -->
-    <div class="box p-0" x-show="!treeView.active">
-        <div x-show="loading" class="has-text-centered p-6 has-text-grey">載入中...</div>
+    <div class="border rounded p-0" x-show="!treeView.active">
+        <div x-show="loading" class="text-center p-5 text-secondary">載入中...</div>
 
-        <div x-show="!loading && filteredWorkflows.length === 0" class="has-text-centered p-6 has-text-grey">
-            <p class="is-size-6 mb-2">尚無工作流模板</p>
+        <div x-show="!loading && filteredWorkflows.length === 0" class="text-center p-5 text-secondary">
+            <p class="mb-2">尚無工作流模板</p>
             <p>點擊「新增工作流」開始建立</p>
         </div>
 
         <!-- 批次工具列 -->
         <div x-show="!loading && selectedItems.length > 0 && viewMode === 'list'"
              class="px-3 py-2" style="background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px;">
-            <span class="is-size-7 has-text-weight-medium">已選 <strong x-text="selectedItems.length"></strong> 項</span>
-            <button class="button is-small" @click="invertSelection()">反選</button>
-            <button class="button is-small is-link" @click="batchSaveNewVersion()" :disabled="batchProcessing">另存新版</button>
-            <button class="button is-small is-danger" @click="batchDelete()" :disabled="batchProcessing">刪除</button>
-            <span x-show="batchProcessing" class="is-size-7 has-text-grey">處理中...</span>
+            <span class="small fw-medium">已選 <strong x-text="selectedItems.length"></strong> 項</span>
+            <button class="btn btn-sm btn-secondary" @click="invertSelection()">反選</button>
+            <button class="btn btn-sm btn-primary" @click="batchSaveNewVersion()" :disabled="batchProcessing">另存新版</button>
+            <button class="btn btn-sm btn-danger" @click="batchDelete()" :disabled="batchProcessing">刪除</button>
+            <span x-show="batchProcessing" class="small text-secondary">處理中...</span>
         </div>
 
         <!-- 清單模式 -->
         <table x-show="!loading && filteredWorkflows.length > 0 && viewMode === 'list'"
-               class="table is-fullwidth is-hoverable is-narrow mb-0">
+               class="table table-hover table-sm mb-0">
             <thead>
                 <tr>
                     <th style="width: 40px; text-align: center;">
@@ -161,43 +155,43 @@
             </thead>
             <tbody>
                 <template x-for="w in filteredWorkflows" :key="w.secure_code">
-                    <tr :class="selectedItems.includes(w.secure_code) ? 'is-selected' : ''">
+                    <tr :class="selectedItems.includes(w.secure_code) ? 'table-active' : ''">
                         <td style="text-align: center;">
                             <input type="checkbox" :value="w.secure_code"
                                    :checked="selectedItems.includes(w.secure_code)"
                                    @change="toggleSelect(w.secure_code)">
                         </td>
-                        <td class="has-text-weight-medium" x-text="w.name"></td>
-                        <td style="font-family: monospace;" class="has-text-grey" x-text="w.code || '-'"></td>
-                        <td class="has-text-grey" style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="firstLine(w.description)"></td>
-                        <td style="font-family: monospace;" class="has-text-grey-light is-size-7"
+                        <td class="fw-medium" x-text="w.name"></td>
+                        <td style="font-family: monospace;" class="text-secondary" x-text="w.code || '-'"></td>
+                        <td class="text-secondary" style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="firstLine(w.description)"></td>
+                        <td style="font-family: monospace;" class="text-muted small"
                             x-text="(w.version || 'AA') + (w.revision || '')"></td>
                         <td style="text-align: center;">
-                            <span x-show="w.dedicated_subflow_count > 0" class="tag is-small is-danger is-light"
+                            <span x-show="w.dedicated_subflow_count > 0" class="badge bg-danger-subtle text-danger"
                                   x-text="w.dedicated_subflow_count"></span>
-                            <span x-show="!w.dedicated_subflow_count" class="has-text-grey-lighter is-size-7">-</span>
+                            <span x-show="!w.dedicated_subflow_count" class="text-muted small">-</span>
                         </td>
                         <td style="text-align: center;">
-                            <span x-show="w.common_subflow_count > 0" class="tag is-small is-warning is-light"
+                            <span x-show="w.common_subflow_count > 0" class="badge bg-warning-subtle text-warning"
                                   x-text="w.common_subflow_count"></span>
-                            <span x-show="!w.common_subflow_count" class="has-text-grey-lighter is-size-7">-</span>
+                            <span x-show="!w.common_subflow_count" class="text-muted small">-</span>
                         </td>
                         <td style="text-align: center;">
-                            <span x-show="w.mapping_count > 0" class="tag is-small is-link is-light"
+                            <span x-show="w.mapping_count > 0" class="badge bg-primary-subtle text-primary"
                                   x-text="w.mapping_count"></span>
-                            <span x-show="!w.mapping_count" class="has-text-grey-lighter is-size-7">-</span>
+                            <span x-show="!w.mapping_count" class="text-muted small">-</span>
                         </td>
                         <td>
-                            <span class="tag is-small"
-                                  :class="w.is_active ? 'is-success is-light' : 'is-danger is-light'"
+                            <span class="badge"
+                                  :class="w.is_active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'"
                                   x-text="w.is_active ? '啟用' : '停用'"></span>
                         </td>
-                        <td class="has-text-grey is-size-7" x-text="formatDate(w.updated_at)"></td>
+                        <td class="text-secondary small" x-text="formatDate(w.updated_at)"></td>
                         <td class="actions" style="text-align: center;">
-                            <div class="buttons are-small is-centered mb-0">
-                                <button class="button is-small" @click="editWorkflow(w)">編輯</button>
-                                <button class="button is-small" @click="openTree(w)">樹系圖</button>
-                                <button class="button is-small is-danger is-light" @click="confirmDelete(w)">刪除</button>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-sm btn-outline-secondary" @click="editWorkflow(w)">編輯</button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="openTree(w)">樹系圖</button>
+                                <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(w)">刪除</button>
                             </div>
                         </td>
                     </tr>
@@ -207,18 +201,14 @@
 
         <!-- 分頁 -->
         <div x-show="!loading && pagination.pages > 1 && viewMode === 'list'"
-             class="level px-4 py-3" style="background: #f9f9f9; border-top: 1px solid #eee;">
-            <div class="level-left">
-                <span class="is-size-7 has-text-grey">
-                    共 <strong x-text="pagination.total"></strong> 項，
-                    第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
-                </span>
-            </div>
-            <div class="level-right">
-                <div class="buttons are-small mb-0">
-                    <button class="button is-small" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
-                    <button class="button is-small" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
-                </div>
+             class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #f9f9f9; border-top: 1px solid #eee;">
+            <span class="small text-secondary">
+                共 <strong x-text="pagination.total"></strong> 項，
+                第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
+            </span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-sm btn-outline-secondary" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
+                <button class="btn btn-sm btn-outline-secondary" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
             </div>
         </div>
     </div>
@@ -239,107 +229,99 @@
     </template>
 
     <!-- 新增/編輯 Modal -->
-    <div class="modal" :class="showModal ? 'is-active' : ''" x-cloak>
-        <div class="modal-background"></div>
-        <div class="modal-card" style="width: 500px; max-width: 90%;">
-            <header class="modal-card-head py-3">
-                <p class="modal-card-title is-size-6" x-text="editingWorkflow ? '編輯工作流' : '新增工作流'"></p>
-                <button class="delete" @click="closeModal()"></button>
-            </header>
-            <form @submit.prevent="saveWorkflow()">
-                <section class="modal-card-body">
-                    <div class="field">
-                        <label class="label is-small">名稱 *</label>
-                        <div class="control">
-                            <input class="input is-small" type="text" x-model="formData.name" required placeholder="例：請假審批流程">
+    <div x-show="showModal" x-cloak style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1050;">
+        <div style="width: 500px; max-width: 90%;">
+            <div class="bg-white rounded shadow">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="fw-semibold" x-text="editingWorkflow ? '編輯工作流' : '新增工作流'"></span>
+                    <button type="button" class="btn-close" @click="closeModal()"></button>
+                </div>
+                <form @submit.prevent="saveWorkflow()">
+                    <div class="p-3">
+                        <div class="mb-3">
+                            <label class="form-label small">名稱 *</label>
+                            <input class="form-control form-control-sm" type="text" x-model="formData.name" required placeholder="例：請假審批流程">
                         </div>
-                    </div>
-                    <div class="field">
-                        <label class="label is-small">代碼</label>
-                        <div class="control">
-                            <input class="input is-small" type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
+                        <div class="mb-3">
+                            <label class="form-label small">代碼</label>
+                            <input class="form-control form-control-sm" type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
                         </div>
-                    </div>
-                    <div class="field">
-                        <label class="label is-small">分類</label>
-                        <div class="control">
-                            <div class="select is-small is-fullwidth">
-                                <select x-model="formData.category_secure_code">
-                                    <template x-for="parent in categories" :key="parent.secure_code">
-                                        <template x-if="(parent.children || []).length > 0">
-                                            <optgroup :label="parent.name">
-                                                <template x-for="child in parent.children" :key="child.secure_code">
-                                                    <option :value="child.secure_code" x-text="child.name"></option>
-                                                </template>
-                                            </optgroup>
-                                        </template>
+                        <div class="mb-3">
+                            <label class="form-label small">分類</label>
+                            <select class="form-select form-select-sm" x-model="formData.category_secure_code">
+                                <template x-for="parent in categories" :key="parent.secure_code">
+                                    <template x-if="(parent.children || []).length > 0">
+                                        <optgroup :label="parent.name">
+                                            <template x-for="child in parent.children" :key="child.secure_code">
+                                                <option :value="child.secure_code" x-text="child.name"></option>
+                                            </template>
+                                        </optgroup>
                                     </template>
-                                    <template x-for="parent in categories" :key="'solo-' + parent.secure_code">
-                                        <template x-if="(parent.children || []).length === 0">
-                                            <option :value="parent.secure_code" x-text="parent.name"></option>
-                                        </template>
+                                </template>
+                                <template x-for="parent in categories" :key="'solo-' + parent.secure_code">
+                                    <template x-if="(parent.children || []).length === 0">
+                                        <option :value="parent.secure_code" x-text="parent.name"></option>
                                     </template>
-                                </select>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">描述</label>
+                            <textarea class="form-control form-control-sm" x-model="formData.description" placeholder="簡述此工作流的用途" rows="3"></textarea>
+                        </div>
+                        <div class="mb-2" x-show="!editingWorkflow">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" x-model="formData.is_subprocess" id="chk-subprocess">
+                                <label class="form-check-label small" for="chk-subprocess">設為通用子流程</label>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" x-model="formData.is_active" id="chk-active">
+                                <label class="form-check-label small" for="chk-active">啟用</label>
                             </div>
                         </div>
                     </div>
-                    <div class="field">
-                        <label class="label is-small">描述</label>
-                        <div class="control">
-                            <textarea class="textarea is-small" x-model="formData.description" placeholder="簡述此工作流的用途" rows="3"></textarea>
-                        </div>
+                    <div class="d-flex justify-content-end gap-2 px-3 py-2 border-top">
+                        <button type="button" class="btn btn-sm btn-secondary" @click="closeModal()">取消</button>
+                        <button type="submit" class="btn btn-sm btn-primary" :disabled="saving">
+                            <span x-show="!saving" x-text="editingWorkflow ? '儲存變更' : '建立工作流'"></span>
+                            <span x-show="saving">處理中...</span>
+                        </button>
                     </div>
-                    <div class="field" x-show="!editingWorkflow">
-                        <label class="checkbox is-size-7">
-                            <input type="checkbox" x-model="formData.is_subprocess">
-                            設為通用子流程
-                        </label>
-                    </div>
-                    <div class="field">
-                        <label class="checkbox is-size-7">
-                            <input type="checkbox" x-model="formData.is_active">
-                            啟用
-                        </label>
-                    </div>
-                </section>
-                <footer class="modal-card-foot py-3" style="justify-content: flex-end;">
-                    <button type="button" class="button is-small" @click="closeModal()">取消</button>
-                    <button type="submit" class="button is-small is-link" :disabled="saving">
-                        <span x-show="!saving" x-text="editingWorkflow ? '儲存變更' : '建立工作流'"></span>
-                        <span x-show="saving">處理中...</span>
-                    </button>
-                </footer>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- 刪除確認 Modal -->
-    <div class="modal" :class="showDeleteModal ? 'is-active' : ''" x-cloak>
-        <div class="modal-background"></div>
-        <div class="modal-card" style="width: 450px;">
-            <header class="modal-card-head py-3">
-                <p class="modal-card-title is-size-6">確認刪除</p>
-                <button class="delete" @click="showDeleteModal = false"></button>
-            </header>
-            <section class="modal-card-body">
-                <p>確定要刪除「<strong x-text="deletingWorkflow?.name"></strong>」嗎？</p>
-                <div x-show="deleteWarnings.length > 0"
-                     class="notification is-warning is-light is-size-7 mt-3 p-3">
-                    <p class="has-text-weight-semibold mb-2">此流程已被以下配對使用：</p>
-                    <template x-for="(w, i) in deleteWarnings" :key="i">
-                        <p class="ml-3">
-                            - 表單：<span x-text="w.form_name"></span>
-                            <span x-show="w.is_published" class="has-text-danger has-text-weight-medium">（已發行）</span>
-                        </p>
-                    </template>
-                    <p class="mt-2 has-text-warning-dark">刪除後配對將無法重新發行，但不影響已執行的流程。</p>
+    <div x-show="showDeleteModal" x-cloak style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1050;">
+        <div style="width: 450px;">
+            <div class="bg-white rounded shadow">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="fw-semibold">確認刪除</span>
+                    <button type="button" class="btn-close" @click="showDeleteModal = false"></button>
                 </div>
-                <p class="has-text-danger is-size-7 mt-3">此操作無法復原。</p>
-            </section>
-            <footer class="modal-card-foot py-3" style="justify-content: flex-end;">
-                <button class="button is-small" @click="showDeleteModal = false">取消</button>
-                <button class="button is-small is-danger" @click="deleteWorkflow()">確認刪除</button>
-            </footer>
+                <div class="p-3">
+                    <p>確定要刪除「<strong x-text="deletingWorkflow?.name"></strong>」嗎？</p>
+                    <div x-show="deleteWarnings.length > 0"
+                         class="alert alert-warning small mt-3 p-3">
+                        <p class="fw-semibold mb-2">此流程已被以下配對使用：</p>
+                        <template x-for="(w, i) in deleteWarnings" :key="i">
+                            <p class="ms-3">
+                                - 表單：<span x-text="w.form_name"></span>
+                                <span x-show="w.is_published" class="text-danger fw-medium">（已發行）</span>
+                            </p>
+                        </template>
+                        <p class="mt-2 text-warning">刪除後配對將無法重新發行，但不影響已執行的流程。</p>
+                    </div>
+                    <p class="text-danger small mt-3">此操作無法復原。</p>
+                </div>
+                <div class="d-flex justify-content-end gap-2 px-3 py-2 border-top">
+                    <button class="btn btn-sm btn-secondary" @click="showDeleteModal = false">取消</button>
+                    <button class="btn btn-sm btn-danger" @click="deleteWorkflow()">確認刪除</button>
+                </div>
+            </div>
         </div>
     </div>
 
