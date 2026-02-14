@@ -84,8 +84,8 @@
 
 ### Phase 5 審計結果
 - ~~**超過 500 行**（後續待辦）：`organizations/list.html` (1004 行)、`workflow_designer.html` (1081 行)~~ → Phase 6 已完成
-- **密碼模態框 CSS 重複**（後續可優化）：`user-view.css` 和 `org-admins.css` 有高度重複的密碼重設樣式，可抽為共用 class
-- **模態框 / 按鈕 CSS 重複**（後續可優化）：`holidays.css`、`schedules.css`、`org-tree.css` 有重複的 `.modal-*` 和 `.btn-*` 定義
+- ~~**密碼模態框 CSS 重複**：`user-view.css` 和 `org-admins.css` 有高度重複的密碼重設樣式~~ → Phase 8 已抽至 common.css
+- ~~**模態框 / 按鈕 CSS 重複**：`holidays.css`、`schedules.css`、`org-tree.css` 有重複的 `.modal-*` 和 `.btn-*` 定義~~ → Phase 8 已抽至 common.css
 
 ## Phase 6: 優先級 1 超限模板處理
 | 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
@@ -116,6 +116,17 @@
 - `menu.js` — 動態選單元件邏輯（185 行，Mode B）
 - `hostconfig-index.css` — 主機設定首頁樣式（83 行）
 - `hostconfig-index.js` — 主機設定首頁邏輯（109 行，Mode B）
+
+## Phase 8: CSS 去重優化
+- [x] `common.css` 擴充：modal-content/header/body/footer、close-btn、密碼重設模態框、password-field、modal-buttons、form-hint、alert (97→249 行)
+- [x] `user-view.css` 移除密碼模態框重複 (149→62 行)
+- [x] `org-admins.css` 移除密碼模態框重複，保留警告色覆蓋 (105→25 行)
+- [x] `holidays.css` 移除 modal/close-btn/form-hint/alert 重複 (163→150 行)
+- [x] `schedules.css` 移除 modal/close-btn/form-hint/alert 重複 (118→100 行)
+- [x] `org-tree.css` 移除 toast 重複 (468→453 行)
+- [x] `user-form.css` 移除 .help-text 重複 (239→234 行)
+- [x] `numbering-edit.css` 移除 .help-text 重複 (161→156 行)
+- [x] `.help-text` 顏色統一為 #666（原 common.css #999, user-form/numbering-edit #888）
 
 ---
 

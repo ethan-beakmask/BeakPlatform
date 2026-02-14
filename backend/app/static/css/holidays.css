@@ -120,6 +120,7 @@
 .actions button:hover { text-decoration: underline; }
 .actions .danger { color: #dc2626; }
 
+/* 按鈕 */
 .btn-primary {
     background: #0066cc; color: white; padding: 8px 16px;
     border: none; border-radius: 4px; text-decoration: none;
@@ -132,21 +133,10 @@
 }
 .btn-secondary:hover { background: #eee; }
 
-.modal-content {
-    background: white; border-radius: 8px;
-    width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-}
-.modal-header {
-    padding: 16px 20px; border-bottom: 1px solid #eee;
-    display: flex; justify-content: space-between; align-items: center;
-}
-.modal-header h3 { margin: 0; }
-.modal-body { padding: 20px; }
-.modal-footer {
-    padding: 16px 20px; border-top: 1px solid #eee;
-    display: flex; justify-content: flex-end; gap: 10px;
-}
-.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+/* 模態框尺寸覆蓋 (base in common.css) */
+.modal-content { width: 90%; max-width: 500px; }
+
+/* 表單 */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; margin-bottom: 6px; font-weight: 500; }
 .form-group input,
@@ -154,9 +144,7 @@
 .form-group textarea { width: 70%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
 .form-group input:focus,
 .form-group select:focus { outline: none; border-color: #0066cc; }
-.form-hint { font-size: 12px; color: #666; margin-top: 4px; }
-.alert { padding: 12px; border-radius: 4px; margin-bottom: 16px; }
-.alert-success { background: #f0fdf4; color: #16a34a; }
-.alert-error { background: #fef2f2; color: #dc2626; }
+
+/* 匯入 */
 .import-section { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; }
 .import-section h4 { margin-top: 0; }

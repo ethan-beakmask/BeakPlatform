@@ -91,6 +91,159 @@
    ------------------------------------------ */
 .help-text {
     font-size: 12px;
-    color: #999;
-    margin-top: 2px;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* ------------------------------------------
+   Modal Content (自訂 Alpine.js 模態框)
+   寬度由各頁面覆蓋。
+   ------------------------------------------ */
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-header h3 { margin: 0; }
+.modal-body { padding: 20px; }
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+.close-btn:hover { color: #333; }
+
+/* ------------------------------------------
+   Modal: 密碼重設 (user-view, org-admins 共用)
+   ------------------------------------------ */
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+.modal-content label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.modal-content input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+.modal-content input[type="password"]:focus {
+    border-color: #0066cc;
+    outline: none;
+}
+.modal-content .help-text {
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.modal-buttons .btn-cancel {
+    background: #e5e7eb;
+    border: none;
+}
+.modal-buttons .btn-submit {
+    background: #0066cc;
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: #0052a3;
+}
+
+/* ------------------------------------------
+   Password Field (密碼輸入 + 顯示/產生按鈕)
+   ------------------------------------------ */
+.password-field {
+    display: flex;
+    gap: 8px;
+    align-items: start;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.password-field input {
+    flex: 1;
+    min-width: 150px;
+}
+.password-field button {
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-toggle {
+    background: #f3f4f6;
+    border: 1px solid #ccc;
+}
+.btn-generate {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+.password-errors div {
+    color: #dc2626;
+    font-size: 12px;
+}
+.password-ok {
+    color: #16a34a;
+    font-size: 12px;
+}
+
+/* ------------------------------------------
+   Form Hint
+   ------------------------------------------ */
+.form-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* ------------------------------------------
+   Alert
+   ------------------------------------------ */
+.alert {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+.alert-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #86efac;
+}
+.alert-error {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
 }

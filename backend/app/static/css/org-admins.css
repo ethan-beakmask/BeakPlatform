@@ -1,62 +1,17 @@
 /* org-admins.css — 企業管理員列表頁面 */
 
-/* 重設密碼模態框 */
+/* 密碼模態框尺寸覆蓋 (base in common.css) */
 .modal-content {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
     min-width: 350px;
     max-width: 450px;
+    padding: 24px;
 }
-.modal-content h3 {
-    margin-top: 0;
-    margin-bottom: 16px;
-}
-.modal-content label {
-    display: block;
-    margin-bottom: 4px;
-    font-weight: 500;
-}
-.modal-content input[type="password"] {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 12px;
-    box-sizing: border-box;
-}
-.modal-content input[type="password"]:focus {
-    border-color: #2563eb;
-    outline: none;
-}
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 16px;
-}
-.modal-buttons button {
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.modal-buttons .btn-cancel {
-    background: #e5e7eb;
-    border: none;
-}
+/* 企業管理員：重設密碼按鈕使用警告色 */
 .modal-buttons .btn-submit {
     background: #f59e0b;
-    color: white;
-    border: none;
 }
 .modal-buttons .btn-submit:hover {
     background: #d97706;
-}
-.help-text {
-    font-size: 12px;
-    color: #666;
-    margin-top: -8px;
-    margin-bottom: 12px;
 }
 .btn-reset-pwd {
     background: none;
@@ -67,38 +22,4 @@
 }
 .btn-reset-pwd:hover {
     color: #d97706;
-}
-.password-field {
-    display: flex;
-    gap: 8px;
-    align-items: start;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-.password-field input {
-    flex: 1;
-    min-width: 150px;
-}
-.password-field button {
-    padding: 6px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-.btn-toggle {
-    background: #f3f4f6;
-    border: 1px solid #ccc;
-}
-.btn-generate {
-    background: #10b981;
-    color: white;
-    border: none;
-}
-.password-errors div {
-    color: #dc2626;
-    font-size: 12px;
-}
-.password-ok {
-    color: #16a34a;
-    font-size: 12px;
 }
