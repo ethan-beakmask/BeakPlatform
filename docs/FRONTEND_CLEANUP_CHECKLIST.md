@@ -101,6 +101,22 @@
 - `workflow-designer-init.js` — 主題管理 IIFE + 節點定義載入器（165 行）
 - `workflow-designer.css` 新增 navbar + badge 樣式
 
+## Phase 7: 優先級 2 中型內嵌模板處理
+| 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
+|------|----------|-----------|--------|-------|------|
+| `components/menu.html` | 406 | 45 | `menu.css` | `menu.js` (Mode B) | [x] |
+| `hostconfig/index.html` | 295 | 111 | `hostconfig-index.css` | `hostconfig-index.js` (Mode B) | [x] |
+| `hostconfig/system_settings.html` | 434 | — | — | — (Mode C, `{% include %}` partial) | [x] 不動 |
+
+> `system_settings.html` 的 JS 使用 `{% include %}` 嵌入 partial 方法（Mode C），CSS 已由 `_system_settings_styles.html` partial 處理，模板已在合理狀態。
+> `org-admins/create.html` 已不存在（已移除），從清單移除。
+
+### Phase 7 額外產出
+- `menu.css` — 動態選單元件樣式（173 行）
+- `menu.js` — 動態選單元件邏輯（185 行，Mode B）
+- `hostconfig-index.css` — 主機設定首頁樣式（83 行）
+- `hostconfig-index.js` — 主機設定首頁邏輯（109 行，Mode B）
+
 ---
 
 ## 共用靜態檔案清單
@@ -121,6 +137,8 @@
 | `css/numbering-edit.css` | 編號規則編輯頁 |
 | `css/org-admins.css` | 企業管理員列表 |
 | `css/organizations.css` | 企業管理頁 |
+| `css/menu.css` | 動態選單元件 |
+| `css/hostconfig-index.css` | 主機設定首頁 |
 | `js/app.js` | 原有應用 JS |
 | `js/auth.js` | 認證相關 JS |
 | `js/holidays.js` | 假日設定頁 |
@@ -133,6 +151,8 @@
 | `js/user-view.js` | 用戶詳情頁 |
 | `js/org-admins.js` | 企業管理員列表 |
 | `js/organizations.js` | 企業管理頁 |
+| `js/menu.js` | 動態選單元件 |
+| `js/hostconfig-index.js` | 主機設定首頁 |
 
 ### 模組層 (`modules/form_workflow/static/modules/form_workflow/`)
 | 檔案 | 用途 |

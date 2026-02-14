@@ -1,0 +1,176 @@
+/* menu.css - 動態選單元件樣式 */
+
+/* 橫式選單樣式 */
+.menubar {
+    background: #1f2937;
+    padding: 0 16px;
+}
+.menubar .menu-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+}
+.menubar .menu-item {
+    position: relative;
+}
+.menubar .menu-link {
+    display: block;
+    padding: 12px 16px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+.menubar .menu-link:hover {
+    color: white;
+    background: #374151;
+}
+.menubar .menu-item.active > .menu-link {
+    color: white;
+    background: #374151;
+}
+.menubar .submenu-arrow {
+    margin-left: 4px;
+    font-size: 10px;
+}
+.menubar .submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #374151;
+    min-width: 160px;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    border-radius: 0 0 4px 4px;
+    z-index: 100;
+}
+.menubar .submenu .menu-link {
+    padding: 8px 16px;
+}
+.menubar .menu-divider-h {
+    width: 1px;
+    background: #4b5563;
+    margin: 8px 0;
+}
+.menubar .menu-header-h {
+    padding: 8px 16px;
+    color: #9ca3af;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* 直式選單樣式 */
+.sidebar-menu {
+    width: 240px;
+    min-height: 100%;
+    background: #1f2937;
+    padding: 8px 0;
+}
+.sidebar-item {
+    margin: 2px 0;
+}
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+.sidebar-link:hover {
+    color: white;
+    background: #374151;
+}
+.sidebar-item.active > .sidebar-link {
+    color: white;
+    background: #374151;
+    border-left: 3px solid #3b82f6;
+}
+.sidebar-link.expandable {
+    justify-content: space-between;
+}
+.expand-icon {
+    font-size: 12px;
+    color: #9ca3af;
+}
+.sidebar-header {
+    padding: 16px 16px 8px;
+    color: #9ca3af;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.sidebar-divider {
+    border-top: 1px solid #374151;
+    margin: 8px 16px;
+}
+.sidebar-children {
+    background: #111827;
+}
+
+/* 動態著色：依權限組合 */
+.menu-sys-only {
+    background-color: #b91c1c !important;
+}
+.menu-sys-only .menu-link,
+.menu-sys-only.sidebar-link,
+.menu-sys-only .sidebar-link {
+    color: white !important;
+}
+
+.menu-org-only {
+    background-color: #1d4ed8 !important;
+}
+.menu-org-only .menu-link,
+.menu-org-only.sidebar-link,
+.menu-org-only .sidebar-link {
+    color: white !important;
+}
+
+.menu-sys-org-shared {
+    background-color: #b91c1c !important;
+}
+.menu-sys-org-shared .menu-link,
+.menu-sys-org-shared.sidebar-link,
+.menu-sys-org-shared .sidebar-link {
+    color: #fde047 !important;
+}
+
+.menu-fixed-black {
+    background-color: #111827 !important;
+}
+.menu-fixed-black .menu-link,
+.menu-fixed-black.sidebar-link,
+.menu-fixed-black .sidebar-link,
+.menu-fixed-black.sidebar-header {
+    color: white !important;
+}
+
+/* Sidebar header 著色 */
+.sidebar-header.menu-sys-only,
+.sidebar-header.menu-org-only,
+.sidebar-header.menu-sys-org-shared,
+.sidebar-header.menu-fixed-black {
+    padding: 8px 16px;
+    margin: 0;
+}
+.sidebar-header.menu-sys-only { color: white !important; }
+.sidebar-header.menu-org-only { color: white !important; }
+.sidebar-header.menu-sys-org-shared { color: #fde047 !important; }
+.sidebar-header.menu-fixed-black { color: white !important; }
+
+/* Navbar header 著色 */
+.menu-header-h.menu-sys-only,
+.menu-header-h.menu-org-only,
+.menu-header-h.menu-sys-org-shared,
+.menu-header-h.menu-fixed-black {
+    padding: 8px 16px;
+}
+.menu-header-h.menu-sys-only { color: white !important; }
+.menu-header-h.menu-org-only { color: white !important; }
+.menu-header-h.menu-sys-org-shared { color: #fde047 !important; }
+.menu-header-h.menu-fixed-black { color: white !important; }

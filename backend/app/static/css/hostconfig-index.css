@@ -1,0 +1,83 @@
+/* hostconfig-index.css - 主機設定首頁樣式 */
+
+.page-header {
+    margin-bottom: 24px;
+}
+.page-header h1 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+.page-header p {
+    margin: 0;
+    color: #666;
+}
+
+.section-title {
+    font-size: 16px;
+    color: #333;
+    border-bottom: 2px solid #333;
+    padding-bottom: 8px;
+    margin: 24px 0 16px 0;
+}
+
+.tool-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.tool-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 16px 20px;
+    border-radius: 4px;
+    min-width: 220px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.tool-card:hover {
+    border-color: #999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.tool-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+.tool-card h3 a {
+    color: #333;
+    text-decoration: none;
+}
+.tool-card h3 a:hover {
+    color: #0066cc;
+}
+.tool-card p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.restart-btn {
+    background: #c53030;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.restart-btn:hover {
+    background: #9b2c2c;
+}
+.restart-btn:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.status-msg {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.external-link {
+    color: #666;
+    font-size: 12px;
+    margin-left: 8px;
+}
