@@ -56,13 +56,13 @@
 | `dev/quick_login.html` | 709 | 215 | `quick-login.css` | `quick-login.js` | [x] |
 | `admin/settings.html` | 640 | 319 | `settings.css` | `settings.js` | [x] |
 
-### 500 行以下（已合規，可選優化）
-| 模板 | 行數 | 內嵌 CSS+JS | 狀態 |
-|------|------|------------|------|
-| `users/view.html` | ~497 | ~279 行 | [ ] |
-| `numbering/edit.html` | ~451 | ~185 行 | [ ] |
-| `org-admins/list.html` | ~391 | ~231 行 | [ ] |
-| `category_list.html` | ~380 | ~217 行 | [ ] |
+### 500 行以下（已完成）
+| 模板 | 原始行數 | 瘦身後行數 | CSS 檔 | JS 檔 | 狀態 |
+|------|----------|-----------|--------|-------|------|
+| `users/view.html` | 497 | 220 | `user-view.css` | `user-view.js` | [x] |
+| `numbering/edit.html` | 451 | 290 | `numbering-edit.css` | — (23 行 Jinja2 留 inline) | [x] |
+| `org-admins/list.html` | 391 | 162 | `org-admins.css` | `org-admins.js` | [x] |
+| `category_list.html` | 379 | 164 | `category-list.css` | `category-list.js` | [x] |
 
 > 以下檔案已不存在（已從專案移除或改名），從清單移除：
 > `job_levels/matrix.html`, `external-users/edit.html`, `roles/create.html`,
@@ -71,6 +71,10 @@
 ### Phase 4 額外產出
 - `user-form.css` 新增編輯頁面特有樣式（edit-form, readonly-info, btn-row, danger-zone, readonly-notice）
 - `settings.css` + `settings.js` — 系統設定頁（Logo/一般設定/密碼政策/左側選單高亮）
+- `user-view.css` + `user-view.js` — 用戶詳情頁（重設密碼）
+- `numbering-edit.css` — 編號規則編輯頁（JS 留 inline，僅 23 行含 Jinja2）
+- `org-admins.css` + `org-admins.js` — 企業管理員列表（重設密碼）
+- `category-list.css` + `category-list.js` — 分類管理頁
 
 ## Phase 5: 收尾
 - [ ] 刪除已轉為外部 .js 的死 partial 檔案
@@ -94,6 +98,9 @@
 | `css/user-form.css` | 新增/編輯用戶頁 |
 | `css/quick-login.css` | 開發快速登入頁 |
 | `css/settings.css` | 系統設定頁 |
+| `css/user-view.css` | 用戶詳情頁 |
+| `css/numbering-edit.css` | 編號規則編輯頁 |
+| `css/org-admins.css` | 企業管理員列表 |
 | `js/app.js` | 原有應用 JS |
 | `js/auth.js` | 認證相關 JS |
 | `js/holidays.js` | 假日設定頁 |
@@ -103,6 +110,8 @@
 | `js/user-edit.js` | 編輯用戶頁 |
 | `js/quick-login.js` | 開發快速登入頁 |
 | `js/settings.js` | 系統設定頁 |
+| `js/user-view.js` | 用戶詳情頁 |
+| `js/org-admins.js` | 企業管理員列表 |
 
 ### 模組層 (`modules/form_workflow/static/modules/form_workflow/`)
 | 檔案 | 用途 |
@@ -120,5 +129,7 @@
 | `js/workflow-main.js` | 工作流設計器主邏輯 |
 | `js/workflow-tree-chart.js` | 樹系圖 |
 | `js/mappings.js` | 表單流程配對列表 |
+| `css/category-list.css` | 分類管理 |
+| `js/category-list.js` | 分類管理 |
 
 *最後更新: 2026-02-15*

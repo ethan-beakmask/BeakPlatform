@@ -1,0 +1,148 @@
+/* user-view.css — 用戶詳情頁面 */
+
+.user-info {
+    max-width: 700px;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.info-table th, .info-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.info-table th {
+    width: 120px;
+    color: #666;
+    font-weight: normal;
+}
+.info-table td {
+    color: #333;
+}
+
+.empty-value {
+    color: #999;
+    font-style: italic;
+}
+.status-active {
+    color: #16a34a;
+}
+.status-inactive {
+    color: #dc2626;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #0066cc;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+.action-btn:hover {
+    background: #0052a3;
+}
+.action-btn.warning {
+    background: #f59e0b;
+}
+.action-btn.warning:hover {
+    background: #d97706;
+}
+
+/* 重設密碼模態框 */
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    min-width: 350px;
+    max-width: 450px;
+}
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+.modal-content label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.modal-content input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
+.modal-content input[type="password"]:focus {
+    border-color: #0066cc;
+    outline: none;
+}
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.modal-buttons .btn-cancel {
+    background: #e5e7eb;
+    border: none;
+}
+.modal-buttons .btn-submit {
+    background: #0066cc;
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: #0052a3;
+}
+.help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+.password-field {
+    display: flex;
+    gap: 8px;
+    align-items: start;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.password-field input {
+    flex: 1;
+    min-width: 150px;
+}
+.password-field button {
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-toggle {
+    background: #f3f4f6;
+    border: 1px solid #ccc;
+}
+.btn-generate {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+.password-errors div {
+    color: #dc2626;
+    font-size: 12px;
+}
+.password-ok {
+    color: #16a34a;
+    font-size: 12px;
+}
