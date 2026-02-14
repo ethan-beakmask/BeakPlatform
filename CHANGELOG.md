@@ -14,6 +14,13 @@
 - 填寫/簽核/閱讀 Modal 灰色畫布背景 + 白色表單區域 + 陰影（匹配設計器 preview）
 
 ### Changed
+- 前端 HTML 瘦身 Phase 0-3：大型模板抽離內嵌 JS/CSS 為獨立靜態檔，符合 FRONT-01/02 規範
+  - Phase 0: 建立 `common.css` 共用樣式、關閉 Bulma Issue #11
+  - Phase 1: `template_list.html` (700→244)、`workflow_list.html` (674→296)
+  - Phase 2: `holidays.html` (1011→205)、`schedules.html` (905→226)、`form_center.html` (1880→393)、`form_designer.html` (479+1459→133)
+  - Phase 3: `groups.html` (1305→238)、`users/create.html` (930→256)、`departments.html` CSS partial→靜態檔
+- 部門/社群頁面共用 `org-tree.css` (467 行)，消除 CSS 重複
+- CLAUDE.md FRONT-01 新增 JS 抽離三種模式說明 (A: 直接搬移 / B: Window Bridge / C: 保留 Partial)
 - 表單設計器工具列「表單檔名」欄位寬度 180→210px、「分類」欄位寬度 140→170px
 - 工作流列表新增「專屬」「通用」子流程數量欄位，API 批次計算
 - 流程設計器描述欄位改為多行編輯 Modal，支援換行儲存
