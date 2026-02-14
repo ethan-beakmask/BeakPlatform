@@ -1,5 +1,5 @@
-<script>
-// Telegram 設定管理
+/* settings-telegram.js — Telegram 設定管理 (Mode A) */
+
 function telegramManager() {
     return {
         configs: [],
@@ -24,8 +24,8 @@ function telegramManager() {
         async loadConfigs() {
             this.loading = true;
             try {
-                const response = await fetch('/api/admin/settings/telegram');
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/telegram');
+                var result = await response.json();
                 if (result.success) {
                     this.configs = result.data;
                 }
@@ -51,16 +51,14 @@ function telegramManager() {
 
         async openEditModal(config) {
             this.isEditing = true;
-            // 取得完整資料（含 token）
             try {
-                const response = await fetch(`/api/admin/settings/telegram/${config.id}`);
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/telegram/' + config.id);
+                var result = await response.json();
                 if (result.success) {
-                    const data = result.data;
-                    // 將 channels object 轉為 array
-                    const channelsArray = Object.entries(data.channels || {}).map(([name, chat_id]) => ({
-                        name, chat_id
-                    }));
+                    var data = result.data;
+                    var channelsArray = Object.entries(data.channels || {}).map(function(entry) {
+                        return { name: entry[0], chat_id: entry[1] };
+                    });
                     this.formData = {
                         id: data.id,
                         name: data.name,
@@ -86,22 +84,22 @@ function telegramManager() {
         },
 
         removeChannel(index) {
-            const removed = this.formData.channels.splice(index, 1)[0];
+            var removed = this.formData.channels.splice(index, 1)[0];
             if (this.formData.default_channel === removed.name) {
                 this.formData.default_channel = '';
             }
         },
 
         async saveConfig() {
-            // 將 channels array 轉為 object
-            const channels = {};
-            for (const ch of this.formData.channels) {
+            var channels = {};
+            for (var i = 0; i < this.formData.channels.length; i++) {
+                var ch = this.formData.channels[i];
                 if (ch.name && ch.chat_id) {
                     channels[ch.name] = ch.chat_id;
                 }
             }
 
-            const data = {
+            var data = {
                 name: this.formData.name,
                 description: this.formData.description,
                 bot_token: this.formData.bot_token,
@@ -111,12 +109,12 @@ function telegramManager() {
             };
 
             try {
-                const url = this.isEditing
-                    ? `/api/admin/settings/telegram/${this.formData.id}`
+                var url = this.isEditing
+                    ? '/api/admin/settings/telegram/' + this.formData.id
                     : '/api/admin/settings/telegram';
-                const method = this.isEditing ? 'PUT' : 'POST';
+                var method = this.isEditing ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                var response = await fetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -125,7 +123,7 @@ function telegramManager() {
                     body: JSON.stringify(data)
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.closeModal();
                     await this.loadConfigs();
@@ -138,18 +136,17 @@ function telegramManager() {
         },
 
         async testConfig(config) {
-            // 選擇要測試的頻道
-            const channels = config.channels || {};
-            const channelNames = Object.keys(channels);
+            var channels = config.channels || {};
+            var channelNames = Object.keys(channels);
 
-            let chatId = null;
+            var chatId = null;
             if (channelNames.length === 0) {
                 alert('此設定沒有頻道，請先新增頻道');
                 return;
             } else if (channelNames.length === 1) {
                 chatId = channels[channelNames[0]];
             } else {
-                const choice = prompt(`選擇測試頻道 (${channelNames.join(', ')})：`, config.default_channel || channelNames[0]);
+                var choice = prompt('選擇測試頻道 (' + channelNames.join(', ') + ')：', config.default_channel || channelNames[0]);
                 if (!choice) return;
                 chatId = channels[choice];
                 if (!chatId) {
@@ -159,7 +156,7 @@ function telegramManager() {
             }
 
             try {
-                const response = await fetch(`/api/admin/settings/telegram/${config.id}/test`, {
+                var response = await fetch('/api/admin/settings/telegram/' + config.id + '/test', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -168,7 +165,7 @@ function telegramManager() {
                     body: JSON.stringify({ chat_id: chatId })
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 alert(result.message);
             } catch (error) {
                 alert('測試失敗：' + error.message);
@@ -184,14 +181,14 @@ function telegramManager() {
             if (!this.configToDelete) return;
 
             try {
-                const response = await fetch(`/api/admin/settings/telegram/${this.configToDelete.id}`, {
+                var response = await fetch('/api/admin/settings/telegram/' + this.configToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()
                     }
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.showDeleteModal = false;
                     this.configToDelete = null;
@@ -205,4 +202,3 @@ function telegramManager() {
         }
     };
 }
-</script>

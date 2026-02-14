@@ -3,44 +3,7 @@
 {% block title %}新增企業 - BeakMask{% endblock %}
 
 {% block head %}
-<style>
-    .password-field {
-        display: flex;
-        gap: 8px;
-        align-items: start;
-        flex-wrap: wrap;
-    }
-    .password-field input {
-        min-width: 150px;
-    }
-    .password-field button {
-        padding: 6px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-    .btn-toggle {
-        background: #f3f4f6;
-        border: 1px solid #ccc;
-    }
-    .btn-generate {
-        background: #10b981;
-        color: white;
-        border: none;
-    }
-    .password-errors {
-        margin-top: 6px;
-    }
-    .password-errors div {
-        color: #dc2626;
-        font-size: 12px;
-    }
-    .password-ok {
-        margin-top: 6px;
-        color: #16a34a;
-        font-size: 12px;
-    }
-</style>
+<script src="/static/js/password-form.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -56,7 +19,7 @@
 {% endif %}
 {% endwith %}
 
-<form method="POST" x-data="passwordForm()" x-init="init()">
+<form method="POST" x-data="passwordForm({autoGenerate: true})" x-init="init()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table border="0" cellpadding="4" cellspacing="0">
         <tr>
@@ -139,100 +102,4 @@
     </table>
 </form>
 
-<script>
-function passwordForm() {
-    return {
-        password: '',
-        showPassword: false,
-        passwordErrors: [],
-        passwordChecked: false,
-        passwordRequirements: '載入中...',
-        validateTimer: null,
-
-        async init() {
-            await this.loadPasswordRequirements();
-            await this.generatePassword();
-        },
-
-        async loadPasswordRequirements() {
-            try {
-                const response = await fetch('/auth/password-policy');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.data.policy.enabled) {
-                        const p = data.data.policy;
-                        let reqs = [`長度至少 ${p.min_length} 個字元`];
-                        if (p.require_uppercase) reqs.push('包含大寫字母');
-                        if (p.require_lowercase) reqs.push('包含小寫字母');
-                        if (p.require_digit) reqs.push('包含數字');
-                        if (p.require_special) reqs.push('包含特殊符號');
-                        this.passwordRequirements = reqs.join('、');
-                    } else {
-                        this.passwordRequirements = '密碼長度至少 8 個字元';
-                    }
-                }
-            } catch (err) {
-                this.passwordRequirements = '密碼長度至少 8 個字元';
-            }
-        },
-
-        async generatePassword() {
-            try {
-                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/auth/password-policy/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        this.password = data.data.password;
-                        this.showPassword = true;
-                        this.validatePassword();
-                    }
-                }
-            } catch (err) {
-                console.error('生成密碼失敗:', err);
-            }
-        },
-
-        validatePassword() {
-            clearTimeout(this.validateTimer);
-            this.validateTimer = setTimeout(() => this._doValidate(), 300);
-        },
-
-        async _doValidate() {
-            if (!this.password) {
-                this.passwordErrors = [];
-                this.passwordChecked = false;
-                return;
-            }
-
-            try {
-                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/auth/password-policy/validate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({ password: this.password })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        this.passwordErrors = data.data.errors || [];
-                        this.passwordChecked = true;
-                    }
-                }
-            } catch (err) {
-                console.error('驗證密碼失敗:', err);
-            }
-        }
-    };
-}
-</script>
 {% endblock %}

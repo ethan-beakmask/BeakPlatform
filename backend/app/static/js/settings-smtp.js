@@ -1,4 +1,5 @@
-<script>
+/* settings-smtp.js — SMTP 設定管理 (Mode A) */
+
 function smtpManager() {
     return {
         configs: [],
@@ -34,8 +35,8 @@ function smtpManager() {
         async loadConfigs() {
             this.loading = true;
             try {
-                const response = await fetch('/api/admin/settings/smtp');
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/smtp');
+                var result = await response.json();
                 if (result.success) {
                     this.configs = result.data;
                 }
@@ -48,8 +49,8 @@ function smtpManager() {
 
         async loadPresets() {
             try {
-                const response = await fetch('/api/admin/settings/smtp/presets');
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/smtp/presets');
+                var result = await response.json();
                 if (result.success) {
                     this.presets = result.data;
                 }
@@ -59,7 +60,7 @@ function smtpManager() {
         },
 
         applyPreset() {
-            const preset = this.presets[this.formData.provider_type];
+            var preset = this.presets[this.formData.provider_type];
             if (preset) {
                 this.formData.smtp_host = preset.smtp_host;
                 this.formData.smtp_port = preset.smtp_port;
@@ -90,12 +91,11 @@ function smtpManager() {
 
         async openEditModal(config) {
             this.isEditing = true;
-            // 取得完整資料（含密碼）
             try {
-                const response = await fetch(`/api/admin/settings/smtp/${config.id}`);
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/smtp/' + config.id);
+                var result = await response.json();
                 if (result.success) {
-                    const data = result.data;
+                    var data = result.data;
                     this.formData = {
                         id: data.id,
                         name: data.name,
@@ -104,7 +104,7 @@ function smtpManager() {
                         use_tls: data.use_tls,
                         use_ssl: data.use_ssl,
                         username: data.username,
-                        password: '',  // 不回填密碼
+                        password: '',
                         from_email: data.from_email,
                         from_name: data.from_name || '',
                         provider_type: data.provider_type,
@@ -124,19 +124,18 @@ function smtpManager() {
         },
 
         async saveConfig() {
-            const data = { ...this.formData };
-            // 編輯時如果密碼為空，不送出
+            var data = Object.assign({}, this.formData);
             if (this.isEditing && !data.password) {
                 delete data.password;
             }
 
             try {
-                const url = this.isEditing
-                    ? `/api/admin/settings/smtp/${this.formData.id}`
+                var url = this.isEditing
+                    ? '/api/admin/settings/smtp/' + this.formData.id
                     : '/api/admin/settings/smtp';
-                const method = this.isEditing ? 'PUT' : 'POST';
+                var method = this.isEditing ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                var response = await fetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -145,7 +144,7 @@ function smtpManager() {
                     body: JSON.stringify(data)
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.closeModal();
                     await this.loadConfigs();
@@ -159,11 +158,11 @@ function smtpManager() {
 
         async testConfig(config) {
             if (!confirm('要發送測試郵件嗎？')) return;
-            const recipient = prompt('請輸入測試收件人信箱：');
+            var recipient = prompt('請輸入測試收件人信箱：');
             if (!recipient) return;
 
             try {
-                const response = await fetch(`/api/admin/settings/smtp/${config.id}/test`, {
+                var response = await fetch('/api/admin/settings/smtp/' + config.id + '/test', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -172,10 +171,10 @@ function smtpManager() {
                     body: JSON.stringify({ test_recipient: recipient })
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 alert(result.message);
                 if (result.success) {
-                    await this.loadConfigs();  // 重新載入以更新測試狀態
+                    await this.loadConfigs();
                 }
             } catch (error) {
                 alert('測試失敗：' + error.message);
@@ -191,14 +190,14 @@ function smtpManager() {
             if (!this.configToDelete) return;
 
             try {
-                const response = await fetch(`/api/admin/settings/smtp/${this.configToDelete.id}`, {
+                var response = await fetch('/api/admin/settings/smtp/' + this.configToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()
                     }
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.showDeleteModal = false;
                     this.configToDelete = null;
@@ -212,4 +211,3 @@ function smtpManager() {
         }
     };
 }
-</script>

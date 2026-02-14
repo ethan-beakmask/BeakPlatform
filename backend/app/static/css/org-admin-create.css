@@ -1,0 +1,25 @@
+/* org-admin-create.css — 新增企業管理員頁面 */
+
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="password"] {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.form-table input:focus {
+    border-color: #2563eb;
+    outline: none;
+}
+.email-input {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.email-input input {
+    width: 150px;
+}
+.email-domain {
+    color: #666;
+    font-family: monospace;
+}

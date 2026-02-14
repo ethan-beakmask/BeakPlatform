@@ -4,7 +4,7 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
-{% include "pages/hostconfig/_system_settings_styles.html" %}
+<link rel="stylesheet" href="/static/css/system-settings.css">
 {% endblock %}
 
 {% block content %}

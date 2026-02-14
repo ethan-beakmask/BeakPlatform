@@ -1,11 +1,11 @@
-<script>
-// 收件人群組管理
+/* settings-recipients.js — 收件人群組管理 (Mode A) */
+
 function recipientGroupManager() {
     return {
         groups: [],
         orgTree: [],
-        userCache: {},  // 用戶 ID -> 用戶資料的快取
-        unitCache: {},  // 部門 ID -> 部門資料的快取
+        userCache: {},
+        unitCache: {},
         loading: true,
         showModal: false,
         showDeleteModal: false,
@@ -37,8 +37,8 @@ function recipientGroupManager() {
         async loadGroups() {
             this.loading = true;
             try {
-                const response = await fetch('/api/admin/settings/recipient-groups');
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/recipient-groups');
+                var result = await response.json();
                 if (result.success) {
                     this.groups = result.data;
                 }
@@ -51,13 +51,12 @@ function recipientGroupManager() {
 
         async loadOrgTree() {
             try {
-                const response = await fetch('/api/admin/settings/org-tree');
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/org-tree');
+                var result = await response.json();
                 if (result.success) {
                     this.orgTree = result.data;
-                    // 建立快取
-                    for (const unit of result.data) {
-                        this.unitCache[unit.id] = unit;
+                    for (var i = 0; i < result.data.length; i++) {
+                        this.unitCache[result.data[i].id] = result.data[i];
                     }
                 }
             } catch (error) {
@@ -71,13 +70,12 @@ function recipientGroupManager() {
                 return;
             }
             try {
-                const response = await fetch(`/api/admin/settings/org-users?search=${encodeURIComponent(this.userSearch)}`);
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/org-users?search=' + encodeURIComponent(this.userSearch));
+                var result = await response.json();
                 if (result.success) {
                     this.searchedUsers = result.data;
-                    // 更新快取
-                    for (const user of result.data) {
-                        this.userCache[user.id] = user;
+                    for (var i = 0; i < result.data.length; i++) {
+                        this.userCache[result.data[i].id] = result.data[i];
                     }
                 }
             } catch (error) {
@@ -86,17 +84,17 @@ function recipientGroupManager() {
         },
 
         getUnitName(unitId) {
-            const unit = this.unitCache[unitId];
+            var unit = this.unitCache[unitId];
             return unit ? unit.name : unitId;
         },
 
         getUserName(userId) {
-            const user = this.userCache[userId];
+            var user = this.userCache[userId];
             return user ? user.name : userId;
         },
 
         isUnitSelected(unitId) {
-            return this.formData.included_units.some(u => u.id === unitId);
+            return this.formData.included_units.some(function(u) { return u.id === unitId; });
         },
 
         isUserSelected(userId) {
@@ -104,7 +102,7 @@ function recipientGroupManager() {
         },
 
         toggleUnit(unit) {
-            const idx = this.formData.included_units.findIndex(u => u.id === unit.id);
+            var idx = this.formData.included_units.findIndex(function(u) { return u.id === unit.id; });
             if (idx >= 0) {
                 this.formData.included_units.splice(idx, 1);
             } else {
@@ -116,7 +114,7 @@ function recipientGroupManager() {
         },
 
         toggleUser(user) {
-            const idx = this.formData.included_users.indexOf(user.id);
+            var idx = this.formData.included_users.indexOf(user.id);
             if (idx >= 0) {
                 this.formData.included_users.splice(idx, 1);
             } else {
@@ -153,10 +151,10 @@ function recipientGroupManager() {
         async openEditModal(group) {
             this.isEditing = true;
             try {
-                const response = await fetch(`/api/admin/settings/recipient-groups/${group.id}`);
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/recipient-groups/' + group.id);
+                var result = await response.json();
                 if (result.success) {
-                    const data = result.data;
+                    var data = result.data;
                     this.formData = {
                         id: data.id,
                         name: data.name,
@@ -182,7 +180,7 @@ function recipientGroupManager() {
         },
 
         async saveGroup() {
-            const data = {
+            var data = {
                 name: this.formData.name,
                 description: this.formData.description,
                 is_active: this.formData.is_active,
@@ -193,12 +191,12 @@ function recipientGroupManager() {
             };
 
             try {
-                const url = this.isEditing
-                    ? `/api/admin/settings/recipient-groups/${this.formData.id}`
+                var url = this.isEditing
+                    ? '/api/admin/settings/recipient-groups/' + this.formData.id
                     : '/api/admin/settings/recipient-groups';
-                const method = this.isEditing ? 'PUT' : 'POST';
+                var method = this.isEditing ? 'PUT' : 'POST';
 
-                const response = await fetch(url, {
+                var response = await fetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -207,7 +205,7 @@ function recipientGroupManager() {
                     body: JSON.stringify(data)
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.closeModal();
                     await this.loadGroups();
@@ -225,8 +223,8 @@ function recipientGroupManager() {
             this.showPreviewModal = true;
 
             try {
-                const response = await fetch(`/api/admin/settings/recipient-groups/${group.id}/resolve`);
-                const result = await response.json();
+                var response = await fetch('/api/admin/settings/recipient-groups/' + group.id + '/resolve');
+                var result = await response.json();
                 if (result.success) {
                     this.previewRecipientsList = result.data.recipients;
                 }
@@ -244,14 +242,14 @@ function recipientGroupManager() {
             if (!this.groupToDelete) return;
 
             try {
-                const response = await fetch(`/api/admin/settings/recipient-groups/${this.groupToDelete.id}`, {
+                var response = await fetch('/api/admin/settings/recipient-groups/' + this.groupToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()
                     }
                 });
 
-                const result = await response.json();
+                var result = await response.json();
                 if (result.success) {
                     this.showDeleteModal = false;
                     this.groupToDelete = null;
@@ -265,4 +263,3 @@ function recipientGroupManager() {
         }
     };
 }
-</script>

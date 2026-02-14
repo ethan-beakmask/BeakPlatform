@@ -1,0 +1,108 @@
+/* approval-limits.css — 核決上限設定頁面 */
+
+.matrix-table {
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.matrix-table th,
+.matrix-table td {
+    border: 1px solid #d1d5db;
+    padding: 6px 10px;
+    text-align: center;
+    vertical-align: middle;
+}
+.matrix-table thead th {
+    background: #1f2937;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+.matrix-table tbody tr:nth-child(odd) {
+    background: #f9fafb;
+}
+.matrix-table tbody tr:hover {
+    background: #fef3c7;
+}
+.level-cell {
+    background: #e5e7eb !important;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    min-width: 120px;
+}
+.level-code {
+    font-family: monospace;
+    color: #6b7280;
+    font-size: 0.85em;
+}
+.limit-cell {
+    background: #fef3c7 !important;
+    min-width: 120px;
+}
+.limit-input {
+    width: 100px;
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    text-align: right;
+}
+.limit-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+.title-cell {
+    min-width: 100px;
+    text-align: left;
+}
+.title-item {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin: 2px;
+    font-size: 0.85em;
+}
+.title-item.supervisor {
+    background: #fef3c7;
+    color: #92400e;
+}
+.empty-cell {
+    color: #d1d5db;
+}
+.manager-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    margin-left: 4px;
+}
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 12px 0;
+    border-top: 2px solid #e5e7eb;
+    margin-top: 20px;
+}
+.btn-save {
+    padding: 10px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+}
+.btn-save:hover {
+    background: #1d4ed8;
+}
+.btn-save:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+.msg-success { color: #059669; margin-left: 12px; }
+.msg-error { color: #dc2626; margin-left: 12px; }
