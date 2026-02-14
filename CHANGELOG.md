@@ -14,6 +14,11 @@
 - 填寫/簽核/閱讀 Modal 灰色畫布背景 + 白色表單區域 + 陰影（匹配設計器 preview）
 - 子流程刪除 API (`DELETE /api/workflows/data/subflows/<secure_code>`)：僅限專屬子流程，引用中回 409，遞迴軟刪除下層
 
+### Fixed
+- 修復群組管理面板修改群組名稱不生效的問題（autoApplyCurrentPanel 用右側面板舊值覆蓋）
+- 修復群組名稱 blur 時因群組已取消選取導致更新失敗的競態條件
+- 群組節點標籤改為頂部顯示、加粗、text-max-width 從 80 提升到 200，長名稱不再被截斷
+
 ### Changed
 - SubFlow 節點配置面板重新設計：從單一下拉選單改為分區面板（專屬區含引用狀態 + 刪除按鈕、通用區按分類分組）
 - SubFlow 節點依子流程類型變色：專屬綠色 (#64aa89)、通用藍色 (#6196ea)

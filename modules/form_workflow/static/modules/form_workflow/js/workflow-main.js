@@ -69,6 +69,7 @@
         let variableMapping = null;    // 變數映射表（新式變數 <-> 舊式變數）
         let currentEditingNodeId = null;   // 當前開啟設定面板的節點 ID
         let currentEditingNodeType = null; // 當前開啟設定面板的節點類型
+        let currentEditingGroupId = null;  // 群組設定面板正在編輯的群組 ID
 
         // ==================== 群組 Helper ====================
         function isGroupNode(node) {
@@ -364,6 +365,20 @@
                             'border-style': 'solid',
                             'background-fit': 'contain',
                             'background-clip': 'none'
+                        }
+                    },
+                    // 群組（compound）節點 — 覆蓋一般節點的 label 設定
+                    {
+                        selector: ':parent',
+                        style: {
+                            'text-valign': 'top',
+                            'text-halign': 'center',
+                            'text-margin-y': -4,
+                            'font-size': '11px',
+                            'font-weight': 'bold',
+                            'text-wrap': 'wrap',
+                            'text-max-width': 200,
+                            'padding': 12
                         }
                     },
                     // 中繼點樣式（一般）
@@ -1658,8 +1673,11 @@
                         updateStatus(`已選擇 ${nodeCount} 個節點, ${edgeCount} 條線`);
                     }
 
-                    // 更新群組資訊顯示
-                    updateGroupInfoDisplay();
+                    // 更新群組資訊顯示（如果正在編輯群組名稱則跳過，避免輸入被覆蓋）
+                    const groupNameInput = document.getElementById('group-name-input');
+                    if (!groupNameInput || document.activeElement !== groupNameInput) {
+                        updateGroupInfoDisplay();
+                    }
                 }, 100);
             });
         }
@@ -11459,16 +11477,19 @@
             const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
 
             if (selectedGroups.length === 0) {
+                currentEditingGroupId = null;
                 panel.innerHTML = '<div style="color: #999; font-style: italic; padding: 8px 0;">選取群組後可在此調整設定</div>';
                 return;
             }
 
             if (selectedGroups.length > 1) {
+                currentEditingGroupId = null;
                 panel.innerHTML = `<div style="color: #666; padding: 8px 0;">已選擇 ${selectedGroups.length} 個群組</div>`;
                 return;
             }
 
             const group = selectedGroups[0];
+            currentEditingGroupId = group.id();
             const currentLabel = group.data('label') || '';
             const currentBorderStyle = group.data('borderStyle') || 'none';
             const currentCornerStyle = group.data('cornerStyle') || 'round';
@@ -11488,8 +11509,9 @@
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="white-space: nowrap; color: #666;">名稱:</span>
                         <input type="text" id="group-name-input" value="${currentLabel.replace(/"/g, '&quot;')}"
-                            onblur="updateGroupNameFromPanel()"
-                            onkeypress="if(event.key==='Enter') this.blur()"
+                            onblur="updateGroupNameFromPanel(true)"
+                            oninput="updateGroupNameFromPanel(false)"
+                            onkeydown="if(event.key==='Enter') this.blur()"
                             style="flex: 1; padding: 3px 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;">
                     </div>
 
@@ -11560,17 +11582,23 @@
             updateSaveButtonState();
         }
 
-        // 從面板更新群組名稱
-        function updateGroupNameFromPanel() {
+        // 從面板更新群組名稱（commitUndo: blur 時才 push undo，oninput 時只同步資料）
+        function updateGroupNameFromPanel(commitUndo) {
             const input = document.getElementById('group-name-input');
             if (!input) return;
-            const selectedGroups = cy.$(':selected').filter(node => isGroupNode(node));
-            if (selectedGroups.length !== 1) return;
-            const group = selectedGroups[0];
+            // 使用儲存的群組 ID 而非查詢選取狀態（避免 blur 時群組已被取消選取的競態條件）
+            if (!currentEditingGroupId) return;
+            const group = cy.getElementById(currentEditingGroupId);
+            if (!group || group.length === 0) return;
             const newLabel = input.value.trim();
             if (newLabel !== group.data('label')) {
-                pushUndoState();
+                if (commitUndo) pushUndoState();
                 group.data('label', newLabel);
+                // 同步右側節點設定面板的名稱輸入框（避免 autoApplyCurrentPanel 用舊值覆蓋）
+                const nodeLabelInput = document.getElementById('node-label-input');
+                if (nodeLabelInput && currentEditingNodeId === currentEditingGroupId) {
+                    nodeLabelInput.value = newLabel;
+                }
                 hasUnsavedChanges = true;
                 updateSaveButtonState();
                 updateMinimap();
