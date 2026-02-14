@@ -15,6 +15,7 @@
 
 ### Changed
 - 平台 navbar/menubar CSS class 改名 `.navbar` → `.bk-navbar`、`.menubar` → `.bk-menubar`，避免與 Bootstrap 衝突（影響 base.html、menu.html、menu.css、themes.css）
+- `.bk-navbar` / `.bk-menubar` 明確設定 font-family/font-size/line-height，防止 Bootstrap body reset 覆蓋
 - 前端 HTML 瘦身 Phase 0-3：大型模板抽離內嵌 JS/CSS 為獨立靜態檔，符合 FRONT-01/02 規範
   - Phase 0: 建立 `common.css` 共用樣式、關閉 Bulma Issue #11
   - Phase 1: `template_list.html` (700→244)、`workflow_list.html` (674→296)
