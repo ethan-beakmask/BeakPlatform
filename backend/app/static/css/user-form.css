@@ -3,17 +3,7 @@
 .form-section {
     margin-bottom: 20px;
 }
-.section-title {
-    background: #f0f0f0;
-    padding: 8px 12px;
-    margin: 20px 0 10px 0;
-    font-weight: bold;
-    border-left: 4px solid #0066cc;
-}
-.section-title.optional {
-    border-left-color: #888;
-    color: #666;
-}
+/* .section-title 和 .section-title.optional 由 common.css 提供 */
 .form-table td {
     padding: 4px 8px;
     vertical-align: top;

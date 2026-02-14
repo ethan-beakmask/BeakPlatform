@@ -77,10 +77,15 @@
 - `category-list.css` + `category-list.js` — 分類管理頁
 
 ## Phase 5: 收尾
-- [ ] 刪除已轉為外部 .js 的死 partial 檔案
-- [ ] 全模板合規審計（FRONT-01/02）
-- [ ] 去重：common.css / app.css / 頁面 CSS 無重複
-- [ ] 更新本文件標記完成
+- [x] 刪除已轉為外部 .js 的死 partial 檔案 → **審計結果：0 個死 partial**，全部 18 個 partial 都有被引用
+- [x] 全模板合規審計（FRONT-01/02）→ Phase 1-4 目標的大型檔案全部完成；剩餘 32 個小型模板有超過 30 行內嵌 CSS/JS，但均 <500 行（除 organizations/list.html 1004 行、workflow_designer.html 1081 行為後續待辦）
+- [x] 去重：移除 `app.css` 中重複的 `[x-cloak]`、`user-form.css` 中重複的 `.section-title`
+- [x] 更新本文件標記完成
+
+### Phase 5 審計結果
+- **超過 500 行**（後續待辦）：`organizations/list.html` (1004 行)、`workflow_designer.html` (1081 行)
+- **密碼模態框 CSS 重複**（後續可優化）：`user-view.css` 和 `org-admins.css` 有高度重複的密碼重設樣式，可抽為共用 class
+- **模態框 / 按鈕 CSS 重複**（後續可優化）：`holidays.css`、`schedules.css`、`org-tree.css` 有重複的 `.modal-*` 和 `.btn-*` 定義
 
 ---
 

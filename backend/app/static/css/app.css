@@ -1,9 +1,6 @@
 /* BeakMask Custom Styles */
 
-/* Hide elements with x-cloak until Alpine.js loads */
-[x-cloak] {
-    display: none !important;
-}
+/* [x-cloak] 由 common.css 提供 */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
