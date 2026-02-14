@@ -361,6 +361,15 @@ def update_template(secure_code):
                 schema={
                     "components": [
                         {
+                            "type": "htmlelement",
+                            "tag": "h3",
+                            "attrs": [{"attr": "style", "value": "text-align:center; margin:0 0 0.5rem 0;"}],
+                            "content": template.name,
+                            "key": "formTitle",
+                            "input": False,
+                            "tableView": False
+                        },
+                        {
                             "type": "textfield",
                             "key": "formSubject",
                             "label": "表單主旨",
@@ -614,6 +623,15 @@ def save_new_version(secure_code):
                 category_secure_code='SYS_CAT_WORKFLOW_REC',
                 schema={
                     "components": [
+                        {
+                            "type": "htmlelement",
+                            "tag": "h3",
+                            "attrs": [{"attr": "style", "value": "text-align:center; margin:0 0 0.5rem 0;"}],
+                            "content": template.name,
+                            "key": "formTitle",
+                            "input": False,
+                            "tableView": False
+                        },
                         {
                             "type": "textfield",
                             "key": "formSubject",

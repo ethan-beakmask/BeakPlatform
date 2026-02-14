@@ -54,9 +54,9 @@
         <!-- 工具列 -->
         <div class="designer-toolbar">
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                    <input type="text" class="form-control form-control-sm" style="width: 180px;" placeholder="表單檔名" id="form-name">
+                    <input type="text" class="form-control form-control-sm" style="width: 210px;" placeholder="表單檔名" id="form-name">
                     <span id="form-version-badge" class="badge bg-secondary" style="display: none;">AA</span>
-                    <select class="form-select form-select-sm" style="width: 140px;" id="form-category">
+                    <select class="form-select form-select-sm" style="width: 170px;" id="form-category">
                     </select>
                     <input type="text" class="form-control form-control-sm" style="width: 240px;" placeholder="描述（選填）" id="form-description">
                     <button id="btn-save" class="btn btn-sm btn-outline-primary">
@@ -263,6 +263,21 @@
                     title: '版面配置',
                     weight: 20,
                     components: {
+                        formTitle: {
+                            title: '表單標題',
+                            key: 'formTitle',
+                            icon: 'header',
+                            schema: {
+                                type: 'htmlelement',
+                                tag: 'h3',
+                                attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }],
+                                content: '表單標題',
+                                className: '',
+                                key: 'formTitle',
+                                input: false,
+                                tableView: false
+                            }
+                        },
                         htmlelement: true,
                         content: true,
                         columns: true,
@@ -380,7 +395,9 @@
                 document.getElementById('form-name').value = formName;
                 document.getElementById('form-category').value = urlCategory;
                 document.getElementById('form-description').value = urlDescription;
+                const titleText = formName || '表單標題';
                 return { components: [
+                    { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false },
                     { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
                 ] };
             } else {
@@ -388,6 +405,7 @@
                 console.log('📝 無參數，建立空白表單');
                 document.getElementById('form-name').value = '新表單';
                 return { components: [
+                    { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '表單標題', key: 'formTitle', input: false, tableView: false },
                     { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
                 ] };
             }

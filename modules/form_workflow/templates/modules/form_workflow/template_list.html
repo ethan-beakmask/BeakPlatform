@@ -412,9 +412,10 @@ function templateListManager() {
                         flat.push({ secure_code: '__uncategorized__', name: '其他', parent_name: null, display: '其他' });
                     }
                     this.flatCategories = flat;
-                    // 設定 formData 預設分類
+                    // 設定 formData 預設分類（優先選「流程記錄」）
                     if (flat.length > 0 && !this.formData.category_secure_code) {
-                        this.formData.category_secure_code = flat[0].secure_code;
+                        const rec = flat.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+                        this.formData.category_secure_code = rec ? rec.secure_code : flat[0].secure_code;
                     }
                 }
             } catch (e) {
@@ -499,7 +500,8 @@ function templateListManager() {
 
         openCreateModal() {
             this.editingTemplate = null;
-            this.formData = { name: '', code: '', description: '', category_secure_code: this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : '', is_active: true };
+            const rec = this.flatCategories.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+            this.formData = { name: '', code: '', description: '', category_secure_code: rec ? rec.secure_code : (this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : ''), is_active: true };
             this.showModal = true;
         },
 

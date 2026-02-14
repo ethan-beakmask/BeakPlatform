@@ -420,7 +420,8 @@ function workflowListManager() {
                     }
                     this.flatCategories = flat;
                     if (flat.length > 1 && !this.formData.category_secure_code) {
-                        this.formData.category_secure_code = flat[0].secure_code;
+                        const rec = flat.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+                        this.formData.category_secure_code = rec ? rec.secure_code : flat[0].secure_code;
                     }
                 }
             } catch (e) {
@@ -471,7 +472,7 @@ function workflowListManager() {
             this.editingWorkflow = null;
             this.formData = {
                 name: '', code: '', description: '',
-                category_secure_code: this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : '',
+                category_secure_code: (this.flatCategories.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC') || this.flatCategories[0] || {}).secure_code || '',
                 is_active: true,
                 is_subprocess: this.flowType === 'subflow'
             };

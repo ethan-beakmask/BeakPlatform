@@ -166,6 +166,28 @@ def create_template():
     if existing:
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
+    # 若未提供 schema，建立含表單標題的預設結構
+    schema = data.get('schema') or {
+        'components': [
+            {
+                'type': 'htmlelement',
+                'tag': 'h3',
+                'attrs': [{'attr': 'style', 'value': 'text-align:center; margin:0 0 0.5rem 0;'}],
+                'content': name,
+                'key': 'formTitle',
+                'input': False,
+                'tableView': False
+            },
+            {
+                'type': 'textfield',
+                'key': 'formSubject',
+                'label': '表單主旨',
+                'input': True,
+                'tableView': True
+            }
+        ]
+    }
+
     template = FwFormTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
@@ -173,8 +195,8 @@ def create_template():
         code=code,
         description=data.get('description', ''),
         category=data.get('category', '其他'),
-        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_OTHER',
-        schema=data.get('schema', {}),
+        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_WORKFLOW_REC',
+        schema=schema,
         is_active=data.get('is_active', True)
     )
 
@@ -601,7 +623,7 @@ def create_workflow():
         code=code,
         description=data.get('description', ''),
         category=data.get('category', '其他'),
-        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_OTHER',
+        category_secure_code=data.get('category_secure_code') or 'SYS_CAT_WORKFLOW_REC',
         graph=data.get('graph', {'nodes': [], 'edges': []}),
         is_active=data.get('is_active', True),
         is_subprocess=is_subprocess
