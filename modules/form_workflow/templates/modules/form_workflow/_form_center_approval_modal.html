@@ -1,0 +1,119 @@
+{# 表單中心 - 簽核模態框 (partial, 注入到 formCenterManager x-data 範圍內) #}
+
+<!-- 簽核 Modal -->
+<div x-show="showApprovalModal" x-cloak class="fc-modal">
+    <div class="fc-modal-content" :style="'width: ' + (currentApproval?.builder_config?.formWidth ? Math.max(currentApproval.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
+        <div class="fc-modal-header">
+            <div>
+                <h3>簽核表單</h3>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #374151;" x-text="currentApproval?.form_name || ''"></p>
+                <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="getShortSerial(currentApproval?.serial_number)"></p>
+            </div>
+            <button class="fc-close-btn" @click="closeApprovalModal()">&times;</button>
+        </div>
+        <div class="fc-modal-body">
+            <div x-show="loadingApproval" class="fc-loading">載入中...</div>
+            <div x-show="!loadingApproval && currentApproval">
+                <!-- 申請人資訊 -->
+                <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
+                    <span>申請人：<strong x-text="currentApproval?.applicant_name || '-'"></strong></span>
+                    <span style="margin-left: 16px;">關卡：<strong x-text="currentApproval?.node_name || '-'"></strong></span>
+                </div>
+
+                <!-- 表單內容 -->
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="font-size: 13px; font-weight: 500;">表單內容</label>
+                        <span x-show="!currentApproval?.has_editable_fields" style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
+                        <span x-show="currentApproval?.has_editable_fields" style="font-size: 11px; color: #1d4ed8; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">部分欄位可編輯</span>
+                    </div>
+                    <div style="background: #f0f1f3; border-radius: 4px; padding: 16px; min-height: 150px;"
+                         :class="{ 'fc-form-readonly': !currentApproval?.has_editable_fields }">
+                        <div id="approval-form-container"></div>
+                    </div>
+                </div>
+
+                <!-- 簽核歷程 -->
+                <div x-show="currentApproval?.approvals?.length > 0" style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                        <span style="font-size: 13px; font-weight: 600;">簽核歷程</span>
+                        <button @click="approvalSortAsc = !approvalSortAsc"
+                                style="padding: 2px 8px; font-size: 11px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
+                            <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                        </button>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">簽核者</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">動作</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
+                                    簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                </th>
+                                <th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb;">意見</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(approval, idx) in sortedApprovals(currentApproval?.approvals)" :key="idx">
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 6px 8px; white-space: nowrap; font-weight: 500;" x-text="approval.approver_name"></td>
+                                    <td style="padding: 6px 8px; white-space: nowrap;">
+                                        <span class="fc-badge" :class="getActionBadgeClass(approval.action)" x-text="getActionText(approval.action)"></span>
+                                    </td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.node_name || '-'"></td>
+                                    <td style="padding: 6px 8px; color: #6b7280; white-space: nowrap;" x-text="approval.acted_at ? formatDate(approval.acted_at) : '-'"></td>
+                                    <td style="padding: 6px 8px; color: #374151; white-space: pre-wrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;"
+                                        x-text="approval.comment || '-'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 簽核選項 -->
+                <div style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">
+                        請選擇後續動作
+                        <span x-show="currentApproval?.selection_mode === 'multiple'" style="color: #7c3aed;">（可複選）</span>
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <template x-for="path in (currentApproval?.available_paths || [])" :key="path.edge_id">
+                            <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; background: white;"
+                                   :style="selectedEdges.includes(path.edge_id) ? 'border-color: #3b82f6; background: #eff6ff;' : ''">
+                                <input x-show="currentApproval?.selection_mode !== 'multiple'" type="radio" name="approval_path" :value="path.edge_id"
+                                       @change="selectedEdges = [path.edge_id]" style="margin-right: 12px;">
+                                <input x-show="currentApproval?.selection_mode === 'multiple'" type="checkbox" :value="path.edge_id"
+                                       @change="toggleEdgeSelection(path.edge_id)" :checked="selectedEdges.includes(path.edge_id)" style="margin-right: 12px;">
+                                <span style="font-weight: 500;" x-text="path.label"></span>
+                                <span style="margin-left: 8px; font-size: 12px; color: #6b7280;" x-text="'→ ' + path.target_node_type"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 簽核意見 -->
+                <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;">
+                    <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">
+                        簽核意見 <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
+                    </label>
+                    <textarea x-model="approvalComment" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; resize: vertical; box-sizing: border-box;"
+                              placeholder="輸入簽核意見..."></textarea>
+                    <div x-show="(currentApproval?.min_comment_length || 0) > 0" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #6b7280;">
+                        <span>最少 <span x-text="currentApproval?.min_comment_length"></span> 字</span>
+                        <span :style="approvalComment.trim().length < (currentApproval?.min_comment_length || 0) ? 'color: #dc2626;' : 'color: #16a34a;'"
+                              x-text="approvalComment.trim().length + ' / ' + (currentApproval?.min_comment_length || 0)"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeApprovalModal()">取消</button>
+            <button class="fc-btn fc-btn-primary" @click="submitApproval()"
+                    :disabled="selectedEdges.length === 0 || submittingApproval">
+                <span x-show="!submittingApproval">送出簽核</span>
+                <span x-show="submittingApproval">處理中...</span>
+            </button>
+        </div>
+    </div>
+</div>

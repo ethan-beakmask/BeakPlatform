@@ -366,3 +366,10 @@ body {
         opacity: 0;
     }
 }
+
+/* Navbar (獨立頁面，不使用 base.html) */
+.navbar { background: white; border-bottom: 1px solid #ccc; padding: 8px 16px; width: 100%; }
+.navbar a { text-decoration: none; }
+.navbar-content { display: flex; align-items: center; width: 100%; }
+.navbar-logo { font-weight: bold; font-size: 16px; color: #333; margin-right: auto; }
+.navbar-user { margin-left: 16px; color: #666; white-space: nowrap; }

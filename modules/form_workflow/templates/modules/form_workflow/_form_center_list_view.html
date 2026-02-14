@@ -1,154 +1,113 @@
-{% extends "layouts/base.html" %}
+{# 表單中心 - 清單模式 (partial, 注入到 formCenterManager x-data 範圍內) #}
 
-{% block title %}表單中心 - BeakPlatform{% endblock %}
+<!-- 清單模式 -->
+<div class="fc-main" x-show="viewMode === 'list'" x-cloak style="flex: 1;">
+    <!-- 返回按鈕 -->
+    <div style="margin-bottom: 6px;">
+        <button @click="viewMode = 'dashboard'" class="fc-btn" style="background: #f3f4f6; color: #374151; font-size: 12px; padding: 4px 10px;">
+            &larr; 返回表單中心
+        </button>
+    </div>
 
-{% block head %}
-<!-- Window Bridge: Jinja2 → JS -->
-<script>window.__USER_TIMEZONE = '{{ user_timezone }}';</script>
-<!-- Bootstrap CSS -->
-<link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
-<!-- Form.io CSS -->
-<link rel="stylesheet" href="/static/vendor/formio.full.min.css">
-<link rel="stylesheet" href="/static/css/formio-theme.css">
-<!-- Form Center CSS -->
-<link rel="stylesheet" href="/static/modules/form_workflow/css/form-center.css">
-{% endblock %}
+    <!-- 三個主頁籤 -->
+    <div class="fc-list-tabs">
+        <button class="fc-list-tab" :class="{ active: listTab === 'pending' }"
+                @click="listTab = 'pending'; listSubTab = 'mine'; listPage = 1;">
+            待簽核
+            <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" style="margin-left: 4px;" x-text="pendingApprovals.length"></span>
+        </button>
+        <button class="fc-list-tab" :class="{ active: listTab === 'tracking' }"
+                @click="listTab = 'tracking'; listSubTab = 'mine'; listPage = 1;">
+            追蹤中
+            <span x-show="trackingList.length + signedList.length > 0" style="margin-left: 4px; color: #6b7280;"
+                  x-text="'(' + (trackingList.length + signedList.length) + ')'"></span>
+        </button>
+        <button class="fc-list-tab" :class="{ active: listTab === 'history' }"
+                @click="listTab = 'history'; listSubTab = 'mine'; listPage = 1;">
+            歷史
+            <span x-show="historyList.length + signedHistoryList.length > 0" style="margin-left: 4px; color: #6b7280;"
+                  x-text="'(' + (historyList.length + signedHistoryList.length) + ')'"></span>
+        </button>
+    </div>
 
-{% block content %}
-<div class="fc-container" x-data="formCenterManager()" :style="viewMode === 'list' ? 'display: block; padding: 16px;' : ''">
-
-    <!-- 左側邊欄：表單分類導航 -->
-    <div class="fc-sidebar" x-show="viewMode === 'dashboard'">
-        <div class="fc-sidebar-box">
-            <div style="padding: 8px 12px; font-weight: 600; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
-            <template x-for="cat in parentCategories" :key="cat.secure_code">
-                <div class="fc-category-item" :class="{ active: selectedParent === cat.secure_code }"
-                     @click="selectParent(cat.secure_code)" style="cursor: pointer;">
-                    <span x-text="cat.name"></span>
-                    <span class="fc-link-badge" style="background: #e5e7eb; color: #374151;" x-text="getFormCountByParent(cat.secure_code)"></span>
-                </div>
-            </template>
+    <!-- 工具列：子頁籤(左) + 分頁(右) -->
+    <div class="fc-list-toolbar">
+        <!-- 左側：子頁籤 -->
+        <div>
+            <div x-show="listTab === 'tracking' || listTab === 'history'" class="fc-list-sub-tabs">
+                <button class="fc-list-sub-tab" :class="{ active: listSubTab === 'mine' }"
+                        @click="listSubTab = 'mine'; listPage = 1;">
+                    我發起的表單(<span x-text="listTab === 'tracking' ? trackingList.length : historyList.length"></span>)
+                </button>
+                <button class="fc-list-sub-tab" :class="{ active: listSubTab === 'signed' }"
+                        @click="listSubTab = 'signed'; listPage = 1;">
+                    我簽過的表單(<span x-text="listTab === 'tracking' ? signedList.length : signedHistoryList.length"></span>)
+                </button>
+            </div>
+            <span x-show="listTab === 'pending'" style="font-size: 12px; color: #6b7280;">
+                共 <span x-text="pendingApprovals.length"></span> 筆
+            </span>
+        </div>
+        <!-- 右側：分頁控制 -->
+        <div x-show="listTotalPages > 1" class="fc-list-pager-compact">
+            <span x-text="listPage + ' / ' + listTotalPages"></span>
+            <button :disabled="listPage <= 1" @click="listPage--">&lt;</button>
+            <button :disabled="listPage >= listTotalPages" @click="listPage++">&gt;</button>
         </div>
     </div>
 
-    <!-- 主內容區 (總覽模式) -->
-    <div class="fc-main" x-show="viewMode === 'dashboard'">
+    <!-- 表格內容 -->
+    <div class="fc-section" style="margin-bottom: 0;">
+        <div style="padding: 0;">
 
-        <!-- 區域一：新填表單 -->
-        <div class="fc-section">
-            <div class="fc-section-header">
-                <div class="fc-section-title">
-                    <span>新填表單</span>
-                </div>
-                <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
-            </div>
-            <!-- 子分類頁籤 -->
-            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;" x-show="selectedParent && currentChildren.length > 0">
-                <div class="fc-cat-tabs">
-                    <template x-for="child in currentChildren" :key="child.secure_code">
-                        <div class="fc-cat-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
-                            <span x-text="child.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByChild(child.secure_code) + ')'"></span>
-                        </div>
-                    </template>
-                </div>
-            </div>
-            <div class="fc-section-body">
-                <div x-show="loadingForms" class="fc-loading">載入中...</div>
-                <div x-show="!loadingForms && filteredForms.length === 0" class="fc-empty">
-                    <span x-text="availableForms.length === 0 ? '目前沒有可填寫的表單' : '此分類目前沒有表單'"></span>
-                </div>
-                <div x-show="!loadingForms && filteredForms.length > 0" class="fc-form-grid">
-                    <template x-for="form in filteredForms" :key="form.secure_code + '_' + form._source">
-                        <div class="fc-form-card" @click="openFormFill(form)">
-                            <h4>
-                                <span x-show="form._status === 'test'" class="fc-badge fc-badge-test">TEST</span>
-                                <span x-text="form.name"></span>
-                            </h4>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-
-        <!-- 區域二：待簽核 -->
-        <div class="fc-section">
-            <div class="fc-section-header">
-                <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('pending')">待簽核</span>
-                    <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" x-text="pendingApprovals.length"></span>
-                </div>
-                <div x-show="pendingTotalPages > 1" class="fc-pagination">
-                    <button @click="pendingPage = Math.max(1, pendingPage - 1)" :disabled="pendingPage === 1">&lt;</button>
-                    <span x-text="pendingPage + '/' + pendingTotalPages"></span>
-                    <button @click="pendingPage = Math.min(pendingTotalPages, pendingPage + 1)" :disabled="pendingPage === pendingTotalPages">&gt;</button>
-                </div>
-            </div>
-            <div style="padding: 0;">
-                <div x-show="loadingPending" class="fc-loading">載入中...</div>
-                <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">目前沒有待簽核的表單</div>
-                <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-pending">
-                    <thead>
-                        <tr>
-                            <th style="width: 140px;">單號</th>
-                            <th style="width: 145px;">表單</th>
-                            <th>主旨</th>
-                            <th style="width: 90px;">發起人</th>
-                            <th style="width: 85px;">類別</th>
-                            <th style="width: 150px;">目前關卡</th>
-                            <th style="width: 150px;">等待時間</th>
-                            <th style="width: 65px;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="item in pagedPendingApprovals" :key="item.queue_secure_code">
+            <!-- 待簽核表格 -->
+            <template x-if="listTab === 'pending'">
+                <div>
+                    <div x-show="loadingPending" class="fc-loading">載入中...</div>
+                    <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">目前沒有待簽核的表單</div>
+                    <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-dense fc-table-pending">
+                        <thead>
                             <tr>
-                                <td>
-                                    <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
-                                    <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                    <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
-                                </td>
-                                <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
-                                <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
-                                <td x-text="item.applicant_name || '-'"></td>
-                                <td style="color: #6b7280;" x-text="item.category || '-'"></td>
-                                <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
-                                <td style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
-                                <td>
-                                    <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)">簽核</button>
-                                </td>
+                                <th style="width: 140px;">單號</th>
+                                <th style="width: 145px;">表單</th>
+                                <th>主旨</th>
+                                <th style="width: 90px;">發起人</th>
+                                <th style="width: 85px;">類別</th>
+                                <th style="width: 150px;">目前關卡</th>
+                                <th style="width: 150px;">等待時間</th>
+                                <th style="width: 65px;">操作</th>
                             </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in pagedListData" :key="item.queue_secure_code">
+                                <tr>
+                                    <td>
+                                        <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
+                                        <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
+                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
+                                    </td>
+                                    <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
+                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td x-text="item.applicant_name || '-'"></td>
+                                    <td style="color: #6b7280;" x-text="item.category || '-'"></td>
+                                    <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
+                                    <td style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
+                                    <td>
+                                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)">簽核</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
 
-        <!-- 區域三：追蹤中 -->
-        <div class="fc-section">
-            <div class="fc-section-header">
-                <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('tracking')">追蹤中</span>
-                    <div class="fc-tabs" style="margin-left: 12px;">
-                        <div class="fc-tab" :class="{ active: trackingTab === 'mine' }" @click="trackingTab = 'mine'; trackingPage = 1">
-                            我發起的表單(<span x-text="trackingList.length"></span>)
-                        </div>
-                        <div class="fc-tab" :class="{ active: trackingTab === 'signed' }" @click="trackingTab = 'signed'; signedPage = 1">
-                            我簽過的表單(<span x-text="signedList.length"></span>)
-                        </div>
-                    </div>
-                </div>
-                <div x-show="trackingTab === 'mine' && trackingTotalPages > 1" class="fc-pagination">
-                    <button @click="trackingPage = Math.max(1, trackingPage - 1)" :disabled="trackingPage === 1">&lt;</button>
-                    <span x-text="trackingPage + '/' + trackingTotalPages"></span>
-                    <button @click="trackingPage = Math.min(trackingTotalPages, trackingPage + 1)" :disabled="trackingPage === trackingTotalPages">&gt;</button>
-                </div>
-            </div>
-            <div style="padding: 0;">
-                <!-- 我的表單 -->
-                <div x-show="trackingTab === 'mine'">
+            <!-- 追蹤中 - 我發起的 -->
+            <template x-if="listTab === 'tracking' && listSubTab === 'mine'">
+                <div>
                     <div x-show="loadingTracking" class="fc-loading">載入中...</div>
                     <div x-show="!loadingTracking && trackingList.length === 0" class="fc-empty">目前沒有執行中的流程</div>
-                    <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table">
+                    <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
                                 <th style="width: 140px;">單號</th>
@@ -161,7 +120,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="item in pagedTrackingList" :key="item.secure_code">
+                            <template x-for="item in pagedListData" :key="item.secure_code">
                                 <tr>
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
@@ -186,11 +145,14 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- 簽核表單 -->
-                <div x-show="trackingTab === 'signed'">
+            </template>
+
+            <!-- 追蹤中 - 我簽過的 -->
+            <template x-if="listTab === 'tracking' && listSubTab === 'signed'">
+                <div>
                     <div x-show="loadingSigned" class="fc-loading">載入中...</div>
                     <div x-show="!loadingSigned && signedList.length === 0" class="fc-empty">沒有曾簽核過的執行中流程</div>
-                    <table x-show="!loadingSigned && signedList.length > 0" class="fc-table">
+                    <table x-show="!loadingSigned && signedList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
                                 <th style="width: 140px;">單號</th>
@@ -204,7 +166,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="item in pagedSignedList" :key="item.secure_code">
+                            <template x-for="item in pagedListData" :key="item.secure_code">
                                 <tr>
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
@@ -230,30 +192,14 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </template>
 
-        <!-- 區域四：歷史 -->
-        <div class="fc-section">
-            <div class="fc-section-header">
-                <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('history')">歷史</span>
-                    <div class="fc-tabs" style="margin-left: 12px;">
-                        <div class="fc-tab" :class="{ active: historyTab === 'mine' }" @click="historyTab = 'mine'; historyPage = 1">
-                            我發起的表單(<span x-text="historyList.length"></span>)
-                        </div>
-                        <div class="fc-tab" :class="{ active: historyTab === 'signed' }" @click="historyTab = 'signed'; signedHistoryPage = 1">
-                            我簽過的表單(<span x-text="signedHistoryList.length"></span>)
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div style="padding: 0;">
-                <!-- 我的歷史 -->
-                <div x-show="historyTab === 'mine'">
+            <!-- 歷史 - 我發起的 -->
+            <template x-if="listTab === 'history' && listSubTab === 'mine'">
+                <div>
                     <div x-show="loadingHistory" class="fc-loading">載入中...</div>
                     <div x-show="!loadingHistory && historyList.length === 0" class="fc-empty">沒有歷史記錄</div>
-                    <table x-show="!loadingHistory && historyList.length > 0" class="fc-table">
+                    <table x-show="!loadingHistory && historyList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
                                 <th style="width: 140px;">單號</th>
@@ -266,7 +212,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="item in pagedHistoryList" :key="item.secure_code">
+                            <template x-for="item in pagedListData" :key="item.secure_code">
                                 <tr>
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
@@ -291,11 +237,14 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- 簽核歷史 -->
-                <div x-show="historyTab === 'signed'">
+            </template>
+
+            <!-- 歷史 - 我簽過的 -->
+            <template x-if="listTab === 'history' && listSubTab === 'signed'">
+                <div>
                     <div x-show="loadingSignedHistory" class="fc-loading">載入中...</div>
                     <div x-show="!loadingSignedHistory && signedHistoryList.length === 0" class="fc-empty">沒有曾簽核過的已結束流程</div>
-                    <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table">
+                    <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
                                 <th style="width: 140px;">單號</th>
@@ -309,7 +258,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="item in pagedSignedHistoryList" :key="item.secure_code">
+                            <template x-for="item in pagedListData" :key="item.secure_code">
                                 <tr>
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
@@ -335,59 +284,23 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </template>
 
-    </div>
-
-    {% include "modules/form_workflow/_form_center_list_view.html" %}
-
-    <!-- 填寫表單 Modal -->
-    <div x-show="showFillModal" x-cloak class="fc-modal">
-        <div class="fc-modal-content" :style="'width: ' + (selectedForm?.builder_config?.formWidth ? Math.max(selectedForm.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
-            <div class="fc-modal-header">
-                <div>
-                    <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
-                    <p x-show="selectedForm?._status === 'test'" style="margin: 4px 0 0; font-size: 12px; color: #c2410c;">
-                        測試模式 - 表單尚未正式發行
-                    </p>
-                </div>
-                <button class="fc-close-btn" @click="closeFillModal()">&times;</button>
-            </div>
-            <div class="fc-modal-body fc-form-canvas">
-                <div x-show="loadingFormSchema" class="fc-loading">載入表單結構中...</div>
-                <div x-show="!loadingFormSchema && formSchema">
-                    <div id="form-fill-container"></div>
-                </div>
-                <div x-show="!loadingFormSchema && !formSchema" class="fc-empty">
-                    <p>此表單尚無欄位定義</p>
-                    <p style="font-size: 12px;">請至表單設計器添加欄位</p>
-                </div>
-            </div>
-            <div class="fc-modal-footer">
-                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeFillModal()">取消</button>
-                <button class="fc-btn fc-btn-primary" @click="submitForm()" :disabled="submitting">
-                    <span x-show="!submitting">送出表單</span>
-                    <span x-show="submitting">處理中...</span>
-                </button>
-            </div>
         </div>
     </div>
 
-    {% include "modules/form_workflow/_form_center_approval_modal.html" %}
-
-    {% include "modules/form_workflow/_monitor_modal.html" %}
-
-    {% include "modules/form_workflow/_read_form_modal.html" %}
-
-    <!-- Toast -->
-    <div x-show="toast.show" x-cloak class="fc-toast" :class="'fc-toast-' + toast.type" x-text="toast.message"></div>
-
+    <!-- 分頁控制 -->
+    <div x-show="listTotalPages > 1" class="fc-list-pager">
+        <div>
+            共 <span x-text="listDataSource.length"></span> 筆，第 <span x-text="listPage"></span> / <span x-text="listTotalPages"></span> 頁
+        </div>
+        <div class="fc-list-pager-btns">
+            <button class="fc-list-pager-btn" :disabled="listPage <= 1" @click="listPage--">&lt; 上一頁</button>
+            <template x-for="p in listTotalPages" :key="p">
+                <button class="fc-list-pager-btn" :class="{ active: listPage === p }" @click="listPage = p" x-text="p"
+                        x-show="p === 1 || p === listTotalPages || (p >= listPage - 2 && p <= listPage + 2)"></button>
+            </template>
+            <button class="fc-list-pager-btn" :disabled="listPage >= listTotalPages" @click="listPage++">下一頁 &gt;</button>
+        </div>
+    </div>
 </div>
-
-<!-- Vendor JS -->
-<script src="/static/vendor/formio.full.min.js"></script>
-<script src="/static/vendor/cytoscape.min.js"></script>
-<!-- Form Center JS -->
-<script src="/static/modules/form_workflow/js/form-center.js"></script>
-{% endblock %}
