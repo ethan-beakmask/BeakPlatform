@@ -15,25 +15,19 @@
             <div class="tree-subtitle" x-show="treeCode" x-text="treeCode"></div>
         </div>
         <div class="spacer"></div>
-        <button class="tb-btn" @click="fitChart()">置中</button>
         <button class="tb-btn" @click="window.close()">關閉</button>
     </div>
 
     <div class="tree-chart-area">
         <div x-show="loading" class="tree-loading">載入中...</div>
         <div x-show="error" class="tree-error" x-text="error"></div>
-        <div x-show="!loading && !error" id="workflow-tree-chart" class="chart-container"></div>
+        <div x-show="!loading && !error" id="workflow-tree-chart" style="overflow:auto;background:#f9fafb;"></div>
     </div>
 
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/vendor/d3.min.js"></script>
-<script src="/static/vendor/d3-flextree.min.js"></script>
-<script src="/static/vendor/d3-org-chart.min.js"></script>
-<script src="/static/modules/form_workflow/js/workflow-tree-chart.js"></script>
-
 <script>
 window.__TREE_CONFIG = { secureCode: '{{ secure_code }}' };
 </script>
