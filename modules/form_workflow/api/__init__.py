@@ -799,6 +799,69 @@ def list_flow_trees():
     })
 
 
+@api_bp.route('/workflows/<secure_code>/unused-subflows')
+@require_permission('form_workflow.workflow.view')
+def get_unused_subflows(secure_code):
+    """取得指定主流程的未使用專屬子流程清單（含縮圖）"""
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    target = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org.secure_code,
+        secure_code=secure_code,
+        is_deleted=False
+    ).first()
+    if not target:
+        return jsonify({'success': False, 'error': '找不到此工作流'}), 404
+
+    # 解析 graph 中實際引用的子流程 codes
+    used_codes = set()
+    if target.graph:
+        for node in target.graph.get('nodes', []):
+            node_data = node.get('data', {}) if isinstance(node.get('data'), dict) else {}
+            node_type = (node_data.get('type') or node.get('type') or '').lower()
+            if node_type == 'subflow':
+                config = node_data.get('config') or node.get('config') or {}
+                child_id = config.get('childFlowId')
+                if child_id:
+                    used_codes.add(child_id)
+
+    # 查詢所有專屬子流程
+    dedicated_sfs = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org.secure_code,
+        parent_workflow_secure_code=secure_code,
+        is_subprocess=True,
+        is_deleted=False
+    ).all()
+
+    # 過濾出未被引用的
+    unused = [sf for sf in dedicated_sfs if sf.code not in used_codes]
+
+    result = []
+    for sf in unused:
+        node_count = len(sf.graph.get('nodes', [])) if sf.graph else 0
+        result.append({
+            'secure_code': sf.secure_code,
+            'name': sf.name,
+            'code': sf.code,
+            'thumbnail_2x1': sf.thumbnail_2x1,
+            'node_count': node_count,
+            'updated_at': sf.updated_at.isoformat() if sf.updated_at else None
+        })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'workflow_name': target.name,
+            'workflow_code': target.code,
+            'subflows': result
+        }
+    })
+
+
 @api_bp.route('/workflows/flow-trees/<secure_code>')
 @require_permission('form_workflow.workflow.view')
 def get_flow_tree(secure_code):
@@ -873,6 +936,35 @@ def get_flow_tree(secure_code):
         return tree_node
 
     tree = build_tree_node(target)
+
+    # 收集樹中已出現的子流程 code（graph 有引用的）
+    used_codes_in_tree = set()
+    def collect_codes(node):
+        used_codes_in_tree.add(node.get('code', ''))
+        for ch in node.get('children', []):
+            collect_codes(ch)
+    collect_codes(tree)
+
+    # 追加未引用的專屬子流程（標記 is_unused）
+    dedicated_sfs = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org_code,
+        parent_workflow_secure_code=secure_code,
+        is_subprocess=True,
+        is_deleted=False
+    ).all()
+    for sf in dedicated_sfs:
+        if sf.code not in used_codes_in_tree:
+            nc = len(sf.graph.get('nodes', [])) if sf.graph else 0
+            tree['children'].append({
+                'secure_code': sf.secure_code,
+                'name': sf.name,
+                'code': sf.code,
+                'thumbnail_2x1': sf.thumbnail_2x1,
+                'node_count': nc,
+                'is_subprocess': True,
+                'is_unused': True,
+                'children': []
+            })
 
     return jsonify({
         'success': True,

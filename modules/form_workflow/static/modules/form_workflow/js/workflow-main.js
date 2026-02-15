@@ -2386,10 +2386,16 @@
             if (saveNewVersionBtn) saveNewVersionBtn.style.display = 'inline-block';
             discardBtn.style.display = 'inline-block';
 
-            saveBtn.removeAttribute('disabled');
-            saveAndCloseBtn.removeAttribute('disabled');
-            if (saveNewVersionBtn) saveNewVersionBtn.removeAttribute('disabled');
-            discardBtn.removeAttribute('disabled');
+            // 完整清除唯讀模式殘留樣式（disabled 屬性、class、inline style）
+            [saveBtn, saveAndCloseBtn, saveNewVersionBtn, discardBtn].forEach(btn => {
+                if (!btn) return;
+                btn.removeAttribute('disabled');
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.style.opacity = '';
+                btn.style.cursor = '';
+                btn.title = '';
+            });
             console.log('  ✓ 顯示操作按鈕並啟用');
 
             // 顯示流程資訊

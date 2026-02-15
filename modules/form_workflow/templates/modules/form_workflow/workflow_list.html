@@ -10,21 +10,65 @@
 {% block content %}
 <div class="wf-container" x-data="workflowListManager()">
 
-    <!-- 樹系圖內嵌視圖 -->
+    <!-- 樹系圖內嵌視圖（d3-hierarchy） -->
     <div x-show="treeView.active" x-cloak>
         <div class="tree-view-toolbar">
-            <button class="btn btn-sm btn-secondary" @click="fitTree()">置中</button>
             <button class="btn btn-sm btn-secondary" @click="closeTree()">關閉</button>
             <span class="fw-semibold" x-text="treeView.name || ''"></span>
             <span class="text-muted small" x-text="treeView.code || ''"></span>
         </div>
-        <div class="tree-view-wrap">
-            <div id="inline-tree-chart" class="chart-container"></div>
+        <div id="tree-container" style="background:#f9fafb;overflow:auto;min-height:200px;max-height:calc(100vh - 160px);"></div>
+    </div>
+
+    <!-- 未用子流程內嵌視圖 -->
+    <div x-show="unusedView.active" x-cloak>
+        <div class="tree-view-toolbar">
+            <button class="btn btn-sm btn-secondary" @click="closeUnused()">關閉</button>
+            <span class="fw-semibold" x-text="unusedView.name || ''"></span>
+            <span class="text-muted small">未使用的專屬子流程</span>
+        </div>
+        <div style="padding: 16px; background: #f9fafb; min-height: 200px;">
+            <div x-show="unusedView.loading" class="text-center p-5 text-secondary">載入中...</div>
+            <div x-show="!unusedView.loading && unusedView.subflows.length === 0" class="text-center p-5 text-secondary">
+                沒有未使用的專屬子流程
+            </div>
+            <div x-show="!unusedView.loading && unusedView.subflows.length > 0">
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+                <template x-for="sf in unusedView.subflows" :key="sf.secure_code">
+                    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <div style="aspect-ratio: 3/2; margin: 4px; border: 1px solid #e5e7eb; overflow: hidden; background: #f3f4f6;">
+                            <img x-show="sf.thumbnail_2x1" :src="sf.thumbnail_2x1" style="width:100%;height:100%;object-fit:contain;">
+                            <div x-show="!sf.thumbnail_2x1" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+                                <i class="ri-flow-chart" style="font-size:28px;color:#9ca3af;"></i>
+                            </div>
+                        </div>
+                        <div style="padding: 6px 8px 2px; font-size: 12px; font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;" x-text="sf.name"></div>
+                        <div style="text-align: center; font-size: 10px; color: #9ca3af; margin-bottom: 4px;">
+                            <span x-text="sf.node_count + ' 節點'"></span>
+                            <span x-show="sf.code" x-text="sf.code" style="margin-left: 6px;"></span>
+                        </div>
+                        <div style="display: flex; border-top: 1px solid #e5e7eb;">
+                            <button @click="editUnusedSubflow(sf)"
+                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #2563eb;"
+                                    onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='none'">
+                                編輯
+                            </button>
+                            <div style="width: 1px; background: #e5e7eb;"></div>
+                            <button @click="deleteUnusedSubflow(sf)"
+                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #dc2626;"
+                                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                                刪除
+                            </button>
+                        </div>
+                    </div>
+                </template>
+              </div>
+            </div>
         </div>
     </div>
 
     <!-- 頁首 -->
-    <div class="d-flex justify-content-between align-items-center mb-3" x-show="!treeView.active">
+    <div class="d-flex justify-content-between align-items-center mb-3" x-show="!treeView.active && !unusedView.active">
         <div>
             <h1 class="h5 mb-1">工作流模板管理</h1>
             <p class="small text-secondary mb-0">管理流程定義與節點配置</p>
@@ -51,7 +95,7 @@
     </div>
 
     <!-- 流程類型 Tab -->
-    <div x-show="!loading && !treeView.active" class="wf-tabs">
+    <div x-show="!loading && !treeView.active && !unusedView.active" class="wf-tabs">
         <button class="wf-tab" :class="{ active: flowType === 'main' }"
                 @click="flowType = 'main'; loadWorkflows()">
             主流程 <span class="text-secondary ms-1" x-text="'(' + totalCounts.main + ')'"></span>
@@ -63,7 +107,7 @@
     </div>
 
     <!-- 分類篩選 chips -->
-    <div x-show="!loading && !treeView.active" class="wf-filter-bar">
+    <div x-show="!loading && !treeView.active && !unusedView.active" class="wf-filter-bar">
         <template x-for="cat in flatCategories" :key="cat.secure_code">
             <div class="wf-chip" :class="{ active: selectedCategory === cat.secure_code }"
                  @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
@@ -74,7 +118,7 @@
     </div>
 
     <!-- 主內容區 -->
-    <div class="border rounded p-0" x-show="!treeView.active">
+    <div class="border rounded p-0" x-show="!treeView.active && !unusedView.active">
         <div x-show="loading" class="text-center p-5 text-secondary">載入中...</div>
 
         <div x-show="!loading && filteredWorkflows.length === 0" class="text-center p-5 text-secondary">
@@ -139,6 +183,7 @@
                         </td>
                         <td style="text-align: center;">
                             <span x-show="w.unused_subflow_count > 0" class="badge bg-secondary-subtle text-secondary"
+                                  style="cursor: pointer;" @click.stop="openUnused(w)"
                                   x-text="w.unused_subflow_count"></span>
                             <span x-show="!w.unused_subflow_count" class="text-muted small">-</span>
                         </td>
@@ -180,7 +225,7 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && !treeView.active && filteredWorkflows.length > 0 && viewMode === 'grid'">
+    <template x-if="!loading && !treeView.active && !unusedView.active && filteredWorkflows.length > 0 && viewMode === 'grid'">
         <div class="wf-thumb-grid">
             <template x-for="w in filteredWorkflows" :key="w.secure_code">
                 <div class="wf-thumb-card" @click="editWorkflow(w)">
@@ -293,9 +338,5 @@
 
 </div>
 
-<script src="/static/vendor/d3.min.js"></script>
-<script src="/static/vendor/d3-flextree.min.js"></script>
-<script src="/static/vendor/d3-org-chart.min.js"></script>
-<script src="/static/modules/form_workflow/js/workflow-tree-chart.js"></script>
 <script src="/static/modules/form_workflow/js/workflow-list.js"></script>
 {% endblock %}
