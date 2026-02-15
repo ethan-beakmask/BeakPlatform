@@ -139,6 +139,58 @@
             updateMinimap();
         }
 
+        // 檢查並更新空群組外觀（空群組強制虛線邊框 + 保持顏色可見）
+        function refreshEmptyGroupStyle(group) {
+            if (!group || group.removed() || group.length === 0) return;
+            if (group.data('type') !== 'group' && !group.isParent()) return;
+
+            const children = group.children();
+            const isEmpty = children.length === 0;
+
+            if (isEmpty) {
+                const gc = group.data('groupColor');
+                const borderColor = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
+                const styleObj = {
+                    'border-width': 2,
+                    'border-style': 'dashed',
+                    'background-opacity': 0.15,
+                    'border-color': borderColor
+                };
+                // 無明確顏色時套用預設可見背景
+                if (!gc) {
+                    styleObj['background-color'] = 'rgba(102, 126, 234, 0.08)';
+                }
+                group.style(styleObj);
+            } else {
+                // 有子節點：依 data 中儲存的 borderStyle 還原
+                const borderStyle = group.data('borderStyle') || 'none';
+                const gc = group.data('groupColor');
+                if (borderStyle === 'none') {
+                    group.style({
+                        'border-width': 0,
+                        'background-opacity': 0.3
+                    });
+                } else {
+                    const borderColor = gc ? groupBorderColor(gc.r, gc.g, gc.b) : '#667eea';
+                    group.style({
+                        'border-width': 2,
+                        'border-style': borderStyle,
+                        'background-opacity': 0.15,
+                        'border-color': borderColor
+                    });
+                }
+            }
+        }
+
+        // 掃描所有群組並更新空群組樣式
+        function refreshAllEmptyGroups() {
+            cy.nodes().forEach(node => {
+                if (node.data('type') === 'group' || node.isParent()) {
+                    refreshEmptyGroupStyle(node);
+                }
+            });
+        }
+
         // ==================== Undo 系統 ====================
         const undoStack = [];
         const UNDO_MAX = 50;
@@ -208,6 +260,7 @@
             });
 
             cy.style().update();
+            refreshAllEmptyGroups();
             updateMinimap();
             updateGridOccupancy();
             updateEdgeSelector();
@@ -688,6 +741,19 @@
                             'border-width': 3,
                             'border-color': '#4CAF50'
                         }
+                    },
+                    // 一般節點選中樣式（邊框 + 陰影光暈）
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': 3,
+                            'border-color': '#2196F3',
+                            'shadow-blur': 8,
+                            'shadow-color': '#2196F3',
+                            'shadow-offset-x': 0,
+                            'shadow-offset-y': 0,
+                            'shadow-opacity': 0.6
+                        }
                     }
                 ],
 
@@ -748,6 +814,7 @@
                         if (currentParent.length > 0) {
                             node.move({ parent: null });
                             cy.style().update();
+                            refreshEmptyGroupStyle(currentParent);
                             alreadyLeftGroup = true;
 
                             const isGroup = isGroupNode(node);
@@ -1565,6 +1632,10 @@
                                 cy.style().update();
                             }
 
+                            // 舊群組可能變空，新群組恢復正常
+                            if (currentParent.length > 0) refreshEmptyGroupStyle(currentParent);
+                            refreshEmptyGroupStyle(targetGroup);
+
                             const nodeType = isGroup ? '群組' : '節點';
                             updateStatus(`${nodeType}已自動加入群組 ${targetGroup.data('label')}`);
                             console.log(`✅ ${nodeType} ${node.id()} 加入群組 ${targetGroup.id()}`);
@@ -1578,6 +1649,7 @@
 
                             // 強制重新渲染
                             cy.style().update();
+                            refreshEmptyGroupStyle(currentParent);
 
                             const nodeType = isGroup ? '群組' : '節點';
                             updateStatus(`${nodeType}已移出群組 ${currentParent.data('label')}`);
@@ -3649,6 +3721,9 @@
             }
             const borderCheckbox = document.getElementById('global-node-border');
             if (borderCheckbox) borderCheckbox.checked = globalNodeBorder;
+
+            // 載入後掃描空群組，強制虛線邊框
+            refreshAllEmptyGroups();
 
             console.log(`✅ 渲染完成 (nodeCounter=${nodeCounter}, edgeCounter=${edgeCounter}, groupCounter=${groupCounter})`);
         }
@@ -10795,8 +10870,10 @@
         // 右鍵選單：移出群組
         function removeNodeFromGroupMenu() {
             if (contextMenuTarget) {
+                const oldParent = contextMenuTarget.parent();
                 contextMenuTarget.move({ parent: null });
                 cy.style().update();
+                if (oldParent.length > 0) refreshEmptyGroupStyle(oldParent);
                 updateStatus('節點已移出群組');
                 updateMinimap();
             }
@@ -11372,6 +11449,7 @@
             }
 
             const groupId = groups[0].id();
+            const targetGroup = groups[0];
 
             // 將節點移入群組
             nodes.forEach(node => {
@@ -11383,6 +11461,9 @@
 
             // 強制重新渲染以避免視覺錯誤
             cy.style().update();
+
+            // 群組恢復非空，還原原始邊框設定
+            refreshEmptyGroupStyle(targetGroup);
 
             updateStatus(`已將 ${nodes.length} 個節點加入群組 ${groupId}`);
             updateMinimap();
@@ -11400,6 +11481,13 @@
                 return;
             }
 
+            // 記錄受影響的群組（移動前）
+            const affectedGroupIds = new Set();
+            selectedNodes.forEach(node => {
+                const parent = node.parent();
+                if (parent.length > 0) affectedGroupIds.add(parent.id());
+            });
+
             selectedNodes.forEach(node => {
                 node.move({ parent: null });
             });
@@ -11409,6 +11497,11 @@
 
             // 強制重新渲染以避免視覺錯誤
             cy.style().update();
+
+            // 檢查受影響群組是否變空
+            affectedGroupIds.forEach(groupId => {
+                refreshEmptyGroupStyle(cy.getElementById(groupId));
+            });
 
             updateStatus(`已從群組移出 ${selectedNodes.length} 個節點`);
             updateMinimap();
