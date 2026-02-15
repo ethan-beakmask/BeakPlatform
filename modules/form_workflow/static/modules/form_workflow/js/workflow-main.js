@@ -3056,10 +3056,15 @@
             // 切換流程時重置狀態
             clearUndoState();
             isReadOnly = false;
-            // 移除上一個流程的唯讀提示
+            // 移除上一個流程的唯讀提示與限制
             const prevWarning = document.getElementById('readonly-warning');
             if (prevWarning) prevWarning.remove();
             cy.autoungrabify(false);
+            const nodeSettings = document.getElementById('nodeSettings');
+            if (nodeSettings) {
+                nodeSettings.style.pointerEvents = '';
+                nodeSettings.style.opacity = '';
+            }
 
             try {
                 console.log(`📥 載入流程: ${currentWorkflowId}`);
@@ -3162,6 +3167,12 @@
                         node.style.opacity = '0.5';
                         node.style.cursor = 'default';
                     });
+                    // 右側節點設定面板唯讀（可看不可改）
+                    const nodeSettings = document.getElementById('nodeSettings');
+                    if (nodeSettings) {
+                        nodeSettings.style.pointerEvents = 'none';
+                        nodeSettings.style.opacity = '0.55';
+                    }
                     // 顯示唯讀提示
                     if (!document.getElementById('readonly-warning')) {
                         const toolbar = document.querySelector('.toolbar-row');
