@@ -26,6 +26,7 @@
 - 流程列表名稱欄寬度縮減至 225px、描述欄限制 200px、更新時間欄加寬至 155px
 
 ### Fixed
+- 修復「未用子流程」判定只看直接父流程：改為遞迴掃描整棵樹所有層級的 graph，被任何層級引用即算「已用」
 - 修復通用子流程切回一般流程時唯讀狀態殘留：unlockInterface 完整清除 disabled 屬性、CSS class 和 inline style
 - 修復群組管理面板修改群組名稱不生效的問題（autoApplyCurrentPanel 用右側面板舊值覆蓋）
 - 修復群組名稱 blur 時因群組已取消選取導致更新失敗的競態條件

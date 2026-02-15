@@ -546,6 +546,20 @@ def list_workflows():
     for sf in dedicated_sfs:
         dedicated_sf_codes.setdefault(sf.parent_workflow_secure_code, set()).add(sf.code)
 
+    # 掃描所有子流程 graph 中引用的 code，建立全域「被引用」集合
+    # 用於判斷專屬子流程是否在整棵樹中被任何層級引用（不只直接父流程）
+    all_tree_used_codes = set(all_child_codes)  # 主流程 graph 引用的
+    for sf in dedicated_sfs:
+        if sf.graph:
+            for node in sf.graph.get('nodes', []):
+                node_data = node.get('data', {})
+                node_type = (node_data.get('type') or node.get('type') or '').lower()
+                if node_type == 'subflow':
+                    config = node_data.get('config') or node.get('config') or {}
+                    child_id = config.get('childFlowId')
+                    if child_id:
+                        all_tree_used_codes.add(child_id)
+
     result = []
     for w in workflows:
         d = w.to_dict(include_graph=False)
@@ -554,10 +568,9 @@ def list_workflows():
         d['dedicated_subflow_count'] = dedicated_counts.get(w.secure_code, 0)
         child_codes = workflow_child_flows.get(w.secure_code, [])
         d['common_subflow_count'] = len([c for c in child_codes if c in common_sf_codes])
-        # 未用專屬子流程：有 parent 指向此流程，但未被 graph SubFlow 節點引用
+        # 未用專屬子流程：有 parent 指向此流程，但未被整棵樹任何層級引用
         my_dedicated_codes = dedicated_sf_codes.get(w.secure_code, set())
-        used_dedicated_codes = set(child_codes) & my_dedicated_codes
-        d['unused_subflow_count'] = len(my_dedicated_codes - used_dedicated_codes)
+        d['unused_subflow_count'] = len(my_dedicated_codes - all_tree_used_codes)
         result.append(d)
 
     return jsonify({
@@ -817,17 +830,31 @@ def get_unused_subflows(secure_code):
     if not target:
         return jsonify({'success': False, 'error': '找不到此工作流'}), 404
 
-    # 解析 graph 中實際引用的子流程 codes
+    # 收集整棵樹中所有被引用的子流程 codes（遞迴掃描所有層級的 graph）
     used_codes = set()
-    if target.graph:
-        for node in target.graph.get('nodes', []):
+
+    def collect_used_codes(wf):
+        """遞迴掃描 workflow 及其子流程的 graph，收集所有被引用的 childFlowId"""
+        if not wf.graph:
+            return
+        for node in wf.graph.get('nodes', []):
             node_data = node.get('data', {}) if isinstance(node.get('data'), dict) else {}
             node_type = (node_data.get('type') or node.get('type') or '').lower()
             if node_type == 'subflow':
                 config = node_data.get('config') or node.get('config') or {}
                 child_id = config.get('childFlowId')
-                if child_id:
+                if child_id and child_id not in used_codes:
                     used_codes.add(child_id)
+                    # 遞迴掃描被引用的子流程
+                    child_wf = FwWorkflowTemplate.query.filter_by(
+                        code=child_id,
+                        org_secure_code=org.secure_code,
+                        is_deleted=False
+                    ).first()
+                    if child_wf:
+                        collect_used_codes(child_wf)
+
+    collect_used_codes(target)
 
     # 查詢所有專屬子流程
     dedicated_sfs = FwWorkflowTemplate.query.filter_by(
@@ -837,7 +864,7 @@ def get_unused_subflows(secure_code):
         is_deleted=False
     ).all()
 
-    # 過濾出未被引用的
+    # 過濾出未被整棵樹引用的
     unused = [sf for sf in dedicated_sfs if sf.code not in used_codes]
 
     result = []
