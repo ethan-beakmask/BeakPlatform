@@ -70,6 +70,7 @@
         let currentEditingNodeId = null;   // 當前開啟設定面板的節點 ID
         let currentEditingNodeType = null; // 當前開啟設定面板的節點類型
         let currentEditingGroupId = null;  // 群組設定面板正在編輯的群組 ID
+        let isReadOnly = false;            // 唯讀模式（通用子流程從外部開啟時啟用）
 
         // ==================== 群組 Helper ====================
         function isGroupNode(node) {
@@ -3052,8 +3053,13 @@
                 return;
             }
 
-            // 切換流程時清除 undo stack
+            // 切換流程時重置狀態
             clearUndoState();
+            isReadOnly = false;
+            // 移除上一個流程的唯讀提示
+            const prevWarning = document.getElementById('readonly-warning');
+            if (prevWarning) prevWarning.remove();
+            cy.autoungrabify(false);
 
             try {
                 console.log(`📥 載入流程: ${currentWorkflowId}`);
@@ -3108,6 +3114,13 @@
                     }
                 }
 
+                // 通用子流程唯讀旗標（UI 在 unlockInterface 後套用）
+                const urlParamsRO = new URLSearchParams(window.location.search);
+                const isCommonSubflow = workflow.is_subprocess && !workflow.parent_workflow_secure_code;
+                if (isCommonSubflow && urlParamsRO.get('editable') !== '1') {
+                    isReadOnly = true;
+                }
+
                 // 檢查是否有cytoscape_config或graph（兼容舊資料）
                 // 優先使用 cytoscape_config，如果沒有則使用 graph，都沒有則使用空配置
                 let config = workflow.cytoscape_config || workflow.graph || { nodes: [], edges: [], relayPoints: [] };
@@ -3127,6 +3140,41 @@
 
                 // 解鎖界面並顯示流程資訊
                 unlockInterface(workflow.name, (workflow.version || 'AA') + (workflow.revision || ''), workflow.description || '', workflow.category_secure_code || '');
+
+                // 通用子流程唯讀 UI（必須在 unlockInterface 之後，否則會被覆蓋）
+                if (isReadOnly) {
+                    // 禁用儲存按鈕
+                    ['btn-save-workflow', 'btn-save-and-close', 'btn-save-new-version'].forEach(id => {
+                        const btn = document.getElementById(id);
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.classList.add('disabled');
+                            btn.title = '通用子流程唯讀，請從流程管理頁面開啟編輯';
+                            btn.style.opacity = '0.5';
+                            btn.style.cursor = 'not-allowed';
+                        }
+                    });
+                    // 防止拖動節點
+                    cy.autoungrabify(true);
+                    // 禁用左側面板節點拖入
+                    document.querySelectorAll('.palette-node').forEach(node => {
+                        node.setAttribute('draggable', 'false');
+                        node.style.opacity = '0.5';
+                        node.style.cursor = 'default';
+                    });
+                    // 顯示唯讀提示
+                    if (!document.getElementById('readonly-warning')) {
+                        const toolbar = document.querySelector('.toolbar-row');
+                        if (toolbar) {
+                            const warning = document.createElement('div');
+                            warning.id = 'readonly-warning';
+                            warning.style.cssText = 'background: #e8f4fd; border: 1px solid #90caf9; color: #1565c0; padding: 6px 16px; margin-bottom: 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 8px;';
+                            warning.innerHTML = '<i class="fas fa-eye"></i><strong>唯讀模式</strong> — 通用子流程僅供檢視。如需編輯，請從<a href="/forms/workflows" style="color: #1565c0; margin-left: 2px;">流程管理</a>頁面開啟。';
+                            toolbar.parentNode.insertBefore(warning, toolbar);
+                        }
+                    }
+                    console.log('🔒 通用子流程唯讀模式已啟用');
+                }
 
                 // 初始化變更追蹤（載入完成後）
                 setTimeout(() => {
@@ -7678,6 +7726,10 @@
 
         // 儲存流程
         async function saveWorkflow() {
+            if (isReadOnly) {
+                updateStatus('唯讀模式，無法儲存', 'warning');
+                return;
+            }
             // 儲存前自動套用當前面板的設定
             autoApplyCurrentPanel();
 
@@ -12541,10 +12593,11 @@
 
             updateStatus(`正在切換到流程...`);
 
-            // 更新 URL 並載入新流程
+            // 更新 URL 並載入新流程（移除 editable，讓通用子流程的唯讀檢查能生效）
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.set('id', secureCode);
             newUrl.searchParams.delete('new');
+            newUrl.searchParams.delete('editable');
             window.history.pushState(null, '', newUrl);
 
             // 重置節點設定面板

@@ -88,7 +88,7 @@ def workflow_new():
 def workflow_detail(secure_code):
     """工作流設計器（重定向到查詢參數格式）"""
     created = request.args.get('created', '')
-    return redirect(f'/api/workflows/designer/standalone?id={secure_code}{"&created=1" if created else ""}')
+    return redirect(f'/api/workflows/designer/standalone?id={secure_code}&editable=1{"&created=1" if created else ""}')
 
 
 @web_bp.route('/workflows/<secure_code>/tree')

@@ -101,16 +101,16 @@
                         <input type="checkbox" @change="toggleSelectAll()"
                                :checked="selectedItems.length > 0 && selectedItems.length === filteredWorkflows.length">
                     </th>
-                    <th style="width: 300px;">名稱</th>
+                    <th style="width: 225px;">名稱</th>
                     <th style="width: 120px;">代碼</th>
-                    <th>描述</th>
+                    <th style="max-width: 200px;">描述</th>
                     <th style="width: 55px;">版本</th>
                     <th style="width: 50px; text-align: center;">專屬</th>
                     <th style="width: 50px; text-align: center;">通用</th>
                     <th style="width: 50px; text-align: center;">未用</th>
                     <th style="width: 55px; text-align: center;">配對</th>
                     <th style="width: 70px;">狀態</th>
-                    <th style="width: 130px;">更新時間</th>
+                    <th style="width: 155px;">更新時間</th>
                     <th style="width: 220px; text-align: center;">操作</th>
                 </tr>
             </thead>
@@ -124,7 +124,7 @@
                         </td>
                         <td class="fw-medium" x-text="w.name"></td>
                         <td style="font-family: monospace;" class="text-secondary" x-text="w.code || '-'"></td>
-                        <td class="text-secondary" style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="firstLine(w.description)"></td>
+                        <td class="text-secondary" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="firstLine(w.description)"></td>
                         <td style="font-family: monospace;" class="text-muted small"
                             x-text="(w.version || 'AA') + (w.revision || '')"></td>
                         <td style="text-align: center;">
