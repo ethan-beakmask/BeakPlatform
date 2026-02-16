@@ -10,14 +10,31 @@
 {% block content %}
 <div class="wf-container" x-data="workflowListManager()">
 
-    <!-- 樹系圖內嵌視圖（d3-hierarchy） -->
+    <!-- 樹系圖內嵌視圖 -->
     <div x-show="treeView.active" x-cloak>
         <div class="tree-view-toolbar">
-            <button class="btn btn-sm btn-secondary" @click="closeTree()">關閉</button>
-            <span class="fw-semibold" x-text="treeView.name || ''"></span>
-            <span class="text-muted small" x-text="treeView.code || ''"></span>
+            <button class="tree-ctrl-btn" @click="closeTree()" title="返回列表">
+                <i class="ri-arrow-left-s-line"></i>
+            </button>
+            <div style="flex:1;"></div>
+            <div class="tree-zoom-group">
+                <button class="tree-ctrl-btn" @click="treeZoomOut()" title="縮小">
+                    <i class="ri-zoom-out-line"></i>
+                </button>
+                <button class="tree-ctrl-btn" @click="treeZoomFit()" title="適應畫面">
+                    <i class="ri-fullscreen-line"></i>
+                </button>
+                <button class="tree-ctrl-btn" @click="treeZoomIn()" title="放大">
+                    <i class="ri-zoom-in-line"></i>
+                </button>
+            </div>
         </div>
-        <div id="tree-container" style="background:#f9fafb;overflow:auto;min-height:200px;max-height:calc(100vh - 160px);"></div>
+        <div id="tree-viewport"
+             @mousedown="treeStartPan($event)"
+             @wheel.prevent="treeWheel($event)"
+             style="background:#f9fafb;overflow:hidden;cursor:grab;height:calc(100vh - 120px);position:relative;">
+            <div id="tree-container" style="transform-origin:0 0;display:inline-block;"></div>
+        </div>
     </div>
 
     <!-- 未用子流程內嵌視圖 -->
@@ -68,29 +85,31 @@
     </div>
 
     <!-- 頁首 -->
-    <div class="d-flex justify-content-between align-items-center mb-3" x-show="!treeView.active && !unusedView.active">
-        <div>
-            <h1 class="h5 mb-1">工作流模板管理</h1>
-            <p class="small text-secondary mb-0">管理流程定義與節點配置</p>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <input class="form-control form-control-sm" type="text" x-model="searchQuery"
-                   @input.debounce.300ms="loadWorkflows()" placeholder="搜尋..."
-                   style="width: 200px;">
-            <div class="btn-group btn-group-sm">
-                <button class="btn btn-sm" :class="viewMode === 'list' ? 'btn-info' : 'btn-outline-secondary'"
-                        @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
-                        title="清單模式">
-                    <i class="ri-list-unordered"></i>
-                </button>
-                <button class="btn btn-sm" :class="viewMode === 'grid' ? 'btn-info' : 'btn-outline-secondary'"
-                        @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
-                        title="縮圖模式">
-                    <i class="ri-layout-grid-fill"></i>
-                </button>
+    <div x-show="!treeView.active && !unusedView.active">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h5 mb-1">工作流模板管理</h1>
+                <p class="small text-secondary mb-0">管理流程定義與節點配置</p>
             </div>
-            <button class="btn btn-sm btn-secondary" @click="loadWorkflows()">重新載入</button>
-            <button class="btn btn-sm btn-primary" @click="openCreateModal()">+ 新增工作流</button>
+            <div class="d-flex align-items-center gap-2">
+                <input class="form-control form-control-sm" type="text" x-model="searchQuery"
+                       @input.debounce.300ms="loadWorkflows()" placeholder="搜尋..."
+                       style="width: 200px;">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-sm" :class="viewMode === 'list' ? 'btn-info' : 'btn-outline-secondary'"
+                            @click="viewMode = 'list'; localStorage.setItem('workflows_view_mode', 'list');"
+                            title="清單模式">
+                        <i class="ri-list-unordered"></i>
+                    </button>
+                    <button class="btn btn-sm" :class="viewMode === 'grid' ? 'btn-info' : 'btn-outline-secondary'"
+                            @click="viewMode = 'grid'; localStorage.setItem('workflows_view_mode', 'grid');"
+                            title="縮圖模式">
+                        <i class="ri-layout-grid-fill"></i>
+                    </button>
+                </div>
+                <button class="btn btn-sm btn-secondary" @click="loadWorkflows()">重新載入</button>
+                <button class="btn btn-sm btn-primary" @click="openCreateModal()">+ 新增工作流</button>
+            </div>
         </div>
     </div>
 

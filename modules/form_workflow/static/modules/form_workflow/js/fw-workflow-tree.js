@@ -11,6 +11,9 @@ function workflowTreePage() {
         error: '',
         treeName: '',
         treeCode: '',
+        _zoom: { scale: 1, panX: 0, panY: 0 },
+        _panState: null,
+        _handlers: null,
 
         async init() {
             try {
@@ -28,6 +31,8 @@ function workflowTreePage() {
                 this.$nextTick(function() {
                     var container = document.getElementById('workflow-tree-chart');
                     if (container) container.innerHTML = self._renderTree(tree, self.secureCode);
+                    self._setupPanListeners();
+                    self.zoomFit();
                 });
             } catch (e) {
                 this.error = '載入失敗: ' + e.message;
@@ -36,6 +41,96 @@ function workflowTreePage() {
             }
         },
 
+        destroy() {
+            this._teardownPanListeners();
+        },
+
+        /* ── 縮放/平移 ── */
+        zoomIn() {
+            this._zoom.scale = Math.min(3, this._zoom.scale * 1.25);
+            this._applyTransform();
+        },
+        zoomOut() {
+            this._zoom.scale = Math.max(0.1, this._zoom.scale / 1.25);
+            this._applyTransform();
+        },
+        zoomFit() {
+            var viewport = document.getElementById('tree-viewport');
+            var container = document.getElementById('workflow-tree-chart');
+            if (!viewport || !container) return;
+            container.style.transform = 'none';
+            var cw = container.scrollWidth;
+            var ch = container.scrollHeight;
+            var vw = viewport.clientWidth;
+            var vh = viewport.clientHeight;
+            if (cw === 0 || ch === 0) return;
+            var scale = Math.min(vw / cw, vh / ch, 1);
+            var panX = Math.max(0, (vw - cw * scale) / 2);
+            var panY = Math.max(0, (vh - ch * scale) / 2);
+            this._zoom = { scale: scale, panX: panX, panY: panY };
+            this._applyTransform();
+        },
+        startPan(e) {
+            if (e.button !== 0) return;
+            if (e.target.closest('a')) return;
+            e.preventDefault();
+            this._panState = {
+                active: true,
+                startX: e.clientX,
+                startY: e.clientY,
+                startPanX: this._zoom.panX,
+                startPanY: this._zoom.panY
+            };
+            document.getElementById('tree-viewport').style.cursor = 'grabbing';
+        },
+        onWheel(e) {
+            var viewport = document.getElementById('tree-viewport');
+            if (!viewport) return;
+            var rect = viewport.getBoundingClientRect();
+            var cx = e.clientX - rect.left;
+            var cy = e.clientY - rect.top;
+            var z = this._zoom;
+            var oldScale = z.scale;
+            var factor = e.deltaY > 0 ? 0.9 : 1.1;
+            var newScale = Math.max(0.1, Math.min(3, oldScale * factor));
+            z.panX = cx - (cx - z.panX) * (newScale / oldScale);
+            z.panY = cy - (cy - z.panY) * (newScale / oldScale);
+            z.scale = newScale;
+            this._applyTransform();
+        },
+        _applyTransform() {
+            var container = document.getElementById('workflow-tree-chart');
+            if (!container) return;
+            var z = this._zoom;
+            container.style.transform = 'translate(' + z.panX + 'px,' + z.panY + 'px) scale(' + z.scale + ')';
+        },
+        _setupPanListeners() {
+            var self = this;
+            var onMove = function(e) {
+                var ps = self._panState;
+                if (!ps || !ps.active) return;
+                self._zoom.panX = ps.startPanX + (e.clientX - ps.startX);
+                self._zoom.panY = ps.startPanY + (e.clientY - ps.startY);
+                self._applyTransform();
+            };
+            var onUp = function() {
+                if (self._panState) self._panState.active = false;
+                var vp = document.getElementById('tree-viewport');
+                if (vp) vp.style.cursor = 'grab';
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            self._handlers = { mousemove: onMove, mouseup: onUp };
+        },
+        _teardownPanListeners() {
+            if (this._handlers) {
+                window.removeEventListener('mousemove', this._handlers.mousemove);
+                window.removeEventListener('mouseup', this._handlers.mouseup);
+                this._handlers = null;
+            }
+        },
+
+        /* ── 樹渲染 ── */
         _renderTree(tree, rootCode) {
             var esc = function(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; };
             var STEM_X = 111;

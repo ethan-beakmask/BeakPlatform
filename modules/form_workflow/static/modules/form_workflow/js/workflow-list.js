@@ -8,7 +8,7 @@ function workflowListManager() {
         searchQuery: '',
         flowType: 'main',
         totalCounts: { main: 0, subflow: 0 },
-        treeView: { active: false, name: '', code: '', chart: null },
+        treeView: { active: false, name: '', code: '', chart: null, _zoom: { scale: 1, panX: 0, panY: 0 }, _panState: null, _handlers: null },
         unusedView: { active: false, name: '', code: '', subflows: [], loading: false, parentSecureCode: '' },
         viewMode: localStorage.getItem('workflows_view_mode') || 'list',
         selectedCategory: null,
@@ -179,10 +179,14 @@ function workflowListManager() {
                 const tree = data.data.tree;
                 this.treeView.name = tree.name;
                 this.treeView.code = tree.code;
+                this.treeView._zoom = { scale: 1, panX: 0, panY: 0 };
+                this.treeView._panState = null;
                 this.treeView.active = true;
                 this.$nextTick(() => {
                     const container = document.getElementById('tree-container');
                     if (container) container.innerHTML = this._renderTree(tree, rootCode);
+                    this._setupTreePanListeners();
+                    this.treeZoomFit();
                 });
             } catch (e) {
                 console.error('載入樹系圖失敗:', e);
@@ -255,9 +259,95 @@ function workflowListManager() {
         },
 
         closeTree() {
+            this._teardownTreePanListeners();
             this.treeView.active = false;
             const container = document.getElementById('tree-container');
             if (container) container.innerHTML = '';
+        },
+
+        /* ── 樹系圖縮放/平移 ── */
+        treeZoomIn() {
+            this.treeView._zoom.scale = Math.min(3, this.treeView._zoom.scale * 1.25);
+            this._applyTreeTransform();
+        },
+        treeZoomOut() {
+            this.treeView._zoom.scale = Math.max(0.1, this.treeView._zoom.scale / 1.25);
+            this._applyTreeTransform();
+        },
+        treeZoomFit() {
+            const viewport = document.getElementById('tree-viewport');
+            const container = document.getElementById('tree-container');
+            if (!viewport || !container) return;
+            container.style.transform = 'none';
+            const cw = container.scrollWidth;
+            const ch = container.scrollHeight;
+            const vw = viewport.clientWidth;
+            const vh = viewport.clientHeight;
+            if (cw === 0 || ch === 0) return;
+            const scale = Math.min(vw / cw, vh / ch, 1);
+            const panX = Math.max(0, (vw - cw * scale) / 2);
+            const panY = Math.max(0, (vh - ch * scale) / 2);
+            this.treeView._zoom = { scale, panX, panY };
+            this._applyTreeTransform();
+        },
+        treeStartPan(e) {
+            if (e.button !== 0) return;
+            if (e.target.closest('a')) return;
+            e.preventDefault();
+            this.treeView._panState = {
+                active: true,
+                startX: e.clientX,
+                startY: e.clientY,
+                startPanX: this.treeView._zoom.panX,
+                startPanY: this.treeView._zoom.panY
+            };
+            document.getElementById('tree-viewport').style.cursor = 'grabbing';
+        },
+        treeWheel(e) {
+            const viewport = document.getElementById('tree-viewport');
+            if (!viewport) return;
+            const rect = viewport.getBoundingClientRect();
+            const cx = e.clientX - rect.left;
+            const cy = e.clientY - rect.top;
+            const z = this.treeView._zoom;
+            const oldScale = z.scale;
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.max(0.1, Math.min(3, oldScale * factor));
+            z.panX = cx - (cx - z.panX) * (newScale / oldScale);
+            z.panY = cy - (cy - z.panY) * (newScale / oldScale);
+            z.scale = newScale;
+            this._applyTreeTransform();
+        },
+        _applyTreeTransform() {
+            const container = document.getElementById('tree-container');
+            if (!container) return;
+            const z = this.treeView._zoom;
+            container.style.transform = 'translate(' + z.panX + 'px,' + z.panY + 'px) scale(' + z.scale + ')';
+        },
+        _setupTreePanListeners() {
+            const self = this;
+            const onMove = function(e) {
+                const ps = self.treeView._panState;
+                if (!ps || !ps.active) return;
+                self.treeView._zoom.panX = ps.startPanX + (e.clientX - ps.startX);
+                self.treeView._zoom.panY = ps.startPanY + (e.clientY - ps.startY);
+                self._applyTreeTransform();
+            };
+            const onUp = function() {
+                if (self.treeView._panState) self.treeView._panState.active = false;
+                const vp = document.getElementById('tree-viewport');
+                if (vp) vp.style.cursor = 'grab';
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            self.treeView._handlers = { mousemove: onMove, mouseup: onUp };
+        },
+        _teardownTreePanListeners() {
+            if (this.treeView._handlers) {
+                window.removeEventListener('mousemove', this.treeView._handlers.mousemove);
+                window.removeEventListener('mouseup', this.treeView._handlers.mouseup);
+                this.treeView._handlers = null;
+            }
         },
 
         async openUnused(w) {

@@ -19,9 +19,14 @@
 .wf-thumb-name { padding: 6px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid #eee; }
 
 /* 樹系圖 */
-.tree-view-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border: 1px solid #ddd; }
-.tree-view-wrap { background: #fafafa; border: 1px solid #ddd; border-top: none; }
-.tree-view-wrap .chart-container { width: 100%; height: calc(100vh - 220px); min-height: 400px; }
+.tree-view-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+.tree-zoom-group { display: flex; gap: 2px; }
+.tree-ctrl-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; font-size: 18px; border-radius: 4px;
+}
+.tree-ctrl-btn:hover { background: #f3f4f6; }
+.tree-ctrl-btn:active { background: #e5e7eb; }
 
 /* 表格微調 */
 .table td, .table th { font-size: 13px; vertical-align: middle; }

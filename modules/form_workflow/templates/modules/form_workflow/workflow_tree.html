@@ -10,18 +10,31 @@
 <div class="tree-page" x-data="workflowTreePage()" x-cloak>
 
     <div class="tree-toolbar">
-        <div>
-            <div class="tree-title" x-text="treeName || '載入中...'"></div>
-            <div class="tree-subtitle" x-show="treeCode" x-text="treeCode"></div>
-        </div>
+        <button class="tree-ctrl-btn" @click="window.location.href='/forms/workflows'" title="返回列表">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
         <div class="spacer"></div>
-        <button class="tb-btn" @click="window.close()">關閉</button>
+        <div class="tree-zoom-group">
+            <button class="tree-ctrl-btn" @click="zoomOut()" title="縮小">
+                <i class="ri-zoom-out-line"></i>
+            </button>
+            <button class="tree-ctrl-btn" @click="zoomFit()" title="適應畫面">
+                <i class="ri-fullscreen-line"></i>
+            </button>
+            <button class="tree-ctrl-btn" @click="zoomIn()" title="放大">
+                <i class="ri-zoom-in-line"></i>
+            </button>
+        </div>
     </div>
 
     <div class="tree-chart-area">
         <div x-show="loading" class="tree-loading">載入中...</div>
         <div x-show="error" class="tree-error" x-text="error"></div>
-        <div x-show="!loading && !error" id="workflow-tree-chart" style="overflow:auto;background:#f9fafb;"></div>
+        <div x-show="!loading && !error" id="tree-viewport"
+             @mousedown="startPan($event)"
+             @wheel.prevent="onWheel($event)">
+            <div id="workflow-tree-chart" style="transform-origin:0 0;display:inline-block;"></div>
+        </div>
     </div>
 
 </div>
