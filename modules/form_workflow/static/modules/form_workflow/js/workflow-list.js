@@ -398,6 +398,26 @@ function workflowListManager() {
             }
         },
 
+        async deleteAllUnused() {
+            const count = this.unusedView.subflows.length;
+            if (!count) return;
+            if (!confirm(`確定要刪除全部 ${count} 個未使用的專屬子流程？此操作無法復原。`)) return;
+            let ok = 0, fail = 0;
+            for (const sf of [...this.unusedView.subflows]) {
+                try {
+                    const res = await fetch(`/api/workflows/data/subflows/${sf.secure_code}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) ok++;
+                    else fail++;
+                } catch (e) {
+                    fail++;
+                }
+            }
+            if (fail > 0) alert(`完成：成功 ${ok}，失敗 ${fail}`);
+            this.closeUnused();
+            this.loadWorkflows();
+        },
+
         async confirmDelete(w) {
             this.deletingWorkflow = w;
             this.deleteWarnings = [];

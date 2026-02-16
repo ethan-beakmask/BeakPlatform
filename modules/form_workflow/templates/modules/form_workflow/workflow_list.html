@@ -43,6 +43,12 @@
             <button class="btn btn-sm btn-secondary" @click="closeUnused()">關閉</button>
             <span class="fw-semibold" x-text="unusedView.name || ''"></span>
             <span class="text-muted small">未使用的專屬子流程</span>
+            <div style="flex:1;"></div>
+            <button class="btn btn-sm btn-danger"
+                    x-show="!unusedView.loading && unusedView.subflows.length > 0"
+                    @click="deleteAllUnused()">
+                全部刪除
+            </button>
         </div>
         <div style="padding: 16px; background: #f9fafb; min-height: 200px;">
             <div x-show="unusedView.loading" class="text-center p-5 text-secondary">載入中...</div>

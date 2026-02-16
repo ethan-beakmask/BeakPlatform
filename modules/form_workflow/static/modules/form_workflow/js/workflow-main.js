@@ -2216,6 +2216,11 @@
             }
 
             updateStatus(`已新增節點: ${label} (${nodeId})`);
+
+            // 自動選取新節點並切換設定面板
+            cy.elements().unselect();
+            newNode.select();
+            showNodeInfo(newNode);
         }
 
         // 建立連線
@@ -12379,13 +12384,17 @@
         }
 
         /**
-         * 更新流程樹系標題旁的根流程名稱
+         * 更新流程樹系標題旁的根流程名稱（已移除顯示元素，保留空函數避免呼叫錯誤）
          */
-        function updateFlowTreeRootLabel() {
-            const el = document.getElementById('flow-tree-root-name');
-            if (el) {
-                el.textContent = rootWorkflowName || '';
-            }
+        function updateFlowTreeRootLabel() {}
+
+        /**
+         * 開啟樹系圖頁面
+         */
+        function openFlowTreePage() {
+            const code = rootWorkflowId || currentWorkflowId;
+            if (!code) return;
+            window.open('/forms/workflows/' + code + '/tree', '_blank');
         }
 
         /**
