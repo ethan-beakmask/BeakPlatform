@@ -613,7 +613,7 @@ function formCenterManager() {
                 // 後端已根據 field_permissions 設好各欄位的 disabled 屬性
                 const formOptions = hasEditable
                     ? { noDefaultSubmitButton: true }
-                    : { readOnly: true, renderMode: 'html' };
+                    : { readOnly: true, viewAsHtml: false };
 
                 this.approvalFormInstance = await Formio.createForm(container, schema, formOptions);
 
@@ -1190,43 +1190,43 @@ function formCenterManager() {
             }
         },
 
-        // 渲染表單檢視器（只讀）
-        renderFormViewer() {
-            if (!this.formDetail?.schema) {
-                console.warn('沒有表單 schema');
-                return;
-            }
+        // 共用：渲染唯讀表單
+        async _renderFormReadOnly(containerId, schema, formData, builderConfig) {
+            const container = document.getElementById(containerId);
+            if (!container) return null;
 
-            const container = document.getElementById('formDetailViewer');
-            if (!container) {
-                console.warn('找不到表單容器');
-                return;
-            }
+            try {
+                const form = await Formio.createForm(container, schema, {
+                    readOnly: true,
+                    viewAsHtml: false
+                });
 
-            // 清理舊的實例
-            if (this.formDetailViewer) {
-                this.formDetailViewer.destroy();
-            }
-
-            // 建立只讀表單
-            Formio.createForm(container, this.formDetail.schema, {
-                readOnly: true,
-                viewAsHtml: false
-            }).then(form => {
-                this.formDetailViewer = form;
-
-                // 填入資料
-                if (this.formDetail.form_data) {
-                    form.submission = { data: this.formDetail.form_data };
+                if (formData) {
+                    form.submission = { data: formData };
                 }
 
-                // 套用底圖和寬度
-                this.applyFormBackground('formDetailViewer', this.formDetail.builder_config);
+                this.applyFormBackground(containerId, builderConfig);
+                return form;
+            } catch (e) {
+                console.error('渲染唯讀表單失敗:', e);
+                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
+                return null;
+            }
+        },
 
-                console.log('表單檢視器已渲染');
-            }).catch(error => {
-                console.error('渲染表單失敗:', error);
-            });
+        // 渲染表單檢視器（監控模態框 - 表單內容頁籤）
+        async renderFormViewer() {
+            if (!this.formDetail?.schema) return;
+            if (this.formDetailViewer) {
+                this.formDetailViewer.destroy();
+                this.formDetailViewer = null;
+            }
+            this.formDetailViewer = await this._renderFormReadOnly(
+                'formDetailViewer',
+                this.formDetail.schema,
+                this.formDetail.form_data,
+                this.formDetail.builder_config
+            );
         },
 
         toggleAutoRefresh() {
@@ -1432,38 +1432,21 @@ function formCenterManager() {
         },
 
         async renderReadForm() {
-            const container = document.getElementById('read-form-container');
-            if (!container || !this.readFormData) return;
-
-            const schema = this.readFormData.schema;
-            const formData = this.readFormData.form_data;
-
-            if (!schema) {
-                container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
+            if (!this.readFormData?.schema) {
+                const container = document.getElementById('read-form-container');
+                if (container) container.innerHTML = '<p style="color: #6b7280; text-align: center;">無表單內容</p>';
                 return;
             }
-
-            try {
-                if (this.readFormInstance) {
-                    this.readFormInstance.destroy();
-                    this.readFormInstance = null;
-                }
-
-                this.readFormInstance = await Formio.createForm(container, schema, {
-                    readOnly: true,
-                    renderMode: 'html'
-                });
-
-                if (formData) {
-                    this.readFormInstance.submission = { data: formData };
-                }
-
-                // 套用底圖和寬度
-                this.applyFormBackground('read-form-container', this.readFormData.builder_config);
-            } catch (e) {
-                console.error('閱讀表單渲染失敗:', e);
-                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
+            if (this.readFormInstance) {
+                this.readFormInstance.destroy();
+                this.readFormInstance = null;
             }
+            this.readFormInstance = await this._renderFormReadOnly(
+                'read-form-container',
+                this.readFormData.schema,
+                this.readFormData.form_data,
+                this.readFormData.builder_config
+            );
         },
 
         closeReadForm() {

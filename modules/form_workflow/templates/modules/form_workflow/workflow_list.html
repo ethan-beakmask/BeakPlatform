@@ -60,41 +60,8 @@
             <div x-show="!unusedView.loading && unusedView.subflows.length === 0" class="text-center p-5 text-secondary">
                 沒有未使用的專屬子流程
             </div>
-            <div x-show="!unusedView.loading && unusedView.subflows.length > 0">
-              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-                <template x-for="sf in unusedView.subflows" :key="sf.secure_code">
-                    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <div style="aspect-ratio: 3/2; margin: 4px; border: 1px solid #e5e7eb; overflow: hidden; background: #f3f4f6;">
-                            <img x-show="sf.thumbnail_2x1" :src="sf.thumbnail_2x1" style="width:100%;height:100%;object-fit:contain;">
-                            <div x-show="!sf.thumbnail_2x1" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-                                <i class="ri-flow-chart" style="font-size:28px;color:#9ca3af;"></i>
-                            </div>
-                        </div>
-                        <div style="padding: 6px 8px 2px; font-size: 12px; font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;" x-text="sf.name"></div>
-                        <div style="text-align: center; font-size: 10px; color: #9ca3af; margin-bottom: 4px;">
-                            <span x-text="sf.node_count + ' 節點'"></span>
-                            <span x-show="sf.code" x-text="sf.code" style="margin-left: 6px;"></span>
-                        </div>
-                        <div style="display: flex; border-top: 1px solid #e5e7eb;">
-                            <button @click="editUnusedSubflow(sf)"
-                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #2563eb;"
-                                    onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='none'">
-                                編輯
-                            </button>
-                            <div style="width: 1px; background: #e5e7eb;"></div>
-                            <button @click="deleteUnusedSubflow(sf)"
-                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #dc2626;"
-                                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
-                                刪除
-                            </button>
-                        </div>
-                    </div>
-                </template>
-              </div>
-            </div>
-
             <!-- 刪除行為參考 -->
-            <div style="margin-top: 24px; padding: 12px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;">
+            <div style="margin-bottom: 16px; padding: 12px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;">
                 <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">刪除行為參考</div>
                 <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                     <thead>
@@ -127,6 +94,39 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div x-show="!unusedView.loading && unusedView.subflows.length > 0">
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+                <template x-for="sf in unusedView.subflows" :key="sf.secure_code">
+                    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <div style="aspect-ratio: 3/2; margin: 4px; border: 1px solid #e5e7eb; overflow: hidden; background: #f3f4f6;">
+                            <img x-show="sf.thumbnail_2x1" :src="sf.thumbnail_2x1" style="width:100%;height:100%;object-fit:contain;">
+                            <div x-show="!sf.thumbnail_2x1" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+                                <i class="ri-flow-chart" style="font-size:28px;color:#9ca3af;"></i>
+                            </div>
+                        </div>
+                        <div style="padding: 6px 8px 2px; font-size: 12px; font-weight: 500; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;" x-text="sf.name"></div>
+                        <div style="text-align: center; font-size: 10px; color: #9ca3af; margin-bottom: 4px;">
+                            <span x-text="sf.node_count + ' 節點'"></span>
+                            <span x-show="sf.code" x-text="sf.code" style="margin-left: 6px;"></span>
+                        </div>
+                        <div style="display: flex; border-top: 1px solid #e5e7eb;">
+                            <button @click="editUnusedSubflow(sf)"
+                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #2563eb;"
+                                    onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='none'">
+                                編輯
+                            </button>
+                            <div style="width: 1px; background: #e5e7eb;"></div>
+                            <button @click="deleteUnusedSubflow(sf)"
+                                    style="flex:1; padding: 6px 0; font-size: 12px; border: none; background: none; cursor: pointer; color: #dc2626;"
+                                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                                刪除
+                            </button>
+                        </div>
+                    </div>
+                </template>
+              </div>
             </div>
         </div>
     </div>

@@ -266,7 +266,7 @@
         </div>
 
         <!-- 第三頁：表單內容 -->
-        <div x-show="monitorPage === 'formContent'" class="fc-monitor-body" style="padding: 20px;">
+        <div x-show="monitorPage === 'formContent'" style="flex: 1; padding: 20px; overflow-y: auto;">
             <div x-show="loadingFormDetail" class="fc-loading">載入表單內容中...</div>
             <div x-show="!loadingFormDetail && !formDetail" class="fc-empty">無法載入表單內容</div>
             <div x-show="!loadingFormDetail && formDetail">
