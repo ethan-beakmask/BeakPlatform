@@ -524,6 +524,14 @@
                             'background-color': '#22C55E'
                         }
                     },
+                    // Abandon 中止節點（淡紅色）
+                    {
+                        selector: 'node[type="Abandon"]',
+                        style: {
+                            'background-color': '#FCA5A5',
+                            'shape': 'round-rectangle'
+                        }
+                    },
                     // Subflow 節點 - 通用子流程（藍色）
                     {
                         selector: 'node[type="Subflow"][subflowKind="common"]',
@@ -5078,6 +5086,38 @@
                 `;
             }
 
+            // Abandon 中止節點配置
+            if (type === 'Abandon') {
+                const currentConfig = node.data('config') || {};
+                const waitSeconds = currentConfig.wait_seconds !== undefined ? currentConfig.wait_seconds : 1;
+
+                info += `
+                    <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="font-size: 11px; color: #666; white-space: nowrap;">
+                                <i class="fas fa-clock" style="color: #991B1B;"></i> 等待
+                            </label>
+                            <input type="number" id="abandonWaitSeconds" value="${waitSeconds}" min="0" max="300"
+                                   style="width: 60px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; text-align: center;">
+                            <span style="font-size: 11px; color: #666;">秒後中止流程</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #fef2f2; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #fca5a5;">
+                        <div style="font-size: 12px; color: #991B1B; margin-bottom: 6px;">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>中止模式</strong>
+                        </div>
+                        <p style="font-size: 11px; color: #666; margin: 0;">
+                            取消所有未執行的節點，強制終止執行中的節點，立即結束流程。
+                        </p>
+                    </div>
+
+                    <button class="btn-primary" onclick="applyAbandonConfig('${nodeId}')" style="width: 100%; background: #991B1B; border-color: #991B1B;">
+                        <i class="fas fa-check"></i> 套用
+                    </button>
+                `;
+            }
+
             document.getElementById('nodeSettings').innerHTML = info;
 
             // 如果是子流程節點，載入可用子流程清單
@@ -7550,6 +7590,32 @@
         }
         window.applyEndConfig = applyEndConfig;
 
+        // 套用 Abandon 中止節點設定
+        function applyAbandonConfig(nodeId) {
+            const node = applyNodeBasicInfo(nodeId, true);
+            if (!node) return;
+
+            const waitSecondsInput = document.getElementById('abandonWaitSeconds');
+            const waitSeconds = waitSecondsInput ? parseInt(waitSecondsInput.value) || 1 : 1;
+
+            const currentConfig = node.data('config') || {};
+            const updatedConfig = {
+                ...currentConfig,
+                finish_mode: 'cancel',
+                wait_seconds: waitSeconds
+            };
+
+            node.data('config', updatedConfig);
+            updateStatus(`✅ 中止節點：等待 ${waitSeconds} 秒後中止`, 'success');
+
+            console.log('ABANDON 節點配置已更新:', {
+                nodeId: nodeId,
+                wait_seconds: waitSeconds,
+                config: updatedConfig
+            });
+        }
+        window.applyAbandonConfig = applyAbandonConfig;
+
         // 更新匯聚節點的模式
         function updateConvergeMode(nodeId, mode) {
             const node = cy.getElementById(nodeId);
@@ -7661,6 +7727,15 @@
                     }
                     if (waitSeconds && waitSeconds.value) {
                         config.wait_seconds = parseInt(waitSeconds.value) || 3;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'Abandon': {
+                    const abandonWait = document.getElementById('abandonWaitSeconds');
+                    if (abandonWait && abandonWait.value) {
+                        config.finish_mode = 'cancel';
+                        config.wait_seconds = parseInt(abandonWait.value) || 1;
                         changed = true;
                     }
                     break;
@@ -8068,54 +8143,64 @@
                 const pngBase64 = `data:image/png;base64,${pngBase64Raw}`;
 
                 // 使用 Canvas 生成 600x400 (3:2 橫式) 縮圖
-                const img = new Image();
-                img.onload = async function() {
-                    console.log(`  原始尺寸: ${img.width}x${img.height}`);
+                // 用 Promise 包裝 img.onload，確保 saveAndClose 能正確等待上傳完成
+                await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = async function() {
+                        try {
+                            console.log(`  原始尺寸: ${img.width}x${img.height}`);
 
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 600;
-                    canvas.height = 400;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, 600, 400);
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 600;
+                            canvas.height = 400;
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = 'white';
+                            ctx.fillRect(0, 0, 600, 400);
 
-                    // 圖片內容內縮，保留白邊
-                    const pad = 24;
-                    const drawW = 600 - pad * 2;
-                    const drawH = 400 - pad * 2;
-                    const scale = Math.min(drawW / img.width, drawH / img.height);
-                    const scaledWidth = img.width * scale;
-                    const scaledHeight = img.height * scale;
-                    const x = pad + (drawW - scaledWidth) / 2;
-                    const y = pad + (drawH - scaledHeight) / 2;
+                            // 圖片內容內縮，保留白邊
+                            const pad = 24;
+                            const drawW = 600 - pad * 2;
+                            const drawH = 400 - pad * 2;
+                            const scale = Math.min(drawW / img.width, drawH / img.height);
+                            const scaledWidth = img.width * scale;
+                            const scaledHeight = img.height * scale;
+                            const x = pad + (drawW - scaledWidth) / 2;
+                            const y = pad + (drawH - scaledHeight) / 2;
 
-                    ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-                    const thumbnail_2x1 = canvas.toDataURL('image/png');
+                            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                            const thumbnail_2x1 = canvas.toDataURL('image/png');
 
-                    console.log('✓ 3:2 縮圖已生成 (600x400)');
+                            console.log('✓ 3:2 縮圖已生成 (600x400)');
 
-                    // 上傳縮圖到後端
-                    const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            thumbnail_2x1: thumbnail_2x1
-                        })
-                    });
+                            // 上傳縮圖到後端
+                            const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    thumbnail_2x1: thumbnail_2x1
+                                })
+                            });
 
-                    if (response.ok) {
-                        console.log('✅ 縮圖已儲存到資料庫');
-                    } else {
-                        console.error('❌ 縮圖儲存失敗:', response.status);
-                    }
-                };
+                            if (response.ok) {
+                                console.log('✅ 縮圖已儲存到資料庫');
+                            } else {
+                                console.error('❌ 縮圖儲存失敗:', response.status);
+                            }
+                            resolve();
+                        } catch (err) {
+                            console.error('❌ 縮圖處理失敗:', err);
+                            resolve(); // 不阻塞主流程
+                        }
+                    };
 
-                img.onerror = function(error) {
-                    console.error('❌ 圖片載入失敗');
-                    console.error('  錯誤:', error);
-                };
+                    img.onerror = function(error) {
+                        console.error('❌ 圖片載入失敗');
+                        console.error('  錯誤:', error);
+                        resolve(); // 不阻塞主流程
+                    };
 
-                img.src = pngBase64;
+                    img.src = pngBase64;
+                });
 
             } catch (error) {
                 console.error('❌ 生成縮圖失敗:', error);

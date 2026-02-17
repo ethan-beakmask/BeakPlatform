@@ -760,7 +760,7 @@ def get_node_definitions():
 
         grouped[category_key].append({
             'type': node_def.node_type,
-            'label': node_def.display_name,
+            'label': f'{node_def.display_name} ({node_def.node_type})',
             'icon': node_def.icon or '',
             'description': node_def.description or ''
         })

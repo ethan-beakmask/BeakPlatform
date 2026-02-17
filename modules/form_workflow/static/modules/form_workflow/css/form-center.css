@@ -53,6 +53,8 @@
 .fc-table th { text-align: left; padding: 8px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
 .fc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
 .fc-table td.fc-cell-subject { max-width: 65em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-table th.fc-sortable { cursor: pointer; user-select: none; }
+.fc-table th.fc-sortable:hover { background: #e5e7eb; }
 .fc-table tr:hover td { background: #fafafa; }
 .fc-table-pending { background: #fffbeb; }
 .fc-table-pending th { background: #fef3c7; }

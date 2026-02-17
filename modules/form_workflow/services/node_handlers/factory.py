@@ -93,8 +93,8 @@ def register_builtin_handlers():
     節點類型名稱與 API 定義 (_get_node_definitions) 一致，不使用別名。
     Factory 已支援大小寫不敏感查找，無需重複註冊。
 
-    標準節點類型（共 14 種）：
-    - Start, End: 流程控制
+    標準節點類型（共 15 種）：
+    - Start, End, Abandon: 流程控制
     - FormAdapter: 簽核
     - Delay: 延遲
     - Branch, Converge: 分支/匯合
@@ -116,10 +116,12 @@ def register_builtin_handlers():
     from .email_handler import EmailHandler
     from .emailrelay_handler import EmailRelayHandler
     from .subflow_handler import SubFlowHandler
+    from .abandon_handler import AbandonHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
     NodeHandlerFactory.register('End', EndHandler)
+    NodeHandlerFactory.register('Abandon', AbandonHandler)
 
     # 簽核
     NodeHandlerFactory.register('FormAdapter', FormAdapterHandler)

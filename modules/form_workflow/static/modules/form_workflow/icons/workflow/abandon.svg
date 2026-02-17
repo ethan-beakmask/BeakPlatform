@@ -4,11 +4,11 @@
   height="24"
   viewBox="0 0 24 24"
   fill="none"
-  stroke="currentColor"
+  stroke="#DC2626"
   stroke-width="1"
   stroke-linecap="round"
   stroke-linejoin="round"
 >
   <circle cx="12" cy="12" r="10" />
-  <path d="M5 19L19 5" />
+  <path d="M5 5L19 19" />
 </svg>

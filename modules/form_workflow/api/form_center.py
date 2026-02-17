@@ -643,7 +643,9 @@ def list_my_forms():
     # 篩選條件
     status = request.args.get('status')
     signed = request.args.get('signed', '0')
-    limit = request.args.get('limit', 50, type=int)
+    limit = request.args.get('limit', 500, type=int)
+    sort_field = request.args.get('sort', 'created_at')
+    sort_order = request.args.get('order', 'desc')
 
     FT = aliased(FwFormTemplate)
     P = aliased(FwPublishedFormWorkflow)
@@ -690,7 +692,20 @@ def list_my_forms():
         elif len(status_list) > 1:
             base_query = base_query.filter(FwWorkflowInstance.status.in_(status_list))
 
-    rows = base_query.order_by(FwFormInstance.created_at.desc()).limit(limit).all()
+    # 動態排序
+    sort_column_map = {
+        'serial_number': FwFormInstance.serial_number,
+        'submitted_at': FwFormInstance.submitted_at,
+        'workflow_completed_at': FwWorkflowInstance.completed_at,
+        'created_at': FwFormInstance.created_at,
+    }
+    sort_col = sort_column_map.get(sort_field, FwFormInstance.created_at)
+    if sort_order == 'asc':
+        base_query = base_query.order_by(sort_col.asc())
+    else:
+        base_query = base_query.order_by(sort_col.desc())
+
+    rows = base_query.limit(limit).all()
 
     # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
     from ..models import FwNodeExecutionQueue
@@ -938,6 +953,15 @@ def list_pending_tasks():
             'category': category,
             'category_secure_code': category_sc,
         })
+
+    # 排序
+    sort_field = request.args.get('sort', 'scheduled_at')
+    sort_order = request.args.get('order', 'asc')
+    reverse = (sort_order == 'desc')
+    if sort_field == 'serial_number':
+        result.sort(key=lambda x: x.get('serial_number', '') or '', reverse=reverse)
+    else:
+        result.sort(key=lambda x: x.get('scheduled_at', '') or '', reverse=reverse)
 
     return jsonify({
         'success': True,
