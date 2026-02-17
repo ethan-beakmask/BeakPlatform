@@ -127,8 +127,7 @@ function mappingsManager() {
         },
 
         async publishMapping(m) {
-            const action = m.is_published ? '重新發行' : '發行';
-            if (!confirm(`確定要${action}「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
+            if (!confirm(`確定要新發行「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
 
             try {
                 const res = await fetch(`/api/mappings/${m.secure_code}/publish`, {

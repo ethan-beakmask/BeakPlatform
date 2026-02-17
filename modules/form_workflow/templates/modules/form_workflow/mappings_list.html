@@ -34,10 +34,10 @@
         <table x-show="!loading && mappings.length > 0" class="fw-table">
             <thead>
                 <tr>
+                    <th>發行名稱</th>
                     <th>表單</th>
                     <th style="width: 40px;"></th>
                     <th>流程</th>
-                    <th>發行名稱</th>
                     <th style="width: 80px; text-align: center;">運作版本</th>
                     <th style="width: 80px; text-align: center;">SQL 同步</th>
                     <th style="width: 140px;">更新時間</th>
@@ -48,6 +48,10 @@
                 <template x-for="m in mappings" :key="m.secure_code">
                     <tr>
                         <td>
+                            <span x-show="m.published_form_name" x-text="m.published_form_name" style="font-size: 13px;"></span>
+                            <span x-show="!m.published_form_name" style="color: #999; font-size: 12px;">-</span>
+                        </td>
+                        <td>
                             <div style="font-weight: 500;" x-text="m.form_template_name || m.form_template_code"></div>
                             <span class="fw-version" x-text="(m.form_current_version || m.form_template_version || 'AA') + (m.form_current_revision || '')"></span>
                         </td>
@@ -55,10 +59,6 @@
                         <td>
                             <div style="font-weight: 500;" x-text="m.workflow_template_name || m.workflow_template_code"></div>
                             <span class="fw-version" x-text="(m.workflow_current_version || m.workflow_template_version || 'AA') + (m.workflow_current_revision || '')"></span>
-                        </td>
-                        <td>
-                            <span x-show="m.published_form_name" x-text="m.published_form_name" style="font-size: 13px;"></span>
-                            <span x-show="!m.published_form_name" style="color: #999; font-size: 12px;">-</span>
                         </td>
                         <td style="text-align: center;">
                             <template x-if="m.version_error">
@@ -80,7 +80,7 @@
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
                         <td class="actions">
                             <div class="fw-action-group">
-                                <button class="fw-btn success" @click="publishMapping(m)" x-text="m.is_published ? '重新發行' : '發行'"></button>
+                                <button class="fw-btn success" @click="publishMapping(m)">新發行</button>
                                 <button class="fw-btn" @click="viewPublished(m)">版本</button>
                                 <button class="fw-btn" @click="archiveMapping(m)"
                                         :disabled="!m.all_versions_archived || m.total_versions === 0"
