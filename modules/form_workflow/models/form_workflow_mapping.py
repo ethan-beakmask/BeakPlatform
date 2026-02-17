@@ -54,6 +54,10 @@ class FwFormWorkflowMapping(ModuleBaseModel):
     # SQL 同步
     sql_sync_enabled = Column(Boolean, default=False, nullable=False)
 
+    # 配對封存
+    is_archived = Column(Boolean, default=False, nullable=False)
+    archived_at = Column(DateTime)
+
     # 備註
     description = Column(String(500))
 
@@ -94,6 +98,10 @@ class FwFormWorkflowMapping(ModuleBaseModel):
 
             # SQL 同步
             'sql_sync_enabled': self.sql_sync_enabled,
+
+            # 封存
+            'is_archived': self.is_archived,
+            'archived_at': self.archived_at.isoformat() if self.archived_at else None,
 
             # 條件
             'trigger_condition': self.trigger_condition,

@@ -3,6 +3,7 @@
 function mappingsManager() {
     return {
         mappings: [],
+        archivedMappings: [],
         unmappedForms: [],
         workflows: [],
         loading: true,
@@ -18,13 +19,17 @@ function mappingsManager() {
         showHelpModal: false,
         showDeleteModal: false,
         deletingMapping: null,
+        showArchivedList: false,
 
         toast: { show: false, message: '', type: 'success' },
 
         async init() {
             await this.loadMappings();
-            await this.loadUnmappedForms();
-            await this.loadWorkflows();
+            await Promise.all([
+                this.loadArchivedMappings(),
+                this.loadUnmappedForms(),
+                this.loadWorkflows(),
+            ]);
             // 載入每個 mapping 的 SQL sync 狀態
             for (const m of this.mappings) {
                 if (m.sql_sync_enabled) {
@@ -45,6 +50,18 @@ function mappingsManager() {
                 console.error('載入配對失敗:', e);
             } finally {
                 this.loading = false;
+            }
+        },
+
+        async loadArchivedMappings() {
+            try {
+                const res = await fetch('/api/mappings/?is_archived=true');
+                const data = await res.json();
+                if (data.success) {
+                    this.archivedMappings = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入封存清單失敗:', e);
             }
         },
 
@@ -199,6 +216,64 @@ function mappingsManager() {
                 }
             } catch (e) {
                 this.showToast('操作失敗', 'error');
+            }
+        },
+
+        async archiveMapping(m) {
+            if (!confirm(`確定要封存「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
+
+            try {
+                const res = await fetch(`/api/mappings/${m.secure_code}/archive`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast('配對已封存');
+                    await this.loadMappings();
+                    await this.loadArchivedMappings();
+                } else {
+                    this.showToast(data.error || '封存失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('封存失敗: ' + e.message, 'error');
+            }
+        },
+
+        async unarchiveMapping(a) {
+            try {
+                const res = await fetch(`/api/mappings/${a.secure_code}/unarchive`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast('配對已恢復');
+                    await this.loadMappings();
+                    await this.loadArchivedMappings();
+                } else {
+                    this.showToast(data.error || '恢復失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('恢復失敗: ' + e.message, 'error');
+            }
+        },
+
+        async deleteVersion(v) {
+            if (!confirm(`確定要刪除版本 v${v.publish_version} 嗎？此操作無法還原。`)) return;
+
+            try {
+                const res = await fetch(`/api/mappings/published/${v.secure_code}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast(data.message || '版本已刪除');
+                    await this.viewPublished(this.viewingMapping);
+                    await this.loadMappings();
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗: ' + e.message, 'error');
             }
         },
 

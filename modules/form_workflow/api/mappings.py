@@ -41,6 +41,10 @@ def list_mappings():
         is_deleted=False
     )
 
+    # 封存篩選（預設只顯示未封存）
+    is_archived = request.args.get('is_archived', 'false').lower() == 'true'
+    query = query.filter_by(is_archived=is_archived)
+
     # 篩選條件
     form_id = request.args.get('form_template_id', type=int)
     if form_id:
@@ -90,6 +94,7 @@ def list_mappings():
         for mcode, versions in grouped.items():
             total = len(versions)
             published_ones = [v for v in versions if v.status == 'Published']
+            all_archived = total > 0 and all(v.status == 'Archived' for v in versions)
             if len(published_ones) == 1:
                 active = published_ones[0]
                 publish_map[mcode] = {
@@ -97,6 +102,7 @@ def list_mappings():
                     'total_versions': total,
                     'published_form_name': active.form_snapshot.get('name', '') if active.form_snapshot else '',
                     'version_error': None,
+                    'all_versions_archived': False,
                 }
             elif len(published_ones) > 1:
                 publish_map[mcode] = {
@@ -104,6 +110,7 @@ def list_mappings():
                     'total_versions': total,
                     'published_form_name': '',
                     'version_error': f'異常：{len(published_ones)} 個版本同時為 Published',
+                    'all_versions_archived': False,
                 }
             else:
                 # 有版本但無 Published（全部暫停或封存）
@@ -112,6 +119,7 @@ def list_mappings():
                     'total_versions': total,
                     'published_form_name': '',
                     'version_error': None,
+                    'all_versions_archived': all_archived,
                 }
 
     # 組合結果
@@ -133,6 +141,7 @@ def list_mappings():
         data['total_versions'] = pi.get('total_versions', 0)
         data['published_form_name'] = pi.get('published_form_name', '')
         data['version_error'] = pi.get('version_error')
+        data['all_versions_archived'] = pi.get('all_versions_archived', False)
 
         result.append(data)
 
@@ -746,6 +755,138 @@ def archive_published(secure_code):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': f'封存失敗: {str(e)}'}), 500
+
+
+# =============================================================================
+# 配對封存 API
+# =============================================================================
+
+@mappings_bp.route('/<secure_code>/archive', methods=['POST'])
+@csrf.exempt
+@login_required
+def archive_mapping(secure_code):
+    """封存配對（所有發行版本都已封存時才可執行）"""
+    from ..models import FwFormWorkflowMapping, FwPublishedFormWorkflow
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not mapping:
+        return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+
+    if mapping.is_archived:
+        return jsonify({'success': False, 'error': '此配對已封存'}), 400
+
+    # 檢查所有發行版本是否都為 Archived
+    versions = FwPublishedFormWorkflow.query.filter_by(
+        source_mapping_secure_code=secure_code,
+        is_deleted=False
+    ).all()
+
+    if not versions:
+        # 無發行版本也允許封存（直接歸檔未用的配對）
+        pass
+    else:
+        non_archived = [v for v in versions if v.status != 'Archived']
+        if non_archived:
+            return jsonify({
+                'success': False,
+                'error': f'尚有 {len(non_archived)} 個發行版本未封存，請先封存所有版本'
+            }), 400
+
+    mapping.is_archived = True
+    mapping.archived_at = datetime.utcnow()
+    mapping.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': mapping.to_dict(),
+        'message': '配對已封存'
+    })
+
+
+@mappings_bp.route('/<secure_code>/unarchive', methods=['POST'])
+@csrf.exempt
+@login_required
+def unarchive_mapping(secure_code):
+    """解除配對封存"""
+    from ..models import FwFormWorkflowMapping
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not mapping:
+        return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+
+    if not mapping.is_archived:
+        return jsonify({'success': False, 'error': '此配對未封存'}), 400
+
+    mapping.is_archived = False
+    mapping.archived_at = None
+    mapping.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': mapping.to_dict(),
+        'message': '配對已恢復'
+    })
+
+
+# =============================================================================
+# 發行版本刪除 API
+# =============================================================================
+
+@mappings_bp.route('/published/<secure_code>', methods=['DELETE'])
+@csrf.exempt
+@login_required
+def delete_published(secure_code):
+    """刪除發行版本（僅限未使用過的版本）"""
+    from ..models import FwPublishedFormWorkflow
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    published = FwPublishedFormWorkflow.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    if not published:
+        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+
+    if published.is_used:
+        return jsonify({'success': False, 'error': '此版本已被使用過，無法刪除'}), 400
+
+    if published.status == 'Published':
+        return jsonify({'success': False, 'error': '運作中的版本無法刪除，請先暫停或封存'}), 400
+
+    # 軟刪除
+    published.is_deleted = True
+    published.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'發行版本 v{published.publish_version} 已刪除'
+    })
 
 
 # =============================================================================

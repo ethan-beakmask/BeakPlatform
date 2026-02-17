@@ -41,7 +41,7 @@
                     <th style="width: 80px; text-align: center;">運作版本</th>
                     <th style="width: 80px; text-align: center;">SQL 同步</th>
                     <th style="width: 140px;">更新時間</th>
-                    <th style="width: 180px;" class="actions">操作</th>
+                    <th style="width: 260px;" class="actions">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,9 +79,50 @@
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
                         <td class="actions">
-                            <button class="fw-btn success" @click="publishMapping(m)" x-text="m.is_published ? '重新發行' : '發行'"></button>
-                            <button class="fw-btn" @click="viewPublished(m)">版本</button>
-                            <button class="fw-btn danger" @click="confirmDelete(m)" :disabled="m.is_published">刪除</button>
+                            <div class="fw-action-group">
+                                <button class="fw-btn success" @click="publishMapping(m)" x-text="m.is_published ? '重新發行' : '發行'"></button>
+                                <button class="fw-btn" @click="viewPublished(m)">版本</button>
+                                <button class="fw-btn" @click="archiveMapping(m)"
+                                        :disabled="!m.all_versions_archived || m.total_versions === 0"
+                                        :title="(!m.all_versions_archived && m.total_versions > 0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')">封存</button>
+                                <button class="fw-btn danger" @click="confirmDelete(m)" :disabled="m.is_published">刪除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 封存清單 -->
+    <div class="fw-card" style="margin-top: 16px;" x-show="archivedMappings.length > 0">
+        <div class="fw-archived-header" @click="showArchivedList = !showArchivedList" style="cursor: pointer;">
+            <span x-text="'封存清單 (' + archivedMappings.length + ')'"></span>
+            <span x-text="showArchivedList ? '▼' : '▶'" style="font-size: 11px; margin-left: 6px;"></span>
+        </div>
+        <table x-show="showArchivedList" class="fw-table">
+            <thead>
+                <tr>
+                    <th>表單</th>
+                    <th style="width: 40px;"></th>
+                    <th>流程</th>
+                    <th>封存時間</th>
+                    <th style="width: 100px;" class="actions">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="a in archivedMappings" :key="a.secure_code">
+                    <tr>
+                        <td>
+                            <div style="font-weight: 500;" x-text="a.form_template_name || a.form_template_code"></div>
+                        </td>
+                        <td class="fw-arrow">→</td>
+                        <td>
+                            <div style="font-weight: 500;" x-text="a.workflow_template_name || a.workflow_template_code"></div>
+                        </td>
+                        <td style="color: #999; font-size: 12px;" x-text="formatDate(a.archived_at)"></td>
+                        <td class="actions">
+                            <button class="fw-btn" @click="unarchiveMapping(a)">恢復</button>
                         </td>
                     </tr>
                 </template>
@@ -158,7 +199,7 @@
                             <th style="width: 60px;">流程版本</th>
                             <th>狀態</th>
                             <th>發行時間</th>
-                            <th style="width: 120px;" class="actions">操作</th>
+                            <th style="width: 160px;" class="actions">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -185,6 +226,9 @@
                                     <button x-show="v.status === 'Published'" class="fw-btn" @click="suspendVersion(v)">暫停</button>
                                     <button x-show="v.status === 'Suspended'" class="fw-btn success" @click="reopenVersion(v)">開放</button>
                                     <button x-show="v.status !== 'Archived'" class="fw-btn" @click="archiveVersion(v)">封存</button>
+                                    <button class="fw-btn danger" @click="deleteVersion(v)"
+                                            :disabled="v.is_used || v.status === 'Published'"
+                                            :title="v.is_used ? '已使用過的版本無法刪除' : (v.status === 'Published' ? '運作中版本無法刪除' : '刪除此版本')">刪除</button>
                                 </td>
                             </tr>
                         </template>
