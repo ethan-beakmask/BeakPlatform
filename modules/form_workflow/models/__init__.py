@@ -19,6 +19,8 @@ from .published_form_workflow import FwPublishedFormWorkflow
 from .workflow_background import FwWorkflowBackground
 from .field_change import FwFormFieldChange
 from .sql_form_registry import FwSqlFormRegistry
+from .org_database import FwOrgDatabase
+from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
 
 __all__ = [
@@ -37,5 +39,7 @@ __all__ = [
     'FwWorkflowBackground',
     'FwFormFieldChange',
     'FwSqlFormRegistry',
+    'FwOrgDatabase',
+    'FwSyncQueue',
     'WorkflowNodeDefinition',
 ]

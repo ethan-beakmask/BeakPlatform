@@ -1,0 +1,18 @@
+[Unit]
+Description=BeakPlatform SQL Sync Worker
+After=postgresql.service redis.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ethan
+WorkingDirectory=/opt/BeakPlatform
+EnvironmentFile=/opt/BeakPlatform/.env
+ExecStart=/opt/BeakPlatform/venv/bin/python /opt/BeakPlatform/scripts/sync_worker.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

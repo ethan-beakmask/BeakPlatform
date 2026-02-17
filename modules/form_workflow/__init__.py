@@ -197,12 +197,5 @@ def init_runtime(app):
     else:
         logger.info('FormWorkflow: 工作流執行器由獨立進程管理')
 
-    # 初始化 SQL Sync 連線池
-    formdata_url = app.config.get('FORMDATA_DATABASE_URL') or os.environ.get('FORMDATA_DATABASE_URL')
-    if formdata_url:
-        try:
-            from .services.sql_sync.pool import init_pool
-            init_pool(app)
-            logger.info('FormWorkflow: SQL Sync 連線池已初始化')
-        except Exception as e:
-            logger.error(f'FormWorkflow: SQL Sync 連線池初始化失敗: {str(e)}')
+    # SQL Sync: per-org 架構，不需全域連線池（連線由 Worker 按需建立）
+    logger.info('FormWorkflow: SQL Sync 使用 per-org 佇列模式（Worker 獨立處理）')

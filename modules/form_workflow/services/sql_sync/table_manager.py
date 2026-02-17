@@ -1,8 +1,10 @@
 """
 SQL Sync — 表管理器
 
-在 beakform_data DB 中建立/刪除/檢查 SQL 同步表。
+在企業專屬 DB (org_{id}) 中建立/刪除/檢查 SQL 同步表。
+使用 admin 角色連線執行 DDL。
 """
+import re
 import logging
 
 from psycopg2 import sql as psql
@@ -13,54 +15,41 @@ from .converter import (
     build_create_table_sql,
     build_create_table_ddl_text,
 )
-from .pool import get_conn, is_pool_ready
+from .pool import get_org_conn
 
 logger = logging.getLogger(__name__)
 
-# 安全前綴檢查
-TABLE_PREFIX = 'fw_data_'
+# 表名前綴（安全檢查用）
+TABLE_PREFIX = 'form_'
 
 
-def _validate_table_name(table_name):
-    """驗證表名符合前綴規則"""
-    if not table_name.startswith(TABLE_PREFIX):
-        raise ValueError(f'表名必須以 {TABLE_PREFIX} 開頭: {table_name}')
-    # 只允許英數底線
-    import re
-    if not re.match(r'^[a-z0-9_]+$', table_name):
-        raise ValueError(f'表名只允許小寫英數和底線: {table_name}')
-
-
-def make_table_name(form_template_secure_code, publish_version):
+def make_table_name(mapping_id, publish_version):
     """
     計算 SQL 同步表名
 
-    格式: fw_data_{form_template_secure_code前8字元}_v{publish_version}
+    格式: form_{mapping_id}_v{publish_version}
+    範例: form_23_v5
 
     Args:
-        form_template_secure_code: 表單模板 secure_code
+        mapping_id: FwFormWorkflowMapping.id（主庫自增 ID）
         publish_version: 發行版本號
 
     Returns:
         str: 表名
     """
-    # secure_code 可能含 - _ 等字元，統一轉小寫並只取英數
-    import re
-    safe_code = re.sub(r'[^a-z0-9]', '', form_template_secure_code.lower())[:8]
-    return f'{TABLE_PREFIX}{safe_code}_v{publish_version}'
+    return f'{TABLE_PREFIX}{mapping_id}_v{publish_version}'
+
+
+def _validate_table_name(table_name):
+    """驗證表名符合規則"""
+    if not table_name.startswith(TABLE_PREFIX):
+        raise ValueError(f'表名必須以 {TABLE_PREFIX} 開頭: {table_name}')
+    if not re.match(r'^[a-z0-9_]+$', table_name):
+        raise ValueError(f'表名只允許小寫英數和底線: {table_name}')
 
 
 def table_exists(table_name, conn):
-    """
-    檢查表是否存在於 beakform_data
-
-    Args:
-        table_name: 表名
-        conn: psycopg2 connection
-
-    Returns:
-        bool
-    """
+    """檢查表是否存在"""
     with conn.cursor() as cur:
         cur.execute(
             "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
@@ -72,15 +61,15 @@ def table_exists(table_name, conn):
 
 def create_sync_table(table_name, form_schema, conn):
     """
-    在 beakform_data DB 建立 SQL 同步表
+    在企業 DB 建立 SQL 同步表
 
     Args:
-        table_name: 表名（已驗證前綴）
+        table_name: 表名
         form_schema: form.io schema dict
-        conn: psycopg2 connection
+        conn: psycopg2 connection (admin 角色)
 
     Returns:
-        tuple: (columns, ddl_text) — columns 為 [(key, pg_type, nullable)]
+        tuple: (columns, ddl_text)
     """
     _validate_table_name(table_name)
 
@@ -93,22 +82,15 @@ def create_sync_table(table_name, form_schema, conn):
 
     with conn.cursor() as cur:
         cur.execute(create_sql)
-
     conn.commit()
+
     logger.info(f'SQL Sync: 已建立表 {table_name} ({len(columns)} 個動態欄位)')
     return columns, ddl_text
 
 
 def drop_sync_table(table_name, conn):
-    """
-    刪除 SQL 同步表
-
-    Args:
-        table_name: 表名
-        conn: psycopg2 connection
-    """
+    """刪除 SQL 同步表"""
     _validate_table_name(table_name)
-
     with conn.cursor() as cur:
         cur.execute(
             psql.SQL('DROP TABLE IF EXISTS {}').format(
@@ -119,34 +101,28 @@ def drop_sync_table(table_name, conn):
     logger.info(f'SQL Sync: 已刪除表 {table_name}')
 
 
-def create_sync_table_for_published(published, form_schema, org_secure_code):
+def create_sync_table_for_published(published, form_schema, org_secure_code, mapping_id):
     """
     為發行版本建立 SQL 同步表（高層 API）
 
     完整流程:
-    1. 計算 table_name
-    2. 在 beakform_data 建表
+    1. 計算 table_name (form_{mapping_id}_v{version})
+    2. 在企業專屬 DB 建表（用 admin 連線）
     3. 在主 DB 建立 FwSqlFormRegistry 記錄
 
     Args:
         published: FwPublishedFormWorkflow 實例
         form_schema: form.io schema dict
         org_secure_code: 組織 secure_code
+        mapping_id: FwFormWorkflowMapping.id
 
     Returns:
         FwSqlFormRegistry or None
     """
-    if not is_pool_ready():
-        logger.warning('SQL Sync: 連線池未初始化，跳過建表')
-        return None
-
     from ...models.sql_form_registry import FwSqlFormRegistry
     from app import db
 
-    table_name = make_table_name(
-        published.source_form_template_secure_code,
-        published.publish_version,
-    )
+    table_name = make_table_name(mapping_id, published.publish_version)
 
     # 檢查是否已建立
     existing = FwSqlFormRegistry.query.filter_by(table_name=table_name).first()
@@ -155,12 +131,11 @@ def create_sync_table_for_published(published, form_schema, org_secure_code):
         return existing
 
     try:
-        with get_conn() as conn:
+        with get_org_conn(org_secure_code, role='admin') as conn:
             columns, ddl_text = create_sync_table(table_name, form_schema, conn)
 
         column_mapping = build_column_mapping(columns)
 
-        # 在主 DB 建立登記記錄
         registry = FwSqlFormRegistry(
             org_secure_code=org_secure_code,
             mapping_secure_code=published.source_mapping_secure_code,
@@ -175,7 +150,6 @@ def create_sync_table_for_published(published, form_schema, org_secure_code):
             create_ddl=ddl_text,
         )
         db.session.add(registry)
-        # 不 commit — 讓呼叫者統一 commit
         db.session.flush()
 
         logger.info(f'SQL Sync: 已為發行版本建立同步表 {table_name}')

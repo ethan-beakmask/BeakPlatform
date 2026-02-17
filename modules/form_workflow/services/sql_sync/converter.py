@@ -85,7 +85,10 @@ def schema_to_columns(form_schema):
             validate = comp.get('validate', {})
             nullable = not validate.get('required', False)
 
-            columns.append((key, pg_type, nullable))
+            # PII 標記（Phase 2 加密用，由表單設計者在欄位屬性勾選）
+            is_pii = bool(comp.get('properties', {}).get('pii', False))
+
+            columns.append((key, pg_type, nullable, is_pii))
 
     _extract(form_schema.get('components', []))
     return columns
@@ -96,13 +99,15 @@ def build_column_mapping(columns):
     從 columns 列表建立 column_mapping dict（存入 FwSqlFormRegistry）
 
     Returns:
-        dict: {field_key: {'pg_type': '...', 'nullable': True/False}}
+        dict: {field_key: {'pg_type': '...', 'nullable': True/False, 'is_pii': False}}
     """
     mapping = {}
-    for key, pg_type, nullable in columns:
+    for key, pg_type, nullable, *rest in columns:
+        is_pii = rest[0] if rest else False
         mapping[key] = {
             'pg_type': pg_type,
             'nullable': nullable,
+            'is_pii': is_pii,
         }
     return mapping
 
@@ -150,7 +155,7 @@ def build_create_table_sql(table_name, columns):
     ]
 
     # 動態欄位
-    for i, (key, pg_type, nullable) in enumerate(columns):
+    for i, (key, pg_type, nullable, *_rest) in enumerate(columns):
         null_str = '' if nullable else ' NOT NULL'
         # 最後一個欄位不加逗號
         is_last = (i == len(columns) - 1)
@@ -191,7 +196,7 @@ def build_create_table_ddl_text(table_name, columns):
     lines.append('  submitted_at TIMESTAMP,')
     lines.append('  synced_at TIMESTAMP DEFAULT NOW(),')
 
-    for i, (key, pg_type, nullable) in enumerate(columns):
+    for i, (key, pg_type, nullable, *_rest) in enumerate(columns):
         null_str = '' if nullable else ' NOT NULL'
         comma = '' if i == len(columns) - 1 else ','
         lines.append(f'  "{key}" {pg_type}{null_str}{comma}')

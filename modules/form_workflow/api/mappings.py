@@ -553,14 +553,30 @@ def publish_mapping(secure_code):
         mapping.form_template_version = form_template.version
         mapping.workflow_template_version = workflow_template.version
 
-        # SQL Sync: 如果啟用，建立同步表
+        # SQL Sync: 如果啟用，在企業專屬 DB 建立同步表
         if mapping.sql_sync_enabled:
+            from ..services.sql_sync.org_db_manager import get_org_database, provision_org_database
             from ..services.sql_sync.table_manager import create_sync_table_for_published
-            create_sync_table_for_published(
-                published=published,
-                form_schema=form_template.schema,
-                org_secure_code=org.secure_code,
-            )
+
+            # 確保企業 DB 已建立
+            org_db = get_org_database(org.secure_code)
+            if not org_db:
+                try:
+                    org_db = provision_org_database(
+                        org_id=org.id,
+                        org_secure_code=org.secure_code,
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f'SQL Sync: 建立企業 DB 失敗: {e}')
+
+            if org_db:
+                create_sync_table_for_published(
+                    published=published,
+                    form_schema=form_template.schema,
+                    org_secure_code=org.secure_code,
+                    mapping_id=mapping.id,
+                )
 
         db.session.add(published)
         db.session.commit()
