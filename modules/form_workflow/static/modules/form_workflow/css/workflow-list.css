@@ -28,6 +28,18 @@
 .tree-ctrl-btn:hover { background: #f3f4f6; }
 .tree-ctrl-btn:active { background: #e5e7eb; }
 
+/* 樹系圖/未用 分頁按鈕 */
+.tree-tab-group { display: flex; gap: 2px; margin-left: 8px; }
+.tree-tab-btn {
+    padding: 4px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid #d1d5db; background: #fff; color: #6b7280; border-radius: 4px;
+}
+.tree-tab-btn:hover { background: #f3f4f6; }
+.tree-tab-btn.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+.tree-tab-badge {
+    font-size: 10px; background: rgba(255,255,255,0.3); padding: 1px 5px; border-radius: 8px; margin-left: 2px;
+}
+
 /* 表格微調 */
 .table td, .table th { font-size: 13px; vertical-align: middle; }
 .table td.actions { white-space: nowrap; }

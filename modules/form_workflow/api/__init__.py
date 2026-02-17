@@ -546,10 +546,10 @@ def list_workflows():
     for sf in dedicated_sfs:
         dedicated_sf_codes.setdefault(sf.parent_workflow_secure_code, set()).add(sf.code)
 
-    # 掃描所有子流程 graph 中引用的 code，建立全域「被引用」集合
-    # 用於判斷專屬子流程是否在整棵樹中被任何層級引用（不只直接父流程）
-    all_tree_used_codes = set(all_child_codes)  # 主流程 graph 引用的
+    # 建立 code → [引用的 childFlowId] 映射（所有子流程）
+    sf_graph_refs = {}
     for sf in dedicated_sfs:
+        refs = []
         if sf.graph:
             for node in sf.graph.get('nodes', []):
                 node_data = node.get('data', {})
@@ -558,7 +558,22 @@ def list_workflows():
                     config = node_data.get('config') or node.get('config') or {}
                     child_id = config.get('childFlowId')
                     if child_id:
-                        all_tree_used_codes.add(child_id)
+                        refs.append(child_id)
+        sf_graph_refs[sf.code] = refs
+
+    def _reachable_codes(root_child_codes):
+        """BFS：從主流程直接引用的 codes 出發，遞迴收集所有可達的子流程 codes"""
+        reachable = set()
+        queue = list(root_child_codes)
+        while queue:
+            code = queue.pop()
+            if code in reachable:
+                continue
+            reachable.add(code)
+            for ref in sf_graph_refs.get(code, []):
+                if ref not in reachable:
+                    queue.append(ref)
+        return reachable
 
     result = []
     for w in workflows:
@@ -568,9 +583,10 @@ def list_workflows():
         d['dedicated_subflow_count'] = dedicated_counts.get(w.secure_code, 0)
         child_codes = workflow_child_flows.get(w.secure_code, [])
         d['common_subflow_count'] = len([c for c in child_codes if c in common_sf_codes])
-        # 未用專屬子流程：有 parent 指向此流程，但未被整棵樹任何層級引用
+        # 未用專屬子流程：從主流程 BFS 不可達的專屬子流程
         my_dedicated_codes = dedicated_sf_codes.get(w.secure_code, set())
-        d['unused_subflow_count'] = len(my_dedicated_codes - all_tree_used_codes)
+        reachable = _reachable_codes(child_codes)
+        d['unused_subflow_count'] = len(my_dedicated_codes - reachable)
         result.append(d)
 
     return jsonify({

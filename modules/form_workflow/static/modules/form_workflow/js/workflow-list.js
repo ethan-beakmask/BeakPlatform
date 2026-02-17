@@ -8,8 +8,8 @@ function workflowListManager() {
         searchQuery: '',
         flowType: 'main',
         totalCounts: { main: 0, subflow: 0 },
-        treeView: { active: false, name: '', code: '', chart: null, _zoom: { scale: 1, panX: 0, panY: 0 }, _panState: null, _handlers: null },
-        unusedView: { active: false, name: '', code: '', subflows: [], loading: false, parentSecureCode: '' },
+        treeView: { active: false, tab: 'tree', name: '', code: '', workflowSecureCode: '', treeLoaded: false, _zoom: { scale: 1, panX: 0, panY: 0 }, _panState: null, _handlers: null },
+        unusedView: { subflows: [], loading: false, loaded: false },
         viewMode: localStorage.getItem('workflows_view_mode') || 'list',
         selectedCategory: null,
         selectedItems: [],
@@ -172,25 +172,17 @@ function workflowListManager() {
 
         async openTree(w) {
             const rootCode = w.parent_workflow_secure_code || w.secure_code;
-            try {
-                const res = await fetch('/api/form-workflow/workflows/flow-trees/' + rootCode);
-                const data = await res.json();
-                if (!data.success) return;
-                const tree = data.data.tree;
-                this.treeView.name = tree.name;
-                this.treeView.code = tree.code;
-                this.treeView._zoom = { scale: 1, panX: 0, panY: 0 };
-                this.treeView._panState = null;
-                this.treeView.active = true;
-                this.$nextTick(() => {
-                    const container = document.getElementById('tree-container');
-                    if (container) container.innerHTML = this._renderTree(tree, rootCode);
-                    this._setupTreePanListeners();
-                    this.treeZoomFit();
-                });
-            } catch (e) {
-                console.error('載入樹系圖失敗:', e);
-            }
+            this.treeView.name = w.name;
+            this.treeView.code = w.code || '';
+            this.treeView.workflowSecureCode = rootCode;
+            this.treeView.tab = 'tree';
+            this.treeView.treeLoaded = false;
+            this.treeView._zoom = { scale: 1, panX: 0, panY: 0 };
+            this.treeView._panState = null;
+            this.unusedView.loaded = false;
+            this.unusedView.subflows = [];
+            this.treeView.active = true;
+            await this._loadTreeData(rootCode);
         },
 
         _renderTree(tree, rootCode) {
@@ -261,8 +253,57 @@ function workflowListManager() {
         closeTree() {
             this._teardownTreePanListeners();
             this.treeView.active = false;
+            this.treeView.treeLoaded = false;
+            this.unusedView.loaded = false;
+            this.unusedView.subflows = [];
             const container = document.getElementById('tree-container');
             if (container) container.innerHTML = '';
+        },
+
+        async _loadTreeData(rootCode) {
+            try {
+                const res = await fetch('/api/form-workflow/workflows/flow-trees/' + rootCode);
+                const data = await res.json();
+                if (!data.success) return;
+                const tree = data.data.tree;
+                this.treeView.name = tree.name;
+                this.treeView.code = tree.code;
+                this.treeView.treeLoaded = true;
+                this.$nextTick(() => {
+                    const container = document.getElementById('tree-container');
+                    if (container) container.innerHTML = this._renderTree(tree, rootCode);
+                    this._setupTreePanListeners();
+                    this.treeZoomFit();
+                });
+            } catch (e) {
+                console.error('載入樹系圖失敗:', e);
+            }
+        },
+
+        async _loadUnusedData(rootCode) {
+            this.unusedView.loading = true;
+            try {
+                const res = await fetch(`/api/form-workflow/workflows/${rootCode}/unused-subflows`);
+                const data = await res.json();
+                if (data.success) {
+                    this.unusedView.subflows = data.data.subflows || [];
+                }
+                this.unusedView.loaded = true;
+            } catch (e) {
+                console.error('載入未用子流程失敗:', e);
+            } finally {
+                this.unusedView.loading = false;
+            }
+        },
+
+        async switchTreeTab(tab) {
+            this.treeView.tab = tab;
+            if (tab === 'tree' && !this.treeView.treeLoaded) {
+                await this._loadTreeData(this.treeView.workflowSecureCode);
+            }
+            if (tab === 'unused' && !this.unusedView.loaded) {
+                await this._loadUnusedData(this.treeView.workflowSecureCode);
+            }
         },
 
         /* ── 樹系圖縮放/平移 ── */
@@ -351,28 +392,18 @@ function workflowListManager() {
         },
 
         async openUnused(w) {
-            this.unusedView.name = w.name;
-            this.unusedView.code = w.code || '';
-            this.unusedView.parentSecureCode = w.secure_code;
+            const rootCode = w.parent_workflow_secure_code || w.secure_code;
+            this.treeView.name = w.name;
+            this.treeView.code = w.code || '';
+            this.treeView.workflowSecureCode = rootCode;
+            this.treeView.tab = 'unused';
+            this.treeView.treeLoaded = false;
+            this.treeView._zoom = { scale: 1, panX: 0, panY: 0 };
+            this.treeView._panState = null;
+            this.unusedView.loaded = false;
             this.unusedView.subflows = [];
-            this.unusedView.loading = true;
-            this.unusedView.active = true;
-            try {
-                const res = await fetch(`/api/form-workflow/workflows/${w.secure_code}/unused-subflows`);
-                const data = await res.json();
-                if (data.success) {
-                    this.unusedView.subflows = data.data.subflows || [];
-                }
-            } catch (e) {
-                console.error('載入未用子流程失敗:', e);
-            } finally {
-                this.unusedView.loading = false;
-            }
-        },
-
-        closeUnused() {
-            this.unusedView.active = false;
-            this.unusedView.subflows = [];
+            this.treeView.active = true;
+            await this._loadUnusedData(rootCode);
         },
 
         editUnusedSubflow(sf) {
@@ -386,9 +417,6 @@ function workflowListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.unusedView.subflows = this.unusedView.subflows.filter(s => s.secure_code !== sf.secure_code);
-                    if (this.unusedView.subflows.length === 0) {
-                        this.closeUnused();
-                    }
                     this.loadWorkflows();
                 } else {
                     alert('刪除失敗: ' + (data.error || data.message));
@@ -414,7 +442,7 @@ function workflowListManager() {
                 }
             }
             if (fail > 0) alert(`完成：成功 ${ok}，失敗 ${fail}`);
-            this.closeUnused();
+            this.unusedView.subflows = [];
             this.loadWorkflows();
         },
 

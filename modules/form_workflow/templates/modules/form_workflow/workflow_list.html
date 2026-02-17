@@ -10,14 +10,24 @@
 {% block content %}
 <div class="wf-container" x-data="workflowListManager()">
 
-    <!-- 樹系圖內嵌視圖 -->
+    <!-- 樹系圖 + 未用子流程 合併視圖 -->
     <div x-show="treeView.active" x-cloak>
         <div class="tree-view-toolbar">
             <button class="tree-ctrl-btn" @click="closeTree()" title="返回列表">
                 <i class="ri-arrow-left-s-line"></i>
             </button>
+            <div class="tree-tab-group">
+                <button class="tree-tab-btn" :class="{ active: treeView.tab === 'tree' }" @click="switchTreeTab('tree')">
+                    樹系圖
+                </button>
+                <button class="tree-tab-btn" :class="{ active: treeView.tab === 'unused' }" @click="switchTreeTab('unused')">
+                    未用
+                    <span x-show="unusedView.loaded && unusedView.subflows.length > 0"
+                          class="tree-tab-badge" x-text="unusedView.subflows.length"></span>
+                </button>
+            </div>
             <div style="flex:1;"></div>
-            <div class="tree-zoom-group">
+            <div x-show="treeView.tab === 'tree'" class="tree-zoom-group">
                 <button class="tree-ctrl-btn" @click="treeZoomOut()" title="縮小">
                     <i class="ri-zoom-out-line"></i>
                 </button>
@@ -28,29 +38,24 @@
                     <i class="ri-zoom-in-line"></i>
                 </button>
             </div>
+            <button class="btn btn-sm btn-danger"
+                    x-show="treeView.tab === 'unused' && !unusedView.loading && unusedView.subflows.length > 0"
+                    @click="deleteAllUnused()">
+                全部刪除
+            </button>
         </div>
-        <div id="tree-viewport"
+
+        <!-- 樹系圖內容 -->
+        <div x-show="treeView.tab === 'tree'"
+             id="tree-viewport"
              @mousedown="treeStartPan($event)"
              @wheel.prevent="treeWheel($event)"
              style="background:#f9fafb;overflow:hidden;cursor:grab;height:calc(100vh - 120px);position:relative;">
             <div id="tree-container" style="transform-origin:0 0;display:inline-block;"></div>
         </div>
-    </div>
 
-    <!-- 未用子流程內嵌視圖 -->
-    <div x-show="unusedView.active" x-cloak>
-        <div class="tree-view-toolbar">
-            <button class="btn btn-sm btn-secondary" @click="closeUnused()">關閉</button>
-            <span class="fw-semibold" x-text="unusedView.name || ''"></span>
-            <span class="text-muted small">未使用的專屬子流程</span>
-            <div style="flex:1;"></div>
-            <button class="btn btn-sm btn-danger"
-                    x-show="!unusedView.loading && unusedView.subflows.length > 0"
-                    @click="deleteAllUnused()">
-                全部刪除
-            </button>
-        </div>
-        <div style="padding: 16px; background: #f9fafb; min-height: 200px;">
+        <!-- 未用子流程內容 -->
+        <div x-show="treeView.tab === 'unused'" style="padding: 16px; background: #f9fafb; min-height: calc(100vh - 120px);">
             <div x-show="unusedView.loading" class="text-center p-5 text-secondary">載入中...</div>
             <div x-show="!unusedView.loading && unusedView.subflows.length === 0" class="text-center p-5 text-secondary">
                 沒有未使用的專屬子流程
@@ -87,11 +92,47 @@
                 </template>
               </div>
             </div>
+
+            <!-- 刪除行為參考 -->
+            <div style="margin-top: 24px; padding: 12px 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;">
+                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">刪除行為參考</div>
+                <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <th style="text-align: left; padding: 6px 8px; color: #6b7280;">操作</th>
+                            <th style="text-align: center; padding: 6px 8px; color: #6b7280; width: 80px;">遞迴刪下層</th>
+                            <th style="text-align: left; padding: 6px 8px; color: #6b7280;">說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 6px 8px;">畫布刪 Subflow 節點 → 儲存</td>
+                            <td style="text-align: center; padding: 6px 8px; color: #9ca3af;">否</td>
+                            <td style="padding: 6px 8px; color: #6b7280;">只改 graph JSON，子流程模板保留</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 6px 8px;">未用面板「刪除」單個</td>
+                            <td style="text-align: center; padding: 6px 8px; color: #dc2626;">是</td>
+                            <td style="padding: 6px 8px; color: #6b7280;">BFS 遞迴軟刪除 + 所有下層</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                            <td style="padding: 6px 8px;">未用面板「全部刪除」</td>
+                            <td style="text-align: center; padding: 6px 8px; color: #dc2626;">是</td>
+                            <td style="padding: 6px 8px; color: #6b7280;">逐一呼叫上方 API</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 8px;">刪除主流程</td>
+                            <td style="text-align: center; padding: 6px 8px; color: #dc2626;">是</td>
+                            <td style="padding: 6px 8px; color: #6b7280;">BFS 遞迴軟刪除整棵樹</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- 頁首 -->
-    <div x-show="!treeView.active && !unusedView.active">
+    <div x-show="!treeView.active">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h1 class="h5 mb-1">工作流模板管理</h1>
@@ -120,7 +161,7 @@
     </div>
 
     <!-- 流程類型 Tab -->
-    <div x-show="!loading && !treeView.active && !unusedView.active" class="wf-tabs">
+    <div x-show="!loading && !treeView.active" class="wf-tabs">
         <button class="wf-tab" :class="{ active: flowType === 'main' }"
                 @click="flowType = 'main'; loadWorkflows()">
             主流程 <span class="text-secondary ms-1" x-text="'(' + totalCounts.main + ')'"></span>
@@ -132,7 +173,7 @@
     </div>
 
     <!-- 分類篩選 chips -->
-    <div x-show="!loading && !treeView.active && !unusedView.active" class="wf-filter-bar">
+    <div x-show="!loading && !treeView.active" class="wf-filter-bar">
         <template x-for="cat in flatCategories" :key="cat.secure_code">
             <div class="wf-chip" :class="{ active: selectedCategory === cat.secure_code }"
                  @click="selectedCategory = cat.secure_code; localStorage.setItem('workflows_filter_category', cat.secure_code)">
@@ -143,7 +184,7 @@
     </div>
 
     <!-- 主內容區 -->
-    <div class="border rounded p-0" x-show="!treeView.active && !unusedView.active">
+    <div class="border rounded p-0" x-show="!treeView.active">
         <div x-show="loading" class="text-center p-5 text-secondary">載入中...</div>
 
         <div x-show="!loading && filteredWorkflows.length === 0" class="text-center p-5 text-secondary">
@@ -250,7 +291,7 @@
     </div>
 
     <!-- 縮圖模式 -->
-    <template x-if="!loading && !treeView.active && !unusedView.active && filteredWorkflows.length > 0 && viewMode === 'grid'">
+    <template x-if="!loading && !treeView.active && filteredWorkflows.length > 0 && viewMode === 'grid'">
         <div class="wf-thumb-grid">
             <template x-for="w in filteredWorkflows" :key="w.secure_code">
                 <div class="wf-thumb-card" @click="editWorkflow(w)">
