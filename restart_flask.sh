@@ -43,7 +43,7 @@ sudo systemctl restart beakplatform
 echo "  done"
 
 # --- 3. 確認 Executor 服務運行 ---
-echo "[3/5] 確認 Executor 服務..."
+echo "[3/6] 確認 Executor 服務..."
 if systemctl is-active --quiet beakplatform-executor; then
     echo "  已在運行中"
 else
@@ -52,8 +52,17 @@ else
     echo "  done"
 fi
 
+# --- 3b. 重啟 Sync Worker ---
+echo "[3b/6] 重啟 Sync Worker..."
+sudo systemctl restart beakplatform-sync-worker 2>/dev/null || true
+if systemctl is-active --quiet beakplatform-sync-worker; then
+    echo "  done"
+else
+    echo "  未安裝或啟動失敗（非必要服務）"
+fi
+
 # --- 4. 啟動 DevTools ---
-echo "[4/5] 啟動 DevTools (port 7001)..."
+echo "[4/6] 啟動 DevTools (port 7001)..."
 cd /opt/BeakPlatform
 source venv/bin/activate
 set -a && source .env && set +a
@@ -61,7 +70,7 @@ nohup python devtools/app.py > /tmp/devtools.log 2>&1 &
 echo "  done"
 
 # --- 5. 確認相依服務 ---
-echo "[5/5] 確認相依服務..."
+echo "[5/6] 確認相依服務..."
 
 # E-MailRelay
 if systemctl is-active --quiet emailrelay; then
@@ -94,6 +103,7 @@ sleep 7
 MAIN_OK=false
 DEV_OK=false
 EXEC_OK=false
+SYNC_OK=false
 
 if curl -s --max-time 5 http://localhost:7000/health > /dev/null 2>&1; then
     MAIN_OK=true
@@ -104,28 +114,37 @@ fi
 if systemctl is-active --quiet beakplatform-executor; then
     EXEC_OK=true
 fi
+if systemctl is-active --quiet beakplatform-sync-worker; then
+    SYNC_OK=true
+fi
 
 echo "======================================"
 echo "  服務狀態"
 echo "======================================"
 if $MAIN_OK; then
-    echo "  主服務     http://192.168.0.16:7000  OK"
+    echo "  主服務       http://192.168.0.16:7000  OK"
 else
-    echo "  主服務     http://192.168.0.16:7000  FAIL"
+    echo "  主服務       http://192.168.0.16:7000  FAIL"
 fi
 if $EXEC_OK; then
-    echo "  Executor   beakplatform-executor     OK"
+    echo "  Executor     beakplatform-executor     OK"
 else
-    echo "  Executor   beakplatform-executor     FAIL"
+    echo "  Executor     beakplatform-executor     FAIL"
+fi
+if $SYNC_OK; then
+    echo "  Sync Worker  beakplatform-sync-worker  OK"
+else
+    echo "  Sync Worker  beakplatform-sync-worker  FAIL"
 fi
 if $DEV_OK; then
-    echo "  DevTools   http://192.168.0.16:7001  OK"
+    echo "  DevTools     http://192.168.0.16:7001  OK"
 else
-    echo "  DevTools   http://192.168.0.16:7001  FAIL"
+    echo "  DevTools     http://192.168.0.16:7001  FAIL"
 fi
 echo ""
 echo "查看日誌:"
-echo "  主服務:   sudo journalctl -u beakplatform -f"
-echo "  Executor: sudo journalctl -u beakplatform-executor -f"
-echo "  DevTools: tail -f /tmp/devtools.log"
+echo "  主服務:      sudo journalctl -u beakplatform -f"
+echo "  Executor:    sudo journalctl -u beakplatform-executor -f"
+echo "  Sync Worker: sudo journalctl -u beakplatform-sync-worker -f"
+echo "  DevTools:    tail -f /tmp/devtools.log"
 echo ""

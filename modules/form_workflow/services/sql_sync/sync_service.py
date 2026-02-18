@@ -6,6 +6,8 @@ SQL Sync — 佇列式同步服務
 
 也提供 execute_sync() 供 Worker 呼叫。
 """
+import json
+import os
 import logging
 from datetime import datetime
 
@@ -80,6 +82,30 @@ def enqueue_sync_safe(form_instance, published_secure_code=None):
 
 
 # =============================================================================
+# PII 加密工具
+# =============================================================================
+
+def _get_pii_passphrase():
+    """取得 PII 加密密鑰"""
+    passphrase = os.environ.get('SYNC_PII_PASSPHRASE')
+    if not passphrase:
+        raise RuntimeError('SYNC_PII_PASSPHRASE 環境變數未設定')
+    return passphrase
+
+
+def _build_value_placeholder(is_pii):
+    """
+    回傳欄位值的 SQL placeholder
+
+    非 PII: %s
+    PII:    pgp_sym_encrypt(%s::text, %s)
+    """
+    if is_pii:
+        return psql.SQL('pgp_sym_encrypt(%s::text, %s)')
+    return psql.Placeholder()
+
+
+# =============================================================================
 # 實際同步（Worker 呼叫）
 # =============================================================================
 
@@ -89,6 +115,7 @@ def execute_sync(queue_item):
 
     由 Worker 呼叫，從 queue_item 中取得資訊，
     用 sync 低權限帳號 UPSERT 到企業 DB。
+    PII 欄位使用 pgcrypto 加密寫入。
 
     Args:
         queue_item: FwSyncQueue 實例
@@ -122,35 +149,102 @@ def execute_sync(queue_item):
     column_mapping = registry.column_mapping or {}
     form_data = form_instance.form_data or {}
 
-    # 固定欄位：只保留關聯鍵，系統欄位由主庫 fw_form_instances 提供
-    fixed_data = {
-        'form_instance_secure_code': form_instance.secure_code,
-    }
+    # 檢查是否有任何 PII 欄位
+    has_pii = any(
+        col_info.get('is_pii', False)
+        for col_info in column_mapping.values()
+    )
+    # 子表中也可能有 PII
+    if not has_pii:
+        for col_info in column_mapping.values():
+            sub = col_info.get('sub_table')
+            if sub:
+                has_pii = any(
+                    sc.get('is_pii', False)
+                    for sc in sub.get('columns', {}).values()
+                )
+                if has_pii:
+                    break
 
-    # 準備動態欄位
-    dynamic_data = {}
+    passphrase = _get_pii_passphrase() if has_pii else None
+
+    # 主表 UPSERT
+    _upsert_main_table(
+        table_name, column_mapping, form_data,
+        form_instance.secure_code, queue_item.org_secure_code, passphrase,
+    )
+
+    # 子表同步
+    _sync_sub_tables(
+        column_mapping, form_data,
+        form_instance.secure_code, queue_item.org_secure_code, passphrase,
+    )
+
+    # 更新 registry 統計
+    registry.last_synced_at = datetime.utcnow()
+    registry.row_count = (registry.row_count or 0) + 1
+    db.session.commit()
+
+    logger.info(f'SQL Sync: UPSERT → {table_name} (instance={form_instance.secure_code})')
+    return True
+
+
+def _upsert_main_table(table_name, column_mapping, form_data,
+                        instance_sc, org_sc, passphrase):
+    """
+    主表 UPSERT（含 PII 加密）
+    """
+    # 固定欄位
+    col_names = ['form_instance_secure_code']
+    col_values = [instance_sc]
+    pii_flags = [False]
+
+    # 動態欄位
     for field_key, col_info in column_mapping.items():
-        if field_key in form_data:
-            pg_type = col_info.get('pg_type', 'TEXT')
-            # Phase 2: 此處可依 col_info.get('is_pii') 做加密
-            dynamic_data[field_key] = normalize_value(form_data[field_key], pg_type)
+        if field_key not in form_data:
+            continue
+        pg_type = col_info.get('pg_type', 'TEXT')
+        is_pii = col_info.get('is_pii', False)
+        value = normalize_value(form_data[field_key], pg_type)
 
-    all_data = {**fixed_data, **dynamic_data}
+        # PII 欄位需轉為字串傳入 pgp_sym_encrypt
+        if is_pii and value is not None:
+            value = str(value) if not isinstance(value, str) else value
 
-    # UPSERT
-    col_names = list(all_data.keys())
-    col_values = [all_data[k] for k in col_names]
+        col_names.append(field_key)
+        col_values.append(value)
+        pii_flags.append(is_pii)
 
+    # 構建 INSERT 部分
     insert_cols = psql.SQL(', ').join([psql.Identifier(c) for c in col_names])
-    insert_vals = psql.SQL(', ').join([psql.Placeholder()] * len(col_names))
 
-    update_cols = [c for c in col_names if c != 'form_instance_secure_code']
-    update_set = psql.SQL(', ').join([
-        psql.SQL('{} = EXCLUDED.{}').format(
-            psql.Identifier(c), psql.Identifier(c)
+    val_placeholders = []
+    actual_values = []
+    for val, is_pii in zip(col_values, pii_flags):
+        if is_pii and val is not None:
+            val_placeholders.append(psql.SQL('pgp_sym_encrypt(%s::text, %s)'))
+            actual_values.append(val)
+            actual_values.append(passphrase)
+        elif is_pii and val is None:
+            val_placeholders.append(psql.SQL('NULL'))
+        else:
+            val_placeholders.append(psql.Placeholder())
+            actual_values.append(val)
+
+    insert_vals = psql.SQL(', ').join(val_placeholders)
+
+    # 構建 UPDATE SET 部分
+    update_parts = []
+    for i, col_name in enumerate(col_names):
+        if col_name == 'form_instance_secure_code':
+            continue
+        update_parts.append(
+            psql.SQL('{} = EXCLUDED.{}').format(
+                psql.Identifier(col_name), psql.Identifier(col_name)
+            )
         )
-        for c in update_cols
-    ])
+
+    update_set = psql.SQL(', ').join(update_parts)
 
     upsert_sql = psql.SQL(
         'INSERT INTO {} ({}) VALUES ({}) '
@@ -162,19 +256,115 @@ def execute_sync(queue_item):
         update_set,
     )
 
-    # 用 sync（低權限）帳號連線到企業 DB
-    with get_org_conn(queue_item.org_secure_code, role='sync') as conn:
+    with get_org_conn(org_sc, role='sync') as conn:
         with conn.cursor() as cur:
-            cur.execute(upsert_sql, col_values)
+            cur.execute(upsert_sql, actual_values)
         conn.commit()
 
-    # 更新 registry 統計
-    registry.last_synced_at = datetime.utcnow()
-    registry.row_count = (registry.row_count or 0) + 1
-    db.session.commit()
 
-    logger.info(f'SQL Sync: UPSERT → {table_name} (instance={form_instance.secure_code})')
-    return True
+def _sync_sub_tables(column_mapping, form_data, instance_sc, org_sc, passphrase):
+    """
+    同步 datagrid/editgrid 子表
+
+    策略: DELETE + batch INSERT（同一 transaction）
+    """
+    for field_key, col_info in column_mapping.items():
+        sub = col_info.get('sub_table')
+        if not sub:
+            continue
+
+        sub_table = sub.get('table_name')
+        sub_columns = sub.get('columns', {})
+        if not sub_table or not sub_columns:
+            continue
+
+        # 從 form_data 取 grid 陣列
+        grid_data = form_data.get(field_key)
+        if not isinstance(grid_data, list):
+            grid_data = []
+
+        with get_org_conn(org_sc, role='sync') as conn:
+            with conn.cursor() as cur:
+                # DELETE 舊 rows
+                cur.execute(
+                    psql.SQL('DELETE FROM {} WHERE form_instance_secure_code = %s').format(
+                        psql.Identifier(sub_table)
+                    ),
+                    (instance_sc,)
+                )
+
+                # INSERT 新 rows
+                if grid_data:
+                    _batch_insert_sub_rows(
+                        cur, sub_table, sub_columns, grid_data,
+                        instance_sc, passphrase,
+                    )
+
+            conn.commit()
+
+        logger.debug(
+            f'SQL Sync: 子表 {sub_table} 同步 {len(grid_data)} 筆 '
+            f'(instance={instance_sc})'
+        )
+
+
+def _batch_insert_sub_rows(cur, sub_table, sub_columns, grid_data,
+                            instance_sc, passphrase):
+    """
+    批次插入子表 rows
+    """
+    # 固定欄位: form_instance_secure_code, row_index
+    col_names = ['form_instance_secure_code', 'row_index']
+    dynamic_keys = list(sub_columns.keys())
+    col_names.extend(dynamic_keys)
+
+    insert_cols = psql.SQL(', ').join([psql.Identifier(c) for c in col_names])
+
+    # 預先建立 PII flags
+    pii_map = {k: v.get('is_pii', False) for k, v in sub_columns.items()}
+    type_map = {k: v.get('pg_type', 'TEXT') for k, v in sub_columns.items()}
+
+    for row_idx, row_data in enumerate(grid_data):
+        if not isinstance(row_data, dict):
+            continue
+
+        val_placeholders = []
+        actual_values = []
+
+        # form_instance_secure_code
+        val_placeholders.append(psql.Placeholder())
+        actual_values.append(instance_sc)
+
+        # row_index
+        val_placeholders.append(psql.Placeholder())
+        actual_values.append(row_idx)
+
+        # dynamic columns
+        for key in dynamic_keys:
+            raw_val = row_data.get(key)
+            pg_type = type_map[key]
+            is_pii = pii_map[key]
+            value = normalize_value(raw_val, pg_type)
+
+            if is_pii and value is not None:
+                value = str(value) if not isinstance(value, str) else value
+                val_placeholders.append(psql.SQL('pgp_sym_encrypt(%s::text, %s)'))
+                actual_values.append(value)
+                actual_values.append(passphrase)
+            elif is_pii and value is None:
+                val_placeholders.append(psql.SQL('NULL'))
+            else:
+                val_placeholders.append(psql.Placeholder())
+                actual_values.append(value)
+
+        insert_vals = psql.SQL(', ').join(val_placeholders)
+
+        insert_sql = psql.SQL('INSERT INTO {} ({}) VALUES ({})').format(
+            psql.Identifier(sub_table),
+            insert_cols,
+            insert_vals,
+        )
+        cur.execute(insert_sql, actual_values)
 
 
 # =============================================================================

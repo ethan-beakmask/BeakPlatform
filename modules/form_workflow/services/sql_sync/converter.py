@@ -125,6 +125,11 @@ def build_column_mapping(columns):
     return mapping
 
 
+def _resolve_pg_type(pg_type, is_pii):
+    """PII 欄位強制使用 BYTEA（pgcrypto 加密後為 BYTEA）"""
+    return 'BYTEA' if is_pii else pg_type
+
+
 def build_create_table_sql(table_name, columns):
     """
     產生 CREATE TABLE DDL
@@ -135,11 +140,11 @@ def build_create_table_sql(table_name, columns):
     - id SERIAL PRIMARY KEY
     - form_instance_secure_code VARCHAR(32) NOT NULL UNIQUE
 
-    動態欄位: 從 columns 參數產生
+    動態欄位: 從 columns 參數產生（PII 欄位自動轉為 BYTEA）
 
     Args:
         table_name: SQL 表名（已驗證前綴）
-        columns: [(field_key, pg_type, nullable)] 列表
+        columns: [(field_key, pg_type, nullable, is_pii)] 列表
 
     Returns:
         psycopg2.sql.Composed: 可安全執行的 SQL
@@ -154,7 +159,9 @@ def build_create_table_sql(table_name, columns):
     ]
 
     # 動態欄位
-    for i, (key, pg_type, nullable, *_rest) in enumerate(columns):
+    for i, (key, pg_type, nullable, *rest) in enumerate(columns):
+        is_pii = rest[0] if rest else False
+        actual_type = _resolve_pg_type(pg_type, is_pii)
         null_str = '' if nullable else ' NOT NULL'
         # 最後一個欄位不加逗號
         is_last = (i == len(columns) - 1)
@@ -162,7 +169,7 @@ def build_create_table_sql(table_name, columns):
         parts.append(
             sql.SQL('  {} {}{}{}').format(
                 sql.Identifier(key),
-                sql.SQL(pg_type),
+                sql.SQL(actual_type),
                 sql.SQL(null_str),
                 sql.SQL(comma),
             )
@@ -179,7 +186,7 @@ def build_create_table_ddl_text(table_name, columns):
 
     Args:
         table_name: SQL 表名
-        columns: [(field_key, pg_type, nullable)] 列表
+        columns: [(field_key, pg_type, nullable, is_pii)] 列表
 
     Returns:
         str: DDL 文字
@@ -188,10 +195,12 @@ def build_create_table_ddl_text(table_name, columns):
     lines.append('  id SERIAL PRIMARY KEY,')
     lines.append('  form_instance_secure_code VARCHAR(32) NOT NULL UNIQUE,')
 
-    for i, (key, pg_type, nullable, *_rest) in enumerate(columns):
+    for i, (key, pg_type, nullable, *rest) in enumerate(columns):
+        is_pii = rest[0] if rest else False
+        actual_type = _resolve_pg_type(pg_type, is_pii)
         null_str = '' if nullable else ' NOT NULL'
         comma = '' if i == len(columns) - 1 else ','
-        lines.append(f'  "{key}" {pg_type}{null_str}{comma}')
+        lines.append(f'  "{key}" {actual_type}{null_str}{comma}')
 
     lines.append(')')
     return '\n'.join(lines)
@@ -287,3 +296,153 @@ def normalize_value(value, pg_type):
 
     # VARCHAR / TEXT: 直接回傳字串
     return str(value) if value is not None else None
+
+
+# =====================================================
+# Datagrid/Editgrid 子表 Schema 解析
+# =====================================================
+
+def grid_schema_to_columns(component):
+    """
+    從 datagrid/editgrid 元件的 components 子陣列提取子欄位定義
+
+    Args:
+        component: datagrid/editgrid 的 form.io component dict
+
+    Returns:
+        list of (field_key, pg_type, nullable, is_pii) tuples
+    """
+    columns = []
+    seen_keys = set()
+
+    for child in component.get('components', []):
+        child_type = child.get('type', '')
+        key = child.get('key')
+
+        if not key or key in seen_keys:
+            continue
+        # 子表內不再遞迴巢狀 grid
+        if child_type in SKIP_TYPES:
+            continue
+
+        seen_keys.add(key)
+
+        if child_type in GRID_TYPES:
+            # 巢狀 grid 在子表中存為 JSONB
+            pg_type = 'JSONB'
+        else:
+            pg_type = FORMIO_TO_PG.get(child_type, 'TEXT')
+
+        validate = child.get('validate', {})
+        nullable = not validate.get('required', False)
+        is_pii = bool(child.get('properties', {}).get('pii', False))
+
+        columns.append((key, pg_type, nullable, is_pii))
+
+    return columns
+
+
+def build_create_sub_table_sql(table_name, columns):
+    """
+    產生子表 CREATE TABLE DDL (psycopg2.sql)
+
+    固定欄位:
+    - id SERIAL PRIMARY KEY
+    - form_instance_secure_code VARCHAR(32) NOT NULL
+    - row_index INT NOT NULL
+
+    動態欄位: 從 columns 參數產生（PII 欄位自動轉為 BYTEA）
+
+    Args:
+        table_name: 子表名
+        columns: [(field_key, pg_type, nullable, is_pii)] 列表
+
+    Returns:
+        list of psycopg2.sql.Composed: [CREATE TABLE, CREATE INDEX]
+    """
+    parts = [
+        sql.SQL('CREATE TABLE IF NOT EXISTS {} (').format(
+            sql.Identifier(table_name)
+        ),
+        sql.SQL('  id SERIAL PRIMARY KEY,'),
+        sql.SQL('  form_instance_secure_code VARCHAR(32) NOT NULL,'),
+        sql.SQL('  row_index INT NOT NULL,'),
+    ]
+
+    for i, (key, pg_type, nullable, *rest) in enumerate(columns):
+        is_pii = rest[0] if rest else False
+        actual_type = _resolve_pg_type(pg_type, is_pii)
+        null_str = '' if nullable else ' NOT NULL'
+        is_last = (i == len(columns) - 1)
+        comma = '' if is_last else ','
+        parts.append(
+            sql.SQL('  {} {}{}{}').format(
+                sql.Identifier(key),
+                sql.SQL(actual_type),
+                sql.SQL(null_str),
+                sql.SQL(comma),
+            )
+        )
+
+    parts.append(sql.SQL(')'))
+
+    create_sql = sql.SQL('\n').join(parts)
+
+    # INDEX on form_instance_secure_code
+    idx_sql = sql.SQL(
+        'CREATE INDEX IF NOT EXISTS {} ON {} (form_instance_secure_code)'
+    ).format(
+        sql.Identifier(f'idx_{table_name}_fisc'),
+        sql.Identifier(table_name),
+    )
+
+    return [create_sql, idx_sql]
+
+
+def build_create_sub_table_ddl_text(table_name, columns):
+    """
+    子表 DDL 純文字版本
+
+    Args:
+        table_name: 子表名
+        columns: [(field_key, pg_type, nullable, is_pii)] 列表
+
+    Returns:
+        str: DDL 文字
+    """
+    lines = [f'CREATE TABLE IF NOT EXISTS "{table_name}" (']
+    lines.append('  id SERIAL PRIMARY KEY,')
+    lines.append('  form_instance_secure_code VARCHAR(32) NOT NULL,')
+    lines.append('  row_index INT NOT NULL,')
+
+    for i, (key, pg_type, nullable, *rest) in enumerate(columns):
+        is_pii = rest[0] if rest else False
+        actual_type = _resolve_pg_type(pg_type, is_pii)
+        null_str = '' if nullable else ' NOT NULL'
+        comma = '' if i == len(columns) - 1 else ','
+        lines.append(f'  "{key}" {actual_type}{null_str}{comma}')
+
+    lines.append(');')
+    lines.append(f'CREATE INDEX ON "{table_name}" (form_instance_secure_code);')
+    return '\n'.join(lines)
+
+
+def build_sub_column_mapping(columns):
+    """
+    從子表 columns 建立 column_mapping dict
+
+    Args:
+        columns: [(field_key, pg_type, nullable, is_pii)] 列表
+
+    Returns:
+        dict: {field_key: {'pg_type': '...', 'nullable': True/False, 'is_pii': False}}
+    """
+    mapping = {}
+    for key, pg_type, nullable, *rest in columns:
+        is_pii = rest[0] if rest else False
+        mapping[key] = {
+            'pg_type': pg_type,
+            'nullable': nullable,
+            'is_pii': is_pii,
+        }
+    return mapping

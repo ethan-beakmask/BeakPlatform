@@ -134,7 +134,24 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
     finally:
         conn.close()
 
-    # 3. 連入 org DB 設定 sync 權限
+    # 3. 用 superuser 連入 org DB 安裝 pgcrypto（需要 superuser 權限）
+    su_url = os.environ.get('SYNC_PG_ADMIN_URL', '')
+    # 替換連線 URL 中的資料庫名稱為 org DB
+    if '/' in su_url:
+        su_base = su_url.rsplit('/', 1)[0]
+        su_dsn = f'{su_base}/{db_name}'
+    else:
+        su_dsn = f'postgresql://postgres:postgres123@{db_host}:{db_port}/{db_name}'
+    su_conn = psycopg2.connect(su_dsn)
+    su_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    try:
+        with su_conn.cursor() as cur:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+            logger.info(f'OrgDB: 已在 {db_name} 安裝 pgcrypto')
+    finally:
+        su_conn.close()
+
+    # 4. 連入 org DB 設定 sync 權限
     admin_dsn = f'postgresql://{admin_user}:{admin_pwd}@{db_host}:{db_port}/{db_name}'
     org_conn = psycopg2.connect(admin_dsn)
     org_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -153,11 +170,11 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
                     psql.Identifier(sync_user),
                 )
             )
-            # 預設：sync_user 對未來建立的表有 DML 權限
+            # 預設：sync_user 對未來建立的表有 DML 權限（含 DELETE，子表同步需要）
             cur.execute(
                 psql.SQL(
                     "ALTER DEFAULT PRIVILEGES FOR ROLE {} IN SCHEMA public "
-                    "GRANT SELECT, INSERT, UPDATE ON TABLES TO {}"
+                    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO {}"
                 ).format(
                     psql.Identifier(admin_user),
                     psql.Identifier(sync_user),
@@ -177,7 +194,7 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
     finally:
         org_conn.close()
 
-    # 4. 儲存到 FwOrgDatabase
+    # 5. 儲存到 FwOrgDatabase
     if existing:
         org_db = existing
     else:
@@ -199,6 +216,41 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
 
     logger.info(f'OrgDB: 企業 {org_id} 專屬資料庫 {db_name} 建立完成')
     return org_db
+
+
+def ensure_pgcrypto(org_secure_code):
+    """
+    確保企業 DB 已安裝 pgcrypto extension
+
+    用於升級已存在的 org DB（provision 時未安裝的情況）。
+
+    Args:
+        org_secure_code: Organization.secure_code
+    """
+    from ...models.org_database import FwOrgDatabase
+    org_db = FwOrgDatabase.query.filter_by(
+        org_secure_code=org_secure_code,
+        is_ready=True,
+        is_deleted=False,
+    ).first()
+    if not org_db:
+        raise RuntimeError(f'找不到企業 {org_secure_code} 的 DB 記錄')
+
+    su_url = os.environ.get('SYNC_PG_ADMIN_URL', '')
+    if '/' in su_url:
+        su_base = su_url.rsplit('/', 1)[0]
+        su_dsn = f'{su_base}/{org_db.db_name}'
+    else:
+        su_dsn = f'postgresql://postgres:postgres123@{org_db.db_host}:{org_db.db_port}/{org_db.db_name}'
+
+    conn = psycopg2.connect(su_dsn)
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+        logger.info(f'OrgDB: 已在 {org_db.db_name} 確認/安裝 pgcrypto')
+    finally:
+        conn.close()
 
 
 def rotate_credentials(org_db):

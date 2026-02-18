@@ -4,6 +4,7 @@ SQL Sync — 表管理器
 在企業專屬 DB (org_{id}) 中建立/刪除/檢查 SQL 同步表。
 使用 admin 角色連線執行 DDL。
 """
+import copy
 import re
 import logging
 
@@ -14,6 +15,11 @@ from .converter import (
     build_column_mapping,
     build_create_table_sql,
     build_create_table_ddl_text,
+    grid_schema_to_columns,
+    build_create_sub_table_sql,
+    build_create_sub_table_ddl_text,
+    build_sub_column_mapping,
+    GRID_TYPES,
 )
 from .pool import get_org_conn
 
@@ -88,6 +94,217 @@ def create_sync_table(table_name, form_schema, conn):
     return columns, ddl_text
 
 
+def _find_grid_components(form_schema):
+    """
+    遞迴找出 form_schema 中所有 datagrid/editgrid 元件
+
+    Returns:
+        list of component dicts
+    """
+    grids = []
+
+    def _walk(components):
+        for comp in (components or []):
+            comp_type = comp.get('type', '')
+            if comp_type in GRID_TYPES:
+                grids.append(comp)
+                continue
+            # 遞迴容器元件
+            if 'components' in comp:
+                _walk(comp.get('components', []))
+            for col in comp.get('columns', []):
+                if isinstance(col, dict):
+                    _walk(col.get('components', []))
+
+    _walk(form_schema.get('components', []))
+    return grids
+
+
+def _get_sync_user(org_secure_code):
+    """取得企業的 sync 角色名稱"""
+    from ...models.org_database import FwOrgDatabase
+    org_db = FwOrgDatabase.query.filter_by(
+        org_secure_code=org_secure_code,
+        is_ready=True,
+        is_deleted=False,
+    ).first()
+    return org_db.sync_user if org_db else None
+
+
+def _grant_sub_table_permissions(conn, sub_table_name, sync_user):
+    """GRANT SELECT, INSERT, UPDATE, DELETE ON 子表 TO sync user"""
+    with conn.cursor() as cur:
+        cur.execute(
+            psql.SQL(
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON {} TO {}"
+            ).format(
+                psql.Identifier(sub_table_name),
+                psql.Identifier(sync_user),
+            )
+        )
+        # 子表的 sequence 也需要 GRANT
+        cur.execute(
+            psql.SQL(
+                "GRANT USAGE, SELECT ON SEQUENCE {} TO {}"
+            ).format(
+                psql.Identifier(f'{sub_table_name}_id_seq'),
+                psql.Identifier(sync_user),
+            )
+        )
+    conn.commit()
+
+
+def create_sub_tables(base_table_name, form_schema, conn, org_secure_code):
+    """
+    為 form_schema 中的 datagrid/editgrid 元件建立子表
+
+    Args:
+        base_table_name: 主表名（如 form_38_v3）
+        form_schema: form.io schema dict
+        conn: psycopg2 connection (admin 角色)
+        org_secure_code: 企業 secure_code（用於查 sync_user 名稱）
+
+    Returns:
+        dict: {grid_key: {'table_name': str, 'columns': {col_mapping}}}
+    """
+    grids = _find_grid_components(form_schema)
+    if not grids:
+        return {}
+
+    sync_user = _get_sync_user(org_secure_code)
+
+    sub_tables = {}
+    for comp in grids:
+        grid_key = comp.get('key')
+        if not grid_key:
+            continue
+
+        sub_columns = grid_schema_to_columns(comp)
+        if not sub_columns:
+            logger.warning(f'SQL Sync: grid "{grid_key}" 沒有子欄位，跳過子表')
+            continue
+
+        # 子表名: 主表名_items_gridkey（小寫）
+        sub_table_name = f'{base_table_name}_items_{grid_key.lower()}'
+        _validate_table_name(sub_table_name)
+
+        # 建子表
+        sql_stmts = build_create_sub_table_sql(sub_table_name, sub_columns)
+        with conn.cursor() as cur:
+            for stmt in sql_stmts:
+                cur.execute(stmt)
+        conn.commit()
+
+        # GRANT 權限給 sync user（含 DELETE，子表同步需要）
+        if sync_user:
+            _grant_sub_table_permissions(conn, sub_table_name, sync_user)
+
+        sub_mapping = build_sub_column_mapping(sub_columns)
+        sub_tables[grid_key] = {
+            'table_name': sub_table_name,
+            'columns': sub_mapping,
+        }
+
+        logger.info(
+            f'SQL Sync: 已建立子表 {sub_table_name} '
+            f'({len(sub_columns)} 個欄位，grid_key={grid_key})'
+        )
+
+    return sub_tables
+
+
+def upgrade_registry_sub_tables(registry, form_schema):
+    """
+    為已存在的 registry 補建子表（Phase 1→2 升級用）
+
+    Phase 1 建立的 registry 沒有子表 metadata，此函式：
+    1. 在企業 DB 建立缺少的子表
+    2. 更新 registry.column_mapping 嵌入 sub_table 資訊
+    3. 更新 registry.create_ddl
+
+    Args:
+        registry: FwSqlFormRegistry 實例
+        form_schema: form.io schema dict
+
+    Returns:
+        dict: 新建的子表 {grid_key: sub_info}，空 dict 表示沒有需要建的
+    """
+    from app import db
+
+    table_name = registry.table_name
+    column_mapping = copy.deepcopy(registry.column_mapping or {})
+
+    # 檢查哪些 grid 欄位還沒有 sub_table
+    grids = _find_grid_components(form_schema)
+    need_build = []
+    for comp in grids:
+        grid_key = comp.get('key')
+        if not grid_key or grid_key not in column_mapping:
+            continue
+        if 'sub_table' in column_mapping[grid_key]:
+            continue  # 已有子表
+        need_build.append(comp)
+
+    if not need_build:
+        logger.info(f'SQL Sync: {table_name} 不需要補建子表')
+        return {}
+
+    # 建子表
+    sync_user = _get_sync_user(registry.org_secure_code)
+    new_sub_tables = {}
+    with get_org_conn(registry.org_secure_code, role='admin') as conn:
+        for comp in need_build:
+            grid_key = comp.get('key')
+            sub_columns = grid_schema_to_columns(comp)
+            if not sub_columns:
+                continue
+
+            sub_table_name = f'{table_name}_items_{grid_key.lower()}'
+            _validate_table_name(sub_table_name)
+
+            # CREATE TABLE IF NOT EXISTS（冪等）
+            sql_stmts = build_create_sub_table_sql(sub_table_name, sub_columns)
+            with conn.cursor() as cur:
+                for stmt in sql_stmts:
+                    cur.execute(stmt)
+            conn.commit()
+
+            # GRANT 權限給 sync user
+            if sync_user:
+                _grant_sub_table_permissions(conn, sub_table_name, sync_user)
+
+            sub_mapping = build_sub_column_mapping(sub_columns)
+            sub_info = {
+                'table_name': sub_table_name,
+                'columns': sub_mapping,
+            }
+            new_sub_tables[grid_key] = sub_info
+
+            # 嵌入 column_mapping
+            column_mapping[grid_key]['sub_table'] = sub_info
+
+            logger.info(f'SQL Sync: 補建子表 {sub_table_name} (grid_key={grid_key})')
+
+    # 更新 registry（flag_modified 確保 SQLAlchemy 偵測到 JSON 變化）
+    from sqlalchemy.orm.attributes import flag_modified
+    registry.column_mapping = column_mapping
+    flag_modified(registry, 'column_mapping')
+
+    # 更新 DDL
+    ddl = registry.create_ddl or ''
+    for grid_key, sub_info in new_sub_tables.items():
+        sub_cols_list = [
+            (k, v['pg_type'], v['nullable'], v.get('is_pii', False))
+            for k, v in sub_info['columns'].items()
+        ]
+        sub_ddl = build_create_sub_table_ddl_text(sub_info['table_name'], sub_cols_list)
+        ddl += f'\n\n-- Sub-table for {grid_key}\n{sub_ddl}'
+    registry.create_ddl = ddl
+
+    db.session.commit()
+    return new_sub_tables
+
+
 def drop_sync_table(table_name, conn):
     """刪除 SQL 同步表"""
     _validate_table_name(table_name)
@@ -134,7 +351,25 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
         with get_org_conn(org_secure_code, role='admin') as conn:
             columns, ddl_text = create_sync_table(table_name, form_schema, conn)
 
+            # 建立 datagrid/editgrid 子表
+            sub_tables = create_sub_tables(table_name, form_schema, conn, org_secure_code)
+
         column_mapping = build_column_mapping(columns)
+
+        # 將子表 metadata 嵌入對應 grid 欄位的 column_mapping
+        for grid_key, sub_info in sub_tables.items():
+            if grid_key in column_mapping:
+                column_mapping[grid_key]['sub_table'] = sub_info
+
+        # 合併所有子表 DDL 到 create_ddl
+        all_ddl = ddl_text
+        for grid_key, sub_info in sub_tables.items():
+            sub_cols_list = [
+                (k, v['pg_type'], v['nullable'], v.get('is_pii', False))
+                for k, v in sub_info['columns'].items()
+            ]
+            sub_ddl = build_create_sub_table_ddl_text(sub_info['table_name'], sub_cols_list)
+            all_ddl += f'\n\n-- Sub-table for {grid_key}\n{sub_ddl}'
 
         registry = FwSqlFormRegistry(
             org_secure_code=org_secure_code,
@@ -147,7 +382,7 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
             column_mapping=column_mapping,
             status='active',
             row_count=0,
-            create_ddl=ddl_text,
+            create_ddl=all_ddl,
         )
         db.session.add(registry)
         db.session.flush()

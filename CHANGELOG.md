@@ -7,10 +7,13 @@
 ## [Unreleased]
 
 ### Added
+- SQL Sync Phase 2: Datagrid/Editgrid 明細子表 (`_items_{grid_key}`)，將 JSONB 陣列展開為獨立 rows
+- SQL Sync Phase 2: PII 欄位加密（pgcrypto `pgp_sym_encrypt`），標記為 PII 的欄位在 org DB 中以 BYTEA 加密儲存
+- SQL Sync Phase 2: 舊資料回補工具 (`scripts/backfill_sync.py`)，批次補寫入已終態的歷史表單
+- SQL Sync Phase 2: 既有 registry 子表補建函式 (`upgrade_registry_sub_tables`)
 - SQL Sync 架構重構：每個企業使用獨立 PostgreSQL 資料庫 (org_{id})，雙權限帳號分離 (bfadmin/bfsync)
 - SQL Sync Background Worker daemon (systemd service)，佇列式非同步同步取代同步 UPSERT
 - SQL Sync 加密憑證儲存 (Fernet)，支援密碼輪換
-- SQL Sync PII 欄位標記基礎設施（Phase 2 加密預留）
 - SQL Sync 架構文件 (`docs/SQL_SYNC.md`)
 - 配對封存機制：所有發行版本都已封存時，可將整個配對歸檔，從主清單移至封存清單
 - 封存清單區塊：可收合展示區，顯示封存計數、封存時間，支援「恢復」操作回到主清單
@@ -21,6 +24,9 @@
 - 配對列表「發行」「重新發行」按鈕統一改名為「新發行」
 - SQL Sync 改為流程結束時同步（終態資料），移除送出/簽核時的同步觸發
 - SQL Sync 開關改為單向啟用（必須已發行，啟用後不可關閉）
+- SQL Sync sync 帳號權限擴展為 SELECT/INSERT/UPDATE/DELETE（子表同步需要 DELETE）
+- SQL Sync 企業 DB 建立時自動安裝 pgcrypto extension
+- restart_flask.sh 加入 Sync Worker 重啟
 - SQL Sync 表結構精簡：固定欄位只保留 form_instance_secure_code，系統欄位由主庫提供
 - SQL Sync 表命名簡化為 form_{mapping_id}_v{version}
 - 樹系圖與未用子流程合併為分頁介面：點擊 [樹系圖] 或列表 [未用] badge 開啟同一視圖，兩個頁籤懶載入切換
