@@ -7,6 +7,7 @@
 ## [Unreleased]
 
 ### Added
+- 表單設計器元件名稱中英對照：左側面板顯示「中文名(English Name)」雙語格式
 - 表單主旨欄位：平台層必填欄位，獨立於 form.io schema，儲存在 `fw_form_instances.subject`
 - 填寫表單 Modal 頂部新增主旨輸入框，寬度跟隨表單設計寬度
 - 簽核 Modal / 閱讀表單 Modal header 顯示主旨
@@ -17,7 +18,12 @@
 - 表單設計器「提示→標籤」checkbox 預設啟用
 - 填寫/簽核/閱讀三個 Modal 高度放大至 100vh
 
+### Removed
+- 移除表單設計器自訂「表單標題」元件（formTitle），改用標準 HTML Element 元件
+
 ### Fixed
+- 修復表單/流程「另存新版」API：原本只修改版本號未建新記錄，改為複製建立新記錄
+- 修復流程「另存新版」回應格式：data 未包在 `data` key 導致前端 `result.data.version` 報錯
 - 修復三個 Modal 的 `formWidth` 判斷，`undefined` 時不再產生 NaN
 
 ### Added
