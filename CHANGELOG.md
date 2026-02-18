@@ -11,6 +11,12 @@
 - SQL Sync Phase 3: 既有 registry approval 子表補建工具 (`scripts/upgrade_approval_tables.py`)
 - SQL Sync Phase 3: 企業 DB 密碼自動輪換腳本 (`scripts/rotate_credentials.py`)，支援 `--dry-run`/`--force`/`--max-age`
 - SQL Sync Phase 3: Systemd Timer 定時輪換排程（每週日凌晨 3:00，90 天閾值）
+
+### Fixed
+- SQL Sync 同步表動態欄位一律改為 NULLABLE，避免表單空值導致同步失敗（required 是 UI 驗證，非 DB 約束）
+- SQL Sync `column_mapping` 遍歷跳過 `_` 前綴保留 metadata key，修復 `_approval_table` 字串值被當 dict 存取的錯誤
+
+### Added
 - SQL Sync Phase 2: Datagrid/Editgrid 明細子表 (`_items_{grid_key}`)，將 JSONB 陣列展開為獨立 rows
 - SQL Sync Phase 2: PII 欄位加密（pgcrypto `pgp_sym_encrypt`），標記為 PII 的欄位在 org DB 中以 BYTEA 加密儲存
 - SQL Sync Phase 2: 舊資料回補工具 (`scripts/backfill_sync.py`)，批次補寫入已終態的歷史表單

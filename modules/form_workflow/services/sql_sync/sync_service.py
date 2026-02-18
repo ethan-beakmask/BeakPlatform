@@ -149,14 +149,17 @@ def execute_sync(queue_item):
     column_mapping = registry.column_mapping or {}
     form_data = form_instance.form_data or {}
 
-    # 檢查是否有任何 PII 欄位
+    # 檢查是否有任何 PII 欄位（跳過 _ 前綴的保留 metadata key）
     has_pii = any(
         col_info.get('is_pii', False)
-        for col_info in column_mapping.values()
+        for key, col_info in column_mapping.items()
+        if not key.startswith('_') and isinstance(col_info, dict)
     )
     # 子表中也可能有 PII
     if not has_pii:
-        for col_info in column_mapping.values():
+        for key, col_info in column_mapping.items():
+            if key.startswith('_') or not isinstance(col_info, dict):
+                continue
             sub = col_info.get('sub_table')
             if sub:
                 has_pii = any(
@@ -208,8 +211,10 @@ def _upsert_main_table(table_name, column_mapping, form_data,
     col_values = [instance_sc]
     pii_flags = [False]
 
-    # 動態欄位
+    # 動態欄位（跳過 _ 前綴的保留 metadata key）
     for field_key, col_info in column_mapping.items():
+        if field_key.startswith('_') or not isinstance(col_info, dict):
+            continue
         if field_key not in form_data:
             continue
         pg_type = col_info.get('pg_type', 'TEXT')
@@ -278,6 +283,8 @@ def _sync_sub_tables(column_mapping, form_data, instance_sc, org_sc, passphrase)
     策略: DELETE + batch INSERT（同一 transaction）
     """
     for field_key, col_info in column_mapping.items():
+        if field_key.startswith('_') or not isinstance(col_info, dict):
+            continue
         sub = col_info.get('sub_table')
         if not sub:
             continue

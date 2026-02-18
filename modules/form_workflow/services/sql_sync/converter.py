@@ -68,10 +68,9 @@ def schema_to_columns(form_schema):
                 key = comp.get('key')
                 if key and key not in seen_keys:
                     seen_keys.add(key)
-                    validate = comp.get('validate', {})
-                    nullable = not validate.get('required', False)
                     is_pii = bool(comp.get('properties', {}).get('pii', False))
-                    columns.append((key, 'JSONB', nullable, is_pii))
+                    # 同步表一律允許 NULL（required 是 UI 驗證，非 DB 約束）
+                    columns.append((key, 'JSONB', True, is_pii))
                 continue
 
             # 版面容器元件：遞迴子元件
@@ -94,14 +93,11 @@ def schema_to_columns(form_schema):
             # 決定 PG 型別
             pg_type = FORMIO_TO_PG.get(comp_type, 'TEXT')
 
-            # 是否 required
-            validate = comp.get('validate', {})
-            nullable = not validate.get('required', False)
-
             # PII 標記（Phase 2 加密用，由表單設計者在欄位屬性勾選）
             is_pii = bool(comp.get('properties', {}).get('pii', False))
 
-            columns.append((key, pg_type, nullable, is_pii))
+            # 同步表一律允許 NULL（required 是 UI 驗證，非 DB 約束）
+            columns.append((key, pg_type, True, is_pii))
 
     _extract(form_schema.get('components', []))
     return columns
@@ -333,11 +329,10 @@ def grid_schema_to_columns(component):
         else:
             pg_type = FORMIO_TO_PG.get(child_type, 'TEXT')
 
-        validate = child.get('validate', {})
-        nullable = not validate.get('required', False)
         is_pii = bool(child.get('properties', {}).get('pii', False))
 
-        columns.append((key, pg_type, nullable, is_pii))
+        # 同步表一律允許 NULL
+        columns.append((key, pg_type, True, is_pii))
 
     return columns
 
