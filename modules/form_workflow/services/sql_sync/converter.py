@@ -39,6 +39,9 @@ SKIP_TYPES = {
     'well', 'htmlelement', 'content', 'button',
 }
 
+# 一對多容器元件（資料以 JSONB 陣列存儲，不遞迴子元件）
+GRID_TYPES = {'datagrid', 'editgrid'}
+
 
 def schema_to_columns(form_schema):
     """
@@ -60,14 +63,24 @@ def schema_to_columns(form_schema):
         for comp in (components or []):
             comp_type = comp.get('type', '')
 
-            # 容器元件：遞迴子元件
+            # datagrid/editgrid：整個當作 JSONB 欄位，不遞迴子元件
+            if comp_type in GRID_TYPES:
+                key = comp.get('key')
+                if key and key not in seen_keys:
+                    seen_keys.add(key)
+                    validate = comp.get('validate', {})
+                    nullable = not validate.get('required', False)
+                    is_pii = bool(comp.get('properties', {}).get('pii', False))
+                    columns.append((key, 'JSONB', nullable, is_pii))
+                continue
+
+            # 版面容器元件：遞迴子元件
             if comp_type in SKIP_TYPES or 'components' in comp:
                 _extract(comp.get('components', []))
                 # columns 元件的子欄位在 columns[].components 裡
                 for col in comp.get('columns', []):
                     if isinstance(col, dict):
                         _extract(col.get('components', []))
-                # tabs 的 components 可能是巢狀的
                 continue
 
             key = comp.get('key')
