@@ -365,7 +365,61 @@ def toggle_sql_sync(secure_code):
 
     mapping.sql_sync_enabled = bool(data['sql_sync_enabled'])
     mapping.updated_at = datetime.utcnow()
+
+    # 啟用時：為現有 Published 版本補建同步表（如果尚未建立）
+    sync_table_created = False
+    if mapping.sql_sync_enabled and mapping.is_published:
+        from ..models import FwPublishedFormWorkflow, FwFormTemplate
+        from ..models.sql_form_registry import FwSqlFormRegistry
+
+        published = FwPublishedFormWorkflow.query.filter_by(
+            source_mapping_secure_code=secure_code,
+            status='Published',
+            is_deleted=False,
+        ).first()
+
+        if published:
+            # 檢查是否已有 registry
+            existing_reg = FwSqlFormRegistry.query.filter_by(
+                published_secure_code=published.secure_code,
+                status='active',
+            ).first()
+
+            if not existing_reg:
+                try:
+                    from ..services.sql_sync.org_db_manager import get_org_database, provision_org_database
+                    from ..services.sql_sync.table_manager import create_sync_table_for_published
+
+                    org_db = get_org_database(org.secure_code)
+                    if not org_db:
+                        org_db = provision_org_database(
+                            org_id=org.id,
+                            org_secure_code=org.secure_code,
+                        )
+
+                    ft = FwFormTemplate.query.filter_by(
+                        secure_code=published.source_form_template_secure_code,
+                        version=published.source_form_version,
+                    ).first()
+
+                    if org_db and ft:
+                        reg = create_sync_table_for_published(
+                            published=published,
+                            form_schema=ft.schema,
+                            org_secure_code=org.secure_code,
+                            mapping_id=mapping.id,
+                        )
+                        if reg:
+                            sync_table_created = True
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f'SQL Sync: 補建表失敗: {e}')
+
     db.session.commit()
+
+    msg = f'SQL 同步已{"啟用" if mapping.sql_sync_enabled else "停用"}'
+    if sync_table_created:
+        msg += '（已自動建立同步表）'
 
     return jsonify({
         'success': True,
@@ -373,7 +427,7 @@ def toggle_sql_sync(secure_code):
             'secure_code': mapping.secure_code,
             'sql_sync_enabled': mapping.sql_sync_enabled,
         },
-        'message': f'SQL 同步已{"啟用" if mapping.sql_sync_enabled else "停用"}'
+        'message': msg
     })
 
 
