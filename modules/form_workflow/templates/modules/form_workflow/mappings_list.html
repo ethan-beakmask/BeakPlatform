@@ -70,8 +70,10 @@
                             </template>
                         </td>
                         <td style="text-align: center;">
-                            <label class="fw-toggle">
-                                <input type="checkbox" :checked="m.sql_sync_enabled" @change="toggleSqlSync(m, $event.target.checked)">
+                            <label class="fw-toggle" :title="m.sql_sync_enabled ? 'SQL 同步已啟用（不可關閉）' : (!m.is_published ? '需先發行才能啟用' : '啟用 SQL 同步')">
+                                <input type="checkbox" :checked="m.sql_sync_enabled"
+                                       :disabled="m.sql_sync_enabled || !m.is_published"
+                                       @change="toggleSqlSync(m, $event.target.checked)">
                                 <span class="slider"></span>
                             </label>
                             <div class="fw-sync-info" :class="m._syncInfo ? 'active' : ''"

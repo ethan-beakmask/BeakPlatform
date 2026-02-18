@@ -343,7 +343,7 @@ def delete_mapping(secure_code):
 @csrf.exempt
 @login_required
 def toggle_sql_sync(secure_code):
-    """切換 SQL 同步開關"""
+    """啟用 SQL 同步（單向，啟用後不可關閉）"""
     from ..models import FwFormWorkflowMapping
 
     org = get_current_org()
@@ -363,12 +363,22 @@ def toggle_sql_sync(secure_code):
     if 'sql_sync_enabled' not in data:
         return jsonify({'success': False, 'error': '缺少 sql_sync_enabled 參數'}), 400
 
-    mapping.sql_sync_enabled = bool(data['sql_sync_enabled'])
+    enabled = bool(data['sql_sync_enabled'])
+
+    # 規則：已啟用就不可關閉
+    if mapping.sql_sync_enabled and not enabled:
+        return jsonify({'success': False, 'error': 'SQL 同步啟用後無法關閉'}), 400
+
+    # 規則：必須有已發行版本才能啟用
+    if enabled and not mapping.is_published:
+        return jsonify({'success': False, 'error': '請先發行配對，才能啟用 SQL 同步'}), 400
+
+    mapping.sql_sync_enabled = True
     mapping.updated_at = datetime.utcnow()
 
-    # 啟用時：為現有 Published 版本補建同步表（如果尚未建立）
+    # 為現有 Published 版本建立同步表
     sync_table_created = False
-    if mapping.sql_sync_enabled and mapping.is_published:
+    if mapping.is_published:
         from ..models import FwPublishedFormWorkflow, FwFormTemplate
         from ..models.sql_form_registry import FwSqlFormRegistry
 
@@ -417,9 +427,9 @@ def toggle_sql_sync(secure_code):
 
     db.session.commit()
 
-    msg = f'SQL 同步已{"啟用" if mapping.sql_sync_enabled else "停用"}'
+    msg = 'SQL 同步已啟用'
     if sync_table_created:
-        msg += '（已自動建立同步表）'
+        msg += '（已建立同步表）'
 
     return jsonify({
         'success': True,

@@ -472,6 +472,15 @@ class WorkflowEngine:
 
         db.session.commit()
 
+        # SQL Sync：流程結束時寫入企業 DB（終態資料，含簽核者修改）
+        if form_instance and form_instance.published_secure_code:
+            try:
+                from ..services.sql_sync.sync_service import enqueue_sync_safe
+                if enqueue_sync_safe(form_instance, form_instance.published_secure_code):
+                    db.session.commit()
+            except Exception as e:
+                logger.warning(f'SQL Sync enqueue 失敗: {e}')
+
     @staticmethod
     def cancel_pending_nodes(
         workflow_instance_secure_code: str,

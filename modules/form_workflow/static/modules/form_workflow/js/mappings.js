@@ -304,21 +304,26 @@ function mappingsManager() {
         },
 
         async toggleSqlSync(m, enabled) {
+            // 只允許啟用，不允許關閉（後端也有擋）
+            if (!enabled) {
+                m.sql_sync_enabled = true; // revert checkbox
+                return;
+            }
+            if (!confirm('啟用 SQL 同步後無法關閉，確定啟用？')) {
+                m.sql_sync_enabled = false; // revert checkbox
+                return;
+            }
             try {
                 const res = await fetch(`/api/mappings/${m.secure_code}/sql-sync`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sql_sync_enabled: enabled })
+                    body: JSON.stringify({ sql_sync_enabled: true })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    m.sql_sync_enabled = enabled;
-                    this.showToast(data.message || (enabled ? 'SQL 同步已啟用' : 'SQL 同步已停用'));
-                    if (enabled) {
-                        this.loadSyncStatus(m);
-                    } else {
-                        m._syncInfo = '';
-                    }
+                    m.sql_sync_enabled = true;
+                    this.showToast(data.message || 'SQL 同步已啟用');
+                    this.loadSyncStatus(m);
                 } else {
                     this.showToast(data.error || '操作失敗', 'error');
                     m.sql_sync_enabled = !enabled; // revert

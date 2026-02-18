@@ -593,11 +593,7 @@ def submit_form():
         db.session.add(queue_item)
         db.session.commit()
 
-        # SQL Sync — 寫入佇列，由背景 Worker 非同步處理
-        if form_instance.published_secure_code:
-            from ..services.sql_sync.sync_service import enqueue_sync_safe
-            if enqueue_sync_safe(form_instance, form_instance.published_secure_code):
-                db.session.commit()
+        # SQL Sync：不在送出時同步，改在流程結束時由 workflow_engine 觸發
 
         return jsonify({
             'success': True,
@@ -1192,11 +1188,7 @@ def approve_task(secure_code):
 
         db.session.commit()
 
-        # SQL Sync — 簽核修改後重新同步（寫入佇列）
-        if updated_form_data and form_instance and form_instance.published_secure_code:
-            from ..services.sql_sync.sync_service import enqueue_sync_safe
-            if enqueue_sync_safe(form_instance, form_instance.published_secure_code):
-                db.session.commit()
+        # SQL Sync：不在簽核時同步，改在流程結束時由 workflow_engine 觸發
 
         # 觸發工作流推進
         if decision == 'approved':
