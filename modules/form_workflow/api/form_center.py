@@ -1406,6 +1406,86 @@ def force_end_workflow(secure_code):
 
 
 # =============================================================================
+# 批量刪除測試表單
+# =============================================================================
+
+@form_center_bp.route('/my-test-forms', methods=['DELETE'])
+@csrf.exempt
+@login_required
+def delete_my_test_forms():
+    """
+    批量 soft delete 當前用戶的測試表單（歷史終態）
+
+    權限：管理員（system_admin 或 org_admin）
+    條件：is_test=True, 終態, 本人發起, 未刪除
+    """
+    from ..models import FwFormInstance, FwWorkflowInstance
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    # 權限：僅管理員可操作
+    is_admin = (
+        getattr(current_user, 'is_system_admin', False) or
+        getattr(current_user, 'level', 0) >= 90
+    )
+    if not is_admin:
+        return jsonify({'success': False, 'error': '無權限執行此操作'}), 403
+
+    # FwWorkflowInstance 終態：COMPLETED/ERROR/CANCELLED/REJECTED
+    # 用 JOIN 確保流程已結束
+    wf_terminal = ('COMPLETED', 'ERROR', 'CANCELLED', 'REJECTED')
+
+    # 查詢符合條件的測試表單
+    # 注意：早期表單 is_test 未正確標記，以 serial_number 前綴 TEST- 為準
+    test_instances = FwFormInstance.query.join(
+        FwWorkflowInstance,
+        FwFormInstance.workflow_instance_secure_code == FwWorkflowInstance.secure_code
+    ).filter(
+        FwFormInstance.org_secure_code == org.secure_code,
+        FwFormInstance.applicant_secure_code == current_user.secure_code,
+        FwFormInstance.serial_number.like('TEST-%'),
+        FwFormInstance.is_deleted == False,
+        FwWorkflowInstance.status.in_(wf_terminal)
+    ).all()
+
+    if not test_instances:
+        return jsonify({'success': True, 'deleted_count': 0, 'message': '沒有可刪除的測試表單'})
+
+    try:
+        deleted_count = 0
+        for fi in test_instances:
+            fi.is_deleted = True
+            deleted_count += 1
+
+            # 同步 soft delete 關聯的 workflow instance
+            if fi.workflow_instance_secure_code:
+                wi = FwWorkflowInstance.query.filter_by(
+                    secure_code=fi.workflow_instance_secure_code,
+                    org_secure_code=org.secure_code
+                ).first()
+                if wi:
+                    wi.is_deleted = True
+
+        db.session.commit()
+
+        operator_name = current_user.display_name or current_user.username
+        logger.info(f'{operator_name} 批量刪除了 {deleted_count} 筆測試表單')
+
+        return jsonify({
+            'success': True,
+            'deleted_count': deleted_count,
+            'message': f'已刪除 {deleted_count} 筆測試表單'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'批量刪除測試表單失敗: {e}')
+        return jsonify({'success': False, 'error': f'操作失敗: {str(e)}'}), 500
+
+
+# =============================================================================
 # 流程執行追蹤（監控用）
 # =============================================================================
 

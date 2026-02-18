@@ -69,10 +69,10 @@
                         <thead>
                             <tr>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('pending', 'serial_number')">單號<span x-text="sortIcon('pending', 'serial_number')"></span></th>
-                                <th style="width: 145px;">表單</th>
+                                <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
                                 <th style="width: 90px;">發起人</th>
-                                <th style="width: 85px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 150px;">目前關卡</th>
                                 <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">等待時間<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
                                 <th style="width: 65px;">操作</th>
@@ -87,7 +87,7 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
-                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
@@ -111,12 +111,12 @@
                         <thead>
                             <tr>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
-                                <th style="width: 145px;">表單</th>
+                                <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 85px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 150px;">待簽關卡</th>
                                 <th class="fc-sortable" style="width: 150px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
-                                <th style="width: 50px;"></th>
+                                <th style="width: 80px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,7 +128,7 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
-                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
@@ -156,13 +156,13 @@
                         <thead>
                             <tr>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
-                                <th style="width: 145px;">表單</th>
+                                <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 85px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 90px;">發起人</th>
                                 <th style="width: 150px;">待簽關卡</th>
                                 <th class="fc-sortable" style="width: 150px;" @click="toggleSort('trackingSigned', 'submitted_at')">簽核後歷時<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
-                                <th style="width: 50px;"></th>
+                                <th style="width: 80px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -174,7 +174,7 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
-                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
@@ -203,13 +203,13 @@
                         <thead>
                             <tr>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
-                                <th style="width: 145px;">表單</th>
+                                <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 85px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 70px;">狀態</th>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
                                 <th style="width: 120px;">流程耗時</th>
-                                <th style="width: 50px;"></th>
+                                <th style="width: 80px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -221,7 +221,7 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
-                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
@@ -250,14 +250,14 @@
                         <thead>
                             <tr>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
-                                <th style="width: 145px;">表單</th>
+                                <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 85px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 90px;">發起人</th>
                                 <th style="width: 70px;">狀態</th>
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
                                 <th style="width: 120px;">流程耗時</th>
-                                <th style="width: 50px;"></th>
+                                <th style="width: 80px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -269,7 +269,7 @@
                                         <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                     </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
-                                    <td class="fc-cell-subject" style="color: #374151;" x-text="item.form_subject || '-'"></td>
+                                    <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td x-text="item.applicant_name || '-'"></td>
                                     <td><span class="fc-badge" :class="getStatusClass(item.workflow_status || item.status)" x-text="getStatusText(item.workflow_status || item.status)"></span></td>

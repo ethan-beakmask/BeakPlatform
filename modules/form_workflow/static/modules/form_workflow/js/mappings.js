@@ -281,6 +281,11 @@ function mappingsManager() {
             this.showDeleteModal = true;
         },
 
+        confirmDeleteArchived(a) {
+            this.deletingMapping = a;
+            this.showDeleteModal = true;
+        },
+
         async deleteMapping() {
             if (!this.deletingMapping) return;
 
@@ -294,6 +299,7 @@ function mappingsManager() {
                     this.showDeleteModal = false;
                     this.showToast('配對已解除');
                     await this.loadMappings();
+                    await this.loadArchivedMappings();
                     await this.loadUnmappedForms();
                 } else {
                     this.showToast(data.error || '刪除失敗', 'error');

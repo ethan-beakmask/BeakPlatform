@@ -143,9 +143,16 @@ def center():
         user_tz = current_user.organization.get_setting('timezone', 'Asia/Taipei')
     user_tz = user_tz or 'Asia/Taipei'
 
+    # 判斷是否為管理員（用於前端顯示管理功能）
+    is_admin = (
+        getattr(current_user, 'is_system_admin', False) or
+        getattr(current_user, 'level', 0) >= 90
+    )
+
     return render_template(
         'modules/form_workflow/form_center.html',
-        user_timezone=user_tz
+        user_timezone=user_tz,
+        is_admin=is_admin
     )
 
 

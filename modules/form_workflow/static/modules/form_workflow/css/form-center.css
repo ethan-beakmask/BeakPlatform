@@ -62,10 +62,9 @@
 .fc-badge-error { background: #fee2e2; color: #dc2626; }
 
 /* 表格 */
-.fc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.fc-table th { text-align: left; padding: 8px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
-.fc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; }
-.fc-table td.fc-cell-subject { max-width: 65em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fc-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.fc-table th { text-align: left; padding: 8px 12px; background: #f9fafb; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; white-space: nowrap; overflow: hidden; }
+.fc-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fc-table th.fc-sortable { cursor: pointer; user-select: none; }
 .fc-table th.fc-sortable:hover { background: #e5e7eb; }
 .fc-table tr:hover td { background: #fafafa; }

@@ -22,6 +22,30 @@ mappings_bp = Blueprint(
 
 
 # =============================================================================
+# 輔助函式
+# =============================================================================
+
+def _sync_mapping_published_flag(mapping_secure_code):
+    """同步配對的 is_published 旗標：檢查是否仍有 Published 狀態的版本"""
+    from modules.form_workflow.models import FwFormWorkflowMapping, FwPublishedFormWorkflow
+
+    has_published = FwPublishedFormWorkflow.query.filter_by(
+        source_mapping_secure_code=mapping_secure_code,
+        status='Published',
+        is_deleted=False
+    ).first() is not None
+
+    mapping = FwFormWorkflowMapping.query.filter_by(
+        secure_code=mapping_secure_code,
+        is_deleted=False
+    ).first()
+
+    if mapping and mapping.is_published != has_published:
+        mapping.is_published = has_published
+        mapping.updated_at = datetime.utcnow()
+
+
+# =============================================================================
 # 配對管理 API
 # =============================================================================
 
@@ -747,6 +771,8 @@ def suspend_published(secure_code):
 
     try:
         published.suspend(suspended_by=current_user.secure_code)
+        _sync_mapping_published_flag(published.source_mapping_secure_code)
+        db.session.commit()
         return jsonify({
             'success': True,
             'data': published.to_dict(),
@@ -792,6 +818,8 @@ def reopen_published(secure_code):
 
     try:
         published.reopen()
+        _sync_mapping_published_flag(published.source_mapping_secure_code)
+        db.session.commit()
         return jsonify({
             'success': True,
             'data': published.to_dict(),
@@ -827,6 +855,8 @@ def archive_published(secure_code):
 
     try:
         published.archive()
+        _sync_mapping_published_flag(published.source_mapping_secure_code)
+        db.session.commit()
         return jsonify({
             'success': True,
             'data': published.to_dict(),
@@ -882,6 +912,7 @@ def archive_mapping(secure_code):
             }), 400
 
     mapping.is_archived = True
+    mapping.is_published = False
     mapping.archived_at = datetime.utcnow()
     mapping.updated_at = datetime.utcnow()
     db.session.commit()
@@ -961,6 +992,7 @@ def delete_published(secure_code):
     # 軟刪除
     published.is_deleted = True
     published.updated_at = datetime.utcnow()
+    _sync_mapping_published_flag(published.source_mapping_secure_code)
     db.session.commit()
 
     return jsonify({

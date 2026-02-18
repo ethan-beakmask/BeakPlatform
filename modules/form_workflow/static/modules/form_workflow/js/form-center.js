@@ -108,8 +108,16 @@ function formCenterManager() {
         // Toast
         toast: { show: false, message: '', type: 'success' },
 
+        // 管理員旗標
+        isAdmin: window.__IS_ADMIN || false,
+
         // 自動刷新
         autoRefreshInterval: null,
+
+        // 測試表單筆數（以 serial_number 前綴 TEST- 為準）
+        get testFormCount() {
+            return this.historyList.filter(i => (i.serial_number || '').startsWith('TEST-')).length;
+        },
 
         init() {
             this.loadAvailableForms();
@@ -775,6 +783,12 @@ function formCenterManager() {
             if (action === 'approved') return 'fc-badge-completed';
             if (action === 'rejected' || action === 'FORCE_END') return 'fc-badge-error';
             return 'fc-badge-pending';
+        },
+
+        shortSubject(text, max = 56) {
+            if (!text) return '-';
+            if (text.length <= max) return text;
+            return text.slice(0, max) + '[...]';
         },
 
         getShortSerial(serial) {
@@ -1474,6 +1488,31 @@ function formCenterManager() {
 
             this.showReadFormModal = false;
             this.readFormData = null;
+        },
+
+        // 批量刪除測試表單
+        async deleteTestForms() {
+            const count = this.testFormCount;
+            if (count === 0) return;
+            if (!confirm(`確定要刪除 ${count} 筆測試表單嗎？\n\n此操作僅刪除您發起的已結束測試表單（TEST-），不影響正式表單。`)) return;
+
+            try {
+                const res = await fetch('/api/form-center/my-test-forms', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast(`已刪除 ${data.deleted_count} 筆測試表單`, 'success');
+                    this.loadHistory();
+                    this.loadSignedHistory();
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                console.error('刪除測試表單失敗:', e);
+                this.showToast('刪除失敗，請稍後再試', 'error');
+            }
         },
 
         // (end of included methods)

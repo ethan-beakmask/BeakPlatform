@@ -109,7 +109,7 @@
                     <th style="width: 40px;"></th>
                     <th>流程</th>
                     <th>封存時間</th>
-                    <th style="width: 100px;" class="actions">操作</th>
+                    <th style="width: 140px;" class="actions">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,6 +125,7 @@
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(a.archived_at)"></td>
                         <td class="actions">
                             <button class="fw-btn" @click="unarchiveMapping(a)">恢復</button>
+                            <button class="fw-btn danger" @click="confirmDeleteArchived(a)">刪除</button>
                         </td>
                     </tr>
                 </template>
