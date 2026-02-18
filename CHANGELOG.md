@@ -11,6 +11,7 @@
 - SQL Sync Background Worker daemon (systemd service)，佇列式非同步同步取代同步 UPSERT
 - SQL Sync 加密憑證儲存 (Fernet)，支援密碼輪換
 - SQL Sync PII 欄位標記基礎設施（Phase 2 加密預留）
+- SQL Sync 架構文件 (`docs/SQL_SYNC.md`)
 - 配對封存機制：所有發行版本都已封存時，可將整個配對歸檔，從主清單移至封存清單
 - 封存清單區塊：可收合展示區，顯示封存計數、封存時間，支援「恢復」操作回到主清單
 - 發行版本刪除：未被使用過且非運作中的發行版本可刪除（版本 Modal 內操作）
@@ -58,6 +59,7 @@
 - 流程列表名稱欄寬度縮減至 225px、描述欄限制 200px、更新時間欄加寬至 155px
 
 ### Fixed
+- 修復 datagrid/editgrid 元件同步錯誤：改為整個存為 JSONB 欄位，不再遞迴拆分子元件為獨立欄位
 - 修復拖放新節點到畫布後右側設定面板未自動切換：新節點放下後立即選取並顯示該節點的設定面板
 - 流程設計器流程樹系面板移除重複的主流程名稱顯示
 - 修復樹系圖開啟時頁首區塊未隱藏：Bootstrap `d-flex` 的 `!important` 覆蓋 Alpine.js `x-show`，改用外層包裹 div 解決
