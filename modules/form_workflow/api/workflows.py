@@ -369,13 +369,6 @@ def update_template(secure_code):
                             "input": False,
                             "tableView": False
                         },
-                        {
-                            "type": "textfield",
-                            "key": "formSubject",
-                            "label": "表單主旨",
-                            "input": True,
-                            "tableView": True
-                        }
                     ],
                     "display": "form"
                 },
@@ -632,13 +625,6 @@ def save_new_version(secure_code):
                             "input": False,
                             "tableView": False
                         },
-                        {
-                            "type": "textfield",
-                            "key": "formSubject",
-                            "label": "表單主旨",
-                            "input": True,
-                            "tableView": True
-                        }
                     ],
                     "display": "form"
                 },

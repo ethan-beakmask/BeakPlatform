@@ -6,6 +6,19 @@
     padding: 24px;
 }
 
+/* 表單主旨輸入框 */
+.fc-subject-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.fc-subject-input.fc-subject-error {
+    border-color: #dc2626;
+}
+
 /* 主容器 */
 .fc-container { display: flex; gap: 16px; padding: 16px; min-height: calc(100vh - 120px); }
 

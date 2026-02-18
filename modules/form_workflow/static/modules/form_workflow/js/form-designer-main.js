@@ -750,16 +750,14 @@ async function loadFormData() {
         document.getElementById('form-description').value = urlDescription;
         const titleText = formName || '表單標題';
         return { components: [
-            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false },
-            { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
+            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false }
         ] };
     } else {
         // 無參數 - 新增空白表單
         console.log('📝 無參數，建立空白表單');
         document.getElementById('form-name').value = '新表單';
         return { components: [
-            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '表單標題', key: 'formTitle', input: false, tableView: false },
-            { type: 'textfield', key: 'formSubject', label: '表單主旨', input: true, tableView: true }
+            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '表單標題', key: 'formTitle', input: false, tableView: false }
         ] };
     }
 }

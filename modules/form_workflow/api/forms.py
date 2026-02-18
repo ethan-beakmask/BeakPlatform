@@ -62,20 +62,10 @@ def _apply_placeholder_as_label(schema):
 
 
 def _get_default_schema():
-    """
-    取得預設表單 schema，包含一個「表單主旨」Text Field
-    """
+    """取得預設空白表單 schema"""
     return {
         "display": "form",
-        "components": [
-            {
-                "type": "textfield",
-                "key": "formSubject",
-                "label": "表單主旨",
-                "input": True,
-                "tableView": True
-            }
-        ]
+        "components": []
     }
 
 

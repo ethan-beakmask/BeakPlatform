@@ -348,7 +348,7 @@
 
     <!-- 填寫表單 Modal -->
     <div x-show="showFillModal" x-cloak class="fc-modal">
-        <div class="fc-modal-content" :style="'width: ' + (selectedForm?.builder_config?.formWidth ? Math.max(selectedForm.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
+        <div class="fc-modal-content" :style="'width: ' + ((selectedForm?.builder_config?.formWidth > 0) ? Math.max(selectedForm.builder_config.formWidth + 120, 700) + 'px' : '85vw') + '; max-height: 100vh;'">
             <div class="fc-modal-header">
                 <div>
                     <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
@@ -361,7 +361,20 @@
             <div class="fc-modal-body fc-form-canvas">
                 <div x-show="loadingFormSchema" class="fc-loading">載入表單結構中...</div>
                 <div x-show="!loadingFormSchema && formSchema">
-                    <div id="form-fill-container"></div>
+                    <div id="form-fill-container">
+                        <!-- 平台層：表單主旨（必填），在 form.io 渲染區內部，自動跟隨表單寬度 -->
+                        <div id="form-subject-wrapper" style="margin-bottom: 16px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+                            <label for="form-subject-input" style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">
+                                表單主旨 <span style="color: #dc2626;">*</span>
+                            </label>
+                            <input id="form-subject-input" type="text" x-model="formSubject" maxlength="500"
+                                   placeholder="請輸入表單主旨（必填）"
+                                   class="fc-subject-input"
+                                   :class="subjectError ? 'fc-subject-error' : ''">
+                            <p x-show="subjectError" x-cloak style="margin: 4px 0 0; font-size: 12px; color: #dc2626;" x-text="subjectError"></p>
+                        </div>
+                        <div id="form-fill-formio"></div>
+                    </div>
                 </div>
                 <div x-show="!loadingFormSchema && !formSchema" class="fc-empty">
                     <p>此表單尚無欄位定義</p>

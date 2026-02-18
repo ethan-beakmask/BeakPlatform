@@ -2,11 +2,14 @@
 
 <!-- 閱讀表單 Modal -->
 <div x-show="showReadFormModal" x-cloak class="fc-modal">
-    <div class="fc-modal-content" :style="'width: ' + (readFormData?.builder_config?.formWidth ? Math.max(readFormData.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
+    <div class="fc-modal-content" :style="'width: ' + ((readFormData?.builder_config?.formWidth > 0) ? Math.max(readFormData.builder_config.formWidth + 120, 700) + 'px' : '85vw') + '; max-height: 100vh;'">
         <div class="fc-modal-header">
             <div>
                 <h3 x-text="'閱讀表單 - ' + (readFormData?.form_name || '')"></h3>
                 <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="readFormData?.serial_number ? getShortSerial(readFormData.serial_number) : ''"></p>
+                <p x-show="readFormData?.form_subject" style="margin: 2px 0 0; font-size: 12px; color: #374151;">
+                    主旨：<span x-text="readFormData?.form_subject"></span>
+                </p>
             </div>
             <button class="fc-close-btn" @click="closeReadForm()">&times;</button>
         </div>

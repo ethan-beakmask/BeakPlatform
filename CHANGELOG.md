@@ -7,6 +7,20 @@
 ## [Unreleased]
 
 ### Added
+- 表單主旨欄位：平台層必填欄位，獨立於 form.io schema，儲存在 `fw_form_instances.subject`
+- 填寫表單 Modal 頂部新增主旨輸入框，寬度跟隨表單設計寬度
+- 簽核 Modal / 閱讀表單 Modal header 顯示主旨
+
+### Changed
+- 表單中心列表（待簽核/追蹤中/歷史）主旨欄改讀 DB 欄位，移除舊版 `extract_form_subject()` 遞迴 schema 萃取
+- 新建表單模板預設 schema 不再包含 `formSubject` 元件
+- 表單設計器「提示→標籤」checkbox 預設啟用
+- 填寫/簽核/閱讀三個 Modal 高度放大至 100vh
+
+### Fixed
+- 修復三個 Modal 的 `formWidth` 判斷，`undefined` 時不再產生 NaN
+
+### Added
 - SQL Sync Phase 3: 簽核記錄子表 (`_approvals`)，固定 schema 同步 `FwApprovalRecord` 到企業 DB
 - SQL Sync Phase 3: 既有 registry approval 子表補建工具 (`scripts/upgrade_approval_tables.py`)
 - SQL Sync Phase 3: 企業 DB 密碼自動輪換腳本 (`scripts/rotate_credentials.py`)，支援 `--dry-run`/`--force`/`--max-age`

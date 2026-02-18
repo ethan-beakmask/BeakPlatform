@@ -178,13 +178,6 @@ def create_template():
                 'input': False,
                 'tableView': False
             },
-            {
-                'type': 'textfield',
-                'key': 'formSubject',
-                'label': '表單主旨',
-                'input': True,
-                'tableView': True
-            }
         ]
     }
 

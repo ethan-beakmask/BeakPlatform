@@ -17,41 +17,6 @@ from app import db, csrf
 logger = logging.getLogger(__name__)
 
 
-def extract_form_subject(schema_snapshot, form_data):
-    """
-    從 schema 中找 label=='表單主旨' 的欄位 key，再從 form_data 取值。
-    找不到回傳 None。
-    """
-    if not schema_snapshot or not form_data:
-        return None
-
-    def find_subject_key(components):
-        for comp in (components or []):
-            if comp.get('label') == '表單主旨':
-                key = comp.get('key')
-                if key:
-                    return key
-            # 遞迴搜尋容器元件
-            if 'components' in comp:
-                result = find_subject_key(comp['components'])
-                if result:
-                    return result
-            if 'columns' in comp:
-                for col in comp.get('columns', []):
-                    if 'components' in col:
-                        result = find_subject_key(col['components'])
-                        if result:
-                            return result
-        return None
-
-    key = find_subject_key(schema_snapshot.get('components', []))
-    if key:
-        value = form_data.get(key)
-        if value and str(value).strip():
-            return str(value).strip()
-    return None
-
-
 # 建立 API Blueprint
 form_center_bp = Blueprint(
     'form_workflow_form_center',
@@ -369,6 +334,10 @@ def submit_form():
     published_secure_code = data.get('published_secure_code')
     mapping_secure_code = data.get('mapping_secure_code')
     form_data = data.get('form_data', {})
+    subject = (data.get('subject') or '').strip()
+
+    if not subject:
+        return jsonify({'success': False, 'error': '請填寫表單主旨'}), 400
 
     # 判斷模式
     is_test_mode = bool(mapping_secure_code) and not published_secure_code
@@ -509,6 +478,7 @@ def submit_form():
             applicant_username=current_user.username,
             applicant_email=getattr(current_user, 'email', None),
             applicant_dept=getattr(current_user, 'department_name', None),
+            subject=subject,
             form_data=form_data,
             schema_snapshot=form_schema,
             builder_config=form_builder_config,
@@ -749,7 +719,7 @@ def list_my_forms():
         # 新增欄位
         data['category'] = ft_category
         data['category_secure_code'] = ft_category_sc
-        data['form_subject'] = extract_form_subject(form_instance.schema_snapshot, form_instance.form_data)
+        data['form_subject'] = form_instance.subject or ''
         data['workflow_started_at'] = workflow_instance.started_at.isoformat() if workflow_instance.started_at else None
         data['workflow_completed_at'] = workflow_instance.completed_at.isoformat() if workflow_instance.completed_at else None
         # 版本資訊
@@ -926,12 +896,11 @@ def list_pending_tasks():
         fi = fi_map.get(task.form_instance_secure_code)
         serial_number = fi.serial_number if fi else None
 
-        # 萃取主旨
         form_subject = None
         category = None
         category_sc = None
         if fi:
-            form_subject = extract_form_subject(fi.schema_snapshot, fi.form_data)
+            form_subject = fi.subject or ''
             category = ft_cat_map.get(fi.form_template_id)
             category_sc = ft_cat_sc_map.get(fi.form_template_id)
 
@@ -1049,6 +1018,7 @@ def get_pending_task(secure_code):
             'form_data': form_instance.form_data if form_instance else {},
             'form_schema': form_schema,
             'form_name': form_instance.form_name if form_instance else None,
+            'form_subject': form_instance.subject if form_instance else None,
             'serial_number': form_instance.serial_number if form_instance else None,
             'applicant_name': form_instance.applicant_name if form_instance else None,
             'builder_config': form_instance.builder_config if form_instance else None,
@@ -1328,6 +1298,7 @@ def get_form_detail(secure_code):
             'secure_code': form_instance.secure_code,
             'serial_number': form_instance.serial_number,
             'form_name': form_instance.form_name,
+            'form_subject': form_instance.subject,
             'form_code': form_instance.form_code,
             'status': form_instance.status,
             'applicant_name': form_instance.applicant_name,

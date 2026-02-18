@@ -2,12 +2,15 @@
 
 <!-- 簽核 Modal -->
 <div x-show="showApprovalModal" x-cloak class="fc-modal">
-    <div class="fc-modal-content" :style="'width: ' + (currentApproval?.builder_config?.formWidth ? Math.max(currentApproval.builder_config.formWidth + 120, 700) + 'px' : '85vw')">
+    <div class="fc-modal-content" :style="'width: ' + ((currentApproval?.builder_config?.formWidth > 0) ? Math.max(currentApproval.builder_config.formWidth + 120, 700) + 'px' : '85vw') + '; max-height: 100vh;'">
         <div class="fc-modal-header">
             <div>
                 <h3>簽核表單</h3>
                 <p style="margin: 4px 0 0; font-size: 13px; color: #374151;" x-text="currentApproval?.form_name || ''"></p>
                 <p style="margin: 2px 0 0; font-size: 12px; color: #6b7280;" x-text="getShortSerial(currentApproval?.serial_number)"></p>
+                <p x-show="currentApproval?.form_subject" style="margin: 2px 0 0; font-size: 12px; color: #374151;">
+                    主旨：<span x-text="currentApproval?.form_subject"></span>
+                </p>
             </div>
             <button class="fc-close-btn" @click="closeApprovalModal()">&times;</button>
         </div>

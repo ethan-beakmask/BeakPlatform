@@ -49,6 +49,8 @@ function formCenterManager() {
         selectedForm: null,
         formSchema: null,
         formInstance: null,
+        formSubject: '',
+        subjectError: '',
         loadingFormSchema: false,
         submitting: false,
 
@@ -481,8 +483,8 @@ function formCenterManager() {
         },
 
         async renderFillForm() {
-            const container = document.getElementById('form-fill-container');
-            if (!container || !this.formSchema) return;
+            const formioTarget = document.getElementById('form-fill-formio');
+            if (!formioTarget || !this.formSchema) return;
 
             try {
                 // 銷毀舊實例
@@ -491,18 +493,18 @@ function formCenterManager() {
                     this.formInstance = null;
                 }
 
-                // 渲染 Form.io
-                this.formInstance = await Formio.createForm(container, this.formSchema, {
+                // 渲染 Form.io 到子容器
+                this.formInstance = await Formio.createForm(formioTarget, this.formSchema, {
                     readOnly: false
                 });
 
-                // 套用底圖和寬度
+                // 套用底圖和寬度到外層容器
                 this.applyFormBackground('form-fill-container', this.selectedForm?.builder_config);
 
                 console.log('表單渲染成功');
             } catch (e) {
                 console.error('表單渲染失敗:', e);
-                container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
+                formioTarget.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
             }
         },
 
@@ -512,16 +514,28 @@ function formCenterManager() {
                 this.formInstance = null;
             }
             this.cleanupFormBackground('form-fill-container');
-            const container = document.getElementById('form-fill-container');
-            if (container) container.innerHTML = '';
+            const formioTarget = document.getElementById('form-fill-formio');
+            if (formioTarget) formioTarget.innerHTML = '';
 
             this.showFillModal = false;
             this.selectedForm = null;
             this.formSchema = null;
+            this.formSubject = '';
+            this.subjectError = '';
         },
 
         async submitForm() {
             if (this.submitting || !this.formInstance) return;
+
+            // 驗證主旨
+            this.subjectError = '';
+            const subject = (this.formSubject || '').trim();
+            if (!subject) {
+                this.subjectError = '請填寫表單主旨';
+                document.getElementById('form-subject-input')?.focus();
+                return;
+            }
+
             this.submitting = true;
 
             try {
@@ -530,7 +544,7 @@ function formCenterManager() {
                 const formData = submission.data || {};
 
                 // 準備請求資料
-                const payload = { form_data: formData };
+                const payload = { form_data: formData, subject: subject };
 
                 // 根據來源決定使用哪個參數
                 if (this.selectedForm._source === 'mapping' || this.selectedForm._status === 'test') {
