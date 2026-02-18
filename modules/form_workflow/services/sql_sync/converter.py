@@ -446,3 +446,93 @@ def build_sub_column_mapping(columns):
             'is_pii': is_pii,
         }
     return mapping
+
+
+# =====================================================
+# Approval 子表 DDL（固定 schema，Phase 3）
+# =====================================================
+
+# 簽核記錄欄位定義（固定，不依賴 form_schema）
+_APPROVAL_COLUMNS = [
+    ('form_instance_secure_code', 'VARCHAR(32)', False),
+    ('node_id', 'VARCHAR(100)', True),
+    ('node_name', 'VARCHAR(200)', True),
+    ('approver_secure_code', 'VARCHAR(32)', True),
+    ('approver_name', 'VARCHAR(200)', True),
+    ('approver_dept', 'VARCHAR(200)', True),
+    ('delegate_from_secure_code', 'VARCHAR(32)', True),
+    ('delegate_from_name', 'VARCHAR(200)', True),
+    ('action', 'VARCHAR(50)', False),
+    ('comment', 'TEXT', True),
+    ('assigned_at', 'TIMESTAMP', True),
+    ('acted_at', 'TIMESTAMP', True),
+]
+
+
+def build_create_approval_table_sql(table_name):
+    """
+    產生 approval 子表 CREATE TABLE DDL (psycopg2.sql)
+
+    固定 schema：所有表單的簽核記錄結構一致。
+
+    Args:
+        table_name: approval 子表名（如 form_38_v3_approvals）
+
+    Returns:
+        list of psycopg2.sql.Composed: [CREATE TABLE, CREATE INDEX]
+    """
+    parts = [
+        sql.SQL('CREATE TABLE IF NOT EXISTS {} (').format(
+            sql.Identifier(table_name)
+        ),
+        sql.SQL('  id SERIAL PRIMARY KEY,'),
+    ]
+
+    for i, (col_name, pg_type, nullable) in enumerate(_APPROVAL_COLUMNS):
+        null_str = '' if nullable else ' NOT NULL'
+        is_last = (i == len(_APPROVAL_COLUMNS) - 1)
+        comma = '' if is_last else ','
+        parts.append(
+            sql.SQL('  {} {}{}{}').format(
+                sql.Identifier(col_name),
+                sql.SQL(pg_type),
+                sql.SQL(null_str),
+                sql.SQL(comma),
+            )
+        )
+
+    parts.append(sql.SQL(')'))
+
+    create_sql = sql.SQL('\n').join(parts)
+
+    idx_sql = sql.SQL(
+        'CREATE INDEX IF NOT EXISTS {} ON {} (form_instance_secure_code)'
+    ).format(
+        sql.Identifier(f'idx_{table_name}_fisc'),
+        sql.Identifier(table_name),
+    )
+
+    return [create_sql, idx_sql]
+
+
+def build_create_approval_table_ddl_text(table_name):
+    """
+    Approval 子表 DDL 純文字版本（存入 registry.create_ddl）
+
+    Args:
+        table_name: approval 子表名
+
+    Returns:
+        str: DDL 文字
+    """
+    lines = [f'CREATE TABLE IF NOT EXISTS "{table_name}" (']
+    lines.append('  id SERIAL PRIMARY KEY,')
+
+    for i, (col_name, pg_type, nullable) in enumerate(_APPROVAL_COLUMNS):
+        null_str = '' if nullable else ' NOT NULL'
+        comma = '' if i == len(_APPROVAL_COLUMNS) - 1 else ','
+        lines.append(f'  "{col_name}" {pg_type}{null_str}{comma}')
+
+    lines.append(');')
+    lines.append(f'CREATE INDEX ON "{table_name}" (form_instance_secure_code);')
+    return '\n'.join(lines)

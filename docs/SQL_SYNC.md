@@ -204,6 +204,122 @@ python scripts/sync_worker.py
 | `services/sql_sync/worker.py` | Background Worker 主迴圈 |
 | `scripts/sync_worker.py` | Worker 啟動腳本 |
 | `scripts/backfill_sync.py` | 舊資料回補腳本 |
+| `scripts/upgrade_approval_tables.py` | 既有 registry 補建 approval 子表 |
+| `scripts/rotate_credentials.py` | 企業 DB 密碼輪換腳本 |
+
+## 簽核記錄子表 (`_approvals`)
+
+流程結束時，除了同步表單欄位，也將簽核記錄寫入固定 schema 的 approval 子表，讓 BI 可直接查詢簽核歷程。
+
+### 表結構
+
+```sql
+CREATE TABLE form_38_v3_approvals (
+    id SERIAL PRIMARY KEY,
+    form_instance_secure_code VARCHAR(32) NOT NULL,
+    node_id VARCHAR(100),
+    node_name VARCHAR(200),
+    approver_secure_code VARCHAR(32),
+    approver_name VARCHAR(200),
+    approver_dept VARCHAR(200),
+    delegate_from_secure_code VARCHAR(32),
+    delegate_from_name VARCHAR(200),
+    action VARCHAR(50) NOT NULL,
+    comment TEXT,
+    assigned_at TIMESTAMP,
+    acted_at TIMESTAMP
+);
+CREATE INDEX ON form_38_v3_approvals (form_instance_secure_code);
+```
+
+### 同步策略
+
+與 datagrid 子表一致：**DELETE + INSERT**（同一 transaction）。
+- 流程結束時查詢該 form_instance 的所有 `FwApprovalRecord`
+- 一次性寫入 approval 子表
+- comment 為純文字操作記錄，非 PII，不加密
+
+### Metadata
+
+在 `FwSqlFormRegistry.column_mapping` 中以 `_` 前綴的保留鍵儲存：
+
+```json
+{
+  "_approval_table": "form_38_v3_approvals",
+  "reason": {"pg_type": "VARCHAR(500)", ...}
+}
+```
+
+`_` 前綴為系統保留 metadata（form.io 欄位 key 不會以 `_` 開頭）。
+
+### 既有 Registry 升級
+
+```bash
+cd /opt/BeakPlatform
+source venv/bin/activate
+set -a && source .env && set +a
+
+# 預覽
+python scripts/upgrade_approval_tables.py --dry-run
+
+# 執行
+python scripts/upgrade_approval_tables.py
+
+# 指定企業
+python scripts/upgrade_approval_tables.py --org ORG_SECURE_CODE
+```
+
+## 密碼自動輪換
+
+企業 DB 帳號（`bfadmin_{id}` / `bfsync_{id}`）的密碼應定期輪換。
+
+### 輪換原理
+
+- `ALTER ROLE ... PASSWORD` 不中斷已建立的 PostgreSQL 連線
+- 連線池 TTL (5 分鐘) + health check 確保自然過渡
+- Worker 和腳本是不同 process，Worker 的連線會在 TTL 到期後自動使用新密碼重連
+
+### 手動執行
+
+```bash
+cd /opt/BeakPlatform
+source venv/bin/activate
+set -a && source .env && set +a
+
+# 預覽（不實際輪換）
+python scripts/rotate_credentials.py --dry-run
+
+# 執行（僅輪換超過 90 天的）
+python scripts/rotate_credentials.py
+
+# 強制輪換全部
+python scripts/rotate_credentials.py --force
+
+# 自訂天數閾值
+python scripts/rotate_credentials.py --max-age 60
+
+# 指定企業
+python scripts/rotate_credentials.py --org ORG_SECURE_CODE
+```
+
+### Systemd Timer（自動排程）
+
+```bash
+# 安裝
+sudo cp scripts/systemd/beakplatform-rotate-credentials.service /etc/systemd/system/
+sudo cp scripts/systemd/beakplatform-rotate-credentials.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now beakplatform-rotate-credentials.timer
+
+# 確認排程
+systemctl list-timers beakplatform-rotate-credentials.timer
+
+# 手動觸發（測試）
+sudo systemctl start beakplatform-rotate-credentials.service
+journalctl -u beakplatform-rotate-credentials.service -e
+```
+
+Timer 每週日凌晨 3:00 觸發，腳本內部檢查 90 天閾值，只輪換超齡的企業。
 
 ## Phase 2 完成項目
 
@@ -211,7 +327,7 @@ python scripts/sync_worker.py
 - [x] PII 欄位加密（依 `properties.pii` 標記）
 - [x] 舊資料回補工具（啟用 SQL Sync 前的表單補寫入）
 
-## Phase 3 待辦
+## Phase 3 完成項目
 
-- [ ] 簽核記錄子表 (`_approvals`)
-- [ ] 密碼定期輪換排程
+- [x] 簽核記錄子表 (`_approvals`)
+- [x] 密碼定期輪換排程

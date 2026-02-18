@@ -180,6 +180,15 @@ def execute_sync(queue_item):
         form_instance.secure_code, queue_item.org_secure_code, passphrase,
     )
 
+    # Approval 子表同步
+    approval_table = column_mapping.get('_approval_table')
+    if approval_table:
+        _sync_approval_records(
+            approval_table,
+            form_instance.secure_code,
+            queue_item.org_secure_code,
+        )
+
     # 更新 registry 統計
     registry.last_synced_at = datetime.utcnow()
     registry.row_count = (registry.row_count or 0) + 1
@@ -365,6 +374,95 @@ def _batch_insert_sub_rows(cur, sub_table, sub_columns, grid_data,
             insert_vals,
         )
         cur.execute(insert_sql, actual_values)
+
+
+# =============================================================================
+# Approval 子表同步（Phase 3）
+# =============================================================================
+
+# approval 欄位名列表（與 FwApprovalRecord 屬性對應）
+_APPROVAL_FIELDS = [
+    'form_instance_secure_code',
+    'node_id',
+    'node_name',
+    'approver_secure_code',
+    'approver_name',
+    'approver_dept',
+    'delegate_from_secure_code',
+    'delegate_from_name',
+    'action',
+    'comment',
+    'assigned_at',
+    'acted_at',
+]
+
+
+def _sync_approval_records(approval_table, instance_sc, org_sc):
+    """
+    同步簽核記錄到 approval 子表
+
+    策略: DELETE + INSERT（與 datagrid 子表一致）
+    簽核意見為操作記錄，非 PII，不加密。
+
+    Args:
+        approval_table: approval 子表名
+        instance_sc: form_instance_secure_code
+        org_sc: org_secure_code
+    """
+    from ...models.approval_record import FwApprovalRecord
+
+    # 查詢該表單的所有簽核記錄
+    records = FwApprovalRecord.query.filter_by(
+        form_instance_secure_code=instance_sc,
+        is_deleted=False,
+    ).order_by(FwApprovalRecord.assigned_at.asc()).all()
+
+    col_ids = [psql.Identifier(c) for c in _APPROVAL_FIELDS]
+    insert_cols = psql.SQL(', ').join(col_ids)
+    placeholders = psql.SQL(', ').join([psql.Placeholder()] * len(_APPROVAL_FIELDS))
+
+    with get_org_conn(org_sc, role='sync') as conn:
+        with conn.cursor() as cur:
+            # DELETE 舊 rows
+            cur.execute(
+                psql.SQL(
+                    'DELETE FROM {} WHERE form_instance_secure_code = %s'
+                ).format(psql.Identifier(approval_table)),
+                (instance_sc,)
+            )
+
+            # INSERT 新 rows
+            if records:
+                insert_sql = psql.SQL(
+                    'INSERT INTO {} ({}) VALUES ({})'
+                ).format(
+                    psql.Identifier(approval_table),
+                    insert_cols,
+                    placeholders,
+                )
+                for rec in records:
+                    values = [
+                        rec.form_instance_secure_code,
+                        rec.node_id,
+                        rec.node_name,
+                        rec.approver_secure_code,
+                        rec.approver_name,
+                        rec.approver_dept,
+                        rec.delegate_from_secure_code,
+                        rec.delegate_from_name,
+                        rec.action,
+                        rec.comment,
+                        rec.assigned_at,
+                        rec.acted_at,
+                    ]
+                    cur.execute(insert_sql, values)
+
+        conn.commit()
+
+    logger.debug(
+        f'SQL Sync: approval 子表 {approval_table} 同步 {len(records)} 筆 '
+        f'(instance={instance_sc})'
+    )
 
 
 # =============================================================================

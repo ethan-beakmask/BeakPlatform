@@ -19,6 +19,8 @@ from .converter import (
     build_create_sub_table_sql,
     build_create_sub_table_ddl_text,
     build_sub_column_mapping,
+    build_create_approval_table_sql,
+    build_create_approval_table_ddl_text,
     GRID_TYPES,
 )
 from .pool import get_org_conn
@@ -305,6 +307,89 @@ def upgrade_registry_sub_tables(registry, form_schema):
     return new_sub_tables
 
 
+def create_approval_table(base_table_name, conn, org_secure_code):
+    """
+    為主表建立 approval 子表（固定 schema）
+
+    Args:
+        base_table_name: 主表名（如 form_38_v3）
+        conn: psycopg2 connection (admin 角色)
+        org_secure_code: 企業 secure_code（用於查 sync_user）
+
+    Returns:
+        str: approval 子表名
+    """
+    approval_table = f'{base_table_name}_approvals'
+    _validate_table_name(approval_table)
+
+    sql_stmts = build_create_approval_table_sql(approval_table)
+    with conn.cursor() as cur:
+        for stmt in sql_stmts:
+            cur.execute(stmt)
+    conn.commit()
+
+    # GRANT 權限給 sync user
+    sync_user = _get_sync_user(org_secure_code)
+    if sync_user:
+        _grant_sub_table_permissions(conn, approval_table, sync_user)
+
+    logger.info(f'SQL Sync: 已建立 approval 子表 {approval_table}')
+    return approval_table
+
+
+def upgrade_registry_approval_table(registry):
+    """
+    為已存在的 registry 補建 approval 子表（Phase 2→3 升級用）
+
+    Phase 2 建立的 registry 沒有 _approval_table metadata，此函式：
+    1. 在企業 DB 建立 approval 表
+    2. 更新 registry.column_mapping 嵌入 _approval_table
+    3. 更新 registry.create_ddl
+
+    Args:
+        registry: FwSqlFormRegistry 實例
+
+    Returns:
+        str or None: 新建的 approval 表名，None 表示已存在
+    """
+    from app import db
+
+    column_mapping = copy.deepcopy(registry.column_mapping or {})
+
+    # 已有 approval 表 metadata，跳過
+    if '_approval_table' in column_mapping:
+        logger.info(
+            f'SQL Sync: {registry.table_name} 已有 approval 表，跳過'
+        )
+        return None
+
+    approval_table = f'{registry.table_name}_approvals'
+
+    with get_org_conn(registry.org_secure_code, role='admin') as conn:
+        # 若表已存在也沒關係（CREATE IF NOT EXISTS）
+        create_approval_table(
+            registry.table_name, conn, registry.org_secure_code
+        )
+
+    # 更新 column_mapping
+    from sqlalchemy.orm.attributes import flag_modified
+    column_mapping['_approval_table'] = approval_table
+    registry.column_mapping = column_mapping
+    flag_modified(registry, 'column_mapping')
+
+    # 更新 DDL
+    ddl = registry.create_ddl or ''
+    approval_ddl = build_create_approval_table_ddl_text(approval_table)
+    ddl += f'\n\n-- Approval sub-table\n{approval_ddl}'
+    registry.create_ddl = ddl
+
+    db.session.commit()
+    logger.info(
+        f'SQL Sync: 已為 {registry.table_name} 補建 approval 子表'
+    )
+    return approval_table
+
+
 def drop_sync_table(table_name, conn):
     """刪除 SQL 同步表"""
     _validate_table_name(table_name)
@@ -354,12 +439,18 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
             # 建立 datagrid/editgrid 子表
             sub_tables = create_sub_tables(table_name, form_schema, conn, org_secure_code)
 
+            # 建立 approval 子表（固定 schema）
+            approval_table = create_approval_table(table_name, conn, org_secure_code)
+
         column_mapping = build_column_mapping(columns)
 
         # 將子表 metadata 嵌入對應 grid 欄位的 column_mapping
         for grid_key, sub_info in sub_tables.items():
             if grid_key in column_mapping:
                 column_mapping[grid_key]['sub_table'] = sub_info
+
+        # 嵌入 approval 表 metadata（_ 前綴為保留 metadata）
+        column_mapping['_approval_table'] = approval_table
 
         # 合併所有子表 DDL 到 create_ddl
         all_ddl = ddl_text
@@ -370,6 +461,10 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
             ]
             sub_ddl = build_create_sub_table_ddl_text(sub_info['table_name'], sub_cols_list)
             all_ddl += f'\n\n-- Sub-table for {grid_key}\n{sub_ddl}'
+
+        # Approval 子表 DDL
+        approval_ddl = build_create_approval_table_ddl_text(approval_table)
+        all_ddl += f'\n\n-- Approval sub-table\n{approval_ddl}'
 
         registry = FwSqlFormRegistry(
             org_secure_code=org_secure_code,
