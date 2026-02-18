@@ -121,13 +121,6 @@ def build_create_table_sql(table_name, columns):
     固定欄位:
     - id SERIAL PRIMARY KEY
     - form_instance_secure_code VARCHAR(32) NOT NULL UNIQUE
-    - org_secure_code VARCHAR(100) NOT NULL
-    - applicant_secure_code VARCHAR(32)
-    - applicant_name VARCHAR(200)
-    - status VARCHAR(50)
-    - serial_number VARCHAR(100)
-    - submitted_at TIMESTAMP
-    - synced_at TIMESTAMP DEFAULT NOW()
 
     動態欄位: 從 columns 參數產生
 
@@ -145,13 +138,6 @@ def build_create_table_sql(table_name, columns):
         ),
         sql.SQL('  id SERIAL PRIMARY KEY,'),
         sql.SQL('  form_instance_secure_code VARCHAR(32) NOT NULL UNIQUE,'),
-        sql.SQL('  org_secure_code VARCHAR(100) NOT NULL,'),
-        sql.SQL('  applicant_secure_code VARCHAR(32),'),
-        sql.SQL('  applicant_name VARCHAR(200),'),
-        sql.SQL('  status VARCHAR(50),'),
-        sql.SQL('  serial_number VARCHAR(100),'),
-        sql.SQL('  submitted_at TIMESTAMP,'),
-        sql.SQL('  synced_at TIMESTAMP DEFAULT NOW(),'),
     ]
 
     # 動態欄位
@@ -188,13 +174,6 @@ def build_create_table_ddl_text(table_name, columns):
     lines = [f'CREATE TABLE IF NOT EXISTS "{table_name}" (']
     lines.append('  id SERIAL PRIMARY KEY,')
     lines.append('  form_instance_secure_code VARCHAR(32) NOT NULL UNIQUE,')
-    lines.append('  org_secure_code VARCHAR(100) NOT NULL,')
-    lines.append('  applicant_secure_code VARCHAR(32),')
-    lines.append('  applicant_name VARCHAR(200),')
-    lines.append('  status VARCHAR(50),')
-    lines.append('  serial_number VARCHAR(100),')
-    lines.append('  submitted_at TIMESTAMP,')
-    lines.append('  synced_at TIMESTAMP DEFAULT NOW(),')
 
     for i, (key, pg_type, nullable, *_rest) in enumerate(columns):
         null_str = '' if nullable else ' NOT NULL'

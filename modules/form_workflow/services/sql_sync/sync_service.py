@@ -122,16 +122,9 @@ def execute_sync(queue_item):
     column_mapping = registry.column_mapping or {}
     form_data = form_instance.form_data or {}
 
-    # 準備固定欄位
+    # 固定欄位：只保留關聯鍵，系統欄位由主庫 fw_form_instances 提供
     fixed_data = {
         'form_instance_secure_code': form_instance.secure_code,
-        'org_secure_code': form_instance.org_secure_code,
-        'applicant_secure_code': getattr(form_instance, 'applicant_secure_code', None),
-        'applicant_name': getattr(form_instance, 'applicant_name', None),
-        'status': getattr(form_instance, 'status', None),
-        'serial_number': getattr(form_instance, 'serial_number', None),
-        'submitted_at': getattr(form_instance, 'submitted_at', None),
-        'synced_at': datetime.utcnow(),
     }
 
     # 準備動態欄位
