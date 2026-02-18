@@ -874,7 +874,7 @@ def get_formio_template(template_id):
 @csrf.exempt
 @login_required
 def save_new_version(secure_code):
-    """儲存新版本"""
+    """另存新版：複製目前表單為新記錄，版本號遞增"""
     from ..models import FwFormTemplate
 
     org = get_current_org()
@@ -892,7 +892,7 @@ def save_new_version(secure_code):
 
     data = request.get_json() or {}
 
-    # 更新版本號
+    # 遞增版本號
     current_version = template.version or 'AA'
     if len(current_version) >= 2:
         first, second = current_version[0], current_version[1]
@@ -901,19 +901,32 @@ def save_new_version(secure_code):
         else:
             new_version = first + chr(ord(second) + 1)
     else:
-        new_version = 'AA'
+        new_version = 'AB'
 
-    template.version = new_version
-    template.revision = 1
+    # 建立新記錄（複製原表單）
+    new_template = FwFormTemplate(
+        secure_code=secrets.token_urlsafe(16),
+        org_secure_code=org.secure_code,
+        code=template.code,
+        name=data.get('name') or template.name,
+        description=data.get('description') or template.description,
+        category=template.category,
+        category_secure_code=template.category_secure_code,
+        schema=data.get('schema') or template.schema,
+        version=new_version,
+        revision=1,
+        builder_config=template.builder_config,
+        is_active=True,
+        is_published=False,
+        permission_type=template.permission_type,
+        owner_secure_code=current_user.secure_code,
+    )
 
-    if 'schema' in data:
-        template.schema = data['schema']
-
-    template.updated_at = datetime.utcnow()
+    db.session.add(new_template)
     db.session.commit()
 
     return jsonify({
         'success': True,
-        'data': template.to_dict(include_schema=True),
-        'message': f'已儲存新版本 {new_version}'
+        'data': new_template.to_dict(include_schema=True),
+        'message': f'已另存新版本 {new_version}'
     })

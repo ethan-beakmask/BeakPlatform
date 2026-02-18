@@ -616,21 +616,6 @@ const options = {
             title: '版面配置',
             weight: 20,
             components: {
-                formTitle: {
-                    title: '表單標題',
-                    key: 'formTitle',
-                    icon: 'header',
-                    schema: {
-                        type: 'htmlelement',
-                        tag: 'h3',
-                        attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }],
-                        content: '表單標題',
-                        className: '',
-                        key: 'formTitle',
-                        input: false,
-                        tableView: false
-                    }
-                },
                 htmlelement: true,
                 content: true,
                 columns: true,

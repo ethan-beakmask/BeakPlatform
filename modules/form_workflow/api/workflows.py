@@ -543,7 +543,7 @@ def delete_template(secure_code):
 @csrf.exempt
 @login_required
 def save_new_version(secure_code):
-    """儲存新版本"""
+    """另存新版：複製目前流程為新記錄，版本號遞增"""
     from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
 
     org = get_current_org()
@@ -561,12 +561,8 @@ def save_new_version(secure_code):
 
     data = request.get_json() or {}
 
-    # 記錄舊的 revision（用於判斷是否首次儲存）
-    old_revision = template.revision or 0
-
-    # 更新版本號
+    # 遞增版本號
     current_version = template.version or 'AA'
-    # 簡單的版本遞增（AA -> AB -> ... -> AZ -> BA -> ...）
     if len(current_version) >= 2:
         first, second = current_version[0], current_version[1]
         if second == 'Z':
@@ -574,125 +570,65 @@ def save_new_version(secure_code):
         else:
             new_version = first + chr(ord(second) + 1)
     else:
-        new_version = 'AA'
+        new_version = 'AB'
 
-    template.version = new_version
-    template.revision = 1
+    # 建立新記錄（複製原流程）
+    new_template = FwWorkflowTemplate(
+        secure_code=secrets.token_urlsafe(16),
+        org_secure_code=org.secure_code,
+        code=template.code,
+        name=data.get('name') or template.name,
+        description=data.get('description') or template.description,
+        category=template.category,
+        category_secure_code=template.category_secure_code,
+        graph=data.get('graph') or template.graph,
+        cytoscape_config=data.get('cytoscape_config') or template.cytoscape_config,
+        version=new_version,
+        revision=1,
+        is_active=True,
+        is_published=False,
+        is_subprocess=template.is_subprocess,
+        parent_workflow_secure_code=template.parent_workflow_secure_code,
+        parent_workflow_id=template.parent_workflow_id,
+        form_template_secure_code=template.form_template_secure_code,
+        permission_type=template.permission_type,
+        owner_secure_code=current_user.secure_code,
+    )
 
-    if 'graph' in data:
-        template.graph = data['graph']
-    if 'cytoscape_config' in data:
-        template.cytoscape_config = data['cytoscape_config']
+    db.session.add(new_template)
+    db.session.flush()  # 取得 new_template.id（mapping FK 需要）
 
-    template.updated_at = datetime.utcnow()
+    # 複製表單-流程配對關係
+    mappings = FwFormWorkflowMapping.query.filter_by(
+        workflow_template_secure_code=template.secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).all()
 
-    # =========================================================================
-    # 自動配對機制：首次儲存時（revision 0 → 1），自動建立同名表單並配對
-    # =========================================================================
-    auto_created_form = None
-    auto_created_mapping = None
-
-    if old_revision == 0 and not template.is_subprocess:
-        # 檢查是否已存在同名表單
-        existing_form = FwFormTemplate.query.filter_by(
+    for m in mappings:
+        new_mapping = FwFormWorkflowMapping(
+            secure_code=secrets.token_urlsafe(16),
             org_secure_code=org.secure_code,
-            name=template.name,
-            is_deleted=False
-        ).first()
-
-        if not existing_form:
-            # 建立空白表單（流程記錄單）
-            form_code = f"FORM_{template.code}_{secrets.token_hex(2).upper()}"
-            form_category = template.category if hasattr(template, 'category') and template.category else '流程記錄'
-
-            form_template = FwFormTemplate(
-                secure_code=secrets.token_urlsafe(16),
-                org_secure_code=org.secure_code,
-                code=form_code,
-                name=template.name,
-                version='AA',
-                description=f'{template.name} 流程記錄單',
-                category=form_category,
-                category_secure_code='SYS_CAT_WORKFLOW_REC',
-                schema={
-                    "components": [
-                        {
-                            "type": "htmlelement",
-                            "tag": "h3",
-                            "attrs": [{"attr": "style", "value": "text-align:center; margin:0 0 0.5rem 0;"}],
-                            "content": template.name,
-                            "key": "formTitle",
-                            "input": False,
-                            "tableView": False
-                        },
-                    ],
-                    "display": "form"
-                },
-                is_active=True,
-                is_published=False,
-                owner_secure_code=current_user.secure_code
-            )
-            db.session.add(form_template)
-            db.session.flush()  # 取得 form_template.id
-            auto_created_form = form_template
-
-            # 自動建立配對關係
-            mapping = FwFormWorkflowMapping(
-                secure_code=secrets.token_urlsafe(16),
-                org_secure_code=org.secure_code,
-                form_template_id=form_template.id,
-                form_template_secure_code=form_template.secure_code,
-                form_template_code=form_template.code,
-                form_template_version=form_template.version,
-                workflow_template_id=template.id,
-                workflow_template_secure_code=template.secure_code,
-                workflow_template_code=template.code,
-                workflow_template_version=template.version,
-                is_active=True,
-                is_published=False
-            )
-            db.session.add(mapping)
-            auto_created_mapping = mapping
+            form_template_id=m.form_template_id,
+            form_template_secure_code=m.form_template_secure_code,
+            form_template_code=m.form_template_code,
+            form_template_version=m.form_template_version,
+            workflow_template_id=new_template.id,
+            workflow_template_secure_code=new_template.secure_code,
+            workflow_template_code=new_template.code,
+            workflow_template_version=new_version,
+            is_active=m.is_active,
+            is_published=False
+        )
+        db.session.add(new_mapping)
 
     db.session.commit()
 
-    # 自動建立的表單 → 背景生成縮圖
-    if auto_created_form and auto_created_form.schema:
-        try:
-            from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
-            if is_available():
-                from flask import current_app
-                generate_form_thumbnails_async(
-                    current_app._get_current_object(),
-                    auto_created_form.id,
-                    auto_created_form.schema,
-                    auto_created_form.name
-                )
-        except Exception as e:
-            print(f"[thumbnail] 自動建立表單縮圖觸發失敗: {e}")
-
-    # 建立回應
-    response_data = {
+    return jsonify({
         'success': True,
-        **template.to_dict(include_graph=True),
-        'message': f'已儲存新版本 {new_version}'
-    }
-
-    # 如果有自動建立表單和配對，加入額外資訊
-    if auto_created_form:
-        response_data['auto_created'] = {
-            'form': {
-                'secure_code': auto_created_form.secure_code,
-                'name': auto_created_form.name,
-                'code': auto_created_form.code
-            },
-            'mapping': {
-                'secure_code': auto_created_mapping.secure_code
-            } if auto_created_mapping else None
-        }
-        response_data['message'] = f'已儲存新版本 {new_version}，並自動建立表單「{auto_created_form.name}」及配對'
-
-    return jsonify(response_data)
+        'data': new_template.to_dict(include_graph=True),
+        'message': f'已另存新版本 {new_version}'
+    })
 
 
 # =============================================================================
