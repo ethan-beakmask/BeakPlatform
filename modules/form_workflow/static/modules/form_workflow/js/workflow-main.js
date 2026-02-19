@@ -260,6 +260,10 @@
             });
 
             cy.style().update();
+
+            // 重建控制點 Maps 和 bypass styles（undo 不保留這些）
+            rebuildControlPointMaps();
+
             refreshAllEmptyGroups();
             updateMinimap();
             updateGridOccupancy();
@@ -272,6 +276,219 @@
         function clearUndoState() {
             undoStack.length = 0;
             replaceNodeUndoBuffer = null;
+        }
+
+        // 重建所有控制點 Maps（undo/load 後呼叫）
+        // cy.json().elements 不含 bypass styles，需從 data 屬性重建 Map 並重新套用視覺樣式
+        function rebuildControlPointMaps() {
+            orthogonalControlPoints.clear();
+            yellowControlPoints.clear();
+            taxiControlPoints.clear();
+
+            // === Phase 1: 重建正交折線 Map ===
+            const orthoNodesByEdge = new Map();
+            cy.nodes('[type="relay"]').forEach(node => {
+                if (!node.data('orthogonalControl')) return;
+                const pid = node.data('parentEdge');
+                if (!pid) return;
+                if (!orthoNodesByEdge.has(pid)) orthoNodesByEdge.set(pid, []);
+                orthoNodesByEdge.get(pid).push(node);
+            });
+
+            const orthoSegsByEdge = new Map();
+            cy.edges('[edgeType="orthogonal-segment"]').forEach(seg => {
+                const pid = seg.data('parentEdge');
+                if (!pid) return;
+                if (!orthoSegsByEdge.has(pid)) orthoSegsByEdge.set(pid, []);
+                orthoSegsByEdge.get(pid).push(seg);
+            });
+
+            orthoNodesByEdge.forEach((relayNodes, edgeId) => {
+                const edge = cy.getElementById(edgeId);
+                if (edge.length === 0) return;
+
+                relayNodes.sort((a, b) => (a.data('pointIndex') || 0) - (b.data('pointIndex') || 0));
+                const relayEdges = (orthoSegsByEdge.get(edgeId) || []);
+                relayEdges.sort((a, b) => (a.data('segmentIndex') || 0) - (b.data('segmentIndex') || 0));
+
+                orthogonalControlPoints.set(edgeId, {
+                    direction: edge.data('orthogonalDirection') || 'auto',
+                    relayNodes: relayNodes,
+                    relayEdges: relayEdges,
+                    sourceId: edge.data('originalSource') || edge.data('source'),
+                    targetId: edge.data('originalTarget') || edge.data('target')
+                });
+
+                // 隱藏原始邊
+                edge.style('opacity', 0);
+                edge.data('orthogonalEnabled', true);
+
+                // 最後一段加箭頭
+                if (relayEdges.length > 0) {
+                    const lastSeg = relayEdges[relayEdges.length - 1];
+                    lastSeg.style({
+                        'target-arrow-shape': 'triangle',
+                        'target-arrow-color': '#95a5a6'
+                    });
+                }
+            });
+
+            // === Phase 2: 重建黃點 Map ===
+            const yellowByEdge = new Map();
+            cy.nodes('[type="relay"][yellowControl]').forEach(node => {
+                const pid = node.data('parentEdge');
+                if (!pid) return;
+                if (!yellowByEdge.has(pid)) yellowByEdge.set(pid, []);
+                yellowByEdge.get(pid).push(node);
+            });
+
+            yellowByEdge.forEach((points, edgeId) => {
+                yellowControlPoints.set(edgeId, points);
+                const edge = cy.getElementById(edgeId);
+                if (edge.length === 0) return;
+
+                // 移除舊的 relay 線段，由 rebuildEdgeWithRelays 重建
+                cy.edges(`[edgeType="relay"][parentEdge="${edgeId}"]`).remove();
+                if (!edge.data('originalSource')) {
+                    edge.data('originalSource', edge.data('source'));
+                    edge.data('originalTarget', edge.data('target'));
+                }
+                rebuildEdgeWithRelays(edge);
+            });
+
+            // === Phase 3: 重建 Taxi Map ===
+            cy.nodes('[type="relay"][taxiControl]').forEach(node => {
+                const pid = node.data('parentEdge');
+                if (!pid) return;
+                if (!taxiControlPoints.has(pid)) {
+                    taxiControlPoints.set(pid, []);
+                }
+                taxiControlPoints.get(pid).push(node);
+            });
+
+            taxiControlPoints.forEach((points, edgeId) => {
+                // 已被 orthogonal 或 yellow 處理的跳過
+                if (orthogonalControlPoints.has(edgeId)) return;
+                if (yellowControlPoints.has(edgeId)) return;
+
+                const edge = cy.getElementById(edgeId);
+                if (edge.length === 0) return;
+                cy.edges(`[edgeType="relay"][parentEdge="${edgeId}"]`).remove();
+                if (!edge.data('originalSource')) {
+                    edge.data('originalSource', edge.data('source'));
+                    edge.data('originalTarget', edge.data('target'));
+                }
+                rebuildEdgeWithRelays(edge);
+            });
+
+            // === Phase 4: 處理無特殊標記的通用 relay 節點 ===
+            const handledEdges = new Set([
+                ...orthogonalControlPoints.keys(),
+                ...yellowControlPoints.keys(),
+                ...taxiControlPoints.keys()
+            ]);
+
+            const genericRelayEdgeIds = new Set();
+            cy.nodes('[type="relay"]').forEach(node => {
+                if (node.data('orthogonalControl') || node.data('yellowControl') || node.data('taxiControl')) return;
+                const pid = node.data('parentEdge');
+                if (pid && !handledEdges.has(pid)) {
+                    genericRelayEdgeIds.add(pid);
+                }
+            });
+
+            genericRelayEdgeIds.forEach(edgeId => {
+                const edge = cy.getElementById(edgeId);
+                if (edge.length === 0) return;
+                cy.edges(`[edgeType="relay"][parentEdge="${edgeId}"]`).remove();
+                if (!edge.data('originalSource')) {
+                    edge.data('originalSource', edge.data('source'));
+                    edge.data('originalTarget', edge.data('target'));
+                }
+                rebuildEdgeWithRelays(edge);
+            });
+
+            console.log(`🔄 rebuildControlPointMaps: orthogonal=${orthogonalControlPoints.size}, yellow=${yellowControlPoints.size}, taxi=${taxiControlPoints.size}, generic=${genericRelayEdgeIds.size}`);
+        }
+
+        // 從已保存的 relay 節點重建正交折線（用於 loadWorkflow）
+        // 與 rebuildControlPointMaps 的差異：此函式會「創建」segment edges，而非從畫布掃描
+        function rebuildOrthogonalFromSaved(edge) {
+            const edgeId = edge.id();
+            const source = cy.getElementById(edge.data('originalSource') || edge.data('source'));
+            const target = cy.getElementById(edge.data('originalTarget') || edge.data('target'));
+
+            if (source.length === 0 || target.length === 0) {
+                console.warn(`rebuildOrthogonalFromSaved: 找不到源/目標節點, edgeId=${edgeId}`);
+                return;
+            }
+
+            // 取得正交 relay 節點，按 pointIndex 排序
+            const relayNodes = [];
+            cy.nodes(`[type="relay"][orthogonalControl][parentEdge="${edgeId}"]`).forEach(n => {
+                relayNodes.push(n);
+            });
+            relayNodes.sort((a, b) => (a.data('pointIndex') || 0) - (b.data('pointIndex') || 0));
+
+            if (relayNodes.length !== 4) {
+                console.warn(`rebuildOrthogonalFromSaved: 預期 4 個控制點，實際 ${relayNodes.length}，edgeId=${edgeId}，fallback 到通用重建`);
+                rebuildEdgeWithRelays(edge);
+                return;
+            }
+
+            // 隱藏原始邊
+            edge.style('opacity', 0);
+            edge.data('orthogonalEnabled', true);
+
+            const direction = edge.data('orthogonalDirection') || 'auto';
+
+            // 線段樣式
+            const edgeStyle = {
+                'width': 1,
+                'line-color': '#95a5a6',
+                'line-style': 'solid',
+                'curve-style': 'straight',
+                'target-arrow-shape': 'none'
+            };
+
+            // 創建 5 條線段：source → r1 → r2 → r3 → r4 → target
+            const relayEdges = [];
+            const segPoints = [source, ...relayNodes, target];
+
+            for (let i = 0; i < 5; i++) {
+                const seg = cy.add({
+                    data: {
+                        id: `orthogonal-${edgeId}-seg-${i + 1}`,
+                        source: segPoints[i].id(),
+                        target: segPoints[i + 1].id(),
+                        edgeType: 'orthogonal-segment',
+                        parentEdge: edgeId,
+                        segmentIndex: i,
+                        label: ''
+                    }
+                });
+                if (i === 4) {
+                    seg.style({
+                        ...edgeStyle,
+                        'target-arrow-shape': 'triangle',
+                        'target-arrow-color': '#95a5a6'
+                    });
+                } else {
+                    seg.style(edgeStyle);
+                }
+                relayEdges.push(seg);
+            }
+
+            // 填入 Map
+            orthogonalControlPoints.set(edgeId, {
+                direction: direction,
+                relayNodes: relayNodes,
+                relayEdges: relayEdges,
+                sourceId: source.id(),
+                targetId: target.id()
+            });
+
+            console.log(`✅ rebuildOrthogonalFromSaved: ${edgeId}, direction=${direction}`);
         }
         // ==================== Undo 系統結束 ====================
 
@@ -475,6 +692,32 @@
                             'border-color': '#FF9800',
                             'label': '',
                             'z-index': 999
+                        }
+                    },
+                    // 正交折線控制點樣式
+                    {
+                        selector: 'node[type="relay"][orthogonalControl]',
+                        style: {
+                            'background-color': '#95a5a6',
+                            'width': 6,
+                            'height': 6,
+                            'shape': 'ellipse',
+                            'border-width': 1,
+                            'border-color': '#7f8c8d',
+                            'label': '',
+                            'z-index': 999
+                        }
+                    },
+                    // 正交折線線段樣式
+                    {
+                        selector: 'edge[edgeType="orthogonal-segment"]',
+                        style: {
+                            'curve-style': 'straight',
+                            'width': 1,
+                            'line-color': '#95a5a6',
+                            'line-style': 'solid',
+                            'target-arrow-shape': 'none',
+                            'label': ''
                         }
                     },
                     // 選中的中繼點
@@ -3580,17 +3823,23 @@
                         label: edge.label
                     });
 
-                    const edgeElement = cy.add({
-                        data: {
-                            id: edge.id,
-                            source: edge.source,
-                            target: edge.target,
-                            label: edge.label || ''
-                        }
-                    });
+                    const edgeDataObj = {
+                        id: edge.id,
+                        source: edge.source,
+                        target: edge.target,
+                        label: edge.label || ''
+                    };
 
-                    // 如果有保存的樣式，應用它們
-                    if (edge.style) {
+                    // 恢復正交折線狀態
+                    if (edge.orthogonalEnabled) {
+                        edgeDataObj.orthogonalEnabled = true;
+                        edgeDataObj.orthogonalDirection = edge.orthogonalDirection || 'auto';
+                    }
+
+                    const edgeElement = cy.add({ data: edgeDataObj });
+
+                    // 如果有保存的樣式，應用它們（正交邊跳過，樣式由重建處理）
+                    if (edge.style && !edge.orthogonalEnabled) {
                         edgeElement.style(edge.style);
                     }
                     edgeSuccessCount++;
@@ -3624,6 +3873,12 @@
                         nodeData.pointType = relay.pointType; // 'nearStar' or 'corner'
                     }
 
+                    // 恢復 orthogonalControl 標記
+                    if (relay.orthogonalControl) {
+                        nodeData.orthogonalControl = true;
+                        nodeData.pointIndex = relay.pointIndex;
+                    }
+
                     cy.add({
                         data: nodeData,
                         position: relay.position
@@ -3654,19 +3909,25 @@
                         const originalEdge = cy.getElementById(edge.id);
                         originalEdge.data('originalSource', edge.source);
                         originalEdge.data('originalTarget', edge.target);
-                        rebuildEdgeWithRelays(originalEdge);
 
-                        // 更新 taxiControlPoints 映射
-                        const relayNodes = getRelayPointsForEdge(edge.id);
-                        const taxiControls = relayNodes.filter(n => n.data('taxiControl'));
-                        if (taxiControls.length > 0) {
-                            taxiControlPoints.set(edge.id, taxiControls);
-                        }
+                        if (edge.orthogonalEnabled) {
+                            // 正交折線：重建 5 段線和 Map
+                            rebuildOrthogonalFromSaved(originalEdge);
+                        } else {
+                            rebuildEdgeWithRelays(originalEdge);
 
-                        // 更新 yellowControlPoints 映射
-                        const yellowControls = relayNodes.filter(n => n.data('yellowControl'));
-                        if (yellowControls.length > 0) {
-                            yellowControlPoints.set(edge.id, yellowControls);
+                            // 更新 taxiControlPoints 映射
+                            const relayNodes = getRelayPointsForEdge(edge.id);
+                            const taxiControls = relayNodes.filter(n => n.data('taxiControl'));
+                            if (taxiControls.length > 0) {
+                                taxiControlPoints.set(edge.id, taxiControls);
+                            }
+
+                            // 更新 yellowControlPoints 映射
+                            const yellowControls = relayNodes.filter(n => n.data('yellowControl'));
+                            if (yellowControls.length > 0) {
+                                yellowControlPoints.set(edge.id, yellowControls);
+                            }
                         }
                     }
                 });
@@ -7942,6 +8203,12 @@
                             relayData.taxiControl = true;
                         }
 
+                        // 如果是正交折線控制點，額外保存標記
+                        if (node.data('orthogonalControl')) {
+                            relayData.orthogonalControl = true;
+                            relayData.pointIndex = node.data('pointIndex');
+                        }
+
                         // 如果是黃點控制點，額外保存標記
                         if (node.data('yellowControl')) {
                             relayData.yellowControl = true;
@@ -7995,6 +8262,16 @@
                         label: edge.data('label') || '',
                         hasRelays: hasRelays
                     };
+
+                    // 保存正交折線狀態
+                    if (edge.data('orthogonalEnabled')) {
+                        edgeData.orthogonalEnabled = true;
+                        // 從 Map 取方向
+                        const orthoData = orthogonalControlPoints.get(edge.id());
+                        if (orthoData) {
+                            edgeData.orthogonalDirection = orthoData.direction || 'auto';
+                        }
+                    }
 
                     // 保存線段樣式屬性（所有線條類型都儲存）
                     const curveStyle = edge.style('curve-style') || 'straight';
