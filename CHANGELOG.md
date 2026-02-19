@@ -10,6 +10,7 @@
 - 工作流程設計器：Ctrl+Z 後正交折線控制點 Maps 未重建，導致正交線變直線且無法刪除
 - 工作流程設計器：儲存/重載後正交折線遺失，殘留孤兒控制點（saveWorkflow 漏存 orthogonalControl 標記）
 - 工作流程設計器：正交折線控制點缺少 CSS selector，bypass styles 遺失後退化成橙色小點
+- 工作流程設計器：刪除節點後正交折線 relay 節點和中間段殘留（Cytoscape 只移除直接連接的邊）
 
 ### Changed
 - 表單中心自動刷新改用 setTimeout 鏈式排程 + 指數退避（5s→60s），分頁隱藏時暫停輪詢

@@ -490,6 +490,30 @@
 
             console.log(`✅ rebuildOrthogonalFromSaved: ${edgeId}, direction=${direction}`);
         }
+
+        // 刪除節點前，清理該節點所有連接邊的控制點系統
+        // Cytoscape 刪除節點只移除直接連接的邊，不清理 relay 節點和中間段
+        function cleanupNodeEdgeControlSystems(node) {
+            const edgeIdsToClean = new Set();
+            node.connectedEdges().forEach(edge => {
+                const parentEdgeId = edge.data('parentEdge');
+                if (parentEdgeId) {
+                    // 這是 relay/orthogonal segment，清理其 parent edge
+                    edgeIdsToClean.add(parentEdgeId);
+                } else {
+                    edgeIdsToClean.add(edge.id());
+                }
+            });
+
+            edgeIdsToClean.forEach(edgeId => {
+                removeOrthogonalControlPoints(edgeId);
+                removeYellowControlPoints(edgeId);
+                removeTaxiControlPoints(edgeId);
+                // 移除所有 relay 子元素
+                cy.nodes(`[type="relay"][parentEdge="${edgeId}"]`).remove();
+                cy.edges(`[parentEdge="${edgeId}"]`).remove();
+            });
+        }
         // ==================== Undo 系統結束 ====================
 
         // 監聯修飾鍵
@@ -1680,7 +1704,7 @@
                                     blockedCount++;
                                     updateStatus('⚠️ Start 節點不允許刪除', 'warning');
                                 } else if (elem.isNode() && isGroupNode(elem)) {
-                                    // 刪除群組時，先將 Start 節點移出群組
+                                    // 刪除群組時，先清理所有子節點連接的邊控制點
                                     const children = elem.children();
                                     children.forEach(child => {
                                         const childType = child.data('type');
@@ -1688,6 +1712,8 @@
                                         if (childId === 'node-Start' || childType === 'Start') {
                                             child.move({ parent: null });
                                             updateStatus('Start 節點已自動移出群組', 'info');
+                                        } else {
+                                            cleanupNodeEdgeControlSystems(child);
                                         }
                                     });
                                     // 刪除群組（會連帶刪除剩餘的子節點）
@@ -1697,6 +1723,10 @@
                                     // 檢查是否為 SUBFLOW 節點
                                     if (elem.isNode() && elemType === 'Subflow') {
                                         deletedSubflow = true;
+                                    }
+                                    // 刪除節點前，清理所有連接邊的控制點系統
+                                    if (elem.isNode()) {
+                                        cleanupNodeEdgeControlSystems(elem);
                                     }
                                     // 刪除一般元素
                                     elem.remove();
