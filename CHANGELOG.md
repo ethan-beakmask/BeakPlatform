@@ -6,6 +6,13 @@
 
 ## [Unreleased]
 
+### Changed
+- 表單中心自動刷新改用 setTimeout 鏈式排程 + 指數退避（5s→60s），分頁隱藏時暫停輪詢
+- 表單中心子分類頁籤從獨立列移入 section header，與標題同列顯示
+
+### Removed
+- 表單中心「重新載入」按鈕（已有自動刷新機制，手動按鈕多餘）
+
 ### Added
 - 簽核並行防護：簽核鎖定機制（`locked_by`/`locked_at`），防止多人同時簽核同一張表單
 - 簽核鎖定 API：`POST/DELETE /api/form-center/pending-tasks/{id}/lock`
