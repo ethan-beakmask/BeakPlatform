@@ -119,6 +119,10 @@ function formCenterManager() {
 
         // 自動刷新
         autoRefreshInterval: null,
+        _refreshFailCount: 0,
+        _refreshBaseDelay: 5000,
+        _refreshMaxDelay: 60000,
+        _visibilityHandler: null,
 
         // 測試表單筆數（以 serial_number 前綴 TEST- 為準）
         get testFormCount() {
@@ -134,12 +138,62 @@ function formCenterManager() {
             this.loadHistory();
             this.loadSignedHistory();
 
-            // 每 5 秒自動刷新（僅在沒開啟模態框時）
-            this.autoRefreshInterval = setInterval(() => {
-                if (!this.showFillModal && !this.showApprovalModal && !this.showReadFormModal) {
-                    this.refreshAll();
+            // 啟動自動刷新
+            this._scheduleRefresh();
+
+            // 分頁可見性：隱藏時暫停，顯示時恢復
+            this._visibilityHandler = () => {
+                if (document.hidden) {
+                    this._clearRefreshTimer();
+                } else {
+                    this._refreshFailCount = 0;
+                    this._scheduleRefresh();
                 }
-            }, 5000);
+            };
+            document.addEventListener('visibilitychange', this._visibilityHandler);
+        },
+
+        destroy() {
+            this._clearRefreshTimer();
+            if (this._visibilityHandler) {
+                document.removeEventListener('visibilitychange', this._visibilityHandler);
+                this._visibilityHandler = null;
+            }
+        },
+
+        _getRefreshDelay() {
+            if (this._refreshFailCount === 0) return this._refreshBaseDelay;
+            const delay = this._refreshBaseDelay * Math.pow(2, this._refreshFailCount);
+            return Math.min(delay, this._refreshMaxDelay);
+        },
+
+        _clearRefreshTimer() {
+            if (this.autoRefreshInterval) {
+                clearTimeout(this.autoRefreshInterval);
+                this.autoRefreshInterval = null;
+            }
+        },
+
+        _scheduleRefresh() {
+            this._clearRefreshTimer();
+            if (document.hidden) return;
+            this.autoRefreshInterval = setTimeout(() => {
+                this._doRefreshCycle();
+            }, this._getRefreshDelay());
+        },
+
+        async _doRefreshCycle() {
+            if (this.showFillModal || this.showApprovalModal || this.showReadFormModal) {
+                this._scheduleRefresh();
+                return;
+            }
+            const ok = await this.refreshAll();
+            if (ok) {
+                this._refreshFailCount = 0;
+            } else {
+                this._refreshFailCount = Math.min(this._refreshFailCount + 1, 5);
+            }
+            this._scheduleRefresh();
         },
 
         async refreshAll() {
@@ -157,12 +211,15 @@ function formCenterManager() {
                 safeFetch(`/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hs.field}&order=${hs.order}`),
                 safeFetch(`/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hss.field}&order=${hss.order}`)
             ]);
+            // 全部 null 代表所有請求都失敗（連線中斷）
+            const allFailed = [forms, approvals, tracking, signed, history, signedHist].every(r => r === null);
             if (forms?.success) this.availableForms = forms.data || [];
             if (approvals?.success) this.pendingApprovals = approvals.data || [];
             if (tracking?.success) this.trackingList = tracking.data || [];
             if (signed?.success) this.signedList = signed.data || [];
             if (history?.success) this.historyList = history.data || [];
             if (signedHist?.success) this.signedHistoryList = signedHist.data || [];
+            return !allFailed;
         },
 
         // 計算屬性

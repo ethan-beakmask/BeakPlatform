@@ -42,17 +42,13 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
             <div class="fc-section-header">
                 <div class="fc-section-title">
                     <span>新填表單</span>
-                </div>
-                <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #374151;" @click="loadAvailableForms()">重新載入</button>
-            </div>
-            <!-- 子分類頁籤 -->
-            <div style="padding: 8px 16px 0; border-bottom: 1px solid #f3f4f6;" x-show="selectedParent && currentChildren.length > 0">
-                <div class="fc-cat-tabs">
-                    <template x-for="child in currentChildren" :key="child.secure_code">
-                        <div class="fc-cat-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
-                            <span x-text="child.name"></span><span class="fc-cat-count" x-text="'(' + getFormCountByChild(child.secure_code) + ')'"></span>
-                        </div>
-                    </template>
+                    <div class="fc-tabs" style="margin-left: 12px;" x-show="selectedParent && currentChildren.length > 0">
+                        <template x-for="child in currentChildren" :key="child.secure_code">
+                            <div class="fc-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
+                                <span x-text="child.name"></span>(<span x-text="getFormCountByChild(child.secure_code)"></span>)
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
             <div class="fc-section-body">
