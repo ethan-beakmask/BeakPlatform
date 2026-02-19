@@ -20,7 +20,7 @@
                 <div style="background: #f9fafb; padding: 12px; margin-bottom: 16px; font-size: 13px; border-radius: 4px;">
                     <span>申請人：<strong x-text="readFormData?.applicant_name || '-'"></strong></span>
                     <span x-show="readFormData?.applicant_dept" style="margin-left: 16px;">部門：<strong x-text="readFormData?.applicant_dept || '-'"></strong></span>
-                    <span style="margin-left: 16px;">狀態：<span class="fc-badge" :class="getStatusClass(readFormData?.status)" x-text="getStatusText(readFormData?.status)"></span></span>
+                    <span x-show="readFormData?.status" style="margin-left: 16px;">狀態：<span class="fc-badge" :class="getStatusClass(readFormData?.status)" x-text="getStatusText(readFormData?.status)"></span></span>
                 </div>
 
                 <!-- 表單內容（唯讀） -->

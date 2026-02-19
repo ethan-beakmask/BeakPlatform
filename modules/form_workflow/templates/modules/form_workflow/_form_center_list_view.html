@@ -75,7 +75,7 @@
                                 <th style="width: 80px;">類別</th>
                                 <th style="width: 150px;">目前關卡</th>
                                 <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">等待時間<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
-                                <th style="width: 65px;">操作</th>
+                                <th style="width: 100px;">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -92,8 +92,15 @@
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                     <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
                                     <td style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
-                                    <td>
-                                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)">簽核</button>
+                                    <td style="display: flex; gap: 4px; align-items: center;">
+                                        <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="閱讀表單">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)"
+                                                :disabled="item.is_locked && !item.locked_by_self">
+                                            <span x-show="!(item.is_locked && !item.locked_by_self)">簽核</span>
+                                            <span x-show="item.is_locked && !item.locked_by_self" style="font-size: 11px;">簽核中</span>
+                                        </button>
                                     </td>
                                 </tr>
                             </template>

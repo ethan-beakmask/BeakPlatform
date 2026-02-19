@@ -2,11 +2,14 @@
 FormWorkflow Module - Node Execution Queue Model
 節點執行隊列
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import Column, String, Text, DateTime, Integer
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
+
+# 簽核鎖定逾時（分鐘）
+APPROVAL_LOCK_TIMEOUT_MINUTES = 10
 
 
 class FwNodeExecutionQueue(ModuleBaseModel):
@@ -51,6 +54,10 @@ class FwNodeExecutionQueue(ModuleBaseModel):
     # Worker 資訊
     worker_id = Column(String(100), nullable=True)
     process_id = Column(Integer, nullable=True)
+
+    # 簽核鎖定（防止並行簽核衝突）
+    locked_by = Column(String(32), nullable=True, comment='鎖定者 user_secure_code')
+    locked_at = Column(DateTime, nullable=True, comment='鎖定時間 (UTC)')
 
     # 狀態名稱對應
     STATUS_NAMES = {
@@ -119,3 +126,32 @@ class FwNodeExecutionQueue(ModuleBaseModel):
     def wait(self):
         """等待條件"""
         self.status = 'WAITING'
+
+    # ---- 簽核鎖定 ----
+
+    @property
+    def is_locked(self):
+        """判斷是否被有效鎖定（未逾時）"""
+        if not self.locked_by or not self.locked_at:
+            return False
+        deadline = self.locked_at + timedelta(minutes=APPROVAL_LOCK_TIMEOUT_MINUTES)
+        return datetime.utcnow() < deadline
+
+    @property
+    def lock_remaining_seconds(self):
+        """鎖定剩餘秒數，已逾期回傳 0"""
+        if not self.locked_by or not self.locked_at:
+            return 0
+        deadline = self.locked_at + timedelta(minutes=APPROVAL_LOCK_TIMEOUT_MINUTES)
+        remaining = (deadline - datetime.utcnow()).total_seconds()
+        return max(0, int(remaining))
+
+    def acquire_lock(self, user_secure_code):
+        """取得鎖定"""
+        self.locked_by = user_secure_code
+        self.locked_at = datetime.utcnow()
+
+    def release_lock(self):
+        """釋放鎖定"""
+        self.locked_by = None
+        self.locked_at = None

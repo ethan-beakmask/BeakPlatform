@@ -63,6 +63,12 @@ function formCenterManager() {
         loadingApproval: false,
         submittingApproval: false,
 
+        // 簽核鎖定
+        approvalLockTimer: null,
+        approvalLockRemaining: 0,
+        approvalLockInterval: null,
+        _beforeUnloadHandler: null,
+
         // 監控
         showMonitorModal: false,
         monitoringExecution: null,
@@ -582,20 +588,83 @@ function formCenterManager() {
             }
         },
 
-        // 簽核
+        // 待簽核：唯讀閱讀表單（不取鎖）
+        async openPendingReadForm(item) {
+            this.readFormData = null;
+            this.showReadFormModal = true;
+            this.loadingReadForm = true;
+
+            try {
+                const res = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}`);
+                const result = await res.json();
+
+                if (result.success) {
+                    this.readFormData = {
+                        schema: result.data.form_schema,
+                        form_data: result.data.form_data,
+                        builder_config: result.data.builder_config,
+                        form_name: result.data.form_name,
+                        serial_number: result.data.serial_number,
+                        form_subject: result.data.form_subject,
+                        applicant_name: result.data.applicant_name,
+                        approvals: result.data.approvals,
+                    };
+                    await this.$nextTick();
+                    this.renderReadForm();
+                } else {
+                    this.showToast(result.error || '載入失敗', 'error');
+                    this.closeReadForm();
+                }
+            } catch (e) {
+                console.error('載入閱讀表單失敗:', e);
+                this.showToast('載入失敗', 'error');
+                this.closeReadForm();
+            } finally {
+                this.loadingReadForm = false;
+            }
+        },
+
+        // 簽核（先取鎖再開表單）
         async openApprovalModal(item) {
             this.currentApproval = null;
             this.selectedEdges = [];
             this.approvalComment = '';
-            this.showApprovalModal = true;
             this.loadingApproval = true;
 
             try {
+                // Step 1: 取得簽核鎖定
+                const lockRes = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}/lock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const lockData = await lockRes.json();
+
+                if (!lockData.success) {
+                    this.showToast(lockData.error || '無法取得簽核鎖定', 'error');
+                    this.loadingApproval = false;
+                    return;
+                }
+
+                // Step 2: 取得任務詳情
+                this.showApprovalModal = true;
                 const res = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}`);
                 const data = await res.json();
 
                 if (data.success) {
                     this.currentApproval = data.data;
+
+                    // Step 3: 啟動倒數計時
+                    this._startApprovalCountdown(lockData.remaining_seconds || 600);
+
+                    // Step 4: 註冊 beforeunload 釋放鎖
+                    const queueCode = item.queue_secure_code;
+                    this._beforeUnloadHandler = () => {
+                        fetch(`/api/form-center/pending-tasks/${queueCode}/lock`, {
+                            method: 'DELETE',
+                            keepalive: true
+                        }).catch(() => {});
+                    };
+                    window.addEventListener('beforeunload', this._beforeUnloadHandler);
 
                     await this.$nextTick();
                     this.renderApprovalForm();
@@ -610,6 +679,34 @@ function formCenterManager() {
             } finally {
                 this.loadingApproval = false;
             }
+        },
+
+        _startApprovalCountdown(seconds) {
+            this._clearApprovalCountdown();
+            this.approvalLockRemaining = seconds;
+            this.approvalLockInterval = setInterval(() => {
+                this.approvalLockRemaining--;
+                if (this.approvalLockRemaining <= 0) {
+                    this._clearApprovalCountdown();
+                    this.showToast('簽核逾時，表單已自動關閉', 'warning');
+                    this.closeApprovalModal();
+                    this.loadPendingApprovals();
+                }
+            }, 1000);
+        },
+
+        _clearApprovalCountdown() {
+            if (this.approvalLockInterval) {
+                clearInterval(this.approvalLockInterval);
+                this.approvalLockInterval = null;
+            }
+            this.approvalLockRemaining = 0;
+        },
+
+        get approvalCountdownText() {
+            const m = Math.floor(this.approvalLockRemaining / 60);
+            const s = this.approvalLockRemaining % 60;
+            return `${m}:${String(s).padStart(2, '0')}`;
         },
 
         async renderApprovalForm() {
@@ -652,6 +749,22 @@ function formCenterManager() {
         },
 
         closeApprovalModal() {
+            // 釋放鎖定（best-effort）
+            if (this.currentApproval?.queue_secure_code) {
+                fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/lock`, {
+                    method: 'DELETE'
+                }).catch(() => {});
+            }
+
+            // 清除倒數計時
+            this._clearApprovalCountdown();
+
+            // 移除 beforeunload
+            if (this._beforeUnloadHandler) {
+                window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+                this._beforeUnloadHandler = null;
+            }
+
             if (this.approvalFormInstance) {
                 this.approvalFormInstance.destroy();
                 this.approvalFormInstance = null;
@@ -687,14 +800,12 @@ function formCenterManager() {
             this.submittingApproval = true;
 
             try {
-                // 組裝提交資料
                 const payload = {
                     decision: 'approved',
                     selected_path: this.selectedEdges[0],
                     comment: this.approvalComment
                 };
 
-                // 如果有可編輯欄位，附帶修改後的 form_data
                 if (this.currentApproval?.has_editable_fields && this.approvalFormInstance) {
                     payload.form_data = this.approvalFormInstance.submission.data;
                 }
@@ -707,12 +818,44 @@ function formCenterManager() {
                 const data = await res.json();
 
                 if (data.success) {
+                    this._clearApprovalCountdown();  // 成功送出，停止倒數
                     this.showToast('簽核完成');
-                    this.closeApprovalModal();
+                    // 不走 closeApprovalModal（避免重複 DELETE lock），直接清理 UI
+                    if (this._beforeUnloadHandler) {
+                        window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+                        this._beforeUnloadHandler = null;
+                    }
+                    if (this.approvalFormInstance) {
+                        this.approvalFormInstance.destroy();
+                        this.approvalFormInstance = null;
+                    }
+                    this.cleanupFormBackground('approval-form-container');
+                    const container = document.getElementById('approval-form-container');
+                    if (container) container.innerHTML = '';
+                    this.showApprovalModal = false;
+                    this.currentApproval = null;
+                    this.selectedEdges = [];
+                    this.approvalComment = '';
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {
-                    this.showToast(data.error || '簽核失敗', 'error');
+                    // 處理特定錯誤碼
+                    if (data.code === 'LOCK_EXPIRED') {
+                        this._clearApprovalCountdown();
+                        this.showToast('簽核逾時，請重新開啟', 'error');
+                        this.closeApprovalModal();
+                        this.loadPendingApprovals();
+                    } else if (data.code === 'LOCKED') {
+                        this.showToast(data.error || '此表單正由他人簽核中', 'error');
+                        this.closeApprovalModal();
+                        this.loadPendingApprovals();
+                    } else if (data.code === 'DUPLICATE') {
+                        this.showToast('您已簽核過此節點', 'error');
+                        this.closeApprovalModal();
+                        this.loadPendingApprovals();
+                    } else {
+                        this.showToast(data.error || '簽核失敗', 'error');
+                    }
                 }
             } catch (e) {
                 this.showToast('簽核失敗: ' + e.message, 'error');

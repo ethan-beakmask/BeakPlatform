@@ -904,6 +904,17 @@ def list_pending_tasks():
             category = ft_cat_map.get(fi.form_template_id)
             category_sc = ft_cat_sc_map.get(fi.form_template_id)
 
+        # 鎖定資訊
+        lock_info = {}
+        if task.is_locked:
+            lock_info = {
+                'is_locked': True,
+                'locked_by': task.locked_by,
+                'locked_by_self': task.locked_by == user_code,
+            }
+        else:
+            lock_info = {'is_locked': False}
+
         result.append({
             'queue_secure_code': task.secure_code,
             'node_id': task.node_id,
@@ -918,6 +929,8 @@ def list_pending_tasks():
             'form_subject': form_subject,
             'category': category,
             'category_secure_code': category_sc,
+            'form_instance_secure_code': fi.secure_code if fi else None,
+            **lock_info,
         })
 
     # 排序
@@ -1035,11 +1048,119 @@ def get_pending_task(secure_code):
     })
 
 
+@form_center_bp.route('/pending-tasks/<secure_code>/lock', methods=['POST'])
+@csrf.exempt
+@login_required
+def lock_task(secure_code):
+    """
+    取得簽核鎖定
+
+    使用 SELECT ... FOR UPDATE 悲觀鎖，確保同一時間只有一人能簽核。
+    鎖定有效期 10 分鐘，逾時自動失效。
+    """
+    from ..models import FwNodeExecutionQueue
+    from app.models.user import User
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    try:
+        # FOR UPDATE 鎖定行，防止並行取鎖
+        task = FwNodeExecutionQueue.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            status='WAITING'
+        ).with_for_update().first()
+
+        if not task:
+            return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
+
+        # 檢查當前用戶是否為指定簽核人
+        task_result_data = (task.result or {}).get('data', {})
+        assignee_type = task_result_data.get('assignee_type')
+        assignees = task_result_data.get('assignees', [])
+        if assignee_type and current_user.secure_code not in assignees:
+            return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+
+        # 檢查是否已被鎖定
+        if task.is_locked:
+            if task.locked_by == current_user.secure_code:
+                # 同一人重複取鎖：刷新鎖定時間
+                task.acquire_lock(current_user.secure_code)
+                db.session.commit()
+                return jsonify({
+                    'success': True,
+                    'message': '鎖定已刷新',
+                    'remaining_seconds': task.lock_remaining_seconds
+                })
+            else:
+                # 被他人鎖定：查詢鎖定者資訊
+                locker = User.query.filter_by(secure_code=task.locked_by).first()
+                locker_display = locker.employee_id or locker.display_name or locker.username if locker else '未知'
+                return jsonify({
+                    'success': False,
+                    'error': f'此表單由 {locker_display} 簽核中',
+                    'locked_by_display': locker_display,
+                    'code': 'LOCKED'
+                }), 409
+
+        # 取得鎖定
+        task.acquire_lock(current_user.secure_code)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '已取得簽核鎖定',
+            'remaining_seconds': task.lock_remaining_seconds
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f'取得簽核鎖定失敗: {e}')
+        return jsonify({'success': False, 'error': f'取得鎖定失敗: {str(e)}'}), 500
+
+
+@form_center_bp.route('/pending-tasks/<secure_code>/lock', methods=['DELETE'])
+@csrf.exempt
+@login_required
+def unlock_task(secure_code):
+    """
+    釋放簽核鎖定（best-effort，用於關閉分頁時呼叫）
+    只有鎖定者本人可釋放。
+    """
+    from ..models import FwNodeExecutionQueue
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    try:
+        task = FwNodeExecutionQueue.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code
+        ).with_for_update().first()
+
+        if not task:
+            return jsonify({'success': False, 'error': '找不到任務'}), 404
+
+        # 只有鎖定者可以釋放
+        if task.locked_by == current_user.secure_code:
+            task.release_lock()
+            db.session.commit()
+
+        return jsonify({'success': True, 'message': '鎖定已釋放'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @form_center_bp.route('/pending-tasks/<secure_code>/approve', methods=['POST'])
 @csrf.exempt
 @login_required
 def approve_task(secure_code):
-    """簽核任務"""
+    """簽核任務（含鎖定驗證 + 重複簽核防護）"""
     from ..models import FwNodeExecutionQueue, FwApprovalRecord
     from ..services.workflow_engine import WorkflowEngine
 
@@ -1047,34 +1168,64 @@ def approve_task(secure_code):
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    task = FwNodeExecutionQueue.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        status='WAITING'
-    ).first()
-
-    if not task:
-        return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
-
-    # 檢查當前用戶是否為指定簽核人
-    task_result_data = (task.result or {}).get('data', {})
-    assignee_type = task_result_data.get('assignee_type')
-    assignees = task_result_data.get('assignees', [])
-    if assignee_type and current_user.secure_code not in assignees:
-        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
-
-    data = request.get_json() or {}
-    decision = data.get('decision', 'approved')  # approved, rejected
-    selected_path = data.get('selected_path')
-    comment = data.get('comment', '')
-    updated_form_data = data.get('form_data')  # 簽核者修改的表單資料
-
-    # 驗證簽核意見最少字數
-    min_comment_length = task_result_data.get('min_comment_length', 0)
-    if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
-        return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
-
     try:
+        # FOR UPDATE 鎖定行，防止並行簽核
+        task = FwNodeExecutionQueue.query.filter_by(
+            secure_code=secure_code,
+            org_secure_code=org.secure_code,
+            status='WAITING'
+        ).with_for_update().first()
+
+        if not task:
+            return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
+
+        # 檢查當前用戶是否為指定簽核人
+        task_result_data = (task.result or {}).get('data', {})
+        assignee_type = task_result_data.get('assignee_type')
+        assignees = task_result_data.get('assignees', [])
+        if assignee_type and current_user.secure_code not in assignees:
+            return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+
+        # 驗證鎖定持有者：必須是當前用戶且未逾時
+        if task.is_locked and task.locked_by != current_user.secure_code:
+            return jsonify({
+                'success': False,
+                'error': '此表單正由他人簽核中',
+                'code': 'LOCKED'
+            }), 409
+
+        if task.locked_by == current_user.secure_code and not task.is_locked:
+            return jsonify({
+                'success': False,
+                'error': '簽核逾時，鎖定已失效，請重新開啟',
+                'code': 'LOCK_EXPIRED'
+            }), 409
+
+        # P1: 防止同一人重複簽核同一節點
+        existing_approval = FwApprovalRecord.query.filter_by(
+            workflow_instance_secure_code=task.workflow_instance_secure_code,
+            node_id=task.node_id,
+            approver_secure_code=current_user.secure_code
+        ).filter(FwApprovalRecord.action.in_(['approved', 'rejected'])).first()
+
+        if existing_approval:
+            return jsonify({
+                'success': False,
+                'error': '您已簽核過此節點，無法重複簽核',
+                'code': 'DUPLICATE'
+            }), 409
+
+        data = request.get_json() or {}
+        decision = data.get('decision', 'approved')
+        selected_path = data.get('selected_path')
+        comment = data.get('comment', '')
+        updated_form_data = data.get('form_data')
+
+        # 驗證簽核意見最少字數
+        min_comment_length = task_result_data.get('min_comment_length', 0)
+        if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
+            return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
+
         # 處理表單欄位修改
         from ..models import FwFormInstance, FwFormFieldChange
         node_config = task.node_config or {}
@@ -1089,23 +1240,19 @@ def approve_task(secure_code):
             if form_instance:
                 old_form_data = form_instance.form_data or {}
 
-                # 驗證只有 editable 欄位被修改，並記錄變更
                 for field_key, new_value in updated_form_data.items():
                     perm = approver_permissions.get(field_key, 'readonly')
                     old_value = old_form_data.get(field_key)
 
-                    # 值沒變就跳過
                     if old_value == new_value:
                         continue
 
-                    # 只有 editable 欄位允許修改
                     if perm != 'editable':
                         return jsonify({
                             'success': False,
                             'error': f'欄位 {field_key} 不允許修改'
                         }), 403
 
-                    # 記錄欄位變更
                     field_change = FwFormFieldChange(
                         secure_code=secrets.token_urlsafe(16),
                         org_secure_code=org.secure_code,
@@ -1116,14 +1263,13 @@ def approve_task(secure_code):
                         changed_by_secure_code=current_user.secure_code,
                         changed_by_name=current_user.display_name or current_user.username,
                         field_key=field_key,
-                        field_label=field_key,  # 可從 schema 取得更好的 label
+                        field_label=field_key,
                         old_value=old_value,
                         new_value=new_value,
                         changed_at=datetime.utcnow(),
                     )
                     db.session.add(field_change)
 
-                # 更新 form_data (只更新 editable 欄位)
                 merged_data = dict(old_form_data)
                 for field_key, new_value in updated_form_data.items():
                     if approver_permissions.get(field_key) == 'editable':
@@ -1146,7 +1292,7 @@ def approve_task(secure_code):
         )
         db.session.add(approval_record)
 
-        # 更新任務狀態
+        # 更新任務狀態 + 釋放鎖定
         task.status = 'SUCCESS' if decision == 'approved' else 'REJECTED'
         task.completed_at = datetime.utcnow()
         task.result = {
@@ -1155,10 +1301,9 @@ def approve_task(secure_code):
             'comment': comment,
             'approver': current_user.secure_code
         }
+        task.release_lock()
 
         db.session.commit()
-
-        # SQL Sync：不在簽核時同步，改在流程結束時由 workflow_engine 觸發
 
         # 觸發工作流推進
         if decision == 'approved':
@@ -1170,8 +1315,7 @@ def approve_task(secure_code):
                     selected_path
                 )
             except Exception as e:
-                import logging
-                logging.error(f'Workflow advance error: {e}')
+                logger.error(f'Workflow advance error: {e}')
 
         return jsonify({
             'success': True,
