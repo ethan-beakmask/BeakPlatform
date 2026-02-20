@@ -10,9 +10,17 @@
 - FormAdapter 設定 Modal 對話窗：節點設定從右側面板搬入 960px 寬獨立 Modal，雙欄佈局（左：簽核設定，右：決策控制器）
 - 右側面板 FormAdapter 摘要卡片：精簡顯示簽核者、模式、備註、決策狀態，一鍵打開設定
 - 通用 Accordion 手風琴元件（`.bk-accordion-*` CSS），可用於未來其他節點設定面板
+- FormAdapter 設定 Modal 三頁籤版面：基本設定 / 決策控制器 / 欄位權限設定
+- 欄位權限設定內嵌於 Modal Tab 2，切換頁籤時自動載入，儲存時一併寫入 node config
+- 決策項目共用組態方塊：多個決策選項共用一個編輯面板，點選連連看左方項目切換內容
+- 連連看 (Edge Mapping) UI：決策選項 ↔ 出線去向 N:M 配對，SVG 即時連線
+
+### Changed
+- FormAdapter 設定 Modal 改為全螢幕高度，不隨內容變化大小
 
 ### Fixed
 - 簽核決策按鈕高亮錯誤：多個決策選項 value 相同時，點選一個全部填滿顏色，改用 option.id 判斷選中狀態
+- 連連看 SVG 連線在 Tab 隱藏狀態下繪製座標為零，切換至決策控制器頁籤時自動重繪
 
 ### Added
 - FormAdapter 自定義決策控制器：可自訂決策選項名稱、值、按鈕風格，取代固定的 edge label
