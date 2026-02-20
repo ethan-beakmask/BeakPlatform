@@ -60,6 +60,7 @@ function formCenterManager() {
         approvalFormInstance: null,
         selectedEdges: [],
         approvalComment: '',
+        selectedOptionValue: null,   // 自定義決策選項的 value
         loadingApproval: false,
         submittingApproval: false,
 
@@ -686,6 +687,7 @@ function formCenterManager() {
             this.currentApproval = null;
             this.selectedEdges = [];
             this.approvalComment = '';
+            this.selectedOptionValue = null;
             this.loadingApproval = true;
 
             try {
@@ -797,6 +799,12 @@ function formCenterManager() {
                     this.approvalFormInstance.submission = { data: formData };
                 }
 
+                // 動態欄位權限覆蓋（來自 input_variables 評估結果）
+                const fieldOverrides = this.currentApproval?.input_variable_results?.field_permission_overrides;
+                if (fieldOverrides && this.approvalFormInstance) {
+                    this._applyFieldPermissionOverrides(this.approvalFormInstance, fieldOverrides);
+                }
+
                 // 套用底圖和寬度
                 this.applyFormBackground('approval-form-container', this.currentApproval?.builder_config);
             } catch (e) {
@@ -834,6 +842,7 @@ function formCenterManager() {
             this.currentApproval = null;
             this.selectedEdges = [];
             this.approvalComment = '';
+            this.selectedOptionValue = null;
         },
 
         toggleEdgeSelection(edgeId) {
@@ -845,8 +854,50 @@ function formCenterManager() {
             }
         },
 
+        /**
+         * 選擇自定義決策選項
+         */
+        selectDecisionOption(option) {
+            if (!option) return;
+            this.selectedOptionValue = option.value;
+            this.selectedEdges = option.target_edges || [];
+        },
+
+        /**
+         * 判斷決策選項是否可見（根據 input_variable_results）
+         */
+        isOptionVisible(option) {
+            if (!this.currentApproval) return true;
+            const hiddenIds = this.currentApproval.input_variable_results?.hidden_option_ids || [];
+            return !hiddenIds.includes(option.id);
+        },
+
+        /**
+         * 取得可見的決策選項
+         */
+        get visibleDecisionOptions() {
+            if (!this.currentApproval?.use_custom_decisions) return [];
+            const paths = this.currentApproval?.available_paths || [];
+            return paths.filter(opt => this.isOptionVisible(opt));
+        },
+
         async submitApproval() {
-            if (this.selectedEdges.length === 0 || this.submittingApproval) return;
+            const useCustom = this.currentApproval?.use_custom_decisions || false;
+
+            // 驗證選擇
+            if (useCustom) {
+                if (this.selectedOptionValue === null) {
+                    this.showToast('請選擇一個決策選項', 'warning');
+                    return;
+                }
+            } else {
+                if (this.selectedEdges.length === 0) {
+                    this.showToast('請選擇後續動作', 'warning');
+                    return;
+                }
+            }
+
+            if (this.submittingApproval) return;
 
             const minLen = this.currentApproval?.min_comment_length || 0;
             if (minLen > 0 && this.approvalComment.trim().length < minLen) {
@@ -857,9 +908,22 @@ function formCenterManager() {
             this.submittingApproval = true;
 
             try {
+                // 決定 decision: 如果 target_edges 為空且 style=danger → rejected
+                let decision = 'approved';
+                if (useCustom && this.selectedEdges.length === 0) {
+                    // 查找選中的 option
+                    const paths = this.currentApproval?.available_paths || [];
+                    const selectedOpt = paths.find(p => p.value === this.selectedOptionValue);
+                    if (selectedOpt && selectedOpt.style === 'danger') {
+                        decision = 'rejected';
+                    }
+                }
+
                 const payload = {
-                    decision: 'approved',
-                    selected_path: this.selectedEdges[0],
+                    decision: decision,
+                    selected_path: useCustom ? null : this.selectedEdges[0],
+                    selected_edges: useCustom ? this.selectedEdges : null,
+                    selected_option_value: this.selectedOptionValue,
                     comment: this.approvalComment
                 };
 
@@ -893,6 +957,7 @@ function formCenterManager() {
                     this.currentApproval = null;
                     this.selectedEdges = [];
                     this.approvalComment = '';
+                    this.selectedOptionValue = null;
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {
@@ -1530,6 +1595,37 @@ function formCenterManager() {
         // =============================================================
         // 統一底圖/寬度渲染
         // =============================================================
+
+        /**
+         * 動態套用欄位權限覆蓋（來自 input_variables 評估結果）
+         * @param {Object} formInstance - Formio form instance
+         * @param {Object} overrides - { fieldKey: 'editable'|'readonly'|'hidden' }
+         */
+        _applyFieldPermissionOverrides(formInstance, overrides) {
+            if (!formInstance || !overrides) return;
+
+            const applyToComponent = (comp) => {
+                const perm = overrides[comp.key];
+                if (!perm) return;
+
+                if (perm === 'hidden') {
+                    comp.visible = false;
+                } else if (perm === 'editable') {
+                    comp.disabled = false;
+                    comp.visible = true;
+                } else if (perm === 'readonly') {
+                    comp.disabled = true;
+                    comp.visible = true;
+                }
+            };
+
+            try {
+                formInstance.everyComponent(applyToComponent);
+                formInstance.redraw();
+            } catch (e) {
+                console.warn('動態欄位權限套用失敗:', e);
+            }
+        },
 
         applyFormBackground(containerId, builderConfig) {
             const container = document.getElementById(containerId);

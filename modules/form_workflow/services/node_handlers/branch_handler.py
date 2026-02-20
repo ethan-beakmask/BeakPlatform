@@ -217,7 +217,8 @@ class BranchHandler(BaseNodeHandler):
             var_name = single_var_match.group(1)
             if var_name.startswith('form.'):
                 return self.get_form_field(var_name[5:])
-            return ''
+            # 查詢 workflow 變數（LOCAL → GLOBAL）
+            return self.get_var(var_name, '')
 
         return self.replace_variables(expr)
 

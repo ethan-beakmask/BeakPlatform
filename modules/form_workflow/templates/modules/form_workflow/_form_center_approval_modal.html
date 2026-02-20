@@ -26,7 +26,7 @@
                 <!-- 表單內容 -->
                 <div style="margin-bottom: 16px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <label style="font-size: 13px; font-weight: 500;">表單內容</label>
+                        <label style="font-size: 16px; font-weight: 600;">表單內容</label>
                         <span x-show="!currentApproval?.has_editable_fields" style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">唯讀</span>
                         <span x-show="currentApproval?.has_editable_fields" style="font-size: 11px; color: #1d4ed8; background: #dbeafe; padding: 2px 8px; border-radius: 4px;">部分欄位可編輯</span>
                     </div>
@@ -74,9 +74,45 @@
                     </table>
                 </div>
 
-                <!-- 簽核選項 -->
-                <div style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
-                    <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">
+                <!-- 簽核選項：自定義決策模式 -->
+                <div x-show="currentApproval?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">
+                        請選擇決策
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <template x-for="option in visibleDecisionOptions" :key="option.id">
+                            <button type="button"
+                                    @click="selectDecisionOption(option)"
+                                    style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; text-align: left;"
+                                    :style="{
+                                        'primary': selectedOptionValue === option.value
+                                            ? 'background: #667eea; color: white; border: 2px solid #667eea;'
+                                            : 'background: white; color: #667eea; border: 2px solid #667eea;',
+                                        'success': selectedOptionValue === option.value
+                                            ? 'background: #28a745; color: white; border: 2px solid #28a745;'
+                                            : 'background: white; color: #28a745; border: 2px solid #28a745;',
+                                        'warning': selectedOptionValue === option.value
+                                            ? 'background: #ffc107; color: #333; border: 2px solid #ffc107;'
+                                            : 'background: white; color: #856404; border: 2px solid #ffc107;',
+                                        'danger': selectedOptionValue === option.value
+                                            ? 'background: #dc3545; color: white; border: 2px solid #dc3545;'
+                                            : 'background: white; color: #dc3545; border: 2px solid #dc3545;',
+                                        'default': selectedOptionValue === option.value
+                                            ? 'background: #6c757d; color: white; border: 2px solid #6c757d;'
+                                            : 'background: white; color: #6c757d; border: 2px solid #6c757d;'
+                                    }[option.style || 'default']"
+                                    x-text="option.label">
+                            </button>
+                        </template>
+                    </div>
+                    <div x-show="selectedOptionValue !== null" style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                        已選擇：<strong x-text="visibleDecisionOptions.find(o => o.value === selectedOptionValue)?.label || ''"></strong>
+                    </div>
+                </div>
+
+                <!-- 簽核選項：傳統模式（edge 選擇） -->
+                <div x-show="!currentApproval?.use_custom_decisions" style="margin-bottom: 16px; padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;">
+                    <label style="font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">
                         請選擇後續動作
                         <span x-show="currentApproval?.selection_mode === 'multiple'" style="color: #7c3aed;">（可複選）</span>
                     </label>
@@ -97,12 +133,11 @@
 
                 <!-- 簽核意見 -->
                 <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                        <label style="font-size: 16px; font-weight: 600; margin: 0;">
-                            簽核意見 <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
-                        </label>
-                        <span x-show="approvalLockRemaining > 0"
-                              style="font-size: 16px; font-weight: 600; font-family: monospace; padding: 4px 10px; border-radius: 4px;"
+                    <label style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; display: block;">
+                        簽核意見 <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
+                    </label>
+                    <div x-show="approvalLockRemaining > 0" style="text-align: center; margin-bottom: 8px;">
+                        <span style="font-size: 16px; font-weight: 600; font-family: monospace; padding: 4px 10px; border-radius: 4px;"
                               :style="approvalLockRemaining <= 60 ? 'background: #fef2f2; color: #dc2626;' : 'background: #f0fdf4; color: #16a34a;'"
                               x-text="approvalCountdownText"></span>
                     </div>
@@ -119,7 +154,7 @@
         <div class="fc-modal-footer">
             <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeApprovalModal()">取消</button>
             <button class="fc-btn fc-btn-primary" @click="submitApproval()"
-                    :disabled="selectedEdges.length === 0 || submittingApproval">
+                    :disabled="(currentApproval?.use_custom_decisions ? selectedOptionValue === null : selectedEdges.length === 0) || submittingApproval">
                 <span x-show="!submittingApproval">送出簽核</span>
                 <span x-show="submittingApproval">處理中...</span>
             </button>

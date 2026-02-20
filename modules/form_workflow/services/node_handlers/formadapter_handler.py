@@ -47,9 +47,10 @@ class FormAdapterHandler(BaseNodeHandler):
         處理 FormAdapter 節點
 
         1. 讀取此節點的所有出線
-        2. 產生可選路徑列表
-        3. 設定狀態為等待簽核
-        4. 等待簽核者透過 API 提交選擇
+        2. 產生可選路徑列表（支援自定義決策選項）
+        3. 評估來向變數控制（input_variables）
+        4. 設定狀態為等待簽核
+        5. 等待簽核者透過 API 提交選擇
 
         Returns:
             dict: 執行結果
@@ -63,9 +64,14 @@ class FormAdapterHandler(BaseNodeHandler):
         allow_comment = self.get_config_value('allow_comment', True)
         require_comment = self.get_config_value('require_comment', False)
         min_comment_length = int(self.get_config_value('min_comment_length', 0))
+        use_custom_decisions = self.get_config_value('use_custom_decisions', False)
+        output_variable = self.get_config_value('output_variable', '')
 
-        # 取得此節點的所有出線選項
-        available_paths = self._get_available_paths()
+        # 根據模式取得決策選項
+        if use_custom_decisions:
+            available_paths = self._get_custom_decision_options()
+        else:
+            available_paths = self._get_available_paths()
 
         if not available_paths:
             self.log_error('FormAdapter 節點沒有出線，無法繼續')
@@ -73,6 +79,9 @@ class FormAdapterHandler(BaseNodeHandler):
                 'status': 'error',
                 'message': 'FormAdapter 節點沒有出線'
             }
+
+        # 評估來向變數控制
+        input_variable_results = self._resolve_input_variables()
 
         # 解析簽核者
         assignees = self._resolve_assignees(assignee_type, assignee_value)
@@ -83,6 +92,7 @@ class FormAdapterHandler(BaseNodeHandler):
             'assignee_value': assignee_value,
             'assignees': assignees,
             'selection_mode': selection_mode,
+            'use_custom_decisions': use_custom_decisions,
             'available_paths': available_paths
         })
 
@@ -98,10 +108,169 @@ class FormAdapterHandler(BaseNodeHandler):
                 'allow_comment': allow_comment,
                 'require_comment': require_comment,
                 'min_comment_length': min_comment_length,
+                'use_custom_decisions': use_custom_decisions,
+                'output_variable': output_variable,
                 'available_paths': available_paths,
+                'input_variable_results': input_variable_results,
                 'waiting_since': datetime.utcnow().isoformat()
             }
         }
+
+    def _get_custom_decision_options(self) -> List[Dict[str, Any]]:
+        """
+        從 config.decision_options 產生自定義決策選項列表
+
+        Returns:
+            list: 決策選項列表，每個選項包含 id, label, value, target_edges, style, visible_when
+        """
+        decision_options = self.get_config_value('decision_options', [])
+        if not decision_options:
+            return []
+
+        # 取得合法 edge IDs 用於驗證
+        graph = self._get_workflow_graph()
+        valid_edge_ids = set()
+        if graph:
+            edges = graph.get('edges', [])
+            current_node_id = self.queue_item.node_id
+            for edge in edges:
+                edge_data = edge.get('data', edge)
+                if edge_data.get('source') == current_node_id:
+                    eid = edge_data.get('id', edge.get('id'))
+                    if eid:
+                        valid_edge_ids.add(eid)
+
+        result = []
+        for opt in decision_options:
+            opt_id = opt.get('id', '')
+            target_edges = opt.get('target_edges', [])
+
+            # 驗證 target_edges 合法性（空 target_edges 表示終態）
+            validated_edges = []
+            for eid in target_edges:
+                if eid in valid_edge_ids:
+                    validated_edges.append(eid)
+                else:
+                    self.log_warning(f'決策選項 {opt_id} 引用了無效的 edge: {eid}')
+
+            result.append({
+                'id': opt_id,
+                'label': opt.get('label', ''),
+                'value': opt.get('value', ''),
+                'target_edges': validated_edges,
+                'style': opt.get('style', 'default'),
+                'visible_when': opt.get('visible_when')
+            })
+
+        return result
+
+    def _resolve_input_variables(self) -> Dict[str, Any]:
+        """
+        評估 config.input_variables 中定義的來向變數控制規則
+
+        Returns:
+            dict: 評估結果
+            {
+                'hidden_option_ids': ['opt-uuid1', ...],    # 應隱藏的決策選項 ID
+                'field_permission_overrides': {              # 動態欄位權限覆蓋
+                    'amount': 'editable',
+                    'reason': 'hidden'
+                }
+            }
+        """
+        input_variables = self.get_config_value('input_variables', [])
+        if not input_variables:
+            return {}
+
+        hidden_option_ids = set()
+        visible_option_ids = set()
+        field_permission_overrides = {}
+        has_visibility_rules = False
+
+        for var_def in input_variables:
+            var_name = var_def.get('var_name', '')
+            if not var_name:
+                continue
+
+            actual_value = self.get_var(var_name, '')
+            controls = var_def.get('controls', [])
+
+            for ctrl in controls:
+                ctrl_type = ctrl.get('type', '')
+                condition = ctrl.get('condition', {})
+
+                # 評估條件
+                if not self._evaluate_input_condition(actual_value, condition):
+                    continue
+
+                if ctrl_type == 'decision_visibility':
+                    has_visibility_rules = True
+                    target_ids = ctrl.get('target_option_ids', [])
+                    visible_option_ids.update(target_ids)
+
+                elif ctrl_type == 'field_permission':
+                    field_key = ctrl.get('field_key', '')
+                    permission = ctrl.get('permission', 'readonly')
+                    if field_key:
+                        field_permission_overrides[field_key] = permission
+
+        result = {}
+
+        # 計算 hidden_option_ids：如果有 visibility 規則，不在 visible 集合中的都隱藏
+        if has_visibility_rules:
+            all_option_ids = set()
+            decision_options = self.get_config_value('decision_options', [])
+            for opt in decision_options:
+                all_option_ids.add(opt.get('id', ''))
+            hidden_option_ids = all_option_ids - visible_option_ids
+            result['hidden_option_ids'] = list(hidden_option_ids)
+
+        if field_permission_overrides:
+            result['field_permission_overrides'] = field_permission_overrides
+
+        return result
+
+    @staticmethod
+    def _evaluate_input_condition(actual_value: Any, condition: Dict) -> bool:
+        """
+        評估單一條件
+
+        Args:
+            actual_value: 實際變數值
+            condition: {'operator': '==', 'value': 'high'}
+
+        Returns:
+            bool: 條件是否成立
+        """
+        operator = condition.get('operator', '==')
+        expected = condition.get('value', '')
+
+        try:
+            actual_str = str(actual_value) if actual_value is not None else ''
+            expected_str = str(expected)
+
+            if operator == '==':
+                return actual_str == expected_str
+            elif operator == '!=':
+                return actual_str != expected_str
+            elif operator == '>':
+                return float(actual_str) > float(expected_str)
+            elif operator == '>=':
+                return float(actual_str) >= float(expected_str)
+            elif operator == '<':
+                return float(actual_str) < float(expected_str)
+            elif operator == '<=':
+                return float(actual_str) <= float(expected_str)
+            elif operator == 'contains':
+                return expected_str in actual_str
+            elif operator == 'not_empty':
+                return actual_str.strip() != ''
+            elif operator == 'empty':
+                return actual_str.strip() == ''
+            else:
+                return False
+        except (ValueError, TypeError):
+            return False
 
     def _get_available_paths(self) -> List[Dict[str, Any]]:
         """

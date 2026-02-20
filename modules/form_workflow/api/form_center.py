@@ -988,6 +988,9 @@ def get_pending_task(secure_code):
     allow_comment = result_data.get('allow_comment', True)
     require_comment = result_data.get('require_comment', False)
     min_comment_length = result_data.get('min_comment_length', 1 if require_comment else 0)
+    use_custom_decisions = result_data.get('use_custom_decisions', False)
+    output_variable = result_data.get('output_variable', '')
+    input_variable_results = result_data.get('input_variable_results', {})
 
     # 判斷用戶角色 (approver/reader) 並取得欄位權限
     field_permissions = node_config.get('field_permissions', {})
@@ -1040,6 +1043,9 @@ def get_pending_task(secure_code):
             'allow_comment': allow_comment,
             'require_comment': require_comment,
             'min_comment_length': min_comment_length,
+            'use_custom_decisions': use_custom_decisions,
+            'output_variable': output_variable,
+            'input_variable_results': input_variable_results,
             'approvals': approvals,
             'field_permissions': role_permissions,
             'has_editable_fields': has_editable,
@@ -1217,9 +1223,15 @@ def approve_task(secure_code):
 
         data = request.get_json() or {}
         decision = data.get('decision', 'approved')
-        selected_path = data.get('selected_path')
+        selected_path = data.get('selected_path')          # 舊模式: 單一 edge ID (str)
+        selected_edges = data.get('selected_edges')         # 新模式: edge ID 列表 (list)
+        selected_option_value = data.get('selected_option_value')  # 自定義決策的選項值
         comment = data.get('comment', '')
         updated_form_data = data.get('form_data')
+
+        # 判斷是否為自定義決策模式
+        use_custom_decisions = task_result_data.get('use_custom_decisions', False)
+        output_variable = task_result_data.get('output_variable', '')
 
         # 驗證簽核意見最少字數
         min_comment_length = task_result_data.get('min_comment_length', 0)
@@ -1231,6 +1243,13 @@ def approve_task(secure_code):
         node_config = task.node_config or {}
         field_permissions = node_config.get('field_permissions', {})
         approver_permissions = field_permissions.get('approver', {})
+
+        # 動態欄位權限覆蓋（來向變數控制）
+        input_variable_results = task_result_data.get('input_variable_results', {})
+        field_permission_overrides = input_variable_results.get('field_permission_overrides', {})
+        if field_permission_overrides:
+            approver_permissions = dict(approver_permissions)
+            approver_permissions.update(field_permission_overrides)
 
         if updated_form_data and approver_permissions:
             form_instance = FwFormInstance.query.filter_by(
@@ -1292,12 +1311,25 @@ def approve_task(secure_code):
         )
         db.session.add(approval_record)
 
+        # 寫入傳出變數（output_variable）
+        if output_variable and selected_option_value is not None:
+            from ..services.variable_service import VariableService
+            VariableService.set_global_var(
+                task.workflow_instance_secure_code,
+                output_variable,
+                selected_option_value,
+                org.secure_code,
+                task.node_id
+            )
+
         # 更新任務狀態 + 釋放鎖定
         task.status = 'SUCCESS' if decision == 'approved' else 'REJECTED'
         task.completed_at = datetime.utcnow()
         task.result = {
             'decision': decision,
             'selected_path': selected_path,
+            'selected_edges': selected_edges,
+            'selected_option_value': selected_option_value,
             'comment': comment,
             'approver': current_user.secure_code
         }
@@ -1308,14 +1340,43 @@ def approve_task(secure_code):
         # 觸發工作流推進
         if decision == 'approved':
             try:
-                engine = WorkflowEngine()
-                engine.advance_workflow(
-                    task.workflow_instance_secure_code,
-                    task.node_id,
-                    selected_path
-                )
+                if use_custom_decisions and selected_edges:
+                    # 自定義決策模式：N:M 映射，逐條 edge 推進
+                    # 去重同一 target_node
+                    advanced_nodes = set()
+                    for edge_id in selected_edges:
+                        items = WorkflowEngine.advance_workflow(
+                            task.workflow_instance_secure_code,
+                            task.node_id,
+                            edge_id
+                        )
+                        for item in items:
+                            advanced_nodes.add(item.node_id)
+                elif selected_path:
+                    # 舊模式：單一 edge
+                    WorkflowEngine.advance_workflow(
+                        task.workflow_instance_secure_code,
+                        task.node_id,
+                        selected_path
+                    )
+                else:
+                    # Fallback: 取所有出邊
+                    WorkflowEngine.advance_workflow(
+                        task.workflow_instance_secure_code,
+                        task.node_id,
+                        None
+                    )
             except Exception as e:
                 logger.error(f'Workflow advance error: {e}')
+        elif decision == 'rejected' and use_custom_decisions:
+            # 自定義決策模式下 rejected 且 target_edges 為空 → 完成工作流為 REJECTED
+            try:
+                WorkflowEngine.complete_workflow(
+                    task.workflow_instance_secure_code,
+                    status='REJECTED'
+                )
+            except Exception as e:
+                logger.error(f'Workflow complete (rejected) error: {e}')
 
         return jsonify({
             'success': True,

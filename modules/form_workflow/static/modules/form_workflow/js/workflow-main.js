@@ -4637,6 +4637,8 @@
                 const minCommentLength = currentConfig.min_comment_length !== undefined
                     ? parseInt(currentConfig.min_comment_length) || 0
                     : (currentConfig.require_comment === true ? 1 : 0);
+                const useCustomDecisions = currentConfig.use_custom_decisions || false;
+                const outputVariable = currentConfig.output_variable || '';
 
                 // 從 config 恢復已選擇的簽核者列表
                 restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
@@ -4761,7 +4763,57 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 自定義決策選項 -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 15px 0; color: #667eea;">
+                            <i class="fas fa-tasks"></i> 決策控制器
+                        </h4>
+
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" id="faUseCustomDecisions" ${useCustomDecisions ? 'checked' : ''} style="margin-right: 8px;"
+                                   onchange="if(window._faDecisions) window._faDecisions.toggleCustomDecisions('${nodeId}', this.checked);">
+                            <strong>啟用自定義決策選項</strong>
+                        </label>
+
+                        <div id="customDecisionsPanel" style="display: ${useCustomDecisions ? 'block' : 'none'};">
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">傳出變數名稱</label>
+                                <input type="text" id="faOutputVariable" value="${outputVariable}"
+                                       placeholder="例如: fa_decision"
+                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+                                       oninput="if(window.cy){var n=window.cy.getElementById('${nodeId}');if(n&&n.length){var c=n.data('config')||{};c.output_variable=this.value.trim();n.data('config',c);}}">
+                                <div style="font-size: 10px; color: #888; margin-top: 3px;">決策值會寫入此全域變數，供下游 Branch 判斷</div>
+                            </div>
+
+                            <div style="margin-bottom: 8px;">
+                                <strong style="font-size: 12px;">決策選項</strong>
+                            </div>
+                            <div id="decisionOptionsContainer"></div>
+                            <button onclick="window._faDecisions.addOption('${nodeId}')" style="width: 100%; padding: 8px; border: 1px dashed #667eea; border-radius: 4px; background: #f0f4ff; cursor: pointer; font-size: 12px; color: #667eea;">
+                                <i class="fas fa-plus"></i> 新增決策選項
+                            </button>
+
+                            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 12px;">
+                                <strong style="font-size: 12px;">來向變數控制</strong>
+                                <div style="font-size: 10px; color: #888; margin-bottom: 8px;">根據上游變數動態控制決策選項顯示/欄位權限</div>
+                                <div id="inputVariablesContainer"></div>
+                                <button onclick="window._faDecisions.addInputVar('${nodeId}')" style="width: 100%; padding: 6px; border: 1px dashed #28a745; border-radius: 4px; background: #f0fff4; cursor: pointer; font-size: 11px; color: #28a745;">
+                                    <i class="fas fa-plus"></i> 新增來向變數
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
+
+                // 渲染決策選項和來向變數（需要在 HTML 插入 DOM 後執行）
+                setTimeout(function() {
+                    if (window._faDecisions && useCustomDecisions) {
+                        const outEdges = window._faDecisions.getOutgoingEdges(nodeId);
+                        window._faDecisions.renderDecisionOptions(nodeId, currentConfig.decision_options || [], outEdges);
+                        window._faDecisions.renderInputVariables(nodeId, currentConfig.input_variables || []);
+                    }
+                }, 50);
             }
 
             // Telegram 通知節點配置
@@ -7782,6 +7834,18 @@
                 return;
             }
 
+            // 自定義決策選項相關
+            const useCustomDecisions = document.getElementById('faUseCustomDecisions')?.checked || false;
+            const outputVariable = document.getElementById('faOutputVariable')?.value?.trim() || '';
+
+            // 收集決策選項和來向變數（從 DOM）
+            let decisionOptions = [];
+            let inputVariables = [];
+            if (useCustomDecisions && window._faDecisions) {
+                decisionOptions = window._faDecisions.collectDecisionOptions();
+                inputVariables = window._faDecisions.collectInputVariables();
+            }
+
             // 更新節點 config
             const currentConfig = node.data('config') || {};
             const updatedConfig = {
@@ -7792,7 +7856,11 @@
                 assignee_list: assigneeList,  // 多用戶詳細列表
                 selection_mode: selectionMode,
                 allow_comment: allowComment,
-                min_comment_length: minCommentLength
+                min_comment_length: minCommentLength,
+                use_custom_decisions: useCustomDecisions,
+                output_variable: outputVariable,
+                decision_options: decisionOptions,
+                input_variables: inputVariables
             };
 
             node.data('config', updatedConfig);
@@ -7806,7 +7874,8 @@
             };
 
             const modeInfo = assigneeList.length > 1 ? `(${assigneeList.length}人，任一人簽)` : '';
-            updateStatus(`✅ 簽核設定已套用：${typeLabels[assigneeType]}${assigneeLabel ? ' - ' + assigneeLabel : ''} ${modeInfo}`, 'success');
+            const decisionInfo = useCustomDecisions ? ` | 自定義決策 ${decisionOptions.length} 項` : '';
+            updateStatus(`✅ 簽核設定已套用：${typeLabels[assigneeType]}${assigneeLabel ? ' - ' + assigneeLabel : ''} ${modeInfo}${decisionInfo}`, 'success');
 
             console.log('FormAdapter 節點配置已更新:', {
                 nodeId: nodeId,
@@ -11587,15 +11656,42 @@
             const currentId = currentNode.id();
             const currentLabel = currentNode.data('label') || currentId;
 
-            // 1. 收集當前節點的所有連線資料
-            const connectedEdges = currentNode.connectedEdges();
+            // 1. 收集當前節點的所有連線資料（含完整樣式）
+            const connectedEdges = currentNode.connectedEdges().filter(e => !e.data('parentEdge'));
             const edgeInfoList = [];
             connectedEdges.forEach(edge => {
-                edgeInfoList.push({
+                const curveStyle = edge.style('curve-style') || 'straight';
+                const lineColor = edge.style('line-color') || '#95a5a6';
+                const info = {
+                    id: edge.id(),
                     sourceId: edge.data('source'),
                     targetId: edge.data('target'),
-                    label: edge.data('label') || ''
-                });
+                    label: edge.data('label') || '',
+                    style: {
+                        'curve-style': curveStyle,
+                        'width': parseFloat(edge.style('width')) || 1,
+                        'line-color': lineColor,
+                        'line-style': edge.style('line-style') || 'solid',
+                        'target-arrow-shape': edge.style('target-arrow-shape') || 'triangle',
+                        'target-arrow-color': edge.style('target-arrow-color') || lineColor,
+                        'arrow-scale': parseFloat(edge.style('arrow-scale')) || 1
+                    }
+                };
+                if (curveStyle === 'bezier' || curveStyle === 'unbundled-bezier') {
+                    const distances = edge.style('control-point-distances');
+                    const weights = edge.style('control-point-weights');
+                    if (distances) info.style['control-point-distances'] = String(distances).replace(/[\[\]px]/g, '');
+                    if (weights) info.style['control-point-weights'] = String(weights).replace(/[\[\]]/g, '');
+                } else if (curveStyle === 'taxi') {
+                    const taxiDir = edge.style('taxi-direction');
+                    const taxiTurn = edge.style('taxi-turn');
+                    if (taxiDir) info.style['taxi-direction'] = taxiDir;
+                    if (taxiTurn) info.style['taxi-turn'] = parseFloat(taxiTurn);
+                }
+                if (edge.data('orthogonalEnabled')) {
+                    info.orthogonalEnabled = true;
+                }
+                edgeInfoList.push(info);
             });
 
             // 2. 移除當前節點
@@ -11636,16 +11732,20 @@
                 restoredNode.move({ parent: parentId || buf.parentId });
             }
 
-            // 4. 重建連線
+            // 4. 重建連線（保留原始樣式）
             edgeInfoList.forEach(info => {
-                cy.add({
+                const newEdge = cy.add({
                     group: 'edges',
                     data: {
                         source: info.sourceId === currentId ? restoredNodeId : info.sourceId,
                         target: info.targetId === currentId ? restoredNodeId : info.targetId,
-                        label: info.label
+                        label: info.label,
+                        orthogonalEnabled: info.orthogonalEnabled || false
                     }
                 });
+                if (info.style) {
+                    newEdge.style(info.style);
+                }
             });
 
             // 5. 清除 buffer
@@ -11696,15 +11796,48 @@
             const oldParent = oldNode.parent();
             const parentId = (oldParent && oldParent.length > 0) ? oldParent.id() : null;
 
-            // 1. 收集舊節點的所有連線資料
-            const connectedEdges = oldNode.connectedEdges();
+            // 1. 收集舊節點的所有連線資料（含完整樣式）
+            const connectedEdges = oldNode.connectedEdges().filter(e => !e.data('parentEdge'));
             const edgeInfoList = [];
             connectedEdges.forEach(edge => {
-                edgeInfoList.push({
+                const curveStyle = edge.style('curve-style') || 'straight';
+                const lineColor = edge.style('line-color') || '#95a5a6';
+                const info = {
+                    id: edge.id(),
                     sourceId: edge.data('source'),
                     targetId: edge.data('target'),
-                    label: edge.data('label') || ''
-                });
+                    label: edge.data('label') || '',
+                    style: {
+                        'curve-style': curveStyle,
+                        'width': parseFloat(edge.style('width')) || 1,
+                        'line-color': lineColor,
+                        'line-style': edge.style('line-style') || 'solid',
+                        'target-arrow-shape': edge.style('target-arrow-shape') || 'triangle',
+                        'target-arrow-color': edge.style('target-arrow-color') || lineColor,
+                        'arrow-scale': parseFloat(edge.style('arrow-scale')) || 1
+                    }
+                };
+                // 保存曲線特定參數
+                if (curveStyle === 'bezier' || curveStyle === 'unbundled-bezier') {
+                    const distances = edge.style('control-point-distances');
+                    const weights = edge.style('control-point-weights');
+                    if (distances) {
+                        info.style['control-point-distances'] = String(distances).replace(/[\[\]px]/g, '');
+                    }
+                    if (weights) {
+                        info.style['control-point-weights'] = String(weights).replace(/[\[\]]/g, '');
+                    }
+                } else if (curveStyle === 'taxi') {
+                    const taxiDir = edge.style('taxi-direction');
+                    const taxiTurn = edge.style('taxi-turn');
+                    if (taxiDir) info.style['taxi-direction'] = taxiDir;
+                    if (taxiTurn) info.style['taxi-turn'] = parseFloat(taxiTurn);
+                }
+                // 保存正交折線狀態
+                if (edge.data('orthogonalEnabled')) {
+                    info.orthogonalEnabled = true;
+                }
+                edgeInfoList.push(info);
             });
 
             // 2. 將舊節點完整資料存入 undo buffer（記憶體保留，不在畫布上）
@@ -11755,16 +11888,20 @@
                 newNode.move({ parent: parentId });
             }
 
-            // 4. 重建所有連線
+            // 4. 重建所有連線（保留原始樣式）
             edgeInfoList.forEach(info => {
-                cy.add({
+                const newEdge = cy.add({
                     group: 'edges',
                     data: {
                         source: info.sourceId === oldId ? newNodeId : info.sourceId,
                         target: info.targetId === oldId ? newNodeId : info.targetId,
-                        label: info.label
+                        label: info.label,
+                        orthogonalEnabled: info.orthogonalEnabled || false
                     }
                 });
+                if (info.style) {
+                    newEdge.style(info.style);
+                }
             });
 
             // 5. 更新畫布
@@ -12699,6 +12836,7 @@
             */
 
             initCytoscape();
+            window.cy = cy;  // 暴露給外部模組（formadapter-decisions.js 等）
             initDragAndDrop();
             initMinimap();
 

@@ -6,13 +6,25 @@
 
 ## [Unreleased]
 
+### Added
+- FormAdapter 自定義決策控制器：可自訂決策選項名稱、值、按鈕風格，取代固定的 edge label
+- FormAdapter N:M 決策映射：一個決策選項可觸發多條 edge，多個選項可指向同一 edge
+- FormAdapter 傳出變數（output_variable）：決策值寫入全域變數，供下游 Branch 判斷
+- FormAdapter 來向變數控制（input_variables）：根據上游變數動態隱藏決策選項、調整欄位權限
+- 工作流程設計器：FormAdapter 決策控制器設定面板（決策選項 CRUD、edge 映射、變數設定）
+
 ### Fixed
+- Branch `_resolve_value()` 非 `form.*` 變數直接回傳空字串，未查詢 workflow 全域變數
+- `advance_to_next_nodes()` 將 Branch result dict 直接傳入 `advance_workflow()`，導致 `selected_edges` 從未被使用
+- 工作流程設計器：替換節點後 edge 樣式（curve-style、顏色、寬度等）全部重置為預設直線
 - 工作流程設計器：Ctrl+Z 後正交折線控制點 Maps 未重建，導致正交線變直線且無法刪除
 - 工作流程設計器：儲存/重載後正交折線遺失，殘留孤兒控制點（saveWorkflow 漏存 orthogonalControl 標記）
 - 工作流程設計器：正交折線控制點缺少 CSS selector，bypass styles 遺失後退化成橙色小點
 - 工作流程設計器：刪除節點後正交折線 relay 節點和中間段殘留（Cytoscape 只移除直接連接的邊）
 
 ### Changed
+- 簽核模態框「表單內容」「請選擇決策」「請選擇後續動作」字體統一為 16px/600，與「簽核意見」一致
+- 簽核模態框倒數計時從靠右改為置中顯示
 - 表單中心自動刷新改用 setTimeout 鏈式排程 + 指數退避（5s→60s），分頁隱藏時暫停輪詢
 - 表單中心子分類頁籤從獨立列移入 section header，與標題同列顯示
 

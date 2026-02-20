@@ -178,16 +178,33 @@ def advance_to_next_nodes(queue_item):
     """
     推進到下一個節點
 
+    解析 result.data.selected_edges（Branch 節點產出），
+    逐條 edge 呼叫 advance_workflow；若無 selected_edges 則 fallback 取所有出邊。
+
     Args:
         queue_item: 當前完成的佇列項目
     """
     from modules.form_workflow.services.workflow_engine import WorkflowEngine
 
-    WorkflowEngine.advance_workflow(
-        queue_item.workflow_instance_secure_code,
-        queue_item.node_id,
-        queue_item.result
-    )
+    result = queue_item.result or {}
+    result_data = result.get('data', {})
+    selected_edges = result_data.get('selected_edges', [])
+
+    if selected_edges and isinstance(selected_edges, list):
+        # Branch 節點：逐條 edge 推進（去重 target node 由 advance_workflow 內部處理）
+        for edge_id in selected_edges:
+            WorkflowEngine.advance_workflow(
+                queue_item.workflow_instance_secure_code,
+                queue_item.node_id,
+                edge_id
+            )
+    else:
+        # 其他節點 / 無 selected_edges：取所有出邊
+        WorkflowEngine.advance_workflow(
+            queue_item.workflow_instance_secure_code,
+            queue_item.node_id,
+            None
+        )
 
 
 def handle_error(queue_item_code, error_message):
