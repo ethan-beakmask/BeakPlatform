@@ -102,6 +102,68 @@
             font-size: 10px;
         }
 
+        /* ==================== 右側面板 Accordion ==================== */
+        .bk-accordion-section {
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+        }
+
+        .bk-accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            cursor: pointer;
+            user-select: none;
+            background: #fafafa;
+            border-bottom: 1px solid transparent;
+            transition: background 0.15s;
+        }
+
+        .bk-accordion-header:hover {
+            background: #f0f4ff;
+        }
+
+        .bk-accordion-section.expanded .bk-accordion-header {
+            border-bottom-color: #e0e0e0;
+        }
+
+        .bk-accordion-header h4 {
+            margin: 0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bk-accordion-chevron {
+            font-size: 10px;
+            color: #999;
+            transition: transform 0.2s;
+        }
+
+        .bk-accordion-section.expanded .bk-accordion-chevron {
+            transform: rotate(90deg);
+        }
+
+        .bk-accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.25s ease-out;
+        }
+
+        .bk-accordion-section.expanded .bk-accordion-body {
+            max-height: 2000px;
+            transition: max-height 0.35s ease-in;
+        }
+
+        .bk-accordion-body-inner {
+            padding: 12px;
+        }
+
         /* ==================== 節點分類區域（精簡版）==================== */
         .node-category {
             margin-bottom: 2px;
@@ -1435,3 +1497,189 @@
         .badge-primary { background: #3498db; }
         .badge-info { background: #1abc9c; }
         .badge-secondary { background: #95a5a6; }
+
+        /* ==================== FormAdapter 設定 Modal ==================== */
+        .fa-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fa-modal {
+            background: #fff;
+            width: 960px;
+            max-width: 95vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .fa-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .fa-modal-header h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fa-modal-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+
+        .fa-modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .fa-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .fa-modal-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .fa-modal-col {
+            min-width: 0;
+        }
+
+        .fa-modal-col-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .fa-modal-hint {
+            margin-top: 16px;
+            padding: 10px 12px;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .fa-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .fa-modal-footer button {
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .fa-modal-btn-cancel {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            color: #374151;
+        }
+
+        .fa-modal-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .fa-modal-btn-save {
+            background: #667eea;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .fa-modal-btn-save:hover {
+            background: #5a6fd6;
+        }
+
+        /* Modal 內表單元素統一 */
+        .fa-modal-body label {
+            font-size: 12px;
+        }
+
+        .fa-modal-body select,
+        .fa-modal-body input[type="text"],
+        .fa-modal-body input[type="number"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        .fa-modal-body strong {
+            font-size: 12px;
+        }
+
+        .fa-modal-field {
+            margin-bottom: 14px;
+        }
+
+        .fa-modal-field > label,
+        .fa-modal-field > strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* 右側面板 FormAdapter 摘要卡片 */
+        .fa-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 11px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .fa-summary-label {
+            color: #888;
+        }
+
+        .fa-summary-value {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }

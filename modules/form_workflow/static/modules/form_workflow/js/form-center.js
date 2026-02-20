@@ -60,7 +60,8 @@ function formCenterManager() {
         approvalFormInstance: null,
         selectedEdges: [],
         approvalComment: '',
-        selectedOptionValue: null,   // 自定義決策選項的 value
+        selectedOptionValue: null,   // 自定義決策選項的 value（送後端用）
+        selectedOptionId: null,      // 自定義決策選項的 id（UI 高亮用）
         loadingApproval: false,
         submittingApproval: false,
 
@@ -688,6 +689,7 @@ function formCenterManager() {
             this.selectedEdges = [];
             this.approvalComment = '';
             this.selectedOptionValue = null;
+            this.selectedOptionId = null;
             this.loadingApproval = true;
 
             try {
@@ -843,6 +845,7 @@ function formCenterManager() {
             this.selectedEdges = [];
             this.approvalComment = '';
             this.selectedOptionValue = null;
+            this.selectedOptionId = null;
         },
 
         toggleEdgeSelection(edgeId) {
@@ -859,6 +862,7 @@ function formCenterManager() {
          */
         selectDecisionOption(option) {
             if (!option) return;
+            this.selectedOptionId = option.id;
             this.selectedOptionValue = option.value;
             this.selectedEdges = option.target_edges || [];
         },
@@ -958,6 +962,7 @@ function formCenterManager() {
                     this.selectedEdges = [];
                     this.approvalComment = '';
                     this.selectedOptionValue = null;
+            this.selectedOptionId = null;
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {

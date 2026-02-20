@@ -7,6 +7,14 @@
 ## [Unreleased]
 
 ### Added
+- FormAdapter 設定 Modal 對話窗：節點設定從右側面板搬入 960px 寬獨立 Modal，雙欄佈局（左：簽核設定，右：決策控制器）
+- 右側面板 FormAdapter 摘要卡片：精簡顯示簽核者、模式、備註、決策狀態，一鍵打開設定
+- 通用 Accordion 手風琴元件（`.bk-accordion-*` CSS），可用於未來其他節點設定面板
+
+### Fixed
+- 簽核決策按鈕高亮錯誤：多個決策選項 value 相同時，點選一個全部填滿顏色，改用 option.id 判斷選中狀態
+
+### Added
 - FormAdapter 自定義決策控制器：可自訂決策選項名稱、值、按鈕風格，取代固定的 edge label
 - FormAdapter N:M 決策映射：一個決策選項可觸發多條 edge，多個選項可指向同一 edge
 - FormAdapter 傳出變數（output_variable）：決策值寫入全域變數，供下游 Branch 判斷

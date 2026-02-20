@@ -85,19 +85,19 @@
                                     @click="selectDecisionOption(option)"
                                     style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; text-align: left;"
                                     :style="{
-                                        'primary': selectedOptionValue === option.value
+                                        'primary': selectedOptionId === option.id
                                             ? 'background: #667eea; color: white; border: 2px solid #667eea;'
                                             : 'background: white; color: #667eea; border: 2px solid #667eea;',
-                                        'success': selectedOptionValue === option.value
+                                        'success': selectedOptionId === option.id
                                             ? 'background: #28a745; color: white; border: 2px solid #28a745;'
                                             : 'background: white; color: #28a745; border: 2px solid #28a745;',
-                                        'warning': selectedOptionValue === option.value
+                                        'warning': selectedOptionId === option.id
                                             ? 'background: #ffc107; color: #333; border: 2px solid #ffc107;'
                                             : 'background: white; color: #856404; border: 2px solid #ffc107;',
-                                        'danger': selectedOptionValue === option.value
+                                        'danger': selectedOptionId === option.id
                                             ? 'background: #dc3545; color: white; border: 2px solid #dc3545;'
                                             : 'background: white; color: #dc3545; border: 2px solid #dc3545;',
-                                        'default': selectedOptionValue === option.value
+                                        'default': selectedOptionId === option.id
                                             ? 'background: #6c757d; color: white; border: 2px solid #6c757d;'
                                             : 'background: white; color: #6c757d; border: 2px solid #6c757d;'
                                     }[option.style || 'default']"
@@ -105,8 +105,8 @@
                             </button>
                         </template>
                     </div>
-                    <div x-show="selectedOptionValue !== null" style="margin-top: 8px; font-size: 12px; color: #6b7280;">
-                        已選擇：<strong x-text="visibleDecisionOptions.find(o => o.value === selectedOptionValue)?.label || ''"></strong>
+                    <div x-show="selectedOptionId !== null" style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                        已選擇：<strong x-text="visibleDecisionOptions.find(o => o.id === selectedOptionId)?.label || ''"></strong>
                     </div>
                 </div>
 

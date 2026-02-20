@@ -4076,10 +4076,26 @@
             return typeMap[type.toLowerCase()] || type;
         }
 
+        // ==================== Accordion 通用函式 ====================
+
+        // 切換 accordion section 展開/收合
+        function toggleAccordion(sectionEl) {
+            if (!sectionEl) return;
+            sectionEl.classList.toggle('expanded');
+        }
+
+        // 用 section id 切換
+        function toggleAccordionById(id) {
+            toggleAccordion(document.getElementById(id));
+        }
+
         // 顯示節點資訊
         function showNodeInfo(node) {
             // 切換節點前，先自動套用前一個面板的設定
             autoApplyCurrentPanel();
+
+            // 關閉可能還開著的 FormAdapter Modal
+            closeFormAdapterModal();
 
             const rawType = node.data('type');
             const type = normalizeNodeType(rawType);  // 標準化節點類型
@@ -4624,196 +4640,71 @@
                 setTimeout(() => loadFieldWriteTargetFields(targetField), 500);
             }
 
-            // FormAdapter 簽核節點配置
+            // FormAdapter 簽核節點配置 — 右側面板只顯示摘要，設定在 Modal 中
             if (type === 'FormAdapter') {
                 const currentConfig = node.data('config') || {};
                 const assigneeType = currentConfig.assignee_type || 'INITIATOR';
-                const assigneeValue = currentConfig.assignee_value || '';
                 const assigneeLabel = currentConfig.assignee_label || '';
                 const assigneeListConfig = currentConfig.assignee_list || [];
                 const selectionMode = currentConfig.selection_mode || 'single';
                 const allowComment = currentConfig.allow_comment !== false;
-                // 向後相容：若無 min_comment_length 但有 require_comment=true，視為 1
                 const minCommentLength = currentConfig.min_comment_length !== undefined
                     ? parseInt(currentConfig.min_comment_length) || 0
                     : (currentConfig.require_comment === true ? 1 : 0);
                 const useCustomDecisions = currentConfig.use_custom_decisions || false;
-                const outputVariable = currentConfig.output_variable || '';
+                const decisionCount = (currentConfig.decision_options || []).length;
+                const inputVarCount = (currentConfig.input_variables || []).length;
 
-                // 從 config 恢復已選擇的簽核者列表
-                restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
+                const typeLabels = {
+                    'INITIATOR': '發起人',
+                    'USER': '指定用戶',
+                    'ROLE': '指定角色',
+                    'DEPARTMENT': '指定部門',
+                    'DYNAMIC': '動態'
+                };
 
-                // 載入組織樹並渲染
-                initOrgTree(assigneeType);
-                // 載入角色列表
-                loadRolesList(assigneeValue);
+                // 簽核者摘要
+                let assigneeSummary = typeLabels[assigneeType] || assigneeType;
+                if (assigneeLabel) {
+                    assigneeSummary += ' - ' + (assigneeLabel.length > 12 ? assigneeLabel.substring(0, 12) + '...' : assigneeLabel);
+                }
+                if (assigneeType === 'USER' && assigneeListConfig.length > 1) {
+                    assigneeSummary += ` (${assigneeListConfig.length}人)`;
+                }
 
                 info += `
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                        <h4 style="margin: 0 0 10px 0; color: #667eea;">
-                            <i class="fas fa-user-check"></i> 簽核節點說明
-                        </h4>
-                        <div style="font-size: 13px; line-height: 1.6; color: #666;">
-                            <p style="margin: 10px 0;">流程到達此節點時會暫停，等待指定人員選擇後續路徑。</p>
-                            <p style="margin: 10px 0;"><strong>按鈕名稱來源：</strong>edge label → 目標節點 label → 節點類型</p>
-                            <div style="background: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffc107; margin-top: 10px;">
-                                <i class="fas fa-lightbulb" style="color: #856404;"></i>
-                                <span style="color: #856404; font-size: 12px;">選取連接線，在右側「條件分支設定」區塊設定「標籤文字」作為按鈕名稱</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                        <h4 style="margin: 0 0 15px 0; color: #667eea;">
-                            <i class="fas fa-cog"></i> 簽核設定
-                        </h4>
-
-                        <div style="margin-bottom: 15px;">
-                            <strong>簽核者類型：</strong><br>
-                            <select id="formAdapterAssigneeType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;" onchange="toggleAssigneeValue()">
-                                <option value="INITIATOR" ${assigneeType === 'INITIATOR' ? 'selected' : ''}>發起人 (表單建立者)</option>
-                                <option value="USER" ${assigneeType === 'USER' ? 'selected' : ''}>指定用戶</option>
-                                <option value="DEPARTMENT" ${assigneeType === 'DEPARTMENT' ? 'selected' : ''}>指定部門</option>
-                                <option value="ROLE" ${assigneeType === 'ROLE' ? 'selected' : ''}>指定角色</option>
-                                <option value="DYNAMIC" ${assigneeType === 'DYNAMIC' ? 'selected' : ''}>動態 (從變數取)</option>
-                            </select>
+                    <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
+                        <div style="font-size: 12px; font-weight: 600; color: #667eea; margin-bottom: 10px;">
+                            <i class="fas fa-user-check"></i> 簽核節點摘要
                         </div>
 
-                        <!-- 組織樹選擇器 (USER / DEPARTMENT) -->
-                        <div id="orgTreeContainer" style="margin-bottom: 15px; display: ${['USER', 'DEPARTMENT'].includes(assigneeType) ? 'block' : 'none'};">
-                            <strong>從組織樹選擇<span id="multiSelectHint" style="color: #667eea; font-size: 11px; display: ${assigneeType === 'USER' ? 'inline' : 'none'};"> (可多選，任一人簽核)</span>：</strong>
-                            <div style="margin-top: 8px; border: 1px solid #ddd; border-radius: 4px; background: #fafafa; max-height: 200px; overflow: auto;">
-                                <div id="orgTreeContent" style="padding: 8px; font-size: 12px;">
-                                    <span style="color: #999;"><i class="fas fa-spinner fa-spin"></i> 載入中...</span>
-                                </div>
-                            </div>
-                            <div id="selectedAssignees" style="margin-top: 8px; padding: 8px; background: #e8f4fd; border-radius: 4px; display: none;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                    <span style="font-weight: bold; font-size: 12px;"><i class="fas fa-users" style="color: #28a745;"></i> 已選擇：</span>
-                                    <button onclick="clearAllAssignees()" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 11px;">
-                                        <i class="fas fa-times"></i> 全部清除
-                                    </button>
-                                </div>
-                                <div id="selectedAssigneesList" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
-                            </div>
+                        <div class="fa-summary-row">
+                            <span class="fa-summary-label">簽核者</span>
+                            <span class="fa-summary-value">${assigneeSummary}</span>
                         </div>
-
-                        <!-- ROLE 角色選擇 -->
-                        <div id="roleInputContainer" style="margin-bottom: 15px; display: ${assigneeType === 'ROLE' ? 'block' : 'none'};">
-                            <strong>選擇角色：</strong><br>
-                            <select id="formAdapterRoleValue" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
-                                <option value="">載入中...</option>
-                            </select>
-                            <div style="margin-top: 4px; font-size: 11px; color: #888;">此角色下的所有用戶都可簽核</div>
+                        <div class="fa-summary-row">
+                            <span class="fa-summary-label">選擇模式</span>
+                            <span class="fa-summary-value">${selectionMode === 'single' ? '單選' : '複選'}</span>
                         </div>
-
-                        <!-- DYNAMIC 變數輸入 -->
-                        <div id="dynamicInputContainer" style="margin-bottom: 15px; display: ${assigneeType === 'DYNAMIC' ? 'block' : 'none'};">
-                            <strong>變數名稱：</strong><br>
-                            <input type="text" id="formAdapterDynamicValue" value="${assigneeType === 'DYNAMIC' ? assigneeValue : ''}"
-                                   placeholder="例如: manager_id"
-                                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px;">
+                        <div class="fa-summary-row">
+                            <span class="fa-summary-label">備註</span>
+                            <span class="fa-summary-value">${allowComment ? (minCommentLength > 0 ? '必填 (' + minCommentLength + '字)' : '選填') : '關閉'}</span>
                         </div>
-
-                        <div style="margin-bottom: 15px;">
-                            <strong>選擇模式：</strong><br>
-                            <div style="display: flex; gap: 10px; margin-top: 8px;">
-                                <label style="display: flex; align-items: center; padding: 10px 15px; border: 2px solid ${selectionMode === 'single' ? '#667eea' : '#e0e0e0'}; border-radius: 6px; cursor: pointer; flex: 1; background: ${selectionMode === 'single' ? '#f0f4ff' : 'white'};">
-                                    <input type="radio" name="selectionMode" value="single" ${selectionMode === 'single' ? 'checked' : ''} style="margin-right: 8px;">
-                                    <div>
-                                        <div style="font-weight: bold; font-size: 13px;">單選</div>
-                                        <div style="font-size: 11px; color: #666;">Radio 按鈕</div>
-                                    </div>
-                                </label>
-                                <label style="display: flex; align-items: center; padding: 10px 15px; border: 2px solid ${selectionMode === 'multiple' ? '#667eea' : '#e0e0e0'}; border-radius: 6px; cursor: pointer; flex: 1; background: ${selectionMode === 'multiple' ? '#f0f4ff' : 'white'};">
-                                    <input type="radio" name="selectionMode" value="multiple" ${selectionMode === 'multiple' ? 'checked' : ''} style="margin-right: 8px;">
-                                    <div>
-                                        <div style="font-weight: bold; font-size: 13px;">複選</div>
-                                        <div style="font-size: 11px; color: #666;">Checkbox</div>
-                                    </div>
-                                </label>
-                            </div>
+                        <div class="fa-summary-row">
+                            <span class="fa-summary-label">決策控制器</span>
+                            <span class="fa-summary-value">${useCustomDecisions ? decisionCount + ' 個選項' : '未啟用'}</span>
                         </div>
+                        ${inputVarCount > 0 ? `
+                        <div class="fa-summary-row">
+                            <span class="fa-summary-label">來向變數</span>
+                            <span class="fa-summary-value">${inputVarCount} 個</span>
+                        </div>` : ''}
 
-                        <div style="margin-bottom: 15px; border-top: 1px solid #eee; padding-top: 15px;">
-                            <strong>備註設定：</strong><br>
-                            <label style="display: flex; align-items: center; margin-top: 8px; cursor: pointer;">
-                                <input type="checkbox" id="formAdapterAllowComment" ${allowComment ? 'checked' : ''} style="margin-right: 8px;"
-                                       onchange="document.getElementById('minCommentLengthRow').style.display = this.checked ? 'flex' : 'none';">
-                                顯示備註欄位
-                            </label>
-                            <div id="minCommentLengthRow" style="display: ${allowComment ? 'flex' : 'none'}; align-items: center; margin-top: 8px; gap: 8px;">
-                                <span style="white-space: nowrap;">最少字數：</span>
-                                <input type="number" id="formAdapterMinCommentLength" value="${minCommentLength}" min="0" max="500" step="1"
-                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center;">
-                                <span style="font-size: 11px; color: #999;">0 = 不需留言</span>
-                            </div>
-                        </div>
-
-                        <button class="btn-primary" onclick="applyFormAdapterConfig('${nodeId}')" style="width: 100%;">
-                            <i class="fas fa-check"></i> 套用
+                        <button class="btn-primary" onclick="openFormAdapterModal('${nodeId}')" style="width: 100%; margin-top: 12px;">
+                            <i class="fas fa-cog"></i> 打開設定
                         </button>
-
-                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                            <button class="btn-secondary" onclick="openFieldPermissionsModal('${nodeId}')" style="width: 100%; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
-                                <i class="fas fa-shield-alt"></i> 欄位權限設定
-                            </button>
-                            <div style="margin-top: 4px; font-size: 11px; color: #888; text-align: center;">
-                                設定簽核者/閱讀者對各欄位的可見與編輯權限
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 自定義決策選項 -->
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
-                        <h4 style="margin: 0 0 15px 0; color: #667eea;">
-                            <i class="fas fa-tasks"></i> 決策控制器
-                        </h4>
-
-                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
-                            <input type="checkbox" id="faUseCustomDecisions" ${useCustomDecisions ? 'checked' : ''} style="margin-right: 8px;"
-                                   onchange="if(window._faDecisions) window._faDecisions.toggleCustomDecisions('${nodeId}', this.checked);">
-                            <strong>啟用自定義決策選項</strong>
-                        </label>
-
-                        <div id="customDecisionsPanel" style="display: ${useCustomDecisions ? 'block' : 'none'};">
-                            <div style="margin-bottom: 12px;">
-                                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">傳出變數名稱</label>
-                                <input type="text" id="faOutputVariable" value="${outputVariable}"
-                                       placeholder="例如: fa_decision"
-                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
-                                       oninput="if(window.cy){var n=window.cy.getElementById('${nodeId}');if(n&&n.length){var c=n.data('config')||{};c.output_variable=this.value.trim();n.data('config',c);}}">
-                                <div style="font-size: 10px; color: #888; margin-top: 3px;">決策值會寫入此全域變數，供下游 Branch 判斷</div>
-                            </div>
-
-                            <div style="margin-bottom: 8px;">
-                                <strong style="font-size: 12px;">決策選項</strong>
-                            </div>
-                            <div id="decisionOptionsContainer"></div>
-                            <button onclick="window._faDecisions.addOption('${nodeId}')" style="width: 100%; padding: 8px; border: 1px dashed #667eea; border-radius: 4px; background: #f0f4ff; cursor: pointer; font-size: 12px; color: #667eea;">
-                                <i class="fas fa-plus"></i> 新增決策選項
-                            </button>
-
-                            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 12px;">
-                                <strong style="font-size: 12px;">來向變數控制</strong>
-                                <div style="font-size: 10px; color: #888; margin-bottom: 8px;">根據上游變數動態控制決策選項顯示/欄位權限</div>
-                                <div id="inputVariablesContainer"></div>
-                                <button onclick="window._faDecisions.addInputVar('${nodeId}')" style="width: 100%; padding: 6px; border: 1px dashed #28a745; border-radius: 4px; background: #f0fff4; cursor: pointer; font-size: 11px; color: #28a745;">
-                                    <i class="fas fa-plus"></i> 新增來向變數
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 `;
-
-                // 渲染決策選項和來向變數（需要在 HTML 插入 DOM 後執行）
-                setTimeout(function() {
-                    if (window._faDecisions && useCustomDecisions) {
-                        const outEdges = window._faDecisions.getOutgoingEdges(nodeId);
-                        window._faDecisions.renderDecisionOptions(nodeId, currentConfig.decision_options || [], outEdges);
-                        window._faDecisions.renderInputVariables(nodeId, currentConfig.input_variables || []);
-                    }
-                }, 50);
             }
 
             // Telegram 通知節點配置
@@ -7883,6 +7774,253 @@
             });
         }
         window.applyFormAdapterConfig = applyFormAdapterConfig;
+
+        // ==================== FormAdapter 設定 Modal ====================
+
+        // 開啟 FormAdapter 設定 Modal
+        function openFormAdapterModal(nodeId) {
+            const node = cy.getElementById(nodeId);
+            if (!node || node.length === 0) return;
+
+            const currentConfig = node.data('config') || {};
+            const label = node.data('label') || '';
+            const description = node.data('description') || '';
+            const assigneeType = currentConfig.assignee_type || 'INITIATOR';
+            const assigneeValue = currentConfig.assignee_value || '';
+            const assigneeLabel = currentConfig.assignee_label || '';
+            const assigneeListConfig = currentConfig.assignee_list || [];
+            const selectionMode = currentConfig.selection_mode || 'single';
+            const allowComment = currentConfig.allow_comment !== false;
+            const minCommentLength = currentConfig.min_comment_length !== undefined
+                ? parseInt(currentConfig.min_comment_length) || 0
+                : (currentConfig.require_comment === true ? 1 : 0);
+            const useCustomDecisions = currentConfig.use_custom_decisions || false;
+            const outputVariable = currentConfig.output_variable || '';
+
+            // 恢復已選擇的簽核者列表
+            restoreSelectedAssignees(assigneeType, assigneeValue, assigneeLabel, assigneeListConfig);
+
+            // 移除舊 Modal
+            const old = document.getElementById('faConfigModal');
+            if (old) old.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'faConfigModal';
+            modal.className = 'fa-modal-overlay';
+            modal.innerHTML = `
+                <div class="fa-modal">
+                    <div class="fa-modal-header">
+                        <h3><i class="fas fa-user-check"></i> 簽核節點設定 — ${label}</h3>
+                        <button class="fa-modal-close" onclick="closeFormAdapterModal()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="fa-modal-body">
+                        <!-- 名稱 / 描述 -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div class="fa-modal-field">
+                                <label>節點名稱</label>
+                                <input type="text" id="fa-modal-label" value="${label}" placeholder="節點名稱">
+                            </div>
+                            <div class="fa-modal-field">
+                                <label>描述</label>
+                                <input type="text" id="fa-modal-desc" value="${description}" placeholder="選填">
+                            </div>
+                        </div>
+
+                        <!-- 雙欄主體 -->
+                        <div class="fa-modal-columns">
+                            <!-- 左欄：簽核設定 -->
+                            <div class="fa-modal-col">
+                                <h4 class="fa-modal-col-title"><i class="fas fa-cog"></i> 簽核設定</h4>
+
+                                <div class="fa-modal-field">
+                                    <strong>簽核者類型</strong>
+                                    <select id="formAdapterAssigneeType" onchange="toggleAssigneeValue()" style="margin-top: 4px;">
+                                        <option value="INITIATOR" ${assigneeType === 'INITIATOR' ? 'selected' : ''}>發起人 (表單建立者)</option>
+                                        <option value="USER" ${assigneeType === 'USER' ? 'selected' : ''}>指定用戶</option>
+                                        <option value="DEPARTMENT" ${assigneeType === 'DEPARTMENT' ? 'selected' : ''}>指定部門</option>
+                                        <option value="ROLE" ${assigneeType === 'ROLE' ? 'selected' : ''}>指定角色</option>
+                                        <option value="DYNAMIC" ${assigneeType === 'DYNAMIC' ? 'selected' : ''}>動態 (從變數取)</option>
+                                    </select>
+                                </div>
+
+                                <!-- 組織樹選擇器 -->
+                                <div id="orgTreeContainer" class="fa-modal-field" style="display: ${['USER', 'DEPARTMENT'].includes(assigneeType) ? 'block' : 'none'};">
+                                    <strong>從組織樹選擇<span id="multiSelectHint" style="color: #667eea; font-size: 11px; display: ${assigneeType === 'USER' ? 'inline' : 'none'};"> (可多選)</span></strong>
+                                    <div style="margin-top: 4px; border: 1px solid #ddd; border-radius: 4px; background: #fafafa; max-height: 200px; overflow: auto;">
+                                        <div id="orgTreeContent" style="padding: 8px; font-size: 12px;">
+                                            <span style="color: #999;"><i class="fas fa-spinner fa-spin"></i> 載入中...</span>
+                                        </div>
+                                    </div>
+                                    <div id="selectedAssignees" style="margin-top: 6px; padding: 8px; background: #e8f4fd; border-radius: 4px; display: none;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <span style="font-weight: bold; font-size: 12px;"><i class="fas fa-users" style="color: #28a745;"></i> 已選擇：</span>
+                                            <button onclick="clearAllAssignees()" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 11px;">
+                                                <i class="fas fa-times"></i> 全部清除
+                                            </button>
+                                        </div>
+                                        <div id="selectedAssigneesList" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- ROLE 角色選擇 -->
+                                <div id="roleInputContainer" class="fa-modal-field" style="display: ${assigneeType === 'ROLE' ? 'block' : 'none'};">
+                                    <strong>選擇角色</strong>
+                                    <select id="formAdapterRoleValue" style="margin-top: 4px;">
+                                        <option value="">載入中...</option>
+                                    </select>
+                                    <div style="margin-top: 3px; font-size: 10px; color: #888;">此角色下的所有用戶都可簽核</div>
+                                </div>
+
+                                <!-- DYNAMIC 變數輸入 -->
+                                <div id="dynamicInputContainer" class="fa-modal-field" style="display: ${assigneeType === 'DYNAMIC' ? 'block' : 'none'};">
+                                    <strong>變數名稱</strong>
+                                    <input type="text" id="formAdapterDynamicValue" value="${assigneeType === 'DYNAMIC' ? assigneeValue : ''}"
+                                           placeholder="例如: manager_id" style="margin-top: 4px;">
+                                </div>
+
+                                <div class="fa-modal-field">
+                                    <strong>選擇模式</strong>
+                                    <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                        <label style="display: flex; align-items: center; padding: 8px 14px; border: 2px solid ${selectionMode === 'single' ? '#667eea' : '#e0e0e0'}; border-radius: 6px; cursor: pointer; flex: 1; background: ${selectionMode === 'single' ? '#f0f4ff' : 'white'};">
+                                            <input type="radio" name="selectionMode" value="single" ${selectionMode === 'single' ? 'checked' : ''} style="margin-right: 6px;">
+                                            <div><div style="font-weight: bold;">單選</div><div style="font-size: 10px; color: #666;">Radio</div></div>
+                                        </label>
+                                        <label style="display: flex; align-items: center; padding: 8px 14px; border: 2px solid ${selectionMode === 'multiple' ? '#667eea' : '#e0e0e0'}; border-radius: 6px; cursor: pointer; flex: 1; background: ${selectionMode === 'multiple' ? '#f0f4ff' : 'white'};">
+                                            <input type="radio" name="selectionMode" value="multiple" ${selectionMode === 'multiple' ? 'checked' : ''} style="margin-right: 6px;">
+                                            <div><div style="font-weight: bold;">複選</div><div style="font-size: 10px; color: #666;">Checkbox</div></div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="fa-modal-field" style="border-top: 1px solid #eee; padding-top: 12px;">
+                                    <strong>備註設定</strong>
+                                    <label style="display: flex; align-items: center; margin-top: 6px; cursor: pointer;">
+                                        <input type="checkbox" id="formAdapterAllowComment" ${allowComment ? 'checked' : ''} style="margin-right: 8px;"
+                                               onchange="document.getElementById('minCommentLengthRow').style.display = this.checked ? 'flex' : 'none';">
+                                        顯示備註欄位
+                                    </label>
+                                    <div id="minCommentLengthRow" style="display: ${allowComment ? 'flex' : 'none'}; align-items: center; margin-top: 6px; gap: 8px;">
+                                        <span style="white-space: nowrap;">最少字數：</span>
+                                        <input type="number" id="formAdapterMinCommentLength" value="${minCommentLength}" min="0" max="500" step="1"
+                                               style="width: 80px; text-align: center;">
+                                        <span style="font-size: 10px; color: #999;">0 = 不需留言</span>
+                                    </div>
+                                </div>
+
+                                <div class="fa-modal-field" style="border-top: 1px solid #eee; padding-top: 12px;">
+                                    <button onclick="openFieldPermissionsModal('${nodeId}')" style="width: 100%; background: #6c757d; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        <i class="fas fa-shield-alt"></i> 欄位權限設定
+                                    </button>
+                                    <div style="margin-top: 3px; font-size: 10px; color: #888; text-align: center;">
+                                        設定簽核者/閱讀者對各欄位的可見與編輯權限
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 右欄：決策控制器 -->
+                            <div class="fa-modal-col">
+                                <h4 class="fa-modal-col-title"><i class="fas fa-tasks"></i> 決策控制器</h4>
+
+                                <div class="fa-modal-field">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="faUseCustomDecisions" ${useCustomDecisions ? 'checked' : ''} style="margin-right: 8px;"
+                                               onchange="if(window._faDecisions) window._faDecisions.toggleCustomDecisions('${nodeId}', this.checked);">
+                                        <strong>啟用自定義決策選項</strong>
+                                    </label>
+                                </div>
+
+                                <div id="customDecisionsPanel" style="display: ${useCustomDecisions ? 'block' : 'none'};">
+                                    <div class="fa-modal-field">
+                                        <label style="color: #666;">傳出變數名稱</label>
+                                        <input type="text" id="faOutputVariable" value="${outputVariable}"
+                                               placeholder="例如: fa_decision"
+                                               oninput="if(window.cy){var n=window.cy.getElementById('${nodeId}');if(n&&n.length){var c=n.data('config')||{};c.output_variable=this.value.trim();n.data('config',c);}}">
+                                        <div style="font-size: 10px; color: #888; margin-top: 2px;">決策值寫入此全域變數，供下游 Branch 判斷</div>
+                                    </div>
+
+                                    <div style="margin-bottom: 6px;">
+                                        <strong>決策選項</strong>
+                                    </div>
+                                    <div id="decisionOptionsContainer"></div>
+                                    <button onclick="window._faDecisions.addOption('${nodeId}')" style="width: 100%; padding: 7px; border: 1px dashed #667eea; border-radius: 4px; background: #f0f4ff; cursor: pointer; font-size: 12px; color: #667eea;">
+                                        <i class="fas fa-plus"></i> 新增決策選項
+                                    </button>
+
+                                    <div style="margin-top: 14px; border-top: 1px solid #eee; padding-top: 10px;">
+                                        <strong>來向變數控制</strong>
+                                        <div style="font-size: 10px; color: #888; margin-bottom: 6px;">根據上游變數動態控制決策選項顯示/欄位權限</div>
+                                        <div id="inputVariablesContainer"></div>
+                                        <button onclick="window._faDecisions.addInputVar('${nodeId}')" style="width: 100%; padding: 6px; border: 1px dashed #28a745; border-radius: 4px; background: #f0fff4; cursor: pointer; font-size: 11px; color: #28a745;">
+                                            <i class="fas fa-plus"></i> 新增來向變數
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 提示 -->
+                        <div class="fa-modal-hint">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>按鈕名稱來源：</strong>edge label → 目標節點 label → 節點類型。
+                            選取連接線，在右側「條件分支設定」區塊設定「標籤文字」作為按鈕名稱。
+                        </div>
+                    </div>
+                    <div class="fa-modal-footer">
+                        <button class="fa-modal-btn-cancel" onclick="closeFormAdapterModal()">取消</button>
+                        <button class="fa-modal-btn-save" onclick="saveFormAdapterModal('${nodeId}')"><i class="fas fa-check"></i> 套用並關閉</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // DOM ready 後初始化子元件
+            setTimeout(function() {
+                initOrgTree(assigneeType);
+                loadRolesList(assigneeValue);
+                if (window._faDecisions && useCustomDecisions) {
+                    const outEdges = window._faDecisions.getOutgoingEdges(nodeId);
+                    window._faDecisions.renderDecisionOptions(nodeId, currentConfig.decision_options || [], outEdges);
+                    window._faDecisions.renderInputVariables(nodeId, currentConfig.input_variables || []);
+                }
+            }, 50);
+        }
+        window.openFormAdapterModal = openFormAdapterModal;
+
+        // 關閉 FormAdapter Modal
+        function closeFormAdapterModal() {
+            const modal = document.getElementById('faConfigModal');
+            if (modal) modal.remove();
+        }
+        window.closeFormAdapterModal = closeFormAdapterModal;
+
+        // 套用並關閉 FormAdapter Modal
+        function saveFormAdapterModal(nodeId) {
+            const node = cy.getElementById(nodeId);
+            if (!node || node.length === 0) return;
+
+            // 1. 從 Modal 讀取名稱/描述（Modal 用不同 ID 避免衝突）
+            const modalLabel = document.getElementById('fa-modal-label');
+            const modalDesc = document.getElementById('fa-modal-desc');
+            if (modalLabel) node.data('label', modalLabel.value.trim() || node.data('label'));
+            if (modalDesc) node.data('description', modalDesc.value.trim());
+
+            // 2. 同步到右側面板的 input（讓 applyFormAdapterConfig 的 applyNodeBasicInfo 不覆蓋）
+            const panelLabel = document.getElementById('node-label-input');
+            const panelDesc = document.getElementById('node-description-input');
+            if (panelLabel) panelLabel.value = node.data('label');
+            if (panelDesc) panelDesc.value = node.data('description') || '';
+
+            // 3. 呼叫原本的 apply 函式（讀取 Modal 內的表單元素）
+            applyFormAdapterConfig(nodeId);
+
+            // 4. 關閉 Modal 並刷新摘要
+            closeFormAdapterModal();
+            if (node && node.length) {
+                showNodeInfo(node);
+            }
+        }
+        window.saveFormAdapterModal = saveFormAdapterModal;
 
         // 更新 End 節點 finish_mode 選擇樣式
         function updateFinishModeSelection(radio) {
