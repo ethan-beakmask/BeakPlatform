@@ -38,6 +38,9 @@ Telegram 設定 (系統級):
 - PUT    /api/system-settings/recipient-groups/<id>   更新群組
 - DELETE /api/system-settings/recipient-groups/<id>   刪除群組
 - GET    /api/system-settings/recipient-groups/<id>/resolve  解析收件人
+
+套件版本:
+- GET    /api/system-settings/package-versions        查詢套件版本
 """
 import os
 import base64
@@ -1258,3 +1261,302 @@ def resolve_recipient_group(secure_code):
             'message': '系統級群組需手動指定收件人'
         }
     })
+
+
+# =============================================================================
+# 套件版本查詢
+# =============================================================================
+
+import re
+import time
+import importlib.metadata
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from packaging.version import Version, InvalidVersion
+
+# 記憶體快取
+_package_versions_cache = {
+    'data': None,
+    'cached_at': None,
+    'ttl': 1800  # 30 分鐘
+}
+
+# 前端 vendor 套件定義
+# header_pattern: 在檔案前 2000 字元搜尋（header 註解）
+# full_pattern: header 找不到時掃描全檔（minified 內嵌版本）
+FRONTEND_VENDOR_REGISTRY = [
+    {
+        'name': 'Bootstrap',
+        'file': 'vendor/bootstrap.bundle.min.js',
+        'header_pattern': r'Bootstrap\s+v([\d.]+)',
+        'npm_name': 'bootstrap',
+    },
+    {
+        'name': 'Alpine.js',
+        'file': 'vendor/alpine.min.js',
+        'full_pattern': r'version["\s:=]*"(\d+\.\d+\.\d+)"',
+        'npm_name': 'alpinejs',
+    },
+    {
+        'name': 'jQuery',
+        'file': 'vendor/jquery.min.js',
+        'header_pattern': r'jQuery\s+v([\d.]+)',
+        'npm_name': 'jquery',
+    },
+    {
+        'name': 'jsTree',
+        'file': 'vendor/jstree.min.js',
+        'header_pattern': r'jsTree\s+-\s+v([\d.]+)',
+        'npm_name': 'jstree',
+    },
+    {
+        'name': 'Cytoscape.js',
+        'file': 'vendor/cytoscape.min.js',
+        'full_pattern': r'version["\s:=]*"(\d+\.\d+\.\d+)"',
+        'npm_name': 'cytoscape',
+    },
+    {
+        'name': 'Formio',
+        'file': 'vendor/formio.full.min.js',
+        'header_pattern': r'[Ff]ormio[^\d]*([\d]+\.[\d]+\.[\d]+)',
+        'npm_name': '@formio/js',
+    },
+    {
+        'name': 'Font Awesome',
+        'file': 'vendor/fontawesome/css/all.min.css',
+        'header_pattern': r'Font Awesome[^\d]*([\d.]+)',
+        'npm_name': '@fortawesome/fontawesome-free',
+    },
+]
+
+
+def _parse_requirements():
+    """解析 requirements.txt"""
+    req_path = os.path.join(os.path.dirname(__file__), '..', '..', 'requirements.txt')
+    req_path = os.path.normpath(req_path)
+    packages = []
+
+    if not os.path.exists(req_path):
+        return packages
+
+    with open(req_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            # 解析 name==version 或 name>=version 等
+            match = re.match(r'^([a-zA-Z0-9_-]+)\s*([>=<~!]+)\s*([\d.]+)', line)
+            if match:
+                packages.append({
+                    'name': match.group(1),
+                    'required_version': match.group(3),
+                    'operator': match.group(2),
+                })
+    return packages
+
+
+def _get_installed_version(package_name):
+    """取得已安裝版本"""
+    try:
+        return importlib.metadata.version(package_name)
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def _fetch_pypi_latest(package_name):
+    """從 PyPI 取得最新版本"""
+    import requests as req_lib
+    try:
+        resp = req_lib.get(
+            f'https://pypi.org/pypi/{package_name}/json',
+            timeout=3
+        )
+        if resp.status_code == 200:
+            return resp.json().get('info', {}).get('version')
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_npm_latest(package_name):
+    """從 npm registry 取得最新版本"""
+    import requests as req_lib
+    try:
+        resp = req_lib.get(
+            f'https://registry.npmjs.org/{package_name}/latest',
+            timeout=3
+        )
+        if resp.status_code == 200:
+            return resp.json().get('version')
+    except Exception:
+        pass
+    return None
+
+
+def _compare_versions(installed, latest):
+    """比較版本，回傳狀態"""
+    if not installed or not latest:
+        return 'check_failed'
+    try:
+        v_installed = Version(installed)
+        v_latest = Version(latest)
+    except InvalidVersion:
+        return 'check_failed'
+
+    if v_installed >= v_latest:
+        return 'up_to_date'
+    if v_installed.major < v_latest.major:
+        return 'major_update'
+    return 'minor_update'
+
+
+def _detect_vendor_version(entry):
+    """從 vendor 檔案偵測版本（先 header，再 full scan）"""
+    static_dir = os.path.join(os.path.dirname(__file__), '..', 'static')
+    file_path = os.path.join(static_dir, entry['file'])
+    file_path = os.path.normpath(file_path)
+
+    if not os.path.exists(file_path):
+        return None
+
+    try:
+        # 階段 1: header pattern（前 2000 字元）
+        if 'header_pattern' in entry:
+            with open(file_path, 'r', errors='ignore') as f:
+                header = f.read(2000)
+            match = re.search(entry['header_pattern'], header, re.IGNORECASE)
+            if match:
+                return match.group(1)
+
+        # 階段 2: full pattern（掃描全檔，用於 minified 檔案）
+        if 'full_pattern' in entry:
+            with open(file_path, 'r', errors='ignore') as f:
+                content = f.read()
+            match = re.search(entry['full_pattern'], content)
+            if match:
+                return match.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def _check_package_versions():
+    """執行完整套件版本檢查"""
+    start_time = time.time()
+
+    # === Python 套件 ===
+    requirements = _parse_requirements()
+    python_packages = []
+
+    # 先取得已安裝版本
+    for pkg in requirements:
+        installed = _get_installed_version(pkg['name'])
+        python_packages.append({
+            'name': pkg['name'],
+            'required_version': pkg['required_version'],
+            'installed_version': installed or '未安裝',
+            'latest_version': None,
+            'status': 'check_failed' if not installed else 'checking',
+        })
+
+    # 並行查詢 PyPI 最新版本
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_map = {}
+        for i, pkg in enumerate(python_packages):
+            if pkg['installed_version'] != '未安裝':
+                future = executor.submit(_fetch_pypi_latest, pkg['name'])
+                future_map[future] = i
+
+        for future in as_completed(future_map):
+            idx = future_map[future]
+            try:
+                latest = future.result()
+                python_packages[idx]['latest_version'] = latest or '無法檢查'
+                if latest:
+                    python_packages[idx]['status'] = _compare_versions(
+                        python_packages[idx]['installed_version'], latest
+                    )
+                else:
+                    python_packages[idx]['status'] = 'check_failed'
+            except Exception:
+                python_packages[idx]['latest_version'] = '無法檢查'
+                python_packages[idx]['status'] = 'check_failed'
+
+    # === 前端 vendor 套件 ===
+    frontend_packages = []
+    for entry in FRONTEND_VENDOR_REGISTRY:
+        installed = _detect_vendor_version(entry)
+        frontend_packages.append({
+            'name': entry['name'],
+            'installed_version': installed or '未偵測',
+            'latest_version': None,
+            'status': 'check_failed' if not installed else 'checking',
+            'source': entry['file'],
+        })
+
+    # 並行查詢 npm 最新版本
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_map = {}
+        for i, entry in enumerate(FRONTEND_VENDOR_REGISTRY):
+            if frontend_packages[i]['installed_version'] != '未偵測':
+                future = executor.submit(_fetch_npm_latest, entry['npm_name'])
+                future_map[future] = i
+
+        for future in as_completed(future_map):
+            idx = future_map[future]
+            try:
+                latest = future.result()
+                frontend_packages[idx]['latest_version'] = latest or '無法檢查'
+                if latest:
+                    frontend_packages[idx]['status'] = _compare_versions(
+                        frontend_packages[idx]['installed_version'], latest
+                    )
+                else:
+                    frontend_packages[idx]['status'] = 'check_failed'
+            except Exception:
+                frontend_packages[idx]['latest_version'] = '無法檢查'
+                frontend_packages[idx]['status'] = 'check_failed'
+
+    duration_ms = int((time.time() - start_time) * 1000)
+
+    return {
+        'python_packages': python_packages,
+        'frontend_packages': frontend_packages,
+        'check_duration_ms': duration_ms,
+    }
+
+
+@api_system_settings.route('/package-versions', methods=['GET'])
+@system_admin_required
+def get_package_versions():
+    """
+    查詢 Python 後端套件 + 前端 vendor 套件的版本資訊
+
+    Query params:
+        refresh: 'true' 強制重新查詢（忽略快取）
+    """
+    force_refresh = request.args.get('refresh', '').lower() == 'true'
+    now = time.time()
+
+    # 檢查快取
+    cache = _package_versions_cache
+    if (not force_refresh
+            and cache['data'] is not None
+            and cache['cached_at'] is not None
+            and (now - cache['cached_at']) < cache['ttl']):
+        result = cache['data'].copy()
+        result['cached'] = True
+        result['cached_at'] = datetime.fromtimestamp(cache['cached_at']).isoformat()
+        return jsonify({'success': True, 'data': result})
+
+    # 執行查詢
+    data = _check_package_versions()
+
+    # 更新快取
+    cache['data'] = data
+    cache['cached_at'] = now
+
+    data_response = data.copy()
+    data_response['cached'] = False
+    data_response['cached_at'] = datetime.fromtimestamp(now).isoformat()
+
+    return jsonify({'success': True, 'data': data_response})

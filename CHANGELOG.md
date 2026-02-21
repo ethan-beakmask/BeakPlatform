@@ -7,6 +7,14 @@
 ## [Unreleased]
 
 ### Added
+- 伺服器設定新增「套件版本」頁面：Python 後端套件 + 前端 vendor 套件版本與線上最新版比對
+- 套件版本 API (`GET /api/system-settings/package-versions`)：並行查詢 PyPI/npm、30 分鐘快取、支援強制刷新
+
+### Removed
+- 移除未使用的前端 vendor 套件：D3.js、D3-flextree、D3-org-chart、GridStack、alpine.min.js.bak
+- 移除未使用的 Python 套件：python-dotenv、pydantic、email-validator、Flask-Cors、factory-boy、faker、bandit、safety
+
+### Added
 - 系統管理員管理企業管理員（救援功能）：查看特定企業管理員列表、啟用/停用、重設密碼
 - 企業管理頁面右側面板新增「管理員管理」導航按鈕
 - 預設管理員帳號安全強化：建立新管理員後自動停用預設 admin 帳號，企業管理員無法自行啟用，僅系統管理員可啟用

@@ -32,6 +32,11 @@
             <span class="settings-menu-icon">[R]</span>
             <span>收件人群組</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'packages' }"
+             @click="activeSection = 'packages'; loadPackageVersions()">
+            <span class="settings-menu-icon">[V]</span>
+            <span>套件版本</span>
+        </div>
     </div>
 
     <!-- 右側內容 -->
@@ -315,6 +320,135 @@
                 </ul>
             </div>
         </div>
+
+        <!-- ==================== 套件版本 ==================== -->
+        <div id="section-packages" class="settings-section" :class="{ active: activeSection === 'packages' }">
+            <h2>套件版本</h2>
+            <p>Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。</p>
+
+            <div x-show="message.packages" x-cloak
+                 :class="'message ' + (message.packagesError ? 'message-error' : 'message-success')"
+                 x-text="message.packages"
+                 x-transition></div>
+
+            <!-- 操作列 -->
+            <div class="settings-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 13px; color: #666;">
+                        <template x-if="packages.cachedAt">
+                            <span>
+                                查詢時間: <span x-text="packages.cachedAt.replace('T', ' ').substring(0, 19)"></span>
+                                <span x-show="packages.cached" style="color: #f59e0b;">（快取）</span>
+                                <span style="color: #888;" x-text="'（耗時 ' + packages.durationMs + 'ms）'"></span>
+                            </span>
+                        </template>
+                    </div>
+                    <button class="btn btn-primary"
+                            @click="loadPackageVersions(true)"
+                            :disabled="loading.packages">
+                        <span x-show="loading.packages">查詢中...</span>
+                        <span x-show="!loading.packages">重新查詢</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 統計摘要 -->
+            <template x-if="packages.stats.total > 0">
+                <div class="settings-card" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <span class="badge badge-success" x-text="'最新 ' + packages.stats.up_to_date"></span>
+                    <span class="badge badge-warning" x-text="'小版本更新 ' + packages.stats.minor_update"></span>
+                    <span class="badge badge-danger" x-text="'大版本更新 ' + packages.stats.major_update"></span>
+                    <span class="badge badge-secondary" x-text="'無法檢查 ' + packages.stats.check_failed"></span>
+                    <span style="color: #888; font-size: 13px;" x-text="'共 ' + packages.stats.total + ' 個套件'"></span>
+                </div>
+            </template>
+
+            <!-- 載入中 -->
+            <template x-if="loading.packages && packages.python.length === 0">
+                <div class="settings-card">
+                    <div class="loading">正在查詢套件版本，可能需要數秒...</div>
+                </div>
+            </template>
+
+            <!-- Python 套件表格 -->
+            <template x-if="packages.python.length > 0">
+                <div class="settings-card">
+                    <h4>Python 套件 (<span x-text="packages.python.length"></span>)</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th>套件名稱</th>
+                                    <th>需求版本</th>
+                                    <th>安裝版本</th>
+                                    <th>最新版本</th>
+                                    <th>狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="pkg in packages.python" :key="pkg.name">
+                                    <tr>
+                                        <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                        <td x-text="pkg.required_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                        <td>
+                                            <span :class="getStatusBadgeClass(pkg.status)"
+                                                  x-text="getStatusLabel(pkg.status)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 前端套件表格 -->
+            <template x-if="packages.frontend.length > 0">
+                <div class="settings-card">
+                    <h4>前端 Vendor 套件 (<span x-text="packages.frontend.length"></span>)</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th>套件名稱</th>
+                                    <th>安裝版本</th>
+                                    <th>最新版本</th>
+                                    <th>來源檔案</th>
+                                    <th>狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="pkg in packages.frontend" :key="pkg.name">
+                                    <tr>
+                                        <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                        <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.source" style="font-size: 12px; color: #888;"></td>
+                                        <td>
+                                            <span :class="getStatusBadgeClass(pkg.status)"
+                                                  x-text="getStatusLabel(pkg.status)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
+
+            <!-- 說明 -->
+            <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
+                <h4 style="color: #0369a1;">說明</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #0369a1;">
+                    <li>Python 套件版本從 PyPI 取得，前端套件從 npm Registry 取得</li>
+                    <li>查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新</li>
+                    <li>封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作</li>
+                    <li>此頁面僅供版本檢視，不提供線上升級功能</li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     {% include "pages/hostconfig/_system_settings_modals.html" %}
@@ -339,14 +473,17 @@ function serverSettings() {
             telegram: '',
             telegramError: false,
             recipients: '',
-            recipientsError: false
+            recipientsError: false,
+            packages: '',
+            packagesError: false
         },
 
         // 載入狀態
         loading: {
             smtp: false,
             telegram: false,
-            recipients: false
+            recipients: false,
+            packages: false
         },
 
         // E-MailRelay
@@ -411,6 +548,16 @@ function serverSettings() {
             }
         },
 
+        // 套件版本
+        packages: {
+            python: [],
+            frontend: [],
+            cached: false,
+            cachedAt: '',
+            durationMs: 0,
+            stats: { total: 0, up_to_date: 0, minor_update: 0, major_update: 0, check_failed: 0 }
+        },
+
         // 初始化
         async init() {
             await this.loadEmailrelaySettings();
@@ -428,6 +575,7 @@ function serverSettings() {
 
 {% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
+{% include "pages/hostconfig/_system_settings_packages_methods.html" %}
     };
 }
 </script>

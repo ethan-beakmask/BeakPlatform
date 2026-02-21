@@ -1,0 +1,58 @@
+        // ==================== 套件版本 ====================
+        async loadPackageVersions(forceRefresh = false) {
+            this.loading.packages = true;
+            this.message.packages = '';
+            try {
+                const url = forceRefresh
+                    ? `${API_BASE}/package-versions?refresh=true`
+                    : `${API_BASE}/package-versions`;
+                const res = await fetch(url, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.packages.python = data.data.python_packages || [];
+                    this.packages.frontend = data.data.frontend_packages || [];
+                    this.packages.cached = data.data.cached || false;
+                    this.packages.cachedAt = data.data.cached_at || '';
+                    this.packages.durationMs = data.data.check_duration_ms || 0;
+                    this.packages.stats = this._calcPackageStats();
+                } else {
+                    this.showMessage('packages', data.message || '載入失敗', true);
+                }
+            } catch (e) {
+                this.showMessage('packages', '載入失敗: ' + e.message, true);
+            }
+            this.loading.packages = false;
+        },
+
+        _calcPackageStats() {
+            const all = [...this.packages.python, ...this.packages.frontend];
+            return {
+                total: all.length,
+                up_to_date: all.filter(p => p.status === 'up_to_date').length,
+                minor_update: all.filter(p => p.status === 'minor_update').length,
+                major_update: all.filter(p => p.status === 'major_update').length,
+                check_failed: all.filter(p => p.status === 'check_failed').length,
+            };
+        },
+
+        getStatusBadgeClass(status) {
+            const map = {
+                'up_to_date': 'badge-success',
+                'minor_update': 'badge-warning',
+                'major_update': 'badge-danger',
+                'check_failed': 'badge-secondary',
+            };
+            return 'badge ' + (map[status] || 'badge-secondary');
+        },
+
+        getStatusLabel(status) {
+            const map = {
+                'up_to_date': '最新',
+                'minor_update': '小版本更新',
+                'major_update': '大版本更新',
+                'check_failed': '無法檢查',
+            };
+            return map[status] || '未知';
+        }
