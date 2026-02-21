@@ -7,6 +7,11 @@
 ## [Unreleased]
 
 ### Added
+- 系統管理員管理企業管理員（救援功能）：查看特定企業管理員列表、啟用/停用、重設密碼
+- 企業管理頁面右側面板新增「管理員管理」導航按鈕
+- 預設管理員帳號安全強化：建立新管理員後自動停用預設 admin 帳號，企業管理員無法自行啟用，僅系統管理員可啟用
+
+### Added
 - 登入頁欄位偽裝：企業員工與外部人員登入頁新增 OTP1/OTP2 decoy 欄位，真正密碼從 OTP1 讀取
 - 登入頁反自動化：HTML/CSS 完全移除 password/pwd/pass 關鍵字，所有欄位改用 `type="text"` + CSS `text-security: disc` 遮蔽
 - 登入頁 Honeypot 偵測：decoy 欄位被填寫時記錄 `[HONEYPOT]` warning log

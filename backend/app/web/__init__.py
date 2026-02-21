@@ -41,6 +41,7 @@ def register_web_blueprints(app: Flask) -> None:
     from .numbering import numbering_bp
     from .approval_categories import approval_categories_bp
     from .org_admins import org_admins_bp
+    from .org_admin_rescue import org_admin_rescue_bp
     from .external_users import external_users_bp
     from .dev import dev_bp
 
@@ -61,6 +62,9 @@ def register_web_blueprints(app: Flask) -> None:
 
     # Org Admins - 企業管理員帳號管理
     app.register_blueprint(org_admins_bp)
+
+    # Org Admin Rescue - 系統管理員管理企業管理員（救援）
+    app.register_blueprint(org_admin_rescue_bp)
 
     # External Users - 非公司成員帳號管理
     app.register_blueprint(external_users_bp)

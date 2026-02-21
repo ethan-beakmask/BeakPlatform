@@ -133,9 +133,22 @@ def create_admin():
                             )
                             user.set_password(password)
                             db.session.add(user)
+
+                            # 自動停用預設管理員帳號（名稱易被猜測，安全考量）
+                            original_admin = User.query.filter(
+                                User.org_secure_code == current_user.org_secure_code,
+                                User.is_original_admin == True,
+                                User.is_active == True,
+                                User.is_deleted == False
+                            ).first()
+                            disabled_msg = ''
+                            if original_admin:
+                                original_admin.is_active = False
+                                disabled_msg = f'，預設管理員 {original_admin.username} 已自動停用'
+
                             db.session.commit()
 
-                            flash(f'已建立管理員 {admin_username}（綁定員工：{bound_employee.display_name}）', 'success')
+                            flash(f'已建立管理員 {admin_username}（綁定員工：{bound_employee.display_name}）{disabled_msg}', 'success')
                             return redirect(url_for('org_admins.list_admins'))
                         except Exception as e:
                             db.session.rollback()
@@ -168,6 +181,11 @@ def toggle_status(secure_code: str):
     # 不能停用自己
     if admin.secure_code == current_user.secure_code:
         flash('不能停用自己的帳號', 'error')
+        return redirect(url_for('org_admins.list_admins'))
+
+    # 預設管理員帳號僅能由系統管理員啟用
+    if not admin.is_active and admin.is_original_admin:
+        flash('預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員', 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 如果要停用，檢查是否為最後一個啟用的管理員

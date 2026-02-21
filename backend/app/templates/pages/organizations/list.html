@@ -127,7 +127,9 @@
         <div class="detail-card">
             <div class="detail-card-header">
                 <h3>{{ selected_org.name }}</h3>
-                <div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="{{ url_for('org_admin_rescue.list_admins', org_code=selected_org.secure_code) }}"
+                       class="btn btn-primary btn-sm">管理員管理</a>
                     <a href="{{ url_for('organizations.edit_org', secure_code=selected_org.secure_code) }}"
                        class="btn btn-secondary btn-sm">編輯企業</a>
                 </div>
