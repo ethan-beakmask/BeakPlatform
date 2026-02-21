@@ -167,16 +167,13 @@ class OpSetHandler(BaseNodeHandler):
             raise ValueError(f'未知的操作: {operation}')
 
     def _evaluate_value(self, value: Any) -> Any:
-        """評估值，支援變數引用"""
+        """評估值，支援變數引用（v2 前綴制）"""
         if value is None:
             return None
 
         if isinstance(value, str):
-            def replace_var(match):
-                var_name = match.group(1)
-                return str(self._get_var(var_name, ''))
-
-            value = re.sub(r'\$\{([^}]+)\}', replace_var, value)
+            # 使用 replace_variables() 統一解析所有前綴
+            value = self.replace_variables(value)
 
             try:
                 if '.' in value:
@@ -204,12 +201,20 @@ class OpSetHandler(BaseNodeHandler):
             raise ValueError('表達式不能為空')
 
         def replace_var(match):
-            var_name = match.group(1)
-            value = self._get_var(var_name, 0)
+            var_expr = match.group(1)
+            # v. 前綴 → 查流程變數
+            if var_expr.startswith('v.'):
+                value = self._get_var(var_expr[2:], 0)
+            # f. 前綴 → 查表單欄位
+            elif var_expr.startswith('f.') and not var_expr.startswith('fi.'):
+                value = self.get_form_field(var_expr[2:]) or 0
+            # 無前綴 → 舊行為 fallback
+            else:
+                value = self._get_var(var_expr, 0)
             try:
                 return str(float(value))
             except (ValueError, TypeError):
-                raise ValueError(f'變數 {var_name} 不是有效的數字')
+                raise ValueError(f'變數 {var_expr} 不是有效的數字')
 
         processed_expr = re.sub(r'\$\{([^}]+)\}', replace_var, expr_str)
 

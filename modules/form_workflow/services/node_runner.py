@@ -141,6 +141,9 @@ def update_result(queue_item, result):
         queue_item.success(result)
         db.session.commit()
 
+        # 清除 NODE scope 變數（節點完成，臨時變數不再需要）
+        _cleanup_node_vars(queue_item)
+
         # 推進到下一個節點
         advance_to_next_nodes(queue_item)
 
@@ -148,6 +151,9 @@ def update_result(queue_item, result):
         # 完成工作流（End 節點）
         queue_item.success(result)
         db.session.commit()
+
+        # 清除 NODE scope 變數
+        _cleanup_node_vars(queue_item)
 
         finish_mode = result.get('data', {}).get('finish_mode', 'detach')
         has_failures = result.get('data', {}).get('has_failures', False)
@@ -172,6 +178,25 @@ def update_result(queue_item, result):
         # 其他狀態視為錯誤
         queue_item.fail(result.get('message', 'Unknown error'))
         db.session.commit()
+
+
+def _cleanup_node_vars(queue_item):
+    """
+    清除節點的 NODE scope 變數
+
+    節點完成後呼叫，移除該節點產生的臨時變數。
+    失敗時僅記錄警告，不中斷流程推進。
+    """
+    try:
+        from modules.form_workflow.services.variable_service import VariableService
+        count = VariableService.cleanup_node_vars(
+            queue_item.workflow_instance_secure_code,
+            queue_item.node_id
+        )
+        if count > 0:
+            logger.info(f'已清除節點 {queue_item.node_id} 的 {count} 個 NODE 變數')
+    except Exception as e:
+        logger.warning(f'清除 NODE 變數失敗（不影響流程）: {e}')
 
 
 def advance_to_next_nodes(queue_item):

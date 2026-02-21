@@ -374,8 +374,11 @@ ${請假申請單::姓名}  →  設計器顯示格式，不是引擎語法
 ### Phase 5: 相容與清理 ✅
 - [x] 舊語法 fallback (form./workflow./timestamp./node. + 無前綴裸名)
 - [x] 舊 API 別名 (get_global_var → get_flow_var) 標記 deprecated
-- [ ] 遷移既有節點配置中的變數語法 (待未來批次處理)
-- [ ] 確認所有 handler 與設計器都使用新語法後移除 fallback
+- [x] 遷移既有節點配置中的變數語法 (`scripts/migrate_variable_syntax.py`，支援 --dry-run)
+- [x] OpSet handler `_evaluate_value()` 改用 `replace_variables()` 統一解析
+- [x] OpSet handler `_evaluate_expression()` 支援 v2 前綴 (v./f.)
+- [x] NODE scope 自動清理：`node_runner.py` 節點完成後呼叫 `cleanup_node_vars()`
+- [ ] 確認所有流程穩定運行後移除 legacy fallback（非急迫，留觀察期）
 
 ---
 
