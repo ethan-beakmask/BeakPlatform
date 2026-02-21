@@ -10,6 +10,12 @@
 - 小版本更新: 13 個
 - 已是最新: 5 個
 
+## 執行前置作業（每次對話開始時）
+
+1. **全目錄備份**: `cp -a /opt/BeakPlatform /opt/BeakPlatform_backup_$(date +%Y%m%d)`
+2. **DB 備份**: `sudo -u postgres pg_dump beakplatform_dev > /opt/BeakPlatform_backup_$(date +%Y%m%d)/db_dump.sql`
+3. **記錄 pip freeze**: `pip freeze > /opt/BeakPlatform_backup_$(date +%Y%m%d)/pip_freeze.txt`
+
 ## 升級批次
 
 每批升級後必須驗證：
@@ -20,7 +26,28 @@
 
 ---
 
-### Batch 0: 測試工具（零風險，不影響 runtime）
+### Batch 1: bcrypt + gunicorn（優先處理）
+
+| 套件 | 現在 | 最新 | 說明 |
+|------|------|------|------|
+| bcrypt | 4.1.1 | 5.0.0 | 密碼 hash |
+| gunicorn | 21.2.0 | 25.1.0 | WSGI server |
+
+**bcrypt 5.0.0 分析結果（低風險）：**
+- 唯一 breaking change: 密碼超過 72 bytes 拋 ValueError（舊版靜默截斷）
+- BeakPlatform **未使用 passlib**，直接呼叫 `bcrypt.hashpw()`/`bcrypt.checkpw()`
+- 密碼長度限制 8~12 碼，不可能超過 72 bytes
+- 升級時在 `User.set_password()` 加防禦性長度檢查
+
+**gunicorn 21→25：**
+- 需同步修正 Docker 部署 (192.168.0.15:8000) 的 gunicorn 配置
+- 之前部署曾有問題，一併檢查 gunicorn config 與啟動參數
+
+**驗證**: 登入/登出、密碼重設、Docker 部署啟動正常
+
+---
+
+### Batch 2: 測試工具（零風險，不影響 runtime）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
@@ -32,7 +59,7 @@
 
 ---
 
-### Batch 1: 時區/日期/工具（低風險）
+### Batch 3: 時區/日期/工具（低風險）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
@@ -45,7 +72,7 @@
 
 ---
 
-### Batch 2: Flask 核心生態（中風險，一起升）
+### Batch 4: Flask 核心生態（中風險，一起升）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
@@ -61,7 +88,7 @@
 
 ---
 
-### Batch 3: DB 層（中風險）
+### Batch 5: DB 層（中風險）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
@@ -75,7 +102,7 @@
 
 ---
 
-### Batch 4: Session/Cache（高風險）
+### Batch 6: Session/Cache（高風險）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
@@ -88,31 +115,16 @@
 
 ---
 
-### Batch 5: 認證/加密（高風險，逐個升）
+### Batch 7: 認證/加密其餘（中風險）
 
 | 套件 | 現在 | 最新 | 說明 |
 |------|------|------|------|
-| bcrypt | 4.1.1 | 5.0.0 | 密碼 hash |
 | cryptography | 41.0.7 | 46.0.5 | SMTP 密碼加密 |
 | Flask-Login | 0.6.3 | (最新) | 登入管理 |
-
-**風險**: bcrypt 5.0 可能改變 hash/verify API，直接影響登入
-**風險**: cryptography 大版本跳躍，Fernet/加密 API 可能變更
-**策略**: 先升 Flask-Login，再升 cryptography，最後升 bcrypt，每個單獨測試
-**驗證**: 登入/登出、密碼重設、SMTP 密碼解密正常
-
----
-
-### Batch 6: Rate Limiting + WSGI Server
-
-| 套件 | 現在 | 最新 | 說明 |
-|------|------|------|------|
 | Flask-Limiter | 3.5.0 | 4.1.1 | API 限流 |
-| gunicorn | 21.2.0 | 25.1.0 | WSGI server (生產環境) |
 
-**風險**: Flask-Limiter 4.x 初始化方式可能不同
-**風險**: gunicorn 影響 Docker 部署 (192.168.0.15:8000)
-**驗證**: 登入限流正常、Docker 部署正常啟動
+**策略**: 先升 Flask-Login，再升 Flask-Limiter，最後升 cryptography，每個單獨測試
+**驗證**: 登入/登出、限流正常、SMTP 密碼解密正常
 
 ---
 

@@ -10,6 +10,9 @@
 - 伺服器設定新增「套件版本」頁面：Python 後端套件 + 前端 vendor 套件版本與線上最新版比對
 - 套件版本 API (`GET /api/system-settings/package-versions`)：並行查詢 PyPI/npm、30 分鐘快取、支援強制刷新
 
+### Changed
+- bcrypt 防禦性檢查：`set_password()` 密碼超過 72 bytes 拋 ValueError、`check_password()` 超長密碼直接回傳 False（為 bcrypt 5.0 升級做準備）
+
 ### Removed
 - 移除未使用的前端 vendor 套件：D3.js、D3-flextree、D3-org-chart、GridStack、alpine.min.js.bak
 - 移除未使用的 Python 套件：python-dotenv、pydantic、email-validator、Flask-Cors、factory-boy、faker、bandit、safety

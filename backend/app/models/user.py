@@ -173,15 +173,18 @@ class User(TenantBaseModel, UserMixin):
 
     def set_password(self, password: str) -> None:
         """設定密碼（自動 hash）"""
+        raw = password.encode('utf-8')
+        if len(raw) > 72:
+            raise ValueError('密碼長度超過 bcrypt 72 bytes 上限')
         salt = bcrypt.gensalt()
-        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        self.password_hash = bcrypt.hashpw(raw, salt).decode('utf-8')
 
     def check_password(self, password: str) -> bool:
         """驗證密碼"""
-        return bcrypt.checkpw(
-            password.encode('utf-8'),
-            self.password_hash.encode('utf-8')
-        )
+        raw = password.encode('utf-8')
+        if len(raw) > 72:
+            return False
+        return bcrypt.checkpw(raw, self.password_hash.encode('utf-8'))
 
     def get_id(self) -> str:
         """Flask-Login 需要的方法，返回用戶識別碼"""
