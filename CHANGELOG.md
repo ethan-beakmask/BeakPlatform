@@ -7,6 +7,22 @@
 ## [Unreleased]
 
 ### Added
+- 變數系統 v2：前綴制語法 (`${f.key}`, `${fi.applicant}`, `${v.var}`, `${wi.code}`, `${n.name}`, `${t.now}`)
+- 變數系統 v2：三層 scope 架構 (TREE 跨流程 / FLOW 單流程 / NODE 單節點)
+- 變數系統 v2：`fi.*` 前綴解析表單實例屬性 (applicant_name 等系統變數)
+- 變數系統 v2：NODE scope 自動清理 API (`cleanup_node_vars`)
+- 變數系統 v2：DB migration (`029_variable_system_v2.sql`)，GLOBAL→FLOW / LOCAL→NODE 遷移
+- 變數系統 v2：規格文件 (`docs/VARIABLE_SYSTEM_SPEC.md`)
+- Forgejo Issue #12: 變數系統 v2 追蹤
+
+### Changed
+- SubFlow paramMapping 改用 TREE scope 傳遞跨流程變數（取代原 TODO）
+- Branch handler `_resolve_value()` 支援 v2 前綴 (`f.`, `fi.`, `v.`)
+- 變數總覽欄位標題：「舊式變數」→「內部變數」、「新式變數」→「引用語法」
+- VariableService 全面重構：新增 tree/flow/node 三層 API，保留舊別名向下相容
+- BaseNodeHandler `replace_variables()` 重寫為前綴分派機制，保留 legacy fallback
+
+### Added
 - FormAdapter 設定 Modal 對話窗：節點設定從右側面板搬入 960px 寬獨立 Modal，雙欄佈局（左：簽核設定，右：決策控制器）
 - 右側面板 FormAdapter 摘要卡片：精簡顯示簽核者、模式、備註、決策狀態，一鍵打開設定
 - 通用 Accordion 手風琴元件（`.bk-accordion-*` CSS），可用於未來其他節點設定面板
