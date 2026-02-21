@@ -64,7 +64,8 @@ def get_organizations():
     """取得所有企業列表"""
     try:
         orgs = Organization.query.filter(
-            Organization.is_deleted == False
+            Organization.is_deleted == False,
+            Organization.is_active == True
         ).order_by(Organization.name).all()
 
         return jsonify({
@@ -96,7 +97,8 @@ def get_users(org_secure_code):
     try:
         users = User.query.filter(
             User.org_secure_code == org_secure_code,
-            User.is_deleted == False
+            User.is_deleted == False,
+            User.is_active == True
         ).order_by(User.user_type, User.username).all()
 
         return jsonify({

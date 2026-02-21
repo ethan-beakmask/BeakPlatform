@@ -7,6 +7,21 @@
 ## [Unreleased]
 
 ### Added
+- 登入頁欄位偽裝：企業員工與外部人員登入頁新增 OTP1/OTP2 decoy 欄位，真正密碼從 OTP1 讀取
+- 登入頁反自動化：HTML/CSS 完全移除 password/pwd/pass 關鍵字，所有欄位改用 `type="text"` + CSS `text-security: disc` 遮蔽
+- 登入頁 Honeypot 偵測：decoy 欄位被填寫時記錄 `[HONEYPOT]` warning log
+- 快速登入頁新增 EXTERNAL 外部人員 badge
+- 企業列表頁新增 flash message 顯示（修復建立企業成功訊息殘留問題）
+
+### Changed
+- 快速登入頁加寬至 1100px，企業列表高度可顯示 6 筆
+- 快速登入頁帳號列表改為姓名與 email 橫排對齊，移除密碼顯示
+- 快速登入頁企業與帳號查詢補上 `is_active=True` 過濾
+
+### Fixed
+- 企業建立成功訊息殘留：列表頁未消費 flash message，導致下次開新增頁時顯示舊訊息
+
+### Added
 - 變數插入器 (VarPicker)：流程設計器節點配置欄位旁新增 `{x}` 按鈕，點選即可從分組清單插入 v2 語法變數
 - 變數插入器：支援搜尋篩選、游標位置插入、外部點擊/Escape 關閉
 - 變數插入器：自動收集表單欄位 (`f.*`)、表單實例 (`fi.*`)、流程變數 (`v.*`)、流程資訊 (`wi.*`)、節點資訊 (`n.*`)、時間 (`t.*`)

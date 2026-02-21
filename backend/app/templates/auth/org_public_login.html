@@ -38,14 +38,19 @@
         form td {
             padding: 8px 0;
         }
+        form input[type="text"],
         form input[type="email"],
-        form input[type="password"] {
+        form .form-input {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             font-size: 14px;
             box-sizing: border-box;
+        }
+        .secure-entry {
+            -webkit-text-security: disc;
+            text-security: disc;
         }
         form input:focus {
             outline: none;
@@ -89,13 +94,15 @@
     </style>
 </head>
 <body>
-    {% if logo_url %}
+    {% if logo_url and show_logo|default(true) %}
     <div class="logo-container">
-        <img src="{{ logo_url }}" alt="{{ org.name }}">
+        <img src="{{ logo_url }}" alt="外部人員登入">
     </div>
-    <h1>{{ org.name }} - 外部人員登入</h1>
+    {% endif %}
+    {% if show_org_name|default(true) %}
+    <h1>{{ org.name }}<br>外部人員登入</h1>
     {% else %}
-    <h1>{{ org.name }} - 外部人員登入</h1>
+    <h1>外部人員登入</h1>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -106,6 +113,7 @@
     {% endif %}
     {% endwith %}
 
+    <!-- 欄位偽裝防自動化猜測 -->
     <form method="POST" action="{{ url_for('auth.org_public_login', domain_name=domain_name) }}">
         <table border="0" cellpadding="0" cellspacing="0">
             <tr>
@@ -115,20 +123,39 @@
             </tr>
             <tr>
                 <td>
-                    <input type="email" id="email" name="email" required
+                    <input type="text" id="email" name="email"
                            autocomplete="email" placeholder="your@email.com">
                     <div class="help-text">請輸入您的完整 Email 地址</div>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="password">密碼</label>
+                    <label for="auth_token">密碼</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="password" id="password" name="password" required
-                           autocomplete="current-password">
+                    <input type="text" id="auth_token" name="auth_token" class="form-input secure-entry" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_1">OTP1</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_1" name="OTP1" class="form-input secure-entry" autocomplete="one-time-code">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_2">OTP2</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_2" name="OTP2" class="form-input secure-entry" autocomplete="off">
                 </td>
             </tr>
             <tr>
@@ -138,10 +165,6 @@
             </tr>
         </table>
     </form>
-
-    <div class="links">
-        <a href="{{ url_for('auth.org_public', domain_name=domain_name) }}">&larr; 返回</a>
-    </div>
 
     <footer>
         <p>&copy; 2025 BeakMask. Security First.</p>

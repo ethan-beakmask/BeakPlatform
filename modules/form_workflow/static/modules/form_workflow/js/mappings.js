@@ -30,12 +30,6 @@ function mappingsManager() {
                 this.loadUnmappedForms(),
                 this.loadWorkflows(),
             ]);
-            // 載入每個 mapping 的 SQL sync 狀態
-            for (const m of this.mappings) {
-                if (m.sql_sync_enabled) {
-                    this.loadSyncStatus(m);
-                }
-            }
         },
 
         async loadMappings() {
@@ -157,6 +151,12 @@ function mappingsManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.publishedVersions = data.data || [];
+                    // 載入每個已啟用 SQL sync 版本的同步狀態
+                    for (const v of this.publishedVersions) {
+                        if (v.sql_sync_enabled) {
+                            this.loadSyncStatus(v);
+                        }
+                    }
                 }
             } catch (e) {
                 console.error('載入版本失敗:', e);
@@ -309,44 +309,43 @@ function mappingsManager() {
             }
         },
 
-        async toggleSqlSync(m, enabled) {
+        async toggleSqlSync(v, enabled) {
             // 只允許啟用，不允許關閉（後端也有擋）
             if (!enabled) {
-                m.sql_sync_enabled = true; // revert checkbox
+                v.sql_sync_enabled = true; // revert checkbox
                 return;
             }
             if (!confirm('啟用 SQL 同步後無法關閉，確定啟用？')) {
-                m.sql_sync_enabled = false; // revert checkbox
+                v.sql_sync_enabled = false; // revert checkbox
                 return;
             }
             try {
-                const res = await fetch(`/api/mappings/${m.secure_code}/sql-sync`, {
+                const res = await fetch(`/api/mappings/published/${v.secure_code}/sql-sync`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sql_sync_enabled: true })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    m.sql_sync_enabled = true;
+                    v.sql_sync_enabled = true;
                     this.showToast(data.message || 'SQL 同步已啟用');
-                    this.loadSyncStatus(m);
+                    this.loadSyncStatus(v);
                 } else {
                     this.showToast(data.error || '操作失敗', 'error');
-                    m.sql_sync_enabled = !enabled; // revert
+                    v.sql_sync_enabled = !enabled; // revert
                 }
             } catch (e) {
                 this.showToast('操作失敗', 'error');
-                m.sql_sync_enabled = !enabled;
+                v.sql_sync_enabled = !enabled;
             }
         },
 
-        async loadSyncStatus(m) {
+        async loadSyncStatus(v) {
             try {
-                const res = await fetch(`/api/mappings/${m.secure_code}/sql-sync/status`);
+                const res = await fetch(`/api/mappings/published/${v.secure_code}/sql-sync/status`);
                 const data = await res.json();
-                if (data.success && data.data.tables && data.data.tables.length > 0) {
-                    const latest = data.data.tables[0]; // 按 publish_version desc
-                    m._syncInfo = `${latest.row_count || 0} 筆`;
+                if (data.success && data.data.table) {
+                    v._syncInfo = `${data.data.table.row_count || 0} 筆`;
                 }
             } catch (e) {
                 // silent

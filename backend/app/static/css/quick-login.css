@@ -16,7 +16,7 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
 }
 
@@ -132,7 +132,7 @@ body {
 }
 
 .list-box.org-list {
-    max-height: 243px;
+    max-height: 365px;
 }
 
 .list-box.user-list {
@@ -221,7 +221,33 @@ body {
 .badge.system { background: #fef3c7; color: #92400e; }
 .badge.org-admin { background: #dbeafe; color: #1e40af; }
 .badge.member { background: #f3f4f6; color: #6b7280; }
-.badge.inactive { background: #fee2e2; color: #991b1b; }
+.badge.external { background: #d1fae5; color: #065f46; }
+
+/* 用戶列表：姓名與 email 橫排對齊 */
+.user-list .item-content {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.user-list .user-name {
+    width: 140px;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-list .user-email {
+    font-size: 12px;
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 /* 空狀態 */
 .empty-state {

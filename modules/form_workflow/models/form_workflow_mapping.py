@@ -96,9 +96,6 @@ class FwFormWorkflowMapping(ModuleBaseModel):
             'is_published': self.is_published,
             'publish_at': self.publish_at.isoformat() if self.publish_at else None,
 
-            # SQL 同步
-            'sql_sync_enabled': self.sql_sync_enabled,
-
             # 封存
             'is_archived': self.is_archived,
             'archived_at': self.archived_at.isoformat() if self.archived_at else None,

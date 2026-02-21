@@ -64,7 +64,7 @@ function quickLoginManager() {
                 const result = await response.json();
                 if (result.success) {
                     // 排序：系統管理員 > 企業管理員 > 一般用戶
-                    const order = { 'SYSTEM_ADMIN': 0, 'ORG_ADMIN': 1, 'MEMBER': 2 };
+                    const order = { 'SYSTEM_ADMIN': 0, 'ORG_ADMIN': 1, 'MEMBER': 2, 'EXTERNAL': 3 };
                     this.users = result.data.sort((a, b) => {
                         const orderA = order[a.user_type] ?? 9;
                         const orderB = order[b.user_type] ?? 9;
@@ -82,7 +82,7 @@ function quickLoginManager() {
         },
 
         async loginAs(user) {
-            if (!user.is_active || this.loading) return;
+            if (this.loading) return;
 
             this.selectedUserId = user.id;
             this.loading = true;

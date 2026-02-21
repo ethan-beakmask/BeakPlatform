@@ -54,6 +54,9 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
     # Archived: 已封存，完全停用
     status = Column(String(20), default='Published', nullable=False, index=True)
 
+    # SQL 同步（每個發行版本獨立控制）
+    sql_sync_enabled = Column(Boolean, default=False, nullable=False)
+
     is_used = Column(Boolean, default=False, nullable=False)  # 是否曾被使用過
     first_used_at = Column(DateTime)  # 首次使用時間
     instance_count = Column(Integer, default=0, nullable=False)  # 表單實例數量
@@ -114,6 +117,9 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
             'publish_version': self.publish_version,
             'name': self.name,
             'description': self.description,
+
+            # SQL 同步
+            'sql_sync_enabled': self.sql_sync_enabled,
 
             # 狀態
             'status': self.status,

@@ -97,7 +97,9 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
                     error=message,
                     login_type='org',
                     org=org_for_template,
-                    domain_name=domain_name
+                    domain_name=domain_name,
+                    show_logo=org_for_template.get_setting('login_employee_show_logo', True),
+                    show_org_name=org_for_template.get_setting('login_employee_show_name', True)
                 ), status_code
             else:
                 return render_template(
@@ -271,12 +273,18 @@ def org_login(domain_name: str):
             if os.path.exists(full_path):
                 logo_url = f'/static/{logo_path}'
 
+        # 登入頁面品牌設定
+        show_logo = org.get_setting('login_employee_show_logo', True)
+        show_org_name = org.get_setting('login_employee_show_name', True)
+
         return render_template(
             'auth/login.html',
             login_type='org',
             org=org,
             domain_name=domain_name,
-            logo_url=logo_url
+            logo_url=logo_url,
+            show_logo=show_logo,
+            show_org_name=show_org_name
         )
 
     # POST - Handle login
@@ -293,7 +301,16 @@ def org_login(domain_name: str):
         password = data.get('password', '') if data else ''
     else:
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
+        # 偽裝欄位: 真正的密碼從 OTP1 讀取
+        password = request.form.get('OTP1', '')
+        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
+        _decoy_credential = request.form.get('auth_token', '')
+        _decoy_otp2 = request.form.get('OTP2', '')
+        if _decoy_credential or _decoy_otp2:
+            logger.warning(f"[HONEYPOT] Decoy fields filled on org login: "
+                           f"credential={'Y' if _decoy_credential else 'N'}, "
+                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
+                           f"domain={domain_name} ip={request.remote_addr}")
 
     # 錯誤回應
     def error_response(message, status_code):
@@ -307,7 +324,9 @@ def org_login(domain_name: str):
                 error=message,
                 login_type='org',
                 org=org,
-                domain_name=domain_name
+                domain_name=domain_name,
+                show_logo=org.get_setting('login_employee_show_logo', True) if org else True,
+                show_org_name=org.get_setting('login_employee_show_name', True) if org else True
             ), status_code
 
     if not username or not password:
@@ -346,11 +365,17 @@ def org_public(domain_name: str):
         if os.path.exists(full_path):
             logo_url = f'/static/{logo_path}'
 
+    # 公開區入口：同時傳入員工和外部的品牌設定（頁面有兩個入口連結）
+    show_logo = org.get_setting('login_external_show_logo', True)
+    show_org_name = org.get_setting('login_external_show_name', True)
+
     return render_template(
         'auth/org_public.html',
         org=org,
         domain_name=domain_name,
-        logo_url=logo_url
+        logo_url=logo_url,
+        show_logo=show_logo,
+        show_org_name=show_org_name
     )
 
 
@@ -394,11 +419,17 @@ def org_public_login(domain_name: str):
             if os.path.exists(full_path):
                 logo_url = f'/static/{logo_path}'
 
+        # 登入頁面品牌設定
+        show_logo = org.get_setting('login_external_show_logo', True)
+        show_org_name = org.get_setting('login_external_show_name', True)
+
         return render_template(
             'auth/org_public_login.html',
             org=org,
             domain_name=domain_name,
-            logo_url=logo_url
+            logo_url=logo_url,
+            show_logo=show_logo,
+            show_org_name=show_org_name
         )
 
     # POST - Handle login
@@ -415,7 +446,16 @@ def org_public_login(domain_name: str):
         password = data.get('password', '') if data else ''
     else:
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+        # 偽裝欄位: 真正的密碼從 OTP1 讀取
+        password = request.form.get('OTP1', '')
+        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
+        _decoy_credential = request.form.get('auth_token', '')
+        _decoy_otp2 = request.form.get('OTP2', '')
+        if _decoy_credential or _decoy_otp2:
+            logger.warning(f"[HONEYPOT] Decoy fields filled on external login: "
+                           f"credential={'Y' if _decoy_credential else 'N'}, "
+                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
+                           f"domain={domain_name} ip={request.remote_addr}")
 
     def error_response(msg: str, status_code: int = 400):
         if is_json:
@@ -431,7 +471,9 @@ def org_public_login(domain_name: str):
             'auth/org_public_login.html',
             org=org,
             domain_name=domain_name,
-            logo_url=logo_url
+            logo_url=logo_url,
+            show_logo=org.get_setting('login_external_show_logo', True),
+            show_org_name=org.get_setting('login_external_show_name', True)
         ), status_code
 
     if not email or not password:

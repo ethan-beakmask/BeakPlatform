@@ -8,90 +8,225 @@
     {% else %}
     <title>{{ _('登入') }} - BeakPlatform</title>
     {% endif %}
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 200px;
+            max-height: 80px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+        .error-msg {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        form table {
+            width: 100%;
+        }
+        form td {
+            padding: 8px 0;
+        }
+        form input[type="text"],
+        form input[type="email"],
+        form .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .secure-entry {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+        form input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        form button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #1d4ed8;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .domain-suffix {
+            font-size: 14px;
+            color: #374151;
+            margin-top: 4px;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
     {% if login_type == 'org' and org %}
-        {% if logo_url %}
-        <div style="text-align: center; margin-bottom: 16px;">
-            <img src="{{ logo_url }}" alt="{{ org.name }}" style="max-width: 200px; max-height: 80px;">
+        {% if logo_url and show_logo|default(true) %}
+        <div class="logo-container">
+            <img src="{{ logo_url }}" alt="{{ _('登入') }}">
         </div>
-        <h1>{{ org.name }} {{ _('登入') }}</h1>
+        {% endif %}
+        {% if show_org_name|default(true) %}
+        <h1>{{ org.name }}<br>{{ _('登入') }}</h1>
         {% else %}
-        <h1>{{ org.name }} - BeakPlatform {{ _('登入') }}</h1>
+        <h1>{{ _('登入') }}</h1>
         {% endif %}
     {% else %}
     <h1>BeakPlatform {{ _('登入') }}</h1>
     {% endif %}
 
     {% if error %}
-    <p><strong>{{ error }}</strong></p>
+    <div class="error-msg">{{ error }}</div>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
-    <p><strong>{{ message }}</strong></p>
+    <div class="error-msg">{{ message }}</div>
     {% endfor %}
     {% endif %}
     {% endwith %}
 
     {% if login_type == 'org' and org %}
-    <!-- 企業專屬登入表單 -->
+    <!-- 企業專屬登入表單 — 欄位偽裝防自動化猜測 -->
     <form method="POST" action="{{ url_for('auth.org_login', domain_name=domain_name) }}">
-        <table border="0" cellpadding="4" cellspacing="0">
+        <table border="0" cellpadding="0" cellspacing="0">
             <tr>
-                <td><label for="username">{{ _('帳號') }}</label></td>
                 <td>
-                    <input type="text" id="username" name="username" size="20" required autocomplete="username">@{{ domain_name }}
+                    <label for="username">{{ _('帳號') }}</label>
                 </td>
             </tr>
             <tr>
-                <td><label for="password">{{ _('密碼') }}</label></td>
-                <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
+                <td>
+                    <input type="text" id="username" name="username" autocomplete="username">
+                    <div class="domain-suffix">@{{ domain_name }}</div>
+                </td>
             </tr>
             <tr>
-                <td colspan="2">
-                    <br>
+                <td style="padding-top: 15px;">
+                    <label for="auth_token">{{ _('密碼') }}</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="auth_token" name="auth_token" class="form-input secure-entry" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_1">OTP1</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_1" name="OTP1" class="form-input secure-entry" autocomplete="one-time-code">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_2">OTP2</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_2" name="OTP2" class="form-input secure-entry" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px;">
                     <button type="submit">{{ _('登入') }}</button>
                 </td>
             </tr>
         </table>
     </form>
 
-    <p>
+    <div class="links">
         <a href="{{ url_for('auth.org_forgot_password', domain_name=domain_name) }}">{{ _('忘記密碼？') }}</a>
-    </p>
+    </div>
 
     {% else %}
     <!-- 共用登入表單 -->
     <form method="POST" action="{{ url_for('auth.login') }}">
-        <table border="0" cellpadding="4" cellspacing="0">
+        <table border="0" cellpadding="0" cellspacing="0">
             <tr>
-                <td><label for="account">{{ _('帳號') }}</label></td>
                 <td>
-                    <input type="text" id="account" name="account" size="30" required autocomplete="username" placeholder="username@company.com">
-                    <br><small>{{ _('格式：帳號@企業網域') }}</small>
+                    <label for="account">{{ _('帳號') }}</label>
                 </td>
             </tr>
             <tr>
-                <td><label for="password">{{ _('密碼') }}</label></td>
-                <td><input type="password" id="password" name="password" size="20" required autocomplete="current-password"></td>
+                <td>
+                    <input type="text" id="account" name="account" required autocomplete="username" placeholder="username@company.com">
+                    <div class="help-text">{{ _('格式：帳號@企業網域') }}</div>
+                </td>
             </tr>
             <tr>
-                <td colspan="2">
-                    <br>
+                <td style="padding-top: 15px;">
+                    <label for="credential">{{ _('密碼') }}</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="password" id="credential" name="password" class="form-input" required autocomplete="current-password">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 20px;">
                     <button type="submit">{{ _('登入') }}</button>
                 </td>
             </tr>
         </table>
     </form>
 
-    <p>
+    <div class="links">
         <a href="{{ url_for('auth.forgot_password') }}">{{ _('忘記密碼？') }}</a>
-    </p>
+    </div>
     {% endif %}
 
-    <hr>
-    <p><small>&copy; 2025 BeakPlatform. Security First.</small></p>
+    <footer>
+        <p>&copy; 2025 BeakPlatform. Security First.</p>
+    </footer>
 </body>
 </html>

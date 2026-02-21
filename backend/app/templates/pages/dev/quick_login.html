@@ -88,17 +88,17 @@
 
                         <template x-for="user in users" :key="user.id">
                             <div class="list-item"
-                                 :class="{'selected': selectedUserId === user.id, 'disabled': !user.is_active || loading}"
+                                 :class="{'selected': selectedUserId === user.id, 'disabled': loading}"
                                  @click="loginAs(user)">
                                 <div class="radio"></div>
                                 <div class="item-content">
-                                    <div class="item-name" x-text="user.display_name || user.username"></div>
-                                    <div class="item-meta" x-text="user.email"></div>
+                                    <span class="user-name" x-text="user.display_name || user.username"></span>
+                                    <span class="user-email" x-text="user.email"></span>
                                 </div>
-                                <span x-show="!user.is_active" class="badge inactive">停用</span>
-                                <span x-show="user.is_active && user.user_type === 'SYSTEM_ADMIN'" class="badge system">系統管理員</span>
-                                <span x-show="user.is_active && user.user_type === 'ORG_ADMIN'" class="badge org-admin">企業管理員</span>
-                                <span x-show="user.is_active && user.user_type === 'MEMBER'" class="badge member">一般用戶</span>
+                                <span x-show="user.user_type === 'SYSTEM_ADMIN'" class="badge system">系統管理員</span>
+                                <span x-show="user.user_type === 'ORG_ADMIN'" class="badge org-admin">企業管理員</span>
+                                <span x-show="user.user_type === 'MEMBER'" class="badge member">一般用戶</span>
+                                <span x-show="user.user_type === 'EXTERNAL'" class="badge external">外部人員</span>
                             </div>
                         </template>
                     </div>
@@ -172,10 +172,6 @@
                                     <span class="cred-label">帳號:</span>
                                     <code>admin@system.local</code>
                                 </div>
-                                <div class="credential">
-                                    <span class="cred-label">密碼:</span>
-                                    <code>admin123</code>
-                                </div>
                             </div>
                         </div>
 
@@ -185,11 +181,6 @@
                                 <div class="credential">
                                     <span class="cred-label">帳號:</span>
                                     <code>admin@{domain_name}</code>
-                                </div>
-                                <div class="credential">
-                                    <span class="cred-label">密碼:</span>
-                                    <code>P@ssw0rd</code>
-                                    <span class="cred-note">(首次建立)</span>
                                 </div>
                             </div>
                         </div>

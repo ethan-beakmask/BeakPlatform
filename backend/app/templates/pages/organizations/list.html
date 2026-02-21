@@ -9,6 +9,16 @@
 
 {% block content %}
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<p style="padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; {% if category == 'success' %}background: #dcfce7; color: #166534; border: 1px solid #86efac;{% else %}background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;{% endif %}">
+    {{ message }}
+</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
 <div class="outlook-layout" x-data="orgManager()" x-cloak>
     <!-- 左側面板 - 企業列表 -->
     <div class="left-panel">

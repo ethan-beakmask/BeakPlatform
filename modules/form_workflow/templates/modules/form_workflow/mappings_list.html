@@ -39,7 +39,6 @@
                     <th style="width: 40px;"></th>
                     <th>流程</th>
                     <th style="width: 80px; text-align: center;">運作版本</th>
-                    <th style="width: 80px; text-align: center;">SQL 同步</th>
                     <th style="width: 140px;">更新時間</th>
                     <th style="width: 260px;" class="actions">操作</th>
                 </tr>
@@ -68,16 +67,6 @@
                                 <span class="fw-version" style="font-size: 13px;"
                                       x-text="m.active_version + '/' + m.total_versions"></span>
                             </template>
-                        </td>
-                        <td style="text-align: center;">
-                            <label class="fw-toggle" :title="m.sql_sync_enabled ? 'SQL 同步已啟用（不可關閉）' : (!m.is_published ? '需先發行才能啟用' : '啟用 SQL 同步')">
-                                <input type="checkbox" :checked="m.sql_sync_enabled"
-                                       :disabled="m.sql_sync_enabled || !m.is_published"
-                                       @change="toggleSqlSync(m, $event.target.checked)">
-                                <span class="slider"></span>
-                            </label>
-                            <div class="fw-sync-info" :class="m._syncInfo ? 'active' : ''"
-                                 x-text="m._syncInfo || ''"></div>
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(m.updated_at)"></td>
                         <td class="actions">
@@ -183,7 +172,7 @@
 
     <!-- 發行版本 Modal -->
     <div x-show="showVersionsModal" x-cloak class="fw-modal">
-        <div class="fw-modal-content" style="width: 960px;">
+        <div class="fw-modal-content" style="width: 1560px;">
             <div class="fw-modal-header">
                 <h3>發行版本 - <span x-text="viewingMapping?.form_template_name"></span></h3>
                 <button @click="showVersionsModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
@@ -196,12 +185,13 @@
                     <thead>
                         <tr>
                             <th style="width: 50px;">版本</th>
-                            <th>表單名稱</th>
+                            <th style="width: 240px;">表單名稱</th>
                             <th style="width: 60px;">表單版本</th>
-                            <th>流程名稱</th>
+                            <th style="width: 240px;">流程名稱</th>
                             <th style="width: 60px;">流程版本</th>
-                            <th>狀態</th>
-                            <th>發行時間</th>
+                            <th style="width: 120px;">狀態</th>
+                            <th style="width: 100px; text-align: center;">SQL 同步</th>
+                            <th style="width: 200px;">發行時間</th>
                             <th style="width: 160px;" class="actions">操作</th>
                         </tr>
                     </thead>
@@ -223,6 +213,17 @@
                                     <span class="fw-badge"
                                           :class="v.status === 'Published' ? 'active' : (v.status === 'Suspended' ? 'warning' : 'secondary')"
                                           x-text="v.status === 'Published' ? '已發行' : (v.status === 'Suspended' ? '已暫停' : '已封存')"></span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <label class="fw-toggle"
+                                           :title="v.sql_sync_enabled ? 'SQL 同步已啟用（不可關閉）' : (v.status === 'Archived' ? '已封存版本無法啟用' : '啟用 SQL 同步')">
+                                        <input type="checkbox" :checked="v.sql_sync_enabled"
+                                               :disabled="v.sql_sync_enabled || v.status === 'Archived'"
+                                               @change="toggleSqlSync(v, $event.target.checked)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div class="fw-sync-info" :class="v._syncInfo ? 'active' : ''"
+                                         x-text="v._syncInfo || ''"></div>
                                 </td>
                                 <td style="font-size: 12px; color: #666;" x-text="formatDate(v.published_at)"></td>
                                 <td class="actions">

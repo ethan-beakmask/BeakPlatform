@@ -156,6 +156,67 @@ function generalSettings() {
     };
 }
 
+// 登入頁面品牌設定
+function loginBrandingSettings() {
+    return {
+        settings: {
+            login_employee_show_logo: true,
+            login_employee_show_name: true,
+            login_external_show_logo: true,
+            login_external_show_name: true
+        },
+        saveMessage: '',
+
+        async init() {
+            await this.loadSettings();
+        },
+
+        async loadSettings() {
+            try {
+                const response = await fetch('/api/admin/settings/general');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const d = data.data;
+                        this.settings.login_employee_show_logo = d.login_employee_show_logo !== false;
+                        this.settings.login_employee_show_name = d.login_employee_show_name !== false;
+                        this.settings.login_external_show_logo = d.login_external_show_logo !== false;
+                        this.settings.login_external_show_name = d.login_external_show_name !== false;
+                    }
+                }
+            } catch (err) {
+                console.error('載入登入品牌設定失敗:', err);
+            }
+        },
+
+        async saveSetting(key, value) {
+            try {
+                const payload = {};
+                payload[key] = value;
+                const response = await fetch('/api/admin/settings/general', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.saveMessage = '設定已儲存';
+                    setTimeout(() => { this.saveMessage = ''; }, 2000);
+                } else {
+                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                }
+            } catch (err) {
+                console.error('儲存設定失敗:', err);
+                alert('儲存失敗: ' + err.message);
+            }
+        }
+    };
+}
+
 function passwordPolicySettings() {
     return {
         policy: {

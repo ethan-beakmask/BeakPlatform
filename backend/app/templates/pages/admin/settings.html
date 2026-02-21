@@ -16,6 +16,7 @@
     <nav class="settings-nav">
         <ul>
             <li><a href="#basic">企業資訊</a></li>
+            <li><a href="#login-branding">登入頁面顯示</a></li>
             <li><a href="#general">一般設定</a></li>
             <li><a href="#password-policy">密碼政策</a></li>
             <li><a href="#recipients">收件人群組</a></li>
@@ -86,6 +87,62 @@
             <p style="margin-top: 10px; color: #666;">
                 <small>如需修改其他企業資訊，請聯繫系統管理員。</small>
             </p>
+        </section>
+
+        <!-- 登入頁面品牌設定 -->
+        <section id="login-branding" class="settings-section" x-data="loginBrandingSettings()" x-init="init()">
+            <h2>登入頁面顯示</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
+                隱藏可避免透過登入頁辨識企業身份
+            </p>
+            <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
+                <tr>
+                    <th style="text-align: left; width: 200px; vertical-align: top;">員工登入頁面</th>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_employee_show_logo"
+                                       @change="saveSetting('login_employee_show_logo', settings.login_employee_show_logo)"
+                                       style="width: 18px; height: 18px;">
+                                <span>顯示企業 Logo</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_employee_show_name"
+                                       @change="saveSetting('login_employee_show_name', settings.login_employee_show_name)"
+                                       style="width: 18px; height: 18px;">
+                                <span>顯示企業名稱</span>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="text-align: left; vertical-align: top;">外部人員登入頁面</th>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_external_show_logo"
+                                       @change="saveSetting('login_external_show_logo', settings.login_external_show_logo)"
+                                       style="width: 18px; height: 18px;">
+                                <span>顯示企業 Logo</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox"
+                                       x-model="settings.login_external_show_name"
+                                       @change="saveSetting('login_external_show_name', settings.login_external_show_name)"
+                                       style="width: 18px; height: 18px;">
+                                <span>顯示企業名稱</span>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <p x-show="saveMessage" x-text="saveMessage"
+               style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+               x-transition></p>
         </section>
 
         <!-- 一般設定 -->
