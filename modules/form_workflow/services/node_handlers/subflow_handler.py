@@ -99,8 +99,13 @@ class SubFlowHandler(BaseNodeHandler):
                 self.log_info('處理子流程輸入參數映射', {
                     'input_mapping': input_mapping
                 })
-                # TODO: 實作變數服務後完成參數映射
-                # 目前僅記錄，不實際映射
+                # 透過 TREE scope 共享變數（父子流程共享 root_instance_code）
+                # 將 input_mapping 中的父流程變數寫入 TREE scope
+                for parent_var, child_var in input_mapping.items():
+                    value = self.get_var(parent_var)
+                    if value is not None:
+                        self.set_tree_var(child_var, value)
+                        self.log_info(f'TREE 變數映射: {parent_var}={value} → {child_var}')
 
             # 3. 取得父流程實例
             parent_instance = FwWorkflowInstance.query.filter_by(

@@ -215,9 +215,19 @@ class BranchHandler(BaseNodeHandler):
         single_var_match = re.match(r'^\$\{([^}]+)\}$', expr.strip())
         if single_var_match:
             var_name = single_var_match.group(1)
+            # v2 前綴: f. 表單欄位
+            if var_name.startswith('f.') and not var_name.startswith('fi.'):
+                return self.get_form_field(var_name[2:])
+            # v2 前綴: fi. 表單資訊
+            if var_name.startswith('fi.'):
+                return self._resolve_fi(var_name)
+            # v2 前綴: v. 流程變數
+            if var_name.startswith('v.'):
+                return self.get_var(var_name[2:], '')
+            # 過渡期: 舊 form.* 語法
             if var_name.startswith('form.'):
                 return self.get_form_field(var_name[5:])
-            # 查詢 workflow 變數（LOCAL → GLOBAL）
+            # 查詢 workflow 變數 (NODE > FLOW > TREE)
             return self.get_var(var_name, '')
 
         return self.replace_variables(expr)

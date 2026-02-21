@@ -2,6 +2,11 @@
 FormWorkflow Module - Workflow Variable Model
 工作流變數模型
 
+Scope 定義 (見 docs/VARIABLE_SYSTEM_SPEC.md):
+- TREE: 跨流程共享（整棵流程樹），隔離鍵 = root_instance_code
+- FLOW: 單一流程實例，隔離鍵 = workflow_instance_secure_code
+- NODE: 節點級，節點完成後自動清除
+
 注意：此模型使用獨立的基礎類別，因為資料表沒有 soft delete 欄位。
 """
 from datetime import datetime
@@ -22,9 +27,21 @@ class FwWorkflowVariable(db.Model):
     """
     __tablename__ = 'fw_workflow_variables'
 
-    # 變數類型常數
-    TYPE_GLOBAL = 'GLOBAL'  # 全域變數：整個流程可見
-    TYPE_LOCAL = 'LOCAL'    # 節點級變數：只在特定節點可見
+    # Scope 常數
+    SCOPE_TREE = 'TREE'    # 跨流程共享（整棵流程樹）
+    SCOPE_FLOW = 'FLOW'    # 單一流程實例
+    SCOPE_NODE = 'NODE'    # 節點級（節點完成後清除）
+
+    # 舊常數別名（過渡期相容，標記 deprecated）
+    TYPE_GLOBAL = 'FLOW'   # deprecated: 用 SCOPE_FLOW
+    TYPE_LOCAL = 'NODE'    # deprecated: 用 SCOPE_NODE
+
+    # Scope 中文標籤
+    SCOPE_LABELS = {
+        'TREE': '跨流程',
+        'FLOW': '流程級',
+        'NODE': '節點級',
+    }
 
     # 基礎欄位
     id = Column(Integer, primary_key=True)
@@ -33,15 +50,18 @@ class FwWorkflowVariable(db.Model):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     org_secure_code = Column(String(32), nullable=False, index=True)
 
-    # 關聯的工作流實例（使用 secure_code）
+    # 關聯的工作流實例（FLOW/NODE scope 使用）
     workflow_instance_secure_code = Column(String(32), nullable=False, index=True)
+
+    # TREE scope 隔離鍵（整棵流程樹共享同一個 root_instance_code）
+    root_instance_code = Column(String(32), nullable=True, index=True)
 
     # 變數資訊
     var_name = Column(String(200), nullable=False)
     var_value = Column(JSONB, nullable=True)  # 支援各種型別
 
-    # 變數類型
-    var_type = Column(String(50), default=TYPE_GLOBAL)  # GLOBAL=全域, LOCAL=節點級
+    # 變數 scope
+    var_type = Column(String(50), default=SCOPE_FLOW)  # TREE / FLOW / NODE
 
     # 來源節點
     source_node_id = Column(String(100), nullable=True)
@@ -55,6 +75,7 @@ class FwWorkflowVariable(db.Model):
         Index('idx_fw_workflow_variables_workflow', 'workflow_instance_secure_code'),
         Index('idx_fw_workflow_variables_name', 'var_name'),
         Index('idx_fw_workflow_variables_type', 'var_type'),
+        Index('idx_fw_workflow_variables_root', 'root_instance_code'),
     )
 
     def __repr__(self):
@@ -68,6 +89,7 @@ class FwWorkflowVariable(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'workflow_instance_secure_code': self.workflow_instance_secure_code,
+            'root_instance_code': self.root_instance_code,
             'var_name': self.var_name,
             'var_value': self.var_value,
             'var_type': self.var_type,

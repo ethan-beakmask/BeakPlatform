@@ -1087,10 +1087,13 @@ def variable_mapping():
                 'form_fields': [],
                 'workflow_variables': [],
                 'system_variables': [
-                    {'name': 'applicant_name', 'type': 'string', 'description': '申請人姓名'},
-                    {'name': 'applicant_department', 'type': 'string', 'description': '申請人部門'},
-                    {'name': 'submit_date', 'type': 'datetime', 'description': '提交日期'},
-                    {'name': 'serial_number', 'type': 'string', 'description': '表單序號'},
+                    {'name': 'fi.applicant', 'type': 'string', 'description': '申請人姓名'},
+                    {'name': 'fi.applicant_dept', 'type': 'string', 'description': '申請人部門'},
+                    {'name': 'fi.applicant_email', 'type': 'string', 'description': '申請人信箱'},
+                    {'name': 'fi.serial', 'type': 'string', 'description': '表單編號'},
+                    {'name': 'fi.name', 'type': 'string', 'description': '表單名稱'},
+                    {'name': 'fi.subject', 'type': 'string', 'description': '表單主旨'},
+                    {'name': 'fi.status', 'type': 'string', 'description': '表單狀態'},
                 ]
             }
         })

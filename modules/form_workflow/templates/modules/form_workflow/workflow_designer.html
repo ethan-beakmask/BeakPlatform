@@ -428,13 +428,13 @@
                                             style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
                                             <i class="fas fa-table"></i>
                                         </button>
-                                        <button onclick="copySelectedOldVars()" title="複製勾選欄位的舊式變數"
+                                        <button onclick="copySelectedOldVars()" title="複製勾選欄位的內部變數"
                                             style="padding: 4px 8px; background: #fd7e14; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
-                                            <i class="fas fa-clipboard"></i> 舊變數
+                                            <i class="fas fa-clipboard"></i> 內部
                                         </button>
-                                        <button onclick="copySelectedDisplayVars()" title="複製勾選欄位的新式變數"
+                                        <button onclick="copySelectedDisplayVars()" title="複製勾選欄位的引用語法 ${f.key}"
                                             style="padding: 4px 8px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
-                                            <i class="fas fa-clipboard"></i> 新變數
+                                            <i class="fas fa-clipboard"></i> f.key
                                         </button>
                                     </div>
                                 </div>
@@ -449,12 +449,12 @@
                                                 </th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">標籤</th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
-                                                    舊式變數
-                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="FieldWrite 使用的變數格式，點擊可複製"></i>
+                                                    內部變數
+                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="FieldWrite 使用的內部變數格式"></i>
                                                 </th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
-                                                    新式變數
-                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="人類可讀的變數格式，點擊可複製"></i>
+                                                    引用語法
+                                                    <i class="fas fa-info-circle" style="color: #999; cursor: help;" title="${f.key} 格式，用於通知/郵件等節點"></i>
                                                 </th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">類型</th>
                                                 <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">資料型別</th>

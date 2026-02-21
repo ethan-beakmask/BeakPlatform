@@ -13969,8 +13969,8 @@
                     defaultOrOptions = `<code style="background: #f5f5f5; padding: 1px 4px; border-radius: 2px; font-size: 10px;">${field.default_value}</code>`;
                 }
 
-                // 組合變數語法（新式變數和舊式變數）
-                const displayVar = getDisplayVariable(selectedFormSecureCode, field.key);
+                // 組合變數語法（v2 引用語法 + 內部變數）
+                const displayVar = `\${f.${field.key}}`;
                 const internalVar = selectedFormSecureCode ? `\${${selectedFormSecureCode}_${field.key}}` : `\${${field.key}}`;
 
                 html += `
@@ -14348,17 +14348,20 @@
         };
 
         /**
-         * 從文字中提取 ${xxx} 變數引用（排除 ${form.xxx}）
+         * 從文字中提取 ${xxx} 流程變數引用
+         * 排除表單/系統前綴 (f./fi./wi./n./t. 和舊 form.*)
+         * 保留 v. 前綴和無前綴裸名
          */
         function _extractVarRefs(text) {
             if (!text) return [];
             const matches = [];
             const regex = /\$\{([^}]+)\}/g;
+            const excludePrefixes = ['f.', 'fi.', 'wi.', 'n.', 't.', 'form.'];
             let m;
             while ((m = regex.exec(text)) !== null) {
                 const varName = m[1].trim();
-                // 排除表單欄位引用
-                if (!varName.startsWith('form.')) {
+                const excluded = excludePrefixes.some(p => varName.startsWith(p));
+                if (!excluded) {
                     matches.push(varName);
                 }
             }
@@ -14418,7 +14421,7 @@
                             const valDisplay = op.value ? `${opLabel}: ${op.value}` : opLabel;
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: op.target_var, detail: valDisplay
+                                varName: 'v.' + op.target_var, detail: valDisplay
                             });
                         });
                         break;
@@ -14428,7 +14431,7 @@
                         if (config.output_variable) {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: config.output_variable, detail: '決策輸出變數'
+                                varName: 'v.' + config.output_variable, detail: '決策輸出變數'
                             });
                         }
                         // input_variables → READ
@@ -14437,7 +14440,7 @@
                             if (!iv.var_name) return;
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type,
-                                varName: iv.var_name, detail: '輸入變數控制'
+                                varName: 'v.' + iv.var_name, detail: '輸入變數控制'
                             });
                         });
                         break;
@@ -14446,13 +14449,14 @@
                         if (config.result_var) {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: config.result_var, detail: 'SQL 查詢結果'
+                                varName: 'v.' + config.result_var, detail: 'SQL 查詢結果'
                             });
                         }
                         break;
                     }
                     case 'Branch': {
                         const rules = config.rules || [];
+                        const formPrefixes = ['f.', 'fi.', 'form.'];
                         rules.forEach((rule, ri) => {
                             const conditions = rule.conditions || [];
                             conditions.forEach(cond => {
@@ -14462,11 +14466,14 @@
                                 if (varName.startsWith('${') && varName.endsWith('}')) {
                                     varName = varName.slice(2, -1);
                                 }
-                                if (varName.startsWith('form.')) return;
+                                // 排除表單類前綴
+                                if (formPrefixes.some(p => varName.startsWith(p))) return;
+                                // 無前綴裸名加 v. 前綴顯示
+                                const displayVar = varName.startsWith('v.') ? varName : 'v.' + varName;
                                 const condDesc = `${rule.name || '規則' + (ri+1)}: ${cond.operator || '=='} ${cond.value || ''}`;
                                 allVars.push({
                                     category: 'READ', nodeId, displayName, type,
-                                    varName: varName, detail: condDesc
+                                    varName: displayVar, detail: condDesc
                                 });
                             });
                         });
@@ -14479,7 +14486,7 @@
                         Object.keys(inputMap).forEach(parentVar => {
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type,
-                                varName: parentVar, detail: `輸入→子: ${inputMap[parentVar]}`
+                                varName: 'v.' + parentVar, detail: `輸入→子: ${inputMap[parentVar]}`
                             });
                         });
                         // output: child→parent (SET parent var)
@@ -14487,7 +14494,7 @@
                         Object.keys(outputMap).forEach(childVar => {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: outputMap[childVar], detail: `子: ${childVar}→父`
+                                varName: 'v.' + outputMap[childVar], detail: `子: ${childVar}→父`
                             });
                         });
                         break;

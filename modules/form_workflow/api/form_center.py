@@ -1969,7 +1969,7 @@ def get_execution_logs(instance_id):
     variables = {}
     vars_query = FwWorkflowVariable.query.filter(
         FwWorkflowVariable.workflow_instance_secure_code.in_(all_instance_codes),
-        FwWorkflowVariable.var_type == 'GLOBAL'
+        FwWorkflowVariable.var_type == 'FLOW'
     ).all()
     logger.info(f'[LOGS API] 查詢到 {len(vars_query)} 個變數')
     for v in vars_query:
