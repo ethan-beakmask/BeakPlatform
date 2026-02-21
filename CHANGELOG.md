@@ -11,11 +11,15 @@
 - 變數系統 v2：三層 scope 架構 (TREE 跨流程 / FLOW 單流程 / NODE 單節點)
 - 變數系統 v2：`fi.*` 前綴解析表單實例屬性 (applicant_name 等系統變數)
 - 變數系統 v2：NODE scope 自動清理 API (`cleanup_node_vars`)
+- 變數系統 v2：NODE scope 自動清理整合 — node_runner 節點完成後自動呼叫 `cleanup_node_vars()`
 - 變數系統 v2：DB migration (`029_variable_system_v2.sql`)，GLOBAL→FLOW / LOCAL→NODE 遷移
 - 變數系統 v2：規格文件 (`docs/VARIABLE_SYSTEM_SPEC.md`)
+- 變數系統 v2：批次遷移腳本 (`scripts/migrate_variable_syntax.py`)，舊語法→v2 前綴制，支援 --dry-run
 - Forgejo Issue #12: 變數系統 v2 追蹤
 
 ### Changed
+- OpSet handler `_evaluate_value()` 改用 `replace_variables()` 統一解析，支援所有 v2 前綴
+- OpSet handler `_evaluate_expression()` 支援 v2 前綴 (v./f.)
 - SubFlow paramMapping 改用 TREE scope 傳遞跨流程變數（取代原 TODO）
 - Branch handler `_resolve_value()` 支援 v2 前綴 (`f.`, `fi.`, `v.`)
 - 變數總覽欄位標題：「舊式變數」→「內部變數」、「新式變數」→「引用語法」
