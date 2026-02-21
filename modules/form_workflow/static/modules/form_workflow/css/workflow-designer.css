@@ -1596,11 +1596,30 @@
 
         .fa-modal-footer {
             display: flex;
-            justify-content: flex-end;
+            align-items: center;
             gap: 8px;
             padding: 12px 20px;
             border-top: 1px solid #e0e0e0;
             background: #fafafa;
+        }
+
+        .fa-modal-message {
+            flex: 1;
+            font-size: 12px;
+            line-height: 1.4;
+            min-height: 1em;
+        }
+
+        .fa-modal-message.error {
+            color: #dc3545;
+        }
+
+        .fa-modal-message.warning {
+            color: #e0a800;
+        }
+
+        .fa-modal-message.success {
+            color: #28a745;
         }
 
         .fa-modal-footer button {

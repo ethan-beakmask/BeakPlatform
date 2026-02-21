@@ -4125,14 +4125,14 @@
                 }
             }
 
-            // OpSet 節點：自動切換到 OPSET 變數分頁並展開面板
+            // OpSet 節點：自動切換到變數總覽分頁並展開面板
             if (type === 'OpSet') {
                 switchTab('opsetvars');
                 if (!isPanelExpanded) {
                     toggleControlPanel();
                 }
-                // 自動掃描 OPSET 變數
-                setTimeout(() => reloadOpsetVars(), 100);
+                // 自動掃描所有變數
+                setTimeout(() => reloadAllVars(), 100);
             }
 
             const typeNames = {
@@ -7721,7 +7721,9 @@
 
             // 驗證
             if (assigneeType !== 'INITIATOR' && !assigneeValue.trim()) {
-                updateStatus('請選擇或填寫簽核者', 'warning');
+                const msg = document.getElementById('faModalMessage');
+                if (msg) { msg.textContent = '請選擇或填寫簽核者'; msg.className = 'fa-modal-message warning'; }
+                else { updateStatus('請選擇或填寫簽核者', 'warning'); }
                 return;
             }
 
@@ -7772,6 +7774,9 @@
                 nodeId: nodeId,
                 config: updatedConfig
             });
+
+            // 同步更新變數總覽
+            if (typeof reloadAllVars === 'function') reloadAllVars();
         }
         window.applyFormAdapterConfig = applyFormAdapterConfig;
 
@@ -7922,18 +7927,21 @@
                                     <input type="text" id="faOutputVariable" value="${outputVariable}"
                                            placeholder="例如: fa_decision"
                                            oninput="if(window.cy){var n=window.cy.getElementById('${nodeId}');if(n&&n.length){var c=n.data('config')||{};c.output_variable=this.value.trim();n.data('config',c);}}">
-                                    <div style="font-size: 10px; color: #888; margin-top: 2px;">決策值寫入此全域變數，供下游 Branch 判斷</div>
+                                    <div style="font-size: 10px; color: #888; margin-top: 2px;">決策值寫入此全域變數，供下游節點讀取（Branch、通知、子流程等）</div>
                                 </div>
 
-                                <div id="decisionConfigBlock" style="margin-bottom: 10px;"></div>
-
-                                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="margin-bottom: 6px;">
                                     <strong>決策 → 流程去向</strong>
+                                </div>
+                                <div id="edgeMappingContainer"></div>
+
+                                <div style="margin-top: 8px; margin-bottom: 8px;">
                                     <button onclick="window._faDecisions.addOption('${nodeId}')" style="padding: 3px 10px; border: 1px solid #667eea; border-radius: 4px; background: #f0f4ff; cursor: pointer; font-size: 11px; color: #667eea;">
                                         <i class="fas fa-plus"></i> 新增決策
                                     </button>
                                 </div>
-                                <div id="edgeMappingContainer"></div>
+
+                                <div id="decisionConfigBlock" style="margin-bottom: 10px;"></div>
 
                                 <div style="margin-top: 14px; border-top: 1px solid #eee; padding-top: 10px;">
                                     <strong>來向變數控制</strong>
@@ -7963,6 +7971,7 @@
                         </div>
                     </div>
                     <div class="fa-modal-footer">
+                        <span id="faModalMessage" class="fa-modal-message"></span>
                         <button class="fa-modal-btn-cancel" onclick="closeFormAdapterModal()">取消</button>
                         <button class="fa-modal-btn-save" onclick="saveFormAdapterModal('${nodeId}')"><i class="fas fa-check"></i> 套用並關閉</button>
                     </div>
@@ -7984,6 +7993,8 @@
                     window._faDecisions.renderDecisionConfigBlock(nodeId, currentConfig.decision_options || []);
                     window._faDecisions.renderEdgeMapping(nodeId, currentConfig.decision_options || [], outEdges);
                     window._faDecisions.renderInputVariables(nodeId, currentConfig.input_variables || []);
+                    // 已啟用自定義決策：直接跳到決策控制器頁籤
+                    switchFaTab(1);
                 }
             }, 50);
         }
@@ -8166,6 +8177,45 @@
         function saveFormAdapterModal(nodeId) {
             const node = cy.getElementById(nodeId);
             if (!node || node.length === 0) return;
+
+            // 0. 清除先前訊息
+            const msgEl = document.getElementById('faModalMessage');
+            if (msgEl) { msgEl.textContent = ''; msgEl.className = 'fa-modal-message'; }
+
+            // 驗證：啟用自定義決策時，所有決策選項和去向都必須有連線
+            const useCustom = document.getElementById('faUseCustomDecisions')?.checked || false;
+            if (useCustom && window._faDecisions) {
+                const options = window._faDecisions.collectDecisionOptions();
+                const outEdges = window._faDecisions.getOutgoingEdges(nodeId);
+
+                if (options.length > 0 && outEdges.length > 0) {
+                    // 檢查每個決策選項是否都有連線
+                    const unmappedOptions = options.filter(opt => !opt.target_edges || opt.target_edges.length === 0);
+                    if (unmappedOptions.length > 0) {
+                        const names = unmappedOptions.map((o, i) => o.label || '(未命名)').join('、');
+                        if (msgEl) { msgEl.textContent = '決策選項 [' + names + '] 尚未連接去向'; msgEl.className = 'fa-modal-message warning'; }
+                        const tab1 = document.querySelectorAll('.fa-modal-tab')[1];
+                        if (tab1) tab1.click();
+                        return;
+                    }
+
+                    // 檢查每個去向是否都有決策選項連到它
+                    const connectedEdgeIds = new Set();
+                    options.forEach(opt => (opt.target_edges || []).forEach(eid => connectedEdgeIds.add(eid)));
+                    const unmappedEdges = outEdges.filter(e => !connectedEdgeIds.has(e.id));
+                    if (unmappedEdges.length > 0) {
+                        const names = unmappedEdges.map(e => {
+                            if (e.label) return e.label;
+                            const tn = cy.getElementById(e.target);
+                            return (tn && tn.length) ? (tn.data('label') || e.target) : e.target;
+                        }).join('、');
+                        if (msgEl) { msgEl.textContent = '去向 [' + names + '] 沒有任何決策選項連接'; msgEl.className = 'fa-modal-message warning'; }
+                        const tab1 = document.querySelectorAll('.fa-modal-tab')[1];
+                        if (tab1) tab1.click();
+                        return;
+                    }
+                }
+            }
 
             // 1. 從 Modal 讀取名稱/描述（Modal 用不同 ID 避免衝突）
             const modalLabel = document.getElementById('fa-modal-label');
@@ -11346,8 +11396,8 @@
                 if (opsetvarsContent) {
                     opsetvarsContent.style.display = 'flex';
                 }
-                // 首次切換到 OPSET 變數分頁時自動載入
-                reloadOpsetVars();
+                // 切換到變數總覽分頁時自動載入
+                reloadAllVars();
             }
         }
 
@@ -14272,170 +14322,293 @@
         // 頁面載入後初始化拖放目標
         setTimeout(initDropTargets, 500);
 
-        // ==================== OPSET 自訂變數統計功能 ====================
+        // ==================== 流程變數總覽功能 ====================
+
+        // 當前篩選狀態
+        let _varsCurrentFilter = 'all';
+
+        // 節點類型簡稱 & icon 對照
+        const _varNodeTypeLabels = {
+            'OpSet': { label: '設定變數', icon: 'fa-calculator' },
+            'FormAdapter': { label: '簽核', icon: 'fa-file-signature' },
+            'SqlExecutor': { label: 'SQL', icon: 'fa-database' },
+            'Branch': { label: '分支', icon: 'fa-code-branch' },
+            'Subflow': { label: '子流程', icon: 'fa-project-diagram' },
+            'Telegram': { label: 'TG通知', icon: 'fa-paper-plane' },
+            'EmailAdapter': { label: '郵件', icon: 'fa-envelope' },
+            'OpFieldWrite': { label: '欄位寫入', icon: 'fa-pen' }
+        };
+
+        // OpSet 運算元中文對照
+        const _opSetLabels = {
+            'set': '設定', 'add': '加法', 'subtract': '減法',
+            'multiply': '乘法', 'divide': '除法', 'concat': '字串連接',
+            'convert': '型別轉換', 'increment': '遞增', 'decrement': '遞減',
+            'expr': '表達式'
+        };
 
         /**
-         * 掃描所有 OPSET 節點並更新變數統計表
+         * 從文字中提取 ${xxx} 變數引用（排除 ${form.xxx}）
          */
-        function reloadOpsetVars() {
+        function _extractVarRefs(text) {
+            if (!text) return [];
+            const matches = [];
+            const regex = /\$\{([^}]+)\}/g;
+            let m;
+            while ((m = regex.exec(text)) !== null) {
+                const varName = m[1].trim();
+                // 排除表單欄位引用
+                if (!varName.startsWith('form.')) {
+                    matches.push(varName);
+                }
+            }
+            return [...new Set(matches)];
+        }
+
+        /**
+         * 掃描所有節點的變數並更新總覽表
+         * @param {string} filter - 'all' | 'set' | 'read'
+         */
+        function reloadAllVars(filter) {
+            filter = filter || _varsCurrentFilter || 'all';
+            _varsCurrentFilter = filter;
+
+            // 更新篩選按鈕高亮
+            ['all', 'set', 'read'].forEach(f => {
+                const btn = document.getElementById('var-filter-' + f);
+                if (btn) {
+                    if (f === filter) {
+                        btn.style.background = '#667eea';
+                        btn.style.color = 'white';
+                    } else {
+                        btn.style.background = '#e0e0e0';
+                        btn.style.color = '#666';
+                    }
+                }
+            });
+
             const tbody = document.getElementById('opset-vars-tbody');
             const countEl = document.getElementById('opset-vars-count');
             const selectAllCheckbox = document.getElementById('opset-var-select-all');
             if (!tbody) return;
 
-            // 重置全選勾選框
             if (selectAllCheckbox) selectAllCheckbox.checked = false;
 
-            // 檢查是否有 Cytoscape 實例
             if (!window.cy) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
-                            <i class="fas fa-exclamation-circle"></i> 流程圖尚未載入
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #999;"><i class="fas fa-exclamation-circle"></i> 流程圖尚未載入</td></tr>';
                 if (countEl) countEl.textContent = '';
                 return;
             }
 
-            // 運算元中文對照
-            const operationLabels = {
-                'set': '設定',
-                'add': '加法',
-                'subtract': '減法',
-                'multiply': '乘法',
-                'divide': '除法',
-                'concat': '字串連接',
-                'convert': '型別轉換',
-                'increment': '遞增',
-                'decrement': '遞減',
-                'expr': '表達式'
-            };
-
-            // 掃描所有 OPSET 節點
-            const opsetNodes = cy.nodes().filter(n => {
-                const nodeType = n.data('type') || '';
-                return nodeType.toLowerCase() === 'opset';
-            });
-
-            if (opsetNodes.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
-                            <i class="fas fa-info-circle"></i> 流程圖中沒有 OPSET 節點
-                        </td>
-                    </tr>
-                `;
-                if (countEl) countEl.textContent = '（0 個變數）';
-                return;
-            }
-
-            // 交替背景色（按節點）
-            const nodeColors = ['#e5f4ff', '#ebffff'];
-
-            // 收集所有變數（同時記錄節點索引）
+            // 收集所有變數
             const allVars = [];
-            opsetNodes.forEach((node, nodeIndex) => {
+
+            cy.nodes().forEach(node => {
+                const type = node.data('type') || '';
                 const nodeId = node.id();
                 const displayName = node.data('display_name') || node.data('label') || nodeId;
                 const config = node.data('config') || {};
-                const operations = config.operations || [];
-                // 描述存在 node.data('description')，不是 config.description
-                const description = node.data('description') || '';
 
-                // 提取 node ID 中的數字部分
-                const nodeNumber = nodeId.replace(/^node-(OPSET|OpSet)-/i, '');
-
-                // 該節點使用的背景色（奇數=0, 偶數=1）
-                const bgColor = nodeColors[nodeIndex % 2];
-
-                operations.forEach(op => {
-                    allVars.push({
-                        nodeId: nodeId,
-                        nodeNumber: nodeNumber,
-                        displayName: displayName,
-                        description: description,
-                        targetVar: op.target_var || '',
-                        operation: op.operation || 'set',
-                        value: op.value || '',
-                        bgColor: bgColor
-                    });
-                });
+                switch (type) {
+                    case 'OpSet': {
+                        const operations = config.operations || [];
+                        operations.forEach(op => {
+                            if (!op.target_var) return;
+                            const opLabel = _opSetLabels[op.operation] || op.operation || 'set';
+                            const valDisplay = op.value ? `${opLabel}: ${op.value}` : opLabel;
+                            allVars.push({
+                                category: 'SET', nodeId, displayName, type,
+                                varName: op.target_var, detail: valDisplay
+                            });
+                        });
+                        break;
+                    }
+                    case 'FormAdapter': {
+                        // output_variable → SET
+                        if (config.output_variable) {
+                            allVars.push({
+                                category: 'SET', nodeId, displayName, type,
+                                varName: config.output_variable, detail: '決策輸出變數'
+                            });
+                        }
+                        // input_variables → READ
+                        const inputVars = config.input_variables || [];
+                        inputVars.forEach(iv => {
+                            if (!iv.var_name) return;
+                            allVars.push({
+                                category: 'READ', nodeId, displayName, type,
+                                varName: iv.var_name, detail: '輸入變數控制'
+                            });
+                        });
+                        break;
+                    }
+                    case 'SqlExecutor': {
+                        if (config.result_var) {
+                            allVars.push({
+                                category: 'SET', nodeId, displayName, type,
+                                varName: config.result_var, detail: 'SQL 查詢結果'
+                            });
+                        }
+                        break;
+                    }
+                    case 'Branch': {
+                        const rules = config.rules || [];
+                        rules.forEach((rule, ri) => {
+                            const conditions = rule.conditions || [];
+                            conditions.forEach(cond => {
+                                let varName = (cond.variable || '').trim();
+                                if (!varName) return;
+                                // 去除 ${} 包裹
+                                if (varName.startsWith('${') && varName.endsWith('}')) {
+                                    varName = varName.slice(2, -1);
+                                }
+                                if (varName.startsWith('form.')) return;
+                                const condDesc = `${rule.name || '規則' + (ri+1)}: ${cond.operator || '=='} ${cond.value || ''}`;
+                                allVars.push({
+                                    category: 'READ', nodeId, displayName, type,
+                                    varName: varName, detail: condDesc
+                                });
+                            });
+                        });
+                        break;
+                    }
+                    case 'Subflow': {
+                        const pm = config.paramMapping || { input: {}, output: {} };
+                        // input: parent→child (READ parent var)
+                        const inputMap = pm.input || {};
+                        Object.keys(inputMap).forEach(parentVar => {
+                            allVars.push({
+                                category: 'READ', nodeId, displayName, type,
+                                varName: parentVar, detail: `輸入→子: ${inputMap[parentVar]}`
+                            });
+                        });
+                        // output: child→parent (SET parent var)
+                        const outputMap = pm.output || {};
+                        Object.keys(outputMap).forEach(childVar => {
+                            allVars.push({
+                                category: 'SET', nodeId, displayName, type,
+                                varName: outputMap[childVar], detail: `子: ${childVar}→父`
+                            });
+                        });
+                        break;
+                    }
+                    case 'Telegram':
+                    case 'SysTelegram': {
+                        const refs = _extractVarRefs(config.message || '');
+                        refs.forEach(v => {
+                            allVars.push({
+                                category: 'READ', nodeId, displayName, type: 'Telegram',
+                                varName: v, detail: '訊息引用'
+                            });
+                        });
+                        break;
+                    }
+                    case 'EmailAdapter':
+                    case 'EmailRelay': {
+                        const fields = [config.subject, config.body, config.recipient_manual].filter(Boolean).join(' ');
+                        const refs2 = _extractVarRefs(fields);
+                        refs2.forEach(v => {
+                            allVars.push({
+                                category: 'READ', nodeId, displayName, type: 'EmailAdapter',
+                                varName: v, detail: '郵件引用'
+                            });
+                        });
+                        break;
+                    }
+                    case 'OpFieldWrite': {
+                        const refs3 = _extractVarRefs(config.content || '');
+                        refs3.forEach(v => {
+                            allVars.push({
+                                category: 'READ', nodeId, displayName, type,
+                                varName: v, detail: '欄位寫入引用'
+                            });
+                        });
+                        break;
+                    }
+                }
             });
 
-            if (allVars.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
-                            <i class="fas fa-info-circle"></i> OPSET 節點尚未設定任何變數
-                        </td>
-                    </tr>
-                `;
-                if (countEl) countEl.textContent = '（0 個變數）';
+            // 按 filter 篩選
+            const filtered = filter === 'all' ? allVars
+                : allVars.filter(v => v.category === filter.toUpperCase());
+
+            if (filtered.length === 0) {
+                const emptyMsg = filter === 'all' ? '流程中沒有偵測到變數'
+                    : filter === 'set' ? '沒有設定(SET)類型的變數' : '沒有讀取(READ)類型的變數';
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #999;"><i class="fas fa-info-circle"></i> ${emptyMsg}</td></tr>`;
+                if (countEl) countEl.textContent = `（${allVars.length} 個變數中 0 個符合）`;
                 return;
             }
 
-            // 生成表格
-            let html = '';
-            allVars.forEach(v => {
-                const opLabel = operationLabels[v.operation] || v.operation;
-                // 處理多行值：用 <br> 顯示
-                const displayValue = String(v.value || '').replace(/\n/g, '<br>');
-                const varText = `\${${v.targetVar}}`;
+            // 交替色（按節點分組）
+            const bgColors = ['#ffffff', '#f7f9fc'];
+            let lastNodeId = '', colorIdx = 0;
 
-                html += `
-                    <tr style="border-bottom: 1px solid #ddd; background: ${v.bgColor}; cursor: pointer;"
-                        title="點擊跳轉到節點">
-                        <td style="padding: 6px 8px; text-align: center;" onclick="event.stopPropagation();">
-                            <input type="checkbox" class="opset-var-checkbox" data-var="${escapeHtml(varText)}">
-                        </td>
-                        <td style="padding: 6px 8px;" onclick="focusOnNode('${v.nodeId}')">
-                            <span style="color: #667eea; text-decoration: underline;">${escapeHtml(v.displayName)}</span>
-                        </td>
-                        <td style="padding: 6px 8px; font-size: 10px; color: #666; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="focusOnNode('${v.nodeId}')" title="${escapeHtml(v.description)}">
-                            ${escapeHtml(v.description) || '-'}
-                        </td>
-                        <td style="padding: 6px 8px; font-family: monospace; font-size: 10px; color: #666;" onclick="focusOnNode('${v.nodeId}')">
-                            ${v.nodeNumber}
-                        </td>
-                        <td style="padding: 6px 8px;" onclick="event.stopPropagation();">
-                            <code style="background: #e8f4fd; padding: 2px 6px; border-radius: 3px; color: #1976d2; cursor: grab;"
-                                  draggable="true"
-                                  ondragstart="handleVarDragStart(event, '${escapeHtml(varText)}')"
-                                  ondragend="handleVarDragEnd(event)"
-                                  onclick="copyOpsetVarToClipboard('${escapeHtml(v.targetVar)}')"
-                                  title="拖拉到設定區或點擊複製">${escapeHtml(varText)}</code>
-                        </td>
-                        <td style="padding: 6px 8px;" onclick="focusOnNode('${v.nodeId}')">
-                            <span style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 10px;">${opLabel}</span>
-                        </td>
-                        <td style="padding: 6px 8px; font-family: monospace; font-size: 10px; max-width: 300px; overflow: hidden; text-overflow: ellipsis;" onclick="focusOnNode('${v.nodeId}')">
-                            ${displayValue}
-                        </td>
-                    </tr>
-                `;
+            let html = '';
+            filtered.forEach(v => {
+                if (v.nodeId !== lastNodeId) {
+                    colorIdx = lastNodeId ? (colorIdx + 1) % 2 : 0;
+                    lastNodeId = v.nodeId;
+                }
+                const bg = bgColors[colorIdx];
+                const varText = `\${${v.varName}}`;
+                const typeInfo = _varNodeTypeLabels[v.type] || { label: v.type, icon: 'fa-cog' };
+                const badgeColor = v.category === 'SET' ? '#e67e22' : '#3498db';
+                const badgeLabel = v.category === 'SET' ? 'SET' : 'READ';
+
+                html += `<tr style="border-bottom: 1px solid #eee; background: ${bg}; cursor: pointer;" title="點擊跳轉到節點">
+                    <td style="padding: 5px 6px; text-align: center;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="opset-var-checkbox" data-var="${escapeHtml(varText)}">
+                    </td>
+                    <td style="padding: 5px 6px; text-align: center;" onclick="focusOnNode('${v.nodeId}')">
+                        <span style="display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; color: white; background: ${badgeColor};">${badgeLabel}</span>
+                    </td>
+                    <td style="padding: 5px 6px; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="focusOnNode('${v.nodeId}')" title="${escapeHtml(v.displayName)}">
+                        <span style="color: #667eea; text-decoration: underline; font-size: 11px;">${escapeHtml(v.displayName)}</span>
+                    </td>
+                    <td style="padding: 5px 6px; text-align: center;" onclick="focusOnNode('${v.nodeId}')">
+                        <span title="${escapeHtml(typeInfo.label)}" style="font-size: 10px; color: #666;"><i class="fas ${typeInfo.icon}" style="margin-right: 2px;"></i>${escapeHtml(typeInfo.label)}</span>
+                    </td>
+                    <td style="padding: 5px 6px;" onclick="event.stopPropagation();">
+                        <code style="background: #e8f4fd; padding: 2px 6px; border-radius: 3px; color: #1976d2; cursor: grab; font-size: 11px;"
+                              draggable="true"
+                              ondragstart="handleVarDragStart(event, '${escapeHtml(varText)}')"
+                              ondragend="handleVarDragEnd(event)"
+                              onclick="copyVarToClipboard('${escapeHtml(v.varName)}')"
+                              title="拖拉到設定區或點擊複製">${escapeHtml(varText)}</code>
+                    </td>
+                    <td style="padding: 5px 6px; font-size: 10px; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="focusOnNode('${v.nodeId}')" title="${escapeHtml(v.detail)}">
+                        ${escapeHtml(v.detail)}
+                    </td>
+                </tr>`;
             });
 
             tbody.innerHTML = html;
-            if (countEl) countEl.textContent = `（共 ${allVars.length} 個變數）`;
+            const totalInfo = filter === 'all' ? `共 ${filtered.length} 個`
+                : `${filtered.length} / ${allVars.length} 個`;
+            if (countEl) countEl.textContent = `（${totalInfo}）`;
 
-            updateStatus(`✅ 已掃描 ${opsetNodes.length} 個 OPSET 節點，共 ${allVars.length} 個自訂變數`);
+            const setCount = allVars.filter(v => v.category === 'SET').length;
+            const readCount = allVars.filter(v => v.category === 'READ').length;
+            updateStatus(`✅ 掃描完成：SET ${setCount} 個，READ ${readCount} 個，共 ${allVars.length} 個變數`);
         }
-        window.reloadOpsetVars = reloadOpsetVars;
+        window.reloadAllVars = reloadAllVars;
+        // 向下相容
+        window.reloadOpsetVars = function() { reloadAllVars(); };
 
         /**
          * 點擊變數名稱複製到剪貼簿
          */
-        function copyOpsetVarToClipboard(varName) {
+        function copyVarToClipboard(varName) {
             const varText = `\${${varName}}`;
             copyToClipboard(varText);
             updateStatus(`✅ 已複製變數 ${varText} 到剪貼簿`);
         }
-        window.copyOpsetVarToClipboard = copyOpsetVarToClipboard;
+        window.copyVarToClipboard = copyVarToClipboard;
+        window.copyOpsetVarToClipboard = copyVarToClipboard;
 
         /**
-         * 全選/取消全選 OPSET 變數
+         * 全選/取消全選變數
          */
         function toggleAllOpsetVarSelection() {
             const selectAllCheckbox = document.getElementById('opset-var-select-all');
@@ -14448,9 +14621,9 @@
         window.toggleAllOpsetVarSelection = toggleAllOpsetVarSelection;
 
         /**
-         * 複製選中的 OPSET 變數到剪貼簿
+         * 複製選中的變數到剪貼簿
          */
-        function copySelectedOpsetVars() {
+        function copySelectedVars() {
             const checkboxes = document.querySelectorAll('.opset-var-checkbox:checked');
 
             if (checkboxes.length === 0) {
@@ -14467,57 +14640,46 @@
             copyToClipboard(text);
             updateStatus(`✅ 已複製 ${vars.length} 個變數到剪貼簿`);
 
-            // 取消所有勾選
             const selectAllCheckbox = document.getElementById('opset-var-select-all');
             if (selectAllCheckbox) selectAllCheckbox.checked = false;
             document.querySelectorAll('.opset-var-checkbox').forEach(cb => cb.checked = false);
         }
-        window.copySelectedOpsetVars = copySelectedOpsetVars;
+        window.copySelectedVars = copySelectedVars;
+        window.copySelectedOpsetVars = copySelectedVars;
 
         /**
-         * 複製 OPSET 變數表格到剪貼簿
+         * 複製變數表格到剪貼簿（TSV 格式）
          */
-        function copyOpsetVarsTable() {
+        function copyVarsTable() {
             if (!window.cy) {
                 updateStatus('⚠ 流程圖尚未載入');
                 return;
             }
 
-            // 掃描所有 OPSET 節點
-            const opsetNodes = cy.nodes().filter(n => {
-                const nodeType = n.data('type') || '';
-                return nodeType.toLowerCase() === 'opset';
-            });
-
-            if (opsetNodes.length === 0) {
-                updateStatus('⚠ 沒有 OPSET 節點可複製');
+            // 用當前篩選重新收集
+            const rows = document.querySelectorAll('#opset-vars-tbody tr');
+            if (!rows.length || (rows.length === 1 && rows[0].querySelector('td[colspan]'))) {
+                updateStatus('⚠ 沒有變數可複製');
                 return;
             }
 
-            // 收集所有變數（含描述欄位）
-            let tsv = '節點名稱\t描述\tNode ID\t變數名稱\t運算元\t值/表達式\n';
-
-            opsetNodes.forEach(node => {
-                const nodeId = node.id();
-                const displayName = node.data('display_name') || node.data('label') || nodeId;
-                const config = node.data('config') || {};
-                const operations = config.operations || [];
-                // 描述存在 node.data('description')，不是 config.description
-                const description = (node.data('description') || '').replace(/\t/g, ' ').replace(/\n/g, '\\n');
-                const nodeNumber = nodeId.replace(/^node-(OPSET|OpSet)-/i, '');
-
-                operations.forEach(op => {
-                    const targetVar = op.target_var || '';
-                    const operation = op.operation || 'set';
-                    const value = String(op.value || '').replace(/\t/g, ' ').replace(/\n/g, '\\n');
-                    tsv += `${displayName}\t${description}\t${nodeNumber}\t\${${targetVar}}\t${operation}\t${value}\n`;
-                });
+            let tsv = '分類\t節點\t類型\t變數\t說明\n';
+            rows.forEach(tr => {
+                const cells = tr.querySelectorAll('td');
+                if (cells.length < 6) return;
+                const category = (cells[1].textContent || '').trim();
+                const nodeName = (cells[2].textContent || '').trim();
+                const nodeType = (cells[3].textContent || '').trim();
+                const varName = (cells[4].textContent || '').trim();
+                const detail = (cells[5].textContent || '').trim();
+                tsv += `${category}\t${nodeName}\t${nodeType}\t${varName}\t${detail}\n`;
             });
 
             copyToClipboard(tsv);
-            updateStatus('✅ 已複製 OPSET 變數表格到剪貼簿');
+            updateStatus('✅ 已複製變數表格到剪貼簿');
         }
-        window.copyOpsetVarsTable = copyOpsetVarsTable;
+        window.copyVarsTable = copyVarsTable;
+        window.copyOpsetVarsTable = copyVarsTable;
 
         /**
          * 跳轉到指定節點並選中

@@ -86,20 +86,20 @@
                                     style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; text-align: left;"
                                     :style="{
                                         'primary': selectedOptionId === option.id
-                                            ? 'background: #667eea; color: white; border: 2px solid #667eea;'
-                                            : 'background: white; color: #667eea; border: 2px solid #667eea;',
+                                            ? 'background: #667eea; color: white; border: 2px solid #667eea; text-align: left;'
+                                            : 'background: white; color: #667eea; border: 2px solid #667eea; text-align: left;',
                                         'success': selectedOptionId === option.id
-                                            ? 'background: #28a745; color: white; border: 2px solid #28a745;'
-                                            : 'background: white; color: #28a745; border: 2px solid #28a745;',
+                                            ? 'background: #28a745; color: white; border: 2px solid #28a745; text-align: left;'
+                                            : 'background: white; color: #28a745; border: 2px solid #28a745; text-align: left;',
                                         'warning': selectedOptionId === option.id
-                                            ? 'background: #ffc107; color: #333; border: 2px solid #ffc107;'
-                                            : 'background: white; color: #856404; border: 2px solid #ffc107;',
+                                            ? 'background: #ffc107; color: #333; border: 2px solid #ffc107; text-align: left;'
+                                            : 'background: white; color: #856404; border: 2px solid #ffc107; text-align: left;',
                                         'danger': selectedOptionId === option.id
-                                            ? 'background: #dc3545; color: white; border: 2px solid #dc3545;'
-                                            : 'background: white; color: #dc3545; border: 2px solid #dc3545;',
+                                            ? 'background: #dc3545; color: white; border: 2px solid #dc3545; text-align: left;'
+                                            : 'background: white; color: #dc3545; border: 2px solid #dc3545; text-align: left;',
                                         'default': selectedOptionId === option.id
-                                            ? 'background: #6c757d; color: white; border: 2px solid #6c757d;'
-                                            : 'background: white; color: #6c757d; border: 2px solid #6c757d;'
+                                            ? 'background: #6c757d; color: white; border: 2px solid #6c757d; text-align: left;'
+                                            : 'background: white; color: #6c757d; border: 2px solid #6c757d; text-align: left;'
                                     }[option.style || 'default']"
                                     x-text="option.label">
                             </button>

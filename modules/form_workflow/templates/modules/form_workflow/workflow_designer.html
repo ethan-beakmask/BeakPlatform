@@ -161,7 +161,7 @@
                     <i class="fas fa-list-alt"></i> 表單欄位
                 </button>
                 <button onclick="switchTab('opsetvars')" id="tab-opsetvars" style="padding: 8px 16px; background: #e0e0e0; color: #666; border: none; cursor: pointer; font-size: 12px; white-space: nowrap;">
-                    <i class="fas fa-calculator"></i> OPSET變數
+                    <i class="fas fa-th-list"></i> 變數總覽
                 </button>
                 <!-- 展開/收合按鈕（右側） -->
                 <div style="flex: 1;"></div>
@@ -484,30 +484,46 @@
                     </div>
                 </div>
 
-                <!-- Tab 5: OPSET 自訂變數 -->
+                <!-- Tab 5: 流程變數總覽 -->
                 <div id="opsetvars-tab-content" style="display: none; gap: 10px; width: 100%; padding: 5px; height: calc(100% - 10px); overflow: hidden;">
                     <div class="canvas-control-panel" style="flex: 1; max-width: 100%;">
                         <div style="display: flex; flex-direction: column; height: 100%;">
                             <!-- 標題列 -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #ddd; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid #ddd; margin-bottom: 4px;">
                                 <div style="font-size: 13px; font-weight: 600; color: #333;">
-                                    <i class="fas fa-calculator"></i> OPSET 自訂變數統計表
+                                    <i class="fas fa-th-list"></i> 流程變數總覽
                                     <span id="opset-vars-count" style="font-weight: 400; color: #666; font-size: 11px;"></span>
                                 </div>
                                 <div style="display: flex; gap: 5px; align-items: center;">
-                                    <button onclick="reloadOpsetVars()" title="重新掃描所有 OPSET 節點"
+                                    <button onclick="reloadAllVars()" title="重新掃描所有節點"
                                         style="padding: 4px 10px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
                                         <i class="fas fa-sync-alt"></i> Reload
                                     </button>
-                                    <button onclick="copySelectedOpsetVars()" title="複製勾選的變數"
+                                    <button onclick="copySelectedVars()" title="複製勾選的變數"
                                         style="padding: 4px 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
                                         <i class="fas fa-clipboard"></i> 複製變數
                                     </button>
-                                    <button onclick="copyOpsetVarsTable()" title="複製表格到剪貼簿"
+                                    <button onclick="copyVarsTable()" title="複製表格到剪貼簿"
                                         style="padding: 4px 10px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
                                         <i class="fas fa-table"></i> 複製表格
                                     </button>
                                 </div>
+                            </div>
+
+                            <!-- 篩選列 -->
+                            <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                                <button id="var-filter-all" onclick="reloadAllVars('all')"
+                                    style="padding: 3px 10px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                    全部
+                                </button>
+                                <button id="var-filter-set" onclick="reloadAllVars('set')"
+                                    style="padding: 3px 10px; background: #e0e0e0; color: #666; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                    設定 SET
+                                </button>
+                                <button id="var-filter-read" onclick="reloadAllVars('read')"
+                                    style="padding: 3px 10px; background: #e0e0e0; color: #666; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">
+                                    讀取 READ
+                                </button>
                             </div>
 
                             <!-- 變數表格 -->
@@ -515,33 +531,30 @@
                                 <table id="opset-vars-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
                                     <thead style="position: sticky; top: 0; background: #f0f0f0;">
                                         <tr>
-                                            <th style="padding: 6px 8px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 30px;">
+                                            <th style="padding: 5px 6px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 28px;">
                                                 <input type="checkbox" id="opset-var-select-all" onchange="toggleAllOpsetVarSelection()" title="全選/取消全選">
                                             </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 120px;">
-                                                節點名稱
+                                            <th style="padding: 5px 6px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 42px;">
+                                                分類
                                             </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">
-                                                描述
+                                            <th style="padding: 5px 6px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 110px;">
+                                                節點
                                             </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 100px;">
-                                                Node ID
+                                            <th style="padding: 5px 6px; text-align: center; border-bottom: 2px solid #ddd; white-space: nowrap; width: 70px;">
+                                                類型
                                             </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 130px;">
-                                                變數名稱
+                                            <th style="padding: 5px 6px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 130px;">
+                                                變數
                                             </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap; width: 80px;">
-                                                運算元
-                                            </th>
-                                            <th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">
-                                                值 / 表達式
+                                            <th style="padding: 5px 6px; text-align: left; border-bottom: 2px solid #ddd;">
+                                                說明
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody id="opset-vars-tbody">
                                         <tr>
-                                            <td colspan="7" style="text-align: center; padding: 30px; color: #999;">
-                                                <i class="fas fa-info-circle"></i> 點擊 Reload 掃描流程中的 OPSET 節點
+                                            <td colspan="6" style="text-align: center; padding: 30px; color: #999;">
+                                                <i class="fas fa-info-circle"></i> 點擊 Reload 掃描流程中所有節點的變數
                                             </td>
                                         </tr>
                                     </tbody>
@@ -549,8 +562,8 @@
                             </div>
 
                             <!-- 說明 -->
-                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 10px; color: #666;">
-                                <i class="fas fa-lightbulb"></i> 提示：此表列出流程圖中所有 OPSET 節點定義的自訂變數。使用 <code>${變數名稱}</code> 引用這些變數。
+                            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #eee; font-size: 10px; color: #666;">
+                                <i class="fas fa-lightbulb"></i> 掃描所有節點的變數。SET = 設定變數值，READ = 讀取/引用變數。使用 <code>${變數名稱}</code> 引用。
                             </div>
                         </div>
                     </div>

@@ -67,16 +67,7 @@
 
         var html = '';
 
-        // Placeholder
-        html += '<div id="dcPlaceholder" class="dc-placeholder">';
-        if (!options || options.length === 0) {
-            html += '無自訂決策，使用出線去向作為預設決策按鈕';
-        } else {
-            html += '點選下方決策項目進行編輯';
-        }
-        html += '</div>';
-
-        // Fields panel (hidden)
+        // Fields panel (hidden until a decision option is clicked)
         html += '<div id="dcFieldsPanel" class="dc-fields-panel" style="display: none;">';
 
         // Title row
@@ -150,12 +141,10 @@
     function _loadOptionToConfigBlock(index) {
         _editingOptionIndex = index;
 
-        var placeholder = document.getElementById('dcPlaceholder');
         var fieldsPanel = document.getElementById('dcFieldsPanel');
-        if (!placeholder || !fieldsPanel) return;
+        if (!fieldsPanel) return;
 
         if (index < 0 || !_mappingOptions[index]) {
-            placeholder.style.display = 'block';
             fieldsPanel.style.display = 'none';
             return;
         }
@@ -163,7 +152,6 @@
         var opt = _mappingOptions[index];
         var color = MAPPING_COLORS[opt.style] || MAPPING_COLORS['default'];
 
-        placeholder.style.display = 'none';
         fieldsPanel.style.display = 'block';
         fieldsPanel.style.borderColor = color;
 
@@ -185,14 +173,7 @@
 
     function _clearConfigBlock() {
         _editingOptionIndex = -1;
-        var placeholder = document.getElementById('dcPlaceholder');
         var fieldsPanel = document.getElementById('dcFieldsPanel');
-        if (placeholder) {
-            placeholder.style.display = 'block';
-            placeholder.textContent = _mappingOptions.length > 0
-                ? '點選下方決策項目進行編輯'
-                : '無自訂決策，使用出線去向作為預設決策按鈕';
-        }
         if (fieldsPanel) fieldsPanel.style.display = 'none';
     }
 

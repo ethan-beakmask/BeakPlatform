@@ -14,9 +14,15 @@
 - 欄位權限設定內嵌於 Modal Tab 2，切換頁籤時自動載入，儲存時一併寫入 node config
 - 決策項目共用組態方塊：多個決策選項共用一個編輯面板，點選連連看左方項目切換內容
 - 連連看 (Edge Mapping) UI：決策選項 ↔ 出線去向 N:M 配對，SVG 即時連線
+- 變數總覽分頁：掃描所有節點類型的變數（OpSet/FormAdapter/SqlExecutor/Branch/Subflow/Telegram/Email/OpFieldWrite），支援 SET/READ 分類篩選
 
 ### Changed
 - FormAdapter 設定 Modal 改為全螢幕高度，不隨內容變化大小
+- OPSET 變數分頁擴充為「變數總覽」，表格新增分類(SET/READ)、節點類型欄位
+- 決策控制器版面調整：連連看移至上方、決策設定移至下方、移除提示佔位框
+- 已啟用自定義決策時，開啟 FormAdapter Modal 直接跳到決策控制器頁籤
+- FormAdapter 套用設定時同步更新變數總覽
+- 自定義決策按鈕文字改為靠左對齊
 
 ### Fixed
 - 簽核決策按鈕高亮錯誤：多個決策選項 value 相同時，點選一個全部填滿顏色，改用 option.id 判斷選中狀態
