@@ -77,9 +77,9 @@ class FieldReadHandler(BaseNodeHandler):
                 var_name_prefixed = f'{form_code}_{field_key}'
                 var_name_simple = field_key
 
-                # 設定全域變數
-                self.set_global_var(var_name_prefixed, field_value)
-                self.set_global_var(var_name_simple, field_value)
+                # 設定流程變數 (FLOW scope)
+                self.set_flow_var(var_name_prefixed, field_value)
+                self.set_flow_var(var_name_simple, field_value)
 
                 read_results[var_name_prefixed] = field_value
 

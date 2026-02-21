@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### Added
+- 變數插入器 (VarPicker)：流程設計器節點配置欄位旁新增 `{x}` 按鈕，點選即可從分組清單插入 v2 語法變數
+- 變數插入器：支援搜尋篩選、游標位置插入、外部點擊/Escape 關閉
+- 變數插入器：自動收集表單欄位 (`f.*`)、表單實例 (`fi.*`)、流程變數 (`v.*`)、流程資訊 (`wi.*`)、節點資訊 (`n.*`)、時間 (`t.*`)
 - 變數系統 v2：前綴制語法 (`${f.key}`, `${fi.applicant}`, `${v.var}`, `${wi.code}`, `${n.name}`, `${t.now}`)
 - 變數系統 v2：三層 scope 架構 (TREE 跨流程 / FLOW 單流程 / NODE 單節點)
 - 變數系統 v2：`fi.*` 前綴解析表單實例屬性 (applicant_name 等系統變數)
@@ -18,6 +21,8 @@
 - Forgejo Issue #12: 變數系統 v2 追蹤
 
 ### Changed
+- 後端 handler 統一改用 `set_flow_var()`：form_center.py、fieldread_handler、fieldwrite_handler、opset_handler
+- 流程設計器所有變數語法提示表更新為 v2 前綴語法
 - OpSet handler `_evaluate_value()` 改用 `replace_variables()` 統一解析，支援所有 v2 前綴
 - OpSet handler `_evaluate_expression()` 支援 v2 前綴 (v./f.)
 - SubFlow paramMapping 改用 TREE scope 傳遞跨流程變數（取代原 TODO）

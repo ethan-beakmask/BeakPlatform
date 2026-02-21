@@ -4561,14 +4561,15 @@
                         </div>
 
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">
                                 寫入內容 <span style="color: #dc3545;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('fieldWriteContent'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
                             </label>
                             <textarea id="fieldWriteContent" rows="5"
                                       style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"
                                       placeholder="輸入內容或使用變數...&#10;支援換行：\\n">${content}</textarea>
                             <div style="font-size: 9px; color: #666; margin-top: 2px;">
-                                <i class="fas fa-lightbulb"></i> 使用 <code>\${form.欄位key}</code> 讀取表單值，如 <code>\${form.textField}</code>
+                                <i class="fas fa-lightbulb"></i> 使用 <code>\${f.欄位key}</code> 讀取表單值，<code>\${v.變數名}</code> 讀取流程變數
                             </div>
                         </div>
 
@@ -4594,7 +4595,7 @@
                     <!-- 變數說明 -->
                     <div style="background: white; border-radius: 6px; border: 1px solid #e0e0e0; overflow: hidden;">
                         <div style="background: #e8f4fd; padding: 6px 8px; border-bottom: 1px solid #e0e0e0;">
-                            <span style="font-size: 11px; font-weight: bold; color: #1976d2;"><i class="fas fa-code"></i> 變數語法</span>
+                            <span style="font-size: 11px; font-weight: bold; color: #1976d2;"><i class="fas fa-code"></i> 變數語法 (v2)</span>
                         </div>
                         <div style="padding: 8px; font-size: 10px;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
@@ -4603,32 +4604,28 @@
                                     <th style="padding: 4px; border: 1px solid #e0e0e0; text-align: left;">說明</th>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.欄位key}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">發動表單欄位值</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${f.欄位key}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單欄位值</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.instance_id}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單實例 ID</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${fi.serial}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流水號</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.serial_number}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單編號</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${fi.applicant}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">申請人</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.display_name}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單名稱</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${變數名}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${v.變數名}</code></td>
                                     <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程變數</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${workflow.instance_id}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程實例 ID</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${wi.name}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程名稱</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${workflow.name}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程名稱</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${t.now}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">當前時間</td>
                                 </tr>
                             </table>
                         </div>
@@ -4735,7 +4732,9 @@
                         </div>
 
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">訊息內容 <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px;">\${var}</code> <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px;">\${form.field}</code></label>
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">訊息內容 <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">\${v.name}</code> <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px; margin-left: 2px;">\${f.key}</code>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('telegramMessage'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
                             <textarea id="telegramMessage" rows="5"
                                       style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"
                                       placeholder="輸入訊息內容...">${message}</textarea>
@@ -4829,7 +4828,7 @@
                     <!-- 變數說明 -->
                     <div style="background: white; border-radius: 6px; border: 1px solid #e0e0e0; margin-top: 8px; overflow: hidden;">
                         <div style="background: #e8f4fd; padding: 6px 8px; border-bottom: 1px solid #e0e0e0;">
-                            <span style="font-size: 11px; font-weight: bold; color: #1976d2;"><i class="fas fa-code"></i> 變數語法</span>
+                            <span style="font-size: 11px; font-weight: bold; color: #1976d2;"><i class="fas fa-code"></i> 變數語法 (v2)</span>
                         </div>
                         <div style="padding: 8px; font-size: 10px;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
@@ -4838,32 +4837,28 @@
                                     <th style="padding: 4px; border: 1px solid #e0e0e0; text-align: left;">說明</th>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.欄位key}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">發動表單欄位值</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${f.欄位key}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單欄位值</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.instance_id}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單實例 ID</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${fi.serial}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流水號</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.serial_number}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單編號</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${fi.applicant}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">申請人</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${form.display_name}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">表單名稱</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${變數名}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${v.變數名}</code></td>
                                     <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程變數</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${workflow.instance_id}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程實例 ID</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${wi.name}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程名稱</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${workflow.name}</code></td>
-                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">流程名稱</td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;"><code>\${t.now}</code></td>
+                                    <td style="padding: 3px 4px; border: 1px solid #e0e0e0;">當前時間</td>
                                 </tr>
                             </table>
                         </div>
@@ -4905,7 +4900,9 @@
                         </div>
 
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">訊息內容 <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px;">\${var}</code> <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px;">\${form.field}</code></label>
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">訊息內容 <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">\${v.name}</code> <code style="font-size: 10px; background: #f0f0f0; padding: 1px 4px; border-radius: 2px; margin-left: 2px;">\${f.key}</code>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('sysTelegramMessage'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
                             <textarea id="sysTelegramMessage" rows="5"
                                       style="width: 100%; padding: 6px; border: 1px solid #DB2777; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;"
                                       placeholder="輸入訊息內容...">${message}</textarea>
@@ -4936,15 +4933,14 @@
 
                         <!-- 變數說明 -->
                         <div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e0e0e0;">
-                            <div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 4px;"><i class="fas fa-code"></i> 變數語法</div>
+                            <div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 4px;"><i class="fas fa-code"></i> 變數語法 (v2)</div>
                             <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${form.欄位key}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">發動表單欄位值</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${form.instance_id}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">表單實例 ID</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${form.serial_number}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">表單編號</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${form.display_name}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">表單名稱</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${變數名}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流程變數</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${workflow.instance_id}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流程實例 ID</td></tr>
-                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${workflow.name}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流程名稱</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${f.欄位key}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">表單欄位值</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${fi.serial}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流水號</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${fi.applicant}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">申請人</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${v.變數名}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流程變數</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${wi.name}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">流程名稱</td></tr>
+                                <tr><td style="padding: 2px; border: 1px solid #e0e0e0;"><code>\${t.now}</code></td><td style="padding: 2px; border: 1px solid #e0e0e0;">當前時間</td></tr>
                             </table>
                         </div>
                     </div>
@@ -5003,13 +4999,17 @@
 
                         <!-- 主旨 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span></label>
-                            <input type="text" id="emailRelaySubject" placeholder="支援變數 \${var}, \${form.field}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('emailRelaySubject'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
+                            <input type="text" id="emailRelaySubject" placeholder="支援變數 \${v.name}, \${f.key}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                         </div>
 
                         <!-- 內容 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span></label>
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('emailRelayBody'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
                             <textarea id="emailRelayBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
                         </div>
 
@@ -5039,12 +5039,12 @@
 
                     <!-- 變數說明 -->
                     <div style="background: white; border-radius: 6px; border: 1px solid #e0e0e0; padding: 8px;">
-                        <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">可用變數</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">可用變數 (v2)</div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #f0fdf4;"><code>\${var_name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">工作流變數</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${form.field}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">表單欄位</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #e0f2fe;"><code>\${workflow.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">工作流名稱</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${timestamp}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">發送時間</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #f0fdf4;"><code>\${v.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">流程變數</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${f.key}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">表單欄位</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #e0f2fe;"><code>\${wi.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">流程名稱</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${t.now}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">當前時間</td></tr>
                         </table>
                     </div>
                 `;
@@ -5112,13 +5112,17 @@
 
                         <!-- 主旨 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span></label>
-                            <input type="text" id="emailAdapterSubject" placeholder="支援變數 \${var}, \${form.field}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">主旨 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('emailAdapterSubject'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
+                            <input type="text" id="emailAdapterSubject" placeholder="支援變數 \${v.name}, \${f.key}" value="${subject}" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                         </div>
 
                         <!-- 內容 -->
                         <div style="margin-bottom: 8px;">
-                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span></label>
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">內容 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('emailAdapterBody'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
                             <textarea id="emailAdapterBody" rows="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;" placeholder="輸入郵件內容...">${body}</textarea>
                         </div>
 
@@ -5148,12 +5152,12 @@
 
                     <!-- 變數說明 -->
                     <div style="background: white; border-radius: 6px; border: 1px solid #e0e0e0; padding: 8px;">
-                        <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">可用變數</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">可用變數 (v2)</div>
                         <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #f0fdf4;"><code>\${var_name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">工作流變數</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${form.field}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">表單欄位</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #e0f2fe;"><code>\${workflow.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">工作流名稱</td></tr>
-                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${timestamp}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">發送時間</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #f0fdf4;"><code>\${v.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">流程變數</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${f.key}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">表單欄位</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee; background: #e0f2fe;"><code>\${wi.name}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">流程名稱</td></tr>
+                            <tr><td style="padding: 2px 4px; border: 1px solid #eee;"><code>\${t.now}</code></td><td style="padding: 2px 4px; border: 1px solid #eee;">當前時間</td></tr>
                         </table>
                     </div>
                 `;
@@ -6157,8 +6161,12 @@
                         </button>
                     </div>
                     <div id="opset_value_container_${idx}" style="display: ${needsValue ? 'block' : 'none'};">
+                        <div style="display:flex;align-items:center;margin-bottom:2px;">
+                            <span style="font-size:10px;color:#999;">值</span>
+                            <button type="button" onclick="VarPicker.open(this, document.getElementById('opset_value_${idx}'))" style="margin-left:auto;padding:1px 5px;font-size:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                        </div>
                         <textarea id="opset_value_${idx}" rows="2"
-                               placeholder="值或 \${var}，支援多行"
+                               placeholder="值或 \${v.name}，支援多行"
                                onchange="updateOpsetOperation(${idx}, 'value', this.value)"
                                style="width: 100%; padding: 4px 6px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px; font-family: monospace; resize: vertical;">${op.value !== undefined ? op.value : ''}</textarea>
                     </div>
@@ -7172,17 +7180,19 @@
 
             return `
                 <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
-                    <input type="text" value="${variable}" placeholder="\${var}"
+                    <input type="text" id="branch_var_${ruleIdx}_${condIdx}" value="${variable}" placeholder="\${v.name}"
                            onchange="updateBranchCondition(${ruleIdx}, ${condIdx}, 'variable', this.value)"
                            style="width: 70px; padding: 3px 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 10px; font-family: monospace;">
+                    <button type="button" onclick="VarPicker.open(this, document.getElementById('branch_var_${ruleIdx}_${condIdx}'))" style="padding:0 4px;font-size:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;line-height:18px;" title="插入變數">{x}</button>
                     <select onchange="updateBranchCondition(${ruleIdx}, ${condIdx}, 'operator', this.value)"
                             style="padding: 3px 2px; border: 1px solid #ddd; border-radius: 3px; font-size: 10px;">
                         ${opOptions}
                     </select>
                     ${showValue ? `
-                        <input type="text" value="${value}" placeholder="值"
+                        <input type="text" id="branch_val_${ruleIdx}_${condIdx}" value="${value}" placeholder="值"
                                onchange="updateBranchCondition(${ruleIdx}, ${condIdx}, 'value', this.value)"
                                style="width: 60px; padding: 3px 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 10px;">
+                        <button type="button" onclick="VarPicker.open(this, document.getElementById('branch_val_${ruleIdx}_${condIdx}'))" style="padding:0 4px;font-size:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;line-height:18px;" title="插入變數">{x}</button>
                     ` : ''}
                     ${hasNext ? `
                         <select onchange="updateBranchCondition(${ruleIdx}, ${condIdx}, 'logic', this.value)"

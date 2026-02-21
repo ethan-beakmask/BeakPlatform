@@ -84,12 +84,12 @@ class FieldWriteHandler(BaseNodeHandler):
             flag_modified(form_instance, 'form_data')
             db.session.commit()
 
-            # 同步更新工作流變數
+            # 同步更新流程變數 (FLOW scope)
             form_code = form_instance.form_template_secure_code or form_instance.form_code
             if form_code:
                 var_name_prefixed = f'{form_code}_{target_field}'
-                self.set_global_var(var_name_prefixed, processed_content)
-                self.set_global_var(target_field, processed_content)
+                self.set_flow_var(var_name_prefixed, processed_content)
+                self.set_flow_var(target_field, processed_content)
                 self.log_info('已同步更新工作流變數', {
                     'var_name': var_name_prefixed
                 })

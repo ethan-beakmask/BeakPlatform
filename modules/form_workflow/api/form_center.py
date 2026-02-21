@@ -1314,7 +1314,7 @@ def approve_task(secure_code):
         # 寫入傳出變數（output_variable）
         if output_variable and selected_option_value is not None:
             from ..services.variable_service import VariableService
-            VariableService.set_global_var(
+            VariableService.set_flow_var(
                 task.workflow_instance_secure_code,
                 output_variable,
                 selected_option_value,

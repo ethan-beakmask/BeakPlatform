@@ -76,8 +76,8 @@ class OpSetHandler(BaseNodeHandler):
                 result = self._execute_operation(op)
                 results[op['target_var']] = result
 
-                # 儲存到工作流變數
-                self.set_global_var(op['target_var'], result)
+                # 儲存到流程變數 (FLOW scope)
+                self.set_flow_var(op['target_var'], result)
 
                 self.log_info(f'變數操作完成: {op["target_var"]} = {result}', {
                     'operation': op['operation'],
