@@ -553,6 +553,75 @@ function workflowListManager() {
             }
         },
 
+        async handleImportFile(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const json = JSON.parse(text);
+                const items = json.items;
+                if (!Array.isArray(items) || items.length === 0) {
+                    alert('JSON 格式不正確或無匯入項目');
+                    return;
+                }
+                if (!confirm(`即將匯入 ${items.length} 個流程模板（含子流程），code 重複者將跳過。確定？`)) return;
+
+                const res = await fetch('/api/form-workflow/workflows/batch/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`匯入完成：建立 ${data.summary.created}，跳過 ${data.summary.skipped}`);
+                    this.loadWorkflows();
+                } else {
+                    alert('匯入失敗: ' + (data.error || data.message));
+                }
+            } catch (e) {
+                alert('匯入失敗: ' + e.message);
+            }
+        },
+
+        async batchExport() {
+            if (this.batchProcessing || this.selectedItems.length === 0) return;
+            this.batchProcessing = true;
+            try {
+                const res = await fetch('/api/form-workflow/workflows/batch/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secure_codes: this.selectedItems })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const now = new Date();
+                    const ts = now.getFullYear().toString() +
+                        String(now.getMonth() + 1).padStart(2, '0') +
+                        String(now.getDate()).padStart(2, '0') + '_' +
+                        String(now.getHours()).padStart(2, '0') +
+                        String(now.getMinutes()).padStart(2, '0') +
+                        String(now.getSeconds()).padStart(2, '0');
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `workflows_export_${ts}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } else {
+                    alert('匯出失敗: ' + (data.error || data.message));
+                }
+            } catch (e) {
+                alert('匯出失敗: ' + e.message);
+            } finally {
+                this.batchProcessing = false;
+            }
+        },
+
         async batchDelete() {
             if (this.batchProcessing || this.selectedItems.length === 0) return;
             if (!confirm(`確定要刪除選取的 ${this.selectedItems.length} 個流程？此操作無法復原。`)) return;

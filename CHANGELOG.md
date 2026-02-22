@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### Added
+- 批次匯出/匯入功能：表單模板和流程模板支援 JSON 格式批次匯出與匯入
+- 流程匯出含樹系收集：匯出主流程時自動 BFS 遞迴收集所有子流程，完整保留樹系結構
+- 匯入防呆機制：export_type 類型檢查（表單/流程互斥）、code 格式驗證（表單需 FT/FORM_ 開頭，流程需 WF/SF 開頭）、code 重複自動跳過
+- 發行時子流程樹系快照：發行表單流程配對時自動收集並快照所有子流程 graph，存入 workflow_snapshot.sub_workflows
+- SubFlowHandler 快照優先讀取：執行子流程時優先從發行快照讀取 graph，確保同一發行版本的案件使用相同版本的子流程
+
+### Added
 - 伺服器設定新增「套件版本」頁面：Python 後端套件 + 前端 vendor 套件版本與線上最新版比對
 - 套件版本 API (`GET /api/system-settings/package-versions`)：並行查詢 PyPI/npm、30 分鐘快取、支援強制刷新
 

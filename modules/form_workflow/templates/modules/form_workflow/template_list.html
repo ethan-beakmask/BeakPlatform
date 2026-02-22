@@ -29,6 +29,8 @@
                 </button>
             </div>
             <button class="fw-btn" @click="loadTemplates()">重新載入</button>
+            <button class="fw-btn" @click="$refs.importFileInput.click()">匯入</button>
+            <input type="file" accept=".json" x-ref="importFileInput" @change="handleImportFile($event)" style="display:none;">
             <button class="fw-btn primary" @click="openCreateModal()">+ 新增表單模板</button>
         </div>
     </div>
@@ -56,6 +58,7 @@
              style="padding: 8px 12px; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px; font-size: 13px;">
             <span style="font-weight: 500;">已選 <strong x-text="selectedItems.length"></strong> 項</span>
             <button class="fw-btn" @click="invertSelection()" style="padding: 4px 10px;">反選</button>
+            <button class="fw-btn" @click="batchExport()" :disabled="batchProcessing" style="padding: 4px 10px;">匯出</button>
             <button class="fw-btn primary" @click="batchSaveNewVersion()" :disabled="batchProcessing" style="padding: 4px 10px;">另存新版</button>
             <button class="fw-btn danger" @click="batchDelete()" :disabled="batchProcessing" style="padding: 4px 10px;">刪除</button>
             <span x-show="batchProcessing" style="color: #666;">處理中...</span>

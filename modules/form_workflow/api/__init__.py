@@ -5,7 +5,7 @@ FormWorkflow Module - API Routes
 提供表單和工作流的 RESTful API。
 """
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 
 from app import csrf
@@ -287,6 +287,151 @@ def batch_delete_templates():
         'success': True,
         'results': results,
         'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
+    })
+
+
+@api_bp.route('/templates/batch/export', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.view')
+def batch_export_templates():
+    """批次匯出表單模板（JSON）"""
+    from ..models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    items = []
+    for sc in secure_codes:
+        tpl = FwFormTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not tpl:
+            continue
+        items.append({
+            'code': tpl.code,
+            'name': tpl.name,
+            'description': tpl.description,
+            'category': tpl.category,
+            'category_secure_code': tpl.category_secure_code,
+            'version': tpl.version,
+            'schema': tpl.schema,
+            'builder_config': tpl.builder_config,
+        })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'export_type': 'forms',
+            'exported_at': datetime.now(timezone.utc).isoformat(),
+            'count': len(items),
+            'items': items,
+        }
+    })
+
+
+@api_bp.route('/templates/batch/import', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.create')
+def batch_import_templates():
+    """批次匯入表單模板（JSON）
+
+    讀取 export 格式的 JSON，逐筆建立 FwFormTemplate。
+    code 重複則跳過。category_secure_code 不存在則歸預設。
+    """
+    from ..models import FwFormTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+
+    # 防呆：檢查 export_type
+    export_type = data.get('export_type', '')
+    if export_type and export_type != 'forms':
+        return jsonify({'success': False, 'error': f'檔案類型不符：期望 forms，實際為 {export_type}'}), 400
+
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'success': False, 'error': 'items is required'}), 400
+
+    # 預載現有 code 集合（用於去重）
+    existing_codes = set(
+        r[0] for r in db.session.query(FwFormTemplate.code).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).all()
+    )
+
+    # 預載有效 category_secure_code 集合
+    from ..models import FwCategory
+    valid_cats = set(
+        r[0] for r in db.session.query(FwCategory.secure_code).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).all()
+    )
+
+    default_cat_code = 'SYS_CAT_WORKFLOW_REC'
+
+    results = []
+    created = 0
+    skipped = 0
+
+    for item in items:
+        code = (item.get('code') or '').strip()
+        if not code:
+            results.append({'code': code, 'status': 'skipped', 'reason': '缺少 code'})
+            skipped += 1
+            continue
+
+        # 防呆：表單 code 必須以 FT 或 FORM_ 開頭
+        code_upper = code.upper()
+        if not (code_upper.startswith('FT') or code_upper.startswith('FORM_')):
+            results.append({'code': code, 'status': 'skipped', 'reason': 'code 格式不符（需 FT 或 FORM_ 開頭）'})
+            skipped += 1
+            continue
+
+        if code in existing_codes:
+            results.append({'code': code, 'status': 'skipped', 'reason': 'code 已存在'})
+            skipped += 1
+            continue
+
+        cat_code = item.get('category_secure_code') or default_cat_code
+        if cat_code not in valid_cats:
+            cat_code = default_cat_code
+
+        tpl = FwFormTemplate(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=org.secure_code,
+            code=code,
+            name=item.get('name', code),
+            description=item.get('description', ''),
+            category=item.get('category', ''),
+            category_secure_code=cat_code,
+            version=item.get('version', 'AA'),
+            revision=1,
+            schema=item.get('schema') or {'components': []},
+            builder_config=item.get('builder_config'),
+            is_active=True,
+            owner_secure_code=current_user.secure_code,
+        )
+        db.session.add(tpl)
+        existing_codes.add(code)
+        results.append({'code': code, 'status': 'created'})
+        created += 1
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'summary': {'total': len(items), 'created': created, 'skipped': skipped},
+        'results': results,
     })
 
 
@@ -1045,6 +1190,194 @@ def batch_delete_workflows():
         'success': True,
         'results': results,
         'summary': {'total': len(secure_codes), 'succeeded': succeeded, 'failed': len(secure_codes) - succeeded}
+    })
+
+
+@api_bp.route('/workflows/batch/export', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.workflow.view')
+def batch_export_workflows():
+    """批次匯出工作流模板（含子流程樹系收集）"""
+    from ..models import FwWorkflowTemplate
+    from ..services.workflow_tree import collect_sub_workflow_tree
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    secure_codes = data.get('secure_codes', [])
+    if not secure_codes:
+        return jsonify({'success': False, 'error': 'secure_codes is required'}), 400
+
+    items = []
+    for sc in secure_codes:
+        wf = FwWorkflowTemplate.query.filter_by(
+            secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
+        ).first()
+        if not wf:
+            continue
+
+        # 遞迴收集子流程樹
+        sub_workflows = {}
+        if wf.graph:
+            collected = collect_sub_workflow_tree(wf.graph, org.secure_code)
+            for code, sf in collected.items():
+                sub_workflows[code] = {
+                    'code': sf.code,
+                    'name': sf.name,
+                    'description': sf.description,
+                    'graph': sf.graph,
+                    'cytoscape_config': sf.cytoscape_config,
+                    'is_subprocess': sf.is_subprocess,
+                }
+
+        items.append({
+            'code': wf.code,
+            'name': wf.name,
+            'description': wf.description,
+            'graph': wf.graph,
+            'cytoscape_config': wf.cytoscape_config,
+            'is_subprocess': wf.is_subprocess,
+            'sub_workflows': sub_workflows,
+        })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'export_type': 'workflows',
+            'exported_at': datetime.now(timezone.utc).isoformat(),
+            'count': len(items),
+            'items': items,
+        }
+    })
+
+
+@api_bp.route('/workflows/batch/import', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.workflow.create')
+def batch_import_workflows():
+    """批次匯入工作流模板（JSON）
+
+    讀取 export 格式的 JSON，先建子流程再建主流程。
+    code 重複則跳過。category_secure_code 不存在則歸預設。
+    """
+    from ..models import FwWorkflowTemplate
+    from app import db
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+
+    # 防呆：檢查 export_type
+    export_type = data.get('export_type', '')
+    if export_type and export_type != 'workflows':
+        return jsonify({'success': False, 'error': f'檔案類型不符：期望 workflows，實際為 {export_type}'}), 400
+
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'success': False, 'error': 'items is required'}), 400
+
+    def _is_valid_workflow_code(code):
+        """流程 code 必須以 WF 或 SF 開頭"""
+        c = code.upper()
+        return c.startswith('WF') or c.startswith('SF')
+
+    # 預載現有 code 集合
+    existing_codes = set(
+        r[0] for r in db.session.query(FwWorkflowTemplate.code).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).all()
+    )
+
+    # 預載有效 category_secure_code 集合
+    from ..models import FwCategory
+    valid_cats = set(
+        r[0] for r in db.session.query(FwCategory.secure_code).filter_by(
+            org_secure_code=org.secure_code, is_deleted=False
+        ).all()
+    )
+
+    default_cat_code = 'SYS_CAT_WORKFLOW_REC'
+
+    results = []
+    created = 0
+    skipped = 0
+
+    for item in items:
+        # 先匯入 sub_workflows
+        sub_workflows = item.get('sub_workflows') or {}
+        for sf_code, sf_data in sub_workflows.items():
+            sf_code_clean = (sf_data.get('code') or sf_code).strip()
+            if not sf_code_clean or sf_code_clean in existing_codes:
+                continue
+            if not _is_valid_workflow_code(sf_code_clean):
+                continue
+
+            sf = FwWorkflowTemplate(
+                secure_code=secrets.token_urlsafe(16),
+                org_secure_code=org.secure_code,
+                code=sf_code_clean,
+                name=sf_data.get('name', sf_code_clean),
+                description=sf_data.get('description', ''),
+                category_secure_code=default_cat_code,
+                graph=sf_data.get('graph') or {'nodes': [], 'edges': []},
+                cytoscape_config=sf_data.get('cytoscape_config'),
+                is_active=True,
+                is_subprocess=True,
+                owner_secure_code=current_user.secure_code,
+            )
+            db.session.add(sf)
+            existing_codes.add(sf_code_clean)
+
+        # 再匯入主流程
+        code = (item.get('code') or '').strip()
+        if not code:
+            results.append({'code': code, 'status': 'skipped', 'reason': '缺少 code'})
+            skipped += 1
+            continue
+
+        # 防呆：流程 code 必須以 WF 或 SF 開頭
+        if not _is_valid_workflow_code(code):
+            results.append({'code': code, 'status': 'skipped', 'reason': 'code 格式不符（需 WF 或 SF 開頭）'})
+            skipped += 1
+            continue
+
+        if code in existing_codes:
+            results.append({'code': code, 'status': 'skipped', 'reason': 'code 已存在'})
+            skipped += 1
+            continue
+
+        cat_code = item.get('category_secure_code') or default_cat_code
+        if cat_code not in valid_cats:
+            cat_code = default_cat_code
+
+        wf = FwWorkflowTemplate(
+            secure_code=secrets.token_urlsafe(16),
+            org_secure_code=org.secure_code,
+            code=code,
+            name=item.get('name', code),
+            description=item.get('description', ''),
+            category_secure_code=cat_code,
+            graph=item.get('graph') or {'nodes': [], 'edges': []},
+            cytoscape_config=item.get('cytoscape_config'),
+            is_active=True,
+            is_subprocess=item.get('is_subprocess', False),
+            owner_secure_code=current_user.secure_code,
+        )
+        db.session.add(wf)
+        existing_codes.add(code)
+        results.append({'code': code, 'status': 'created', 'sub_workflows': list(sub_workflows.keys())})
+        created += 1
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'summary': {'total': len(items), 'created': created, 'skipped': skipped},
+        'results': results,
     })
 
 

@@ -77,16 +77,28 @@ class SubFlowHandler(BaseNodeHandler):
             from app import db
             import secrets
 
-            # 1. 載入子流程模板
-            subflow = FwWorkflowTemplate.query.filter_by(
-                code=child_flow_id,
-                org_secure_code=self.queue_item.org_secure_code
-            ).first()
+            # 1. 優先從發行快照載入子流程 graph，找不到則查 DB（fallback）
+            snapshot_graph = self._get_subflow_graph_from_snapshot(child_flow_id)
 
-            if not subflow:
-                raise ValueError(f'找不到子流程: {child_flow_id}')
-
-            child_graph = subflow.graph
+            if snapshot_graph:
+                self.log_info(f'從發行快照讀取子流程 graph: {child_flow_id}')
+                child_graph = snapshot_graph
+                # 仍需查 DB 取得 subflow 模板（用於建 instance 的 workflow_template_secure_code）
+                subflow = FwWorkflowTemplate.query.filter_by(
+                    code=child_flow_id,
+                    org_secure_code=self.queue_item.org_secure_code
+                ).first()
+                if not subflow:
+                    raise ValueError(f'找不到子流程模板: {child_flow_id}')
+            else:
+                self.log_info(f'快照無子流程資料，從 DB 載入: {child_flow_id}')
+                subflow = FwWorkflowTemplate.query.filter_by(
+                    code=child_flow_id,
+                    org_secure_code=self.queue_item.org_secure_code
+                ).first()
+                if not subflow:
+                    raise ValueError(f'找不到子流程: {child_flow_id}')
+                child_graph = subflow.graph
 
             if not child_graph or 'nodes' not in child_graph:
                 raise ValueError(f'子流程 {child_flow_id} 的 graph 資料不正確')
@@ -221,6 +233,61 @@ class SubFlowHandler(BaseNodeHandler):
                     'error': str(e)
                 }
             }
+
+    def _get_subflow_graph_from_snapshot(self, child_flow_code: str):
+        """
+        嘗試從發行快照取得子流程 graph
+
+        透過 queue_item → workflow_instance → root instance → published version
+        取得 workflow_snapshot.sub_workflows 中對應子流程的 graph。
+
+        Returns:
+            dict or None: 子流程 graph，找不到則 None
+        """
+        try:
+            from ...models import FwWorkflowInstance, FwPublishedFormWorkflow
+
+            # 找到當前 workflow instance
+            instance = FwWorkflowInstance.query.filter_by(
+                secure_code=self.queue_item.workflow_instance_secure_code
+            ).first()
+            if not instance:
+                return None
+
+            # 找到 root instance（向上追溯）
+            root_code = instance.root_instance_code or instance.secure_code
+            root_instance = FwWorkflowInstance.query.filter_by(
+                secure_code=root_code
+            ).first()
+            if not root_instance:
+                return None
+
+            # 取得 published_secure_code（優先從 workflow instance，再從 form instance）
+            pub_code = root_instance.published_secure_code
+            if not pub_code and root_instance.form_instance_secure_code:
+                from ...models import FwFormInstance
+                form_inst = FwFormInstance.query.filter_by(
+                    secure_code=root_instance.form_instance_secure_code
+                ).first()
+                if form_inst:
+                    pub_code = form_inst.published_secure_code
+
+            if not pub_code:
+                return None
+
+            published = FwPublishedFormWorkflow.query.filter_by(
+                secure_code=pub_code
+            ).first()
+            if not published or not published.workflow_snapshot:
+                return None
+
+            sub_workflows = published.workflow_snapshot.get('sub_workflows', {})
+            sub_entry = sub_workflows.get(child_flow_code)
+            if sub_entry:
+                return sub_entry.get('graph')
+            return None
+        except Exception:
+            return None
 
     def _infer_node_type(self, node_id: str) -> str:
         """根據節點 ID 推斷類型"""

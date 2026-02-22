@@ -312,14 +312,9 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
                 'category': form_template.category,
                 'category_secure_code': form_template.category_secure_code,
             },
-            workflow_snapshot={
-                'name': workflow_template.name,
-                'code': workflow_template.code,
-                'version': workflow_template.version,
-                'graph': workflow_template.graph,
-                'cytoscape_config': workflow_template.cytoscape_config,
-                'description': workflow_template.description,
-            },
+            workflow_snapshot=cls._build_workflow_snapshot(
+                workflow_template, mapping.org_secure_code
+            ),
 
             # 狀態
             status='Published',
@@ -327,6 +322,48 @@ class FwPublishedFormWorkflow(ModuleBaseModel):
             published_by_name=published_by_name,
             published_at=datetime.utcnow(),
         )
+
+
+    @classmethod
+    def _build_workflow_snapshot(cls, workflow_template, org_secure_code):
+        """
+        建構含子流程樹系的 workflow snapshot
+
+        Args:
+            workflow_template: FwWorkflowTemplate 實例
+            org_secure_code: 組織代碼
+
+        Returns:
+            dict: workflow snapshot（含 sub_workflows）
+        """
+        from ..services.workflow_tree import collect_sub_workflow_tree
+
+        snapshot = {
+            'name': workflow_template.name,
+            'code': workflow_template.code,
+            'version': workflow_template.version,
+            'graph': workflow_template.graph,
+            'cytoscape_config': workflow_template.cytoscape_config,
+            'description': workflow_template.description,
+        }
+
+        # 收集子流程樹系快照
+        if workflow_template.graph:
+            sub_workflows = collect_sub_workflow_tree(
+                workflow_template.graph, org_secure_code
+            )
+            if sub_workflows:
+                snapshot['sub_workflows'] = {
+                    code: {
+                        'code': sf.code,
+                        'name': sf.name,
+                        'graph': sf.graph,
+                        'cytoscape_config': sf.cytoscape_config,
+                    }
+                    for code, sf in sub_workflows.items()
+                }
+
+        return snapshot
 
 
 # 自動生成 secure_code
