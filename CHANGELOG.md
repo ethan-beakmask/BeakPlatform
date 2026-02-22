@@ -11,7 +11,12 @@
 - 套件版本 API (`GET /api/system-settings/package-versions`)：並行查詢 PyPI/npm、30 分鐘快取、支援強制刷新
 
 ### Changed
-- bcrypt 防禦性檢查：`set_password()` 密碼超過 72 bytes 拋 ValueError、`check_password()` 超長密碼直接回傳 False（為 bcrypt 5.0 升級做準備）
+- Python 套件全面升級 (Issue #13)：21 個套件升級至最新版
+  - 大版本：bcrypt 4→5, gunicorn 21→25, pytest 7→9, pytest-cov 4→7, redis 5→7, Flask-Session 0.5→0.8, cryptography 41→46, Flask-Limiter 3→4
+  - 小版本：Flask 3.0→3.1, Werkzeug 3.0→3.1, itsdangerous 2.1→2.2, Flask-WTF 1.2.1→1.2.2, WTForms 3.1→3.2, SQLAlchemy 2.0.23→2.0.46, psycopg2-binary 2.9.9→2.9.11, Flask-Migrate 4.0→4.1, alembic 1.13→1.18, pytz 2023→2025, python-dateutil 2.8→2.9, requests 2.31→2.32, pypinyin 0.50→0.55
+- Flask-Limiter 4.x 適配：`RATELIMIT_STORAGE_URL` 改為 `RATELIMIT_STORAGE_URI`
+- Flask-Session 0.8 適配：Dev/Test session 從 `filesystem` + `SESSION_FILE_DIR` 改為 `cachelib` + `FileSystemCache`
+- bcrypt 防禦性檢查：`set_password()` 密碼超過 72 bytes 拋 ValueError、`check_password()` 超長密碼直接回傳 False
 
 ### Removed
 - 移除未使用的前端 vendor 套件：D3.js、D3-flextree、D3-org-chart、GridStack、alpine.min.js.bak

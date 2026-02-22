@@ -58,7 +58,7 @@ class BaseConfig:
 
     # Rate Limiting
     RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() == 'true'
-    RATELIMIT_STORAGE_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
+    RATELIMIT_STORAGE_URI = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_HEADERS_ENABLED = True
     RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '200 per day;50 per hour')
@@ -78,9 +78,10 @@ class DevelopmentConfig(BaseConfig):
     # Allow missing SECRET_KEY in dev
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-    # Use filesystem session in development (no Redis required)
-    SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/beakplatform_sessions'
+    # Use cachelib filesystem session in development (no Redis required)
+    SESSION_TYPE = 'cachelib'
+    from cachelib import FileSystemCache
+    SESSION_CACHELIB = FileSystemCache('/tmp/beakplatform_sessions')
 
 
 class ProductionConfig(BaseConfig):
@@ -114,9 +115,10 @@ class TestingConfig(BaseConfig):
         SQLALCHEMY_ENGINE_OPTIONS = {}
     # else: inherit from BaseConfig
 
-    # Use filesystem session for testing (no Redis dependency)
-    SESSION_TYPE = 'filesystem'
-    SESSION_FILE_DIR = '/tmp/beakmask_test_sessions'
+    # Use cachelib filesystem session for testing (no Redis dependency)
+    SESSION_TYPE = 'cachelib'
+    from cachelib import FileSystemCache
+    SESSION_CACHELIB = FileSystemCache('/tmp/beakmask_test_sessions')
 
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
