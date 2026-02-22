@@ -7,8 +7,13 @@
 *.pem
 *.key
 *.crt
+*.json.bak
 secrets/
 credentials/
+
+# Google Cloud Service Account Keys
+*-*.json
+beakmask-*.json
 
 # Python
 __pycache__/

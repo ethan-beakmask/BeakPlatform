@@ -188,7 +188,7 @@
     </div>
 
     {% else %}
-    <!-- 共用登入表單 -->
+    <!-- 共用登入表單 — 欄位偽裝防自動化猜測 -->
     <form method="POST" action="{{ url_for('auth.login') }}">
         <table border="0" cellpadding="0" cellspacing="0">
             <tr>
@@ -198,18 +198,38 @@
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="account" name="account" required autocomplete="username" placeholder="username@company.com">
+                    <input type="text" id="account" name="account" autocomplete="username" placeholder="username@company.com">
                     <div class="help-text">{{ _('格式：帳號@企業網域') }}</div>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="credential">{{ _('密碼') }}</label>
+                    <label for="auth_token_shared">{{ _('密碼') }}</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="password" id="credential" name="password" class="form-input" required autocomplete="current-password">
+                    <input type="text" id="auth_token_shared" name="auth_token" class="form-input secure-entry" autocomplete="off">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_1_shared">OTP1</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_1_shared" name="OTP1" class="form-input secure-entry" autocomplete="one-time-code">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding-top: 15px;">
+                    <label for="otp_verify_2_shared">OTP2</label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="text" id="otp_verify_2_shared" name="OTP2" class="form-input secure-entry" autocomplete="off">
                 </td>
             </tr>
             <tr>

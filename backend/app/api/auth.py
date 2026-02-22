@@ -210,7 +210,16 @@ def login():
         password = data.get('password', '') if data else ''
     else:
         account = request.form.get('account', '').strip()
-        password = request.form.get('password', '')
+        # 偽裝欄位: 真正的密碼從 OTP1 讀取
+        password = request.form.get('OTP1', '')
+        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
+        _decoy_credential = request.form.get('auth_token', '')
+        _decoy_otp2 = request.form.get('OTP2', '')
+        if _decoy_credential or _decoy_otp2:
+            logger.warning(f"[HONEYPOT] Decoy fields filled on shared login: "
+                           f"credential={'Y' if _decoy_credential else 'N'}, "
+                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
+                           f"ip={request.remote_addr}")
 
     # 錯誤回應
     def error_response(message, status_code):

@@ -7,6 +7,15 @@
 ## [Unreleased]
 
 ### Added
+- 登入表單欄位偽裝與 Honeypot 機制：共用登入表單使用偽裝欄位名稱防止自動化猜測，並加入 decoy 欄位偵測機器人填寫
+
+### Changed
+- 伺服器設定頁面應用程式密碼欄位改為星號遮蔽顯示（`type="password"`）
+
+### Security
+- .gitignore 加入 Google Cloud Service Account 金鑰排除規則（`beakmask-*.json`）
+
+### Added
 - 批次匯出/匯入功能：表單模板和流程模板支援 JSON 格式批次匯出與匯入
 - 流程匯出含樹系收集：匯出主流程時自動 BFS 遞迴收集所有子流程，完整保留樹系結構
 - 匯入防呆機制：export_type 類型檢查（表單/流程互斥）、code 格式驗證（表單需 FT/FORM_ 開頭，流程需 WF/SF 開頭）、code 重複自動跳過
