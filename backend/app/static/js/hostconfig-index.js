@@ -41,6 +41,115 @@ function restartFlask() {
     });
 }
 
+function purgeDeletedManager() {
+    return {
+        scope: 'all',
+        orgs: [],
+        tables: [],
+        scanning: false,
+        scanned: false,
+        executing: false,
+        resultMessage: '',
+        resultSuccess: false,
+
+        get totalCount() {
+            var sum = 0;
+            for (var i = 0; i < this.tables.length; i++) {
+                sum += this.tables[i].count;
+            }
+            return sum;
+        },
+
+        async loadOrgs() {
+            try {
+                var res = await fetch(__HOSTCONFIG.purgePreviewUrl + '?scope=all');
+                var data = await res.json();
+                if (data.success) {
+                    this.orgs = data.orgs || [];
+                }
+            } catch (err) {
+                // 靜默處理
+            }
+        },
+
+        async scan() {
+            this.scanning = true;
+            this.resultMessage = '';
+            this.tables = [];
+            this.scanned = false;
+
+            try {
+                var url = __HOSTCONFIG.purgePreviewUrl + '?scope=' + encodeURIComponent(this.scope);
+                var res = await fetch(url);
+                var data = await res.json();
+                if (data.success) {
+                    this.tables = data.tables || [];
+                    if (data.orgs) {
+                        this.orgs = data.orgs;
+                    }
+                } else {
+                    this.resultMessage = '掃描失敗: ' + data.message;
+                    this.resultSuccess = false;
+                }
+            } catch (err) {
+                this.resultMessage = '掃描失敗: ' + err.message;
+                this.resultSuccess = false;
+            }
+            this.scanning = false;
+            this.scanned = true;
+        },
+
+        async executePurge() {
+            var scopeLabel = this.scope === 'all' ? '全系統' : this.scope;
+            if (this.scope !== 'all') {
+                for (var i = 0; i < this.orgs.length; i++) {
+                    if (this.orgs[i].secure_code === this.scope) {
+                        scopeLabel = this.orgs[i].name;
+                        break;
+                    }
+                }
+            }
+
+            if (!confirm(
+                '確定要永久清除「' + scopeLabel + '」中所有標記刪除的記錄嗎？\n\n' +
+                '共 ' + this.totalCount + ' 筆記錄將被永久刪除。\n' +
+                '此操作無法復原！'
+            )) {
+                return;
+            }
+
+            this.executing = true;
+            this.resultMessage = '';
+
+            try {
+                var res = await fetch(__HOSTCONFIG.purgeExecuteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ scope: this.scope })
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this.resultSuccess = true;
+                    var successMsg = data.message;
+                    // 重新掃描以更新計數（scan 會清 resultMessage，之後再恢復）
+                    await this.scan();
+                    this.resultMessage = successMsg;
+                } else {
+                    this.resultSuccess = false;
+                    this.resultMessage = '清除失敗: ' + data.message;
+                }
+            } catch (err) {
+                this.resultSuccess = false;
+                this.resultMessage = '清除失敗: ' + err.message;
+            }
+            this.executing = false;
+        }
+    };
+}
+
 function hardDeleteManager() {
     return {
         loading: true,

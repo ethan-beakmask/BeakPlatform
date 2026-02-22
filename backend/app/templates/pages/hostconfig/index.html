@@ -30,8 +30,8 @@
 </div>
 
 <h2 class="section-title">資料維護</h2>
-<div class="tool-grid" x-data="hardDeleteManager()" x-init="loadPreview()">
-    <div class="tool-card" style="min-width: 400px;">
+<div class="tool-grid">
+    <div class="tool-card" style="min-width: 400px;" x-data="hardDeleteManager()" x-init="loadPreview()">
         <h3>硬刪除已軟刪除的企業</h3>
         <p style="margin-bottom: 12px;">永久刪除所有已軟刪除的企業及其相關資料（無法復原）</p>
 
@@ -85,6 +85,66 @@
              :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
         </div>
     </div>
+
+    <div class="tool-card" style="min-width: 400px;" x-data="purgeDeletedManager()" x-init="loadOrgs()">
+        <h3>清除標記刪除的資料</h3>
+        <p style="margin-bottom: 12px;">永久刪除各表中 is_deleted=true 的記錄（無法復原）</p>
+
+        <!-- 範圍選擇 + 掃描按鈕 -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <label>範圍:</label>
+            <select x-model="scope" style="padding: 4px 8px; min-width: 160px;">
+                <option value="all">全系統</option>
+                <template x-for="org in orgs" :key="org.secure_code">
+                    <option :value="org.secure_code" x-text="org.name + ' (' + org.domain_name + ')'"></option>
+                </template>
+            </select>
+            <button class="restart-btn" @click="scan()" :disabled="scanning">
+                <span x-show="!scanning">掃描</span>
+                <span x-show="scanning">掃描中...</span>
+            </button>
+        </div>
+
+        <!-- 掃描結果 -->
+        <div x-show="scanned && tables.length === 0" style="color: #666;">
+            沒有標記刪除的記錄
+        </div>
+
+        <div x-show="tables.length > 0">
+            <table border="1" cellpadding="6" cellspacing="0" style="margin-bottom: 12px; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th>資料表</th>
+                        <th>筆數</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="t in tables" :key="t.table">
+                        <tr>
+                            <td x-text="t.display_name + ' (' + t.table + ')'"></td>
+                            <td style="text-align: right;" x-text="t.count"></td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background: #f9f9f9;">
+                        <td>合計</td>
+                        <td style="text-align: right;" x-text="totalCount"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <button class="restart-btn" @click="executePurge()" :disabled="executing">
+                <span x-show="!executing">執行清除</span>
+                <span x-show="executing">清除中...</span>
+            </button>
+        </div>
+
+        <!-- 結果訊息 -->
+        <div x-show="resultMessage" x-text="resultMessage"
+             :style="resultSuccess ? 'color: #2f855a; margin-top: 10px;' : 'color: #c53030; margin-top: 10px;'">
+        </div>
+    </div>
 </div>
 
 <h2 class="section-title">開發工具</h2>
@@ -104,7 +164,9 @@
 window.__HOSTCONFIG = {
     restartUrl: '{{ url_for("hostconfig.restart_flask") }}',
     previewUrl: '{{ url_for("hostconfig.hard_delete_preview") }}',
-    executeUrl: '{{ url_for("hostconfig.hard_delete_execute") }}'
+    executeUrl: '{{ url_for("hostconfig.hard_delete_execute") }}',
+    purgePreviewUrl: '{{ url_for("hostconfig.purge_deleted_preview") }}',
+    purgeExecuteUrl: '{{ url_for("hostconfig.purge_deleted_execute") }}'
 };
 </script>
 <script src="/static/js/hostconfig-index.js"></script>
