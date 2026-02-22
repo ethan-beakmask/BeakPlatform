@@ -370,40 +370,6 @@
                 </div>
             </template>
 
-            <!-- Python 套件表格 -->
-            <template x-if="packages.python.length > 0">
-                <div class="settings-card">
-                    <h4>Python 套件 (<span x-text="packages.python.length"></span>)</h4>
-                    <div style="overflow-x: auto;">
-                        <table class="config-table">
-                            <thead>
-                                <tr>
-                                    <th>套件名稱</th>
-                                    <th>需求版本</th>
-                                    <th>安裝版本</th>
-                                    <th>最新版本</th>
-                                    <th>狀態</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="pkg in packages.python" :key="pkg.name">
-                                    <tr>
-                                        <td x-text="pkg.name" style="font-weight: 500;"></td>
-                                        <td x-text="pkg.required_version" style="font-family: monospace;"></td>
-                                        <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
-                                        <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
-                                        <td>
-                                            <span :class="getStatusBadgeClass(pkg.status)"
-                                                  x-text="getStatusLabel(pkg.status)"></span>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </template>
-
             <!-- 前端套件表格 -->
             <template x-if="packages.frontend.length > 0">
                 <div class="settings-card">
@@ -426,6 +392,40 @@
                                         <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
                                         <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
                                         <td x-text="pkg.source" style="font-size: 12px; color: #888;"></td>
+                                        <td>
+                                            <span :class="getStatusBadgeClass(pkg.status)"
+                                                  x-text="getStatusLabel(pkg.status)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Python 套件表格 -->
+            <template x-if="packages.python.length > 0">
+                <div class="settings-card">
+                    <h4>Python 套件 (<span x-text="packages.python.length"></span>)</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th>套件名稱</th>
+                                    <th>需求版本</th>
+                                    <th>安裝版本</th>
+                                    <th>最新版本</th>
+                                    <th>狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="pkg in packages.python" :key="pkg.name">
+                                    <tr>
+                                        <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                        <td x-text="pkg.required_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
                                         <td>
                                             <span :class="getStatusBadgeClass(pkg.status)"
                                                   x-text="getStatusLabel(pkg.status)"></span>

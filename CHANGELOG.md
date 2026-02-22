@@ -11,12 +11,19 @@
 - 套件版本 API (`GET /api/system-settings/package-versions`)：並行查詢 PyPI/npm、30 分鐘快取、支援強制刷新
 
 ### Changed
+- 前端 vendor 套件大版本升級 (Issue #13)：Formio 3.44.0→5.3.0、jQuery 3.7.1→4.0.0、Font Awesome 6.4.0→7.2.0
+- Formio v5 適配：所有頁面加入 `Formio.icons = 'fontawesome'`（v5 預設改用 Bootstrap Icons）
+- 套件版本頁面調整：前端 Vendor 套件表格移至 Python 套件表格上方
 - Python 套件全面升級 (Issue #13)：21 個套件升級至最新版
   - 大版本：bcrypt 4→5, gunicorn 21→25, pytest 7→9, pytest-cov 4→7, redis 5→7, Flask-Session 0.5→0.8, cryptography 41→46, Flask-Limiter 3→4
   - 小版本：Flask 3.0→3.1, Werkzeug 3.0→3.1, itsdangerous 2.1→2.2, Flask-WTF 1.2.1→1.2.2, WTForms 3.1→3.2, SQLAlchemy 2.0.23→2.0.46, psycopg2-binary 2.9.9→2.9.11, Flask-Migrate 4.0→4.1, alembic 1.13→1.18, pytz 2023→2025, python-dateutil 2.8→2.9, requests 2.31→2.32, pypinyin 0.50→0.55
 - Flask-Limiter 4.x 適配：`RATELIMIT_STORAGE_URL` 改為 `RATELIMIT_STORAGE_URI`
 - Flask-Session 0.8 適配：Dev/Test session 從 `filesystem` + `SESSION_FILE_DIR` 改為 `cachelib` + `FileSystemCache`
 - bcrypt 防禦性檢查：`set_password()` 密碼超過 72 bytes 拋 ValueError、`check_password()` 超長密碼直接回傳 False
+
+### Fixed
+- 修正套件版本頁面 Formio 版本無法偵測的問題（v5 版本號不在檔案前 2000 字元，改用 full_pattern 全檔掃描）
+- 修正 npm 預發行版本（如 `5.3.1-refb-rc.0`）導致版本比對失敗顯示「無法檢查」的問題
 
 ### Removed
 - 移除未使用的前端 vendor 套件：D3.js、D3-flextree、D3-org-chart、GridStack、alpine.min.js.bak

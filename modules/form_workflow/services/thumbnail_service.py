@@ -78,6 +78,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
             <div id="form-container"></div>
             <script src="file://{vendor_path}/formio.full.min.js"></script>
             <script>
+                Formio.icons = 'fontawesome';
                 const schema = {json.dumps(schema)};
                 Formio.createForm(document.getElementById('form-container'), schema, {{
                     readOnly: true

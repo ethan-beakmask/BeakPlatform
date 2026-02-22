@@ -6,12 +6,14 @@
 // 必須用 setBaseUrl() 才會觸發 updateUrls() 重新計算所有路徑
 if (Formio.cdn && typeof Formio.cdn.setBaseUrl === 'function') {
     Formio.cdn.setBaseUrl('/static/vendor');
-    console.log('✅ Formio CDN 已覆寫，ACE 路徑:', Formio.cdn.ace);
+    console.log('Formio CDN 已覆寫，ACE 路徑:', Formio.cdn.ace);
 }
 Formio.ace = { basePath: '/static/vendor/ace' };
 
-console.log('🧪 Form.io 測試頁面 (Test6)');
-console.log('📦 Form.io 版本:', Formio.version || '未知');
+// v5 預設改用 Bootstrap Icons，強制使用 Font Awesome
+Formio.icons = 'fontawesome';
+
+console.log('Form.io 版本:', Formio.version || '未知');
 
 
 // Toast 通知系統

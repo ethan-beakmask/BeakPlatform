@@ -1318,6 +1318,7 @@ FRONTEND_VENDOR_REGISTRY = [
         'name': 'Formio',
         'file': 'vendor/formio.full.min.js',
         'header_pattern': r'[Ff]ormio[^\d]*([\d]+\.[\d]+\.[\d]+)',
+        'full_pattern': r'Formio\.version\s*=\s*"(\d+\.\d+\.\d+)"',
         'npm_name': '@formio/js',
     },
     {
@@ -1378,18 +1379,53 @@ def _fetch_pypi_latest(package_name):
 
 
 def _fetch_npm_latest(package_name):
-    """從 npm registry 取得最新版本"""
+    """從 npm registry 取得最新穩定版本"""
     import requests as req_lib
     try:
         resp = req_lib.get(
-            f'https://registry.npmjs.org/{package_name}/latest',
-            timeout=3
+            f'https://registry.npmjs.org/{package_name}',
+            timeout=5
         )
         if resp.status_code == 200:
-            return resp.json().get('version')
+            data = resp.json()
+            # 優先取 dist-tags.latest
+            latest = data.get('dist-tags', {}).get('latest', '')
+            # 若 latest 是穩定版，直接回傳
+            if latest and _is_stable_version(latest):
+                return latest
+            # 否則從所有版本中找最新穩定版
+            versions = list(data.get('versions', {}).keys())
+            stable = [v for v in versions if _is_stable_version(v)]
+            if stable:
+                stable.sort(key=lambda v: _parse_version_tuple(v))
+                return stable[-1]
+            # 全都是預發行版本，回傳 latest tag 原值
+            return latest or None
     except Exception:
         pass
     return None
+
+
+def _is_stable_version(version_str):
+    """判斷是否為穩定版本（不含 rc/alpha/beta/dev）"""
+    return not re.search(r'(rc|alpha|beta|dev|canary|next|pre)', version_str, re.IGNORECASE)
+
+
+def _parse_version_tuple(version_str):
+    """將版本字串解析為可排序的 tuple"""
+    m = re.match(r'(\d+)\.(\d+)\.(\d+)', version_str)
+    if m:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    return (0, 0, 0)
+
+
+def _normalize_npm_version(version_str):
+    """將 npm semver 預發行版本轉換為 PEP 440 格式"""
+    if not version_str:
+        return version_str
+    # 提取主版本號部分 (x.y.z)
+    m = re.match(r'(\d+\.\d+\.\d+)', version_str)
+    return m.group(1) if m else version_str
 
 
 def _compare_versions(installed, latest):
@@ -1400,7 +1436,12 @@ def _compare_versions(installed, latest):
         v_installed = Version(installed)
         v_latest = Version(latest)
     except InvalidVersion:
-        return 'check_failed'
+        # npm semver 格式與 PEP 440 不相容時，嘗試只取主版本號比較
+        try:
+            v_installed = Version(_normalize_npm_version(installed))
+            v_latest = Version(_normalize_npm_version(latest))
+        except InvalidVersion:
+            return 'check_failed'
 
     if v_installed >= v_latest:
         return 'up_to_date'
