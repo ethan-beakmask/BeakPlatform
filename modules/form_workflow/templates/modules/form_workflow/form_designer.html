@@ -85,6 +85,9 @@
                     <button id="btn-get-schema" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-code"></i> Schema
                     </button>
+                    <button id="btn-field-spec" class="btn btn-sm btn-outline-warning" title="開啟欄位規格編輯器" onclick="openFieldSpecEditor()">
+                        <i class="fas fa-database"></i> 規格
+                    </button>
                     <span class="border-start ps-2 ms-1"></span>
                     <label class="form-check form-check-inline mb-0 small" title="啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || 分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名">
                         <input class="form-check-input" type="checkbox" id="chk-placeholder-to-label" checked>
@@ -125,6 +128,17 @@
 
     <!-- Form.io JS (本地) -->
     <script src="/static/vendor/formio.full.min.js"></script>
+
+    <!-- 欄位規格跳轉（從 URL query 取 id） -->
+    <script>
+    function openFieldSpecEditor() {
+        const params = new URLSearchParams(window.location.search);
+        const sc = params.get('id');
+        if (sc) {
+            window.open('/forms/templates/' + sc + '/spec', '_blank');
+        }
+    }
+    </script>
 
     <!-- Form Designer JS (merged from inline + 4 partials) -->
     <script src="/static/modules/form_workflow/js/form-designer-main.js"></script>

@@ -67,7 +67,7 @@ def table_exists(table_name, conn):
         return cur.fetchone()[0]
 
 
-def create_sync_table(table_name, form_schema, conn):
+def create_sync_table(table_name, form_schema, conn, spec_fields=None):
     """
     在企業 DB 建立 SQL 同步表
 
@@ -75,13 +75,14 @@ def create_sync_table(table_name, form_schema, conn):
         table_name: 表名
         form_schema: form.io schema dict
         conn: psycopg2 connection (admin 角色)
+        spec_fields: (optional) FwFormFieldSpec.fields list，有值時覆蓋型別
 
     Returns:
         tuple: (columns, ddl_text)
     """
     _validate_table_name(table_name)
 
-    columns = schema_to_columns(form_schema)
+    columns = schema_to_columns(form_schema, spec_fields=spec_fields)
     if not columns:
         raise ValueError('form.io schema 中沒有可同步的資料欄位')
 
@@ -432,9 +433,27 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
         logger.info(f'SQL Sync: 表 {table_name} 的 registry 已存在，跳過')
         return existing
 
+    # 查詢 FwFormFieldSpec（有 spec 時優先用 spec 的 pg_type 和 is_pii）
+    spec_fields = None
+    try:
+        from ...models.form_field_spec import FwFormFieldSpec
+        spec = FwFormFieldSpec.query.filter_by(
+            org_secure_code=org_secure_code,
+            form_template_secure_code=published.source_form_template_secure_code,
+            status='active',
+            is_deleted=False,
+        ).first()
+        if spec:
+            spec_fields = spec.fields
+            logger.info(f'SQL Sync: 使用 spec v{spec.version} 的型別定義建表')
+    except Exception as e:
+        logger.warning(f'SQL Sync: 查詢 spec 失敗（不影響建表）: {e}')
+
     try:
         with get_org_conn(org_secure_code, role='admin') as conn:
-            columns, ddl_text = create_sync_table(table_name, form_schema, conn)
+            columns, ddl_text = create_sync_table(
+                table_name, form_schema, conn, spec_fields=spec_fields
+            )
 
             # 建立 datagrid/editgrid 子表
             sub_tables = create_sub_tables(table_name, form_schema, conn, org_secure_code)

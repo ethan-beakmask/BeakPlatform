@@ -43,19 +43,32 @@ SKIP_TYPES = {
 GRID_TYPES = {'datagrid', 'editgrid'}
 
 
-def schema_to_columns(form_schema):
+def schema_to_columns(form_schema, spec_fields=None):
     """
-    form.io schema → [(field_key, pg_type, nullable)] 列表
+    form.io schema → [(field_key, pg_type, nullable, is_pii)] 列表
 
     遞迴處理 components（含巢狀 panel/columns/fieldset/tabs 等容器元件）。
     只抽取資料欄位，跳過版面元件。
 
+    當 spec_fields 有值時，優先使用 spec 定義的 pg_type 和 is_pii，
+    FormIO schema 仍作為欄位來源（決定有哪些欄位），
+    但型別和 PII 標記以 spec 為準。
+
     Args:
         form_schema: form.io schema dict，含 'components' key
+        spec_fields: (optional) FwFormFieldSpec.fields list，有值時覆蓋型別
 
     Returns:
-        list of (field_key, pg_type, nullable) tuples
+        list of (field_key, pg_type, nullable, is_pii) tuples
     """
+    # 建立 spec 查詢索引
+    spec_map = {}
+    if spec_fields:
+        for sf in spec_fields:
+            fk = sf.get('field_key')
+            if fk:
+                spec_map[fk] = sf
+
     columns = []
     seen_keys = set()
 
@@ -68,9 +81,16 @@ def schema_to_columns(form_schema):
                 key = comp.get('key')
                 if key and key not in seen_keys:
                     seen_keys.add(key)
-                    is_pii = bool(comp.get('properties', {}).get('pii', False))
+                    # spec 覆蓋
+                    if key in spec_map:
+                        sf = spec_map[key]
+                        pg_type = sf.get('pg_type') or 'JSONB'
+                        is_pii = bool(sf.get('is_pii', False))
+                    else:
+                        pg_type = 'JSONB'
+                        is_pii = bool(comp.get('properties', {}).get('pii', False))
                     # 同步表一律允許 NULL（required 是 UI 驗證，非 DB 約束）
-                    columns.append((key, 'JSONB', True, is_pii))
+                    columns.append((key, pg_type, True, is_pii))
                 continue
 
             # 版面容器元件：遞迴子元件
@@ -90,11 +110,16 @@ def schema_to_columns(form_schema):
 
             seen_keys.add(key)
 
-            # 決定 PG 型別
-            pg_type = FORMIO_TO_PG.get(comp_type, 'TEXT')
-
-            # PII 標記（Phase 2 加密用，由表單設計者在欄位屬性勾選）
-            is_pii = bool(comp.get('properties', {}).get('pii', False))
+            # spec 覆蓋
+            if key in spec_map:
+                sf = spec_map[key]
+                pg_type = sf.get('pg_type') or FORMIO_TO_PG.get(comp_type, 'TEXT')
+                is_pii = bool(sf.get('is_pii', False))
+            else:
+                # 決定 PG 型別
+                pg_type = FORMIO_TO_PG.get(comp_type, 'TEXT')
+                # PII 標記（Phase 2 加密用，由表單設計者在欄位屬性勾選）
+                is_pii = bool(comp.get('properties', {}).get('pii', False))
 
             # 同步表一律允許 NULL（required 是 UI 驗證，非 DB 約束）
             columns.append((key, pg_type, True, is_pii))

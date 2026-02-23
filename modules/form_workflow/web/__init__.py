@@ -65,6 +65,20 @@ def template_detail(secure_code):
 
 
 # =============================================================================
+# 欄位規格編輯器
+# =============================================================================
+
+@web_bp.route('/templates/<secure_code>/spec')
+@security_login_required
+def template_spec(secure_code):
+    """欄位規格編輯器"""
+    return render_template(
+        'modules/form_workflow/field_spec_editor.html',
+        form_template_secure_code=secure_code
+    )
+
+
+# =============================================================================
 # 工作流管理
 # =============================================================================
 

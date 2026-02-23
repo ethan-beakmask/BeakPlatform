@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### Added
+- Schema-First Form Builder：欄位規格編輯器，作為表單結構的 single source of truth
+  - 欄位規格 CRUD：新增/編輯/刪除/拖曳排序欄位，支援 FormIO type、PG type、constraints、PII 標記
+  - FormIO 雙向轉換：從 FormIO schema 同步建立 spec (`sync-from-formio`)、從 spec 生成 FormIO schema (`generate-formio`)
+  - 套用到表單：將 spec 套用至 FormIO schema (Replace 模式，保留 layout 容器)
+  - 三向偏移偵測：Spec vs FormIO vs SQL 比對，偵測 type_mismatch、missing field、pii_mismatch
+  - 版本歷史：每次儲存自動遞增版本號、記錄欄位快照與變更差異 (added/modified/removed)
+  - SQL Sync 整合：建表時自動查詢 spec，有 spec 時優先使用 spec 定義的 pg_type 和 is_pii
+  - UI 入口：表單範本列表「規格」按鈕 + 表單設計器「規格」按鈕
+- 欄位規格 DB Migration (`009_field_specs.sql`)：`fw_form_field_specs` + `fw_form_field_spec_histories` 表
+
+### Added
 - 主機設定「清除標記刪除的資料」功能：永久刪除各表 `is_deleted=true` 的個別記錄，支援全系統或特定企業範圍
 - 清除功能掃描/預覽：動態偵測所有含 `is_deleted` 欄位的表，顯示各表待清除筆數
 - 清除功能孤兒清理：刪除 soft-deleted 父記錄前，自動清理指向它的子記錄

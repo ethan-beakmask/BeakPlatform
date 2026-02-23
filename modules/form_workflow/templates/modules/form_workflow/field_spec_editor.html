@@ -1,0 +1,375 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}欄位規格 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/form_workflow/css/field-spec-editor.css">
+{% endblock %}
+
+{% block content %}
+<script>
+window.__SPEC_CONFIG = {
+    formTemplateSecureCode: '{{ form_template_secure_code }}'
+};
+</script>
+
+<div class="fs-container" x-data="fieldSpecEditor()">
+
+    <!-- 頁首 -->
+    <div class="fs-header">
+        <div>
+            <h1>欄位規格編輯器</h1>
+            <div class="fs-meta">
+                <span x-text="formTemplateName"></span>
+                <template x-if="specVersion">
+                    <span> | v<span x-text="specVersion"></span></span>
+                </template>
+                <template x-if="!specVersion && !loading">
+                    <span> | 尚未建立規格</span>
+                </template>
+            </div>
+        </div>
+        <div class="fs-toolbar">
+            <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="從現有 FormIO schema 反向建立規格">
+                從 FormIO 同步
+            </button>
+            <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="生成 FormIO schema 預覽">
+                FormIO 預覽
+            </button>
+            <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="將規格套用到表單 schema">
+                套用到表單
+            </button>
+            <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="三向比對: Spec vs FormIO vs SQL">
+                比對
+            </button>
+            <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
+                歷史
+            </button>
+            <button class="fs-btn primary" @click="openAddField()">
+                + 新增欄位
+            </button>
+            <button class="fs-btn success" @click="saveSpec()" :disabled="saving || fields.length === 0">
+                <span x-show="!saving">儲存規格</span>
+                <span x-show="saving">儲存中...</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 載入中 -->
+    <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">載入中...</div>
+
+    <!-- 欄位表格 -->
+    <div x-show="!loading" class="fs-card">
+        <div x-show="fields.length > 0" class="fs-summary">
+            <span>共 <strong x-text="fields.length"></strong> 個欄位</span>
+            <span x-show="fields.filter(f => f.is_pii).length > 0">
+                PII: <strong x-text="fields.filter(f => f.is_pii).length"></strong>
+            </span>
+            <span x-show="fields.filter(f => f.constraints && f.constraints.required).length > 0">
+                必填: <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
+            </span>
+        </div>
+
+        <div x-show="fields.length === 0" class="fs-empty">
+            <p style="font-size: 15px; margin-bottom: 8px;">尚無欄位定義</p>
+            <p>點擊「+ 新增欄位」手動建立，或「從 FormIO 同步」自動匯入</p>
+        </div>
+
+        <table x-show="fields.length > 0" class="fs-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;"></th>
+                    <th style="width: 30px;">#</th>
+                    <th>Field Key</th>
+                    <th>Label</th>
+                    <th>FormIO Type</th>
+                    <th>PG Type</th>
+                    <th style="width: 50px;">必填</th>
+                    <th style="width: 50px;">PII</th>
+                    <th>說明</th>
+                    <th style="width: 120px;" class="col-actions">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="(f, idx) in fields" :key="f.field_key + '-' + idx">
+                    <tr draggable="true"
+                        @dragstart="dragStart(idx)"
+                        @dragover="dragOver(idx, $event)"
+                        @drop="drop(idx)"
+                        @dragend="dragEnd()"
+                        :class="dragIndex === idx ? 'dragging' : ''">
+                        <td><span class="fs-drag-handle">::</span></td>
+                        <td style="color: #9ca3af; font-size: 11px;" x-text="idx + 1"></td>
+                        <td style="font-family: monospace; font-size: 12px;" x-text="f.field_key"></td>
+                        <td x-text="f.label || '-'"></td>
+                        <td>
+                            <span class="fs-badge type" x-text="getFormioLabel(f.formio_type)"></span>
+                        </td>
+                        <td style="font-family: monospace; font-size: 11px; color: #6b7280;" x-text="f.pg_type || '-'"></td>
+                        <td style="text-align: center;">
+                            <span x-show="f.constraints && f.constraints.required" class="fs-badge required">Y</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span x-show="f.is_pii" class="fs-badge pii">PII</span>
+                        </td>
+                        <td style="color: #6b7280; font-size: 12px;" x-text="(f.description || '').substring(0, 30)"></td>
+                        <td class="col-actions">
+                            <button @click="openEditField(idx)">編輯</button>
+                            <button class="danger" @click="removeField(idx)">移除</button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 比對結果面板 -->
+    <template x-if="showCompare && compareResult">
+        <div class="fs-compare-panel">
+            <div class="fs-compare-header">
+                <span>三向比對結果</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 12px; color: #6b7280;">
+                        Spec: <strong x-text="compareResult.summary.spec_field_count"></strong> |
+                        FormIO: <strong x-text="compareResult.summary.formio_field_count"></strong> |
+                        SQL: <strong x-text="compareResult.summary.sql_column_count"></strong> |
+                        偏移: <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
+                    </span>
+                    <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showCompare = false">關閉</button>
+                </div>
+            </div>
+            <div class="fs-compare-body">
+                <template x-if="compareResult.summary.total_drifts === 0">
+                    <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">三向完全一致</p>
+                </template>
+
+                <template x-if="compareResult.spec_vs_formio.length > 0">
+                    <div style="margin-bottom: 12px;">
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">Spec vs FormIO</p>
+                        <template x-for="d in compareResult.spec_vs_formio" :key="d.field_key + d.issue">
+                            <div class="fs-drift-item" :class="d.severity">
+                                <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
+                                <span class="fs-drift-badge" :class="d.severity" x-text="d.severity"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="compareResult.spec_vs_sql.length > 0">
+                    <div>
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">Spec vs SQL</p>
+                        <template x-for="d in compareResult.spec_vs_sql" :key="d.field_key + d.issue">
+                            <div class="fs-drift-item" :class="d.severity">
+                                <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
+                                <span class="fs-drift-badge" :class="d.severity" x-text="d.severity"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="!compareResult.summary.has_sql_registry">
+                    <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">SQL Registry: 此表單尚未建立 SQL 同步表</p>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- FormIO 預覽面板 -->
+    <template x-if="showPreview && previewSchema">
+        <div class="fs-preview-panel">
+            <div class="fs-preview-header">
+                <span>FormIO Schema 預覽</span>
+                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showPreview = false">關閉</button>
+            </div>
+            <div class="fs-preview-body">
+                <pre x-text="JSON.stringify(previewSchema, null, 2)"></pre>
+            </div>
+        </div>
+    </template>
+
+    <!-- 歷史面板 -->
+    <template x-if="showHistory">
+        <div class="fs-compare-panel">
+            <div class="fs-compare-header">
+                <span>版本歷史</span>
+                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false">關閉</button>
+            </div>
+            <div class="fs-history-list">
+                <template x-if="histories.length === 0">
+                    <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
+                </template>
+                <template x-for="h in histories" :key="h.secure_code">
+                    <div class="fs-history-item">
+                        <div>
+                            <span class="fs-history-version">v<span x-text="h.version"></span></span>
+                            <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                        </div>
+                        <div class="fs-history-meta">
+                            <span x-text="h.changed_by_name || '系統'"></span> |
+                            <span x-text="formatDate(h.created_at)"></span> |
+                            <span x-text="(h.fields_snapshot || []).length + ' 個欄位'"></span>
+                        </div>
+                        <template x-if="h.change_diff">
+                            <div class="fs-history-diff">
+                                <span class="added" x-show="h.change_diff.added && h.change_diff.added.length">
+                                    +<span x-text="h.change_diff.added.length"></span> 新增
+                                </span>
+                                <span class="modified" x-show="h.change_diff.modified && h.change_diff.modified.length">
+                                    ~<span x-text="h.change_diff.modified.length"></span> 修改
+                                </span>
+                                <span class="removed" x-show="h.change_diff.removed && h.change_diff.removed.length">
+                                    -<span x-text="h.change_diff.removed.length"></span> 移除
+                                </span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- 欄位編輯 Modal -->
+    <div x-show="showFieldModal" x-cloak class="fs-modal">
+        <div class="fs-modal-content">
+            <div class="fs-modal-header">
+                <h3 x-text="editingIndex >= 0 ? '編輯欄位' : '新增欄位'"></h3>
+                <button @click="showFieldModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fs-modal-body">
+                <div class="fs-form-row">
+                    <div class="fs-form-group">
+                        <label>Field Key *</label>
+                        <input type="text" x-model="fieldForm.field_key" placeholder="leaveType" :disabled="editingIndex >= 0">
+                    </div>
+                    <div class="fs-form-group">
+                        <label>Label</label>
+                        <input type="text" x-model="fieldForm.label" placeholder="假別">
+                    </div>
+                </div>
+
+                <div class="fs-form-row">
+                    <div class="fs-form-group">
+                        <label>FormIO Type *</label>
+                        <select x-model="fieldForm.formio_type" @change="onFormioTypeChange()">
+                            <template x-for="t in FORMIO_TYPES" :key="t.value">
+                                <option :value="t.value" x-text="t.label + ' (' + t.value + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="fs-form-group">
+                        <label>PG Type</label>
+                        <input type="text" x-model="fieldForm.pg_type" placeholder="自動推導">
+                    </div>
+                </div>
+
+                <div class="fs-form-row">
+                    <div class="fs-form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" x-model="fieldForm.constraints.required">
+                            <span>必填</span>
+                        </label>
+                    </div>
+                    <div class="fs-form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" x-model="fieldForm.is_pii">
+                            <span>PII (個資加密)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="fs-form-row">
+                    <div class="fs-form-group">
+                        <label>MaxLength</label>
+                        <input type="number" x-model.number="fieldForm.constraints.maxLength" placeholder="(無限制)">
+                    </div>
+                    <div class="fs-form-group">
+                        <label>MinLength</label>
+                        <input type="number" x-model.number="fieldForm.constraints.minLength" placeholder="(無限制)">
+                    </div>
+                </div>
+
+                <div class="fs-form-row">
+                    <div class="fs-form-group">
+                        <label>Min</label>
+                        <input type="number" x-model.number="fieldForm.constraints.min" placeholder="(無限制)">
+                    </div>
+                    <div class="fs-form-group">
+                        <label>Max</label>
+                        <input type="number" x-model.number="fieldForm.constraints.max" placeholder="(無限制)">
+                    </div>
+                </div>
+
+                <div class="fs-form-group">
+                    <label>Pattern (正規表達式)</label>
+                    <input type="text" x-model="fieldForm.constraints.pattern" placeholder="^[A-Z0-9]+$">
+                </div>
+
+                <div class="fs-form-group">
+                    <label>說明</label>
+                    <textarea x-model="fieldForm.description" placeholder="欄位用途說明"></textarea>
+                </div>
+
+                <div class="fs-form-group">
+                    <label>預設值</label>
+                    <input type="text" x-model="fieldForm.default_value" placeholder="(無)">
+                </div>
+
+                <!-- Options (select/radio/selectboxes) -->
+                <template x-if="['select', 'radio', 'selectboxes'].includes(fieldForm.formio_type)">
+                    <div class="fs-form-group">
+                        <label>選項</label>
+                        <template x-for="(opt, oi) in optionRows" :key="oi">
+                            <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+                                <input type="text" x-model="opt.label" placeholder="顯示文字" style="flex: 1;">
+                                <input type="text" x-model="opt.value" placeholder="值" style="flex: 1;">
+                                <button type="button" @click="removeOptionRow(oi)"
+                                        style="padding: 4px 8px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 12px; border-radius: 2px;">X</button>
+                            </div>
+                        </template>
+                        <button type="button" @click="addOptionRow()"
+                                style="padding: 4px 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; border-radius: 2px;">+ 新增選項</button>
+                    </div>
+                </template>
+
+                <!-- Grid Children (datagrid/editgrid) -->
+                <template x-if="['datagrid', 'editgrid'].includes(fieldForm.formio_type)">
+                    <div class="fs-form-group">
+                        <label>子欄位</label>
+                        <div class="fs-grid-children">
+                            <template x-for="(child, ci) in gridChildRows" :key="ci">
+                                <div style="display: flex; gap: 6px; margin-bottom: 4px; align-items: center;">
+                                    <input type="text" x-model="child.field_key" placeholder="key" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                    <input type="text" x-model="child.label" placeholder="label" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                    <select x-model="child.formio_type" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                        <template x-for="t in FORMIO_TYPES.filter(x => !['datagrid','editgrid'].includes(x.value))" :key="t.value">
+                                            <option :value="t.value" x-text="t.label"></option>
+                                        </template>
+                                    </select>
+                                    <button type="button" @click="removeGridChild(ci)"
+                                            style="padding: 3px 6px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 11px; border-radius: 2px;">X</button>
+                                </div>
+                            </template>
+                            <button type="button" @click="addGridChild()"
+                                    style="padding: 3px 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 11px; border-radius: 2px;">+ 子欄位</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="fs-modal-footer">
+                <button type="button" class="fs-btn" @click="showFieldModal = false">取消</button>
+                <button type="button" class="fs-btn primary" @click="saveField()">確認</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// 暴露 FORMIO_TYPES 給 Alpine scope
+document.addEventListener('alpine:init', () => {
+    Alpine.store('formioTypes', FORMIO_TYPES);
+});
+</script>
+
+<script src="/static/modules/form_workflow/js/field-spec-editor.js"></script>
+{% endblock %}

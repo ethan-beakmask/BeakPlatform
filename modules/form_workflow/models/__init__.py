@@ -22,6 +22,8 @@ from .sql_form_registry import FwSqlFormRegistry
 from .org_database import FwOrgDatabase
 from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
+from .form_field_spec import FwFormFieldSpec
+from .form_field_spec_history import FwFormFieldSpecHistory
 
 __all__ = [
     'ModuleBaseModel',
@@ -42,4 +44,6 @@ __all__ = [
     'FwOrgDatabase',
     'FwSyncQueue',
     'WorkflowNodeDefinition',
+    'FwFormFieldSpec',
+    'FwFormFieldSpecHistory',
 ]

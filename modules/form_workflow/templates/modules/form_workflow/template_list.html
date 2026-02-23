@@ -103,6 +103,7 @@
                         <td class="actions">
                             <button class="fw-btn" @click="editTemplate(t)">編輯</button>
                             <button class="fw-btn" @click="viewSchema(t)">結構</button>
+                            <a class="fw-btn" :href="'/forms/templates/' + t.secure_code + '/spec'" title="欄位規格">規格</a>
                             <button class="fw-btn danger" @click="confirmDelete(t)" :disabled="t.is_protected">刪除</button>
                         </td>
                     </tr>
