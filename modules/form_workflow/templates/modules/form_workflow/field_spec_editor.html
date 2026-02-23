@@ -130,22 +130,49 @@ window.__SPEC_CONFIG = {
                 <span>三向比對結果</span>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-size: 12px; color: #6b7280;">
-                        Spec: <strong x-text="compareResult.summary.spec_field_count"></strong> |
-                        FormIO: <strong x-text="compareResult.summary.formio_field_count"></strong> |
-                        SQL: <strong x-text="compareResult.summary.sql_column_count"></strong> |
+                        規格: <strong x-text="compareResult.summary.spec_field_count"></strong> |
+                        表單: <strong x-text="compareResult.summary.formio_field_count"></strong> |
+                        SQL: <strong x-text="compareResult.summary.has_sql_registry ? compareResult.summary.sql_column_count : '未建立'"></strong> |
                         偏移: <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
                     </span>
                     <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showCompare = false">關閉</button>
                 </div>
             </div>
             <div class="fs-compare-body">
-                <template x-if="compareResult.summary.total_drifts === 0">
-                    <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">三向完全一致</p>
+                <!-- 各組狀態摘要 -->
+                <div style="margin-bottom: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 3px; font-size: 12px; line-height: 1.8;">
+                    <div>
+                        <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs 表單:</span>
+                        <template x-if="compareResult.summary.spec_formio_status === 'match'">
+                            <span style="color: #059669;">一致</span>
+                        </template>
+                        <template x-if="compareResult.summary.spec_formio_status === 'mismatch'">
+                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_formio.length"></span> 項)</span>
+                        </template>
+                    </div>
+                    <div>
+                        <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs SQL:</span>
+                        <template x-if="compareResult.summary.spec_sql_status === 'match'">
+                            <span style="color: #059669;">一致</span>
+                        </template>
+                        <template x-if="compareResult.summary.spec_sql_status === 'mismatch'">
+                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_sql.length"></span> 項)</span>
+                        </template>
+                        <template x-if="compareResult.summary.spec_sql_status === 'unavailable'">
+                            <span style="color: #9ca3af;">SQL 同步表尚未建立</span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 三向完全一致 (三者都存在且無偏移) -->
+                <template x-if="compareResult.summary.overall === 'all_match'">
+                    <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">規格、表單、SQL 三向完全一致</p>
                 </template>
 
+                <!-- Spec vs FormIO 偏移細節 -->
                 <template x-if="compareResult.spec_vs_formio.length > 0">
                     <div style="margin-bottom: 12px;">
-                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">Spec vs FormIO</p>
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs 表單 偏移細節</p>
                         <template x-for="d in compareResult.spec_vs_formio" :key="d.field_key + d.issue">
                             <div class="fs-drift-item" :class="d.severity">
                                 <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -155,9 +182,10 @@ window.__SPEC_CONFIG = {
                     </div>
                 </template>
 
+                <!-- Spec vs SQL 偏移細節 -->
                 <template x-if="compareResult.spec_vs_sql.length > 0">
                     <div>
-                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">Spec vs SQL</p>
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs SQL 偏移細節</p>
                         <template x-for="d in compareResult.spec_vs_sql" :key="d.field_key + d.issue">
                             <div class="fs-drift-item" :class="d.severity">
                                 <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -165,10 +193,6 @@ window.__SPEC_CONFIG = {
                             </div>
                         </template>
                     </div>
-                </template>
-
-                <template x-if="!compareResult.summary.has_sql_registry">
-                    <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">SQL Registry: 此表單尚未建立 SQL 同步表</p>
                 </template>
             </div>
         </div>

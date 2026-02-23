@@ -77,6 +77,13 @@ MODULE_INFO = {
                     'required_permission': 'form_workflow.workflow.manage'
                 },
                 {
+                    'code': 'form_workflow.data_specs',
+                    'name': '資料表規格',
+                    'url': '/forms/data-specs',
+                    'sort_order': 13,
+                    'required_permission': 'form_workflow.template.manage'
+                },
+                {
                     'code': 'form_workflow.categories',
                     'name': '分類管理',
                     'url': '/forms/categories',

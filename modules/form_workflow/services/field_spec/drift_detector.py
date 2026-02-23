@@ -260,6 +260,31 @@ def three_way_compare(spec_fields, formio_schema, column_mapping):
         if not k.startswith('_')
     ]) if column_mapping else 0
 
+    has_sql = column_mapping is not None
+    sf_drifts = len(spec_vs_formio)
+    ss_drifts = len(spec_vs_sql)
+
+    # 各組比對狀態: match / mismatch / unavailable
+    spec_formio_status = 'match' if sf_drifts == 0 else 'mismatch'
+    if has_sql:
+        spec_sql_status = 'match' if ss_drifts == 0 else 'mismatch'
+    else:
+        spec_sql_status = 'unavailable'
+
+    # 整體狀態訊息
+    if spec_formio_status == 'match' and spec_sql_status == 'match':
+        overall = 'all_match'
+    elif spec_formio_status == 'match' and spec_sql_status == 'unavailable':
+        overall = 'spec_formio_match_no_sql'
+    elif spec_formio_status == 'mismatch' and spec_sql_status == 'unavailable':
+        overall = 'spec_formio_mismatch_no_sql'
+    elif spec_formio_status == 'match' and spec_sql_status == 'mismatch':
+        overall = 'spec_formio_match_sql_mismatch'
+    elif spec_formio_status == 'mismatch' and spec_sql_status == 'match':
+        overall = 'spec_formio_mismatch_sql_match'
+    else:
+        overall = 'all_mismatch'
+
     return {
         'spec_vs_formio': spec_vs_formio,
         'spec_vs_sql': spec_vs_sql,
@@ -267,7 +292,10 @@ def three_way_compare(spec_fields, formio_schema, column_mapping):
             'spec_field_count': len(spec_fields or []),
             'formio_field_count': len(formio_fields),
             'sql_column_count': sql_count,
-            'total_drifts': len(spec_vs_formio) + len(spec_vs_sql),
-            'has_sql_registry': column_mapping is not None,
+            'total_drifts': sf_drifts + ss_drifts,
+            'has_sql_registry': has_sql,
+            'spec_formio_status': spec_formio_status,
+            'spec_sql_status': spec_sql_status,
+            'overall': overall,
         }
     }

@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### Added
+- 資料表規格管理頁面：獨立選單入口 (`/forms/data-specs`)，以表單為分組主軸列出所有 SQL 同步 Registry
+  - 可展開子列顯示各發行版本的 SQL 表名、欄位數、筆數、同步時間（按版本排序）
+  - 操作按鈕：編輯規格（跳轉 spec editor）、建立規格（sync-from-formio）、三向比對（Modal 顯示）
+  - 新增規格 Modal：選擇尚無 spec 的表單範本，跳轉建立
+  - API：`registry-overview`（總覽）、`available-templates`（可選範本）
+
+### Changed
+- 三向比對結果改為明確的組別狀態顯示：規格 vs 表單（一致/有偏移）、規格 vs SQL（一致/有偏移/未建立），取代原本 `total_drifts === 0` 即顯示「三向完全一致」的不精確邏輯
+
+### Added
 - Schema-First Form Builder：欄位規格編輯器，作為表單結構的 single source of truth
   - 欄位規格 CRUD：新增/編輯/刪除/拖曳排序欄位，支援 FormIO type、PG type、constraints、PII 標記
   - FormIO 雙向轉換：從 FormIO schema 同步建立 spec (`sync-from-formio`)、從 spec 生成 FormIO schema (`generate-formio`)

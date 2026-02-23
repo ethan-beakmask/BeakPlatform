@@ -554,6 +554,164 @@ def apply_to_form(form_template_sc):
 # Phase 3 端點（三向比對）
 # =============================================================================
 
+# =============================================================================
+# 資料表規格管理頁面 API
+# =============================================================================
+
+@field_specs_bp.route('/registry-overview')
+@require_permission('form_workflow.template.manage')
+def registry_overview():
+    """
+    資料表規格總覽
+
+    以 form_template 為分組主軸，列出所有啟用 SQL 同步的表單，
+    以及每個表單下的 published versions SQL registry。
+    """
+    from ..models import (
+        FwSqlFormRegistry, FwFormTemplate,
+        FwFormFieldSpec, FwPublishedFormWorkflow,
+    )
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    org_sc = org.secure_code
+
+    # 1. 查所有 active registry
+    registries = FwSqlFormRegistry.query.filter_by(
+        org_secure_code=org_sc,
+        status='active',
+    ).all()
+
+    if not registries:
+        return jsonify({'success': True, 'data': []})
+
+    # 2. 收集 form_template_secure_code 集合
+    ft_scs = set()
+    pub_scs = set()
+    for r in registries:
+        ft_scs.add(r.form_template_secure_code)
+        pub_scs.add(r.published_secure_code)
+
+    # 3. 批次查 form_templates
+    templates = FwFormTemplate.query.filter(
+        FwFormTemplate.secure_code.in_(ft_scs),
+        FwFormTemplate.org_secure_code == org_sc,
+        FwFormTemplate.is_deleted == False,
+    ).all()
+    tpl_map = {t.secure_code: t for t in templates}
+
+    # 4. 批次查 specs
+    specs = FwFormFieldSpec.query.filter(
+        FwFormFieldSpec.form_template_secure_code.in_(ft_scs),
+        FwFormFieldSpec.org_secure_code == org_sc,
+        FwFormFieldSpec.status == 'active',
+        FwFormFieldSpec.is_deleted == False,
+    ).all()
+    spec_map = {s.form_template_secure_code: s for s in specs}
+
+    # 5. 批次查 published versions
+    publisheds = FwPublishedFormWorkflow.query.filter(
+        FwPublishedFormWorkflow.secure_code.in_(pub_scs),
+        FwPublishedFormWorkflow.org_secure_code == org_sc,
+        FwPublishedFormWorkflow.is_deleted == False,
+    ).all()
+    pub_map = {p.secure_code: p for p in publisheds}
+
+    # 6. 以 form_template_secure_code 分組
+    grouped = {}
+    for r in registries:
+        ft_sc = r.form_template_secure_code
+        if ft_sc not in grouped:
+            tpl = tpl_map.get(ft_sc)
+            spec = spec_map.get(ft_sc)
+            grouped[ft_sc] = {
+                'form_template_secure_code': ft_sc,
+                'form_template_name': tpl.name if tpl else '(unknown)',
+                'form_template_code': tpl.code if tpl else '',
+                'spec_status': spec.status if spec else None,
+                'spec_version': spec.version if spec else None,
+                'spec_field_count': len(spec.fields or []) if spec else None,
+                'registries': [],
+            }
+
+        pub = pub_map.get(r.published_secure_code)
+        col_mapping = r.column_mapping or {}
+        # 排除以 _ 開頭的 metadata key
+        column_count = len([k for k in col_mapping if not k.startswith('_')])
+
+        grouped[ft_sc]['registries'].append({
+            'registry_secure_code': r.secure_code,
+            'published_secure_code': r.published_secure_code,
+            'publish_version': r.publish_version or (pub.publish_version if pub else None),
+            'published_name': pub.name if pub else '',
+            'published_status': pub.status if pub else '',
+            'table_name': r.table_name,
+            'column_count': column_count,
+            'row_count': r.row_count or 0,
+            'last_synced_at': r.last_synced_at.isoformat() if r.last_synced_at else None,
+        })
+
+    # 子列按 publish_version 排序
+    for g in grouped.values():
+        g['registries'].sort(key=lambda r: r['publish_version'] or 0)
+
+    # 主列按表單名稱排序
+    result = sorted(grouped.values(), key=lambda x: x['form_template_name'])
+
+    return jsonify({'success': True, 'data': result})
+
+
+@field_specs_bp.route('/available-templates')
+@require_permission('form_workflow.template.manage')
+def available_templates():
+    """
+    列出尚無 active spec 的表單範本
+
+    供「新增資料表規格」Modal 使用。
+    """
+    from ..models import FwFormTemplate, FwFormFieldSpec
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    org_sc = org.secure_code
+
+    # 查所有已有 active spec 的 form_template_secure_code
+    existing_scs = db.session.query(
+        FwFormFieldSpec.form_template_secure_code
+    ).filter(
+        FwFormFieldSpec.org_secure_code == org_sc,
+        FwFormFieldSpec.status == 'active',
+        FwFormFieldSpec.is_deleted == False,
+    ).all()
+    existing_set = {row[0] for row in existing_scs}
+
+    # 查所有表單範本
+    templates = FwFormTemplate.query.filter_by(
+        org_secure_code=org_sc,
+        is_deleted=False,
+        is_active=True,
+    ).order_by(FwFormTemplate.name).all()
+
+    result = []
+    for t in templates:
+        if t.secure_code not in existing_set:
+            result.append({
+                'secure_code': t.secure_code,
+                'name': t.name,
+                'code': t.code,
+            })
+
+    return jsonify({'success': True, 'data': result})
+
+
+# =============================================================================
+# Phase 3 端點（三向比對）
+# =============================================================================
+
 @field_specs_bp.route('/<form_template_sc>/compare')
 @require_permission('form_workflow.template.view')
 def compare(form_template_sc):
