@@ -1,5 +1,5 @@
 /**
- * field-spec-editor.js -- 欄位規格編輯器
+ * field-spec-editor.js -- 欄位規格編輯器 (Excel-like Grid)
  * Alpine.js component
  */
 
@@ -26,7 +26,7 @@ const FORMIO_TYPES = [
 ];
 
 function getPgDefault(formioType) {
-    const t = FORMIO_TYPES.find(x => x.value === formioType);
+    var t = FORMIO_TYPES.find(function(x) { return x.value === formioType; });
     return t ? t.pgDefault : 'TEXT';
 }
 
@@ -41,18 +41,17 @@ function fieldSpecEditor() {
         loading: true,
         saving: false,
 
-        // 編輯 modal
-        showFieldModal: false,
-        editingIndex: -1,
-        fieldForm: _emptyField(),
+        // 底部空白列
+        newRow: _emptyField(),
 
-        // options 編輯
-        optionRows: [],
+        // 進階設定 Modal
+        showDetailModal: false,
+        detailIndex: -1,
+        detailForm: {},
+        detailOptionRows: [],
+        detailGridChildRows: [],
 
-        // grid children 編輯
-        gridChildRows: [],
-
-        // 比對結果
+        // 比對
         showCompare: false,
         compareResult: null,
         comparing: false,
@@ -67,18 +66,23 @@ function fieldSpecEditor() {
         previewSchema: null,
         previewing: false,
 
-        // drag
+        // 拖曳
         dragIndex: -1,
+
+        // 給 template 使用
+        FORMIO_TYPES: FORMIO_TYPES,
 
         async init() {
             await this.loadTemplateName();
             await this.loadSpec();
         },
 
+        // ===== API 方法 =====
+
         async loadTemplateName() {
             try {
-                const res = await fetch(`/api/form-workflow/templates/${this.formTemplateSc}`);
-                const data = await res.json();
+                var res = await fetch('/api/form-workflow/templates/' + this.formTemplateSc);
+                var data = await res.json();
                 if (data.success && data.data) {
                     this.formTemplateName = data.data.name || '';
                 }
@@ -90,10 +94,10 @@ function fieldSpecEditor() {
         async loadSpec() {
             this.loading = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}`);
-                const data = await res.json();
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc);
+                var data = await res.json();
                 if (data.success && data.data) {
-                    this.fields = data.data.fields || [];
+                    this.fields = _normalizeFields(data.data.fields || []);
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
                 } else {
@@ -110,16 +114,25 @@ function fieldSpecEditor() {
         async saveSpec() {
             this.saving = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}`, {
+                // 過濾空白列，清除內部 flag
+                var cleanFields = this.fields
+                    .filter(function(f) { return f.field_key && f.field_key.trim(); })
+                    .map(function(f) {
+                        var copy = JSON.parse(JSON.stringify(f));
+                        delete copy._pgTypeOverridden;
+                        return copy;
+                    });
+
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fields: this.fields }),
+                    body: JSON.stringify({ fields: cleanFields }),
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
-                    this.fields = data.data.fields || this.fields;
+                    this.fields = _normalizeFields(data.data.fields || cleanFields);
                     _toast('success', data.message || '已儲存');
                 } else {
                     _toast('error', data.error || '儲存失敗');
@@ -130,19 +143,18 @@ function fieldSpecEditor() {
             this.saving = false;
         },
 
-        // --- 同步自 FormIO ---
         async syncFromFormio() {
             if (!confirm('從 FormIO schema 同步會覆蓋目前的規格，確認?')) return;
             this.saving = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}/sync-from-formio`, {
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/sync-from-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}',
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
-                    this.fields = data.data.fields || [];
+                    this.fields = _normalizeFields(data.data.fields || []);
                     this.specVersion = data.data.version;
                     _toast('success', data.message || '已同步');
                 } else {
@@ -154,21 +166,16 @@ function fieldSpecEditor() {
             this.saving = false;
         },
 
-        // --- 套用到表單 ---
         async applyToForm(mode) {
-            const msg = mode === 'preview'
-                ? '產生預覽...'
-                : '套用到表單將修改 FormIO schema，確認?';
-            if (mode !== 'preview' && !confirm(msg)) return;
-
+            if (mode !== 'preview' && !confirm('套用到表單將修改 FormIO schema，確認?')) return;
             this.saving = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}/apply-to-form`, {
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/apply-to-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode }),
+                    body: JSON.stringify({ mode: mode }),
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     if (mode === 'preview') {
                         this.previewSchema = data.data.schema;
@@ -185,16 +192,15 @@ function fieldSpecEditor() {
             this.saving = false;
         },
 
-        // --- 生成 FormIO 預覽 ---
         async generatePreview() {
             this.previewing = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}/generate-formio`, {
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/generate-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}',
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.previewSchema = data.data.schema;
                     this.showPreview = true;
@@ -207,12 +213,11 @@ function fieldSpecEditor() {
             this.previewing = false;
         },
 
-        // --- 三向比對 ---
         async runCompare() {
             this.comparing = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}/compare`);
-                const data = await res.json();
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/compare');
+                var data = await res.json();
                 if (data.success) {
                     this.compareResult = data.data;
                     this.showCompare = true;
@@ -225,12 +230,11 @@ function fieldSpecEditor() {
             this.comparing = false;
         },
 
-        // --- 歷史 ---
         async loadHistory() {
             this.historyLoading = true;
             try {
-                const res = await fetch(`/api/form-workflow/specs/${this.formTemplateSc}/history`);
-                const data = await res.json();
+                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/history');
+                var data = await res.json();
                 if (data.success) {
                     this.histories = data.data.histories || [];
                     this.showHistory = true;
@@ -241,94 +245,93 @@ function fieldSpecEditor() {
             this.historyLoading = false;
         },
 
-        // --- 欄位 CRUD ---
-        openAddField() {
-            this.editingIndex = -1;
-            this.fieldForm = _emptyField();
-            this.optionRows = [];
-            this.gridChildRows = [];
-            this.showFieldModal = true;
-        },
+        // ===== Inline Grid 操作 =====
 
-        openEditField(idx) {
-            this.editingIndex = idx;
-            const f = JSON.parse(JSON.stringify(this.fields[idx]));
-            this.fieldForm = f;
-            this.optionRows = (f.options || []).map(o => ({...o}));
-            this.gridChildRows = (f.grid_children || []).map(c => ({...c}));
-            this.showFieldModal = true;
-        },
-
-        saveField() {
-            const f = this.fieldForm;
-            if (!f.field_key || !f.field_key.trim()) {
-                _toast('error', 'Field Key 為必填');
+        commitNewRow() {
+            if (!this.newRow.field_key || !this.newRow.field_key.trim()) return;
+            var key = this.newRow.field_key.trim();
+            if (this.fields.some(function(f) { return f.field_key === key; })) {
+                _toast('error', 'Field Key "' + key + '" 已存在');
                 return;
             }
-            if (!f.formio_type) {
-                _toast('error', 'FormIO Type 為必填');
-                return;
+            this.newRow.field_key = key;
+            this.newRow.sort_order = this.fields.length;
+            if (!this.newRow.pg_type) {
+                this.newRow.pg_type = getPgDefault(this.newRow.formio_type);
             }
-
-            // 自動填入 pg_type
-            if (!f.pg_type) {
-                f.pg_type = getPgDefault(f.formio_type);
-            }
-
-            // options
-            f.options = this.optionRows.filter(o => o.value || o.label).length > 0
-                ? this.optionRows.filter(o => o.value || o.label)
-                : null;
-
-            // grid_children
-            f.grid_children = this.gridChildRows.length > 0
-                ? this.gridChildRows
-                : null;
-
-            if (this.editingIndex >= 0) {
-                this.fields[this.editingIndex] = JSON.parse(JSON.stringify(f));
-            } else {
-                // 檢查重複
-                if (this.fields.some(x => x.field_key === f.field_key.trim())) {
-                    _toast('error', 'Field Key "' + f.field_key + '" 已存在');
-                    return;
-                }
-                f.sort_order = this.fields.length;
-                this.fields.push(JSON.parse(JSON.stringify(f)));
-            }
-            this.showFieldModal = false;
+            this.fields.push(JSON.parse(JSON.stringify(this.newRow)));
+            this.newRow = _emptyField();
         },
 
         removeField(idx) {
-            if (confirm('確定移除此欄位?')) {
-                this.fields.splice(idx, 1);
+            this.fields.splice(idx, 1);
+            this.fields.forEach(function(f, i) { f.sort_order = i; });
+        },
+
+        onTypeChange(idx) {
+            var f = this.fields[idx];
+            if (!f._pgTypeOverridden) {
+                f.pg_type = getPgDefault(f.formio_type);
             }
         },
 
-        // --- Options 管理 ---
-        addOptionRow() {
-            this.optionRows.push({ label: '', value: '' });
+        onPgTypeInput(idx) {
+            this.fields[idx]._pgTypeOverridden = true;
         },
 
-        removeOptionRow(idx) {
-            this.optionRows.splice(idx, 1);
+        onNewRowTypeChange() {
+            this.newRow.pg_type = getPgDefault(this.newRow.formio_type);
         },
 
-        // --- Grid Children 管理 ---
-        addGridChild() {
-            this.gridChildRows.push(_emptyField());
+        // ===== 進階設定 Modal =====
+
+        openDetail(idx) {
+            this.detailIndex = idx;
+            var f = JSON.parse(JSON.stringify(this.fields[idx]));
+            this.detailForm = f;
+            this.detailOptionRows = (f.options || []).map(function(o) { return {label: o.label || '', value: o.value || ''}; });
+            this.detailGridChildRows = (f.grid_children || []).map(function(c) { return JSON.parse(JSON.stringify(c)); });
+            this.showDetailModal = true;
         },
 
-        removeGridChild(idx) {
-            this.gridChildRows.splice(idx, 1);
+        saveDetail() {
+            var f = this.detailForm;
+            var filteredOptions = this.detailOptionRows.filter(function(o) { return o.value || o.label; });
+            f.options = filteredOptions.length > 0 ? filteredOptions : null;
+            f.grid_children = this.detailGridChildRows.length > 0 ? this.detailGridChildRows : null;
+
+            // 回寫進階欄位到 fields 陣列
+            var target = this.fields[this.detailIndex];
+            target.constraints = JSON.parse(JSON.stringify(f.constraints));
+            target.default_value = f.default_value;
+            target.options = f.options ? JSON.parse(JSON.stringify(f.options)) : null;
+            target.grid_children = f.grid_children ? JSON.parse(JSON.stringify(f.grid_children)) : null;
+            this.showDetailModal = false;
+            _toast('success', '進階設定已更新');
         },
 
-        // --- FormIO Type 變更時自動推導 pgType ---
-        onFormioTypeChange() {
-            this.fieldForm.pg_type = getPgDefault(this.fieldForm.formio_type);
+        closeDetail() {
+            this.showDetailModal = false;
         },
 
-        // --- 拖曳排序 ---
+        addDetailOption() {
+            this.detailOptionRows.push({ label: '', value: '' });
+        },
+
+        removeDetailOption(idx) {
+            this.detailOptionRows.splice(idx, 1);
+        },
+
+        addDetailGridChild() {
+            this.detailGridChildRows.push(_emptyField());
+        },
+
+        removeDetailGridChild(idx) {
+            this.detailGridChildRows.splice(idx, 1);
+        },
+
+        // ===== 拖曳排序 =====
+
         dragStart(idx) {
             this.dragIndex = idx;
         },
@@ -339,10 +342,9 @@ function fieldSpecEditor() {
 
         drop(idx) {
             if (this.dragIndex < 0 || this.dragIndex === idx) return;
-            const item = this.fields.splice(this.dragIndex, 1)[0];
+            var item = this.fields.splice(this.dragIndex, 1)[0];
             this.fields.splice(idx, 0, item);
-            // 更新 sort_order
-            this.fields.forEach((f, i) => { f.sort_order = i; });
+            this.fields.forEach(function(f, i) { f.sort_order = i; });
             this.dragIndex = -1;
         },
 
@@ -350,27 +352,44 @@ function fieldSpecEditor() {
             this.dragIndex = -1;
         },
 
-        // --- 工具 ---
+        // ===== 工具 =====
+
         getFormioLabel(type) {
-            const t = FORMIO_TYPES.find(x => x.value === type);
+            var t = FORMIO_TYPES.find(function(x) { return x.value === type; });
             return t ? t.label : type;
         },
 
         formatDate(iso) {
             if (!iso) return '-';
-            const d = new Date(iso);
+            var d = new Date(iso);
             return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         },
 
         getDiffSummary(diff) {
             if (!diff) return '';
-            const parts = [];
+            var parts = [];
             if (diff.added && diff.added.length) parts.push('+' + diff.added.length);
             if (diff.modified && diff.modified.length) parts.push('~' + diff.modified.length);
             if (diff.removed && diff.removed.length) parts.push('-' + diff.removed.length);
             return parts.join(' / ');
         },
     };
+}
+
+/** 確保每個 field 的 constraints 物件完整 */
+function _normalizeFields(fields) {
+    return fields.map(function(f) {
+        f.constraints = Object.assign({
+            required: false,
+            maxLength: null,
+            minLength: null,
+            min: null,
+            max: null,
+            pattern: null,
+            customValidation: null,
+        }, f.constraints || {});
+        return f;
+    });
 }
 
 function _emptyField() {
@@ -398,8 +417,7 @@ function _emptyField() {
 }
 
 function _toast(type, msg) {
-    // 簡易 toast
-    const el = document.createElement('div');
+    var el = document.createElement('div');
     el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;padding:10px 18px;border-radius:4px;font-size:13px;max-width:400px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
     if (type === 'success') {
         el.style.background = '#d1fae5';
@@ -416,5 +434,5 @@ function _toast(type, msg) {
     }
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    setTimeout(function() { el.remove(); }, 3500);
 }

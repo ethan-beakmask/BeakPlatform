@@ -9,6 +9,12 @@ function dataSpecManager() {
         loading: true,
         totalRegistries: 0,
 
+        // 隱藏/選取狀態
+        hiddenRegistries: [],
+        selectedRegistries: [],
+        allExpanded: true,
+        lowerAllExpanded: false,
+
         // 新增 Modal
         showNewModal: false,
         availableTemplates: [],
@@ -24,23 +30,178 @@ function dataSpecManager() {
         // 建立中
         creating: false,
 
+        // --- computed-like getters ---
+        get selectedCount() {
+            return this.selectedRegistries.length;
+        },
+
+        // 手動隱藏數量
+        get hiddenCount() {
+            return this.hiddenRegistries.length;
+        },
+
+        // 下方清單總數（自動 + 手動）
+        get lowerCount() {
+            let count = 0;
+            for (const item of this.items) {
+                for (const reg of (item.registries || [])) {
+                    if (this._isLower(reg)) count++;
+                }
+            }
+            return count;
+        },
+
+        get visibleRegistryCount() {
+            let count = 0;
+            for (const item of this.items) {
+                for (const reg of (item.registries || [])) {
+                    if (!this._isLower(reg)) count++;
+                }
+            }
+            return count;
+        },
+
+        // --- 隱藏/選取 helpers ---
+        _isManuallyHidden(sc) {
+            return this.hiddenRegistries.indexOf(sc) !== -1;
+        },
+
+        _isAutoHidden(reg) {
+            return reg.published_status === 'Archived';
+        },
+
+        _isLower(reg) {
+            return this._isAutoHidden(reg) || this._isManuallyHidden(reg.registry_secure_code);
+        },
+
+        isSelected(sc) {
+            return this.selectedRegistries.indexOf(sc) !== -1;
+        },
+
+        hasVisibleRegistries(item) {
+            return (item.registries || []).some(r => !this._isLower(r));
+        },
+
+        hasHiddenRegistries(item) {
+            return (item.registries || []).some(r => this._isLower(r));
+        },
+
+        // --- 選取操作 ---
+        toggleRegistrySelect(sc) {
+            const idx = this.selectedRegistries.indexOf(sc);
+            if (idx === -1) {
+                this.selectedRegistries.push(sc);
+            } else {
+                this.selectedRegistries.splice(idx, 1);
+            }
+        },
+
+        invertSelection() {
+            const allUpper = [];
+            for (const item of this.items) {
+                for (const reg of (item.registries || [])) {
+                    if (!this._isLower(reg)) {
+                        allUpper.push(reg.registry_secure_code);
+                    }
+                }
+            }
+            this.selectedRegistries = allUpper.filter(
+                sc => this.selectedRegistries.indexOf(sc) === -1
+            );
+        },
+
+        // --- 隱藏/還原操作 ---
+        hideSelected() {
+            if (this.selectedRegistries.length === 0) return;
+            for (const sc of this.selectedRegistries) {
+                if (this.hiddenRegistries.indexOf(sc) === -1) {
+                    this.hiddenRegistries.push(sc);
+                }
+            }
+            this.selectedRegistries = [];
+            this._saveHidden();
+        },
+
+        unhideRegistry(sc) {
+            const idx = this.hiddenRegistries.indexOf(sc);
+            if (idx !== -1) {
+                this.hiddenRegistries.splice(idx, 1);
+            }
+            this._saveHidden();
+        },
+
+        unhideAll() {
+            this.hiddenRegistries = [];
+            this._saveHidden();
+        },
+
+        // --- 展開/閉合 ---
+        toggleExpandAll(which) {
+            if (which === 'upper') {
+                this.allExpanded = !this.allExpanded;
+                for (const item of this.items) {
+                    item.expanded = this.allExpanded;
+                }
+            } else {
+                this.lowerAllExpanded = !this.lowerAllExpanded;
+                for (const item of this.items) {
+                    item.lowerExpanded = this.lowerAllExpanded;
+                }
+            }
+        },
+
+        // --- localStorage ---
+        _saveHidden() {
+            try {
+                localStorage.setItem('ds_hidden_registries', JSON.stringify(this.hiddenRegistries));
+            } catch (e) { /* ignore */ }
+        },
+
+        _loadHidden() {
+            try {
+                const saved = localStorage.getItem('ds_hidden_registries');
+                if (saved) {
+                    const arr = JSON.parse(saved);
+                    if (Array.isArray(arr)) {
+                        this.hiddenRegistries = arr;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        },
+
+        // --- 生命週期 ---
         async init() {
+            this._loadHidden();
             await this.loadData();
         },
 
         async loadData() {
             this.loading = true;
+            this.selectedRegistries = [];
             try {
                 const res = await fetch('/api/form-workflow/specs/registry-overview');
                 const data = await res.json();
                 if (data.success) {
                     this.items = (data.data || []).map(item => ({
                         ...item,
-                        expanded: false,
+                        expanded: true,
+                        lowerExpanded: false,
                     }));
                     this.totalRegistries = this.items.reduce(
                         (sum, item) => sum + (item.registries || []).length, 0
                     );
+                    // 清理已不存在的 hidden entries
+                    const allScs = new Set();
+                    for (const item of this.items) {
+                        for (const reg of (item.registries || [])) {
+                            allScs.add(reg.registry_secure_code);
+                        }
+                    }
+                    const cleaned = this.hiddenRegistries.filter(sc => allScs.has(sc));
+                    if (cleaned.length !== this.hiddenRegistries.length) {
+                        this.hiddenRegistries = cleaned;
+                        this._saveHidden();
+                    }
                 } else {
                     _dsToast('error', data.error || '載入失敗');
                 }

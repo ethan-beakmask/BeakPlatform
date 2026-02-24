@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Changed
+- 欄位規格編輯器改為 Excel-like Grid 介面：所有基本欄位（Label、Field Key、Type、PG Type、PII、Required、Description）直接在表格內 inline 編輯，取代原本逐欄開 Modal 的方式
+- 欄位規格編輯器新增空白列自動新增機制：在表格底部空白列輸入 Field Key 後 blur/Enter 即自動加入欄位
+- 欄位規格編輯器 FormIO Type 連動 PG Type：切換 Type 時自動帶入對應預設值，手動修改過 PG Type 後不覆寫（`_pgTypeOverridden` flag）
+- 欄位規格編輯器「詳細」按鈕開啟進階設定 Modal（constraints、default_value、options、grid_children），基本欄位不再需要開 Modal
+- 資料表規格管理頁面改為卡片式 Registry 分組佈局：每張表單一個獨立卡片，展開顯示發行版本清單含 SQL 表名、欄位數、筆數
+- 資料表規格管理頁面新增三向比對 Modal：卡片操作列直接開啟比對結果，顯示規格 vs 表單 / 規格 vs SQL 偏移細節
+
 ### Added
 - 資料表規格管理頁面：獨立選單入口 (`/forms/data-specs`)，以表單為分組主軸列出所有 SQL 同步 Registry
   - 可展開子列顯示各發行版本的 SQL 表名、欄位數、筆數、同步時間（按版本排序）
