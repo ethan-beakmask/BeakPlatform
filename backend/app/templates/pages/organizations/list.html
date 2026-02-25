@@ -68,6 +68,13 @@
 
         <!-- 企業列表 -->
         <div class="org-list">
+            <div class="org-list-header">
+                <span class="col-id">ID</span>
+                <span class="col-name">企業名稱</span>
+                <span class="col-domain">網域名稱</span>
+                <span class="col-conglomerate">集團</span>
+                <span class="col-contract">合約</span>
+            </div>
             {% for org in organizations %}
             {% if not org.is_system_org %}
             <div class="org-item"
@@ -75,29 +82,34 @@
                  @click="selectOrg('{{ org.secure_code }}')">
 
                 <template x-if="conglomerateMode">
-                    <input type="checkbox" style="margin-right: 8px;"
+                    <input type="checkbox" style="margin-right: 4px;"
                            :checked="selectedOrgs.includes('{{ org.secure_code }}')"
                            @click.stop="toggleOrgSelection('{{ org.secure_code }}')">
                 </template>
 
-                <span class="org-name">{{ org.name }}</span>
-                <span class="org-domain">{{ org.domain_name }}</span>
-                {% if org.conglomerate_secure_code and conglomerate_map.get(org.conglomerate_secure_code) %}
-                <span class="badge badge-conglomerate"
-                      @click.stop="editConglomerateById('{{ org.conglomerate_secure_code }}')">
-                    {{ conglomerate_map[org.conglomerate_secure_code].name }}
+                <span class="org-id">{{ org.id }}</span>
+                <span class="org-name" title="{{ org.name }}">{{ org.name }}</span>
+                <span class="org-domain" title="{{ org.domain_name }}">{{ org.domain_name }}</span>
+                <span class="org-conglomerate">
+                    {% if org.conglomerate_secure_code and conglomerate_map.get(org.conglomerate_secure_code) %}
+                    <span class="badge badge-conglomerate"
+                          @click.stop="editConglomerateById('{{ org.conglomerate_secure_code }}')">
+                        {{ conglomerate_map[org.conglomerate_secure_code].name }}
+                    </span>
+                    {% endif %}
                 </span>
-                {% endif %}
-                {% set active_count = org_active_counts.get(org.secure_code, 0) %}
-                {% set total_count = org_total_counts.get(org.secure_code, 0) %}
-                {% if total_count > 0 %}
-                <span class="badge {% if active_count > 0 %}badge-contract{% else %}badge-no-contract{% endif %}">{{ active_count }}/{{ total_count }}</span>
-                {% else %}
-                <span class="badge badge-no-contract">無約</span>
-                {% endif %}
-                {% if not org.is_active %}
-                <span class="badge badge-inactive">停用</span>
-                {% endif %}
+                <span class="org-contract">
+                    {% set active_count = org_active_counts.get(org.secure_code, 0) %}
+                    {% set total_count = org_total_counts.get(org.secure_code, 0) %}
+                    {% if total_count > 0 %}
+                    <span class="badge {% if active_count > 0 %}badge-contract{% else %}badge-no-contract{% endif %}">{{ active_count }}/{{ total_count }}</span>
+                    {% else %}
+                    <span class="badge badge-no-contract">無約</span>
+                    {% endif %}
+                    {% if not org.is_active %}
+                    <span class="badge badge-inactive">停用</span>
+                    {% endif %}
+                </span>
             </div>
             {% endif %}
             {% endfor %}

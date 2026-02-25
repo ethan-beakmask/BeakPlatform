@@ -1,0 +1,213 @@
+/* org-databases.css - 企業獨立資料庫監視頁面 */
+
+.odb-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.odb-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.odb-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+.odb-summary {
+    font-size: 13px;
+    color: #888;
+}
+
+/* 空狀態 */
+.odb-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 企業資料庫卡片 */
+.odb-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.odb-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.1s;
+    user-select: none;
+}
+.odb-card-header:hover {
+    background: #f9f9f9;
+}
+
+.odb-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+.odb-org-id {
+    font-family: monospace;
+    font-size: 12px;
+    color: #999;
+    min-width: 30px;
+}
+.odb-org-name {
+    font-weight: 600;
+}
+.odb-org-domain {
+    font-size: 12px;
+    color: #888;
+    font-family: monospace;
+}
+
+.odb-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+}
+.odb-db-name {
+    font-family: monospace;
+    color: #555;
+    font-size: 12px;
+}
+.odb-db-size {
+    font-weight: 600;
+    color: #1976d2;
+}
+.odb-table-count {
+    color: #888;
+}
+
+/* 展開箭頭 */
+.odb-toggle-icon {
+    font-size: 10px;
+    color: #999;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.odb-toggle-icon.expanded {
+    transform: rotate(90deg);
+}
+
+/* Badge */
+.odb-badge {
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.odb-badge-inactive {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* 錯誤訊息 */
+.odb-error {
+    padding: 8px 16px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 12px;
+    border-top: 1px solid #fca5a5;
+}
+
+/* 卡片展開區 */
+.odb-card-body {
+    border-top: 1px solid #eee;
+    padding: 12px 16px 16px;
+}
+
+/* 資料庫資訊 */
+.odb-info-row {
+    margin-bottom: 12px;
+}
+.odb-info-table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+.odb-info-table td {
+    padding: 4px 8px 4px 0;
+    vertical-align: top;
+}
+.odb-info-table td:nth-child(odd) {
+    color: #888;
+    width: 80px;
+    white-space: nowrap;
+}
+.odb-info-table td:nth-child(even) {
+    padding-right: 24px;
+}
+.odb-info-table code {
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* 資料表清單 */
+.odb-table-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.odb-table-list th,
+.odb-table-list td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.odb-table-list thead th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 2px solid #ddd;
+}
+.odb-table-list tfoot td {
+    border-top: 2px solid #ddd;
+    border-bottom: none;
+    background: #fafafa;
+}
+.odb-table-list .col-num {
+    width: 40px;
+    color: #bbb;
+    text-align: center;
+}
+.odb-table-list .col-name {
+    min-width: 200px;
+}
+.odb-table-list .col-name code {
+    font-size: 12px;
+}
+.odb-table-list .col-rows {
+    width: 100px;
+    text-align: right;
+    font-family: monospace;
+}
+.odb-table-list .col-size {
+    width: 100px;
+    text-align: right;
+    font-family: monospace;
+}
+.odb-table-list tbody tr:hover {
+    background: #f9fafb;
+}
+
+.odb-empty-tables {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 13px;
+}

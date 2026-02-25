@@ -1,0 +1,133 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}
+{% if is_system_view %}企業獨立資料庫管理{% else %}獨立資料庫{% endif %} - BeakMask
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/org-databases.css">
+{% endblock %}
+
+{% block content %}
+<div class="odb-page" x-data="odbMonitor()">
+    <div class="odb-header">
+        <h2>{% if is_system_view %}企業獨立資料庫管理{% else %}獨立資料庫{% endif %}</h2>
+        {% if is_system_view %}
+        <span class="odb-summary">共 {{ org_db_list|length }} 個企業資料庫</span>
+        {% endif %}
+    </div>
+
+    {% if not org_db_list %}
+    <div class="odb-empty">
+        {% if is_system_view %}
+        尚無任何企業建立獨立資料庫。企業需在表單版本中啟用 SQL 同步後才會建立。
+        {% else %}
+        您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% for db in org_db_list %}
+    <div class="odb-card">
+        <div class="odb-card-header" @click="toggle('db_{{ db.org_id }}')">
+            <div class="odb-card-title">
+                {% if is_system_view %}
+                <span class="odb-org-id">{{ db.org_id }}</span>
+                <span class="odb-org-name">{{ db.org_name }}</span>
+                <span class="odb-org-domain">{{ db.org_domain }}</span>
+                {% if not db.org_active %}
+                <span class="odb-badge odb-badge-inactive">停用</span>
+                {% endif %}
+                {% else %}
+                <span class="odb-org-name">{{ db.org_name }}</span>
+                {% endif %}
+            </div>
+            <div class="odb-card-meta">
+                <span class="odb-db-name">{{ db.db_name }}</span>
+                <span class="odb-db-size">{{ db.db_size_display }}</span>
+                <span class="odb-table-count">{{ db.stats.table_count }} 表</span>
+                <span class="odb-toggle-icon" :class="{'expanded': expanded['db_{{ db.org_id }}']}">&#9654;</span>
+            </div>
+        </div>
+
+        {% if db.stats.error %}
+        <div class="odb-error">
+            連線失敗: {{ db.stats.error }}
+        </div>
+        {% endif %}
+
+        <div class="odb-card-body" x-show="expanded['db_{{ db.org_id }}']" x-cloak>
+            <!-- 資料庫資訊 -->
+            <div class="odb-info-row">
+                <table class="odb-info-table">
+                    <tr>
+                        <td>資料庫</td>
+                        <td><code>{{ db.db_name }}</code></td>
+                        <td>主機</td>
+                        <td><code>{{ db.db_host }}:{{ db.db_port }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>DDL 帳號</td>
+                        <td><code>{{ db.admin_user }}</code></td>
+                        <td>DML 帳號</td>
+                        <td><code>{{ db.sync_user }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>總大小</td>
+                        <td>{{ db.db_size_display }}</td>
+                        <td>密碼輪換</td>
+                        <td>{{ db.last_rotation.strftime('%Y-%m-%d %H:%M') if db.last_rotation else '尚未輪換' }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 資料表清單 -->
+            {% if db.stats.tables %}
+            <table class="odb-table-list">
+                <thead>
+                    <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-name">資料表名稱</th>
+                        <th class="col-rows">筆數</th>
+                        <th class="col-size">總大小</th>
+                        <th class="col-size">索引大小</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in db.stats.tables %}
+                    <tr>
+                        <td class="col-num">{{ loop.index }}</td>
+                        <td class="col-name"><code>{{ t.name }}</code></td>
+                        <td class="col-rows">{{ '{:,}'.format(t.row_count) }}</td>
+                        <td class="col-size">{{ format_bytes(t.total_bytes) }}</td>
+                        <td class="col-size">{{ format_bytes(t.index_bytes) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td class="col-name"><strong>合計 ({{ db.stats.tables|length }} 表)</strong></td>
+                        <td class="col-rows"><strong>{{ '{:,}'.format(db.stats.tables|map(attribute='row_count')|sum) }}</strong></td>
+                        <td class="col-size"><strong>{{ format_bytes(db.stats.tables|map(attribute='total_bytes')|sum) }}</strong></td>
+                        <td class="col-size"><strong>{{ format_bytes(db.stats.tables|map(attribute='index_bytes')|sum) }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            {% else %}
+            <div class="odb-empty-tables">資料庫中尚無資料表</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+window.__ODB_CONFIG = {
+    dbCount: {{ org_db_list|length }},
+    isSystemView: {{ 'true' if is_system_view else 'false' }},
+    orgIds: [{% for db in org_db_list %}{{ db.org_id }}{% if not loop.last %}, {% endif %}{% endfor %}]
+};
+</script>
+<script src="/static/js/org-databases.js"></script>
+{% endblock %}

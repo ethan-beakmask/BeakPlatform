@@ -6,7 +6,14 @@
 
 ## [Unreleased]
 
+### Added
+- 企業獨立資料庫監視頁面：顯示企業 DB 用量、資料表數、每表筆數、硬碟佔用空間
+  - 系統級 (`/organizations/databases`)：系統管理員可查看所有企業 DB
+  - 企業級 (`/admin/org-database`)：企業管理員只看見自己的 DB
+- 選單新增「企業管理」第一層分類，底下整合「企業與合約管理」及「企業獨立資料庫管理」
+
 ### Changed
+- 企業列表左側面板加寬為 620px，改為分欄佈局：ID / 企業名稱 / 網域名稱 / 集團 / 合約
 - 欄位規格編輯器改為 Excel-like Grid 介面：所有基本欄位（Label、Field Key、Type、PG Type、PII、Required、Description）直接在表格內 inline 編輯，取代原本逐欄開 Modal 的方式
 - 欄位規格編輯器新增空白列自動新增機制：在表格底部空白列輸入 Field Key 後 blur/Enter 即自動加入欄位
 - 欄位規格編輯器 FormIO Type 連動 PG Type：切換 Type 時自動帶入對應預設值，手動修改過 PG Type 後不覆寫（`_pgTypeOverridden` flag）

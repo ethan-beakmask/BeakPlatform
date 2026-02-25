@@ -123,3 +123,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Work schedules (時間管理 - 班表設定)
     from .work_schedules import work_schedules_bp
     app.register_blueprint(work_schedules_bp)
+
+    # Org Database Monitor (企業獨立資料庫監視)
+    from .org_databases import org_databases_bp
+    app.register_blueprint(org_databases_bp)
