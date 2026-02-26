@@ -9,6 +9,10 @@ function dataSpecManager() {
         loading: true,
         totalRegistries: 0,
 
+        // 獨立規格
+        standaloneSpecs: [],
+        deletingSpec: false,
+
         // 隱藏/選取狀態
         hiddenRegistries: [],
         selectedRegistries: [],
@@ -179,10 +183,16 @@ function dataSpecManager() {
             this.loading = true;
             this.selectedRegistries = [];
             try {
-                const res = await fetch('/api/form-workflow/specs/registry-overview');
-                const data = await res.json();
-                if (data.success) {
-                    this.items = (data.data || []).map(item => ({
+                // 並行載入 registry overview 和獨立規格
+                const [regRes, saRes] = await Promise.all([
+                    fetch('/api/form-workflow/specs/registry-overview'),
+                    fetch('/api/form-workflow/specs/standalone'),
+                ]);
+                const regData = await regRes.json();
+                const saData = await saRes.json();
+
+                if (regData.success) {
+                    this.items = (regData.data || []).map(item => ({
                         ...item,
                         expanded: true,
                         lowerExpanded: false,
@@ -203,7 +213,11 @@ function dataSpecManager() {
                         this._saveHidden();
                     }
                 } else {
-                    _dsToast('error', data.error || '載入失敗');
+                    _dsToast('error', regData.error || '載入失敗');
+                }
+
+                if (saData.success) {
+                    this.standaloneSpecs = saData.data || [];
                 }
             } catch (e) {
                 _dsToast('error', '載入失敗: ' + e.message);
@@ -297,6 +311,40 @@ function dataSpecManager() {
                 _dsToast('error', '比對失敗: ' + e.message);
             }
             this.comparing = false;
+        },
+
+        // --- 獨立規格操作 ---
+        goNewStandalone() {
+            window.open('/forms/data-specs/new', '_blank');
+        },
+
+        goEditStandalone(specSc) {
+            window.open('/forms/data-specs/' + specSc + '/edit', '_blank');
+        },
+
+        goSyncControl(ftSc) {
+            window.open('/forms/data-specs/' + ftSc + '/sync', '_blank');
+        },
+
+        async deleteStandalone(specSc) {
+            if (!confirm('確定要刪除此獨立規格？此操作無法復原。')) return;
+            this.deletingSpec = true;
+            try {
+                const res = await fetch('/api/form-workflow/specs/standalone/' + specSc, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    _dsToast('success', '已刪除');
+                    await this.loadData();
+                } else {
+                    _dsToast('error', data.error || '刪除失敗');
+                }
+            } catch (e) {
+                _dsToast('error', '刪除失敗: ' + e.message);
+            }
+            this.deletingSpec = false;
         },
 
         // --- 工具 ---

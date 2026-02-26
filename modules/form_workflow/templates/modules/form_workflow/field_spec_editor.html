@@ -9,7 +9,9 @@
 {% block content %}
 <script>
 window.__SPEC_CONFIG = {
-    formTemplateSecureCode: '{{ form_template_secure_code }}'
+    formTemplateSecureCode: '{{ form_template_secure_code or "" }}',
+    mode: '{{ mode or "template" }}',
+    specSc: '{{ spec_sc or "" }}'
 };
 </script>
 
@@ -20,28 +22,66 @@ window.__SPEC_CONFIG = {
         <div>
             <h1>欄位規格編輯器</h1>
             <div class="fs-meta">
-                <span x-text="formTemplateName"></span>
-                <template x-if="specVersion">
-                    <span> | v<span x-text="specVersion"></span></span>
+                <template x-if="isStandalone && !specSc">
+                    <span>
+                        <input type="text" x-model="specName" placeholder="輸入規格名稱"
+                               style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
+                        <span> | 新建獨立規格</span>
+                    </span>
                 </template>
-                <template x-if="!specVersion && !loading">
-                    <span> | 尚未建立規格</span>
+                <template x-if="isStandalone && specSc">
+                    <span>
+                        <input type="text" x-model="specName" placeholder="規格名稱"
+                               style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
+                        <template x-if="specVersion">
+                            <span> | v<span x-text="specVersion"></span></span>
+                        </template>
+                    </span>
+                </template>
+                <template x-if="!isStandalone">
+                    <span>
+                        <span x-text="formTemplateName"></span>
+                        <template x-if="specVersion">
+                            <span> | v<span x-text="specVersion"></span></span>
+                        </template>
+                        <template x-if="!specVersion && !loading">
+                            <span> | 尚未建立規格</span>
+                        </template>
+                    </span>
                 </template>
             </div>
         </div>
         <div class="fs-toolbar">
-            <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="從現有 FormIO schema 反向建立規格">
-                從 FormIO 同步
-            </button>
-            <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="生成 FormIO schema 預覽">
-                FormIO 預覽
-            </button>
-            <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="將規格套用到表單 schema">
-                套用到表單
-            </button>
-            <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="三向比對: Spec vs FormIO vs SQL">
-                比對
-            </button>
+            <template x-if="!isStandalone">
+                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="從現有 FormIO schema 反向建立規格">
+                    從 FormIO 同步
+                </button>
+            </template>
+            <template x-if="!isStandalone">
+                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="生成 FormIO schema 預覽">
+                    FormIO 預覽
+                </button>
+            </template>
+            <template x-if="!isStandalone">
+                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="將規格套用到表單 schema">
+                    套用到表單
+                </button>
+            </template>
+            <template x-if="!isStandalone">
+                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="三向比對: Spec vs FormIO vs SQL">
+                    比對
+                </button>
+            </template>
+            <template x-if="isStandalone && specSc">
+                <button class="fs-btn" @click="openLinkForm()" title="關聯到既有表單">
+                    關聯表單
+                </button>
+            </template>
+            <template x-if="isStandalone && specSc">
+                <button class="fs-btn" @click="createFormFromSpec()" title="從此規格建立新表單">
+                    建立表單
+                </button>
+            </template>
             <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
                 歷史
             </button>
@@ -412,6 +452,36 @@ window.__SPEC_CONFIG = {
             <div class="fs-modal-footer">
                 <button type="button" class="fs-btn" @click="closeDetail()">取消</button>
                 <button type="button" class="fs-btn primary" @click="saveDetail()">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 關聯表單 Modal (standalone) -->
+    <div x-show="showLinkModal" x-cloak class="fs-modal">
+        <div class="fs-modal-content">
+            <div class="fs-modal-header">
+                <h3>關聯到表單</h3>
+                <button @click="showLinkModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fs-modal-body">
+                <div x-show="linkLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
+                <div x-show="!linkLoading && linkTemplates.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
+                    所有表單範本都已建立規格
+                </div>
+                <div x-show="!linkLoading && linkTemplates.length > 0" style="max-height: 360px; overflow-y: auto;">
+                    <template x-for="tpl in linkTemplates" :key="tpl.secure_code">
+                        <div style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 3px; margin-bottom: 4px; cursor: pointer; display: flex; justify-content: space-between;"
+                             :style="linkTemplateSc === tpl.secure_code ? 'background: #eff6ff; border-color: #3b82f6;' : ''"
+                             @click="linkTemplateSc = tpl.secure_code">
+                            <span x-text="tpl.name" style="font-weight: 500;"></span>
+                            <span x-text="tpl.code" style="font-size: 11px; color: #6b7280; font-family: monospace;"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="fs-modal-footer">
+                <button class="fs-btn" @click="showLinkModal = false">取消</button>
+                <button class="fs-btn primary" @click="confirmLinkForm()" :disabled="!linkTemplateSc">確認關聯</button>
             </div>
         </div>
     </div>

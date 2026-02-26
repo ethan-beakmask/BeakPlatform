@@ -21,8 +21,11 @@ class FwFormFieldSpec(ModuleBaseModel):
 
     org_secure_code = Column(String(100), nullable=False, index=True)
 
-    # 關聯表單模板
-    form_template_secure_code = Column(String(32), nullable=False, index=True)
+    # 關聯表單模板（獨立 spec 可為 NULL）
+    form_template_secure_code = Column(String(32), nullable=True, index=True)
+
+    # 獨立 spec 識別名稱（form_template_secure_code 為 NULL 時使用）
+    name = Column(String(200), nullable=True)
 
     # 版本（每次儲存遞增）
     version = Column(Integer, nullable=False, default=1)
@@ -50,6 +53,7 @@ class FwFormFieldSpec(ModuleBaseModel):
         base = super().to_dict()
         base.update({
             'form_template_secure_code': self.form_template_secure_code,
+            'name': self.name,
             'version': self.version,
             'fields': self.fields or [],
             'status': self.status,

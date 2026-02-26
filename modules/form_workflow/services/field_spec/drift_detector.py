@@ -299,3 +299,72 @@ def three_way_compare(spec_fields, formio_schema, column_mapping):
             'overall': overall,
         }
     }
+
+
+def compare_formio_vs_sql(formio_schema, column_mapping):
+    """
+    FormIO schema vs SQL column_mapping 直接比對
+
+    比對欄位存在性、型別（formio_type 推導的 pg_type vs SQL pg_type）
+
+    Args:
+        formio_schema: FormIO schema dict
+        column_mapping: FwSqlFormRegistry.column_mapping dict
+
+    Returns:
+        list of drifts
+    """
+    drifts = []
+    if not column_mapping:
+        return drifts
+
+    formio_fields = _extract_formio_fields(formio_schema or {})
+    sql_keys = {k for k in column_mapping.keys() if not k.startswith('_')}
+    formio_keys = set(formio_fields.keys())
+
+    # FormIO 有但 SQL 沒有
+    for k in (formio_keys - sql_keys):
+        drifts.append({
+            'field_key': k,
+            'issue': 'missing_in_sql',
+            'detail': f'FormIO 有 "{k}" 但 SQL 表無此欄位',
+            'severity': 'warning',
+        })
+
+    # SQL 有但 FormIO 沒有
+    for k in (sql_keys - formio_keys):
+        drifts.append({
+            'field_key': k,
+            'issue': 'missing_in_formio',
+            'detail': f'SQL 表有 "{k}" 但 FormIO schema 未定義',
+            'severity': 'info',
+        })
+
+    # 兩邊都有：比對 type
+    for k in (formio_keys & sql_keys):
+        formio_f = formio_fields[k]
+        sql_col = column_mapping[k]
+        if not isinstance(sql_col, dict):
+            continue
+
+        formio_type = formio_f['type']
+        expected_pg = FORMIO_TO_PG.get(formio_type, 'TEXT')
+        if formio_type in GRID_TYPES:
+            expected_pg = 'JSONB'
+
+        sql_pg = sql_col.get('pg_type', '')
+        sql_pii = sql_col.get('is_pii', False)
+
+        # PII 欄位在 SQL 中是 BYTEA
+        if sql_pii:
+            continue  # PII 類型不比對
+
+        if expected_pg.upper() != sql_pg.upper():
+            drifts.append({
+                'field_key': k,
+                'issue': 'type_mismatch',
+                'detail': f'FormIO 推導 pg_type={expected_pg}, SQL pg_type={sql_pg}',
+                'severity': 'warning',
+            })
+
+    return drifts

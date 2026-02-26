@@ -21,8 +21,8 @@ class FwFormFieldSpecHistory(ModuleBaseModel):
     # 關聯 spec
     spec_secure_code = Column(String(32), nullable=False, index=True)
 
-    # 關聯表單模板（冗餘，方便查詢）
-    form_template_secure_code = Column(String(32), nullable=False, index=True)
+    # 關聯表單模板（冗餘，方便查詢；獨立 spec 可為 NULL）
+    form_template_secure_code = Column(String(32), nullable=True, index=True)
 
     # 版本號
     version = Column(Integer, nullable=False)

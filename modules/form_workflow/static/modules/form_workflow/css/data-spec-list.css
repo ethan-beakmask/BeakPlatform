@@ -453,6 +453,24 @@
     font-size: 11px;
 }
 
+/* 區塊標題 */
+.ds-section {
+    margin-bottom: 20px;
+}
+
+.ds-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ds-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
 /* 載入中 */
 .ds-loading {
     padding: 40px;

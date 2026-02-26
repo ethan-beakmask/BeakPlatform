@@ -37,6 +37,11 @@ function fieldSpecEditor() {
         specVersion: null,
         specStatus: null,
 
+        // standalone 模式
+        mode: window.__SPEC_CONFIG.mode || 'template',
+        specSc: window.__SPEC_CONFIG.specSc || '',
+        specName: '',
+
         fields: [],
         loading: true,
         saving: false,
@@ -69,12 +74,33 @@ function fieldSpecEditor() {
         // 拖曳
         dragIndex: -1,
 
+        // 關聯表單 Modal
+        showLinkModal: false,
+        linkTemplates: [],
+        linkTemplateSc: null,
+        linkLoading: false,
+
         // 給 template 使用
         FORMIO_TYPES: FORMIO_TYPES,
 
+        get isStandalone() {
+            return this.mode === 'standalone';
+        },
+
+        get apiBase() {
+            if (this.isStandalone && this.specSc) {
+                return '/api/form-workflow/specs/standalone/' + this.specSc;
+            }
+            return '/api/form-workflow/specs/' + this.formTemplateSc;
+        },
+
         async init() {
-            await this.loadTemplateName();
-            await this.loadSpec();
+            if (this.isStandalone) {
+                await this.loadStandaloneSpec();
+            } else {
+                await this.loadTemplateName();
+                await this.loadSpec();
+            }
         },
 
         // ===== API 方法 =====
@@ -89,6 +115,34 @@ function fieldSpecEditor() {
             } catch (e) {
                 console.error('loadTemplateName:', e);
             }
+        },
+
+        async loadStandaloneSpec() {
+            this.loading = true;
+            if (!this.specSc) {
+                // 新建模式
+                this.fields = [];
+                this.specVersion = null;
+                this.loading = false;
+                return;
+            }
+            try {
+                var res = await fetch('/api/form-workflow/specs/standalone/' + this.specSc);
+                var data = await res.json();
+                if (data.success && data.data) {
+                    this.fields = _normalizeFields(data.data.fields || []);
+                    this.specVersion = data.data.version;
+                    this.specStatus = data.data.status;
+                    this.specName = data.data.name || '';
+                    this.formTemplateName = data.data.name || '(獨立規格)';
+                    if (data.data.form_template_secure_code) {
+                        this.formTemplateSc = data.data.form_template_secure_code;
+                    }
+                }
+            } catch (e) {
+                console.error('loadStandaloneSpec:', e);
+            }
+            this.loading = false;
         },
 
         async loadSpec() {
@@ -123,16 +177,39 @@ function fieldSpecEditor() {
                         return copy;
                     });
 
-                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc, {
+                var url, body;
+                if (this.isStandalone && !this.specSc) {
+                    // 新建獨立 spec
+                    if (!this.specName || !this.specName.trim()) {
+                        _toast('error', '請輸入規格名稱');
+                        this.saving = false;
+                        return;
+                    }
+                    url = '/api/form-workflow/specs/standalone';
+                    body = JSON.stringify({ name: this.specName, fields: cleanFields });
+                } else if (this.isStandalone && this.specSc) {
+                    url = '/api/form-workflow/specs/standalone/' + this.specSc;
+                    body = JSON.stringify({ name: this.specName, fields: cleanFields });
+                } else {
+                    url = '/api/form-workflow/specs/' + this.formTemplateSc;
+                    body = JSON.stringify({ fields: cleanFields });
+                }
+
+                var res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fields: cleanFields }),
+                    body: body,
                 });
                 var data = await res.json();
                 if (data.success) {
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
                     this.fields = _normalizeFields(data.data.fields || cleanFields);
+                    if (this.isStandalone && !this.specSc && data.data.secure_code) {
+                        this.specSc = data.data.secure_code;
+                        // 更新 URL 不重載頁面
+                        history.replaceState(null, '', '/forms/data-specs/' + this.specSc + '/edit');
+                    }
                     _toast('success', data.message || '已儲存');
                 } else {
                     _toast('error', data.error || '儲存失敗');
@@ -233,7 +310,13 @@ function fieldSpecEditor() {
         async loadHistory() {
             this.historyLoading = true;
             try {
-                var res = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/history');
+                var url;
+                if (this.isStandalone && this.specSc) {
+                    url = '/api/form-workflow/specs/standalone/' + this.specSc + '/history';
+                } else {
+                    url = '/api/form-workflow/specs/' + this.formTemplateSc + '/history';
+                }
+                var res = await fetch(url);
                 var data = await res.json();
                 if (data.success) {
                     this.histories = data.data.histories || [];
@@ -243,6 +326,69 @@ function fieldSpecEditor() {
                 _toast('error', '載入歷史失敗');
             }
             this.historyLoading = false;
+        },
+
+        // ===== Standalone: 關聯表單 =====
+
+        async openLinkForm() {
+            this.showLinkModal = true;
+            this.linkTemplateSc = null;
+            this.linkLoading = true;
+            try {
+                var res = await fetch('/api/form-workflow/specs/available-templates');
+                var data = await res.json();
+                if (data.success) {
+                    this.linkTemplates = data.data || [];
+                }
+            } catch (e) {
+                _toast('error', '載入範本失敗');
+            }
+            this.linkLoading = false;
+        },
+
+        async confirmLinkForm() {
+            if (!this.linkTemplateSc || !this.specSc) return;
+            try {
+                var res = await fetch('/api/form-workflow/specs/standalone/' + this.specSc + '/link-form', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ form_template_secure_code: this.linkTemplateSc }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    _toast('success', data.message || '已關聯');
+                    this.formTemplateSc = this.linkTemplateSc;
+                    this.showLinkModal = false;
+                } else {
+                    _toast('error', data.error || '關聯失敗');
+                }
+            } catch (e) {
+                _toast('error', '關聯失敗: ' + e.message);
+            }
+        },
+
+        async createFormFromSpec() {
+            if (!this.specSc) return;
+            var formName = prompt('請輸入新表單名稱:', this.specName || '');
+            if (!formName) return;
+            try {
+                var res = await fetch('/api/form-workflow/specs/standalone/' + this.specSc + '/create-form', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: formName }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    _toast('success', data.message || '已建立表單');
+                    if (data.data && data.data.form_template) {
+                        this.formTemplateSc = data.data.form_template.secure_code;
+                    }
+                } else {
+                    _toast('error', data.error || '建立失敗');
+                }
+            } catch (e) {
+                _toast('error', '建立失敗: ' + e.message);
+            }
         },
 
         // ===== Inline Grid 操作 =====
