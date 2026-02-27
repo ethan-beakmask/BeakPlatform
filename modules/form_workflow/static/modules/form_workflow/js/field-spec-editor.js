@@ -82,6 +82,13 @@ function fieldSpecEditor() {
         linkTemplateSc: null,
         linkLoading: false,
 
+        // 建立表單 Modal
+        showCreateFormModal: false,
+        createFormName: '',
+        createFormCategorySc: '',
+        createFormCategories: [],
+        createFormLoading: false,
+
         // 給 template 使用
         FORMIO_TYPES: FORMIO_TYPES,
 
@@ -460,19 +467,43 @@ function fieldSpecEditor() {
             }
         },
 
-        async createFormFromSpec() {
+        async openCreateFormModal() {
             if (!this.specSc) return;
-            var formName = prompt('請輸入新表單名稱:', this.specName || '');
-            if (!formName) return;
+            this.createFormName = this.specName || '';
+            this.createFormCategorySc = '';
+            this.createFormCategories = [];
+            this.showCreateFormModal = true;
+            this.createFormLoading = true;
             try {
+                var res = await fetch('/api/form-workflow/categories?context=form_design&flat=1');
+                var data = await res.json();
+                if (data.success) {
+                    this.createFormCategories = data.data || [];
+                    if (this.createFormCategories.length > 0) {
+                        this.createFormCategorySc = this.createFormCategories[0].secure_code;
+                    }
+                }
+            } catch (e) { /* silent */ }
+            this.createFormLoading = false;
+        },
+
+        async confirmCreateForm() {
+            if (!this.specSc || !this.createFormName.trim()) return;
+            this.saving = true;
+            try {
+                var body = { name: this.createFormName.trim() };
+                if (this.createFormCategorySc) {
+                    body.category_secure_code = this.createFormCategorySc;
+                }
                 var res = await fetch('/api/form-workflow/specs/standalone/' + this.specSc + '/create-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: formName }),
+                    body: JSON.stringify(body),
                 });
                 var data = await res.json();
                 if (data.success) {
                     _toast('success', data.message || '已建立表單');
+                    this.showCreateFormModal = false;
                     if (data.data && data.data.form_template) {
                         this.formTemplateSc = data.data.form_template.secure_code;
                     }
@@ -482,6 +513,7 @@ function fieldSpecEditor() {
             } catch (e) {
                 _toast('error', '建立失敗: ' + e.message);
             }
+            this.saving = false;
         },
 
         // ===== Inline Grid 操作 =====

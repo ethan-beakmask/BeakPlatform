@@ -1187,6 +1187,7 @@ def create_form_from_spec(spec_sc):
     data = request.get_json() or {}
     form_name = (data.get('name') or spec.name or '').strip()
     form_code = (data.get('code') or '').strip()
+    category_sc = (data.get('category_secure_code') or '').strip() or None
 
     if not form_name:
         return jsonify({'success': False, 'error': '缺少表單名稱'}), 400
@@ -1200,6 +1201,7 @@ def create_form_from_spec(spec_sc):
         name=form_name,
         code=form_code,
         schema=schema,
+        category_secure_code=category_sc,
         is_active=True,
     )
     db.session.add(template)
