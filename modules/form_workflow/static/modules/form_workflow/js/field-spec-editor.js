@@ -89,6 +89,14 @@ function fieldSpecEditor() {
         createFormCategories: [],
         createFormLoading: false,
 
+        // SQL Table 操作
+        sqlLoading: false,
+        showSqlTableModal: false,
+        sqlTables: [],
+        selectedSqlTable: '',
+        showSqlApplyModal: false,
+        sqlApplyPreview: null,
+
         // 給 template 使用
         FORMIO_TYPES: FORMIO_TYPES,
 
@@ -514,6 +522,107 @@ function fieldSpecEditor() {
                 _toast('error', '建立失敗: ' + e.message);
             }
             this.saving = false;
+        },
+
+        // ===== SQL Table 操作 =====
+
+        async openSyncFromSqlModal() {
+            this.sqlLoading = true;
+            this.selectedSqlTable = '';
+            this.sqlTables = [];
+            this.showSqlTableModal = true;
+            try {
+                var res = await fetch('/api/form-workflow/specs/sql-tables');
+                var data = await res.json();
+                if (data.success) {
+                    this.sqlTables = data.data || [];
+                } else {
+                    _toast('error', data.error || '載入失敗');
+                }
+            } catch (e) {
+                _toast('error', '載入失敗: ' + e.message);
+            }
+            this.sqlLoading = false;
+        },
+
+        async confirmSyncFromSql() {
+            if (!this.selectedSqlTable) return;
+            this.sqlLoading = true;
+            try {
+                var url = this.apiBase + '/sync-from-sql-table';
+                var res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table_name: this.selectedSqlTable }),
+                });
+                var data = await res.json();
+                if (data.success && data.data && data.data.fields) {
+                    this.fields = _normalizeFields(data.data.fields);
+                    this.showSqlTableModal = false;
+                    _toast('success', data.message || '欄位已匯入');
+                } else {
+                    _toast('error', data.error || '匯入失敗');
+                }
+            } catch (e) {
+                _toast('error', '匯入失敗: ' + e.message);
+            }
+            this.sqlLoading = false;
+        },
+
+        async applyToSqlTable() {
+            if (!this.specVersion) {
+                _toast('error', '請先儲存規格');
+                return;
+            }
+            this.sqlLoading = true;
+            this.sqlApplyPreview = null;
+            try {
+                var url = this.apiBase + '/apply-to-sql-table';
+                var res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirm: false }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this.sqlApplyPreview = data.data;
+                    this.showSqlApplyModal = true;
+                } else {
+                    _toast('error', data.error || '預覽失敗');
+                }
+            } catch (e) {
+                _toast('error', '預覽失敗: ' + e.message);
+            }
+            this.sqlLoading = false;
+        },
+
+        async confirmApplyToSql() {
+            this.sqlLoading = true;
+            try {
+                var url = this.apiBase + '/apply-to-sql-table';
+                var res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirm: true }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this.showSqlApplyModal = false;
+                    var action = data.data.action;
+                    if (action === 'create') {
+                        _toast('success', '已建立 SQL Table: ' + data.data.table_name);
+                    } else if (action === 'alter') {
+                        _toast('success', '已更新 SQL Table: ' + data.data.table_name);
+                    } else {
+                        _toast('info', '表結構無需變更');
+                    }
+                } else {
+                    _toast('error', data.error || '執行失敗');
+                }
+            } catch (e) {
+                _toast('error', '執行失敗: ' + e.message);
+            }
+            this.sqlLoading = false;
         },
 
         // ===== Inline Grid 操作 =====

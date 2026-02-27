@@ -36,6 +36,9 @@ class FwFormFieldSpec(ModuleBaseModel):
     # 狀態: active / archived
     status = Column(String(20), nullable=False, default='active')
 
+    # 獨立規格的 SQL 表名基礎碼（無表單綁定時使用）
+    sql_table_code = Column(String(20), nullable=True)
+
     # 描述
     description = Column(Text)
 
@@ -58,6 +61,7 @@ class FwFormFieldSpec(ModuleBaseModel):
             'fields': self.fields or [],
             'status': self.status,
             'description': self.description,
+            'sql_table_code': self.sql_table_code,
             'last_modified_by': self.last_modified_by,
             'last_modified_by_name': self.last_modified_by_name,
         })

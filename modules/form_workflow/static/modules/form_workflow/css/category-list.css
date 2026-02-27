@@ -1,6 +1,6 @@
 /* category-list.css — 分類管理頁面 */
 
-.fw-container { max-width: 1000px; margin: 0 auto; padding: 16px; }
+.fw-container { max-width: 1500px; margin: 0 auto; padding: 16px; }
 .fw-header { background: white; border: 1px solid #ddd; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
 .fw-header h1 { margin: 0; font-size: 20px; }
 .fw-toolbar { display: flex; gap: 12px; align-items: center; }
@@ -17,7 +17,7 @@
 .fw-table th { background: #f5f5f5; padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: 600; }
 .fw-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
 .fw-table tr:hover { background: #fafafa; }
-.fw-table .actions { text-align: center; white-space: nowrap; }
+.fw-table .actions { text-align: right; white-space: nowrap; }
 .fw-table .actions button { padding: 4px 8px; margin: 0 2px; font-size: 11px; }
 
 /* 父分類列 */
@@ -27,8 +27,7 @@
 .fw-table tr.parent-row .expand-btn:hover { color: #333; }
 
 /* 子分類列 */
-.fw-table tr.child-row td { padding-left: 36px; background: white; }
-.fw-table tr.child-row td:first-child { padding-left: 36px; }
+.fw-table tr.child-row td { background: white; }
 
 .fw-badge { padding: 2px 8px; font-size: 11px; border-radius: 2px; }
 .fw-badge.system { background: #dbeafe; color: #1e40af; }

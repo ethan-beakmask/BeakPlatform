@@ -82,6 +82,14 @@ window.__SPEC_CONFIG = {
                     建立表單
                 </button>
             </template>
+            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading" title="從 org DB 既有表匯入欄位定義">
+                <span x-show="!sqlLoading">從 SQL Table 同步</span>
+                <span x-show="sqlLoading">載入中...</span>
+            </button>
+            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading" title="將 spec 欄位定義建立/更新到 SQL Table">
+                <span x-show="!sqlLoading">套用到 SQL Table</span>
+                <span x-show="sqlLoading">處理中...</span>
+            </button>
             <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
                 歷史
             </button>
@@ -581,6 +589,79 @@ window.__SPEC_CONFIG = {
                     <span x-show="!saving">建立</span>
                     <span x-show="saving">建立中...</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 從 SQL Table 同步 Modal -->
+    <div x-show="showSqlTableModal" x-cloak class="fs-modal">
+        <div class="fs-modal-content" style="width: 560px;">
+            <div class="fs-modal-header">
+                <h3>從 SQL Table 同步欄位</h3>
+                <button @click="showSqlTableModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fs-modal-body">
+                <div x-show="sqlLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
+                <div x-show="!sqlLoading && sqlTables.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
+                    企業資料庫中沒有任何表
+                </div>
+                <div x-show="!sqlLoading && sqlTables.length > 0">
+                    <div style="margin-bottom: 8px; font-size: 12px; color: #6b7280;">
+                        選擇要匯入欄位定義的表（共 <span x-text="sqlTables.length"></span> 個表）
+                    </div>
+                    <div style="max-height: 360px; overflow-y: auto;">
+                        <template x-for="tbl in sqlTables" :key="tbl.table_name">
+                            <div style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 3px; margin-bottom: 4px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+                                 :style="selectedSqlTable === tbl.table_name ? 'background: #eff6ff; border-color: #3b82f6;' : ''"
+                                 @click="selectedSqlTable = tbl.table_name">
+                                <span x-text="tbl.table_name" style="font-weight: 500; font-family: monospace; font-size: 13px;"></span>
+                                <span x-text="'~' + tbl.row_estimate + ' rows'" style="font-size: 11px; color: #9ca3af;"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <div class="fs-modal-footer">
+                <button class="fs-btn" @click="showSqlTableModal = false">取消</button>
+                <button class="fs-btn primary" @click="confirmSyncFromSql()" :disabled="!selectedSqlTable || sqlLoading">匯入欄位</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 套用到 SQL Table 確認 Modal -->
+    <div x-show="showSqlApplyModal" x-cloak class="fs-modal">
+        <div class="fs-modal-content" style="width: 640px;">
+            <div class="fs-modal-header">
+                <h3>套用到 SQL Table</h3>
+                <button @click="showSqlApplyModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fs-modal-body">
+                <template x-if="sqlApplyPreview">
+                    <div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 12px; color: #6b7280;">表名: </span>
+                            <span style="font-family: monospace; font-weight: 600;" x-text="sqlApplyPreview.table_name"></span>
+                            <span style="margin-left: 12px; padding: 2px 8px; border-radius: 3px; font-size: 11px;"
+                                  :style="sqlApplyPreview.action === 'create' ? 'background:#d1fae5;color:#065f46;' : sqlApplyPreview.action === 'alter' ? 'background:#fef3c7;color:#92400e;' : 'background:#e5e7eb;color:#374151;'"
+                                  x-text="sqlApplyPreview.action === 'create' ? 'CREATE' : sqlApplyPreview.action === 'alter' ? 'ALTER' : 'NO CHANGE'"></span>
+                        </div>
+                        <div style="background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; line-height: 1.6; max-height: 320px; overflow-y: auto; white-space: pre-wrap;" x-text="sqlApplyPreview.ddl"></div>
+                        <template x-if="sqlApplyPreview.plan && sqlApplyPreview.plan.drop_candidates && sqlApplyPreview.plan.drop_candidates.length > 0">
+                            <div style="margin-top: 8px; padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 3px; font-size: 12px; color: #991b1b;">
+                                DB 中有 <strong x-text="sqlApplyPreview.plan.drop_candidates.length"></strong> 個欄位不在 spec 中（不會自動刪除）
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div class="fs-modal-footer">
+                <button class="fs-btn" @click="showSqlApplyModal = false">取消</button>
+                <template x-if="sqlApplyPreview && sqlApplyPreview.action !== 'no_change'">
+                    <button class="fs-btn warning" @click="confirmApplyToSql()" :disabled="sqlLoading">
+                        <span x-show="!sqlLoading">確認執行</span>
+                        <span x-show="sqlLoading">執行中...</span>
+                    </button>
+                </template>
             </div>
         </div>
     </div>

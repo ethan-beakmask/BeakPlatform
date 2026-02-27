@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### Added
+- Spec 編輯器新增 SQL Table 直接操作功能：設計階段即可建立/更新 org DB 表
+  - 「從 SQL Table 同步」按鈕：列出 org DB 所有表，選取後匯入欄位定義到 spec
+  - 「套用到 SQL Table」按鈕：將 spec 欄位定義 CREATE 或 ALTER 到 org DB，含 DDL 預覽確認
+  - 表名規則：使用 form template code 或獨立 spec 自動產生碼（FT{8hex}）+ 版本號
+  - 5 個新 API 端點：sql-tables, sync-from-sql-table, apply-to-sql-table（template/standalone 兩組）
+- FwFormFieldSpec Model 新增 `sql_table_code` 欄位，供獨立規格產生 SQL 表名
+
+### Fixed
+- 從規格建立表單（create_form_from_spec）缺少 code 自動產生，導致表單 code 為空
+
+### Added
 - 版本歷史取回功能：載入舊版規格預覽，可「取回為新版」或「取回並套用到表單設計」
 - 配對版本顯示資料表名稱欄位
 - 三向比對結果顯示版本資訊（Spec 版本、表單版本、SQL 表名）

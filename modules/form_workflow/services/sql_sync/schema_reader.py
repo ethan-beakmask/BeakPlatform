@@ -35,6 +35,32 @@ PG_TO_FORMIO = {
 }
 
 
+def list_tables(org_sc):
+    """
+    列出企業 DB 中 public schema 所有使用者表
+
+    Args:
+        org_sc: 企業 secure_code
+
+    Returns:
+        list of dict: [{'table_name', 'row_estimate'}]
+    """
+    with get_org_conn(org_sc, role='sync') as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT c.relname AS table_name,
+                       c.reltuples::bigint AS row_estimate
+                FROM pg_class c
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public'
+                  AND c.relkind = 'r'
+                ORDER BY c.relname
+            """)
+            rows = cur.fetchall()
+
+    return [{'table_name': r[0], 'row_estimate': max(r[1], 0)} for r in rows]
+
+
 def read_table_columns(org_sc, table_name):
     """
     從 information_schema.columns 讀取實際表結構

@@ -49,11 +49,27 @@ def make_table_name(mapping_id, publish_version):
 
 
 def _validate_table_name(table_name):
-    """驗證表名符合規則"""
+    """驗證表名符合規則（SQL Sync 正式表：form_ 開頭）"""
     if not table_name.startswith(TABLE_PREFIX):
         raise ValueError(f'表名必須以 {TABLE_PREFIX} 開頭: {table_name}')
     if not re.match(r'^[a-z0-9_]+$', table_name):
         raise ValueError(f'表名只允許小寫英數和底線: {table_name}')
+
+
+# 設計階段允許的表名前綴
+_DESIGN_TABLE_PREFIXES = ('form_', 'ft')
+
+
+def validate_design_table_name(table_name):
+    """驗證設計階段表名（允許 ft 或 form_ 開頭）"""
+    if not table_name:
+        raise ValueError('表名不可為空')
+    if not re.match(r'^[a-z0-9_]+$', table_name):
+        raise ValueError(f'表名只允許小寫英數和底線: {table_name}')
+    if len(table_name) > 63:
+        raise ValueError(f'表名超過 PostgreSQL 63 字元限制: {table_name}')
+    if not any(table_name.startswith(p) for p in _DESIGN_TABLE_PREFIXES):
+        raise ValueError(f'表名必須以 {_DESIGN_TABLE_PREFIXES} 之一開頭: {table_name}')
 
 
 def table_exists(table_name, conn):

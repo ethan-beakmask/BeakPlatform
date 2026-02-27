@@ -1186,11 +1186,24 @@ def create_form_from_spec(spec_sc):
 
     data = request.get_json() or {}
     form_name = (data.get('name') or spec.name or '').strip()
-    form_code = (data.get('code') or '').strip()
+    form_code = (data.get('code') or '').strip().upper()
     category_sc = (data.get('category_secure_code') or '').strip() or None
 
     if not form_name:
         return jsonify({'success': False, 'error': '缺少表單名稱'}), 400
+
+    # 自動產生 code
+    if not form_code:
+        form_code = f'FT{secrets.token_hex(4).upper()}'
+
+    # 檢查 code 是否重複
+    existing_tpl = FwFormTemplate.query.filter_by(
+        code=form_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if existing_tpl:
+        return jsonify({'success': False, 'error': f'Code {form_code} 已存在'}), 400
 
     # 從 spec 生成 FormIO schema
     from ..services.field_spec.spec_generator import spec_to_formio_schema
@@ -1848,3 +1861,187 @@ def sync_sql_to_formio(ft_sc):
         'data': {'field_count': len(sql_fields)},
         'message': f'SQL -> FormIO 同步完成（{len(sql_fields)} 個欄位）'
     })
+
+
+# =============================================================================
+# Phase 4: Spec SQL Table 直接操作（設計階段）
+# =============================================================================
+
+@field_specs_bp.route('/sql-tables')
+@require_permission('form_workflow.template.view')
+def list_sql_tables():
+    """列出企業 DB 中所有表"""
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    try:
+        from ..services.field_spec.spec_sql_table import list_org_tables
+        tables = list_org_tables(org.secure_code)
+    except Exception as e:
+        logger.error(f'列出 org DB 表失敗: {e}')
+        return jsonify({'success': False, 'error': f'無法連線企業資料庫: {e}'}), 500
+
+    return jsonify({'success': True, 'data': tables})
+
+
+@field_specs_bp.route('/<form_template_sc>/sync-from-sql-table', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.edit')
+def sync_from_sql_table(form_template_sc):
+    """從指定 SQL 表讀取欄位定義（不依賴 registry）"""
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    table_name = (data.get('table_name') or '').strip()
+    if not table_name:
+        return jsonify({'success': False, 'error': '缺少 table_name'}), 400
+
+    try:
+        from ..services.sql_sync.schema_reader import read_table_columns, pg_columns_to_spec_fields
+        columns = read_table_columns(org.secure_code, table_name)
+        fields = pg_columns_to_spec_fields(columns)
+    except Exception as e:
+        logger.error(f'從 SQL Table 讀取欄位失敗: {e}')
+        return jsonify({'success': False, 'error': f'讀取表結構失敗: {e}'}), 500
+
+    if not fields:
+        return jsonify({'success': False, 'error': '未偵測到可轉換的資料欄位'}), 400
+
+    return jsonify({
+        'success': True,
+        'data': {'fields': fields, 'table_name': table_name},
+        'message': f'從 {table_name} 讀取到 {len(fields)} 個欄位'
+    })
+
+
+@field_specs_bp.route('/<form_template_sc>/apply-to-sql-table', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.manage')
+def apply_to_sql_table(form_template_sc):
+    """將 spec 欄位定義建立/更新到 SQL Table（template 模式）"""
+    _ensure_models()
+    from ..models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    spec = FwFormFieldSpec.query.filter_by(
+        org_secure_code=org.secure_code,
+        form_template_secure_code=form_template_sc,
+        status='active',
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '找不到 active 欄位規格'}), 404
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=form_template_sc,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if not template:
+        return jsonify({'success': False, 'error': '找不到表單範本'}), 404
+
+    data = request.get_json() or {}
+    confirm = bool(data.get('confirm', False))
+
+    try:
+        from ..services.field_spec.spec_sql_table import (
+            compute_spec_table_name, ensure_org_db, apply_spec_to_sql,
+        )
+        ensure_org_db(org.secure_code, org.id)
+        table_name = compute_spec_table_name(spec, form_template=template)
+        result = apply_spec_to_sql(
+            org.secure_code, table_name, spec.fields, confirm=confirm,
+        )
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f'套用 spec 到 SQL Table 失敗: {e}')
+        return jsonify({'success': False, 'error': f'操作失敗: {e}'}), 500
+
+    if confirm and spec.sql_table_code:
+        db.session.commit()
+
+    return jsonify({'success': True, 'data': result})
+
+
+@field_specs_bp.route('/standalone/<spec_sc>/sync-from-sql-table', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.edit')
+def standalone_sync_from_sql_table(spec_sc):
+    """從指定 SQL 表讀取欄位定義（standalone 模式）"""
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json() or {}
+    table_name = (data.get('table_name') or '').strip()
+    if not table_name:
+        return jsonify({'success': False, 'error': '缺少 table_name'}), 400
+
+    try:
+        from ..services.sql_sync.schema_reader import read_table_columns, pg_columns_to_spec_fields
+        columns = read_table_columns(org.secure_code, table_name)
+        fields = pg_columns_to_spec_fields(columns)
+    except Exception as e:
+        logger.error(f'從 SQL Table 讀取欄位失敗: {e}')
+        return jsonify({'success': False, 'error': f'讀取表結構失敗: {e}'}), 500
+
+    if not fields:
+        return jsonify({'success': False, 'error': '未偵測到可轉換的資料欄位'}), 400
+
+    return jsonify({
+        'success': True,
+        'data': {'fields': fields, 'table_name': table_name},
+        'message': f'從 {table_name} 讀取到 {len(fields)} 個欄位'
+    })
+
+
+@field_specs_bp.route('/standalone/<spec_sc>/apply-to-sql-table', methods=['POST'])
+@csrf.exempt
+@require_permission('form_workflow.template.manage')
+def standalone_apply_to_sql_table(spec_sc):
+    """將 spec 欄位定義建立/更新到 SQL Table（standalone 模式）"""
+    _ensure_models()
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    spec = FwFormFieldSpec.query.filter_by(
+        org_secure_code=org.secure_code,
+        secure_code=spec_sc,
+        status='active',
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '找不到 active 欄位規格'}), 404
+
+    data = request.get_json() or {}
+    confirm = bool(data.get('confirm', False))
+
+    try:
+        from ..services.field_spec.spec_sql_table import (
+            compute_spec_table_name, ensure_org_db, apply_spec_to_sql,
+        )
+        ensure_org_db(org.secure_code, org.id)
+        table_name = compute_spec_table_name(spec)
+
+        if spec.sql_table_code:
+            db.session.commit()
+
+        result = apply_spec_to_sql(
+            org.secure_code, table_name, spec.fields, confirm=confirm,
+        )
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f'套用 spec 到 SQL Table 失敗: {e}')
+        return jsonify({'success': False, 'error': f'操作失敗: {e}'}), 500
+
+    return jsonify({'success': True, 'data': result})
