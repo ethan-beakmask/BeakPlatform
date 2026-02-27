@@ -7,6 +7,10 @@
 ## [Unreleased]
 
 ### Added
+- 版本歷史取回功能：載入舊版規格預覽，可「取回為新版」或「取回並套用到表單設計」
+- 配對版本顯示資料表名稱欄位
+- 三向比對結果顯示版本資訊（Spec 版本、表單版本、SQL 表名）
+- 從規格建立表單支援選擇分類（Modal 取代 prompt）
 - 資料規格三面相同步中控：Spec / FormIO(JSONB) / SQL Table 三面相 6 方向雙向同步
   - 獨立 Spec CRUD：FwFormFieldSpec 可獨立存在（不綁定表單），支援命名、版本歷史、關聯表單、從 Spec 建立表單
   - 重複版本防止：儲存時 JSON 深度比對，內容無變更時不建新版
@@ -23,6 +27,11 @@
 
 ### Changed
 - FwFormFieldSpec/FwFormFieldSpecHistory Model：`form_template_secure_code` 改 nullable，新增 `name` 欄位
+
+### Fixed
+- 欄位規格編輯器 detailForm 初始值缺少 constraints 物件，Alpine 綁定報 TypeError
+- 分類篩選統一使用 DB 真實分類 `SYS_CAT_OTHER`（其他），移除錯誤注入的虛擬 `__uncategorized__` 分類
+- 選中「其他」分類時同時顯示 `category_secure_code=NULL` 的項目（表單/流程/表單中心三頁面統一）
 
 ### Added
 - 企業獨立資料庫監視頁面：顯示企業 DB 用量、資料表數、每表筆數、硬碟佔用空間
