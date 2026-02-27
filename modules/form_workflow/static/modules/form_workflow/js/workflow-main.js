@@ -13295,7 +13295,7 @@
         function openFlowTreePage() {
             const code = rootWorkflowId || currentWorkflowId;
             if (!code) return;
-            window.open('/forms/workflows/' + code + '/tree', '_blank');
+            window.location.href = '/forms/workflows/' + code + '/tree';
         }
 
         /**

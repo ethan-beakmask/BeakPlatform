@@ -135,7 +135,7 @@
         const params = new URLSearchParams(window.location.search);
         const sc = params.get('id');
         if (sc) {
-            window.open('/forms/templates/' + sc + '/spec', '_blank');
+            window.location.href = '/forms/templates/' + sc + '/spec';
         }
     }
     </script>

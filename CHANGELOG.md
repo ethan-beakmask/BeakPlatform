@@ -7,7 +7,7 @@
 ## [Unreleased]
 
 ### Fixed
-- 資料表規格列表頁（/forms/data-specs）所有按鈕改為當前頁跳轉，不再另開新分頁
+- 全站內部頁面跳轉統一改為當前頁開啟，移除不必要的 _blank（data-specs、form_designer、workflow tree、sync-control）
 
 ### Added
 - data_crud 模組：無碼 CRUD 工具

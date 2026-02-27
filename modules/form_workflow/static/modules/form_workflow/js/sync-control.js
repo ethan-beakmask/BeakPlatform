@@ -182,7 +182,7 @@ function syncControl() {
 
         // --- 跳轉 ---
         goSpecEditor() {
-            window.open('/forms/templates/' + this.ftSc + '/spec', '_blank');
+            window.location.href = '/forms/templates/' + this.ftSc + '/spec';
         },
 
         // --- 工具 ---
