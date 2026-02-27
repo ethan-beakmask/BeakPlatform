@@ -7,6 +7,19 @@
 ## [Unreleased]
 
 ### Added
+- data_crud 模組：無碼 CRUD 工具 MVP
+  - 選表 -> 欄位配置 -> 自動產生增刪改查介面
+  - 多租戶資料庫隔離：系統管理員存取主資料庫，企業用戶存取企業專屬資料庫
+  - 系統欄位自動識別：id/form_instance_secure_code/row_index 強制唯讀、簽核表全欄位鎖定、BYTEA(PII) 欄位保護
+  - 前後端雙重保護：前端 checkbox 禁用 + 伺服器端強制拒絕系統欄位寫入
+  - 完整 REST API (17 端點)：schema 讀取、視圖 CRUD、資料列 CRUD
+  - 分頁、搜尋、排序、軟刪除支援
+
+### Fixed
+- hostconfig 重啟按鈕修正：改用 systemd-run transient service 脫離 Flask cgroup，解決 systemctl stop 連帶殺死重啟腳本的問題
+- 重啟後頁面 reload 等待時間從 5 秒改為 15 秒，配合實際重啟耗時
+
+### Added
 - Spec 編輯器新增 SQL Table 直接操作功能：設計階段即可建立/更新 org DB 表
   - 「從 SQL Table 同步」按鈕：列出 org DB 所有表，選取後匯入欄位定義到 spec
   - 「套用到 SQL Table」按鈕：將 spec 欄位定義 CREATE 或 ALTER 到 org DB，含 DDL 預覽確認

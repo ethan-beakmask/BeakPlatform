@@ -89,14 +89,23 @@ def server_settings():
 def restart_flask():
     """執行 Flask 重啟腳本"""
     try:
-        # 使用 nohup 讓腳本在背景執行，避免被中斷
+        # 用 systemd-run (transient service) 讓 PID 1 直接啟動腳本，
+        # 完全脫離 beakplatform.service 的 cgroup，
+        # 避免 systemctl stop 連帶殺掉腳本自身。
+        # --collect: 執行完畢自動清除 transient unit
         subprocess.Popen(
-            ['nohup', '/opt/BeakPlatform/restart_flask.sh'],
+            [
+                'sudo', 'systemd-run',
+                '--collect',
+                '--unit=beakplatform-restart',
+                '--property=Type=oneshot',
+                '/opt/BeakPlatform/restart_flask.sh',
+            ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        return jsonify({'success': True, 'message': '重啟指令已發送，頁面將在 5 秒後重新整理'})
+        return jsonify({'success': True, 'message': '重啟指令已發送，頁面將在 15 秒後重新整理'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

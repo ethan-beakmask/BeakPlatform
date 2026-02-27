@@ -26,7 +26,7 @@ function restartFlask() {
         if (data.success) {
             msg.style.color = '#2f855a';
             msg.textContent = data.message;
-            setTimeout(function() { location.reload(); }, 5000);
+            setTimeout(function() { location.reload(); }, 15000);
         } else {
             msg.style.color = '#c53030';
             msg.textContent = '錯誤: ' + data.message;
@@ -36,8 +36,8 @@ function restartFlask() {
     })
     .catch(function() {
         msg.style.color = '#2f855a';
-        msg.textContent = '服務重啟中，5 秒後重新整理...';
-        setTimeout(function() { location.reload(); }, 5000);
+        msg.textContent = '服務重啟中，15 秒後重新整理...';
+        setTimeout(function() { location.reload(); }, 15000);
     });
 }
 
