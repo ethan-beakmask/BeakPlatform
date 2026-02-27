@@ -231,7 +231,7 @@ function formCenterManager() {
             if (!parent) return [];
             const children = [...(parent.children || [])];
             // 追加「其他」收納沒有子分類的表單
-            children.push({ secure_code: '__child_uncategorized__', name: '其他' });
+            children.push({ secure_code: '__child_uncategorized__', name: '未分類' });
             return children;
         },
 
@@ -427,10 +427,7 @@ function formCenterManager() {
                 const data = await res.json();
                 if (data.success) {
                     const cats = data.data || [];
-                    const hasOther = cats.some(c => c.name === '其他');
-                    if (!hasOther) {
-                        cats.push({ secure_code: '__uncategorized__', name: '其他', children: [] });
-                    }
+                    cats.unshift({ secure_code: '__uncategorized__', name: '未分類', children: [] });
                     this.parentCategories = cats;
                     if (!this.selectedParent && cats.length > 0) {
                         this.selectParent(cats[0].secure_code);
