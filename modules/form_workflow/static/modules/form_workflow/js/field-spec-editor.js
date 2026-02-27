@@ -52,7 +52,7 @@ function fieldSpecEditor() {
         // 進階設定 Modal
         showDetailModal: false,
         detailIndex: -1,
-        detailForm: {},
+        detailForm: { constraints: { required: false, maxLength: null, minLength: null, min: null, max: null, pattern: null, customValidation: null } },
         detailOptionRows: [],
         detailGridChildRows: [],
 
