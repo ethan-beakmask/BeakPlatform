@@ -70,14 +70,12 @@ function templateListManager() {
                             });
                         }
                     });
-                    const hasOther = flat.some(c => c.name === '其他');
-                    if (!hasOther) {
-                        flat.push({ secure_code: '__uncategorized__', name: '其他', parent_name: null, display: '其他' });
-                    }
+                    flat.unshift({ secure_code: '__uncategorized__', name: '未分類', parent_name: null, display: '未分類' });
                     this.flatCategories = flat;
                     if (flat.length > 0 && !this.formData.category_secure_code) {
-                        const rec = flat.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
-                        this.formData.category_secure_code = rec ? rec.secure_code : flat[0].secure_code;
+                        const realCats = flat.filter(c => c.secure_code !== '__uncategorized__');
+                        const rec = realCats.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+                        this.formData.category_secure_code = rec ? rec.secure_code : (realCats.length > 0 ? realCats[0].secure_code : '');
                     }
                 }
             } catch (e) {
@@ -161,8 +159,9 @@ function templateListManager() {
 
         openCreateModal() {
             this.editingTemplate = null;
-            const rec = this.flatCategories.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
-            this.formData = { name: '', code: '', description: '', category_secure_code: rec ? rec.secure_code : (this.flatCategories.length > 0 ? this.flatCategories[0].secure_code : ''), is_active: true };
+            const realCats = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__');
+            const rec = realCats.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+            this.formData = { name: '', code: '', description: '', category_secure_code: rec ? rec.secure_code : (realCats.length > 0 ? realCats[0].secure_code : ''), is_active: true };
             this.showModal = true;
         },
 
