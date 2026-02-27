@@ -228,10 +228,18 @@ window.__SPEC_CONFIG = {
                 <span>三向比對結果</span>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-size: 12px; color: #6b7280;">
-                        規格: <strong x-text="compareResult.summary.spec_field_count"></strong> |
-                        表單: <strong x-text="compareResult.summary.formio_field_count"></strong> |
-                        SQL: <strong x-text="compareResult.summary.has_sql_registry ? compareResult.summary.sql_column_count : '未建立'"></strong> |
-                        偏移: <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
+                        規格 v<strong x-text="compareResult.versions ? compareResult.versions.spec_version : ''"></strong>:
+                        <strong x-text="compareResult.summary.spec_field_count"></strong> 欄 |
+                        表單 <strong x-text="compareResult.versions ? compareResult.versions.form_version : ''"></strong>:
+                        <strong x-text="compareResult.summary.formio_field_count"></strong> 欄 |
+                        <template x-if="compareResult.summary.has_sql_registry">
+                            <span>SQL <strong x-text="compareResult.versions ? compareResult.versions.sql_table_name : ''"></strong>:
+                            <strong x-text="compareResult.summary.sql_column_count"></strong> 欄</span>
+                        </template>
+                        <template x-if="!compareResult.summary.has_sql_registry">
+                            <span>SQL: 未建立</span>
+                        </template>
+                        | 偏移: <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
                     </span>
                     <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showCompare = false">關閉</button>
                 </div>

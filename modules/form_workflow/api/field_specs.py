@@ -767,6 +767,13 @@ def compare(form_template_sc):
         column_mapping,
     )
 
+    # 附加版本資訊
+    result['versions'] = {
+        'spec_version': spec.version,
+        'form_version': f'{template.version or "AA"}{template.revision or ""}',
+        'sql_table_name': registry.table_name if registry else None,
+    }
+
     return jsonify({
         'success': True,
         'data': result

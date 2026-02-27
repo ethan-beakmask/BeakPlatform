@@ -191,6 +191,7 @@
                             <th style="width: 60px;">流程版本</th>
                             <th style="width: 120px;">狀態</th>
                             <th style="width: 100px; text-align: center;">SQL 同步</th>
+                            <th style="width: 140px;">資料表名稱</th>
                             <th style="width: 200px;">發行時間</th>
                             <th style="width: 160px;" class="actions">操作</th>
                         </tr>
@@ -225,6 +226,7 @@
                                     <div class="fw-sync-info" :class="v._syncInfo ? 'active' : ''"
                                          x-text="v._syncInfo || ''"></div>
                                 </td>
+                                <td style="font-size: 12px; font-family: monospace; color: #6b7280;" x-text="v._tableName || '-'"></td>
                                 <td style="font-size: 12px; color: #666;" x-text="formatDate(v.published_at)"></td>
                                 <td class="actions">
                                     <button x-show="v.status === 'Published'" class="fw-btn" @click="suspendVersion(v)">暫停</button>

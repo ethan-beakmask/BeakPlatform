@@ -346,6 +346,7 @@ function mappingsManager() {
                 const data = await res.json();
                 if (data.success && data.data.table) {
                     v._syncInfo = `${data.data.table.row_count || 0} 筆`;
+                    v._tableName = data.data.table.table_name || '';
                 }
             } catch (e) {
                 // silent
