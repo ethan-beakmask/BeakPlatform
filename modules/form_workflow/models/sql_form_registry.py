@@ -35,6 +35,9 @@ class FwSqlFormRegistry(ModuleBaseModel):
     # {field_key: {pg_type: 'VARCHAR(500)', nullable: True, ...}}
     column_mapping = Column(JSON, nullable=False)
 
+    # form.io schema 快取（建立 registry 時從 published.form_snapshot.schema 複製）
+    form_schema = Column(JSON)
+
     # 狀態
     status = Column(String(20), default='active')  # active / suspended / archived
     row_count = Column(Integer, default=0)

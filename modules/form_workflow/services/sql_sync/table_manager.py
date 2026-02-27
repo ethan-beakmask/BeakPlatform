@@ -501,6 +501,11 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
         approval_ddl = build_create_approval_table_ddl_text(approval_table)
         all_ddl += f'\n\n-- Approval sub-table\n{approval_ddl}'
 
+        # 從 published 的 form_snapshot 取得 form.io schema 快取
+        form_schema = None
+        if published.form_snapshot:
+            form_schema = published.form_snapshot.get('schema')
+
         registry = FwSqlFormRegistry(
             org_secure_code=org_secure_code,
             mapping_secure_code=published.source_mapping_secure_code,
@@ -510,6 +515,7 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
             form_version=published.source_form_version,
             publish_version=published.publish_version,
             column_mapping=column_mapping,
+            form_schema=form_schema,
             status='active',
             row_count=0,
             create_ddl=all_ddl,

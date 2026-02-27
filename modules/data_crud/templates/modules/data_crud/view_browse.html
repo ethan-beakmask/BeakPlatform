@@ -30,7 +30,7 @@ window.__DC_BROWSE = {
                    @input.debounce.400ms="loadRows(1)" placeholder="搜尋...">
             <button class="dc-btn" @click="loadRows()">重新載入</button>
             <a :href="'/data-crud/views/' + secureCode + '/config'" class="dc-btn">設定</a>
-            <button class="dc-btn primary" x-show="viewConfig.allow_create" @click="openCreateModal()">+ 新增</button>
+            <a :href="'/data-crud/views/' + secureCode + '/rows/new'" class="dc-btn primary" x-show="viewConfig.allow_create">+ 新增</a>
             <a href="/data-crud/" class="dc-btn">返回列表</a>
         </div>
     </div>
@@ -71,7 +71,7 @@ window.__DC_BROWSE = {
                                 <td x-text="formatCell(row[col.column], col)"></td>
                             </template>
                             <td class="actions" x-show="viewConfig.allow_edit || viewConfig.allow_delete">
-                                <button class="dc-btn sm" x-show="viewConfig.allow_edit" @click="openEditModal(row)">編輯</button>
+                                <a :href="'/data-crud/views/' + secureCode + '/rows/' + row._row_id + '/edit'" class="dc-btn sm" x-show="viewConfig.allow_edit">編輯</a>
                                 <button class="dc-btn sm danger" x-show="viewConfig.allow_delete" @click="confirmDelete(row)">刪除</button>
                             </td>
                         </tr>
@@ -89,37 +89,6 @@ window.__DC_BROWSE = {
             <div class="page-btns">
                 <button class="dc-btn sm" @click="loadRows(pagination.page - 1)" :disabled="pagination.page <= 1">上一頁</button>
                 <button class="dc-btn sm" @click="loadRows(pagination.page + 1)" :disabled="pagination.page >= pagination.pages">下一頁</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create / Edit Modal -->
-    <div x-show="showFormModal" x-cloak class="dc-modal">
-        <div class="dc-modal-content wide">
-            <div class="dc-modal-header">
-                <h3 x-text="editingRow ? '編輯資料' : '新增資料'"></h3>
-                <button class="dc-close-btn" @click="showFormModal = false">&times;</button>
-            </div>
-            <div class="dc-modal-body">
-                <template x-for="col in formColumns" :key="'form_' + col.column">
-                    <div class="dc-form-group">
-                        <label>
-                            <span x-text="col.label || col.column"></span>
-                            <span style="font-size: 11px; color: #999; margin-left: 4px;" x-text="'(' + col.db_type + ')'"></span>
-                            <span x-show="col.is_pk" style="font-size: 11px; color: #c00; margin-left: 4px;">[PK]</span>
-                        </label>
-                        <input type="text" x-model="formData[col.column]"
-                               :disabled="col.readonly || col.is_pk"
-                               :placeholder="col.nullable ? '可為空' : '必填'">
-                    </div>
-                </template>
-            </div>
-            <div class="dc-modal-footer">
-                <button class="dc-btn" @click="showFormModal = false">取消</button>
-                <button class="dc-btn primary" @click="saveRow()" :disabled="saving">
-                    <span x-show="!saving" x-text="editingRow ? '儲存' : '新增'"></span>
-                    <span x-show="saving">處理中...</span>
-                </button>
             </div>
         </div>
     </div>

@@ -3,6 +3,7 @@ Data CRUD Module - CRUD Service
 用 psycopg2 cursor 參數化查詢操作目標表資料
 """
 import re
+import secrets
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -12,8 +13,8 @@ from .schema_service import _SYSTEM_COLUMNS, is_approval_table, _PII_DB_TYPE
 
 logger = logging.getLogger(__name__)
 
-# 合法的 SQL 識別符格式
-IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+# 合法的 SQL 識別符格式（支援 Unicode，psql.Identifier 會自動加引號）
+IDENTIFIER_RE = re.compile(r'^\w+$', re.UNICODE)
 
 
 def _validate_identifier(name: str) -> bool:
@@ -108,6 +109,56 @@ def _find_row_id_column(view) -> Optional[str]:
 def _ident(name: str) -> psql.Identifier:
     """建立 psycopg2 safe identifier"""
     return psql.Identifier(name)
+
+
+def _check_required_columns(conn, table_name: str, insert_data: dict) -> List[str]:
+    """
+    檢查 NOT NULL 且無 DB default 的欄位是否都有值。
+    回傳缺少的欄位名稱列表（空 = 通過）。
+    PK 欄位通常有 sequence default，不在此檢查範圍。
+    """
+    sql = """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = %s
+          AND is_nullable = 'NO'
+          AND column_default IS NULL
+    """
+    missing = []
+    with conn.cursor() as cur:
+        cur.execute(sql, (table_name,))
+        for row in cur.fetchall():
+            col = row[0]
+            if col not in insert_data:
+                missing.append(col)
+    return missing
+
+
+def _auto_fill_system_columns(conn, table_name: str, insert_data: dict):
+    """
+    自動填入系統欄位（in-place 修改 insert_data）。
+    沿用表單系統相同的產生方式（sync_service.py / form_center.py）。
+    """
+    # 查 NOT NULL 且無 DB default 的欄位
+    sql = """
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = %s
+          AND is_nullable = 'NO' AND column_default IS NULL
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, (table_name,))
+        required = {r[0] for r in cur.fetchall()}
+
+    # form_instance_secure_code — 同 form_center.py
+    if 'form_instance_secure_code' in required and 'form_instance_secure_code' not in insert_data:
+        insert_data['form_instance_secure_code'] = secrets.token_urlsafe(16)
+
+    # row_index — 僅子表（表名含 _items_），同 sync_service._batch_insert_sub_rows
+    if 'row_index' in required and 'row_index' not in insert_data and '_items_' in table_name:
+        with conn.cursor() as cur:
+            cur.execute(psql.SQL('SELECT COALESCE(MAX({}), -1) + 1 FROM {}').format(
+                _ident('row_index'), _ident(table_name)))
+            insert_data['row_index'] = cur.fetchone()[0]
 
 
 class CrudService:
@@ -238,6 +289,57 @@ class CrudService:
         }
 
     @staticmethod
+    def get_row(conn, view, row_id: str) -> Dict[str, Any]:
+        """
+        取得單筆資料，供編輯頁載入用。
+
+        Returns:
+            {success: True, data: {col: val, ...}} 或 {success: False, error: ...}
+        """
+        table_name = view.table_name
+        if not _validate_identifier(table_name):
+            return {'success': False, 'error': 'Invalid table name'}
+
+        row_id_col = _find_row_id_column(view)
+        if not row_id_col:
+            return {'success': False, 'error': 'Cannot determine row identifier'}
+
+        # SELECT 表單可見欄位 + row_id 欄位
+        form_cols = []
+        for col_cfg in sorted(view.columns_config or [], key=lambda c: c.get('sort_order', 999)):
+            col_name = col_cfg.get('column', '')
+            if not col_name or not _validate_identifier(col_name):
+                continue
+            if col_cfg.get('visible_in_form', True):
+                form_cols.append(col_name)
+
+        if row_id_col not in form_cols:
+            form_cols.insert(0, row_id_col)
+
+        select_part = psql.SQL(', ').join(_ident(c) for c in form_cols)
+        query = psql.SQL('SELECT {} FROM {} WHERE {} = %s LIMIT 1').format(
+            select_part, _ident(table_name), _ident(row_id_col)
+        )
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, (row_id,))
+                db_row = cur.fetchone()
+                if not db_row:
+                    conn.rollback()
+                    return {'success': False, 'error': 'Row not found'}
+                col_names = [desc[0] for desc in cur.description]
+                row_dict = {}
+                for i, val in enumerate(db_row):
+                    row_dict[col_names[i]] = _serialize_value(val)
+            conn.rollback()
+            return {'success': True, 'data': row_dict}
+        except Exception as e:
+            conn.rollback()
+            logger.error(f'get_row error: {e}')
+            return {'success': False, 'error': str(e)}
+
+    @staticmethod
     def create_row(conn, view, row_data: Dict) -> Dict[str, Any]:
         """新增一筆資料到目標表"""
         table_name = view.table_name
@@ -255,6 +357,15 @@ class CrudService:
 
         if not insert_data:
             return {'success': False, 'error': 'No valid data provided'}
+
+        # 自動填入系統欄位（如 form_instance_secure_code）
+        _auto_fill_system_columns(conn, table_name, insert_data)
+
+        # 預檢: NOT NULL 且無 DB default 的欄位必須有值
+        missing = _check_required_columns(conn, table_name, insert_data)
+        if missing:
+            names = ', '.join(sorted(missing))
+            return {'success': False, 'error': f'必填欄位缺少值且無法自動填入: {names}'}
 
         cols = list(insert_data.keys())
         col_idents = psql.SQL(', ').join(_ident(c) for c in cols)

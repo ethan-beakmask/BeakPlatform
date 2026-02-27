@@ -40,3 +40,17 @@ def view_config(secure_code):
 def view_browse(secure_code):
     """資料瀏覽/操作"""
     return render_template('modules/data_crud/view_browse.html', secure_code=secure_code)
+
+
+@web_bp.route('/views/<secure_code>/rows/new')
+@security_login_required
+def row_create(secure_code):
+    """新增資料（全頁面）"""
+    return render_template('modules/data_crud/row_form.html', secure_code=secure_code, row_id=None)
+
+
+@web_bp.route('/views/<secure_code>/rows/<row_id>/edit')
+@security_login_required
+def row_edit(secure_code, row_id):
+    """編輯資料（全頁面）"""
+    return render_template('modules/data_crud/row_form.html', secure_code=secure_code, row_id=row_id)

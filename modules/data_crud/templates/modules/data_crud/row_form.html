@@ -1,0 +1,93 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ '編輯資料' if row_id else '新增資料' }} - 資料表工具{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/data_crud/css/data-crud.css">
+<link rel="stylesheet" href="/static/vendor/formio.full.min.css">
+<link rel="stylesheet" href="/static/css/formio-theme.css">
+{% endblock %}
+
+{% block content %}
+<script>
+window.__DC_ROW_FORM = {
+    secureCode: {{ secure_code | tojson }},
+    rowId: {{ (row_id | tojson) if row_id else 'null' }}
+};
+</script>
+
+<div class="dc-container" x-data="rowFormManager()" x-cloak>
+
+    <!-- Header -->
+    <div class="dc-header">
+        <div>
+            <h1 x-text="rowId ? '編輯資料' : '新增資料'"></h1>
+            <p>
+                <span x-text="viewConfig.name || ''" style="font-weight: 600;"></span>
+                <span style="font-family: monospace; color: #999; margin-left: 8px;" x-text="viewConfig.table_name || ''"></span>
+                <span style="margin-left: 12px; font-size: 12px; color: #999;">DB: <span x-text="dbName"></span></span>
+            </p>
+        </div>
+        <div class="dc-toolbar">
+            <a :href="'/data-crud/views/' + secureCode" class="dc-btn">返回瀏覽</a>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="dc-card" x-show="loading" style="padding: 40px; text-align: center;">
+        <div class="dc-loading">載入中...</div>
+    </div>
+
+    <!-- Form -->
+    <div class="dc-card" x-show="!loading" style="padding: 24px;">
+
+        <!-- form.io 渲染區 -->
+        <div x-show="useFormio" id="formio-container"></div>
+
+        <!-- 原有 plain input (fallback) -->
+        <div x-show="!useFormio">
+            <template x-for="col in formColumns" :key="'form_' + col.column">
+                <div class="dc-form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">
+                        <span x-text="col.label || col.column"></span>
+                        <span style="font-size: 11px; color: #999; margin-left: 4px;" x-text="'(' + col.db_type + ')'"></span>
+                        <span x-show="col.is_pk" style="font-size: 11px; color: #c00; margin-left: 4px;">[PK]</span>
+                        <span x-show="col.is_system" style="font-size: 11px; color: #666; background: #eee; padding: 1px 5px; margin-left: 4px;">SYS</span>
+                        <span x-show="!col.nullable && !col.is_pk && !col.is_system" style="color: #c00; margin-left: 2px;">*</span>
+                    </label>
+                    <template x-if="isTextArea(col)">
+                        <textarea x-model="formData[col.column]"
+                                  :disabled="isFieldDisabled(col)"
+                                  :placeholder="col.nullable ? '可為空' : '必填'"
+                                  rows="4"
+                                  style="width: 100%; font-family: monospace; font-size: 13px;"></textarea>
+                    </template>
+                    <template x-if="!isTextArea(col)">
+                        <input type="text" x-model="formData[col.column]"
+                               :disabled="isFieldDisabled(col)"
+                               :placeholder="col.nullable ? '可為空' : '必填'"
+                               style="width: 100%;">
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; display: flex; gap: 12px;">
+            <button class="dc-btn primary" @click="save()" :disabled="saving">
+                <span x-show="!saving" x-text="rowId ? '儲存' : '新增'"></span>
+                <span x-show="saving">處理中...</span>
+            </button>
+            <a :href="'/data-crud/views/' + secureCode" class="dc-btn">取消</a>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
+         x-text="toast.message" x-transition></div>
+</div>
+
+<script src="/static/vendor/formio.full.min.js"></script>
+<script>Formio.icons = 'fontawesome';</script>
+<script src="/static/modules/data_crud/js/row-form.js"></script>
+{% endblock %}

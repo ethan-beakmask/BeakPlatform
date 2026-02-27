@@ -15,12 +15,6 @@ function viewBrowseManager() {
         sortDir: 'ASC',
         pagination: { page: 1, pages: 0, total: 0, per_page: 20 },
 
-        // Form modal
-        showFormModal: false,
-        editingRow: null,
-        formData: {},
-        saving: false,
-
         // Delete modal
         showDeleteModal: false,
         deletingRow: null,
@@ -51,14 +45,6 @@ function viewBrowseManager() {
             if (!this.viewConfig.columns_config) return [];
             return this.viewConfig.columns_config
                 .filter(c => c.visible)
-                .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
-        },
-
-        // 取得表單欄位
-        get formColumns() {
-            if (!this.viewConfig.columns_config) return [];
-            return this.viewConfig.columns_config
-                .filter(c => c.visible_in_form)
                 .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
         },
 
@@ -112,72 +98,6 @@ function viewBrowseManager() {
                 this.sortDir = 'ASC';
             }
             this.loadRows(1);
-        },
-
-        // Create
-        openCreateModal() {
-            this.editingRow = null;
-            this.formData = {};
-            this.formColumns.forEach(col => {
-                this.formData[col.column] = '';
-            });
-            this.showFormModal = true;
-        },
-
-        // Edit
-        openEditModal(row) {
-            this.editingRow = row;
-            this.formData = {};
-            this.formColumns.forEach(col => {
-                const val = row[col.column];
-                this.formData[col.column] = val !== null && val !== undefined ? String(val) : '';
-            });
-            this.showFormModal = true;
-        },
-
-        async saveRow() {
-            // 組裝只包含可寫欄位的資料
-            const payload = {};
-            this.formColumns.forEach(col => {
-                if (!col.readonly && !col.is_pk) {
-                    let val = this.formData[col.column];
-                    // 空字串轉 null（如果欄位 nullable）
-                    if (val === '' && col.nullable) {
-                        val = null;
-                    }
-                    payload[col.column] = val;
-                }
-            });
-
-            this.saving = true;
-            try {
-                let url, method;
-                if (this.editingRow) {
-                    url = `/api/data-crud/views/${this.secureCode}/rows/${this.editingRow._row_id}`;
-                    method = 'PUT';
-                } else {
-                    url = `/api/data-crud/views/${this.secureCode}/rows`;
-                    method = 'POST';
-                }
-
-                const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.showFormModal = false;
-                    this.showToast(this.editingRow ? '已更新' : '已新增', 'success');
-                    await this.loadRows();
-                } else {
-                    this.showToast(data.error || '操作失敗', 'error');
-                }
-            } catch (e) {
-                this.showToast('操作失敗', 'error');
-            } finally {
-                this.saving = false;
-            }
         },
 
         // Delete

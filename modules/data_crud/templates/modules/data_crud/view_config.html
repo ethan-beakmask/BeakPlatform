@@ -142,9 +142,7 @@ window.__DC_CONFIG = {
                     </span>
                     <span class="col-checks">
                         <label><input type="checkbox" x-model="col.visible"> 列表</label>
-                        <label><input type="checkbox" x-model="col.visible_in_form"
-                                      :disabled="col.is_system"
-                                      @change="if(col.is_system) col.visible_in_form = false"> 表單</label>
+                        <label><input type="checkbox" x-model="col.visible_in_form"> 表單</label>
                         <label><input type="checkbox" x-model="col.readonly"
                                       :disabled="col.is_system"
                                       @change="if(col.is_system) col.readonly = true"> 唯讀</label>

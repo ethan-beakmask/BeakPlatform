@@ -7,13 +7,23 @@
 ## [Unreleased]
 
 ### Added
-- data_crud 模組：無碼 CRUD 工具 MVP
+- data_crud 模組：無碼 CRUD 工具
   - 選表 -> 欄位配置 -> 自動產生增刪改查介面
-  - 多租戶資料庫隔離：系統管理員存取主資料庫，企業用戶存取企業專屬資料庫
+  - 統一企業 DB 路由：所有資料操作透過 view.org_secure_code 連線企業專屬資料庫
   - 系統欄位自動識別：id/form_instance_secure_code/row_index 強制唯讀、簽核表全欄位鎖定、BYTEA(PII) 欄位保護
   - 前後端雙重保護：前端 checkbox 禁用 + 伺服器端強制拒絕系統欄位寫入
-  - 完整 REST API (17 端點)：schema 讀取、視圖 CRUD、資料列 CRUD
+  - 完整 REST API：schema 讀取、視圖 CRUD、資料列 CRUD（含單筆查詢）
   - 分頁、搜尋、排序、軟刪除支援
+  - 全頁面新增/編輯（row_form.html）取代 Modal 模式
+  - form.io 整合：SQL Sync 表自動使用 form.io 渲染與驗證，非 SQL Sync 表 fallback 到 plain input
+  - form.io schema 查詢 API（`GET /views/<sc>/formio-schema`）
+  - 新增資料時自動填入系統欄位（form_instance_secure_code 等）
+- FwSqlFormRegistry 新增 `form_schema` 快取欄位：建立 registry 時從 published.form_snapshot.schema 複製，data_crud 單次查詢即可取得 schema
+
+### Changed
+- data_crud DB 連線策略：移除系統管理員直連主資料庫的路徑，統一走企業 DB pool（與 SQL Sync 一致）
+- data_crud 視圖設定：系統欄位表單可見性改為用戶可控（唯讀保護不變）
+- data_crud 識別符正規表達式改為支援 Unicode
 
 ### Fixed
 - hostconfig 重啟按鈕修正：改用 systemd-run transient service 脫離 Flask cgroup，解決 systemctl stop 連帶殺死重啟腳本的問題

@@ -3,8 +3,8 @@ Data CRUD Module - API Routes
 資料表工具 API
 
 DB 路由策略:
-  系統管理員 → 主資料庫 (beakplatform_dev)
-  企業用戶   → 企業專屬資料庫 (org_{org_id})
+  統一透過 view.org_secure_code 路由到企業專屬資料庫 (org_{org_id})
+  SQL Sync 表都在企業 DB，與表單系統使用相同的連線路徑。
 """
 import re
 import logging
@@ -19,8 +19,8 @@ from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
 
-# 合法的識別符格式（表名/欄位名）
-IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+# 合法的識別符格式（表名/欄位名，支援 Unicode）
+IDENTIFIER_RE = re.compile(r'^\w+$', re.UNICODE)
 
 api_bp = Blueprint(
     'data_crud_api',
@@ -253,6 +253,47 @@ def delete_view(secure_code):
 # 動態資料 API -- 操作目標表的資料 (使用 db_connector 路由到正確 DB)
 # =============================================================================
 
+@api_bp.route('/views/<secure_code>/formio-schema')
+def get_formio_schema(secure_code):
+    """取得 form.io schema（若此表來自 SQL Sync）"""
+    from ..models import DcCrudView
+
+    view = ResourceGateway.get(
+        DcCrudView, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not view or view.is_deleted:
+        return jsonify({'success': False, 'error': 'View not found'}), 404
+
+    schema = _lookup_formio_schema(view.table_name, view.org_secure_code)
+    return jsonify({'success': True, 'data': {'schema': schema}})
+
+
+def _lookup_formio_schema(table_name, org_secure_code):
+    """
+    透過 SQL Sync registry 取得 form.io schema
+
+    registry 建立時已從 published.form_snapshot.schema 快取到 form_schema 欄位，
+    單次查詢即可取得，不需再跳到 published 表。
+    """
+    try:
+        from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
+
+        registry = FwSqlFormRegistry.query.filter_by(
+            table_name=table_name,
+            org_secure_code=org_secure_code,
+            status='active'
+        ).first()
+        if not registry:
+            return None
+
+        return registry.form_schema
+    except Exception as e:
+        logger.warning('formio schema lookup failed: %s', e)
+        return None
+
+
 @api_bp.route('/views/<secure_code>/rows')
 def query_rows(secure_code):
     """查詢視圖資料（分頁）"""
@@ -277,7 +318,7 @@ def query_rows(secure_code):
     per_page = max(1, min(per_page, 100))
 
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(view.org_secure_code) as conn:
             result = CrudService.query_rows(
                 conn=conn,
                 view=view,
@@ -291,6 +332,32 @@ def query_rows(secure_code):
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': result})
+
+
+@api_bp.route('/views/<secure_code>/rows/<row_id>')
+def get_row(secure_code, row_id):
+    """取得單筆資料"""
+    from ..models import DcCrudView
+    from ..services.crud_service import CrudService
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+
+    view = ResourceGateway.get(
+        DcCrudView, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not view or view.is_deleted:
+        return jsonify({'success': False, 'error': 'View not found'}), 404
+
+    try:
+        with get_data_conn(view.org_secure_code) as conn:
+            result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
+    except OrgDatabaseNotFound as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    if not result['success']:
+        return jsonify(result), 404
+    return jsonify(result)
 
 
 @api_bp.route('/views/<secure_code>/rows', methods=['POST'])
@@ -314,7 +381,7 @@ def create_row(secure_code):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(view.org_secure_code) as conn:
             result = CrudService.create_row(conn=conn, view=view, row_data=data)
     except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -345,7 +412,7 @@ def update_row(secure_code, row_id):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(view.org_secure_code) as conn:
             result = CrudService.update_row(conn=conn, view=view, row_id=row_id, row_data=data)
     except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -375,7 +442,7 @@ def delete_row(secure_code, row_id):
         return jsonify({'success': False, 'error': 'Delete not allowed'}), 403
 
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(view.org_secure_code) as conn:
             result = CrudService.delete_row(conn=conn, view=view, row_id=row_id)
     except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400

@@ -120,8 +120,8 @@ function viewConfigManager() {
                             system_reason: col.system_reason || null,
                             label: col.column,
                             visible: true,
-                            // 系統欄位: 強制不出現在表單、強制唯讀
-                            visible_in_form: isSys ? false : !col.is_pk,
+                            // 系統欄位預設不勾表單，但允許用戶勾選；強制唯讀
+                            visible_in_form: !col.is_pk && !isSys,
                             readonly: isSys ? true : col.is_pk,
                             width: 150,
                             sort_order: idx + 1,
@@ -152,9 +152,8 @@ function viewConfigManager() {
                         width: saved.width || 150,
                         sort_order: saved.sort_order !== undefined ? saved.sort_order : idx + 1,
                     };
-                    // 系統欄位: 強制覆蓋，不讓 saved config 繞過保護
+                    // 系統欄位: 強制唯讀（表單可見性尊重用戶設定）
                     if (col.is_system) {
-                        merged.visible_in_form = false;
                         merged.readonly = true;
                     }
                     return merged;
@@ -181,7 +180,7 @@ function viewConfigManager() {
                 column: col.column,
                 label: col.label || col.column,
                 visible: col.visible,
-                visible_in_form: col.is_system ? false : col.visible_in_form,
+                visible_in_form: col.visible_in_form,
                 readonly: col.is_system ? true : col.readonly,
                 width: col.width,
                 sort_order: idx + 1,
