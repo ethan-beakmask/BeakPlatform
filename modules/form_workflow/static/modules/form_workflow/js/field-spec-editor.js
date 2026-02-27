@@ -46,8 +46,7 @@ function fieldSpecEditor() {
         loading: true,
         saving: false,
 
-        // 底部空白列
-        newRow: _emptyField(),
+        // (已移除 newRow 單列機制，改用 addEmptyRows 批次新增)
 
         // 進階設定 Modal
         showDetailModal: false,
@@ -137,8 +136,9 @@ function fieldSpecEditor() {
         async loadStandaloneSpec() {
             this.loading = true;
             if (!this.specSc) {
-                // 新建模式
+                // 新建模式，預設 10 列空白欄位
                 this.fields = [];
+                this.addEmptyRows(10);
                 this.specVersion = null;
                 this.loading = false;
                 return;
@@ -185,12 +185,43 @@ function fieldSpecEditor() {
         async saveSpec() {
             this.saving = true;
             try {
+                // 驗證已填寫的欄位（有 field_key 的列）
+                var filledFields = this.fields.filter(function(f) {
+                    return f.field_key && f.field_key.trim();
+                });
+                if (filledFields.length === 0) {
+                    _toast('error', '至少需要一個已設定 Field Key 的欄位');
+                    this.saving = false;
+                    return;
+                }
+                // 檢查必填欄位完整性
+                var errors = [];
+                var keySet = {};
+                for (var i = 0; i < filledFields.length; i++) {
+                    var f = filledFields[i];
+                    var rowNum = this.fields.indexOf(f) + 1;
+                    if (!f.label || !f.label.trim()) {
+                        errors.push('第 ' + rowNum + ' 列缺少 Label');
+                    }
+                    var key = f.field_key.trim();
+                    if (keySet[key]) {
+                        errors.push('第 ' + rowNum + ' 列 Field Key "' + key + '" 重複');
+                    }
+                    keySet[key] = true;
+                }
+                if (errors.length > 0) {
+                    _toast('error', errors.join('；'));
+                    this.saving = false;
+                    return;
+                }
                 // 過濾空白列，清除內部 flag
-                var cleanFields = this.fields
-                    .filter(function(f) { return f.field_key && f.field_key.trim(); })
+                var cleanFields = filledFields
                     .map(function(f) {
                         var copy = JSON.parse(JSON.stringify(f));
                         delete copy._pgTypeOverridden;
+                        delete copy._uid;
+                        copy.field_key = copy.field_key.trim();
+                        copy.label = copy.label.trim();
                         return copy;
                     });
 
@@ -627,20 +658,12 @@ function fieldSpecEditor() {
 
         // ===== Inline Grid 操作 =====
 
-        commitNewRow() {
-            if (!this.newRow.field_key || !this.newRow.field_key.trim()) return;
-            var key = this.newRow.field_key.trim();
-            if (this.fields.some(function(f) { return f.field_key === key; })) {
-                _toast('error', 'Field Key "' + key + '" 已存在');
-                return;
+        addEmptyRows(count) {
+            for (var i = 0; i < count; i++) {
+                var row = _emptyField();
+                row.sort_order = this.fields.length;
+                this.fields.push(row);
             }
-            this.newRow.field_key = key;
-            this.newRow.sort_order = this.fields.length;
-            if (!this.newRow.pg_type) {
-                this.newRow.pg_type = getPgDefault(this.newRow.formio_type);
-            }
-            this.fields.push(JSON.parse(JSON.stringify(this.newRow)));
-            this.newRow = _emptyField();
         },
 
         removeField(idx) {
@@ -659,9 +682,6 @@ function fieldSpecEditor() {
             this.fields[idx]._pgTypeOverridden = true;
         },
 
-        onNewRowTypeChange() {
-            this.newRow.pg_type = getPgDefault(this.newRow.formio_type);
-        },
 
         // ===== 進階設定 Modal =====
 
@@ -771,6 +791,7 @@ function fieldSpecEditor() {
 /** 確保每個 field 的 constraints 物件完整 */
 function _normalizeFields(fields) {
     return fields.map(function(f) {
+        if (!f._uid) f._uid = _nextUid();
         f.constraints = Object.assign({
             required: false,
             maxLength: null,
@@ -784,8 +805,12 @@ function _normalizeFields(fields) {
     });
 }
 
+var _uidCounter = 0;
+function _nextUid() { return '__uid_' + (++_uidCounter) + '_' + Date.now(); }
+
 function _emptyField() {
     return {
+        _uid: _nextUid(),
         field_key: '',
         label: '',
         formio_type: 'textfield',

@@ -93,7 +93,7 @@ window.__SPEC_CONFIG = {
             <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
                 歷史
             </button>
-            <button class="fs-btn success" @click="saveSpec()" :disabled="saving || fields.length === 0">
+            <button class="fs-btn success" @click="saveSpec()" :disabled="saving">
                 <span x-show="!saving">儲存規格</span>
                 <span x-show="saving">儲存中...</span>
             </button>
@@ -116,7 +116,7 @@ window.__SPEC_CONFIG = {
         </div>
 
         <div x-show="fields.length === 0" class="fs-empty-hint">
-            在下方空白列輸入 Field Key 開始建立欄位，或使用「從 FormIO 同步」自動匯入
+            點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入
         </div>
 
         <table class="fs-grid-table">
@@ -146,7 +146,7 @@ window.__SPEC_CONFIG = {
             </thead>
             <tbody>
                 <!-- 既有欄位 -->
-                <template x-for="(f, idx) in fields" :key="f.field_key + '-' + idx">
+                <template x-for="(f, idx) in fields" :key="f._uid">
                     <tr class="fs-grid-row"
                         draggable="true"
                         @dragstart="dragStart(idx)"
@@ -190,40 +190,14 @@ window.__SPEC_CONFIG = {
                     </tr>
                 </template>
 
-                <!-- 底部空白列（新增用） -->
-                <tr class="fs-grid-row new-row">
-                    <td>
-                        <span style="color: #d1d5db; padding: 0 4px; font-size: 12px;">+</span>
+                <!-- 批次新增按鈕 -->
+                <tr>
+                    <td colspan="9" style="padding: 6px 8px; border: none;">
+                        <button class="fs-btn" @click="addEmptyRows(10)"
+                                style="font-size: 12px; padding: 3px 12px;">
+                            [+] 新增 10 列空白欄位
+                        </button>
                     </td>
-                    <td>
-                        <input type="text" x-model="newRow.label" placeholder="顯示名稱">
-                    </td>
-                    <td>
-                        <input type="text" class="mono" x-model="newRow.field_key"
-                               placeholder="輸入 key 後 Tab 新增"
-                               @blur="commitNewRow()"
-                               @keydown.enter.prevent="commitNewRow()">
-                    </td>
-                    <td>
-                        <select x-model="newRow.formio_type" @change="onNewRowTypeChange()">
-                            <template x-for="t in FORMIO_TYPES" :key="t.value">
-                                <option :value="t.value" x-text="t.label"></option>
-                            </template>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="text" class="mono" x-model="newRow.pg_type">
-                    </td>
-                    <td class="cb-cell">
-                        <input type="checkbox" x-model="newRow.is_pii">
-                    </td>
-                    <td class="cb-cell">
-                        <input type="checkbox" x-model="newRow.constraints.required">
-                    </td>
-                    <td>
-                        <input type="text" x-model="newRow.description" placeholder="-">
-                    </td>
-                    <td class="col-actions"></td>
                 </tr>
             </tbody>
         </table>

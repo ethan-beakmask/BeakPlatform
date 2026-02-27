@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Changed
+- 欄位規格編輯器新增欄位機制重構：移除底部單列 newRow 輸入，改為 [+] 按鈕批次新增 10 列空白欄位
+- 新建規格頁面預設帶 10 列空白欄位，方便直接填寫
+
+### Fixed
+- 修正欄位規格編輯器最後一列 Type 下拉選單選擇後套用到錯誤欄位的問題（blur 觸發 commitNewRow 導致 DOM 重繪）
+- 修正欄位規格編輯器 Field Key 輸入框每打一個字就失去焦點的問題（x-for :key 使用 field_key 導致 Alpine 重建 DOM，改為穩定 _uid）
+- 儲存規格時增加驗證：檢查 Field Key 重複、Label 缺漏，空白列自動略過
+
 ### Added
 - 獨立規格套用 SQL Table 時自動建立 FwSqlFormRegistry，data_crud 可直接取得 form.io schema
 - FwSqlFormRegistry 新增 `spec_secure_code` 欄位，追蹤來源規格
