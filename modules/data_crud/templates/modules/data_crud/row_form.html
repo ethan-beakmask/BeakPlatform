@@ -44,32 +44,10 @@ window.__DC_ROW_FORM = {
         <!-- form.io 渲染區 -->
         <div x-show="useFormio" id="formio-container"></div>
 
-        <!-- 原有 plain input (fallback) -->
-        <div x-show="!useFormio">
-            <template x-for="col in formColumns" :key="'form_' + col.column">
-                <div class="dc-form-group" style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">
-                        <span x-text="col.label || col.column"></span>
-                        <span style="font-size: 11px; color: #999; margin-left: 4px;" x-text="'(' + col.db_type + ')'"></span>
-                        <span x-show="col.is_pk" style="font-size: 11px; color: #c00; margin-left: 4px;">[PK]</span>
-                        <span x-show="col.is_system" style="font-size: 11px; color: #666; background: #eee; padding: 1px 5px; margin-left: 4px;">SYS</span>
-                        <span x-show="!col.nullable && !col.is_pk && !col.is_system" style="color: #c00; margin-left: 2px;">*</span>
-                    </label>
-                    <template x-if="isTextArea(col)">
-                        <textarea x-model="formData[col.column]"
-                                  :disabled="isFieldDisabled(col)"
-                                  :placeholder="col.nullable ? '可為空' : '必填'"
-                                  rows="4"
-                                  style="width: 100%; font-family: monospace; font-size: 13px;"></textarea>
-                    </template>
-                    <template x-if="!isTextArea(col)">
-                        <input type="text" x-model="formData[col.column]"
-                               :disabled="isFieldDisabled(col)"
-                               :placeholder="col.nullable ? '可為空' : '必填'"
-                               style="width: 100%;">
-                    </template>
-                </div>
-            </template>
+        <!-- 無 form.io schema 時顯示錯誤 -->
+        <div x-show="!useFormio && !loading" style="padding: 40px; text-align: center; color: #999;">
+            <p style="font-size: 14px;">此資料表尚未建立欄位規格，無法使用表單編輯。</p>
+            <p style="font-size: 12px; margin-top: 8px;">請先在「資料表規格管理」建立欄位規格並套用到 SQL Table。</p>
         </div>
 
         <!-- Action buttons -->

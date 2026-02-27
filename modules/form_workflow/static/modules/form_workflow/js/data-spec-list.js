@@ -83,7 +83,10 @@ function dataSpecManager() {
         },
 
         hasVisibleRegistries(item) {
-            return (item.registries || []).some(r => !this._isLower(r));
+            const regs = item.registries || [];
+            // 無 registry 的項目（有 spec 但尚未建 SQL 表）也要顯示
+            if (regs.length === 0) return true;
+            return regs.some(r => !this._isLower(r));
         },
 
         hasHiddenRegistries(item) {

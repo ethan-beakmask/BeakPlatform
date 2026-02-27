@@ -574,8 +574,8 @@ def registry_overview():
     """
     資料表規格總覽
 
-    以 form_template 為分組主軸，列出所有啟用 SQL 同步的表單，
-    以及每個表單下的 published versions SQL registry。
+    以 form_template / standalone spec 為分組主軸，列出所有有 spec 的表單，
+    以及每個表單下的 SQL registry。包含有 spec 但尚無 registry 的表單。
     """
     from ..models import (
         FwSqlFormRegistry, FwFormTemplate,
@@ -594,61 +594,84 @@ def registry_overview():
         status='active',
     ).all()
 
-    if not registries:
-        return jsonify({'success': True, 'data': []})
-
-    # 2. 收集 form_template_secure_code 集合
-    ft_scs = set()
-    pub_scs = set()
-    for r in registries:
-        ft_scs.add(r.form_template_secure_code)
-        pub_scs.add(r.published_secure_code)
-
-    # 3. 批次查 form_templates
-    templates = FwFormTemplate.query.filter(
-        FwFormTemplate.secure_code.in_(ft_scs),
-        FwFormTemplate.org_secure_code == org_sc,
-        FwFormTemplate.is_deleted == False,
-    ).all()
-    tpl_map = {t.secure_code: t for t in templates}
-
-    # 4. 批次查 specs
-    specs = FwFormFieldSpec.query.filter(
-        FwFormFieldSpec.form_template_secure_code.in_(ft_scs),
+    # 2. 查所有綁定表單的 active specs（獨立規格由 standalone API 處理）
+    bound_specs = FwFormFieldSpec.query.filter(
         FwFormFieldSpec.org_secure_code == org_sc,
         FwFormFieldSpec.status == 'active',
         FwFormFieldSpec.is_deleted == False,
+        FwFormFieldSpec.form_template_secure_code.isnot(None),
     ).all()
-    spec_map = {s.form_template_secure_code: s for s in specs}
 
-    # 5. 批次查 published versions
-    publisheds = FwPublishedFormWorkflow.query.filter(
-        FwPublishedFormWorkflow.secure_code.in_(pub_scs),
-        FwPublishedFormWorkflow.org_secure_code == org_sc,
-        FwPublishedFormWorkflow.is_deleted == False,
-    ).all()
-    pub_map = {p.secure_code: p for p in publisheds}
+    if not registries and not bound_specs:
+        return jsonify({'success': True, 'data': []})
 
-    # 6. 以 form_template_secure_code 分組
+    # 3. 收集需要查的 secure_code 集合
+    ft_scs = set()
+    pub_scs = set()
+    for r in registries:
+        if r.form_template_secure_code:
+            ft_scs.add(r.form_template_secure_code)
+        if r.published_secure_code:
+            pub_scs.add(r.published_secure_code)
+    for s in bound_specs:
+        ft_scs.add(s.form_template_secure_code)
+
+    # 4. 批次查 form_templates（過濾已刪除的）
+    tpl_map = {}
+    if ft_scs:
+        templates = FwFormTemplate.query.filter(
+            FwFormTemplate.secure_code.in_(ft_scs),
+            FwFormTemplate.org_secure_code == org_sc,
+            FwFormTemplate.is_deleted == False,
+        ).all()
+        tpl_map = {t.secure_code: t for t in templates}
+
+    # 5. 建立 spec 查找 map
+    spec_by_ft = {}
+    for s in bound_specs:
+        # 過濾掉指向已刪除 template 的孤兒 spec
+        if s.form_template_secure_code in tpl_map:
+            spec_by_ft[s.form_template_secure_code] = s
+
+    # 6. 批次查 published versions
+    pub_map = {}
+    if pub_scs:
+        publisheds = FwPublishedFormWorkflow.query.filter(
+            FwPublishedFormWorkflow.secure_code.in_(pub_scs),
+            FwPublishedFormWorkflow.org_secure_code == org_sc,
+            FwPublishedFormWorkflow.is_deleted == False,
+        ).all()
+        pub_map = {p.secure_code: p for p in publisheds}
+
+    # 7. 以 form_template_secure_code 分組
     grouped = {}
+
+    def _ensure_ft_group(ft_sc):
+        """確保 form_template 分組存在"""
+        if ft_sc in grouped or ft_sc not in tpl_map:
+            return
+        tpl = tpl_map[ft_sc]
+        spec = spec_by_ft.get(ft_sc)
+        grouped[ft_sc] = {
+            'form_template_secure_code': ft_sc,
+            'form_template_name': tpl.name,
+            'form_template_code': tpl.code or '',
+            'spec_secure_code': spec.secure_code if spec else None,
+            'spec_status': spec.status if spec else None,
+            'spec_version': spec.version if spec else None,
+            'spec_field_count': len(spec.fields or []) if spec else None,
+            'registries': [],
+        }
+
+    # 8. 將 registries 分組（只處理綁定表單的 registry）
     for r in registries:
         ft_sc = r.form_template_secure_code
-        if ft_sc not in grouped:
-            tpl = tpl_map.get(ft_sc)
-            spec = spec_map.get(ft_sc)
-            grouped[ft_sc] = {
-                'form_template_secure_code': ft_sc,
-                'form_template_name': tpl.name if tpl else '(unknown)',
-                'form_template_code': tpl.code if tpl else '',
-                'spec_status': spec.status if spec else None,
-                'spec_version': spec.version if spec else None,
-                'spec_field_count': len(spec.fields or []) if spec else None,
-                'registries': [],
-            }
+        if not ft_sc or ft_sc not in tpl_map:
+            continue
+        _ensure_ft_group(ft_sc)
 
-        pub = pub_map.get(r.published_secure_code)
+        pub = pub_map.get(r.published_secure_code) if r.published_secure_code else None
         col_mapping = r.column_mapping or {}
-        # 排除以 _ 開頭的 metadata key
         column_count = len([k for k in col_mapping if not k.startswith('_')])
 
         grouped[ft_sc]['registries'].append({
@@ -662,6 +685,10 @@ def registry_overview():
             'row_count': r.row_count or 0,
             'last_synced_at': r.last_synced_at.isoformat() if r.last_synced_at else None,
         })
+
+    # 9. 納入有 spec 但無 registry 的表單（template 必須存在）
+    for ft_sc in spec_by_ft:
+        _ensure_ft_group(ft_sc)
 
     # 子列按 publish_version 排序
     for g in grouped.values():
@@ -2043,5 +2070,49 @@ def standalone_apply_to_sql_table(spec_sc):
     except Exception as e:
         logger.error(f'套用 spec 到 SQL Table 失敗: {e}')
         return jsonify({'success': False, 'error': f'操作失敗: {e}'}), 500
+
+    # confirm=True 且有實際執行時，補建/更新 Registry
+    if confirm and result.get('executed'):
+        try:
+            from ..models import FwSqlFormRegistry
+            from ..services.field_spec.spec_generator import spec_to_formio_schema
+            from ..services.field_spec.spec_sql_table import spec_fields_to_columns
+            from ..services.sql_sync.converter import build_column_mapping
+
+            form_schema = spec_to_formio_schema(spec.fields)
+            columns = spec_fields_to_columns(spec.fields)
+            column_mapping = build_column_mapping(columns)
+
+            existing = FwSqlFormRegistry.query.filter_by(
+                org_secure_code=org.secure_code,
+                table_name=result['table_name'],
+            ).first()
+
+            if existing:
+                existing.form_schema = form_schema
+                existing.column_mapping = column_mapping
+                existing.create_ddl = result.get('ddl')
+                existing.spec_secure_code = spec.secure_code
+                existing.status = 'active'
+            else:
+                registry = FwSqlFormRegistry(
+                    org_secure_code=org.secure_code,
+                    mapping_secure_code=None,
+                    published_secure_code=None,
+                    form_template_secure_code=spec.form_template_secure_code,
+                    spec_secure_code=spec.secure_code,
+                    table_name=result['table_name'],
+                    form_schema=form_schema,
+                    column_mapping=column_mapping,
+                    create_ddl=result.get('ddl'),
+                    status='active',
+                )
+                db.session.add(registry)
+
+            db.session.commit()
+            logger.info(f'SpecSQL: Registry {"updated" if existing else "created"} for {result["table_name"]}')
+        except Exception as e:
+            logger.error(f'建立 Registry 失敗: {e}')
+            db.session.rollback()
 
     return jsonify({'success': True, 'data': result})

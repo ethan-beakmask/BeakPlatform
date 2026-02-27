@@ -6,8 +6,22 @@
 
 ## [Unreleased]
 
+### Added
+- 獨立規格套用 SQL Table 時自動建立 FwSqlFormRegistry，data_crud 可直接取得 form.io schema
+- FwSqlFormRegistry 新增 `spec_secure_code` 欄位，追蹤來源規格
+- registry-overview API 納入有 spec 但尚無 registry 的表單，不再遺漏未建表的規格
+
+### Changed
+- FwSqlFormRegistry 放寬 `mapping_secure_code`/`published_secure_code`/`form_template_secure_code` 為 nullable（獨立規格無此概念）
+- registry-overview API 過濾孤兒 spec（指向已刪除 template），獨立規格由 standalone API 處理不重複
+
+### Removed
+- data_crud plain input fallback：移除 row_form.html/row-form.js 的 plain input 殘留，統一使用 form.io 渲染
+
 ### Fixed
 - 全站內部頁面跳轉統一改為當前頁開啟，移除不必要的 _blank（data-specs、form_designer、workflow tree、sync-control）
+- data-specs 頁面「表單綁定規格」區塊無 registry 項目不顯示的問題（hasVisibleRegistries 修正）
+- data-specs 頁面 x-for :key 防禦 null form_template_secure_code
 
 ### Added
 - data_crud 模組：無碼 CRUD 工具
@@ -18,7 +32,7 @@
   - 完整 REST API：schema 讀取、視圖 CRUD、資料列 CRUD（含單筆查詢）
   - 分頁、搜尋、排序、軟刪除支援
   - 全頁面新增/編輯（row_form.html）取代 Modal 模式
-  - form.io 整合：SQL Sync 表自動使用 form.io 渲染與驗證，非 SQL Sync 表 fallback 到 plain input
+  - form.io 整合：SQL Sync 表自動使用 form.io 渲染與驗證
   - form.io schema 查詢 API（`GET /views/<sc>/formio-schema`）
   - 新增資料時自動填入系統欄位（form_instance_secure_code 等）
 - FwSqlFormRegistry 新增 `form_schema` 快取欄位：建立 registry 時從 published.form_snapshot.schema 複製，data_crud 單次查詢即可取得 schema

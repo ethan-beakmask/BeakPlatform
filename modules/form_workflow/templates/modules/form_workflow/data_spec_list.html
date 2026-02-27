@@ -117,7 +117,7 @@
                         <th style="width: 160px;" class="ds-actions">操作</th>
                     </tr>
                 </thead>
-                <template x-for="item in items" :key="item.form_template_secure_code">
+                <template x-for="item in items" :key="item.form_template_secure_code || item.spec_secure_code">
                     <tbody x-show="hasVisibleRegistries(item)">
                         <!-- 主列 (form_template) -->
                         <tr class="ds-group-row" @click="toggleExpand(item)">
@@ -226,7 +226,7 @@
                             <th style="width: 100px;" class="ds-actions">操作</th>
                         </tr>
                     </thead>
-                    <template x-for="item in items" :key="'h_' + item.form_template_secure_code">
+                    <template x-for="item in items" :key="'h_' + (item.form_template_secure_code || item.spec_secure_code)">
                         <tbody x-show="hasHiddenRegistries(item)">
                             <!-- 主列 -->
                             <tr class="ds-group-row" @click="item.lowerExpanded = !item.lowerExpanded">

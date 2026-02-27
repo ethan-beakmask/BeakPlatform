@@ -21,10 +21,11 @@ class FwSqlFormRegistry(ModuleBaseModel):
 
     org_secure_code = Column(String(100), nullable=False, index=True)
 
-    # 來源追蹤
-    mapping_secure_code = Column(String(32), nullable=False, index=True)
-    published_secure_code = Column(String(32), nullable=False, index=True)
-    form_template_secure_code = Column(String(32), nullable=False)
+    # 來源追蹤（獨立規格無 mapping/published，允許 NULL）
+    mapping_secure_code = Column(String(32), nullable=True, index=True)
+    published_secure_code = Column(String(32), nullable=True, index=True)
+    form_template_secure_code = Column(String(32), nullable=True)
+    spec_secure_code = Column(String(32), nullable=True)
 
     # SQL 表資訊
     table_name = Column(String(200), nullable=False, unique=True)
@@ -55,6 +56,7 @@ class FwSqlFormRegistry(ModuleBaseModel):
             'mapping_secure_code': self.mapping_secure_code,
             'published_secure_code': self.published_secure_code,
             'form_template_secure_code': self.form_template_secure_code,
+            'spec_secure_code': self.spec_secure_code,
             'table_name': self.table_name,
             'form_version': self.form_version,
             'publish_version': self.publish_version,

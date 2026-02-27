@@ -1,9 +1,9 @@
 /**
  * row_form.html - Alpine.js Manager
- * 全頁面新增/編輯資料
+ * 全頁面新增/編輯資料（form.io 專用）
  *
- * 有 form.io schema 時使用 form.io 渲染（含驗證），
- * 無 schema 時 fallback 到 plain input。
+ * 使用 form.io schema 渲染表單（含驗證）。
+ * 無 schema 時顯示錯誤提示，不提供 fallback。
  */
 function rowFormManager() {
     const config = window.__DC_ROW_FORM || {};
@@ -12,7 +12,6 @@ function rowFormManager() {
         secureCode: config.secureCode,
         rowId: config.rowId,
         viewConfig: {},
-        formData: {},
         loading: true,
         saving: false,
         dbName: '',
@@ -24,13 +23,6 @@ function rowFormManager() {
         formioInstance: null,
         formioI18n: {},
 
-        get formColumns() {
-            if (!this.viewConfig.columns_config) return [];
-            return this.viewConfig.columns_config
-                .filter(c => c.visible_in_form)
-                .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
-        },
-
         async init() {
             await this.loadDbInfo();
             await this.loadViewConfig();
@@ -40,12 +32,6 @@ function rowFormManager() {
                 await this.renderFormio();
                 if (this.rowId) {
                     await this.loadRowIntoFormio();
-                }
-            } else {
-                if (this.rowId) {
-                    await this.loadRow();
-                } else {
-                    this.initFormData();
                 }
             }
             this.loading = false;
@@ -88,7 +74,7 @@ function rowFormManager() {
                     this.useFormio = true;
                 }
             } catch (e) {
-                console.warn('formio schema not available, using plain input:', e);
+                console.warn('formio schema not available:', e);
             }
         },
 
@@ -116,13 +102,9 @@ function rowFormManager() {
                     i18n: { 'zh-TW': this.formioI18n }
                 });
             } catch (e) {
-                console.error('form.io render failed, fallback to plain input:', e);
+                console.error('form.io render failed:', e);
                 this.useFormio = false;
-                if (this.rowId) {
-                    await this.loadRow();
-                } else {
-                    this.initFormData();
-                }
+                this.showToast('表單渲染失敗，請確認欄位規格是否正確', 'error');
             }
         },
 
@@ -141,75 +123,26 @@ function rowFormManager() {
         },
 
         // =====================================================
-        // Plain input fallback (原有邏輯)
-        // =====================================================
-
-        initFormData() {
-            this.formData = {};
-            this.formColumns.forEach(col => {
-                this.formData[col.column] = '';
-            });
-        },
-
-        async loadRow() {
-            try {
-                const res = await fetch(`/api/data-crud/views/${this.secureCode}/rows/${this.rowId}`);
-                const data = await res.json();
-                if (data.success) {
-                    this.formData = {};
-                    this.formColumns.forEach(col => {
-                        const val = data.data[col.column];
-                        this.formData[col.column] = val !== null && val !== undefined ? String(val) : '';
-                    });
-                } else {
-                    this.showToast(data.error || '載入資料失敗', 'error');
-                }
-            } catch (e) {
-                this.showToast('載入資料失敗', 'error');
-            }
-        },
-
-        isTextArea(col) {
-            const t = (col.db_type || '').toUpperCase();
-            return t === 'TEXT' || t === 'JSONB' || t === 'JSON';
-        },
-
-        isFieldDisabled(col) {
-            return col.readonly || col.is_pk || col.is_system;
-        },
-
-        // =====================================================
         // 儲存
         // =====================================================
 
         async save() {
-            let payload;
-
-            if (this.useFormio && this.formioInstance) {
-                // form.io 路徑：觸發驗證
-                const valid = await this.formioInstance.checkValidity(
-                    this.formioInstance.submission.data, true, null, false
-                );
-                if (!valid) {
-                    this.showToast('請修正表單中的錯誤', 'error');
-                    return;
-                }
-                payload = this.formioInstance.submission.data;
-                // 移除 form.io 內部欄位
-                delete payload.submit;
-            } else {
-                // plain input 路徑
-                payload = {};
-                this.formColumns.forEach(col => {
-                    if (!col.readonly && !col.is_pk && !col.is_system) {
-                        let val = this.formData[col.column];
-                        if (val === '' && col.nullable) {
-                            val = null;
-                        }
-                        payload[col.column] = val;
-                    }
-                });
+            if (!this.useFormio || !this.formioInstance) {
+                this.showToast('此資料表尚未建立欄位規格，無法儲存', 'error');
+                return;
             }
+
+            // form.io 路徑：觸發驗證
+            const valid = await this.formioInstance.checkValidity(
+                this.formioInstance.submission.data, true, null, false
+            );
+            if (!valid) {
+                this.showToast('請修正表單中的錯誤', 'error');
+                return;
+            }
+            const payload = this.formioInstance.submission.data;
+            // 移除 form.io 內部欄位
+            delete payload.submit;
 
             this.saving = true;
             try {
