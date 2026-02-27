@@ -258,12 +258,12 @@ function dataSpecManager() {
                 return;
             }
             this.showNewModal = false;
-            window.open('/forms/templates/' + this.selectedTemplateSc + '/spec', '_blank');
+            window.location.href = '/forms/templates/' + this.selectedTemplateSc + '/spec';
         },
 
         // --- 跳轉編輯器 ---
         goToSpecEditor(ftSc) {
-            window.open('/forms/templates/' + ftSc + '/spec', '_blank');
+            window.location.href = '/forms/templates/' + ftSc + '/spec';
         },
 
         // --- 建立規格 (sync-from-formio) ---
@@ -315,15 +315,15 @@ function dataSpecManager() {
 
         // --- 獨立規格操作 ---
         goNewStandalone() {
-            window.open('/forms/data-specs/new', '_blank');
+            window.location.href = '/forms/data-specs/new';
         },
 
         goEditStandalone(specSc) {
-            window.open('/forms/data-specs/' + specSc + '/edit', '_blank');
+            window.location.href = '/forms/data-specs/' + specSc + '/edit';
         },
 
         goSyncControl(ftSc) {
-            window.open('/forms/data-specs/' + ftSc + '/sync', '_blank');
+            window.location.href = '/forms/data-specs/' + ftSc + '/sync';
         },
 
         async deleteStandalone(specSc) {

@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- 資料表規格列表頁（/forms/data-specs）所有按鈕改為當前頁跳轉，不再另開新分頁
+
 ### Added
 - data_crud 模組：無碼 CRUD 工具
   - 選表 -> 欄位配置 -> 自動產生增刪改查介面
