@@ -6,6 +6,16 @@
 
 ## [Unreleased]
 
+### Added
+- data-crud 視圖建立時自動補建 FwSqlFormRegistry：無 Registry 的表在建視圖時自動從 DB 結構生成 form.io schema
+  - 三層策略：已有 Registry 不覆蓋 > 嘗試從已發行表單還原原始 schema > 從 DB 結構反推
+  - 驗證規則推導：NOT NULL 欄位自動設 required、VARCHAR(n) 自動設 maxLength
+  - 來源追蹤欄位全部 NULL 標記為自動生成，與手動/SQL Sync 建立的 Registry 區分
+
+### Changed
+- data-crud 欄位配置預設 label 改用 DB comment（若有），取代原始欄位名稱
+- data-crud 無 schema 錯誤提示更新為更友善的說明
+
 ### Changed
 - 欄位規格編輯器新增欄位機制重構：移除底部單列 newRow 輸入，改為 [+] 按鈕批次新增 10 列空白欄位
 - 新建規格頁面預設帶 10 列空白欄位，方便直接填寫

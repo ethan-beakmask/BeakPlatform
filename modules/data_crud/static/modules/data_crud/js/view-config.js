@@ -118,7 +118,7 @@ function viewConfigManager() {
                             is_pk: col.is_pk,
                             is_system: isSys,
                             system_reason: col.system_reason || null,
-                            label: col.column,
+                            label: col.comment || col.column,
                             visible: true,
                             // 系統欄位預設不勾表單，但允許用戶勾選；強制唯讀
                             visible_in_form: !col.is_pk && !isSys,

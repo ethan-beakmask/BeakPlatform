@@ -166,6 +166,14 @@ def create_view():
     )
     ResourceGateway.commit()
 
+    # 自動補建 Registry（失敗不影響視圖建立）
+    try:
+        _auto_ensure_registry(
+            org.secure_code, table_name, data.get('columns_config', [])
+        )
+    except Exception as e:
+        logger.warning('Auto-ensure registry failed for table=%s: %s', table_name, e)
+
     return jsonify({
         'success': True,
         'data': view.to_dict(),
@@ -292,6 +300,208 @@ def _lookup_formio_schema(table_name, org_secure_code):
     except Exception as e:
         logger.warning('formio schema lookup failed: %s', e)
         return None
+
+
+_VARCHAR_LEN_RE = re.compile(
+    r'(?:VARCHAR|CHARACTER VARYING)\((\d+)\)', re.IGNORECASE
+)
+
+
+def _db_type_to_formio_type(db_type):
+    """
+    將 DB 型別（SchemaService 格式）映射到 form.io 元件類型
+
+    例: VARCHAR(500) → textfield, INTEGER → number, BOOLEAN → checkbox
+
+    注意：DB 型別到 form.io 型別是不可逆的。
+    VARCHAR(200) 可能原本是 email / phoneNumber / url / select 等，
+    但從 DB 結構無法區分，統一回退為 textfield。
+    """
+    if not db_type:
+        return 'textfield'
+
+    upper = db_type.upper().strip()
+
+    if upper.startswith('VARCHAR') or upper.startswith('CHARACTER VARYING'):
+        return 'textfield'
+    if upper == 'TEXT':
+        return 'textarea'
+    if upper in ('INTEGER', 'BIGINT', 'SMALLINT', 'INT', 'SERIAL', 'BIGSERIAL'):
+        return 'number'
+    if upper.startswith('NUMERIC') or upper.startswith('DECIMAL'):
+        return 'number'
+    if upper in ('REAL', 'DOUBLE PRECISION'):
+        return 'number'
+    if upper == 'BOOLEAN':
+        return 'checkbox'
+    if upper == 'DATE':
+        return 'day'
+    if upper.startswith('TIMESTAMP'):
+        return 'datetime'
+    if upper in ('JSONB', 'JSON'):
+        return 'textarea'
+
+    return 'textfield'
+
+
+def _build_constraints(col):
+    """
+    從 columns_config 的單筆欄位推導 form.io 驗證約束
+
+    可推導的規則：
+    - nullable=false 且非 PK → required
+    - VARCHAR(n) → maxLength
+    """
+    constraints = {}
+    db_type = col.get('db_type', '')
+
+    # required: 非 nullable 且非主鍵
+    if not col.get('nullable', True) and not col.get('is_pk', False):
+        constraints['required'] = True
+
+    # maxLength: 從 VARCHAR(n) / CHARACTER VARYING(n) 提取
+    m = _VARCHAR_LEN_RE.search(db_type)
+    if m:
+        constraints['maxLength'] = int(m.group(1))
+
+    return constraints if constraints else None
+
+
+def _try_find_published_schema(org_secure_code, table_name):
+    """
+    嘗試從已發行的表單找回原始 form.io schema
+
+    SQL Sync 建立的表（如 form_59_v1）在 registry 中會有 published_secure_code，
+    指向 FwPublishedFormWorkflow 的 form_snapshot.schema。
+    若 registry 已被刪除但 published form 仍存在，可以透過比對找回。
+
+    Returns:
+        dict or None: 原始 form.io schema，找不到則 None
+    """
+    try:
+        from modules.form_workflow.models.published_form_workflow import (
+            FwPublishedFormWorkflow,
+        )
+
+        # 查找所有同企業的 published forms，比對 form_snapshot 中是否有匹配資訊
+        pubs = FwPublishedFormWorkflow.query.filter_by(
+            org_secure_code=org_secure_code
+        ).all()
+
+        for pub in pubs:
+            fs = pub.form_snapshot or {}
+            # SQL Sync registry 的 table_name 記錄在 form_snapshot 的 metadata 中
+            # 或透過 registry 的 published_secure_code 反查
+            # 這裡直接從已有 registry 反查: 找有 pub_sc 的 registry 指向此 published
+            from modules.form_workflow.models.sql_form_registry import (
+                FwSqlFormRegistry,
+            )
+            linked_reg = FwSqlFormRegistry.query.filter_by(
+                published_secure_code=pub.secure_code,
+                org_secure_code=org_secure_code,
+            ).first()
+            # 如果有其他 registry 指向這個 pub，且表名相同，就用它的 schema
+            if linked_reg and linked_reg.table_name == table_name:
+                schema = fs.get('schema', fs)
+                if schema and schema.get('components'):
+                    return schema
+
+        return None
+    except Exception:
+        return None
+
+
+def _auto_ensure_registry(org_secure_code, table_name, columns_config):
+    """
+    視圖建立時自動補建 FwSqlFormRegistry
+
+    策略（依優先順序）：
+    1. 已有 Registry → 不覆蓋
+    2. 嘗試從已發行表單找回原始 form.io schema → 還原完整型別與驗證
+    3. 從 DB 結構反推 → 基本型別 + DB 約束驗證（required / maxLength）
+    """
+    from app import db
+    from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
+    from modules.form_workflow.services.field_spec.spec_generator import (
+        spec_to_formio_schema,
+    )
+    from modules.form_workflow.services.field_spec.spec_sql_table import (
+        spec_fields_to_columns,
+    )
+    from modules.form_workflow.services.sql_sync.converter import build_column_mapping
+
+    # 已存在 → 不覆蓋
+    existing = FwSqlFormRegistry.query.filter_by(
+        org_secure_code=org_secure_code,
+        table_name=table_name,
+        status='active'
+    ).first()
+    if existing:
+        return
+
+    # 過濾：排除系統欄位和 BYTEA（PII 加密欄位）
+    user_columns = [
+        c for c in (columns_config or [])
+        if not c.get('is_system') and c.get('db_type', '').upper() != 'BYTEA'
+    ]
+    if not user_columns:
+        return
+
+    # 策略 1: 嘗試從 published form 找回原始 schema
+    published_schema = _try_find_published_schema(org_secure_code, table_name)
+    if published_schema:
+        form_schema = published_schema
+        logger.info(
+            'Auto-registry: recovered published schema for table=%s', table_name
+        )
+    else:
+        # 策略 2: 從 DB 結構反推 spec fields → form.io schema
+        spec_fields = []
+        for col in user_columns:
+            field = {
+                'field_key': col.get('column', ''),
+                'label': col.get('label') or col.get('column', ''),
+                'formio_type': _db_type_to_formio_type(col.get('db_type')),
+                'pg_type': col.get('db_type', 'TEXT'),
+                'is_pii': False,
+            }
+            constraints = _build_constraints(col)
+            if constraints:
+                field['constraints'] = constraints
+            spec_fields.append(field)
+
+        form_schema = spec_to_formio_schema(spec_fields)
+
+    # 生成 column_mapping（始終從 columns_config 建，不依賴 form_schema）
+    spec_for_mapping = []
+    for col in user_columns:
+        spec_for_mapping.append({
+            'field_key': col.get('column', ''),
+            'pg_type': col.get('db_type', 'TEXT'),
+            'is_pii': False,
+        })
+    columns = spec_fields_to_columns(spec_for_mapping)
+    column_mapping = build_column_mapping(columns)
+
+    # 建立 Registry（來源追蹤欄位全部 NULL 標記為自動生成）
+    registry = FwSqlFormRegistry(
+        org_secure_code=org_secure_code,
+        table_name=table_name,
+        form_schema=form_schema,
+        column_mapping=column_mapping,
+        status='active',
+        mapping_secure_code=None,
+        published_secure_code=None,
+        form_template_secure_code=None,
+        spec_secure_code=None,
+    )
+    db.session.add(registry)
+    db.session.commit()
+
+    logger.info(
+        'Auto-created registry for table=%s org=%s (%d user fields)',
+        table_name, org_secure_code, len(user_columns)
+    )
 
 
 @api_bp.route('/views/<secure_code>/rows')
