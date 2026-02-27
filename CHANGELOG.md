@@ -7,6 +7,24 @@
 ## [Unreleased]
 
 ### Added
+- 資料規格三面相同步中控：Spec / FormIO(JSONB) / SQL Table 三面相 6 方向雙向同步
+  - 獨立 Spec CRUD：FwFormFieldSpec 可獨立存在（不綁定表單），支援命名、版本歷史、關聯表單、從 Spec 建立表單
+  - 重複版本防止：儲存時 JSON 深度比對，內容無變更時不建新版
+  - SQL 結構讀取：從企業 DB `information_schema.columns` 讀取實際表結構，PG_TO_FORMIO 反向映射
+  - SQL->Spec 反向同步：從企業 DB 表結構建立/更新 Spec
+  - ALTER TABLE 管理：compute_alter_plan 計算變更計劃（ADD/ALTER TYPE/DROP COLUMN），風險等級評估（low/medium/high/critical），SAVEPOINT 交易安全
+  - 高風險操作確認：DROP COLUMN 有資料時需輸入表名二次確認
+  - 同步中控台頁面 (`/forms/data-specs/<ft_sc>/sync`)：三面相狀態卡片 + 6 方向同步按鈕 + 偏移細節
+  - FormIO<->SQL 直接同步支援「同時更新 Spec」勾選（新增一版，非覆蓋）
+  - FormIO vs SQL 直接比對 (`compare_formio_vs_sql`)
+- 資料規格列表增加「獨立規格」區塊：列出未綁定表單的規格，支援編輯、刪除
+- 資料規格列表增加「同步中控」按鈕：已有 Spec 的表單可跳轉同步中控台
+- Spec 編輯器 standalone 模式：獨立規格使用 spec_sc 做 CRUD，不需 form_template_sc
+
+### Changed
+- FwFormFieldSpec/FwFormFieldSpecHistory Model：`form_template_secure_code` 改 nullable，新增 `name` 欄位
+
+### Added
 - 企業獨立資料庫監視頁面：顯示企業 DB 用量、資料表數、每表筆數、硬碟佔用空間
   - 系統級 (`/organizations/databases`)：系統管理員可查看所有企業 DB
   - 企業級 (`/admin/org-database`)：企業管理員只看見自己的 DB
