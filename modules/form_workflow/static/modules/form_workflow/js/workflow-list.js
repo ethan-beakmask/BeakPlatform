@@ -65,12 +65,10 @@ function workflowListManager() {
                             });
                         }
                     });
-                    flat.unshift({ secure_code: '__uncategorized__', name: '未分類', parent_name: null, display: '未分類' });
                     this.flatCategories = flat;
                     if (flat.length > 1 && !this.formData.category_secure_code) {
-                        const realCats = flat.filter(c => c.secure_code !== '__uncategorized__');
-                        const rec = realCats.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
-                        this.formData.category_secure_code = rec ? rec.secure_code : (realCats.length > 0 ? realCats[0].secure_code : '');
+                        const rec = flat.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC');
+                        this.formData.category_secure_code = rec ? rec.secure_code : flat[0].secure_code;
                     }
                 }
             } catch (e) {
@@ -121,7 +119,7 @@ function workflowListManager() {
             this.editingWorkflow = null;
             this.formData = {
                 name: '', code: '', description: '',
-                category_secure_code: (this.flatCategories.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC') || this.flatCategories.find(c => c.secure_code !== '__uncategorized__') || {}).secure_code || '',
+                category_secure_code: (this.flatCategories.find(c => c.secure_code === 'SYS_CAT_WORKFLOW_REC') || this.flatCategories[0] || {}).secure_code || '',
                 is_active: true,
                 is_subprocess: this.flowType === 'subflow'
             };
@@ -476,17 +474,15 @@ function workflowListManager() {
 
         get filteredWorkflows() {
             if (!this.selectedCategory) return this.workflows;
-            if (this.selectedCategory === '__uncategorized__') {
-                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
-                return this.workflows.filter(w => !w.category_secure_code || !knownCodes.includes(w.category_secure_code));
+            if (this.selectedCategory === 'SYS_CAT_OTHER') {
+                return this.workflows.filter(w => !w.category_secure_code || w.category_secure_code === 'SYS_CAT_OTHER');
             }
             return this.workflows.filter(w => w.category_secure_code === this.selectedCategory);
         },
 
         getCategoryCount(sc) {
-            if (sc === '__uncategorized__') {
-                const knownCodes = this.flatCategories.filter(c => c.secure_code !== '__uncategorized__').map(c => c.secure_code);
-                return this.workflows.filter(w => !w.category_secure_code || !knownCodes.includes(w.category_secure_code)).length;
+            if (sc === 'SYS_CAT_OTHER') {
+                return this.workflows.filter(w => !w.category_secure_code || w.category_secure_code === 'SYS_CAT_OTHER').length;
             }
             return this.workflows.filter(w => w.category_secure_code === sc).length;
         },

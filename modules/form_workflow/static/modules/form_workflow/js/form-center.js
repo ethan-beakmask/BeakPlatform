@@ -226,44 +226,41 @@ function formCenterManager() {
 
         // 計算屬性
         get currentChildren() {
-            if (!this.selectedParent || this.selectedParent === '__uncategorized__') return [];
+            if (!this.selectedParent || this.selectedParent === 'SYS_CAT_OTHER') return [];
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
             if (!parent) return [];
             const children = [...(parent.children || [])];
-            // 追加「其他」收納沒有子分類的表單
-            children.push({ secure_code: '__child_uncategorized__', name: '未分類' });
+            // 追加「未歸子分類」收納只掛在父分類的表單
+            children.push({ secure_code: '__child_uncategorized__', name: '其他' });
             return children;
         },
 
         _allKnownCodes() {
             const codes = [];
             this.parentCategories.forEach(p => {
-                if (p.secure_code !== '__uncategorized__') {
-                    codes.push(p.secure_code);
-                    (p.children || []).forEach(c => codes.push(c.secure_code));
-                }
+                codes.push(p.secure_code);
+                (p.children || []).forEach(c => codes.push(c.secure_code));
             });
             return codes;
         },
 
         get filteredForms() {
             if (this.selectedParent === null) return this.availableForms;
-            if (this.selectedParent === '__uncategorized__') {
-                const known = this._allKnownCodes();
-                return this.availableForms.filter(f => !f.category_secure_code || !known.includes(f.category_secure_code));
+            if (this.selectedParent === 'SYS_CAT_OTHER') {
+                return this.availableForms.filter(f => !f.category_secure_code || f.category_secure_code === 'SYS_CAT_OTHER');
             }
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
             if (!parent) return this.availableForms;
             const children = parent.children || [];
 
-            // 選了「其他」子分類 → 直接指向父分類的表單（未歸入任何子分類）
+            // 選了「其他」子分類 -> 直接指向父分類的表單（未歸入任何子分類）
             if (this.selectedChild === '__child_uncategorized__') {
                 return this.availableForms.filter(f => f.category_secure_code === parent.secure_code);
             }
             if (this.selectedChild) {
                 return this.availableForms.filter(f => f.category_secure_code === this.selectedChild);
             }
-            // 沒選子分類 → 匹配所有子分類 + 直接指向父分類的
+            // 沒選子分類 -> 匹配所有子分類 + 直接指向父分類的
             const childCodes = children.map(c => c.secure_code);
             return this.availableForms.filter(f =>
                 childCodes.includes(f.category_secure_code) || f.category_secure_code === parent.secure_code
@@ -271,9 +268,8 @@ function formCenterManager() {
         },
 
         getFormCountByParent(parentSc) {
-            if (parentSc === '__uncategorized__') {
-                const known = this._allKnownCodes();
-                return this.availableForms.filter(f => !f.category_secure_code || !known.includes(f.category_secure_code)).length;
+            if (parentSc === 'SYS_CAT_OTHER') {
+                return this.availableForms.filter(f => !f.category_secure_code || f.category_secure_code === 'SYS_CAT_OTHER').length;
             }
             const parent = this.parentCategories.find(c => c.secure_code === parentSc);
             if (!parent) return 0;
@@ -427,7 +423,6 @@ function formCenterManager() {
                 const data = await res.json();
                 if (data.success) {
                     const cats = data.data || [];
-                    cats.unshift({ secure_code: '__uncategorized__', name: '未分類', children: [] });
                     this.parentCategories = cats;
                     if (!this.selectedParent && cats.length > 0) {
                         this.selectParent(cats[0].secure_code);
