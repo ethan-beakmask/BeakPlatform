@@ -65,6 +65,8 @@ function fieldSpecEditor() {
         showHistory: false,
         histories: [],
         historyLoading: false,
+        historyPreview: null,  // 正在檢視的歷史版本
+        historyRestoring: false,
 
         // 預覽
         showPreview: false,
@@ -328,6 +330,97 @@ function fieldSpecEditor() {
             this.historyLoading = false;
         },
 
+        previewHistoryVersion(h) {
+            this.historyPreview = h;
+        },
+
+        closeHistoryPreview() {
+            this.historyPreview = null;
+        },
+
+        async restoreAsNewVersion(h) {
+            if (!confirm('確定要以 v' + h.version + ' 的欄位建立新版本？')) return;
+            this.historyRestoring = true;
+            try {
+                var fields = h.fields_snapshot || [];
+                var url, body;
+                if (this.isStandalone && this.specSc) {
+                    url = '/api/form-workflow/specs/standalone/' + this.specSc;
+                    body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
+                } else {
+                    url = '/api/form-workflow/specs/' + this.formTemplateSc;
+                    body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
+                }
+                var res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    _toast('success', data.message || '已從 v' + h.version + ' 建立新版');
+                    this.historyPreview = null;
+                    this.showHistory = false;
+                    // 重新載入
+                    this.fields = _normalizeFields(data.data.fields || []);
+                    this.specVersion = data.data.version;
+                    this.dirty = false;
+                } else {
+                    _toast('error', data.error || '取回失敗');
+                }
+            } catch (e) {
+                _toast('error', '取回失敗: ' + e.message);
+            }
+            this.historyRestoring = false;
+        },
+
+        async applyHistoryToForm(h) {
+            if (this.isStandalone) {
+                _toast('error', '獨立規格無綁定表單，無法套用');
+                return;
+            }
+            if (!confirm('確定要將 v' + h.version + ' 的欄位套用到表單設計？\n（發行機制確保既有 SQL 表不受影響）')) return;
+            this.historyRestoring = true;
+            try {
+                // 先取回為新版
+                var saveRes = await fetch('/api/form-workflow/specs/' + this.formTemplateSc, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fields: h.fields_snapshot || [],
+                        description: '從 v' + h.version + ' 取回並套用到表單',
+                    }),
+                });
+                var saveData = await saveRes.json();
+                if (!saveData.success) {
+                    _toast('error', saveData.error || '儲存新版失敗');
+                    this.historyRestoring = false;
+                    return;
+                }
+
+                // 套用到表單
+                var applyRes = await fetch('/api/form-workflow/specs/' + this.formTemplateSc + '/sync-spec-to-formio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}',
+                });
+                var applyData = await applyRes.json();
+                if (applyData.success) {
+                    _toast('success', '已從 v' + h.version + ' 取回並套用到表單設計');
+                    this.historyPreview = null;
+                    this.showHistory = false;
+                    this.fields = _normalizeFields(saveData.data.fields || []);
+                    this.specVersion = saveData.data.version;
+                    this.dirty = false;
+                } else {
+                    _toast('error', applyData.error || '套用到表單失敗');
+                }
+            } catch (e) {
+                _toast('error', '操作失敗: ' + e.message);
+            }
+            this.historyRestoring = false;
+        },
+
         // ===== Standalone: 關聯表單 =====
 
         async openLinkForm() {
@@ -434,6 +527,18 @@ function fieldSpecEditor() {
         openDetail(idx) {
             this.detailIndex = idx;
             var f = JSON.parse(JSON.stringify(this.fields[idx]));
+            // 確保 constraints 物件存在
+            if (!f.constraints || typeof f.constraints !== 'object') {
+                f.constraints = {};
+            }
+            var dc = f.constraints;
+            if (dc.required === undefined) dc.required = false;
+            if (dc.maxLength === undefined) dc.maxLength = null;
+            if (dc.minLength === undefined) dc.minLength = null;
+            if (dc.min === undefined) dc.min = null;
+            if (dc.max === undefined) dc.max = null;
+            if (dc.pattern === undefined) dc.pattern = null;
+            if (dc.customValidation === undefined) dc.customValidation = null;
             this.detailForm = f;
             this.detailOptionRows = (f.options || []).map(function(o) { return {label: o.label || '', value: o.value || ''}; });
             this.detailGridChildRows = (f.grid_children || []).map(function(c) { return JSON.parse(JSON.stringify(c)); });

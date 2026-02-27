@@ -377,6 +377,11 @@
     border-bottom: none;
 }
 
+.fs-history-item.active {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
 .fs-history-version {
     font-weight: 600;
     font-size: 13px;

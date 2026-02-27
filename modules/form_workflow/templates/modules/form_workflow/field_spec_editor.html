@@ -318,17 +318,24 @@ window.__SPEC_CONFIG = {
         <div class="fs-compare-panel">
             <div class="fs-compare-header">
                 <span>版本歷史</span>
-                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false">關閉</button>
+                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false; historyPreview = null">關閉</button>
             </div>
             <div class="fs-history-list">
                 <template x-if="histories.length === 0">
                     <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
                 </template>
                 <template x-for="h in histories" :key="h.secure_code">
-                    <div class="fs-history-item">
-                        <div>
-                            <span class="fs-history-version">v<span x-text="h.version"></span></span>
-                            <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                    <div class="fs-history-item" :class="historyPreview && historyPreview.secure_code === h.secure_code ? 'active' : ''">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span class="fs-history-version">v<span x-text="h.version"></span></span>
+                                <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="fs-btn" style="padding: 2px 8px; font-size: 11px;"
+                                        @click="previewHistoryVersion(h)"
+                                        :disabled="historyPreview && historyPreview.secure_code === h.secure_code">檢視</button>
+                            </div>
                         </div>
                         <div class="fs-history-meta">
                             <span x-text="h.changed_by_name || '系統'"></span> |
@@ -351,6 +358,57 @@ window.__SPEC_CONFIG = {
                     </div>
                 </template>
             </div>
+
+            <!-- 歷史版本檢視 -->
+            <template x-if="historyPreview">
+                <div style="border-top: 1px solid #e5e7eb; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 600;">
+                            v<span x-text="historyPreview.version"></span> 欄位內容
+                            (<span x-text="(historyPreview.fields_snapshot || []).length"></span> 個欄位)
+                        </span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #3b82f6; color: #fff; border-color: #3b82f6;"
+                                    @click="restoreAsNewVersion(historyPreview)" :disabled="historyRestoring">
+                                取回為新版
+                            </button>
+                            <template x-if="!isStandalone">
+                                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #f59e0b; color: #fff; border-color: #f59e0b;"
+                                        @click="applyHistoryToForm(historyPreview)" :disabled="historyRestoring">
+                                    取回並套用到表單
+                                </button>
+                            </template>
+                            <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="closeHistoryPreview()">關閉預覽</button>
+                        </div>
+                    </div>
+                    <div style="max-height: 260px; overflow-y: auto;">
+                        <table class="fs-grid" style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 140px;">Label</th>
+                                    <th style="width: 120px;">Field Key</th>
+                                    <th style="width: 100px;">Type</th>
+                                    <th style="width: 100px;">PG Type</th>
+                                    <th style="width: 50px;">PII</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="sf in historyPreview.fields_snapshot || []" :key="sf.field_key">
+                                    <tr>
+                                        <td x-text="sf.label || ''"></td>
+                                        <td style="font-family: monospace;" x-text="sf.field_key"></td>
+                                        <td x-text="sf.formio_type || ''"></td>
+                                        <td style="font-family: monospace;" x-text="sf.pg_type || ''"></td>
+                                        <td x-text="sf.is_pii ? 'Y' : ''"></td>
+                                        <td style="color: #6b7280;" x-text="sf.description || ''"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </template>
         </div>
     </template>
 
