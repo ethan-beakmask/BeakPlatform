@@ -162,7 +162,9 @@ window.__SPEC_CONFIG = {
                             <input type="text" x-model="f.label" placeholder="-">
                         </td>
                         <td>
-                            <input type="text" class="mono" x-model="f.field_key">
+                            <input type="text" class="mono" x-model="f.field_key"
+                                   @input="validateFieldKey(idx)"
+                                   :style="f._keyError ? 'border-color:#dc2626;background:#fef2f2' : ''">
                         </td>
                         <td>
                             <select x-model="f.formio_type" @change="onTypeChange(idx)">
@@ -480,7 +482,9 @@ window.__SPEC_CONFIG = {
                         <div class="fs-grid-children">
                             <template x-for="(child, ci) in detailGridChildRows" :key="ci">
                                 <div style="display: flex; gap: 6px; margin-bottom: 4px; align-items: center;">
-                                    <input type="text" x-model="child.field_key" placeholder="key" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                    <input type="text" x-model="child.field_key" placeholder="key"
+                                           @input="child._keyError = (child.field_key && !/^[a-zA-Z0-9_]*$/.test(child.field_key))"
+                                           :style="(child._keyError ? 'border-color:#dc2626;background:#fef2f2;' : '') + 'flex: 1; font-size: 12px; padding: 4px 6px;'">
                                     <input type="text" x-model="child.label" placeholder="label" style="flex: 1; font-size: 12px; padding: 4px 6px;">
                                     <select x-model="child.formio_type" style="flex: 1; font-size: 12px; padding: 4px 6px;">
                                         <template x-for="t in FORMIO_TYPES.filter(x => !['datagrid','editgrid'].includes(x.value))" :key="t.value">

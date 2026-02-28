@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### Added
+- Spec 套用/同步時自動補建 formTitle HTML Element：若表單 schema 無 `key=formTitle` 的 htmlelement，從 data-specs 名稱自動補上
+- 從獨立 Spec 建立表單時自動帶入 formTitle HTML Element
+
+### Fixed
+- Field Key 限制只能使用英文字母、數字與底線（前端即時驗證紅框提示 + 儲存阻擋 + 後端 regex 驗證，含 datagrid 子欄位）
+
+### Added
 - 表單風格主題切換功能：每張表單可獨立指定外觀風格，透過 `data-form-theme` attribute + CSS scope 實現
 - 新增 `security`（正式扁平）內建主題：深灰色系、無陰影、無漸層、緊湊間距、標籤水平排列
 - 表單風格管理頁面（/forms/form-themes）：主題 CRUD、CSS 線上編輯、上傳/下載、啟停用

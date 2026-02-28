@@ -197,6 +197,7 @@ function fieldSpecEditor() {
                 // 檢查必填欄位完整性
                 var errors = [];
                 var keySet = {};
+                var keyPattern = /^[a-zA-Z0-9_]+$/;
                 for (var i = 0; i < filledFields.length; i++) {
                     var f = filledFields[i];
                     var rowNum = this.fields.indexOf(f) + 1;
@@ -204,10 +205,21 @@ function fieldSpecEditor() {
                         errors.push('第 ' + rowNum + ' 列缺少 Label');
                     }
                     var key = f.field_key.trim();
+                    if (!keyPattern.test(key)) {
+                        errors.push('第 ' + rowNum + ' 列 Field Key "' + key + '" 只能使用英文字母、數字與底線');
+                    }
                     if (keySet[key]) {
                         errors.push('第 ' + rowNum + ' 列 Field Key "' + key + '" 重複');
                     }
                     keySet[key] = true;
+                    // 子欄位驗證
+                    var children = f.grid_children || [];
+                    for (var ci = 0; ci < children.length; ci++) {
+                        var ck = (children[ci].field_key || '').trim();
+                        if (ck && !keyPattern.test(ck)) {
+                            errors.push('第 ' + rowNum + ' 列子欄位 "' + ck + '" 只能使用英文字母、數字與底線');
+                        }
+                    }
                 }
                 if (errors.length > 0) {
                     _toast('error', errors.join('；'));
@@ -682,6 +694,16 @@ function fieldSpecEditor() {
             this.fields[idx]._pgTypeOverridden = true;
         },
 
+        validateFieldKey(idx) {
+            var f = this.fields[idx];
+            var val = f.field_key || '';
+            if (val && !/^[a-zA-Z0-9_]+$/.test(val)) {
+                f._keyError = true;
+                _toast('error', 'Field Key 只能使用英文字母、數字與底線');
+            } else {
+                f._keyError = false;
+            }
+        },
 
         // ===== 進階設定 Modal =====
 

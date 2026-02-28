@@ -8,6 +8,7 @@ URL prefix: /api/form-workflow/specs
 import copy
 import json
 import logging
+import re
 import secrets
 from datetime import datetime, timezone
 
@@ -89,6 +90,9 @@ def _compute_diff(old_fields, new_fields):
     }
 
 
+_FIELD_KEY_RE = re.compile(r'^[a-zA-Z0-9_]+$')
+
+
 def _validate_fields(fields):
     """
     驗證 fields 結構
@@ -108,12 +112,22 @@ def _validate_fields(fields):
         if not field_key:
             return False, f'fields[{i}] 缺少 field_key'
 
+        if not _FIELD_KEY_RE.match(field_key):
+            return False, f'field_key "{field_key}" 只能使用英文字母、數字與底線'
+
         if field_key in seen_keys:
             return False, f'field_key "{field_key}" 重複'
         seen_keys.add(field_key)
 
         if not f.get('formio_type'):
             return False, f'fields[{i}] ({field_key}) 缺少 formio_type'
+
+        # 子欄位也要驗證
+        grid_children = f.get('grid_children') or []
+        for ci, child in enumerate(grid_children):
+            child_key = (child.get('field_key') or '').strip()
+            if child_key and not _FIELD_KEY_RE.match(child_key):
+                return False, f'field_key "{field_key}" 的子欄位 "{child_key}" 只能使用英文字母、數字與底線'
 
     return True, ''
 
@@ -535,7 +549,7 @@ def apply_to_form(form_template_sc):
 
     if mode == 'preview':
         new_schema = apply_spec_to_existing_schema(
-            spec.fields, template.schema
+            spec.fields, template.schema, form_title=spec.name
         )
         return jsonify({
             'success': True,
@@ -545,7 +559,7 @@ def apply_to_form(form_template_sc):
 
     # replace 模式
     new_schema = apply_spec_to_existing_schema(
-        spec.fields, template.schema
+        spec.fields, template.schema, form_title=spec.name
     )
     template.schema = new_schema
 
@@ -1232,9 +1246,9 @@ def create_form_from_spec(spec_sc):
     if existing_tpl:
         return jsonify({'success': False, 'error': f'Code {form_code} 已存在'}), 400
 
-    # 從 spec 生成 FormIO schema
+    # 從 spec 生成 FormIO schema（含 formTitle）
     from ..services.field_spec.spec_generator import spec_to_formio_schema
-    schema = spec_to_formio_schema(spec.fields)
+    schema = spec_to_formio_schema(spec.fields, form_title=form_name)
 
     template = FwFormTemplate(
         org_secure_code=org.secure_code,
@@ -1514,7 +1528,9 @@ def sync_spec_to_formio(form_template_sc):
         return jsonify({'success': False, 'error': '找不到表單模板'}), 404
 
     from ..services.field_spec.spec_generator import apply_spec_to_existing_schema
-    new_schema = apply_spec_to_existing_schema(spec.fields, template.schema)
+    new_schema = apply_spec_to_existing_schema(
+        spec.fields, template.schema, form_title=spec.name
+    )
     template.schema = new_schema
 
     from sqlalchemy.orm.attributes import flag_modified
