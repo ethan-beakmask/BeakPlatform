@@ -3,14 +3,18 @@ BeakMask Org Database Monitor Web Routes
 企業獨立資料庫監視頁面
 
 系統級：/organizations/databases — 可看所有企業（master-detail 佈局）
-企業級：/admin/org-database — 只能看見自己企業（卡片佈局）
+企業級：/admin/org-database — 企業管理員（master-detail 佈局 + 管理功能）
 """
 import logging
+import re
+from datetime import datetime, date
+from decimal import Decimal
 
 import psycopg2
-from flask import Blueprint, render_template, abort, jsonify
+from flask import Blueprint, render_template, abort, jsonify, request
 from flask_login import current_user
 
+from .. import db
 from ..security.decorators import system_admin_required, admin_required
 from ..models.organization import Organization
 
@@ -246,11 +250,293 @@ def system_org_stats(org_secure_code):
 @org_databases_bp.route('/admin/org-database')
 @admin_required
 def org_view():
-    """企業級：只顯示自己企業的獨立資料庫（保留原卡片佈局）"""
-    org_db_list = _get_org_db_list(org_secure_code=current_user.org_secure_code)
+    """企業級：master-detail 佈局 + 管理功能"""
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+
+    odb = FwOrgDatabase.query.filter_by(
+        org_secure_code=current_user.org_secure_code,
+        is_deleted=False,
+        is_ready=True,
+    ).first()
+
+    db_info = None
+    tables = []
+
+    if odb:
+        try:
+            dsn = odb.get_admin_dsn()
+            stats = _query_db_stats(dsn)
+        except Exception as e:
+            stats = {
+                'db_size_bytes': 0,
+                'table_count': 0,
+                'tables': [],
+                'error': str(e),
+            }
+
+        db_info = {
+            'db_name': odb.db_name,
+            'db_host': odb.db_host,
+            'db_port': odb.db_port,
+            'admin_user': odb.admin_user,
+            'sync_user': odb.sync_user,
+            'db_size_display': _format_bytes(stats['db_size_bytes']),
+            'last_rotation': odb.last_credential_rotation.strftime('%Y-%m-%d %H:%M')
+                if odb.last_credential_rotation else None,
+            'error': stats.get('error'),
+        }
+
+        for t in stats.get('tables', []):
+            tables.append({
+                'name': t['name'],
+                'row_count': t['row_count'],
+                'total_bytes': t['total_bytes'],
+                'index_bytes': t['index_bytes'],
+                'total_display': _format_bytes(t['total_bytes']),
+                'index_display': _format_bytes(t['index_bytes']),
+            })
+
     return render_template(
         'pages/org_databases/monitor.html',
-        org_db_list=org_db_list,
+        db_info=db_info,
+        tables=tables,
         is_system_view=False,
-        format_bytes=_format_bytes,
     )
+
+
+def _get_org_dsn(org_secure_code):
+    """取得企業的 admin DSN，不存在時 abort(404)"""
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+
+    odb = FwOrgDatabase.query.filter_by(
+        org_secure_code=org_secure_code,
+        is_deleted=False,
+        is_ready=True,
+    ).first()
+    if not odb:
+        abort(404, description='企業資料庫不存在')
+    return odb.get_admin_dsn()
+
+
+def _validate_table_name(name):
+    """驗證表名格式，防止 SQL injection"""
+    return bool(re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name))
+
+
+def _table_exists(cur, table_name):
+    """檢查表是否存在於 public schema"""
+    cur.execute(
+        "SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = %s",
+        (table_name,)
+    )
+    return cur.fetchone() is not None
+
+
+def _serialize_value(val):
+    """序列化 psycopg2 回傳值為 JSON 可序列化格式"""
+    if val is None:
+        return None
+    if isinstance(val, (datetime, date)):
+        return val.isoformat()
+    if isinstance(val, (bytes, memoryview)):
+        return '(binary)'
+    if isinstance(val, Decimal):
+        return float(val)
+    # 其他非基本型別安全轉字串
+    if not isinstance(val, (str, int, float, bool)):
+        return str(val)
+    return val
+
+
+@org_databases_bp.route('/admin/org-database/preview/<table_name>')
+@admin_required
+def preview_table(table_name):
+    """預覽企業 DB 指定表的前 100 筆資料"""
+    if not _validate_table_name(table_name):
+        abort(400, description='無效的表名格式')
+
+    dsn = _get_org_dsn(current_user.org_secure_code)
+
+    try:
+        conn = psycopg2.connect(dsn, connect_timeout=5)
+    except psycopg2.OperationalError as e:
+        err_msg = str(e).strip()
+        logger.warning(f'Preview: DB connection failed: {err_msg}')
+        if 'does not exist' in err_msg:
+            return jsonify({'error': '企業資料庫不存在，可能尚未建立或已被移除'})
+        return jsonify({'error': f'資料庫連線失敗: {err_msg}'})
+
+    try:
+        with conn.cursor() as cur:
+            # 確認表存在
+            if not _table_exists(cur, table_name):
+                conn.close()
+                return jsonify({'error': f'資料表 {table_name} 不存在'})
+
+            # 查欄位名稱與是否有 id 欄位
+            cur.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = %s "
+                "ORDER BY ordinal_position",
+                (table_name,)
+            )
+            columns = [r[0] for r in cur.fetchall()]
+            has_id = 'id' in columns
+
+            # 總筆數
+            cur.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+            total_count = cur.fetchone()[0]
+
+            # 取 100 筆
+            order_clause = ' ORDER BY id DESC' if has_id else ''
+            cur.execute(f'SELECT * FROM "{table_name}"{order_clause} LIMIT 100')
+            raw_rows = cur.fetchall()
+
+            rows = []
+            for raw_row in raw_rows:
+                rows.append([_serialize_value(v) for v in raw_row])
+
+            return jsonify({
+                'columns': columns,
+                'rows': rows,
+                'total_count': total_count,
+            })
+    except psycopg2.Error as e:
+        logger.warning(f'Preview table {table_name} failed: {e}')
+        return jsonify({'error': f'查詢失敗: {str(e).strip()}'})
+    finally:
+        conn.close()
+
+
+@org_databases_bp.route('/admin/org-database/check-references', methods=['POST'])
+@admin_required
+def check_references():
+    """檢查待刪除表的引用關係（FwSqlFormRegistry、DcCrudView）"""
+    from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
+    from modules.data_crud.models.crud_view import DcCrudView
+
+    data = request.get_json()
+    if not data or not isinstance(data.get('tables'), list):
+        abort(400)
+
+    table_names = data['tables']
+    org_code = current_user.org_secure_code
+    references = {}
+
+    for tname in table_names:
+        if not _validate_table_name(tname):
+            continue
+
+        # 查 FwSqlFormRegistry
+        registry = FwSqlFormRegistry.query.filter_by(
+            table_name=tname,
+            org_secure_code=org_code,
+            is_deleted=False,
+        ).filter(FwSqlFormRegistry.status != 'table_dropped').first()
+
+        registry_info = None
+        if registry:
+            registry_info = {
+                'secure_code': registry.secure_code,
+                'form_version': registry.form_version,
+                'status': registry.status,
+                'row_count': registry.row_count,
+            }
+
+        # 查 DcCrudView
+        crud_views = DcCrudView.query.filter_by(
+            table_name=tname,
+            org_secure_code=org_code,
+            is_deleted=False,
+        ).filter(DcCrudView.is_active == True).all()
+
+        crud_list = []
+        for cv in crud_views:
+            crud_list.append({
+                'secure_code': cv.secure_code,
+                'name': cv.name,
+            })
+
+        references[tname] = {
+            'registry': registry_info,
+            'crud_views': crud_list,
+        }
+
+    return jsonify({'references': references})
+
+
+@org_databases_bp.route('/admin/org-database/drop-tables', methods=['POST'])
+@admin_required
+def drop_tables():
+    """
+    刪除企業 DB 中的資料表
+
+    流程：驗證表存在 → 標記主 DB 引用 → DROP TABLE CASCADE
+    """
+    from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
+    from modules.data_crud.models.crud_view import DcCrudView
+
+    data = request.get_json()
+    if not data or not isinstance(data.get('tables'), list):
+        abort(400)
+
+    table_names = data['tables']
+    org_code = current_user.org_secure_code
+    dsn = _get_org_dsn(org_code)
+
+    results = []
+    dropped_count = 0
+
+    try:
+        conn = psycopg2.connect(dsn, connect_timeout=5)
+        conn.autocommit = False
+        try:
+            with conn.cursor() as cur:
+                for tname in table_names:
+                    if not _validate_table_name(tname):
+                        results.append({'table': tname, 'dropped': False, 'reason': '無效表名'})
+                        continue
+
+                    if not _table_exists(cur, tname):
+                        results.append({'table': tname, 'dropped': False, 'reason': '表不存在'})
+                        continue
+
+                    # 標記主 DB 引用
+                    registries = FwSqlFormRegistry.query.filter_by(
+                        table_name=tname,
+                        org_secure_code=org_code,
+                        is_deleted=False,
+                    ).filter(FwSqlFormRegistry.status != 'table_dropped').all()
+                    for reg in registries:
+                        reg.status = 'table_dropped'
+                        reg.updated_at = datetime.utcnow()
+
+                    crud_views = DcCrudView.query.filter_by(
+                        table_name=tname,
+                        org_secure_code=org_code,
+                        is_deleted=False,
+                    ).filter(DcCrudView.is_active == True).all()
+                    for cv in crud_views:
+                        cv.is_active = False
+                        desc = cv.description or ''
+                        cv.description = desc + '\n[已透過企業獨立資料庫管理刪除]'
+                        cv.updated_at = datetime.utcnow()
+
+                    # DROP TABLE
+                    cur.execute(f'DROP TABLE IF EXISTS "{tname}" CASCADE')
+                    results.append({'table': tname, 'dropped': True})
+                    dropped_count += 1
+
+            conn.commit()
+            db.session.commit()
+        except Exception:
+            conn.rollback()
+            db.session.rollback()
+            raise
+        finally:
+            conn.close()
+    except psycopg2.Error as e:
+        logger.error(f'Drop tables failed: {e}')
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'results': results, 'dropped_count': dropped_count})

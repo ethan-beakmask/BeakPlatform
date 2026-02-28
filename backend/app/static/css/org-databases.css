@@ -223,9 +223,10 @@
 
 .odb-layout {
     display: flex;
-    min-height: calc(100vh - 140px);
+    height: calc(100vh - 140px);
     margin: -16px;
     background: #f5f5f5;
+    overflow: hidden;
 }
 
 /* 左側企業清單 */
@@ -357,27 +358,25 @@
     text-align: right;
 }
 
-/* 右側詳情面板 */
+/* 右側詳情面板 — 固定不捲動，內部上下分割 */
 .odb-detail {
     flex: 1;
-    padding: 24px;
-    overflow-y: auto;
+    padding: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 .odb-detail-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
     color: #999;
     font-size: 14px;
+    padding: 40px 0;
+    text-align: center;
 }
 .odb-detail-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
     color: #888;
     font-size: 14px;
+    padding: 40px 0;
+    text-align: center;
 }
 .odb-detail-header {
     margin-bottom: 16px;
@@ -405,10 +404,417 @@
     border: 1px solid #ddd;
     border-radius: 6px;
     padding: 16px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 .odb-detail-content .odb-info-row {
     margin-bottom: 16px;
 }
 .odb-detail-content .odb-table-list {
     margin-top: 8px;
+}
+
+/* ========== 企業級：工具列 ========== */
+
+.odb-table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+.odb-toolbar-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.odb-toolbar-check input[type="checkbox"] {
+    margin: 0;
+}
+.odb-toolbar-spacer {
+    flex: 1;
+}
+.odb-toolbar-sort {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #888;
+    white-space: nowrap;
+}
+
+/* 反選按鈕 */
+.odb-btn-invert {
+    padding: 3px 10px;
+    font-size: 12px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    color: #555;
+}
+.odb-btn-invert:hover {
+    background: #f0f0f0;
+}
+
+/* 刪除按鈕 */
+.odb-btn-danger {
+    padding: 3px 10px;
+    font-size: 12px;
+    border: 1px solid #dc2626;
+    border-radius: 3px;
+    background: #dc2626;
+    color: white;
+    cursor: pointer;
+}
+.odb-btn-danger:hover {
+    background: #b91c1c;
+}
+.odb-btn-danger:disabled {
+    background: #ccc;
+    border-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 取消按鈕 */
+.odb-btn-cancel {
+    padding: 6px 16px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    color: #333;
+}
+.odb-btn-cancel:hover {
+    background: #f5f5f5;
+}
+
+/* ========== 企業級：資料表清單項 ========== */
+
+.odb-table-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    transition: background 0.1s;
+}
+.odb-table-item:hover {
+    background: #f5f5f5;
+}
+.odb-table-item.active {
+    background: #e8f0fe;
+}
+.odb-table-item input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+.odb-table-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    color: #1a73e8;
+    font-family: monospace;
+    font-size: 12px;
+}
+.odb-table-name:hover {
+    text-decoration: underline;
+}
+.odb-table-stat {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-family: monospace;
+    color: #888;
+    min-width: 70px;
+    text-align: right;
+}
+
+/* ========== 企業級：預覽區 ========== */
+
+.odb-preview-header {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+.odb-preview-header strong {
+    font-family: monospace;
+    font-size: 14px;
+}
+.odb-preview-header span {
+    color: #888;
+    font-size: 12px;
+    margin-left: 8px;
+}
+.odb-preview-wrap {
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+.odb-preview-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: monospace;
+    white-space: nowrap;
+}
+.odb-preview-table th,
+.odb-preview-table td {
+    padding: 4px 10px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.odb-preview-table thead th {
+    background: #f5f5f5;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.odb-preview-table tbody tr {
+    cursor: pointer;
+}
+.odb-preview-table tbody tr:hover {
+    background: #f0f4ff;
+}
+.odb-preview-table tbody tr:nth-child(even) {
+    background: #fcfcfc;
+}
+.odb-preview-table tbody tr:nth-child(even):hover {
+    background: #f0f4ff;
+}
+
+/* 行號欄 */
+.odb-col-rowsel {
+    width: 32px;
+    min-width: 32px;
+    text-align: center;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+}
+.odb-preview-table thead .odb-col-rowsel {
+    color: #888;
+}
+
+/* 選中行 */
+.odb-row-selected {
+    background: #e0edff;
+}
+.odb-row-selected:hover {
+    background: #d0e0f8;
+}
+
+/* ========== 企業級：上下分割 ========== */
+
+.odb-detail-split {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.odb-split-top {
+    display: flex;
+    flex-direction: column;
+    min-height: 60px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+.odb-split-top .odb-preview-header {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+.odb-split-top .odb-preview-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* 拖拉分割條 */
+.odb-split-handle {
+    height: 8px;
+    cursor: row-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+.odb-split-handle-bar {
+    width: 40px;
+    height: 3px;
+    background: #ccc;
+    border-radius: 2px;
+}
+.odb-split-handle:hover .odb-split-handle-bar {
+    background: #999;
+}
+
+/* 下半：單筆直式 */
+.odb-split-bottom {
+    display: flex;
+    flex-direction: column;
+    min-height: 40px;
+    overflow: hidden;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+.odb-split-bottom .odb-detail-placeholder {
+    padding: 16px 0;
+    font-size: 13px;
+}
+.odb-row-detail-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+.odb-row-detail-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #555;
+}
+.odb-row-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.odb-row-detail-table th {
+    text-align: left;
+    width: 180px;
+    padding: 4px 12px 4px 0;
+    color: #888;
+    font-weight: normal;
+    font-family: monospace;
+    white-space: nowrap;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+}
+.odb-row-detail-table td {
+    padding: 4px 0;
+    font-family: monospace;
+    border-bottom: 1px solid #f0f0f0;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* ========== 企業級：刪除確認 Modal ========== */
+
+.odb-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.odb-modal {
+    background: white;
+    border-radius: 8px;
+    width: 520px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.odb-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+}
+.odb-modal-body {
+    padding: 16px 20px;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 13px;
+}
+.odb-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.odb-modal-footer .odb-btn-danger {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+.odb-modal-section {
+    margin-bottom: 12px;
+}
+.odb-modal-section-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #555;
+}
+.odb-modal-table-row {
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.odb-modal-table-row code {
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+.odb-modal-table-row span {
+    color: #888;
+    font-size: 12px;
+}
+.odb-modal-ref {
+    padding: 3px 0 3px 12px;
+    font-size: 12px;
+    color: #666;
+}
+.odb-modal-ref code {
+    font-size: 11px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+/* 加密欄位（binary）標記 */
+.odb-cell-binary {
+    background: #fef2f2;
+    color: #991b1b;
+    font-style: italic;
+    text-align: center;
+}
+
+.odb-modal-warning {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    color: #991b1b;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
 }

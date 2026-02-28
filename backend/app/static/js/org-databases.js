@@ -166,21 +166,282 @@ function _enrichStats(data) {
 }
 
 /**
- * 企業級卡片元件（保留不動）
+ * 企業級 master-detail 元件
+ * 左側 DB 資訊 + 資料表清單（多選/反選/排序）
+ * 右側 點擊表名預覽 100 筆資料
+ * 刪除：DROP TABLE 前檢查引用 → 標記稽核記錄
  */
-function odbMonitor() {
-    var config = window.__ODB_CONFIG || {};
-    return {
-        expanded: {},
+function odbOrgView() {
+    var raw = window.__ODB_ORG || {};
+    var rawTables = (raw.tables || []).map(function(t) {
+        return {
+            name: t.name,
+            row_count: t.row_count,
+            total_bytes: t.total_bytes,
+            index_bytes: t.index_bytes,
+            total_display: t.total_display,
+            index_display: t.index_display
+        };
+    });
 
-        init() {
-            if (config.dbCount === 1 && config.orgIds && config.orgIds.length === 1) {
-                this.expanded['db_' + config.orgIds[0]] = true;
+    return {
+        dbInfo: raw.db_info || {},
+        tables: rawTables,
+        selected: {},
+        selectedTable: null,
+        preview: null,
+        previewLoading: false,
+        previewError: null,
+        listSortBy: null,
+        deleteModal: false,
+        deleteChecking: false,
+        deleteRefs: {},
+        deleting: false,
+        detailRow: null,
+        splitPct: 50,
+        _dragging: false,
+
+        get isAllSelected() {
+            if (this.tables.length === 0) return false;
+            for (var i = 0; i < this.tables.length; i++) {
+                if (!this.selected[this.tables[i].name]) return false;
+            }
+            return true;
+        },
+
+        get selectedCount() {
+            var c = 0;
+            for (var k in this.selected) {
+                if (this.selected[k]) c++;
+            }
+            return c;
+        },
+
+        get selectedNames() {
+            var names = [];
+            for (var i = 0; i < this.tables.length; i++) {
+                if (this.selected[this.tables[i].name]) {
+                    names.push(this.tables[i].name);
+                }
+            }
+            return names;
+        },
+
+        get sortedTables() {
+            var list = [].concat(this.tables);
+            var s = this.listSortBy;
+            if (s === 'name_asc') {
+                list.sort(function(a, b) { return a.name.localeCompare(b.name); });
+            } else if (s === 'name_desc') {
+                list.sort(function(a, b) { return b.name.localeCompare(a.name); });
+            } else if (s === 'rows_desc') {
+                list.sort(function(a, b) { return b.row_count - a.row_count; });
+            } else if (s === 'rows_asc') {
+                list.sort(function(a, b) { return a.row_count - b.row_count; });
+            } else if (s === 'size_desc') {
+                list.sort(function(a, b) { return b.total_bytes - a.total_bytes; });
+            } else if (s === 'size_asc') {
+                list.sort(function(a, b) { return a.total_bytes - b.total_bytes; });
+            }
+            return list;
+        },
+
+        get hasReferences() {
+            for (var name in this.deleteRefs) {
+                var ref = this.deleteRefs[name];
+                if (ref.registry) return true;
+                if (ref.crud_views && ref.crud_views.length > 0) return true;
+            }
+            return false;
+        },
+
+        toggleSelect(name) {
+            this.selected[name] = !this.selected[name];
+        },
+
+        selectAll() {
+            var allSelected = this.isAllSelected;
+            for (var i = 0; i < this.tables.length; i++) {
+                this.selected[this.tables[i].name] = !allSelected;
             }
         },
 
-        toggle(key) {
-            this.expanded[key] = !this.expanded[key];
+        invertSelection() {
+            for (var i = 0; i < this.tables.length; i++) {
+                var name = this.tables[i].name;
+                this.selected[name] = !this.selected[name];
+            }
+        },
+
+        toggleListSort(col) {
+            if (col === 'name') {
+                this.listSortBy = this.listSortBy === 'name_asc' ? 'name_desc' : 'name_asc';
+            } else if (col === 'rows') {
+                this.listSortBy = this.listSortBy === 'rows_desc' ? 'rows_asc' : 'rows_desc';
+            } else if (col === 'size') {
+                this.listSortBy = this.listSortBy === 'size_desc' ? 'size_asc' : 'size_desc';
+            }
+        },
+
+        listSortIcon(col) {
+            if (col === 'name') {
+                if (this.listSortBy === 'name_asc') return ' ^';
+                if (this.listSortBy === 'name_desc') return ' v';
+            } else if (col === 'rows') {
+                if (this.listSortBy === 'rows_asc') return ' ^';
+                if (this.listSortBy === 'rows_desc') return ' v';
+            } else if (col === 'size') {
+                if (this.listSortBy === 'size_asc') return ' ^';
+                if (this.listSortBy === 'size_desc') return ' v';
+            }
+            return '';
+        },
+
+        selectRow(ri) {
+            if (!this.preview) return;
+            this.detailRow = (this.detailRow === ri) ? null : ri;
+        },
+
+        get detailRowData() {
+            if (this.detailRow === null || !this.preview) return null;
+            var row = this.preview.rows[this.detailRow];
+            if (!row) return null;
+            var cols = this.preview.columns;
+            var pairs = [];
+            for (var i = 0; i < cols.length; i++) {
+                pairs.push({ col: cols[i], val: row[i] });
+            }
+            return pairs;
+        },
+
+        startDrag(e) {
+            e.preventDefault();
+            this._dragging = true;
+            var self = this;
+            var detail = this.$refs.detailPane;
+            if (!detail) return;
+            var rect = detail.getBoundingClientRect();
+            var totalH = rect.height;
+            var topY = rect.top;
+
+            function onMove(ev) {
+                if (!self._dragging) return;
+                var y = (ev.clientY || ev.touches[0].clientY) - topY;
+                var pct = Math.round((y / totalH) * 100);
+                if (pct < 15) pct = 15;
+                if (pct > 85) pct = 85;
+                self.splitPct = pct;
+            }
+            function onUp() {
+                self._dragging = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onUp);
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            document.addEventListener('touchmove', onMove);
+            document.addEventListener('touchend', onUp);
+        },
+
+        previewTable(name) {
+            var self = this;
+            this.selectedTable = name;
+            this.preview = null;
+            this.previewError = null;
+            this.previewLoading = true;
+            this.detailRow = null;
+
+            fetch('/admin/org-database/preview/' + encodeURIComponent(name))
+                .then(function(resp) {
+                    var ct = resp.headers.get('content-type') || '';
+                    if (ct.indexOf('application/json') >= 0) {
+                        return resp.json();
+                    }
+                    // 非 JSON 回應（如 HTML 錯誤頁）
+                    throw new Error('伺服器回應異常 (HTTP ' + resp.status + ')');
+                })
+                .then(function(data) {
+                    if (data.error) {
+                        self.previewError = data.error;
+                    } else {
+                        self.preview = data;
+                    }
+                })
+                .catch(function(err) {
+                    self.previewError = err.message;
+                })
+                .finally(function() {
+                    self.previewLoading = false;
+                });
+        },
+
+        getTableRowCount(name) {
+            for (var i = 0; i < this.tables.length; i++) {
+                if (this.tables[i].name === name) {
+                    return '(' + formatNumber(this.tables[i].row_count) + ' 筆)';
+                }
+            }
+            return '';
+        },
+
+        startDelete() {
+            if (this.selectedCount === 0) return;
+            var self = this;
+            this.deleteModal = true;
+            this.deleteChecking = true;
+            this.deleteRefs = {};
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('/admin/org-database/check-references', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({tables: this.selectedNames})
+            })
+            .then(function(resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            })
+            .then(function(data) {
+                self.deleteRefs = data.references || {};
+            })
+            .catch(function(err) {
+                alert('檢查引用失敗: ' + err.message);
+                self.deleteModal = false;
+            })
+            .finally(function() {
+                self.deleteChecking = false;
+            });
+        },
+
+        confirmDelete() {
+            var self = this;
+            this.deleting = true;
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('/admin/org-database/drop-tables', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                body: JSON.stringify({tables: this.selectedNames})
+            })
+            .then(function(resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            })
+            .then(function(data) {
+                if (data.error) {
+                    alert('刪除失敗: ' + data.error);
+                } else {
+                    location.reload();
+                }
+            })
+            .catch(function(err) {
+                alert('刪除失敗: ' + err.message);
+            })
+            .finally(function() {
+                self.deleting = false;
+            });
         }
     };
 }

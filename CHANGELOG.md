@@ -12,7 +12,11 @@
   - 左側面板：只顯示有獨立 DB 的企業，含名稱/domain 模糊搜尋、依資料表量/容量排序
   - 右側面板：AJAX 載入 DB 統計，資料表清單支援筆數/總大小欄位排序
   - system.local 不再被排除（若有 DB 即顯示）
-  - 企業級 /admin/org-database 頁面不受影響
+- 企業級 /admin/org-database 頁面重構為 master-detail 佈局 + 管理功能
+  - 左側：DB 資訊 + 資料表清單（全選/反選/表名排序/筆數排序/容量排序）
+  - 右上：點擊表名預覽前 100 筆資料（有 id 欄位則 DESC），加密欄位紅底標記
+  - 右下：點擊行號直式顯示單筆明細，上下可拖拉調整比例
+  - 多選刪除：DROP TABLE 前檢查 FwSqlFormRegistry / DcCrudView 引用，標記稽核記錄後刪除
 
 ### Fixed
 - 修正欄位規格編輯器儲存後 formio_type 被重設為 textfield 的問題（Alpine.js x-model + x-for race condition：替換 fields 陣列時 _uid 全部更新導致 select 元素銷毀重建，x-model 在 option 建立前觸發）
