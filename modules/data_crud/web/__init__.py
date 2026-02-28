@@ -42,6 +42,31 @@ def view_browse(secure_code):
     return render_template('modules/data_crud/view_browse.html', secure_code=secure_code)
 
 
+@web_bp.route('/lab')
+@security_login_required
+def lab():
+    """Web Builder - 佈局設計器（新頁面）"""
+    return render_template('modules/data_crud/lab.html')
+
+
+@web_bp.route('/lab/<secure_code>')
+@security_login_required
+def lab_edit(secure_code):
+    """Web Builder - 佈局設計器（編輯既有頁面）"""
+    return render_template('modules/data_crud/lab.html')
+
+
+@web_bp.route('/pages/<secure_code>')
+@security_login_required
+def page_view(secure_code):
+    """Web Builder - 頁面檢視（用戶模式）"""
+    return render_template(
+        'modules/data_crud/lab_view.html',
+        secure_code=secure_code,
+        page_name=''
+    )
+
+
 @web_bp.route('/views/<secure_code>/rows/new')
 @security_login_required
 def row_create(secure_code):

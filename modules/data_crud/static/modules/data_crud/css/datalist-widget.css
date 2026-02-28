@@ -1,0 +1,316 @@
+/* =============================================
+   DataListWidget - 無碼元件樣式
+   前綴: dlw-
+   ============================================= */
+
+.dlw-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    overflow: hidden;
+    font-size: 13px;
+    font-family: -apple-system, "Microsoft JhengHei", sans-serif;
+}
+
+.dlw-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+}
+.dlw-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dlw-toolbar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+.dlw-search {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    width: 140px;
+}
+.dlw-search:focus { outline: none; border-color: #0066cc; }
+
+.dlw-body {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+}
+
+.dlw-loading,
+.dlw-empty,
+.dlw-empty-data {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 80px;
+    color: #999;
+    font-size: 13px;
+}
+
+/* Table */
+.dlw-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.dlw-table th {
+    background: #fafafa;
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.dlw-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #eee;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dlw-table tr:hover { background: #f8f8f8; }
+.dlw-sortable { cursor: pointer; user-select: none; }
+.dlw-sortable:hover { background: #eee; }
+.dlw-sort-arrow { font-size: 10px; color: #0066cc; margin-left: 2px; }
+.dlw-actions-th { width: 80px; }
+.dlw-actions { white-space: nowrap; }
+
+/* Buttons */
+.dlw-btn {
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    cursor: pointer;
+    font-size: 11px;
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    line-height: 1.4;
+}
+.dlw-btn:hover { background: #e9e9e9; }
+.dlw-btn:disabled { opacity: 0.4; cursor: default; }
+.dlw-btn.sm { padding: 2px 6px; font-size: 11px; }
+.dlw-btn.danger { color: #dc2626; border-color: #dc2626; }
+.dlw-btn.danger:hover { background: #dc2626; color: white; }
+
+/* Pager */
+.dlw-pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: #f9f9f9;
+    border-top: 1px solid #ddd;
+    font-size: 11px;
+    color: #666;
+    flex-shrink: 0;
+}
+.dlw-page-btns { display: flex; gap: 4px; }
+
+/* =============================================
+   GridStack Lab - 佈局設計器樣式
+   前綴: lab-
+   ============================================= */
+
+.lab-layout {
+    display: flex;
+    height: calc(100vh - 60px);
+    overflow: hidden;
+}
+
+/* 左側元件庫 */
+.lab-sidebar {
+    width: 220px;
+    background: #f7f7f7;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+.lab-sidebar-title {
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
+    background: #eee;
+}
+.lab-component-list {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+.lab-component-item {
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: #fff;
+    border: 1px solid #ddd;
+    cursor: grab;
+    font-size: 13px;
+    user-select: none;
+}
+.lab-component-item:hover { border-color: #0066cc; background: #f0f7ff; }
+.lab-component-item .label { font-weight: 500; }
+.lab-component-item .desc { font-size: 11px; color: #999; margin-top: 2px; }
+
+/* 中央畫布 */
+.lab-canvas {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+    background: #e8e8e8;
+}
+.lab-canvas .grid-stack {
+    background: #fff;
+    min-height: 600px;
+    border: 1px solid #ccc;
+}
+/* GridStack 格子內容撐滿 */
+.lab-canvas .grid-stack-item-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+/* 設計模式的格子外框 */
+.lab-canvas .grid-stack-item-content .dlw-root {
+    border: 2px solid #0066cc;
+}
+/* 空格子佔位 */
+.lab-canvas .gs-placeholder {
+    background: rgba(0, 102, 204, 0.08);
+    border: 2px dashed #0066cc;
+}
+
+/* 右側設定面板 */
+.lab-settings {
+    width: 280px;
+    background: #fff;
+    border-left: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+.lab-settings-title {
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid #ddd;
+    background: #eee;
+}
+.lab-settings-body {
+    padding: 14px;
+    flex: 1;
+    overflow-y: auto;
+}
+.lab-settings-empty {
+    color: #999;
+    font-size: 13px;
+    padding: 20px 0;
+    text-align: center;
+}
+.lab-field {
+    margin-bottom: 12px;
+}
+.lab-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    color: #555;
+}
+.lab-field select,
+.lab-field input[type="number"] {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+.lab-field select:focus,
+.lab-field input:focus { outline: none; border-color: #0066cc; }
+.lab-field-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+.lab-field-check input[type="checkbox"] { margin: 0; }
+
+/* 頂部工具列 */
+.lab-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+.lab-topbar-title { font-weight: 600; font-size: 16px; }
+.lab-topbar-actions { display: flex; gap: 8px; }
+
+/* Context 設定區段標題 */
+.lab-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+/* Context 項目（output / input） */
+.lab-context-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    margin-bottom: 4px;
+    background: #fafafa;
+    font-size: 11px;
+}
+.lab-context-desc {
+    color: #555;
+    font-family: monospace;
+}
+
+/* Context 新增表單 */
+.lab-context-add {
+    margin-top: 8px;
+    padding: 8px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+}
+
+/* 選中 widget 外框 */
+.lab-selected > .grid-stack-item-content > .dlw-root {
+    border-color: #ff6600;
+}
+
+/* Row 選中狀態（DataListWidget 內部） */
+.dlw-row { cursor: pointer; }
+.dlw-row-selected { background: #e6f0ff; }
+.dlw-row-selected:hover { background: #d6e6ff; }
+
+/* 頁面列表項目 */
+.lab-page-item {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+.lab-page-item:hover { background: #f0f7ff; border-color: #0066cc; }

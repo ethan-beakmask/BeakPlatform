@@ -27,6 +27,12 @@ MODULE_INFO = {
                     'url': '/data-crud/',
                     'sort_order': 1
                 },
+                {
+                    'code': 'data_crud.lab',
+                    'name': '頁面設計',
+                    'url': '/data-crud/lab',
+                    'sort_order': 2
+                },
             ]
         }
     ],

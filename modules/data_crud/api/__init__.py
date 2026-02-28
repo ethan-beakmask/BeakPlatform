@@ -12,7 +12,7 @@ import logging
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app import csrf
+from app import csrf, db
 from app.security.decorators import public_route
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
@@ -527,6 +527,18 @@ def query_rows(secure_code):
 
     per_page = max(1, min(per_page, 100))
 
+    # 動態篩選：接受 filter_<column>=<value> 參數
+    # 安全：只允許 view.columns_config 中存在的欄位名
+    dynamic_filters = {}
+    allowed_columns = {
+        c.get('column') for c in (view.columns_config or []) if c.get('column')
+    }
+    for key in request.args:
+        if key.startswith('filter_'):
+            col_name = key[7:]  # 去掉 'filter_' 前綴
+            if col_name in allowed_columns and IDENTIFIER_RE.match(col_name):
+                dynamic_filters[col_name] = request.args.get(key)
+
     try:
         with get_data_conn(view.org_secure_code) as conn:
             result = CrudService.query_rows(
@@ -537,6 +549,7 @@ def query_rows(secure_code):
                 search=search,
                 sort_column=sort_col,
                 sort_dir=sort_dir,
+                dynamic_filters=dynamic_filters,
             )
     except OrgDatabaseNotFound as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -660,3 +673,147 @@ def delete_row(secure_code, row_id):
     if not result['success']:
         return jsonify(result), 400
     return jsonify(result)
+
+
+# =============================================================================
+# Page Layout CRUD API (Web Builder 佈局持久化)
+# =============================================================================
+
+@api_bp.route('/pages')
+def list_pages():
+    """列出頁面佈局"""
+    try:
+        from ..models import DcPageLayout
+
+        result = ResourceGateway.filter(
+            DcPageLayout,
+            is_deleted=False,
+            order_by='-updated_at'
+        )
+
+        return jsonify({
+            'success': True,
+            'data': [p.to_dict() for p in result]
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] list_pages error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/pages', methods=['POST'])
+@csrf.exempt
+def create_page():
+    """建立頁面佈局"""
+    try:
+        from ..models import DcPageLayout
+
+        data = request.get_json() or {}
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'success': False, 'error': 'Name is required'}), 400
+
+        page = ResourceGateway.create(
+            DcPageLayout,
+            check_permission=False,
+            name=name,
+            description=data.get('description', ''),
+            layout_json=data.get('layout_json', {'version': 2, 'widgets': []}),
+            is_active=data.get('is_active', True),
+        )
+        ResourceGateway.commit()
+
+        return jsonify({
+            'success': True,
+            'data': page.to_dict(),
+            'message': 'Page created'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] create_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/pages/<secure_code>')
+def get_page(secure_code):
+    """取得頁面佈局"""
+    try:
+        from ..models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        return jsonify({'success': True, 'data': page.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] get_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/pages/<secure_code>', methods=['PUT'])
+@csrf.exempt
+def update_page(secure_code):
+    """更新頁面佈局"""
+    try:
+        from ..models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        data = request.get_json() or {}
+
+        update_fields = {}
+        for field in ('name', 'description', 'layout_json', 'is_active'):
+            if field in data:
+                update_fields[field] = data[field]
+
+        if 'name' in update_fields and not update_fields['name'].strip():
+            return jsonify({'success': False, 'error': 'Name cannot be empty'}), 400
+
+        ResourceGateway.update(page, check_permission=False, **update_fields)
+        ResourceGateway.commit()
+
+        return jsonify({
+            'success': True,
+            'data': page.to_dict(),
+            'message': 'Page updated'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] update_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/pages/<secure_code>', methods=['DELETE'])
+@csrf.exempt
+def delete_page(secure_code):
+    """刪除頁面佈局"""
+    try:
+        from ..models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        ResourceGateway.delete(page, check_permission=False, soft=True)
+        ResourceGateway.commit()
+
+        return jsonify({'success': True, 'message': 'Page deleted'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] delete_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500

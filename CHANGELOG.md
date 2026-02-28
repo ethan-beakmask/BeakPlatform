@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### Added
+- Web Builder Lab: 頁面佈局設計器與預覽功能（GridStack 拖放 + DataListWidget 資料清單元件）
+- Web Builder: PageContext 共享狀態架構，取代 WidgetBus point-to-point binding
+  - Widget 獨立宣告 contextOutputs/contextInputs，不需互相指向
+  - Cascading Clear: 上游切換時自動連鎖清空下游，depth 上限 10 防迴圈
+  - 向下相容: 自動遷移舊版 bindings 格式為 context 格式
+- 頁面佈局 CRUD API（/api/data-crud/pages）+ DcPageLayout Model
+- DataListWidget: 支援搜尋、排序、分頁、動態篩選、row-select 事件
+- Lab Designer: 元件設定面板內建輸出/輸入 context key 設定 UI
+- layout_json schema v2: `{ version: 2, widgets: [{ ..., widget: { contextOutputs, contextInputs } }] }`
+- data-crud 動態篩選 API: 支援 `filter_<column>=<value>` 查詢參數
 - Spec 套用/同步時自動補建 formTitle HTML Element：若表單 schema 無 `key=formTitle` 的 htmlelement，從 data-specs 名稱自動補上
 - 從獨立 Spec 建立表單時自動帶入 formTitle HTML Element
 

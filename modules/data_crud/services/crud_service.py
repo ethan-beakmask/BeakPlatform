@@ -173,6 +173,7 @@ class CrudService:
         search: str = '',
         sort_column: Optional[str] = None,
         sort_dir: str = 'ASC',
+        dynamic_filters: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         查詢目標表的資料（分頁）
@@ -180,6 +181,8 @@ class CrudService:
         Args:
             conn: psycopg2 connection
             view: DcCrudView instance
+            dynamic_filters: 動態篩選 {column: value}，
+                             由 API 層白名單驗證後傳入
 
         Returns:
             {rows: [...], total: N, page: N, pages: N, per_page: N}
@@ -215,6 +218,15 @@ class CrudService:
         # 固定篩選
         if view.fixed_filters:
             for col, val in view.fixed_filters.items():
+                if _validate_identifier(col):
+                    where_parts.append(
+                        psql.SQL('{} = %s').format(_ident(col))
+                    )
+                    params.append(val)
+
+        # 動態篩選（EventBus binding 傳入，API 層已白名單驗證）
+        if dynamic_filters:
+            for col, val in dynamic_filters.items():
                 if _validate_identifier(col):
                     where_parts.append(
                         psql.SQL('{} = %s').format(_ident(col))
