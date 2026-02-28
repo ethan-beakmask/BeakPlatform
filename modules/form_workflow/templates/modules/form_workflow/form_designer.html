@@ -14,6 +14,7 @@
     <!-- Form.io CSS (本地) -->
     <link rel="stylesheet" href="/static/vendor/formio.full.min.css">
     <link rel="stylesheet" href="/static/css/formio-theme.css">
+    <link rel="stylesheet" href="/api/form-workflow/form-themes/bundle.css">
 
     <!-- Theme Styles -->
     <link rel="stylesheet" href="/static/css/theme-styles.css">
@@ -93,6 +94,11 @@
                         <input class="form-check-input" type="checkbox" id="chk-placeholder-to-label" checked>
                         <span class="form-check-label text-muted">提示→標籤</span>
                     </label>
+                    <span class="border-start ps-2 ms-1"></span>
+                    <span class="small text-muted">風格:</span>
+                    <select id="form-theme" class="form-select form-select-sm" style="width: auto;">
+                        <option value="default">預設</option>
+                    </select>
                     <span class="border-start ps-2 ms-1"></span>
                     <span class="small text-muted">寬度:</span>
                     <div class="btn-group btn-group-sm" role="group">

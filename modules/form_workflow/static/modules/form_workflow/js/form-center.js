@@ -1634,6 +1634,14 @@ function formCenterManager() {
             container.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
             container.style.minHeight = '400px';
 
+            // 套用風格主題
+            const formTheme = builderConfig?.formTheme;
+            if (formTheme && formTheme !== 'default') {
+                container.setAttribute('data-form-theme', formTheme);
+            } else {
+                container.removeAttribute('data-form-theme');
+            }
+
             // 套用寬度
             const formWidth = builderConfig?.formWidth;
             if (formWidth) {
@@ -1708,6 +1716,7 @@ function formCenterManager() {
             const container = document.getElementById(containerId);
             if (container) {
                 container.classList.remove('has-background');
+                container.removeAttribute('data-form-theme');
                 container.style.maxWidth = '';
                 container.style.margin = '';
                 container.style.backgroundColor = '';

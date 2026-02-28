@@ -358,11 +358,18 @@
     text-align: right;
 }
 
-/* 右側詳情面板 — 固定不捲動，內部上下分割 */
+/* 右側詳情面板 */
 .odb-detail {
     flex: 1;
     padding: 16px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+/* Alpine x-if 產生的中間 div，需延續 flex 鏈 */
+.odb-detail > div {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
@@ -408,7 +415,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
 }
 .odb-detail-content .odb-info-row {
     margin-bottom: 16px;

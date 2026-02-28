@@ -1,0 +1,602 @@
+/**
+ * Form.io Security 主題
+ * 正式、扁平、資訊密度高、間距適中
+ * 以 [data-form-theme="security"] 為 scope，覆寫 formio-theme.css 的預設樣式
+ */
+
+/* ========================================
+   CSS 變數覆寫
+   ======================================== */
+[data-form-theme="security"] {
+    --formio-primary: #374151;
+    --formio-primary-hover: #1f2937;
+    --formio-secondary: #6b7280;
+    --formio-success: #059669;
+    --formio-danger: #dc2626;
+    --formio-warning: #d97706;
+    --formio-info: #2563eb;
+    --formio-light: #f9fafb;
+    --formio-border: #d1d5db;
+    --formio-text: #1f2937;
+    --formio-text-muted: #6b7280;
+    --formio-radius: 3px;
+    --formio-shadow: none;
+    --formio-shadow-lg: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --formio-transition: all 0.15s ease;
+}
+
+/* ========================================
+   整體表單容器
+   ======================================== */
+[data-form-theme="security"] .formio-form {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+[data-form-theme="security"] .formio-component {
+    margin-bottom: 0.75rem;
+}
+
+/* ========================================
+   標籤樣式
+   ======================================== */
+[data-form-theme="security"] .formio-component label.col-form-label,
+[data-form-theme="security"] .formio-component label.form-label,
+[data-form-theme="security"] .formio-component .control-label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* ========================================
+   輸入欄位
+   ======================================== */
+[data-form-theme="security"] .formio-component .form-control {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+    box-shadow: none;
+    line-height: 1.4;
+}
+
+[data-form-theme="security"] .formio-component .form-control:focus {
+    border-color: var(--formio-primary);
+    box-shadow: 0 0 0 1px rgba(55, 65, 81, 0.2);
+}
+
+[data-form-theme="security"] .formio-component .form-control::placeholder {
+    font-size: 0.75rem;
+}
+
+/* ========================================
+   下拉選單
+   ======================================== */
+[data-form-theme="security"] .formio-component .form-select,
+[data-form-theme="security"] .formio-component select.form-control {
+    padding: 0.375rem 2rem 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+[data-form-theme="security"] .formio-component .form-select:focus,
+[data-form-theme="security"] .formio-component select.form-control:focus {
+    box-shadow: 0 0 0 1px rgba(55, 65, 81, 0.2);
+}
+
+/* Choices.js */
+[data-form-theme="security"] .formio-component .choices__inner {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.25rem 0.5rem;
+    min-height: 34px;
+}
+
+[data-form-theme="security"] .formio-component .choices.is-focused .choices__inner {
+    box-shadow: 0 0 0 1px rgba(55, 65, 81, 0.2);
+}
+
+[data-form-theme="security"] .formio-component .choices__list--dropdown {
+    border-radius: var(--formio-radius);
+    box-shadow: var(--formio-shadow-lg);
+}
+
+[data-form-theme="security"] .formio-component .choices__list--dropdown .choices__item--selectable.is-highlighted {
+    background-color: var(--formio-primary);
+}
+
+/* ========================================
+   複選框與單選按鈕
+   ======================================== */
+[data-form-theme="security"] .formio-component .form-check {
+    margin-bottom: 0.25rem;
+}
+
+[data-form-theme="security"] .formio-component .form-check-input {
+    width: 1rem;
+    height: 1rem;
+}
+
+[data-form-theme="security"] .formio-component .form-check-input:checked {
+    background-color: var(--formio-primary);
+    border-color: var(--formio-primary);
+}
+
+[data-form-theme="security"] .formio-component .form-check-input:focus {
+    box-shadow: 0 0 0 1px rgba(55, 65, 81, 0.2);
+}
+
+[data-form-theme="security"] .formio-component .form-check-label {
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   按鈕樣式 — 純色扁平，無 gradient
+   ======================================== */
+[data-form-theme="security"] .formio-component .btn {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: var(--formio-radius);
+}
+
+[data-form-theme="security"] .formio-component .btn-primary {
+    background: var(--formio-primary);
+    border: 1px solid var(--formio-primary);
+    color: #fff;
+    box-shadow: none;
+}
+
+[data-form-theme="security"] .formio-component .btn-primary:hover {
+    background: var(--formio-primary-hover);
+    border-color: var(--formio-primary-hover);
+    transform: none;
+    box-shadow: none;
+}
+
+[data-form-theme="security"] .formio-component .btn-primary:active {
+    transform: none;
+}
+
+[data-form-theme="security"] .formio-component .btn-secondary {
+    background-color: #f3f4f6;
+    border: 1px solid var(--formio-border);
+    color: var(--formio-text);
+}
+
+[data-form-theme="security"] .formio-component .btn-secondary:hover {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+[data-form-theme="security"] .formio-component .btn-success {
+    background: var(--formio-success);
+    border: 1px solid var(--formio-success);
+    color: #fff;
+}
+
+[data-form-theme="security"] .formio-component .btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+}
+
+[data-form-theme="security"] .formio-component .btn-danger {
+    background: var(--formio-danger);
+    border: 1px solid var(--formio-danger);
+    color: #fff;
+}
+
+[data-form-theme="security"] .formio-component .btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+/* ========================================
+   面板 / 卡片 — 底線 + 粗體，無色條
+   ======================================== */
+[data-form-theme="security"] .formio-component-panel {
+    background: #fff;
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    box-shadow: none;
+    margin-bottom: 1rem;
+}
+
+[data-form-theme="security"] .formio-component-panel .card-header {
+    background: transparent;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0.625rem 0.875rem;
+}
+
+[data-form-theme="security"] .formio-component-panel .card-header .card-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--formio-text);
+}
+
+/* 移除左側色條 */
+[data-form-theme="security"] .formio-component-panel .card-header .card-title::before {
+    display: none;
+}
+
+[data-form-theme="security"] .formio-component-panel .card-body {
+    padding: 0.875rem;
+}
+
+/* ========================================
+   欄位集 (Fieldset)
+   ======================================== */
+[data-form-theme="security"] .formio-component-fieldset fieldset {
+    border: 1px solid var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+[data-form-theme="security"] .formio-component-fieldset legend {
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+/* ========================================
+   表格元件
+   ======================================== */
+[data-form-theme="security"] .formio-component-table .table {
+    border-radius: var(--formio-radius);
+}
+
+[data-form-theme="security"] .formio-component-table .table th {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 2px solid var(--formio-border);
+}
+
+[data-form-theme="security"] .formio-component-table .table td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   DataGrid — 正常文字，無 uppercase
+   ======================================== */
+[data-form-theme="security"] .formio-component-datagrid .datagrid-table {
+    border-radius: var(--formio-radius);
+}
+
+[data-form-theme="security"] .formio-component-datagrid .datagrid-table thead th {
+    background: #f3f4f6;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--formio-text);
+    padding: 0.5rem 0.375rem;
+}
+
+[data-form-theme="security"] .formio-component-datagrid .btn-secondary {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* ========================================
+   Tabs 標籤頁
+   ======================================== */
+[data-form-theme="security"] .formio-component-tabs .nav-tabs {
+    border-bottom: 1px solid var(--formio-border);
+}
+
+[data-form-theme="security"] .formio-component-tabs .nav-tabs .nav-link {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    border-radius: var(--formio-radius) var(--formio-radius) 0 0;
+}
+
+[data-form-theme="security"] .formio-component-tabs .nav-tabs .nav-link.active {
+    color: var(--formio-primary);
+    border-bottom-color: var(--formio-primary);
+}
+
+[data-form-theme="security"] .formio-component-tabs .tab-content {
+    padding: 0.875rem 0;
+}
+
+/* ========================================
+   錯誤與驗證訊息
+   ======================================== */
+[data-form-theme="security"] .formio-component .form-control.is-invalid:focus,
+[data-form-theme="security"] .formio-component .has-error .form-control:focus {
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+
+[data-form-theme="security"] .formio-component .invalid-feedback,
+[data-form-theme="security"] .formio-component .formio-errors .error {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   說明文字
+   ======================================== */
+[data-form-theme="security"] .formio-component .form-text,
+[data-form-theme="security"] .formio-component .text-muted {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   檔案上傳
+   ======================================== */
+[data-form-theme="security"] .formio-component-file .fileSelector {
+    border: 1px dashed var(--formio-border);
+    border-radius: var(--formio-radius);
+    padding: 1.25rem;
+}
+
+[data-form-theme="security"] .formio-component-file .fileSelector:hover {
+    border-color: var(--formio-primary);
+    background: #f3f4f6;
+}
+
+[data-form-theme="security"] .formio-component-file .fileSelector i {
+    font-size: 1.5rem;
+    color: var(--formio-secondary);
+}
+
+[data-form-theme="security"] .formio-component-file .file {
+    padding: 0.5rem;
+    border-radius: var(--formio-radius);
+}
+
+[data-form-theme="security"] .formio-component-file .file .fileName {
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   日期時間選擇器
+   ======================================== */
+[data-form-theme="security"] .formio-component-datetime .flatpickr-calendar {
+    border-radius: var(--formio-radius);
+    box-shadow: var(--formio-shadow-lg);
+}
+
+[data-form-theme="security"] .formio-component-datetime .flatpickr-day.selected {
+    background: var(--formio-primary);
+    border-color: var(--formio-primary);
+}
+
+/* ========================================
+   簽名欄位
+   ======================================== */
+[data-form-theme="security"] .formio-component-signature .signature-pad-canvas {
+    border-radius: var(--formio-radius);
+}
+
+/* ========================================
+   Well 區塊
+   ======================================== */
+[data-form-theme="security"] .formio-component-well .well {
+    border-radius: var(--formio-radius);
+    padding: 0.875rem;
+    border: 1px solid var(--formio-border);
+    background: var(--formio-light);
+}
+
+/* ========================================
+   HTML 內容區塊
+   ======================================== */
+[data-form-theme="security"] .formio-component-htmlelement {
+    padding: 0.25rem 0;
+}
+
+[data-form-theme="security"] .formio-component-htmlelement p {
+    line-height: 1.5;
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   進度條
+   ======================================== */
+[data-form-theme="security"] .formio-component .progress-bar {
+    background: var(--formio-primary);
+}
+
+/* ========================================
+   Alert 提示訊息
+   ======================================== */
+[data-form-theme="security"] .formio-component .alert {
+    border-radius: var(--formio-radius);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    border: 1px solid transparent;
+}
+
+[data-form-theme="security"] .formio-component .alert-info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+}
+
+[data-form-theme="security"] .formio-component .alert-success {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+
+[data-form-theme="security"] .formio-component .alert-warning {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+[data-form-theme="security"] .formio-component .alert-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* ========================================
+   Input Group
+   ======================================== */
+[data-form-theme="security"] .formio-component .input-group {
+    border-radius: var(--formio-radius);
+}
+
+[data-form-theme="security"] .formio-component .input-group-text {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.5rem;
+}
+
+[data-form-theme="security"] .formio-component .input-group .form-control {
+    border-radius: 0 var(--formio-radius) var(--formio-radius) 0;
+}
+
+/* ========================================
+   水平標籤佈局 (Label Left)
+   僅套用於輸入型元件，容器類元件不受影響
+   ======================================== */
+[data-form-theme="security"] :is(
+    .formio-component-textfield,
+    .formio-component-number,
+    .formio-component-email,
+    .formio-component-phoneNumber,
+    .formio-component-url,
+    .formio-component-currency,
+    .formio-component-password,
+    .formio-component-select,
+    .formio-component-datetime,
+    .formio-component-day,
+    .formio-component-time
+):not(.formio-component-label-hidden) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+/* 標籤：固定寬度靠右對齊 */
+[data-form-theme="security"] :is(
+    .formio-component-textfield,
+    .formio-component-number,
+    .formio-component-email,
+    .formio-component-phoneNumber,
+    .formio-component-url,
+    .formio-component-currency,
+    .formio-component-password,
+    .formio-component-select,
+    .formio-component-datetime,
+    .formio-component-day,
+    .formio-component-time
+):not(.formio-component-label-hidden) > label {
+    flex: 0 0 140px;
+    padding-top: 0.4rem;
+    padding-right: 0.75rem;
+    margin-bottom: 0;
+    text-align: right;
+}
+
+/* 輸入區域：佔滿剩餘空間 */
+[data-form-theme="security"] :is(
+    .formio-component-textfield,
+    .formio-component-number,
+    .formio-component-email,
+    .formio-component-phoneNumber,
+    .formio-component-url,
+    .formio-component-currency,
+    .formio-component-password,
+    .formio-component-select,
+    .formio-component-datetime,
+    .formio-component-day,
+    .formio-component-time
+):not(.formio-component-label-hidden) > *:not(label):not(.formio-errors) {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 驗證錯誤訊息：換行並對齊輸入區 */
+[data-form-theme="security"] :is(
+    .formio-component-textfield,
+    .formio-component-number,
+    .formio-component-email,
+    .formio-component-phoneNumber,
+    .formio-component-url,
+    .formio-component-currency,
+    .formio-component-password,
+    .formio-component-select,
+    .formio-component-datetime,
+    .formio-component-day,
+    .formio-component-time
+):not(.formio-component-label-hidden) > .formio-errors {
+    flex: 0 0 100%;
+    padding-left: 140px;
+}
+
+/* 響應式：窄螢幕恢復垂直佈局 */
+@media (max-width: 576px) {
+    [data-form-theme="security"] :is(
+        .formio-component-textfield,
+        .formio-component-number,
+        .formio-component-email,
+        .formio-component-phoneNumber,
+        .formio-component-url,
+        .formio-component-currency,
+        .formio-component-password,
+        .formio-component-select,
+        .formio-component-datetime,
+        .formio-component-day,
+        .formio-component-time
+    ):not(.formio-component-label-hidden) {
+        display: block;
+    }
+
+    [data-form-theme="security"] :is(
+        .formio-component-textfield,
+        .formio-component-number,
+        .formio-component-email,
+        .formio-component-phoneNumber,
+        .formio-component-url,
+        .formio-component-currency,
+        .formio-component-password,
+        .formio-component-select,
+        .formio-component-datetime,
+        .formio-component-day,
+        .formio-component-time
+    ):not(.formio-component-label-hidden) > label {
+        text-align: left;
+        margin-bottom: 0.25rem;
+    }
+
+    [data-form-theme="security"] :is(
+        .formio-component-textfield,
+        .formio-component-number,
+        .formio-component-email,
+        .formio-component-phoneNumber,
+        .formio-component-url,
+        .formio-component-currency,
+        .formio-component-password,
+        .formio-component-select,
+        .formio-component-datetime,
+        .formio-component-day,
+        .formio-component-time
+    ):not(.formio-component-label-hidden) > .formio-errors {
+        padding-left: 0;
+    }
+}
+
+/* ========================================
+   響應式調整
+   ======================================== */
+@media (max-width: 768px) {
+    [data-form-theme="security"] .formio-component .btn {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.625rem;
+    }
+
+    [data-form-theme="security"] .formio-component-panel .card-body {
+        padding: 0.625rem;
+    }
+
+    [data-form-theme="security"] .formio-component-tabs .nav-tabs .nav-link {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

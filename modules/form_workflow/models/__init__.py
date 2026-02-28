@@ -24,6 +24,7 @@ from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
 from .form_field_spec import FwFormFieldSpec
 from .form_field_spec_history import FwFormFieldSpecHistory
+from .form_theme import FwFormTheme
 
 __all__ = [
     'ModuleBaseModel',
@@ -46,4 +47,5 @@ __all__ = [
     'WorkflowNodeDefinition',
     'FwFormFieldSpec',
     'FwFormFieldSpecHistory',
+    'FwFormTheme',
 ]

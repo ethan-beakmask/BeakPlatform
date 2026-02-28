@@ -6,7 +6,17 @@
 
 ## [Unreleased]
 
+### Added
+- 表單風格主題切換功能：每張表單可獨立指定外觀風格，透過 `data-form-theme` attribute + CSS scope 實現
+- 新增 `security`（正式扁平）內建主題：深灰色系、無陰影、無漸層、緊湊間距、標籤水平排列
+- 表單風格管理頁面（/forms/form-themes）：主題 CRUD、CSS 線上編輯、上傳/下載、啟停用
+- 表單設計器風格下拉選單：從 API 動態載入可用主題，即時預覽切換
+- CSS bundle 動態端點（/api/form-workflow/form-themes/bundle.css）：集中輸出所有啟用主題的 CSS
+- DB Model `FwFormTheme` + migration + seed（security 主題）
+
 ### Changed
+- 表單設計器、表單中心、data_crud 的主題 CSS 改為動態載入（bundle.css 端點取代靜態 link）
+- 表單中心 applyFormBackground/cleanupFormBackground 支援 `formTheme` 屬性，填表/簽核/唯讀全覆蓋
 - 企業獨立資料庫管理頁面 (/organizations/databases) 重構為 master-detail 佈局
   - 資料來源改為 Organization 表（排除已刪除企業），不再依賴 FwOrgDatabase 為主源
   - 左側面板：只顯示有獨立 DB 的企業，含名稱/domain 模糊搜尋、依資料表量/容量排序

@@ -84,6 +84,13 @@ MODULE_INFO = {
                     'required_permission': 'form_workflow.template.manage'
                 },
                 {
+                    'code': 'form_workflow.form_themes',
+                    'name': '表單風格管理',
+                    'url': '/forms/form-themes',
+                    'sort_order': 15,
+                    'required_permission': 'form_workflow.admin'
+                },
+                {
                     'code': 'form_workflow.categories',
                     'name': '分類管理',
                     'url': '/forms/categories',

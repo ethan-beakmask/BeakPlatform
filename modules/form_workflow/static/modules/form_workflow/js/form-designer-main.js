@@ -89,6 +89,51 @@ let formBuilder;
 let hasUnsavedChanges = false;
 let currentFormId = null;  // 目前編輯的表單 ID
 let currentFormWidth = null;  // 目前表單寬度（null 表示全寬）
+let currentFormTheme = 'default';  // 目前表單風格主題
+
+// 表單風格主題切換
+function setFormTheme(theme) {
+    currentFormTheme = theme || 'default';
+    const wrapper = document.getElementById('builder-wrapper');
+    if (wrapper) {
+        if (currentFormTheme === 'default') {
+            wrapper.removeAttribute('data-form-theme');
+        } else {
+            wrapper.setAttribute('data-form-theme', currentFormTheme);
+        }
+    }
+    const dropdown = document.getElementById('form-theme');
+    if (dropdown) {
+        dropdown.value = currentFormTheme;
+    }
+}
+
+// 從 API 載入可用主題並填充下拉選單
+function loadFormThemes() {
+    fetch('/api/form-workflow/form-themes')
+        .then(r => r.json())
+        .then(json => {
+            if (!json.success) return;
+            const dropdown = document.getElementById('form-theme');
+            if (!dropdown) return;
+            json.data.forEach(theme => {
+                // 跳過已存在的選項
+                if (dropdown.querySelector(`option[value="${theme.name}"]`)) return;
+                const opt = document.createElement('option');
+                opt.value = theme.name;
+                opt.textContent = theme.display_name;
+                dropdown.appendChild(opt);
+            });
+            // 恢復當前選中值
+            if (currentFormTheme && currentFormTheme !== 'default') {
+                dropdown.value = currentFormTheme;
+            }
+        })
+        .catch(e => console.warn('載入主題清單失敗:', e));
+}
+
+// 頁面載入時載入主題
+loadFormThemes();
 
 // 預設寬度常數
 const WIDTH_PRESETS = {
@@ -720,6 +765,8 @@ async function loadFormData() {
                 if (formData.builder_config.placeholderToLabel) {
                     document.getElementById('chk-placeholder-to-label').checked = true;
                 }
+                // 恢復風格主題
+                setFormTheme(formData.builder_config.formTheme || 'default');
             }
 
             // 返回 schema
@@ -890,6 +937,11 @@ document.getElementById('form-width-input').addEventListener('focus', (e) => {
     }
 });
 
+// 綁定風格主題下拉選單
+document.getElementById('form-theme').addEventListener('change', (e) => {
+    setFormTheme(e.target.value);
+});
+
 // Schema 彈出視窗控制
 const schemaModal = document.getElementById('schema-modal');
 const schemaModalClose = document.getElementById('schema-modal-close');
@@ -1050,6 +1102,13 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
         // 套用底圖
         BackgroundManager.applyToContainer(previewFormContainer, 'preview-bg-style');
 
+        // 套用風格主題
+        if (currentFormTheme && currentFormTheme !== 'default') {
+            previewFormWrapper.setAttribute('data-form-theme', currentFormTheme);
+        } else {
+            previewFormWrapper.removeAttribute('data-form-theme');
+        }
+
         // 套用寬度
         if (currentFormWidth) {
             previewFormContainer.style.maxWidth = currentFormWidth + 'px';
@@ -1079,6 +1138,7 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
 function closePreviewModal() {
     previewModal.classList.remove('show');
     BackgroundManager.removeContainerBg(previewFormContainer, 'preview-bg-style');
+    previewFormWrapper.removeAttribute('data-form-theme');
     previewFormWrapper.style.transform = '';
     if (previewFormInstance) {
         try {
@@ -1234,6 +1294,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
     const schema = getProcessedSchema();
     const builderConfig = {
         formWidth: currentFormWidth,
+        formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
         background: BackgroundManager.getConfig(),
         placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
     };
@@ -1352,6 +1413,7 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
     const schema = getProcessedSchema();
     const builderConfig = {
         formWidth: currentFormWidth,
+        formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
         background: BackgroundManager.getConfig(),
         placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
     };
@@ -1464,6 +1526,7 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
         const schema = getProcessedSchema();
         const builderConfig = {
             formWidth: currentFormWidth,
+            formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
             background: BackgroundManager.getConfig()
         };
 
