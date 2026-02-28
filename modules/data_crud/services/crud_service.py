@@ -5,6 +5,7 @@ Data CRUD Module - CRUD Service
 import re
 import secrets
 import logging
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from psycopg2 import sql as psql
@@ -20,6 +21,54 @@ IDENTIFIER_RE = re.compile(r'^\w+$', re.UNICODE)
 def _validate_identifier(name: str) -> bool:
     """驗證表名/欄位名是否合法（防注入）"""
     return bool(IDENTIFIER_RE.match(name))
+
+
+def resolve_filter_variables(filters: Dict[str, str], user=None) -> Dict[str, str]:
+    """
+    替換篩選條件中的變數佔位符
+
+    支援的變數:
+      $CURRENT_USER       → user.secure_code
+      $CURRENT_USER_NAME  → user.username
+      $CURRENT_ORG        → user.org_secure_code
+      $TODAY              → date.today().isoformat()
+
+    Args:
+        filters: {column: value} 篩選字典
+        user: 當前用戶 (flask_login current_user)，None 時嘗試 flask context
+
+    Returns:
+        替換後的篩選字典 (新 dict，不修改原始)
+    """
+    if not filters:
+        return {}
+
+    if user is None:
+        try:
+            from flask_login import current_user
+            user = current_user
+        except RuntimeError:
+            pass
+
+    resolved = {}
+    for col, val in filters.items():
+        if not isinstance(val, str) or not val.startswith('$'):
+            resolved[col] = val
+            continue
+
+        if val == '$CURRENT_USER' and user:
+            resolved[col] = user.secure_code
+        elif val == '$CURRENT_USER_NAME' and user:
+            resolved[col] = getattr(user, 'username', '')
+        elif val == '$CURRENT_ORG' and user:
+            resolved[col] = getattr(user, 'org_secure_code', '')
+        elif val == '$TODAY':
+            resolved[col] = date.today().isoformat()
+        else:
+            # 不認識的變數保持原值
+            resolved[col] = val
+
+    return resolved
 
 
 def _is_system_column(table_name: str, col_cfg: dict) -> bool:
@@ -215,9 +264,10 @@ class CrudService:
                 psql.SQL('{} = FALSE').format(_ident(view.soft_delete_column))
             )
 
-        # 固定篩選
+        # 固定篩選 (支援變數替換)
         if view.fixed_filters:
-            for col, val in view.fixed_filters.items():
+            resolved_fixed = resolve_filter_variables(view.fixed_filters)
+            for col, val in resolved_fixed.items():
                 if _validate_identifier(col):
                     where_parts.append(
                         psql.SQL('{} = %s').format(_ident(col))

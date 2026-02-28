@@ -33,6 +33,12 @@ MODULE_INFO = {
                     'url': '/data-crud/lab',
                     'sort_order': 2
                 },
+                {
+                    'code': 'data_crud.sub_systems',
+                    'name': '子系統管理',
+                    'url': '/data-crud/sub-systems',
+                    'sort_order': 3
+                },
             ]
         }
     ],

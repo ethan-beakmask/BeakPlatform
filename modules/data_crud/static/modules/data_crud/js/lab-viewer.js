@@ -11,6 +11,7 @@ function labViewer() {
         widgets: {},
         error: '',
         pageName: '',
+        subCtx: null,  // 子系統 context
 
         async init() {
             const config = window.__PAGE_CONFIG || {};
@@ -18,6 +19,11 @@ function labViewer() {
                 this.error = '未指定頁面';
                 return;
             }
+
+            // 子系統 context (server-side 注入)
+            this.subCtx = (config.subSystemContext && config.subSystemContext.sub_sc)
+                ? config.subSystemContext
+                : null;
 
             // 從 API 載入佈局
             try {
@@ -65,6 +71,12 @@ function labViewer() {
                 const widgetConfig = item.widget;
                 if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
+
+                    // 子系統 context: 套用 CRUD 覆蓋和資料篩選
+                    if (this.subCtx) {
+                        this._applySubSystemOverrides(widgetConfig);
+                    }
+
                     const content = gsItem.querySelector('.grid-stack-item-content');
                     if (content) {
                         content.innerHTML = '';
@@ -78,6 +90,26 @@ function labViewer() {
                         content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
                     }
                 }
+            }
+        },
+
+        /**
+         * 套用子系統的 CRUD 覆蓋和資料篩選到 widget config
+         */
+        _applySubSystemOverrides(widgetConfig) {
+            if (!this.subCtx) return;
+
+            const crud = this.subCtx.crud || {};
+            // CRUD 覆蓋: 只在子系統有明確設定時覆蓋
+            if ('create' in crud) widgetConfig.allowCreate = crud.create;
+            if ('edit' in crud) widgetConfig.allowEdit = crud.edit;
+            if ('delete' in crud) widgetConfig.allowDelete = crud.delete;
+
+            // 資料篩選: 注入為額外的 contextInputs
+            // 使用特殊的 _subSystemFilters 欄位，DataListWidget 會在請求時附加
+            const dataFilters = this.subCtx.data_filters || {};
+            if (Object.keys(dataFilters).length > 0) {
+                widgetConfig._subSystemFilters = dataFilters;
             }
         },
 

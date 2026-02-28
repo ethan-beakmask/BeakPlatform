@@ -207,8 +207,16 @@ class DataListWidget {
             if (this.search) url += '&q=' + encodeURIComponent(this.search);
             if (this.sortCol) url += '&sort=' + this.sortCol + '&dir=' + this.sortDir;
 
-            // 附加外部篩選條件
+            // 附加外部篩選條件 (PageContext)
             for (const [col, val] of Object.entries(this._externalFilters)) {
+                if (val !== null && val !== undefined && val !== '') {
+                    url += '&filter_' + encodeURIComponent(col) + '=' + encodeURIComponent(val);
+                }
+            }
+
+            // 附加子系統資料篩選 (server-side 注入，已替換變數)
+            const sysFilters = this.config._subSystemFilters || {};
+            for (const [col, val] of Object.entries(sysFilters)) {
                 if (val !== null && val !== undefined && val !== '') {
                     url += '&filter_' + encodeURIComponent(col) + '=' + encodeURIComponent(val);
                 }

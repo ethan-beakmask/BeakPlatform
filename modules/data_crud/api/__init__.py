@@ -13,7 +13,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
 from app import csrf, db
-from app.security.decorators import public_route
+from app.security.decorators import public_route, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -128,6 +128,7 @@ def list_views():
 
 @api_bp.route('/views', methods=['POST'])
 @csrf.exempt
+@admin_required
 def create_view():
     """建立視圖"""
     from ..models import DcCrudView
@@ -199,6 +200,7 @@ def get_view(secure_code):
 
 @api_bp.route('/views/<secure_code>', methods=['PUT'])
 @csrf.exempt
+@admin_required
 def update_view(secure_code):
     """更新視圖配置"""
     from ..models import DcCrudView
@@ -239,6 +241,7 @@ def update_view(secure_code):
 
 @api_bp.route('/views/<secure_code>', methods=['DELETE'])
 @csrf.exempt
+@admin_required
 def delete_view(secure_code):
     """刪除視圖"""
     from ..models import DcCrudView
@@ -599,6 +602,11 @@ def create_row(secure_code):
     if not view or view.is_deleted:
         return jsonify({'success': False, 'error': 'View not found'}), 404
 
+    # 子系統 context 權限檢查
+    denied = _check_sub_system_crud(request, 'create')
+    if denied:
+        return denied
+
     if not view.allow_create:
         return jsonify({'success': False, 'error': 'Create not allowed'}), 403
 
@@ -630,6 +638,11 @@ def update_row(secure_code, row_id):
     if not view or view.is_deleted:
         return jsonify({'success': False, 'error': 'View not found'}), 404
 
+    # 子系統 context 權限檢查
+    denied = _check_sub_system_crud(request, 'edit')
+    if denied:
+        return denied
+
     if not view.allow_edit:
         return jsonify({'success': False, 'error': 'Edit not allowed'}), 403
 
@@ -660,6 +673,11 @@ def delete_row(secure_code, row_id):
     )
     if not view or view.is_deleted:
         return jsonify({'success': False, 'error': 'View not found'}), 404
+
+    # 子系統 context 權限檢查
+    denied = _check_sub_system_crud(request, 'delete')
+    if denied:
+        return denied
 
     if not view.allow_delete:
         return jsonify({'success': False, 'error': 'Delete not allowed'}), 403
@@ -703,6 +721,7 @@ def list_pages():
 
 @api_bp.route('/pages', methods=['POST'])
 @csrf.exempt
+@admin_required
 def create_page():
     """建立頁面佈局"""
     try:
@@ -757,6 +776,7 @@ def get_page(secure_code):
 
 @api_bp.route('/pages/<secure_code>', methods=['PUT'])
 @csrf.exempt
+@admin_required
 def update_page(secure_code):
     """更新頁面佈局"""
     try:
@@ -796,6 +816,7 @@ def update_page(secure_code):
 
 @api_bp.route('/pages/<secure_code>', methods=['DELETE'])
 @csrf.exempt
+@admin_required
 def delete_page(secure_code):
     """刪除頁面佈局"""
     try:
@@ -817,3 +838,70 @@ def delete_page(secure_code):
         db.session.rollback()
         logger.exception('[PageLayout] delete_page error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# 子系統 Row CRUD 權限檢查
+# =============================================================================
+
+def _check_sub_system_crud(req, action):
+    """
+    檢查 Row 寫操作的子系統權限
+
+    如果請求帶有 X-SubSystem-SC + X-SubSystem-SSP header（或 sub/ssp query param），
+    則驗證用戶在該子系統頁面的 CRUD 權限。
+
+    Args:
+        req: Flask request
+        action: 'create' / 'edit' / 'delete'
+
+    Returns:
+        None = 通過，Response = 拒絕
+    """
+    sub_sc = req.headers.get('X-SubSystem-SC') or req.args.get('sub_sc', '').strip()
+    ssp_sc = req.headers.get('X-SubSystem-SSP') or req.args.get('ssp_sc', '').strip()
+
+    if not sub_sc or not ssp_sc:
+        return None  # 無子系統 context，回退到 view 本身權限
+
+    try:
+        from ..models import DcSubSystem, DcSubSystemPage
+        from ..services.sub_system_service import SubSystemService
+
+        ss = DcSubSystem.query.filter_by(
+            secure_code=sub_sc,
+            is_deleted=False,
+        ).first()
+        if not ss or not ss.is_active:
+            return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+        role_type = SubSystemService.get_user_role_type(current_user, ss)
+        if role_type is None:
+            return jsonify({'success': False, 'error': '非子系統成員'}), 403
+
+        ssp = DcSubSystemPage.query.filter_by(
+            secure_code=ssp_sc,
+            is_deleted=False,
+        ).first()
+        if not ssp:
+            return jsonify({'success': False, 'error': 'Page config not found'}), 404
+
+        ctx = SubSystemService.get_page_context(role_type, ssp)
+        crud = ctx.get('crud', {})
+
+        if not crud.get(action, False):
+            return jsonify({
+                'success': False,
+                'error': f'您的角色 ({role_type}) 不允許此操作'
+            }), 403
+
+        return None  # 通過
+    except Exception as e:
+        logger.warning('Sub system CRUD check error: %s', e)
+        return None  # 檢查失敗時不阻擋（回退到 view 權限）
+
+
+# =============================================================================
+# Sub System API (獨立檔案)
+# =============================================================================
+from . import sub_system_api  # noqa: E402, F401

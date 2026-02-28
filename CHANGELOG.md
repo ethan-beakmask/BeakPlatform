@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### Added
+- Web Builder 子系統權限架構: 三層權限模型 (准入/頁面可見性/資料層控制)
+  - `dc_sub_systems` 表: 子系統綁定社群 (OrganizationalUnit GROUP)，社群成員才能進入
+  - `dc_sub_system_pages` 表: 頁面可見性 (`visible_roles`)、CRUD 權限覆蓋 (`crud_overrides`)、資料篩選 (`data_filters`)
+  - SubSystemService: 成員檢查、角色判定 (管理層自動 MANAGER)、可見頁面過濾、頁面權限 context
+  - 子系統 Portal 頁面: 卡片式導航，依角色顯示可見頁面，顯示用戶角色標籤
+  - 子系統管理 UI: 列表頁 (CRUD) + 配置頁 (基本資訊/頁面管理/角色CRUD設定/資料篩選)
+  - lab_view 整合: 子系統 context 時套用 CRUD 覆蓋和資料篩選，topbar 顯示角色和返回按鈕
+  - 變數替換: `$CURRENT_USER` / `$CURRENT_USER_NAME` / `$CURRENT_ORG` / `$TODAY`，用於 fixed_filters 和 data_filters
+  - 子系統管理 API: 完整 CRUD + 頁面管理 + Portal API + 頁面權限 context API
+  - API 權限強化: View/Page CRUD 加 `@admin_required`，Row CRUD 加子系統 context 檢查
+  - 模組選單新增「子系統管理」入口
 - Web Builder Lab: 頁面佈局設計器與預覽功能（GridStack 拖放 + DataListWidget 資料清單元件）
 - Web Builder: PageContext 共享狀態架構，取代 WidgetBus point-to-point binding
   - Widget 獨立宣告 contextOutputs/contextInputs，不需互相指向
