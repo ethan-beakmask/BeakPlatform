@@ -6,6 +6,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- 修正欄位規格編輯器儲存後 formio_type 被重設為 textfield 的問題（Alpine.js x-model + x-for race condition：替換 fields 陣列時 _uid 全部更新導致 select 元素銷毀重建，x-model 在 option 建立前觸發）
+
 ### Added
 - data-crud 視圖建立時自動補建 FwSqlFormRegistry：無 Registry 的表在建視圖時自動從 DB 結構生成 form.io schema
   - 三層策略：已有 Registry 不覆蓋 > 嘗試從已發行表單還原原始 schema > 從 DB 結構反推

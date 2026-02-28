@@ -252,7 +252,7 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
-                    this.fields = _normalizeFields(data.data.fields || cleanFields);
+                    this.fields = _normalizeFields(data.data.fields || cleanFields, this.fields);
                     if (this.isStandalone && !this.specSc && data.data.secure_code) {
                         this.specSc = data.data.secure_code;
                         // 更新 URL 不重載頁面
@@ -279,7 +279,7 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.fields = _normalizeFields(data.data.fields || []);
+                    this.fields = _normalizeFields(data.data.fields || [], this.fields);
                     this.specVersion = data.data.version;
                     _toast('success', data.message || '已同步');
                 } else {
@@ -408,7 +408,7 @@ function fieldSpecEditor() {
                     this.historyPreview = null;
                     this.showHistory = false;
                     // 重新載入
-                    this.fields = _normalizeFields(data.data.fields || []);
+                    this.fields = _normalizeFields(data.data.fields || [], this.fields);
                     this.specVersion = data.data.version;
                     this.dirty = false;
                 } else {
@@ -455,7 +455,7 @@ function fieldSpecEditor() {
                     _toast('success', '已從 v' + h.version + ' 取回並套用到表單設計');
                     this.historyPreview = null;
                     this.showHistory = false;
-                    this.fields = _normalizeFields(saveData.data.fields || []);
+                    this.fields = _normalizeFields(saveData.data.fields || [], this.fields);
                     this.specVersion = saveData.data.version;
                     this.dirty = false;
                 } else {
@@ -588,7 +588,7 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success && data.data && data.data.fields) {
-                    this.fields = _normalizeFields(data.data.fields);
+                    this.fields = _normalizeFields(data.data.fields, this.fields);
                     this.showSqlTableModal = false;
                     _toast('success', data.message || '欄位已匯入');
                 } else {
@@ -788,10 +788,21 @@ function fieldSpecEditor() {
     };
 }
 
-/** 確保每個 field 的 constraints 物件完整 */
-function _normalizeFields(fields) {
-    return fields.map(function(f) {
-        if (!f._uid) f._uid = _nextUid();
+/**
+ * 確保每個 field 的 constraints 物件完整
+ *
+ * @param {Array} fields - 新的 fields 陣列
+ * @param {Array} [oldFields] - 可選，舊 fields 陣列。傳入時會按索引保留舊 _uid，
+ *   避免 Alpine.js 銷毀重建 <select>（重建時 x-model 在 x-for options
+ *   建立前觸發，導致 formio_type 被重設為第一個選項 textfield）
+ */
+function _normalizeFields(fields, oldFields) {
+    return fields.map(function(f, i) {
+        if (!f._uid) {
+            f._uid = (oldFields && i < oldFields.length && oldFields[i]._uid)
+                ? oldFields[i]._uid
+                : _nextUid();
+        }
         f.constraints = Object.assign({
             required: false,
             maxLength: null,
