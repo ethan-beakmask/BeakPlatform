@@ -9,21 +9,168 @@
 {% endblock %}
 
 {% block content %}
+{% if is_system_view %}
+{# ========== 系統級：master-detail 佈局 ========== #}
+<script>window.__ODB_ORGS = {{ org_list|tojson }};</script>
+
+<div class="odb-layout" x-data="odbSystemView()">
+    {# 左側：企業清單 #}
+    <div class="odb-sidebar">
+        <div class="odb-sidebar-header">
+            <h2>企業獨立資料庫管理</h2>
+            <div class="odb-sidebar-summary" x-text="orgs.length + ' 個企業資料庫'"></div>
+            <input type="text" class="odb-search" x-model="search"
+                   placeholder="搜尋企業名稱或 domain...">
+            <div class="odb-sort-bar">
+                排序:
+                <button class="odb-sort-btn" :class="{'active': sortBy==='id'}" @click="sortBy='id'">編號</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy==='tables'}" @click="sortBy='tables'">資料表</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy==='size'}" @click="sortBy='size'">容量</button>
+            </div>
+        </div>
+        <div class="odb-sidebar-list">
+            <template x-if="orgs.length === 0">
+                <div class="odb-sidebar-empty">尚無任何企業建立獨立資料庫</div>
+            </template>
+            <template x-for="org in filteredOrgs" :key="org.secureCode">
+                <div class="odb-org-item"
+                     :class="{'active': selectedCode === org.secureCode}"
+                     @click="selectOrg(org.secureCode)">
+                    <span class="odb-org-item-id" x-text="org.id"></span>
+                    <span class="odb-org-item-name" x-text="org.name"></span>
+                    <span class="odb-org-item-domain" x-text="org.domain"></span>
+                    <template x-if="!org.isActive">
+                        <span class="odb-badge odb-badge-inactive">停用</span>
+                    </template>
+                    <span class="odb-org-item-stats" x-text="org.dataLoading ? '...' : orgStats(org)"></span>
+                </div>
+            </template>
+            <template x-if="filteredOrgs.length === 0 && orgs.length > 0 && search">
+                <div class="odb-sidebar-empty">無符合條件的企業</div>
+            </template>
+        </div>
+    </div>
+
+    {# 右側：詳情面板 #}
+    <div class="odb-detail">
+        {# 未選取 #}
+        <template x-if="!currentOrg">
+            <div class="odb-detail-placeholder">請從左側選取企業</div>
+        </template>
+
+        {# 已選取 #}
+        <template x-if="currentOrg">
+            <div>
+                <div class="odb-detail-header">
+                    <h3 x-text="currentOrg.name"></h3>
+                    <span class="odb-org-domain" x-text="currentOrg.domain"></span>
+                    <template x-if="!currentOrg.isActive">
+                        <span class="odb-badge odb-badge-inactive" style="margin-left:8px">停用</span>
+                    </template>
+                </div>
+
+                {# 載入中 #}
+                <template x-if="currentOrg.dataLoading">
+                    <div class="odb-detail-loading">載入中...</div>
+                </template>
+
+                {# 錯誤 #}
+                <template x-if="currentOrg.dataError && !currentOrg.dataLoading">
+                    <div class="odb-error" x-text="'載入失敗: ' + currentOrg.dataError"></div>
+                </template>
+
+                {# 有 DB：顯示統計 #}
+                <template x-if="currentOrg.dataLoaded && !currentOrg.dataError && currentOrg.data && currentOrg.data.has_database">
+                    <div class="odb-detail-content">
+                        <div class="odb-info-row">
+                            <table class="odb-info-table">
+                                <tr>
+                                    <td>資料庫</td>
+                                    <td><code x-text="currentOrg.data.db_name"></code></td>
+                                    <td>主機</td>
+                                    <td><code x-text="currentOrg.data.db_host + ':' + currentOrg.data.db_port"></code></td>
+                                </tr>
+                                <tr>
+                                    <td>DDL 帳號</td>
+                                    <td><code x-text="currentOrg.data.admin_user"></code></td>
+                                    <td>DML 帳號</td>
+                                    <td><code x-text="currentOrg.data.sync_user"></code></td>
+                                </tr>
+                                <tr>
+                                    <td>總大小</td>
+                                    <td x-text="currentOrg.data.db_size_display"></td>
+                                    <td>密碼輪換</td>
+                                    <td x-text="currentOrg.data.last_rotation || '尚未輪換'"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        {# 連線錯誤 #}
+                        <template x-if="currentOrg.data.stats && currentOrg.data.stats.error">
+                            <div class="odb-error" x-text="'連線失敗: ' + currentOrg.data.stats.error"></div>
+                        </template>
+
+                        {# 資料表清單 #}
+                        <template x-if="currentOrg.data.stats && currentOrg.data.stats.tables && currentOrg.data.stats.tables.length > 0">
+                            <table class="odb-table-list">
+                                <thead>
+                                    <tr>
+                                        <th class="col-num">#</th>
+                                        <th class="col-name">資料表名稱</th>
+                                        <th class="col-rows col-sortable" @click="toggleTableSort('rows')" x-text="'筆數' + tableSortIcon('rows')"></th>
+                                        <th class="col-size col-sortable" @click="toggleTableSort('size')" x-text="'總大小' + tableSortIcon('size')"></th>
+                                        <th class="col-size">索引大小</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(t, idx) in sortedTables" :key="t.name">
+                                        <tr>
+                                            <td class="col-num" x-text="idx + 1"></td>
+                                            <td class="col-name"><code x-text="t.name"></code></td>
+                                            <td class="col-rows" x-text="formatNumber(t.row_count)"></td>
+                                            <td class="col-size" x-text="t.total_display"></td>
+                                            <td class="col-size" x-text="t.index_display"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td></td>
+                                        <td class="col-name"><strong x-text="'合計 (' + currentOrg.data.stats.table_count + ' 表)'"></strong></td>
+                                        <td class="col-rows"><strong x-text="formatNumber(currentOrg.data.stats.total_rows)"></strong></td>
+                                        <td class="col-size"><strong x-text="currentOrg.data.stats.total_bytes_display"></strong></td>
+                                        <td class="col-size"><strong x-text="currentOrg.data.stats.total_index_display"></strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </template>
+
+                        {# 無資料表 #}
+                        <template x-if="currentOrg.data.stats && currentOrg.data.stats.tables && currentOrg.data.stats.tables.length === 0 && !currentOrg.data.stats.error">
+                            <div class="odb-empty-tables">資料庫中尚無資料表</div>
+                        </template>
+                    </div>
+                </template>
+
+                {# 無 DB（邊界情況：頁面載入後 DB 被移除） #}
+                <template x-if="currentOrg.dataLoaded && !currentOrg.dataError && currentOrg.data && !currentOrg.data.has_database">
+                    <div class="odb-detail-nodb">尚未建立獨立資料庫</div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
+
+{% else %}
+{# ========== 企業級：保留原卡片佈局 ========== #}
 <div class="odb-page" x-data="odbMonitor()">
     <div class="odb-header">
-        <h2>{% if is_system_view %}企業獨立資料庫管理{% else %}獨立資料庫{% endif %}</h2>
-        {% if is_system_view %}
-        <span class="odb-summary">共 {{ org_db_list|length }} 個企業資料庫</span>
-        {% endif %}
+        <h2>獨立資料庫</h2>
     </div>
 
     {% if not org_db_list %}
     <div class="odb-empty">
-        {% if is_system_view %}
-        尚無任何企業建立獨立資料庫。企業需在表單版本中啟用 SQL 同步後才會建立。
-        {% else %}
         您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。
-        {% endif %}
     </div>
     {% endif %}
 
@@ -31,16 +178,7 @@
     <div class="odb-card">
         <div class="odb-card-header" @click="toggle('db_{{ db.org_id }}')">
             <div class="odb-card-title">
-                {% if is_system_view %}
-                <span class="odb-org-id">{{ db.org_id }}</span>
                 <span class="odb-org-name">{{ db.org_name }}</span>
-                <span class="odb-org-domain">{{ db.org_domain }}</span>
-                {% if not db.org_active %}
-                <span class="odb-badge odb-badge-inactive">停用</span>
-                {% endif %}
-                {% else %}
-                <span class="odb-org-name">{{ db.org_name }}</span>
-                {% endif %}
             </div>
             <div class="odb-card-meta">
                 <span class="odb-db-name">{{ db.db_name }}</span>
@@ -57,7 +195,6 @@
         {% endif %}
 
         <div class="odb-card-body" x-show="expanded['db_{{ db.org_id }}']" x-cloak>
-            <!-- 資料庫資訊 -->
             <div class="odb-info-row">
                 <table class="odb-info-table">
                     <tr>
@@ -81,7 +218,6 @@
                 </table>
             </div>
 
-            <!-- 資料表清單 -->
             {% if db.stats.tables %}
             <table class="odb-table-list">
                 <thead>
@@ -125,9 +261,11 @@
 <script>
 window.__ODB_CONFIG = {
     dbCount: {{ org_db_list|length }},
-    isSystemView: {{ 'true' if is_system_view else 'false' }},
+    isSystemView: false,
     orgIds: [{% for db in org_db_list %}{{ db.org_id }}{% if not loop.last %}, {% endif %}{% endfor %}]
 };
 </script>
+{% endif %}
+
 <script src="/static/js/org-databases.js"></script>
 {% endblock %}

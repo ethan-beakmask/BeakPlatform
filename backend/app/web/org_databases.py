@@ -2,13 +2,13 @@
 BeakMask Org Database Monitor Web Routes
 企業獨立資料庫監視頁面
 
-系統級：/organizations/databases — 可看所有企業
-企業級：/admin/org-database — 只能看見自己企業
+系統級：/organizations/databases — 可看所有企業（master-detail 佈局）
+企業級：/admin/org-database — 只能看見自己企業（卡片佈局）
 """
 import logging
 
 import psycopg2
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, jsonify
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required, admin_required
@@ -155,20 +155,98 @@ def _get_org_db_list(org_secure_code=None):
 @org_databases_bp.route('/organizations/databases')
 @system_admin_required
 def system_view():
-    """系統級：顯示所有企業的獨立資料庫"""
-    org_db_list = _get_org_db_list()
+    """
+    系統級：master-detail 佈局，只顯示有獨立 DB 的企業
+
+    資料來源：FwOrgDatabase 取有 DB 的 org_id → Organization 取企業資訊。
+    system.local 不排除（若已建 DB 就會出現）。
+    """
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+
+    # 取得有 DB 的 org_id 集合
+    org_db_records = FwOrgDatabase.query.filter_by(
+        is_deleted=False, is_ready=True
+    ).all()
+    org_ids_with_db = {r.org_id for r in org_db_records}
+
+    org_list = []
+    if org_ids_with_db:
+        orgs = Organization.query.filter(
+            Organization.is_deleted == False,
+            Organization.id.in_(org_ids_with_db),
+        ).order_by(Organization.id.asc()).all()
+
+        for org in orgs:
+            org_list.append({
+                'id': org.id,
+                'name': org.name,
+                'domain_name': org.domain_name,
+                'is_active': org.is_active,
+                'secure_code': org.secure_code,
+            })
+
     return render_template(
         'pages/org_databases/monitor.html',
-        org_db_list=org_db_list,
+        org_list=org_list,
         is_system_view=True,
-        format_bytes=_format_bytes,
     )
+
+
+@org_databases_bp.route('/organizations/databases/<org_secure_code>/stats')
+@system_admin_required
+def system_org_stats(org_secure_code):
+    """
+    AJAX endpoint：查詢指定企業的 DB 統計
+
+    流程：Organization 表確認企業存在 → FwOrgDatabase 取 DSN → 連線查統計
+    """
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+
+    org = Organization.query.filter_by(
+        secure_code=org_secure_code,
+        is_deleted=False,
+    ).first()
+    if not org:
+        abort(404)
+
+    odb = FwOrgDatabase.query.filter_by(
+        org_id=org.id,
+        is_deleted=False,
+        is_ready=True,
+    ).first()
+
+    if not odb:
+        return jsonify({'has_database': False})
+
+    try:
+        dsn = odb.get_admin_dsn()
+        stats = _query_db_stats(dsn)
+    except Exception as e:
+        stats = {
+            'db_size_bytes': 0,
+            'table_count': 0,
+            'tables': [],
+            'error': str(e),
+        }
+
+    return jsonify({
+        'has_database': True,
+        'db_name': odb.db_name,
+        'db_host': odb.db_host,
+        'db_port': odb.db_port,
+        'admin_user': odb.admin_user,
+        'sync_user': odb.sync_user,
+        'last_rotation': odb.last_credential_rotation.strftime('%Y-%m-%d %H:%M')
+            if odb.last_credential_rotation else None,
+        'db_size_display': _format_bytes(stats['db_size_bytes']),
+        'stats': stats,
+    })
 
 
 @org_databases_bp.route('/admin/org-database')
 @admin_required
 def org_view():
-    """企業級：只顯示自己企業的獨立資料庫"""
+    """企業級：只顯示自己企業的獨立資料庫（保留原卡片佈局）"""
     org_db_list = _get_org_db_list(org_secure_code=current_user.org_secure_code)
     return render_template(
         'pages/org_databases/monitor.html',

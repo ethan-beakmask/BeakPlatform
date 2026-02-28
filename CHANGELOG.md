@@ -6,6 +6,14 @@
 
 ## [Unreleased]
 
+### Changed
+- 企業獨立資料庫管理頁面 (/organizations/databases) 重構為 master-detail 佈局
+  - 資料來源改為 Organization 表（排除已刪除企業），不再依賴 FwOrgDatabase 為主源
+  - 左側面板：只顯示有獨立 DB 的企業，含名稱/domain 模糊搜尋、依資料表量/容量排序
+  - 右側面板：AJAX 載入 DB 統計，資料表清單支援筆數/總大小欄位排序
+  - system.local 不再被排除（若有 DB 即顯示）
+  - 企業級 /admin/org-database 頁面不受影響
+
 ### Fixed
 - 修正欄位規格編輯器儲存後 formio_type 被重設為 textfield 的問題（Alpine.js x-model + x-for race condition：替換 fields 陣列時 _uid 全部更新導致 select 元素銷毀重建，x-model 在 option 建立前觸發）
 
