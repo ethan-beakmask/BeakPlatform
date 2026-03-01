@@ -7,6 +7,11 @@
 ## [Unreleased]
 
 ### Added
+- 模組選單動態注入: 模組選單可見性改由 `module_access_control` 驅動，不再依賴 MenuPermission 硬寫
+  - SYSTEM_ADMIN / ORG_ADMIN: 自動注入所有已安裝模組選單（合約過濾仍在後續生效）
+  - EMPLOYEE: 根據 `/admin/module-permissions` 的授權自動注入對應模組選單
+  - 新增 `_get_all_module_menu_codes()` / `_get_module_access_menu_codes()` 方法
+- Web Builder 選單定義: `032_web_builder_menus.sql` 建立 `web_builder` / `web_builder.sub_systems` / `web_builder.lab` 選單項目
 - 模組使用權控制: 企業管理員可指定角色/部門/群組/帳號對模組的使用權
   - `module_access_control` 表 + `ModuleAccessControl` Model + `ModuleAccessService`
   - 選單過濾鏈新增 `_filter_by_module_access()`: 合約過濾之後插入模組使用權檢查
@@ -28,10 +33,12 @@
 ### Changed
 - `sync_installed_modules()` 跳過 `value.manual=True` 的項目，避免手動登記的模組被自動刪除
 - 模組權限頁面無合約模組顯示「無有效合約」（原為「未授權」）
+- 模組選單同步不再重建管理員已刪除的選單（`module_menu_service.py` 查詢含 is_deleted）
 
 ### Fixed
 - 新建 DB 表 `module_access_control` 補 GRANT 給 beakplatform 用戶，避免 InsufficientPrivilege 錯誤
 - `get_accessible_modules()` / `_filter_by_module_access()` 加 try/except + rollback 保護，避免查詢失敗汙染 session
+- 修正模組選單同步重建已刪除選單的問題（form_workflow.pending / my_forms 重複）
 
 - 合約驅動模組授權: 模組選單依企業有效合約的 modules_config 控制可見性
   - MenuService 新增合約過濾: `_get_authorized_modules()` / `_filter_by_contract()` / `_get_module_code_for_menu()`

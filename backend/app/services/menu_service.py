@@ -74,11 +74,23 @@ class MenuService:
         # 1. 取得用戶 user_type 有權限的選單 secure_codes
         allowed_menu_codes = cls._get_allowed_menu_codes(user)
 
+        # 1.5 模組選單注入：模組選單不走 MenuPermission，改由此處統一注入
+        user_type_str = str(user.user_type)
+        if user_type_str == 'SYSTEM_ADMIN':
+            # 系統管理員：看到所有已安裝模組的選單
+            allowed_menu_codes |= cls._get_all_module_menu_codes()
+        elif user_type_str == 'ORG_ADMIN':
+            # 企業管理員：看到所有已安裝模組的選單（合約過濾在 Step 6 處理）
+            allowed_menu_codes |= cls._get_all_module_menu_codes()
+        else:
+            # 一般用戶：根據 module_access_control 授權決定
+            allowed_menu_codes |= cls._get_module_access_menu_codes(user)
+
         # 2. 取得用戶的 RBAC 權限列表 (用於 required_permission 檢查)
         user_permissions = cls._get_user_permission_codes(user)
 
         # 3. 建立查詢
-        # 選單可見性由 MenuPermission 交叉表決定，不受 org_secure_code 限制
+        # 選單可見性由 MenuPermission + module_access_control 共同決定
         # org_secure_code 只用於管理權限（誰能編輯選單）
         query = MenuItem.query.filter(
             MenuItem.is_deleted == False,
@@ -710,6 +722,94 @@ class MenuService:
             # else: 模組選單但未授權，過濾掉
 
         return filtered
+
+    @classmethod
+    def _get_all_module_menu_codes(cls) -> Set[str]:
+        """
+        取得所有已安裝模組的選單 secure_codes
+
+        供 SYSTEM_ADMIN / ORG_ADMIN 使用，讓管理員看到所有模組選單。
+        合約過濾在後續 Step 6 處理。
+
+        Returns:
+            所有模組選單的 secure_code 集合
+        """
+        try:
+            from .lookup_service import LookupService
+            from sqlalchemy import or_
+
+            installed_items = LookupService.get_items('INSTALLED_MODULES')
+            installed_module_codes = {item['code'] for item in installed_items}
+
+            if not installed_module_codes:
+                return set()
+
+            conditions = []
+            for mc in installed_module_codes:
+                conditions.append(MenuItem.code == mc)
+                conditions.append(MenuItem.code.like(f'{mc}.%'))
+
+            menus = MenuItem.query.filter(
+                or_(*conditions),
+                MenuItem.is_deleted == False,
+                MenuItem.is_active == True
+            ).all()
+
+            return {m.secure_code for m in menus}
+
+        except Exception as e:
+            logger.warning('_get_all_module_menu_codes failed: %s', e)
+            return set()
+
+    @classmethod
+    def _get_module_access_menu_codes(cls, user) -> Set[str]:
+        """
+        根據 module_access_control 取得用戶可見的模組選單 secure_codes
+
+        當用戶透過 /admin/module-permissions 被指派模組使用權時，
+        該模組的選單自動加入用戶的可見範圍，不需要 MenuPermission 預先設定。
+
+        Args:
+            user: 當前用戶
+
+        Returns:
+            模組選單的 secure_code 集合
+        """
+        try:
+            from .module_access_service import ModuleAccessService
+            from .lookup_service import LookupService
+            from sqlalchemy import or_
+
+            accessible, _controlled = ModuleAccessService.get_accessible_modules(user)
+            if not accessible:
+                return set()
+
+            # 取得已安裝模組代碼
+            installed_items = LookupService.get_items('INSTALLED_MODULES')
+            installed_module_codes = {item['code'] for item in installed_items}
+
+            # 交集：用戶可存取 且 已安裝的模組
+            target_modules = accessible & installed_module_codes
+            if not target_modules:
+                return set()
+
+            # 查詢這些模組的選單項目 (code == module_code 或 code LIKE 'module_code.%')
+            conditions = []
+            for mc in target_modules:
+                conditions.append(MenuItem.code == mc)
+                conditions.append(MenuItem.code.like(f'{mc}.%'))
+
+            menus = MenuItem.query.filter(
+                or_(*conditions),
+                MenuItem.is_deleted == False,
+                MenuItem.is_active == True
+            ).all()
+
+            return {m.secure_code for m in menus}
+
+        except Exception as e:
+            logger.warning('_get_module_access_menu_codes failed: %s', e)
+            return set()
 
     @classmethod
     def _filter_by_module_access(

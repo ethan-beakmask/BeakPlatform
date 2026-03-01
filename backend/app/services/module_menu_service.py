@@ -115,12 +115,17 @@ class ModuleMenuService:
             )
             return result
 
-        # 查找現有選單（以 code 為準）
+        # 查找現有選單（以 code 為準，含已刪除的）
+        # 如果管理員手動刪除了模組選單，不應該被同步重建
         existing = MenuItem.query.filter_by(
             code=code,
             org_secure_code=SYSTEM_ORG_CODE,
-            is_deleted=False
         ).first()
+
+        # 已被管理員刪除的選單，跳過不重建
+        if existing and existing.is_deleted:
+            result['unchanged'] += 1
+            return result
 
         # 解析選單屬性
         icon = menu_def.get('icon')
