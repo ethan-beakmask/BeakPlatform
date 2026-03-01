@@ -7,6 +7,19 @@
 ## [Unreleased]
 
 ### Added
+- Code 欄位自動建議: 全平台 8 個建立頁面統一支援輸入名稱自動產生代碼建議
+  - 通用 Code API (`POST /api/code/generate`, `POST /api/code/validate`)，支援 8 種實體類型
+  - 前端可重用元件 `code-input.js` (Alpine.js mixin) + `_code_input.html` (Jinja2 partial)
+  - code 欄位改為選填，留空時後端自動產生；手動輸入即時驗證格式與唯一性
+  - 重複檢查改為 case-insensitive，避免 `Admin` 和 `ADMIN` 共存
+  - CLAUDE.md 新增 FRONT-04 規範
+
+### Changed
+- CodeGenerator 放寬大小寫限制: CODE_PATTERN 接受混合大小寫，自動產生的建議仍為大寫
+- 所有建立邏輯移除 `.upper()` / `.toUpperCase()` 強制轉換
+- 部門/社群頁面名稱欄位移至代碼欄位之前（先輸入名稱觸發建議）
+
+### Added
 - Web Builder 子系統權限架構: 三層權限模型 (准入/頁面可見性/資料層控制)
   - `dc_sub_systems` 表: 子系統綁定社群 (OrganizationalUnit GROUP)，社群成員才能進入
   - `dc_sub_system_pages` 表: 頁面可見性 (`visible_roles`)、CRUD 權限覆蓋 (`crud_overrides`)、資料篩選 (`data_filters`)
