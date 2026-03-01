@@ -109,6 +109,26 @@ def register_context_processors(app: Flask) -> None:
         return {'nav_menu': []}
 
     @app.context_processor
+    def inject_menu_helpers():
+        """注入選單顏色 helper 函式"""
+        def _menu_color_class(item):
+            """根據 bg_level + is_cross_level 產生 CSS class (依 CSV 權限顏色表)"""
+            level = item.get('bg_level', '') if isinstance(item, dict) else ''
+            cross = item.get('is_cross_level', False) if isinstance(item, dict) else False
+            if level == 'fixed':
+                return 'menu-fixed-black'
+            elif level == 'system':
+                return 'menu-sys-cross' if cross else 'menu-sys-only'
+            elif level == 'admin':
+                return 'menu-org-cross' if cross else 'menu-org-only'
+            elif level == 'user':
+                return 'menu-user-cross' if cross else 'menu-user-only'
+            elif level == 'external':
+                return 'menu-ext-only'
+            return ''
+        return {'_menu_color_class': _menu_color_class}
+
+    @app.context_processor
     def inject_i18n():
         """將 i18n 相關資料注入到所有模板"""
         from .i18n import SUPPORTED_LANGUAGES

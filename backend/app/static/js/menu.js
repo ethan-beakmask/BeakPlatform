@@ -62,22 +62,15 @@ function menuComponent() {
         },
 
         getMenuColorClass(item) {
-            if (item.bg_level === 'fixed') {
-                return 'menu-fixed-black';
-            }
+            // 依 CSV 權限顏色表，viewer-independent
+            var level = item.bg_level || '';
+            var cross = item.is_cross_level;
 
-            if (this.userType !== 'SYSTEM_ADMIN') {
-                return '';
-            }
-
-            if (item.bg_level === 'system') {
-                if (item.is_cross_level) {
-                    return 'menu-sys-org-shared';
-                }
-                return 'menu-sys-only';
-            } else if (item.bg_level === 'admin') {
-                return 'menu-org-only';
-            }
+            if (level === 'fixed') return 'menu-fixed-black';
+            if (level === 'system') return cross ? 'menu-sys-cross' : 'menu-sys-only';
+            if (level === 'admin') return cross ? 'menu-org-cross' : 'menu-org-only';
+            if (level === 'user') return cross ? 'menu-user-cross' : 'menu-user-only';
+            if (level === 'external') return 'menu-ext-only';
             return '';
         },
 

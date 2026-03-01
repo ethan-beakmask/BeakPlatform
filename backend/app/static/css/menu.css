@@ -112,65 +112,56 @@
     background: #111827;
 }
 
-/* 動態著色：依權限組合 */
-.menu-sys-only {
-    background-color: #b91c1c !important;
-}
-.menu-sys-only .menu-link,
-.menu-sys-only.sidebar-link,
-.menu-sys-only .sidebar-link {
-    color: white !important;
-}
+/* ========================================
+   動態著色：依 CSV 權限顏色表 (完整 4 級 + cross)
+   底色 = 最高權限等級，cross = 還有更低等級也能存取
+   ----------------------------------------
+   系統管理員: 紅底白字 / 紅底黃字(cross)
+   企業管理員: 藍底白字 / 藍底黃字(cross)
+   企業員工:   黑底白字 / 黑底黃字(cross)
+   外部人員:   黃底黑字
+   固定項目:   黑底白字
+   ======================================== */
 
-.menu-org-only {
-    background-color: #1d4ed8 !important;
-}
-.menu-org-only .menu-link,
-.menu-org-only.sidebar-link,
-.menu-org-only .sidebar-link {
-    color: white !important;
-}
+/* --- 系統管理員: 紅底 --- */
+.menu-sys-only { background-color: #b91c1c !important; }
+.menu-sys-only .menu-link, .menu-sys-only.sidebar-link, .menu-sys-only .sidebar-link { color: white !important; }
+.menu-sys-cross { background-color: #b91c1c !important; }
+.menu-sys-cross .menu-link, .menu-sys-cross.sidebar-link, .menu-sys-cross .sidebar-link { color: #fde047 !important; }
 
-.menu-sys-org-shared {
-    background-color: #b91c1c !important;
-}
-.menu-sys-org-shared .menu-link,
-.menu-sys-org-shared.sidebar-link,
-.menu-sys-org-shared .sidebar-link {
-    color: #fde047 !important;
-}
+/* --- 企業管理員: 藍底 --- */
+.menu-org-only { background-color: #1d4ed8 !important; }
+.menu-org-only .menu-link, .menu-org-only.sidebar-link, .menu-org-only .sidebar-link { color: white !important; }
+.menu-org-cross { background-color: #1d4ed8 !important; }
+.menu-org-cross .menu-link, .menu-org-cross.sidebar-link, .menu-org-cross .sidebar-link { color: #fde047 !important; }
 
-.menu-fixed-black {
-    background-color: #111827 !important;
-}
-.menu-fixed-black .menu-link,
-.menu-fixed-black.sidebar-link,
-.menu-fixed-black .sidebar-link,
-.menu-fixed-black.sidebar-header {
-    color: white !important;
-}
+/* --- 企業員工: 黑底 --- */
+.menu-user-only { background-color: #111827 !important; }
+.menu-user-only .menu-link, .menu-user-only.sidebar-link, .menu-user-only .sidebar-link { color: white !important; }
+.menu-user-cross { background-color: #111827 !important; }
+.menu-user-cross .menu-link, .menu-user-cross.sidebar-link, .menu-user-cross .sidebar-link { color: #fde047 !important; }
+
+/* --- 外部人員: 黃底黑字 --- */
+.menu-ext-only { background-color: #f59e0b !important; }
+.menu-ext-only .menu-link, .menu-ext-only.sidebar-link, .menu-ext-only .sidebar-link { color: #111827 !important; }
+
+/* --- 固定項目: 黑底白字 --- */
+.menu-fixed-black { background-color: #111827 !important; }
+.menu-fixed-black .menu-link, .menu-fixed-black.sidebar-link, .menu-fixed-black .sidebar-link { color: white !important; }
 
 /* Sidebar header 著色 */
-.sidebar-header.menu-sys-only,
-.sidebar-header.menu-org-only,
-.sidebar-header.menu-sys-org-shared,
-.sidebar-header.menu-fixed-black {
+.sidebar-header.menu-sys-only, .sidebar-header.menu-sys-cross,
+.sidebar-header.menu-org-only, .sidebar-header.menu-org-cross,
+.sidebar-header.menu-user-only, .sidebar-header.menu-user-cross,
+.sidebar-header.menu-ext-only, .sidebar-header.menu-fixed-black {
     padding: 8px 16px;
     margin: 0;
 }
 .sidebar-header.menu-sys-only { color: white !important; }
+.sidebar-header.menu-sys-cross { color: #fde047 !important; }
 .sidebar-header.menu-org-only { color: white !important; }
-.sidebar-header.menu-sys-org-shared { color: #fde047 !important; }
+.sidebar-header.menu-org-cross { color: #fde047 !important; }
+.sidebar-header.menu-user-only { color: white !important; }
+.sidebar-header.menu-user-cross { color: #fde047 !important; }
+.sidebar-header.menu-ext-only { color: #111827 !important; }
 .sidebar-header.menu-fixed-black { color: white !important; }
-
-/* Navbar header 著色 */
-.menu-header-h.menu-sys-only,
-.menu-header-h.menu-org-only,
-.menu-header-h.menu-sys-org-shared,
-.menu-header-h.menu-fixed-black {
-    padding: 8px 16px;
-}
-.menu-header-h.menu-sys-only { color: white !important; }
-.menu-header-h.menu-org-only { color: white !important; }
-.menu-header-h.menu-sys-org-shared { color: #fde047 !important; }
-.menu-header-h.menu-fixed-black { color: white !important; }

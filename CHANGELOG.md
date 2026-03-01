@@ -7,6 +7,25 @@
 ## [Unreleased]
 
 ### Added
+- 合約驅動模組授權: 模組選單依企業有效合約的 modules_config 控制可見性
+  - MenuService 新增合約過濾: `_get_authorized_modules()` / `_filter_by_contract()` / `_get_module_code_for_menu()`
+  - SYSTEM_ADMIN 不受合約限制 (bypass)，非系統管理員依合約授權顯示模組選單
+  - 模組選單判定: code 前綴匹配 INSTALLED_MODULES Lookup Table
+- 模組權限管理頁面 (`/admin/module-permissions`): 列出平台已安裝模組與企業授權狀態、相關合約資訊
+  - MODULE_ADMIN 角色 (module:manage 權限) 控制頁面存取
+  - 模組區下新增「模組權限管理」選單項目
+- 選單權限顏色系統: 依 CSV 權限顏色表完整實作 4 級 + cross
+  - 系統管理員 (紅底白字/紅底黃字)、企業管理員 (藍底白字/藍底黃字)、企業員工 (黑底白字/黑底黃字)、外部人員 (黃底黑字)
+  - 固定項目 (儀表板、個人設定、表單中心、模組區) 黑底白字
+  - viewer-independent 邏輯: 底色=最高權限等級，cross=有更低等級也能存取
+  - base.html menubar + /menu/ 管理頁面 + menu.js sidebar 三處統一
+
+### Changed
+- 選單顏色邏輯從 viewer-dependent 改為 viewer-independent (與 /menu/ 管理頁面一致)
+- `_menu_color_class()` context processor 從 8-class 映射簡化為與 CSV 對應的完整 4 級系統
+- menu.css 從舊版 8-class 更新為 CSV 對應的 8+1 class (含 fixed)
+- /menu/ 管理頁面 (list.html) 顏色邏輯擴展: 新增 employee/external 級別支援
+
 - Lookup Table 通用選項清單架構
   - `lookup_categories` + `lookup_items` 兩張表，支援系統級 (org=NULL) 與企業級選項
   - RLS 政策: 一般用戶看系統級+自己企業，系統管理員看全部

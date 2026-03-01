@@ -71,46 +71,37 @@
         }
         .bk-menubar a:hover { color: white; background: #444; }
 
-        /* ========================================
-           權限等級視覺標記
-           - bg-system: 系統管理員 (紅底)
-           - bg-admin: 企業管理員 (藍底)
-           - cross-level: 跨權限 (黃色字體)
-           ======================================== */
-
-        /* 系統級選單：紅底 */
-        .bk-menubar a.bg-system,
-        .bk-menu-trigger.bg-system {
-            background: #c62828;
-            color: white;
-        }
-        .bk-menubar a.bg-system:hover,
-        .bk-menu-trigger.bg-system:hover {
-            background: #b71c1c;
-            color: white;
-        }
-
-        /* 企業管理員選單：藍底 */
-        .bk-menubar a.bg-admin,
-        .bk-menu-trigger.bg-admin {
-            background: #1565c0;
-            color: white;
-        }
-        .bk-menubar a.bg-admin:hover,
-        .bk-menu-trigger.bg-admin:hover {
-            background: #0d47a1;
-            color: white;
-        }
-
-        /* 跨權限：黃色字體 (優先級高於底色的字體設定) */
-        .bk-menubar a.cross-level,
-        .bk-menu-trigger.cross-level {
-            color: #ffd600 !important;
-        }
-        .bk-menubar a.cross-level:hover,
-        .bk-menu-trigger.cross-level:hover {
-            color: #ffea00 !important;
-        }
+        /* 權限等級著色 (依 CSV 權限顏色表，完整 4 級 + cross) */
+        /* 系統管理員: 紅底 */
+        .bk-menubar a.menu-sys-only,
+        .bk-menubar .bk-menu-trigger.menu-sys-only { background: #b91c1c; color: white; }
+        .bk-menubar a.menu-sys-cross,
+        .bk-menubar .bk-menu-trigger.menu-sys-cross { background: #b91c1c; color: #fde047; }
+        /* 企業管理員: 藍底 */
+        .bk-menubar a.menu-org-only,
+        .bk-menubar .bk-menu-trigger.menu-org-only { background: #1d4ed8; color: white; }
+        .bk-menubar a.menu-org-cross,
+        .bk-menubar .bk-menu-trigger.menu-org-cross { background: #1d4ed8; color: #fde047; }
+        /* 企業員工: 黑底 */
+        .bk-menubar a.menu-user-only,
+        .bk-menubar .bk-menu-trigger.menu-user-only { background: #111827; color: white; }
+        .bk-menubar a.menu-user-cross,
+        .bk-menubar .bk-menu-trigger.menu-user-cross { background: #111827; color: #fde047; }
+        /* 外部人員: 黃底黑字 */
+        .bk-menubar a.menu-ext-only,
+        .bk-menubar .bk-menu-trigger.menu-ext-only { background: #f59e0b; color: #111827; }
+        /* 固定項目: 黑底白字 */
+        .bk-menubar a.menu-fixed-black,
+        .bk-menubar .bk-menu-trigger.menu-fixed-black { background: #111827; color: white; }
+        /* 下拉選單內項目著色 */
+        .bk-menu-dropdown-content a.menu-sys-only { background: #b91c1c; color: white; }
+        .bk-menu-dropdown-content a.menu-sys-cross { background: #b91c1c; color: #fde047; }
+        .bk-menu-dropdown-content a.menu-org-only { background: #1d4ed8; color: white; }
+        .bk-menu-dropdown-content a.menu-org-cross { background: #1d4ed8; color: #fde047; }
+        .bk-menu-dropdown-content a.menu-user-only { background: #111827; color: white; }
+        .bk-menu-dropdown-content a.menu-user-cross { background: #111827; color: #fde047; }
+        .bk-menu-dropdown-content a.menu-ext-only { background: #f59e0b; color: #111827; }
+        .bk-menu-dropdown-content a.menu-fixed-black { background: #111827; color: white; }
 
         .bk-menubar-sep { color: #666; margin: 0 4px; }
         .bk-menu-dropdown {
@@ -164,19 +155,15 @@
     <!-- Menu Bar (動態選單) -->
     <div class="bk-menubar">
         {% for item in nav_menu %}
-            {# 計算權限等級 class: bg-system/bg-admin + cross-level #}
-            {% set bg_class = 'bg-' ~ (item.bg_level or 'user') %}
-            {% set cross_class = 'cross-level' if item.is_cross_level else '' %}
-            {% set item_class = (bg_class ~ ' ' ~ cross_class) | trim %}
+            {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
+            {% set item_class = _menu_color_class(item) %}
 
             {% if item.children %}
             <div class="bk-menu-dropdown">
                 <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
                 <div class="bk-menu-dropdown-content">
                     {% for child in item.children %}
-                    {% set child_bg = 'bg-' ~ (child.bg_level or 'user') %}
-                    {% set child_cross = 'cross-level' if child.is_cross_level else '' %}
-                    {% set child_class = (child_bg ~ ' ' ~ child_cross) | trim %}
+                    {% set child_class = _menu_color_class(child) %}
                     <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
                         {% if child.icon %}{{ child.icon }} {% endif %}{{ child.title }}
                     </a>

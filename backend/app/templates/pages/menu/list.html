@@ -19,50 +19,26 @@
     .perm-yes { color: #2e7d32; font-weight: bold; }
     .perm-no { color: #ccc; }
 
-    /* 動態著色：依權限組合 */
-    .menu-sys-only {
-        background-color: #b91c1c;
-        color: white;
-    }
-    .menu-org-only {
-        background-color: #1d4ed8;
-        color: white;
-    }
-    .menu-sys-org-shared {
-        background-color: #b91c1c;
-        color: #fde047;
-    }
-    .menu-fixed-black {
-        background-color: #111827;
-        color: white;
-    }
+    /* 動態著色：依 CSV 權限顏色表 (完整 4 級 + cross) */
+    .menu-sys-only { background-color: #b91c1c; color: white; }
+    .menu-sys-cross { background-color: #b91c1c; color: #fde047; }
+    .menu-org-only { background-color: #1d4ed8; color: white; }
+    .menu-org-cross { background-color: #1d4ed8; color: #fde047; }
+    .menu-user-only { background-color: #111827; color: white; }
+    .menu-user-cross { background-color: #111827; color: #fde047; }
+    .menu-ext-only { background-color: #f59e0b; color: #111827; }
+    .menu-fixed-black { background-color: #111827; color: white; }
 
     /* 有底色時的勾選標記與連結調整 */
-    .menu-sys-only .perm-yes,
-    .menu-org-only .perm-yes,
-    .menu-sys-org-shared .perm-yes,
-    .menu-fixed-black .perm-yes {
-        color: #4ade80;
-    }
-    .menu-sys-only .perm-no,
-    .menu-org-only .perm-no,
-    .menu-sys-org-shared .perm-no,
-    .menu-fixed-black .perm-no {
-        color: rgba(255,255,255,0.3);
-    }
-    .menu-sys-only a,
-    .menu-org-only a,
-    .menu-sys-org-shared a,
-    .menu-fixed-black a {
-        color: #93c5fd;
-    }
-    .menu-sys-only code,
-    .menu-org-only code,
-    .menu-sys-org-shared code,
-    .menu-fixed-black code {
-        background: rgba(255,255,255,0.15);
-        color: inherit;
-    }
+    tr[class*="menu-"] .perm-yes { color: #4ade80; }
+    tr[class*="menu-"] .perm-no { color: rgba(255,255,255,0.3); }
+    tr[class*="menu-"] a { color: #93c5fd; }
+    tr[class*="menu-"] code { background: rgba(255,255,255,0.15); color: inherit; }
+    /* 黃底項目特殊處理: 深色文字 */
+    tr.menu-ext-only .perm-yes { color: #166534; }
+    tr.menu-ext-only .perm-no { color: rgba(0,0,0,0.25); }
+    tr.menu-ext-only a { color: #1d4ed8; }
+    tr.menu-ext-only code { background: rgba(0,0,0,0.1); color: inherit; }
 
     .status-active { color: #16a34a; }
     .status-inactive { color: #dc2626; }
@@ -96,17 +72,21 @@
         {% set perms = permission_matrix.get(entry.item.secure_code, {}) %}
         {% set has_sys = perms.get('SYSTEM_ADMIN', false) %}
         {% set has_org = perms.get('ORG_ADMIN', false) %}
+        {% set has_emp = perms.get('EMPLOYEE', false) %}
+        {% set has_ext = perms.get('EXTERNAL', false) %}
         {% set fixed_titles = ['模組區', '個人設定', '儀表板', '表單中心'] %}
         {% set is_fixed = entry.item.title in fixed_titles %}
-        {# 計算 row class #}
+        {# 依 CSV 權限顏色表: 底色=最高等級, cross=有更低等級也能存取 #}
         {% if is_fixed %}
             {% set row_class = 'menu-fixed-black' %}
-        {% elif has_sys and has_org %}
-            {% set row_class = 'menu-sys-org-shared' %}
         {% elif has_sys %}
-            {% set row_class = 'menu-sys-only' %}
+            {% set row_class = 'menu-sys-cross' if (has_org or has_emp or has_ext) else 'menu-sys-only' %}
         {% elif has_org %}
-            {% set row_class = 'menu-org-only' %}
+            {% set row_class = 'menu-org-cross' if (has_emp or has_ext) else 'menu-org-only' %}
+        {% elif has_emp %}
+            {% set row_class = 'menu-user-cross' if has_ext else 'menu-user-only' %}
+        {% elif has_ext %}
+            {% set row_class = 'menu-ext-only' %}
         {% else %}
             {% set row_class = '' %}
         {% endif %}

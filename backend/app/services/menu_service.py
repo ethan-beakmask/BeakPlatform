@@ -6,7 +6,11 @@ BeakMask Menu Service
 - MenuPermission 交叉表決定選單對 user_type 的可見性
 - org_secure_code 用於管理權限（誰能編輯選單），不影響可見性
 - required_permission 設定的選單需要通過 RBAC 權限檢查
+- 模組選單需要企業擁有有效合約授權才可見
 """
+import json
+import logging
+from datetime import date
 from typing import List, Dict, Any, Optional, Set
 from flask import g, url_for
 
@@ -14,6 +18,8 @@ from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
 from ..models.user import UserType
 from .. import db
+
+logger = logging.getLogger(__name__)
 
 # system.local 企業識別碼
 SYSTEM_ORG_CODE = 'system.local'
@@ -92,20 +98,29 @@ class MenuService:
         # 5. 過濾需要 RBAC 權限的選單
         filtered_items = cls._filter_by_rbac_permission(items, user_permissions)
 
-        # 6. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
+        # 6. 合約驅動模組選單過濾 (SYSTEM_ADMIN 不受限)
+        if str(user.user_type) != 'SYSTEM_ADMIN':
+            authorized_modules = cls._get_authorized_modules(user)
+            filtered_items = cls._filter_by_contract(filtered_items, authorized_modules)
+
+        # 7. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
         menu_permissions_map = cls._get_menu_permissions_map(
             [item.secure_code for item in filtered_items]
         )
 
-        # 7. 取得語系 (優先用 g.locale，由 auth_interceptor 設定)
+        # 8. 取得語系 (優先用 g.locale，由 auth_interceptor 設定)
         locale = getattr(g, 'locale', None)
         if not locale:
             locale = 'zh-TW'
             if hasattr(user, 'organization') and user.organization:
                 locale = user.organization.get_setting('locale', 'zh-TW')
 
-        # 8. 建構樹狀結構
-        return cls._build_tree(filtered_items, menu_permissions_map=menu_permissions_map, locale=locale)
+        # 9. 建構樹狀結構
+        return cls._build_tree(
+            filtered_items,
+            menu_permissions_map=menu_permissions_map,
+            locale=locale,
+        )
 
     @classmethod
     def _get_allowed_menu_codes(cls, user) -> Set[str]:
@@ -205,7 +220,7 @@ class MenuService:
         items: List[MenuItem],
         parent_code: Optional[str] = None,
         menu_permissions_map: Optional[Dict[str, Set[str]]] = None,
-        locale: str = 'zh-TW'
+        locale: str = 'zh-TW',
     ) -> List[Dict[str, Any]]:
         """
         建構選單樹
@@ -230,15 +245,25 @@ class MenuService:
 
         return result
 
+    # 固定底色選單標題 (與 /menu/ 管理頁面的 fixed_titles 一致)
+    FIXED_BLACK_TITLES = {'模組區', '個人設定', '儀表板', '表單中心'}
+
     @classmethod
     def _item_to_dict(
         cls,
         item: MenuItem,
         allowed_types: Optional[Set[str]] = None,
-        locale: str = 'zh-TW'
+        locale: str = 'zh-TW',
     ) -> Dict[str, Any]:
         """
         將選單項目轉換為前端需要的格式
+
+        顏色規則 (與 /menu/ 管理頁面一致，viewer-independent):
+        - 固定標題 → bg_level='fixed' (黑底白字)
+        - has_sys AND has_org → bg_level='system', is_cross_level=True (紅底黃字)
+        - has_sys only → bg_level='system', is_cross_level=False (紅底白字)
+        - has_org only → bg_level='admin', is_cross_level=False (藍底白字)
+        - else → 無特殊顏色
 
         Args:
             item: MenuItem 物件
@@ -256,45 +281,30 @@ class MenuService:
         # 判斷是否為系統級選單 (屬於 system.local)
         is_system_menu = item.org_secure_code == SYSTEM_ORG_CODE
 
-        # 計算權限等級標記 (用於前端顯示不同顏色)
-        # 底色根據最高權限等級：
-        # - 'fixed': 固定黑底白字（所有權限通用的選單）
-        # - 'system': 包含 SYSTEM_ADMIN → 紅底
-        # - 'admin': 包含 ORG_ADMIN (無 SYSTEM_ADMIN) → 藍底
-        # - 'user': 只有 EMPLOYEE/EXTERNAL → 無特殊底色
-        # 跨權限時字體用黃色提示
+        # 計算權限等級標記 (viewer-independent，依 CSV 權限顏色表)
+        # 底色 = 最高權限等級，cross = 還有更低等級也能存取
+        bg_level = ''
+        is_cross_level = False
 
-        # 這 4 個選單對所有權限開放，強制使用黑底白字
-        FIXED_BLACK_TITLES = {'模組區', '個人設定', '儀表板', '表單中心'}
-
-        if item.title in FIXED_BLACK_TITLES:
+        if item.title in cls.FIXED_BLACK_TITLES:
             bg_level = 'fixed'
-            is_cross_level = False
-        else:
-            bg_level = 'user'  # 底色等級
-            is_cross_level = False  # 是否跨權限
+        elif allowed_types:
+            has_system_admin = UserType.SYSTEM_ADMIN in allowed_types
+            has_org_admin = UserType.ORG_ADMIN in allowed_types
+            has_employee = UserType.EMPLOYEE in allowed_types
+            has_external = UserType.EXTERNAL in allowed_types
 
-            if allowed_types:
-                has_employee = UserType.EMPLOYEE in allowed_types
-                has_external = UserType.EXTERNAL in allowed_types
-                has_org_admin = UserType.ORG_ADMIN in allowed_types
-                has_system_admin = UserType.SYSTEM_ADMIN in allowed_types
-
-                # 計算底色等級 (取最高)
-                if has_system_admin:
-                    bg_level = 'system'
-                elif has_org_admin:
-                    bg_level = 'admin'
-                else:
-                    bg_level = 'user'
-
-                # 判斷是否跨權限 (被多個層級共用)
-                level_count = sum([
-                    has_system_admin,
-                    has_org_admin,
-                    has_employee or has_external  # EMPLOYEE 和 EXTERNAL 算同一層級
-                ])
-                is_cross_level = level_count > 1
+            if has_system_admin:
+                bg_level = 'system'
+                is_cross_level = has_org_admin or has_employee or has_external
+            elif has_org_admin:
+                bg_level = 'admin'
+                is_cross_level = has_employee or has_external
+            elif has_employee:
+                bg_level = 'user'
+                is_cross_level = has_external
+            elif has_external:
+                bg_level = 'external'
 
         return {
             'id': item.secure_code,
@@ -605,3 +615,113 @@ class MenuService:
             db.session.delete(menu_item)
 
         return True
+
+    # ========================================
+    # 合約驅動模組選單過濾
+    # ========================================
+
+    @classmethod
+    def _get_authorized_modules(cls, user) -> Set[str]:
+        """
+        取得用戶企業的已授權模組代碼集合
+
+        根據企業所有 ACTIVE 且在有效期限內的合約，
+        聯集所有 modules_config 中的模組代碼。
+
+        Args:
+            user: 當前用戶
+
+        Returns:
+            已授權的模組代碼集合 (如 {'form_workflow', 'data_crud'})
+        """
+        from ..models.contract import Contract, ContractStatus
+
+        org_sc = getattr(user, 'org_secure_code', None)
+        if not org_sc:
+            return set()
+
+        today = date.today()
+
+        contracts = Contract.query.filter(
+            Contract.org_secure_code == org_sc,
+            Contract.status == ContractStatus.ACTIVE,
+            Contract.start_date <= today,
+            Contract.end_date >= today,
+            Contract.is_deleted == False
+        ).all()
+
+        authorized = set()
+        for contract in contracts:
+            if contract.modules_config:
+                try:
+                    modules = json.loads(contract.modules_config)
+                    if isinstance(modules, list):
+                        authorized.update(modules)
+                except (json.JSONDecodeError, TypeError):
+                    logger.warning(
+                        f"Invalid modules_config in contract {contract.contract_number}"
+                    )
+
+        return authorized
+
+    @classmethod
+    def _filter_by_contract(
+        cls,
+        items: List[MenuItem],
+        authorized_modules: Set[str]
+    ) -> List[MenuItem]:
+        """
+        根據合約授權過濾模組選單
+
+        模組選單的判定方式：code 前綴匹配已安裝模組名稱。
+        非模組選單（平台核心選單）不受影響。
+
+        Args:
+            items: 選單項目列表
+            authorized_modules: 已授權的模組代碼集合
+
+        Returns:
+            過濾後的選單項目列表
+        """
+        from ..services.lookup_service import LookupService
+
+        # 取得所有已安裝模組的代碼 (get_items 回傳 List[dict])
+        installed_items = LookupService.get_items('INSTALLED_MODULES')
+        installed_module_codes = {item['code'] for item in installed_items}
+
+        if not installed_module_codes:
+            return items
+
+        filtered = []
+        for item in items:
+            # 判斷此選單是否屬於某個模組 (code 前綴匹配)
+            module_code = cls._get_module_code_for_menu(item.code, installed_module_codes)
+
+            if module_code is None:
+                # 不是模組選單，直接保留
+                filtered.append(item)
+            elif module_code in authorized_modules:
+                # 是模組選單且已授權
+                filtered.append(item)
+            # else: 模組選單但未授權，過濾掉
+
+        return filtered
+
+    @staticmethod
+    def _get_module_code_for_menu(menu_code: str, installed_modules: Set[str]) -> Optional[str]:
+        """
+        判斷選單 code 屬於哪個模組
+
+        規則：menu_code 等於模組代碼，或以 '模組代碼.' 開頭。
+
+        Args:
+            menu_code: 選單的 code
+            installed_modules: 已安裝模組代碼集合
+
+        Returns:
+            模組代碼，或 None（不屬於任何模組）
+        """
+        for module_code in installed_modules:
+            if menu_code == module_code or menu_code.startswith(f'{module_code}.'):
+                return module_code
+        return None
