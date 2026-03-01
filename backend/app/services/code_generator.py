@@ -56,8 +56,8 @@ logger = logging.getLogger(__name__)
 # 常數定義
 # =============================================================================
 
-# 代碼格式正則：大寫英文、數字、底線，開頭必須是英文
-CODE_PATTERN = re.compile(r'^[A-Z][A-Z0-9_]*$')
+# 代碼格式正則：英文、數字、底線，開頭必須是英文
+CODE_PATTERN = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
 
 # 代碼最大長度
 MAX_CODE_LENGTH = 50
@@ -436,7 +436,7 @@ class CodeGenerator:
         code = re.sub(r'[\s\-]+', '_', code)
 
         # 移除非英文字母、數字、底線的字元
-        code = re.sub(r'[^A-Z0-9_]', '', code)
+        code = re.sub(r'[^A-Za-z0-9_]', '', code)
 
         # 合併多個連續底線
         code = re.sub(r'_+', '_', code)
@@ -500,7 +500,7 @@ class CodeGenerator:
             raise ValueError(f'無法從名稱 "{name}" 產生有效代碼')
 
         # 檢查保留字
-        if base_code in RESERVED_CODES:
+        if base_code.upper() in RESERVED_CODES:
             base_code = f'{base_code}_CUSTOM'
 
         # 如果沒有提供檢查函數，直接返回
@@ -537,9 +537,9 @@ class CodeGenerator:
             return False, f'代碼長度不可超過 {MAX_CODE_LENGTH} 字元'
 
         if not CODE_PATTERN.match(code):
-            return False, '代碼格式錯誤：只能包含大寫英文、數字和底線，且必須以英文開頭'
+            return False, '代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭'
 
-        if code in RESERVED_CODES:
+        if code.upper() in RESERVED_CODES:
             return False, f'"{code}" 是系統保留字，不可使用'
 
         return True, None

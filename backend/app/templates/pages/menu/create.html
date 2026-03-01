@@ -2,6 +2,10 @@
 
 {% block title %}{{ _('新增選單項目') }} - BeakMask{% endblock %}
 
+{% block head %}
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <p><a href="{{ url_for('menu.list_menu') }}">&lt; {{ _('返回選單管理') }}</a></p>
 
@@ -15,19 +19,28 @@
 {% endif %}
 {% endwith %}
 
-<form method="POST">
+<form method="POST"
+      x-data="{...codeInputMixin('menu_item'), codeval: ''}"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table border="0" cellpadding="4" cellspacing="0">
         <tr>
-            <td><label for="code">{{ _('選單代碼') }} *</label></td>
+            <td><label for="title">{{ _('選單標題 (繁中)') }} *</label></td>
             <td>
-                <input type="text" id="code" name="code" size="30" required pattern="[a-z0-9_]+">
-                <br><small>{{ _('唯一識別碼，只能使用小寫英文、數字、底線') }}</small>
+                <input type="text" id="title" name="title" size="40" required
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
             </td>
         </tr>
         <tr>
-            <td><label for="title">{{ _('選單標題 (繁中)') }} *</label></td>
-            <td><input type="text" id="title" name="title" size="40" required></td>
+            <td><label for="code">{{ _('選單代碼') }}</label></td>
+            <td>
+                <input type="text" id="code" name="code" size="30" x-ref="codeField"
+                       x-model="codeval"
+                       :placeholder="_ci_generatedCode || '留空自動產生'"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <br><small>{{ _('選填，留空自動產生。英文、數字、底線') }}</small>
+                {% include "partials/_code_input.html" %}
+            </td>
         </tr>
         {% for code, name in [('en','English'),('zh-CN','简体中文'),('ja','日本語')] %}
         <tr>

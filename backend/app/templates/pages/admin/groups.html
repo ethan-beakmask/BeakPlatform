@@ -9,6 +9,7 @@
 <script src="{{ url_for('static', filename='vendor/jstree.min.js') }}"></script>
 <!-- 共用樹狀面板樣式 -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/org-tree.css') }}">
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -49,15 +50,19 @@
                     <template x-if="isCreating || selectedGroup">
                         <form @submit.prevent="isCreating ? createGroup() : updateGroup()">
                             <div class="form-row">
-                                <label>社群代碼 *</label>
-                                <input type="text" x-model="formData.code" :disabled="!isCreating" required
-                                       maxlength="50" pattern="[A-Za-z0-9_\-]+" style="text-transform: uppercase;">
-                                <div class="field-hint">2-50 字元，僅限英文、數字、底線、連字號</div>
+                                <label>社群名稱 *</label>
+                                <input type="text" x-model="formData.name" required maxlength="255"
+                                       @input.debounce.500ms="isCreating && ciGenerateCode(formData.name)">
+                                <div class="field-hint">最多 255 字元</div>
                             </div>
                             <div class="form-row">
-                                <label>社群名稱 *</label>
-                                <input type="text" x-model="formData.name" required maxlength="255">
-                                <div class="field-hint">最多 255 字元</div>
+                                <label>社群代碼</label>
+                                <input type="text" x-model="formData.code" :disabled="!isCreating"
+                                       maxlength="50" pattern="[A-Za-z0-9_\-]+"
+                                       :placeholder="_ci_generatedCode || '留空自動產生'"
+                                       @input.debounce.500ms="ciValidateCode(formData.code)">
+                                <div class="field-hint">選填，留空自動產生。僅限英文、數字、底線、連字號</div>
+                                {% include "partials/_code_input.html" %}
                             </div>
                             <div class="form-row">
                                 <label>父社群</label>

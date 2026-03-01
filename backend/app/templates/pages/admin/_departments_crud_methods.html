@@ -134,6 +134,10 @@
             const parentId = this.selectedDept ? this.selectedDept.id : '';
             this.isCreating = true;
             this.formData = { code: '', name: '', parent_id: parentId };
+            this._ci_generatedCode = '';
+            this._ci_suggestions = [];
+            this._ci_codeValid = false;
+            this._ci_codeError = '';
         },
 
         cancelEdit() {
@@ -146,10 +150,16 @@
         // CRUD
         async createDepartment() {
             try {
+                var payload = {
+                    name: this.formData.name,
+                    code: this.ciGetFinalCode(this.formData.code),
+                    parent_id: this.formData.parent_id,
+                    unit_type: 'DEPARTMENT'
+                };
                 const res = await fetch('/api/units', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-                    body: JSON.stringify({ ...this.formData, unit_type: 'DEPARTMENT' })
+                    body: JSON.stringify(payload)
                 });
                 if (res.ok) {
                     this.showToast('部門建立成功', 'success');

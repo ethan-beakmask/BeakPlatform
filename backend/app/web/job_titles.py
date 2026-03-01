@@ -9,11 +9,13 @@ from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
 from flask_login import current_user
 
+from sqlalchemy import func
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_title import JobTitle
 from ..models.job_level import JobLevel
 from ..models.job_family import JobFamily
+from ..services.code_generator import get_code_generator
 from .. import db
 
 job_titles_bp = Blueprint('job_titles', __name__)
@@ -96,7 +98,7 @@ def create_job_title():
     )
 
     if request.method == 'POST':
-        code = request.form.get('code', '').strip().upper()
+        code = request.form.get('code', '').strip()
         name = request.form.get('name', '').strip()
         name_en = request.form.get('name_en', '').strip() or None
         short_name = request.form.get('short_name', '').strip() or None
@@ -108,14 +110,26 @@ def create_job_title():
 
         errors = []
 
-        if not code:
-            errors.append('職稱代碼為必填')
         if not name:
             errors.append('職稱名稱為必填')
         if not job_level_secure_code:
             errors.append('請選擇職等')
         if not job_family_secure_code:
             errors.append('請選擇職系')
+
+        # code 空白時自動產生
+        if not code and name:
+            generator = get_code_generator()
+            def _exists(c):
+                return JobTitle.query.filter(
+                    func.upper(JobTitle.code) == c.upper(),
+                    JobTitle.org_secure_code == current_user.org_secure_code,
+                    JobTitle.is_deleted == False
+                ).first() is not None
+            try:
+                code = generator.generate(name, exists_checker=_exists)
+            except ValueError:
+                errors.append('無法自動產生代碼，請手動輸入')
 
         sort_order = 0
         try:
@@ -127,12 +141,12 @@ def create_job_title():
             for err in errors:
                 flash(err, 'error')
         else:
-            # 檢查代碼是否已存在
-            existing = ResourceGateway.exists(
-                JobTitle,
-                code=code,
-                is_deleted=False
-            )
+            # 檢查代碼是否已存在 (case-insensitive)
+            existing = JobTitle.query.filter(
+                func.upper(JobTitle.code) == code.upper(),
+                JobTitle.org_secure_code == current_user.org_secure_code,
+                JobTitle.is_deleted == False
+            ).first()
 
             if existing:
                 flash(f'職稱代碼 {code} 已存在', 'error')

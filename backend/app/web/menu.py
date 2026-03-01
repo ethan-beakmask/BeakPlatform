@@ -6,11 +6,13 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import current_user
 
+from sqlalchemy import func
 from ..security.decorators import admin_required
 from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
 from ..models.user import UserType
 from ..services.menu_service import MenuService
+from ..services.code_generator import get_code_generator
 from .. import db
 
 menu_web_bp = Blueprint('menu', __name__)
@@ -142,13 +144,29 @@ def create_menu():
         if title_zh_cn and 'zh-CN' not in title_i18n:
             title_i18n['zh-CN'] = title_zh_cn
 
+        # code 空白時自動產生
+        if not code and title:
+            generator = get_code_generator()
+            def _exists(c):
+                return MenuItem.query.filter(
+                    func.upper(MenuItem.code) == c.upper(),
+                    MenuItem.is_deleted == False
+                ).first() is not None
+            try:
+                code = generator.generate(title, exists_checker=_exists)
+            except ValueError:
+                flash('無法自動產生代碼，請手動輸入', 'error')
+
         if not code or not title:
-            flash('代碼和標題為必填', 'error')
+            flash('標題為必填', 'error')
         elif not allowed_user_types:
             flash('請至少選擇一種用戶類型', 'error')
         else:
-            # 檢查代碼是否重複
-            existing = MenuItem.query.filter_by(code=code, is_deleted=False).first()
+            # 檢查代碼是否重複 (case-insensitive)
+            existing = MenuItem.query.filter(
+                func.upper(MenuItem.code) == code.upper(),
+                MenuItem.is_deleted == False
+            ).first()
             if existing:
                 flash(f'選單代碼 {code} 已存在', 'error')
             else:

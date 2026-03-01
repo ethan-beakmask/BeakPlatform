@@ -4,6 +4,7 @@
 
 {% block head %}
 <script src="/static/js/password-form.js"></script>
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -19,22 +20,30 @@
 {% endif %}
 {% endwith %}
 
-<form method="POST" x-data="passwordForm({autoGenerate: true})" x-init="init()">
+<form method="POST"
+      x-data="{...passwordForm({autoGenerate: true}), ...codeInputMixin('organization'), codeval: '{{ request.form.get('code', '') }}'}"
+      x-init="init()"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table border="0" cellpadding="4" cellspacing="0">
         <tr>
-            <td><label for="code">企業代碼 *</label></td>
+            <td><label for="name">企業名稱 *</label></td>
             <td>
-                <input type="text" id="code" name="code" size="20" required pattern="[A-Za-z0-9_]+"
-                       style="text-transform: uppercase;"
-                       value="{{ request.form.get('code', '') }}">
-                <br><small>內部識別碼，如 ACME、DEMO_CORP（會自動轉為大寫）</small>
+                <input type="text" id="name" name="name" size="40" required
+                       value="{{ request.form.get('name', '') }}"
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
             </td>
         </tr>
         <tr>
-            <td><label for="name">企業名稱 *</label></td>
-            <td><input type="text" id="name" name="name" size="40" required
-                       value="{{ request.form.get('name', '') }}"></td>
+            <td><label for="code">企業代碼</label></td>
+            <td>
+                <input type="text" id="code" name="code" size="20" x-ref="codeField"
+                       x-model="codeval"
+                       :placeholder="_ci_generatedCode || '留空自動產生'"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <br><small>選填，留空自動產生。如 ACME、DEMO_CORP</small>
+                {% include "partials/_code_input.html" %}
+            </td>
         </tr>
         <tr>
             <td><label for="display_name">顯示名稱</label></td>

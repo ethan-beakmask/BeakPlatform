@@ -202,6 +202,24 @@ function pageManager() {
 - API 透過 `WorkflowNodeDefinition` ORM Model 查詢
 - 新增 node type 流程見 `docs/NODE_TYPE_NORMALIZATION_PLAN.md`
 
+### FRONT-04: Code 欄位自動建議規範
+
+所有需要唯一識別碼 (code) 的建立表單，必須遵循統一 UX:
+
+1. 輸入名稱 → debounce 500ms → 呼叫 `/api/code/generate` 取得建議
+2. code 欄位顯示建議值為 placeholder，附建議列表按鈕
+3. 使用者可手動輸入任意大小寫，即時呼叫 `/api/code/validate` 驗證
+4. code 留空提交時，後端自動採用建議值
+5. 不強制大小寫轉換（自動產生的建議為大寫，但不限制手動輸入）
+
+**通用 API**:
+- `POST /api/code/generate` -- body: `{ entity_type, name }`
+- `POST /api/code/validate` -- body: `{ entity_type, code }`
+
+**前端實作**:
+- 引入 `/static/js/code-input.js`，使用 `codeInputMixin(entityType)`
+- 可用 `{% include "partials/_code_input.html" %}` 取得標準建議區塊 HTML
+
 ---
 
 ## 🚫 禁止事項

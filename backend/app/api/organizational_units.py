@@ -8,9 +8,11 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
 
+from sqlalchemy import func
 from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import OrganizationalUnit, UnitType, Role, RoleType, ScopeType
+from ..services.code_generator import get_code_generator
 from ..models.user import User
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from .. import db
@@ -128,18 +130,31 @@ def create_unit():
     if not data:
         return jsonify({'error': '請提供單位資料'}), 400
 
-    required_fields = ['code', 'name']
-    for field in required_fields:
-        if field not in data or not data[field].strip():
-            return jsonify({'error': f'缺少必要欄位: {field}'}), 400
+    # name 必填
+    if 'name' not in data or not data['name'].strip():
+        return jsonify({'error': '缺少必要欄位: name'}), 400
 
-    code = data['code'].strip().upper()
     name = data['name'].strip()
+    code = data.get('code', '').strip()
 
-    # 驗證代碼格式：只允許英文、數字、底線、連字號
-    import re
-    if not re.match(r'^[A-Z0-9_-]+$', code):
-        return jsonify({'error': '代碼只能包含英文字母、數字、底線(_)、連字號(-)'}), 400
+    # code 空白時自動產生
+    if not code:
+        generator = get_code_generator()
+        def _exists(c):
+            return OrganizationalUnit.query.filter(
+                func.upper(OrganizationalUnit.code) == c.upper(),
+                OrganizationalUnit.org_secure_code == current_user.org_secure_code,
+                OrganizationalUnit.is_deleted == False
+            ).first() is not None
+        try:
+            code = generator.generate(name, exists_checker=_exists)
+        except ValueError as e:
+            return jsonify({'error': f'無法自動產生代碼: {e}'}), 400
+    else:
+        # 驗證代碼格式：允許英文、數字、底線、連字號
+        import re
+        if not re.match(r'^[A-Za-z][A-Za-z0-9_-]*$', code):
+            return jsonify({'error': '代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文'}), 400
 
     # 驗證長度
     if len(code) > 50:
@@ -151,8 +166,13 @@ def create_unit():
     if len(name) < 1:
         return jsonify({'error': '名稱不可為空'}), 400
 
-    # 檢查代碼是否重複
-    if ResourceGateway.exists(OrganizationalUnit, code=code, is_deleted=False):
+    # 檢查代碼是否重複 (case-insensitive)
+    existing = OrganizationalUnit.query.filter(
+        func.upper(OrganizationalUnit.code) == code.upper(),
+        OrganizationalUnit.org_secure_code == current_user.org_secure_code,
+        OrganizationalUnit.is_deleted == False
+    ).first()
+    if existing:
         return jsonify({'error': f'代碼 {code} 已存在'}), 400
 
     # 檢查父層

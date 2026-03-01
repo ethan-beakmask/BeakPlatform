@@ -1,0 +1,28 @@
+{#
+    Code 欄位自動建議 partial
+
+    使用方式:
+    {% include "partials/_code_input.html" %}
+
+    前提: 外層有 code-input.js 的 codeInputMixin，且以下變數在 Alpine scope 內可用:
+    - _ci_generatedCode, _ci_suggestions, _ci_codeValid, _ci_codeError, _ci_loading
+    - 父元件需自行綁定 x-model 到 code 欄位
+
+    注意: 此 partial 只提供「建議區塊」，code 的 <input> 由各頁面自行控制，
+    因為不同頁面的 x-model 名稱、name 屬性各不相同。
+#}
+<div class="code-suggestions" x-show="_ci_generatedCode" x-cloak>
+    <span style="font-size: 0.85em; color: #555;">
+        建議:
+        <template x-for="s in _ci_suggestions" :key="s">
+            <button type="button"
+                    style="margin: 0 2px; padding: 1px 6px; font-size: 0.85em; cursor: pointer; border: 1px solid #999; background: #f5f5f5;"
+                    @click="ciUseSuggestion(s)"
+                    x-text="s"></button>
+        </template>
+    </span>
+</div>
+<div x-show="_ci_codeError" style="font-size: 0.85em; color: #c00;" x-text="_ci_codeError" x-cloak></div>
+<div x-show="_ci_codeValid && !_ci_codeError" style="font-size: 0.85em; color: #060;" x-cloak>
+    代碼可用
+</div>

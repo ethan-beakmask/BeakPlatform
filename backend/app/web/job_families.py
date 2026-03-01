@@ -11,9 +11,11 @@ from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
 from flask_login import current_user
 
+from sqlalchemy import func
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.job_family import JobFamily, JobFamilyType
+from ..services.code_generator import get_code_generator
 from .. import db
 
 job_families_bp = Blueprint('job_families', __name__)
@@ -71,7 +73,7 @@ def create_job_family():
     )
 
     if request.method == 'POST':
-        code = request.form.get('code', '').strip().upper()
+        code = request.form.get('code', '').strip()
         name = request.form.get('name', '').strip()
         name_en = request.form.get('name_en', '').strip() or None
         family_type = request.form.get('family_type', JobFamilyType.PROFESSIONAL)
@@ -81,12 +83,24 @@ def create_job_family():
 
         errors = []
 
-        if not code:
-            errors.append('職系代碼為必填')
         if not name:
             errors.append('職系名稱為必填')
         if family_type not in [JobFamilyType.MANAGER, JobFamilyType.PROFESSIONAL]:
             errors.append('職系類型無效')
+
+        # code 空白時自動產生
+        if not code and name:
+            generator = get_code_generator()
+            def _exists(c):
+                return JobFamily.query.filter(
+                    func.upper(JobFamily.code) == c.upper(),
+                    JobFamily.org_secure_code == current_user.org_secure_code,
+                    JobFamily.is_deleted == False
+                ).first() is not None
+            try:
+                code = generator.generate(name, exists_checker=_exists)
+            except ValueError:
+                errors.append('無法自動產生代碼，請手動輸入')
 
         sort_order = 0
         try:
@@ -98,12 +112,12 @@ def create_job_family():
             for err in errors:
                 flash(err, 'error')
         else:
-            # 檢查代碼是否已存在
-            existing = ResourceGateway.exists(
-                JobFamily,
-                code=code,
-                is_deleted=False
-            )
+            # 檢查代碼是否已存在 (case-insensitive)
+            existing = JobFamily.query.filter(
+                func.upper(JobFamily.code) == code.upper(),
+                JobFamily.org_secure_code == current_user.org_secure_code,
+                JobFamily.is_deleted == False
+            ).first()
 
             if existing:
                 flash(f'職系代碼 {code} 已存在', 'error')

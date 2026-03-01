@@ -64,7 +64,7 @@ function roleCreateForm() {
         },
 
         async validateCode() {
-            var code = this.formData.code.trim().toUpperCase();
+            var code = this.formData.code.trim();
 
             if (!code) {
                 this.codeValid = false;
@@ -115,7 +115,7 @@ function roleCreateForm() {
             };
 
             if (this.formData.code.trim()) {
-                payload.code = this.formData.code.trim().toUpperCase();
+                payload.code = this.formData.code.trim();
             }
 
             try {

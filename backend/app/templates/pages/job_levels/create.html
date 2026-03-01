@@ -2,29 +2,38 @@
 
 {% block title %}新增職等 - BeakMask{% endblock %}
 
+{% block head %}
+<script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <h1>新增職等</h1>
 
 <p><a href="{{ url_for('job_levels.list_job_levels') }}">[返回列表]</a></p>
 
-<form method="POST" style="max-width: 600px;">
+<form method="POST" style="max-width: 600px;"
+      x-data="{...codeInputMixin('job_level'), codeval: '{{ request.form.get('code', '') }}'}"
+      @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
         <tr>
-            <th style="text-align: left; width: 150px;">職等代碼 *</th>
-            <td>
-                <input type="text" name="code" required maxlength="20"
-                       placeholder="如 L150" style="width: 100%;"
-                       value="{{ request.form.get('code', '') }}">
-                <div style="font-size: 0.8em; color: #666;">建議格式：L + 序號，如 L100, L150, L200</div>
-            </td>
-        </tr>
-        <tr>
-            <th style="text-align: left;">職等名稱 *</th>
+            <th style="text-align: left; width: 150px;">職等名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        placeholder="如 職員級" style="width: 100%;"
-                       value="{{ request.form.get('name', '') }}">
+                       value="{{ request.form.get('name', '') }}"
+                       @input.debounce.500ms="ciGenerateCode($event.target.value)">
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">職等代碼</th>
+            <td>
+                <input type="text" name="code" maxlength="20" x-ref="codeField"
+                       :placeholder="_ci_generatedCode || '留空自動產生'" style="width: 100%;"
+                       x-model="codeval"
+                       @input.debounce.500ms="ciValidateCode(codeval)">
+                <div style="font-size: 0.8em; color: #666;">選填，留空自動產生。建議格式：L + 序號，如 L100, L150</div>
+                {% include "partials/_code_input.html" %}
             </td>
         </tr>
         <tr>

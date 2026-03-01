@@ -10,6 +10,7 @@ from flask import Blueprint, render_template, abort, request, flash, redirect, u
 from flask_login import current_user
 from sqlalchemy import or_
 
+from sqlalchemy import func
 from ..security.decorators import system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.organization import Organization
@@ -17,6 +18,7 @@ from ..models.contract import Contract
 from ..models.conglomerate import Conglomerate
 from ..services.organization_service import OrganizationService
 from ..services.conglomerate_service import ConglomerateService
+from ..services.code_generator import get_code_generator
 from .. import db
 
 organizations_bp = Blueprint('organizations', __name__)
@@ -195,13 +197,26 @@ def view_org(secure_code: str):
 def create_org():
     """建立企業頁面"""
     if request.method == 'POST':
-        code = request.form.get('code', '').strip().upper()
+        code = request.form.get('code', '').strip()
         name = request.form.get('name', '').strip()
         display_name = request.form.get('display_name', '').strip() or None
         domain_name = request.form.get('domain_name', '').strip().lower()
         description = request.form.get('description', '').strip() or None
         admin_username = request.form.get('admin_username', 'admin').strip() or 'admin'
         admin_password = request.form.get('admin_password', '').strip() or None
+
+        # code 空白時自動產生
+        if not code and name:
+            generator = get_code_generator()
+            def _exists(c):
+                return Organization.query.filter(
+                    func.upper(Organization.code) == c.upper(),
+                    Organization.is_deleted == False
+                ).first() is not None
+            try:
+                code = generator.generate(name, exists_checker=_exists)
+            except ValueError:
+                flash('無法自動產生企業代碼，請手動輸入', 'error')
 
         if not code or not name or not domain_name:
             flash('企業代碼、企業名稱、網域名稱為必填', 'error')

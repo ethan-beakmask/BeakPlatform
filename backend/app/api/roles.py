@@ -8,6 +8,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
 
+from sqlalchemy import func
 from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import Role, RoleType, ScopeType, OrganizationalUnit, UserRoleAssignment
@@ -126,7 +127,7 @@ def validate_code():
         return ResourceGateway.exists(Role, code=code, is_deleted=False)
 
     is_valid, error = generator.validate_with_exists_check(
-        data['code'].upper(),
+        data['code'],
         exists_checker
     )
 
@@ -165,17 +166,21 @@ def create_role():
     generator = get_code_generator()
 
     def exists_checker(code: str) -> bool:
-        return ResourceGateway.exists(Role, code=code, is_deleted=False)
+        return Role.query.filter(
+            func.upper(Role.code) == code.upper(),
+            Role.org_secure_code == current_user.org_secure_code,
+            Role.is_deleted == False
+        ).first() is not None
 
     # 處理代碼：用戶輸入優先，否則自動產生
     if data.get('code'):
         # 用戶手動輸入，驗證格式
-        code = data['code'].upper()
+        code = data['code'].strip()
         is_valid, error = generator.validate(code)
         if not is_valid:
             return jsonify({'error': f'代碼格式錯誤: {error}'}), 400
 
-        # 檢查重複
+        # 檢查重複 (case-insensitive)
         if exists_checker(code):
             return jsonify({'error': f'代碼 {code} 已存在'}), 400
     else:

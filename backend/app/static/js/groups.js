@@ -9,6 +9,7 @@ function getCsrfToken() {
 
 function groupManager() {
     return {
+        ...codeInputMixin('group'),
         groups: [],
         expandedNodes: {},
         selectedGroup: null,
@@ -440,6 +441,10 @@ function groupManager() {
             const parentId = this.selectedGroup ? this.selectedGroup.id : '';
             this.isCreating = true;
             this.formData = { code: '', name: '', description: '', parent_id: parentId };
+            this._ci_generatedCode = '';
+            this._ci_suggestions = [];
+            this._ci_codeValid = false;
+            this._ci_codeError = '';
         },
 
         cancelEdit() {
@@ -461,7 +466,7 @@ function groupManager() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
-                        code: this.formData.code.toUpperCase(),
+                        code: this.ciGetFinalCode(this.formData.code),
                         name: this.formData.name,
                         description: this.formData.description,
                         parent_id: this.formData.parent_id || null,

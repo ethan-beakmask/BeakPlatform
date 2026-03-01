@@ -77,3 +77,7 @@ def register_blueprints(app: Flask) -> None:
     # Transliteration (CJK to romanized)
     from .transliteration import api_transliteration
     app.register_blueprint(api_transliteration, url_prefix='/api/transliterate')
+
+    # Code generation/validation (universal)
+    from .code_service import code_bp
+    app.register_blueprint(code_bp)
