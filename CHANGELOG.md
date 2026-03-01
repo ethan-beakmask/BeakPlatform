@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- 安全審查修正 (2026-03-02 審查範圍: 02/26~03/02)
+  - **TENANT-01 違規**: `ModuleAccessService.remove_access()` 缺少 `org_secure_code` 過濾，可跨租戶刪除 ACL 記錄
+  - 18 筆孤兒 MenuPermission 清理: 已刪除選單仍有活躍權限記錄
+  - `org_hidden_functions` 不當對 EMPLOYEE/EXTERNAL 可見
+  - `deactivate_module_menus()` / `get_module_menus()` 前綴匹配改為精確匹配 (避免誤匹配同前綴模組)
+  - `_filter_by_module_access()` 移除不當的 `db.session.rollback()` (避免取消外層交易)
+  - migration 032 移除不再需要的 MenuPermission 建立段落
+
 ### Added
 - 模組選單動態注入: 模組選單可見性改由 `module_access_control` 驅動，不再依賴 MenuPermission 硬寫
   - SYSTEM_ADMIN / ORG_ADMIN: 自動注入所有已安裝模組選單（合約過濾仍在後續生效）
