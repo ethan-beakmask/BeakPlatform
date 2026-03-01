@@ -7,6 +7,32 @@
 ## [Unreleased]
 
 ### Added
+- 模組使用權控制: 企業管理員可指定角色/部門/群組/帳號對模組的使用權
+  - `module_access_control` 表 + `ModuleAccessControl` Model + `ModuleAccessService`
+  - 選單過濾鏈新增 `_filter_by_module_access()`: 合約過濾之後插入模組使用權檢查
+  - SYSTEM_ADMIN / ORG_ADMIN 不受限，EMPLOYEE / EXTERNAL 依 ACL 控制
+  - 向下相容: 無 ACL 記錄的模組 = 不限制（所有人可用）
+  - API: `/api/module-access` (CRUD + targets 查詢)
+- 模組使用權管理 UI (`/admin/module-permissions`): 已授權模組行增加「管理使用者」按鈕
+  - 展開 ACL 管理區，支援新增/移除指派，類型下拉 + 搜尋選擇對象
+  - `module-permissions.js` + `module-permissions.css` 獨立靜態檔
+- 系統管理員模組清單頁 (`/admin/module-list`): 展示已安裝模組及各企業授權狀態
+- Web Builder 頁面狀態: `dc_page_layouts.status` 欄位 (draft/published)
+  - 設計器工具列顯示狀態標籤 + 發布/取消發布按鈕
+  - 發布後顯示上線版 URL `/p/<sc>`
+  - API: `PATCH /api/data-crud/pages/<sc>/publish` + `/unpublish`
+- 上線版頁面路由 `/p/<sc>`: 僅限 published 狀態，支援子系統 context
+- Web Builder 模組登記: `web_builder` 加入 INSTALLED_MODULES (manual=True)
+- 規格文件: `docs/WEB_BUILDER_SPEC.md`
+
+### Changed
+- `sync_installed_modules()` 跳過 `value.manual=True` 的項目，避免手動登記的模組被自動刪除
+- 模組權限頁面無合約模組顯示「無有效合約」（原為「未授權」）
+
+### Fixed
+- 新建 DB 表 `module_access_control` 補 GRANT 給 beakplatform 用戶，避免 InsufficientPrivilege 錯誤
+- `get_accessible_modules()` / `_filter_by_module_access()` 加 try/except + rollback 保護，避免查詢失敗汙染 session
+
 - 合約驅動模組授權: 模組選單依企業有效合約的 modules_config 控制可見性
   - MenuService 新增合約過濾: `_get_authorized_modules()` / `_filter_by_contract()` / `_get_module_code_for_menu()`
   - SYSTEM_ADMIN 不受合約限制 (bypass)，非系統管理員依合約授權顯示模組選單

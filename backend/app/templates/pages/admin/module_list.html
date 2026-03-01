@@ -1,0 +1,164 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}模組清單 - BeakMask{% endblock %}
+
+{% block head %}
+<style>
+    .ml-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+    }
+    .ml-table th,
+    .ml-table td {
+        padding: 10px 14px;
+        border: 1px solid #dee2e6;
+        text-align: left;
+    }
+    .ml-table th {
+        background: #f0f0f0;
+        font-weight: 600;
+    }
+    .ml-table tr:hover {
+        background: #f8f9fa;
+    }
+    .ml-expand-btn {
+        cursor: pointer;
+        background: none;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 12px;
+        color: #333;
+    }
+    .ml-expand-btn:hover {
+        background: #e8e8e8;
+    }
+    .ml-sub-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 8px 0;
+    }
+    .ml-sub-table th,
+    .ml-sub-table td {
+        padding: 6px 10px;
+        border: 1px solid #e0e0e0;
+        font-size: 13px;
+    }
+    .ml-sub-table th {
+        background: #f8f8f8;
+    }
+    .ml-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .ml-badge-ok {
+        background: #d4edda;
+        color: #155724;
+    }
+    .ml-badge-warn {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .ml-badge-expired {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>模組清單（系統管理員）</h2>
+<p style="color: #666; margin-bottom: 16px;">
+    已安裝 {{ modules|length }} 個模組。展開可查看各企業授權狀態。
+</p>
+
+<table class="ml-table">
+    <thead>
+        <tr>
+            <th style="width: 40px;">#</th>
+            <th>模組代碼</th>
+            <th>模組名稱</th>
+            <th style="width: 100px;">授權企業數</th>
+            <th style="width: 80px;">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for mod in modules %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td><code>{{ mod.code }}</code></td>
+            <td>{{ mod.label }}</td>
+            <td>{{ mod.org_count }}</td>
+            <td>
+                {% if mod.orgs %}
+                <button class="ml-expand-btn" onclick="toggleDetail('mod-{{ loop.index }}')">
+                    展開
+                </button>
+                {% else %}
+                <span style="color: #999; font-size: 12px;">無</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% if mod.orgs %}
+        <tr id="mod-{{ loop.index }}" style="display: none;">
+            <td colspan="5" style="background: #fafafa; padding: 12px 20px;">
+                <table class="ml-sub-table">
+                    <thead>
+                        <tr>
+                            <th>企業名稱</th>
+                            <th>合約編號</th>
+                            <th>到期日</th>
+                            <th>狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for org in mod.orgs %}
+                        <tr>
+                            <td>{{ org.org_name }}</td>
+                            <td>{{ org.contract_number }}</td>
+                            <td>{{ org.end_date }}</td>
+                            <td>
+                                {% if org.is_expired %}
+                                <span class="ml-badge ml-badge-expired">已過期</span>
+                                {% elif org.days_remaining is not none and org.days_remaining <= 30 %}
+                                <span class="ml-badge ml-badge-warn">剩餘 {{ org.days_remaining }} 天</span>
+                                {% else %}
+                                <span class="ml-badge ml-badge-ok">
+                                    {% if org.days_remaining is not none %}
+                                    剩餘 {{ org.days_remaining }} 天
+                                    {% else %}
+                                    有效
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function toggleDetail(id) {
+    const row = document.getElementById(id);
+    if (!row) return;
+    const btn = row.previousElementSibling.querySelector('.ml-expand-btn');
+    if (row.style.display === 'none') {
+        row.style.display = '';
+        if (btn) btn.textContent = '收合';
+    } else {
+        row.style.display = 'none';
+        if (btn) btn.textContent = '展開';
+    }
+}
+</script>
+{% endblock %}

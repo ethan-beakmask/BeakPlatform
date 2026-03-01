@@ -86,6 +86,9 @@ from .user_numbering_rule import (
     NumberingUsageScope
 )
 
+# 模組使用權控制
+from .module_access_control import ModuleAccessControl, TargetType
+
 # 時間管理（班表、排班）
 from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
 from .schedule_holiday import ScheduleHoliday, DEFAULT_TW_HOLIDAYS_2026
@@ -177,6 +180,9 @@ __all__ = [
     'NumberingElementType',
     'NumberingResetPeriod',
     'NumberingUsageScope',
+    # 模組使用權控制
+    'ModuleAccessControl',
+    'TargetType',
     # 時間管理
     'WorkSchedule',
     'DEFAULT_WORK_SCHEDULES',

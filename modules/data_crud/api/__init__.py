@@ -841,6 +841,70 @@ def delete_page(secure_code):
 
 
 # =============================================================================
+# Page Layout Publish / Unpublish
+# =============================================================================
+
+@api_bp.route('/pages/<secure_code>/publish', methods=['PATCH'])
+@csrf.exempt
+@admin_required
+def publish_page(secure_code):
+    """發布頁面 (status -> published)"""
+    try:
+        from ..models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        ResourceGateway.update(page, check_permission=False, status='published')
+        ResourceGateway.commit()
+
+        return jsonify({
+            'success': True,
+            'data': page.to_dict(),
+            'message': '頁面已發布'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] publish_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/pages/<secure_code>/unpublish', methods=['PATCH'])
+@csrf.exempt
+@admin_required
+def unpublish_page(secure_code):
+    """取消發布 (status -> draft)"""
+    try:
+        from ..models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not page or page.is_deleted:
+            return jsonify({'success': False, 'error': 'Page not found'}), 404
+
+        ResourceGateway.update(page, check_permission=False, status='draft')
+        ResourceGateway.commit()
+
+        return jsonify({
+            'success': True,
+            'data': page.to_dict(),
+            'message': '頁面已取消發布'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PageLayout] unpublish_page error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
 # 子系統 Row CRUD 權限檢查
 # =============================================================================
 

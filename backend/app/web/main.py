@@ -2,13 +2,16 @@
 BeakMask Main Web Routes
 主要網頁路由
 """
+import logging
 from datetime import datetime
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
 from ..utils.timezone import get_timezone_choices
 from .. import db
+
+logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main', __name__)
 
@@ -133,3 +136,50 @@ def change_password():
                 flash(f'變更失敗: {str(e)}', 'error')
 
     return render_template('pages/change_password.html')
+
+
+@main_bp.route('/p/<secure_code>')
+@login_required
+def published_page(secure_code):
+    """
+    Web Builder 上線版頁面
+
+    僅限 status='published' 的頁面。
+    支援子系統 context query params: ?sub=<sub_sc>&ssp=<ssp_sc>
+    """
+    from app.security.resource_gateway import ResourceGateway
+
+    try:
+        # 動態 import 模組 Model（避免循環引用）
+        from modules.data_crud.models import DcPageLayout
+
+        page = ResourceGateway.get(
+            DcPageLayout, secure_code,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+    except Exception:
+        abort(404)
+        return
+
+    if not page or page.is_deleted or page.status != 'published':
+        abort(404)
+
+    # 子系統 context
+    sub_sc = request.args.get('sub', '').strip()
+    ssp_sc = request.args.get('ssp', '').strip()
+
+    sub_system_context = None
+    if sub_sc and ssp_sc:
+        try:
+            from modules.data_crud.web import _build_sub_system_context
+            sub_system_context = _build_sub_system_context(sub_sc, ssp_sc)
+        except Exception as e:
+            logger.warning('Failed to build sub system context for /p/: %s', e)
+
+    return render_template(
+        'modules/data_crud/lab_view.html',
+        secure_code=secure_code,
+        page_name=page.name or '',
+        sub_system_context=sub_system_context,
+    )

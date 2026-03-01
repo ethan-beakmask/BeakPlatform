@@ -16,12 +16,32 @@
         <div style="display:flex; align-items:center; gap:12px;">
             <span class="lab-topbar-title">Web Builder</span>
             <span style="color:#666; font-size:13px;" x-text="pageName || '(未儲存)'"></span>
+            <template x-if="pageSecureCode">
+                <span style="font-size:12px; padding:2px 8px; border-radius:3px;"
+                      :style="pageStatus === 'published'
+                          ? 'background:#d4edda; color:#155724;'
+                          : 'background:#e2e8f0; color:#555;'"
+                      x-text="pageStatus === 'published' ? 'Published' : 'Draft'"></span>
+            </template>
+            <template x-if="publishedUrl">
+                <a :href="publishedUrl" target="_blank"
+                   style="font-size:12px; color:#0066cc;"
+                   x-text="publishedUrl"></a>
+            </template>
         </div>
         <div class="lab-topbar-actions">
             <button class="dc-btn" @click="newPage()">新頁面</button>
             <button class="dc-btn" @click="openPageList()">開啟</button>
             <button class="dc-btn primary" @click="savePage()">儲存</button>
             <button class="dc-btn" @click="previewLayout()">預覽</button>
+            <template x-if="pageSecureCode && pageStatus !== 'published'">
+                <button class="dc-btn" style="background:#28a745; color:#fff; border-color:#28a745;"
+                        @click="publishPage()">發布</button>
+            </template>
+            <template x-if="pageSecureCode && pageStatus === 'published'">
+                <button class="dc-btn" style="background:#dc3545; color:#fff; border-color:#dc3545;"
+                        @click="unpublishPage()">取消發布</button>
+            </template>
             <a href="/data-crud/" class="dc-btn">返回</a>
         </div>
     </div>

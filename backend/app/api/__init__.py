@@ -81,3 +81,7 @@ def register_blueprints(app: Flask) -> None:
     # Code generation/validation (universal)
     from .code_service import code_bp
     app.register_blueprint(code_bp)
+
+    # Module access control (模組使用權)
+    from .module_access import module_access_bp
+    app.register_blueprint(module_access_bp)

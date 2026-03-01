@@ -18,6 +18,7 @@ class DcPageLayout(ModuleBaseModel):
     description = Column(Text, nullable=True)
     layout_json = Column(JSONB, nullable=False, default=dict)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
+    status = Column(String(20), default='draft', nullable=False)
 
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
@@ -26,5 +27,6 @@ class DcPageLayout(ModuleBaseModel):
             'description': self.description,
             'layout_json': self.layout_json or {'version': 2, 'widgets': []},
             'is_active': self.is_active,
+            'status': self.status or 'draft',
         })
         return data

@@ -273,8 +273,12 @@ class LookupService:
                 stats['created'] += 1
 
         # 不在 loaded_modules 中的舊項目 -> 軟刪除
+        # 但跳過手動新增的項目 (value.manual=True)
         for code, item in existing_map.items():
             if code not in active_codes:
+                is_manual = isinstance(item.value, dict) and item.value.get('manual')
+                if is_manual:
+                    continue
                 item.is_deleted = True
                 item.deleted_at = datetime.utcnow()
                 stats['deactivated'] += 1

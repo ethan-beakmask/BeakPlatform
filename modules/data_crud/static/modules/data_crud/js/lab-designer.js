@@ -21,6 +21,7 @@ function labDesigner() {
         pageSecureCode: null,   // 當前頁面 secure_code (null=新頁面)
         pageName: '',
         pageDescription: '',
+        pageStatus: 'draft',    // draft / published
         savedPages: [],         // 已存頁面列表
         showPageListModal: false,
         showSaveAsModal: false,
@@ -377,6 +378,7 @@ function labDesigner() {
                 this.pageSecureCode = data.data.secure_code;
                 this.pageName = data.data.name;
                 this.pageDescription = data.data.description || '';
+                this.pageStatus = data.data.status || 'draft';
                 let layout = data.data.layout_json || {};
 
                 // 向下相容: 舊格式 → 新格式
@@ -453,6 +455,7 @@ function labDesigner() {
             this.pageSecureCode = null;
             this.pageName = '';
             this.pageDescription = '';
+            this.pageStatus = 'draft';
             history.replaceState(null, '', '/data-crud/lab');
         },
 
@@ -463,6 +466,54 @@ function labDesigner() {
                 return;
             }
             window.open('/data-crud/pages/' + this.pageSecureCode, '_blank');
+        },
+
+        // 發布
+        async publishPage() {
+            if (!this.pageSecureCode) {
+                alert('請先儲存頁面');
+                return;
+            }
+            try {
+                const res = await fetch('/api/data-crud/pages/' + this.pageSecureCode + '/publish', {
+                    method: 'PATCH',
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.pageStatus = 'published';
+                    alert('頁面已發布\n上線版 URL: /p/' + this.pageSecureCode);
+                } else {
+                    alert('發布失敗: ' + (data.error || ''));
+                }
+            } catch (e) {
+                alert('發布失敗: ' + e.message);
+            }
+        },
+
+        // 取消發布
+        async unpublishPage() {
+            if (!this.pageSecureCode) return;
+            if (!confirm('確定要取消發布？取消後 /p/ 連結將無法存取。')) return;
+            try {
+                const res = await fetch('/api/data-crud/pages/' + this.pageSecureCode + '/unpublish', {
+                    method: 'PATCH',
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.pageStatus = 'draft';
+                    alert('已取消發布');
+                } else {
+                    alert('取消發布失敗: ' + (data.error || ''));
+                }
+            } catch (e) {
+                alert('取消發布失敗: ' + e.message);
+            }
+        },
+
+        // 上線版 URL
+        get publishedUrl() {
+            if (!this.pageSecureCode || this.pageStatus !== 'published') return '';
+            return '/p/' + this.pageSecureCode;
         },
 
         _loadLayoutWidgets(items) {

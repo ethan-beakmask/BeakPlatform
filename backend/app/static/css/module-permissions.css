@@ -1,0 +1,302 @@
+/* module-permissions.css -- 模組權限管理頁面樣式 */
+
+.mp-summary {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+.mp-summary-item {
+    text-align: center;
+}
+.mp-summary-num {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+.mp-summary-label {
+    font-size: 13px;
+    color: #666;
+}
+
+/* 模組表格 */
+.mp-module-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+}
+.mp-module-table th,
+.mp-module-table td {
+    padding: 10px 14px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+.mp-module-table th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+.mp-module-table tr:hover {
+    background: #f8f9fa;
+}
+
+.mp-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.mp-badge-ok {
+    background: #d4edda;
+    color: #155724;
+}
+.mp-badge-no {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.mp-manage-btn {
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #0066cc;
+    border-radius: 3px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #0066cc;
+}
+.mp-manage-btn:hover {
+    background: #e8f0fe;
+}
+
+/* ACL 區段 */
+.mp-acl-cell {
+    background: #fafafa;
+    padding: 16px 20px;
+}
+.mp-acl-section {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 16px;
+    background: #fff;
+}
+.mp-acl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.mp-acl-hint {
+    font-size: 13px;
+    color: #888;
+    margin: 0 0 12px 0;
+}
+.mp-acl-empty {
+    padding: 12px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+.mp-acl-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.mp-acl-table th,
+.mp-acl-table td {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    font-size: 13px;
+}
+.mp-acl-table th {
+    background: #f8f8f8;
+    font-weight: 600;
+}
+
+.mp-type-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.mp-add-btn {
+    cursor: pointer;
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+.mp-add-btn:hover {
+    background: #004499;
+}
+.mp-del-btn {
+    cursor: pointer;
+    background: none;
+    border: 1px solid #dc3545;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #dc3545;
+}
+.mp-del-btn:hover {
+    background: #f8d7da;
+}
+
+/* 合約區段 */
+.mp-contract-section {
+    margin-top: 32px;
+}
+.mp-contract-card {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.mp-contract-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.mp-contract-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+.mp-contract-period {
+    font-size: 13px;
+    color: #666;
+}
+.mp-contract-modules {
+    margin-top: 8px;
+}
+.mp-module-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px 4px 2px 0;
+    background: #e2e8f0;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* 模態框 */
+.mp-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.mp-modal {
+    background: #fff;
+    border-radius: 6px;
+    width: 480px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.mp-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+.mp-modal-close {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #666;
+    padding: 4px 8px;
+}
+.mp-modal-close:hover {
+    color: #333;
+}
+.mp-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+.mp-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid #dee2e6;
+}
+.mp-form-group {
+    margin-bottom: 16px;
+}
+.mp-form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 13px;
+}
+.mp-form-group select,
+.mp-form-group input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.mp-target-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    margin-top: 8px;
+}
+.mp-target-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #f0f0f0;
+}
+.mp-target-item:hover {
+    background: #f0f5ff;
+}
+.mp-target-item.mp-target-selected {
+    background: #e0eaff;
+}
+.mp-target-detail {
+    font-size: 12px;
+    color: #888;
+}
+.mp-cancel-btn {
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+.mp-cancel-btn:hover {
+    background: #f0f0f0;
+}
+.mp-confirm-btn {
+    cursor: pointer;
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+.mp-confirm-btn:hover {
+    background: #004499;
+}
+.mp-confirm-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}

@@ -103,6 +103,10 @@ class MenuService:
             authorized_modules = cls._get_authorized_modules(user)
             filtered_items = cls._filter_by_contract(filtered_items, authorized_modules)
 
+        # 6.5 模組使用權過濾 (SYSTEM_ADMIN / ORG_ADMIN 不受限)
+        if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
+            filtered_items = cls._filter_by_module_access(filtered_items, user)
+
         # 7. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
         menu_permissions_map = cls._get_menu_permissions_map(
             [item.secure_code for item in filtered_items]
@@ -706,6 +710,60 @@ class MenuService:
             # else: 模組選單但未授權，過濾掉
 
         return filtered
+
+    @classmethod
+    def _filter_by_module_access(
+        cls,
+        items: List[MenuItem],
+        user
+    ) -> List[MenuItem]:
+        """
+        根據模組使用權過濾選單
+
+        有 ACL 記錄的模組才檢查；無 ACL 記錄的模組保留（向下相容）。
+        非模組選單不受影響。
+
+        Args:
+            items: 選單項目列表
+            user: 當前用戶
+
+        Returns:
+            過濾後的選單項目列表
+        """
+        try:
+            from .module_access_service import ModuleAccessService
+            from .lookup_service import LookupService
+
+            # 取得使用者可存取的模組 + 有 ACL 設定的模組
+            accessible, controlled = ModuleAccessService.get_accessible_modules(user)
+
+            if not controlled:
+                return items  # 沒有任何 ACL 記錄，全部保留
+
+            # 取得已安裝模組代碼
+            installed_items = LookupService.get_items('INSTALLED_MODULES')
+            installed_module_codes = {item['code'] for item in installed_items}
+
+            if not installed_module_codes:
+                return items
+
+            filtered = []
+            for item in items:
+                module_code = cls._get_module_code_for_menu(item.code, installed_module_codes)
+
+                if module_code is None:
+                    filtered.append(item)
+                elif module_code not in controlled:
+                    filtered.append(item)
+                elif module_code in accessible:
+                    filtered.append(item)
+
+            return filtered
+
+        except Exception as e:
+            logger.warning('Module access filter failed, skipping: %s', e)
+            db.session.rollback()
+            return items
 
     @staticmethod
     def _get_module_code_for_menu(menu_code: str, installed_modules: Set[str]) -> Optional[str]:
