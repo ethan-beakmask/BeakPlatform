@@ -59,6 +59,10 @@ from .menu_item import MenuItem
 from .menu_permission import MenuPermission
 from .page import Page
 
+# 通用選項清單
+from .lookup_category import LookupCategory
+from .lookup_item import LookupItem
+
 # 系統設定
 from .system_setting import SystemSetting
 from .smtp_config import SmtpConfig
@@ -148,6 +152,9 @@ __all__ = [
     'UserUnitMembership',
     'MembershipType',
     'MembershipRole',
+    # 通用選項清單
+    'LookupCategory',
+    'LookupItem',
     # 功能
     'Module',
     'MenuItem',

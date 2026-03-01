@@ -2,6 +2,7 @@
 BeakMask Contract Model
 合約 Model
 """
+import json
 from datetime import date, datetime
 from typing import Dict, Any, Optional
 
@@ -144,6 +145,7 @@ class Contract(TenantBaseModel):
             'is_active': self.is_active,
             'is_expired': self.is_expired,
             'days_remaining': self.days_remaining,
+            'modules_config': json.loads(self.modules_config) if self.modules_config else [],
             'modified_at': self.modified_at.isoformat() if self.modified_at else None,
         })
 

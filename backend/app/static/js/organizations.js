@@ -22,6 +22,7 @@ function orgManager() {
             editing: null,
             message: '',
             error: false,
+            availableModules: config.availableModules || [],
             form: {
                 name: '',
                 start_date: '',
@@ -29,6 +30,7 @@ function orgManager() {
                 amount: '',
                 description: '',
                 notes: '',
+                modules: [],
                 disabled: false
             }
         },
@@ -201,6 +203,7 @@ function orgManager() {
                 amount: '',
                 description: '',
                 notes: '',
+                modules: [],
                 disabled: false
             };
             this.contractModal.show = true;
@@ -223,6 +226,7 @@ function orgManager() {
                         amount: c.amount || '',
                         description: c.description || '',
                         notes: c.notes || '',
+                        modules: c.modules_config || [],
                         disabled: c.status === 'DISABLED'
                     };
                     this.contractModal.show = true;
@@ -253,6 +257,7 @@ function orgManager() {
                         amount: form.amount ? parseFloat(form.amount) : null,
                         description: form.description || null,
                         notes: form.notes || null,
+                        modules_config: form.modules,
                         status: form.disabled ? 'DISABLED' : 'ACTIVE'
                     };
                     resp = await fetch('/api/contracts/' + this.contractModal.editing, {
@@ -268,7 +273,8 @@ function orgManager() {
                         end_date: form.end_date,
                         amount: form.amount ? parseFloat(form.amount) : null,
                         description: form.description || null,
-                        notes: form.notes || null
+                        notes: form.notes || null,
+                        modules_config: form.modules
                     };
                     resp = await fetch('/api/contracts/', {
                         method: 'POST',
@@ -312,6 +318,15 @@ function orgManager() {
             this.contractModal.message = msg;
             this.contractModal.error = isError;
             setTimeout(() => { this.contractModal.message = ''; }, 5000);
+        },
+
+        toggleModule(code) {
+            const idx = this.contractModal.form.modules.indexOf(code);
+            if (idx > -1) {
+                this.contractModal.form.modules.splice(idx, 1);
+            } else {
+                this.contractModal.form.modules.push(code);
+            }
         },
 
         formatDate(date) {

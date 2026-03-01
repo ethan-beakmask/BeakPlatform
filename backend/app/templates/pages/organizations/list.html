@@ -303,6 +303,25 @@
                     <textarea x-model="contractModal.form.notes" rows="2" placeholder="選填"></textarea>
                 </div>
 
+                <div class="form-group" x-show="contractModal.availableModules.length > 0" style="text-align: left;">
+                    <label>授權模組</label>
+                    <template x-for="mod in contractModal.availableModules" :key="mod.code">
+                        <label style="display: block; margin-bottom: 4px; font-weight: normal; cursor: pointer;">
+                            <input type="checkbox" :value="mod.code"
+                                   :checked="contractModal.form.modules.includes(mod.code)"
+                                   @change="toggleModule(mod.code)"
+                                   style="width: auto; margin: 0 6px 0 0;">
+                            <span x-text="mod.label"></span>
+                            <small x-show="mod.value && mod.value.version" style="color: #888;"
+                                   x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
+                            <br x-show="mod.value && mod.value.description">
+                            <small x-show="mod.value && mod.value.description" style="color: #666; margin-left: 22px;"
+                                   x-text="mod.value && mod.value.description || ''"></small>
+                        </label>
+                    </template>
+                    <small style="color: #888;">選擇此合約授權使用的功能模組</small>
+                </div>
+
                 <div class="form-group" x-show="contractModal.editing" style="text-align: left;">
                     <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
                         <input type="checkbox" x-model="contractModal.form.disabled" style="width: auto; margin: 0;">
@@ -326,7 +345,8 @@
 window.__ORG_PAGE_CONFIG = {
     search: '{{ search }}',
     conglomerateFilter: '{{ conglomerate_filter }}',
-    selectedOrgCode: '{{ selected_org.secure_code if selected_org else '' }}'
+    selectedOrgCode: '{{ selected_org.secure_code if selected_org else '' }}',
+    availableModules: {{ available_modules | default([]) | tojson }}
 };
 </script>
 <script src="/static/js/organizations.js"></script>

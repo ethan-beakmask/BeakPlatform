@@ -2,6 +2,7 @@
 BeakMask Contract API
 合約管理 API
 """
+import json
 import logging
 from datetime import datetime
 
@@ -121,6 +122,9 @@ def create_contract():
         return jsonify({'error': '日期格式錯誤，請使用 YYYY-MM-DD'}), 400
 
     try:
+        modules_config = data.get('modules_config')
+        modules_config_str = json.dumps(modules_config) if modules_config else None
+
         contract = OrganizationService.create_contract(
             org_secure_code=data['org_id'],
             start_date=start_date,
@@ -128,6 +132,7 @@ def create_contract():
             name=data.get('name'),
             description=data.get('description'),
             amount=data.get('amount'),
+            modules_config=modules_config_str,
             notes=data.get('notes'),
             created_by=current_user.secure_code
         )
@@ -188,6 +193,9 @@ def update_contract(secure_code: str):
             contract.status = data['status']
         if 'notes' in data:
             contract.notes = data['notes']
+        if 'modules_config' in data:
+            mc = data['modules_config']
+            contract.modules_config = json.dumps(mc) if mc else None
 
         # 檢查日期
         if contract.end_date < contract.start_date:

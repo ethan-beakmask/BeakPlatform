@@ -7,6 +7,14 @@
 ## [Unreleased]
 
 ### Added
+- Lookup Table 通用選項清單架構
+  - `lookup_categories` + `lookup_items` 兩張表，支援系統級 (org=NULL) 與企業級選項
+  - RLS 政策: 一般用戶看系統級+自己企業，系統管理員看全部
+  - LookupCategory / LookupItem Model (繼承 BaseModel，org nullable)
+  - LookupService: CRUD + 記憶體快取 (lazy load) + 模組同步
+  - 模組啟動時自動同步已安裝模組到 `INSTALLED_MODULES` category
+  - 合約新增/編輯 Modal 整合授權模組多選 (來源: Lookup Table)
+  - 開發速查文件 `docs/LOOKUP_TABLE_GUIDE.md` (SQL + JSONB 操作範例)
 - Code 欄位自動建議: 全平台 8 個建立頁面統一支援輸入名稱自動產生代碼建議
   - 通用 Code API (`POST /api/code/generate`, `POST /api/code/validate`)，支援 8 種實體類型
   - 前端可重用元件 `code-input.js` (Alpine.js mixin) + `_code_input.html` (Jinja2 partial)

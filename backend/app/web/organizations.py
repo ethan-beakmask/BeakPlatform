@@ -5,6 +5,7 @@ BeakMask Organization Management Web Routes
 僅限系統管理員存取
 整合企業列表、合約管理、集團管理
 """
+import json
 from datetime import datetime, date
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
 from flask_login import current_user
@@ -19,6 +20,7 @@ from ..models.conglomerate import Conglomerate
 from ..services.organization_service import OrganizationService
 from ..services.conglomerate_service import ConglomerateService
 from ..services.code_generator import get_code_generator
+from ..services.lookup_service import LookupService
 from .. import db
 
 organizations_bp = Blueprint('organizations', __name__)
@@ -172,7 +174,8 @@ def list_orgs():
             'page_range': page_range
         },
         search=search,
-        conglomerate_filter=conglomerate_filter
+        conglomerate_filter=conglomerate_filter,
+        available_modules=LookupService.get_items('INSTALLED_MODULES')
     )
 
 
@@ -374,6 +377,9 @@ def add_contract(org_secure_code: str):
 
     if request.method == 'POST':
         try:
+            selected_modules = request.form.getlist('modules')
+            modules_config = json.dumps(selected_modules) if selected_modules else None
+
             contract = Contract(
                 org_secure_code=org.secure_code,
                 contract_number=Contract.generate_contract_number(),
@@ -383,6 +389,7 @@ def add_contract(org_secure_code: str):
                 end_date=date.fromisoformat(request.form.get('end_date')),
                 amount=request.form.get('amount') or None,
                 status=request.form.get('status', 'ACTIVE'),
+                modules_config=modules_config,
                 notes=request.form.get('notes', '').strip() or None,
                 created_by_secure_code=current_user.secure_code
             )
@@ -394,11 +401,15 @@ def add_contract(org_secure_code: str):
             db.session.rollback()
             flash(f'新增失敗: {str(e)}', 'error')
 
+    available_modules = LookupService.get_items('INSTALLED_MODULES')
+
     return render_template(
         'pages/organizations/contract_form.html',
         organization=org,
         contract=None,
-        action='add'
+        action='add',
+        available_modules=available_modules,
+        selected_modules=[]
     )
 
 
@@ -427,12 +438,16 @@ def edit_contract(org_secure_code: str, contract_secure_code: str):
 
     if request.method == 'POST':
         try:
+            selected_modules = request.form.getlist('modules')
+            modules_config = json.dumps(selected_modules) if selected_modules else None
+
             contract.name = request.form.get('name', '').strip() or None
             contract.description = request.form.get('description', '').strip() or None
             contract.start_date = date.fromisoformat(request.form.get('start_date'))
             contract.end_date = date.fromisoformat(request.form.get('end_date'))
             contract.amount = request.form.get('amount') or None
             contract.status = request.form.get('status', 'ACTIVE')
+            contract.modules_config = modules_config
             contract.notes = request.form.get('notes', '').strip() or None
             contract.modified_by_secure_code = current_user.secure_code
             contract.modified_at = datetime.utcnow()
@@ -443,11 +458,22 @@ def edit_contract(org_secure_code: str, contract_secure_code: str):
             db.session.rollback()
             flash(f'更新失敗: {str(e)}', 'error')
 
+    available_modules = LookupService.get_items('INSTALLED_MODULES')
+
+    selected_modules = []
+    if contract.modules_config:
+        try:
+            selected_modules = json.loads(contract.modules_config)
+        except (json.JSONDecodeError, TypeError):
+            pass
+
     return render_template(
         'pages/organizations/contract_form.html',
         organization=org,
         contract=contract,
-        action='edit'
+        action='edit',
+        available_modules=available_modules,
+        selected_modules=selected_modules
     )
 
 

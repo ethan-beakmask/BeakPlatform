@@ -495,6 +495,14 @@ def init_module_loader(app: Flask, modules_path: str = None):
                 except Exception as e:
                     logger.warning(f"Failed to register module menus: {e}")
 
+                # 同步已安裝模組到 Lookup Table
+                try:
+                    from .services.lookup_service import LookupService
+                    LookupService.sync_installed_modules(module_loader.get_loaded_modules())
+                    logger.info("Installed modules synced to lookup table")
+                except Exception as e:
+                    logger.warning(f"Failed to sync installed modules: {e}")
+
             # 在 app context 中執行同步（可透過環境變數跳過）
             if not os.environ.get('SKIP_MODULE_SYNC'):
                 with app.app_context():

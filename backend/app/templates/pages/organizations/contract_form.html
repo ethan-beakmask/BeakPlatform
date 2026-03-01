@@ -71,6 +71,27 @@
                 </select>
             </td>
         </tr>
+        {% if available_modules %}
+        <tr>
+            <td style="vertical-align: top;">授權模組</td>
+            <td>
+                {% for mod in available_modules %}
+                <label style="display: block; margin-bottom: 4px;">
+                    <input type="checkbox" name="modules" value="{{ mod.code }}"
+                           {% if mod.code in selected_modules %}checked{% endif %}>
+                    {{ mod.label }}
+                    {% if mod.value and mod.value.version %}
+                    <small style="color: #888;">(v{{ mod.value.version }})</small>
+                    {% endif %}
+                    {% if mod.value and mod.value.description %}
+                    <br><small style="color: #666; margin-left: 20px;">{{ mod.value.description }}</small>
+                    {% endif %}
+                </label>
+                {% endfor %}
+                <small style="color: #888;">選擇此合約授權使用的功能模組</small>
+            </td>
+        </tr>
+        {% endif %}
         <tr>
             <td><label for="notes">備註</label></td>
             <td>
