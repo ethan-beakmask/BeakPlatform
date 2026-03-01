@@ -862,7 +862,6 @@ class MenuService:
 
         except Exception as e:
             logger.warning('Module access filter failed, skipping: %s', e)
-            db.session.rollback()
             return items
 
     @staticmethod

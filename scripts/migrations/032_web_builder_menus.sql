@@ -109,47 +109,9 @@ INSERT INTO menu_items (
 )
 ON CONFLICT DO NOTHING;
 
--- 4. 建立 MenuPermission (三個選單各給 SYSTEM_ADMIN, ORG_ADMIN, EMPLOYEE)
--- web_builder 頂級選單
-INSERT INTO menu_permissions (secure_code, menu_secure_code, user_type, is_deleted, created_at, updated_at)
-SELECT
-    'WB_MP_' || substr(md5(random()::text), 1, 24),
-    mi.secure_code,
-    ut.user_type,
-    false,
-    NOW(),
-    NOW()
-FROM menu_items mi
-CROSS JOIN (VALUES ('SYSTEM_ADMIN'), ('ORG_ADMIN'), ('EMPLOYEE')) AS ut(user_type)
-WHERE mi.code = 'web_builder' AND mi.is_deleted = false
-ON CONFLICT DO NOTHING;
-
--- web_builder.sub_systems
-INSERT INTO menu_permissions (secure_code, menu_secure_code, user_type, is_deleted, created_at, updated_at)
-SELECT
-    'WB_MP_' || substr(md5(random()::text), 1, 24),
-    mi.secure_code,
-    ut.user_type,
-    false,
-    NOW(),
-    NOW()
-FROM menu_items mi
-CROSS JOIN (VALUES ('SYSTEM_ADMIN'), ('ORG_ADMIN'), ('EMPLOYEE')) AS ut(user_type)
-WHERE mi.code = 'web_builder.sub_systems' AND mi.is_deleted = false
-ON CONFLICT DO NOTHING;
-
--- web_builder.lab
-INSERT INTO menu_permissions (secure_code, menu_secure_code, user_type, is_deleted, created_at, updated_at)
-SELECT
-    'WB_MP_' || substr(md5(random()::text), 1, 24),
-    mi.secure_code,
-    ut.user_type,
-    false,
-    NOW(),
-    NOW()
-FROM menu_items mi
-CROSS JOIN (VALUES ('SYSTEM_ADMIN'), ('ORG_ADMIN'), ('EMPLOYEE')) AS ut(user_type)
-WHERE mi.code = 'web_builder.lab' AND mi.is_deleted = false
-ON CONFLICT DO NOTHING;
+-- 4. MenuPermission 不再需要
+-- web_builder 選單可見性改由 module_access_control 動態注入驅動
+-- (SYSTEM_ADMIN/ORG_ADMIN 自動看到所有已安裝模組，EMPLOYEE 按 ACL)
+-- 參考: menu_service.py Step 1.5
 
 COMMIT;

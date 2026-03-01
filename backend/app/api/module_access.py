@@ -129,7 +129,9 @@ def add_access():
 def remove_access(secure_code):
     """軟刪除 ACL"""
     try:
-        success = ModuleAccessService.remove_access(secure_code)
+        success = ModuleAccessService.remove_access(
+            secure_code, current_user.org_secure_code
+        )
         if not success:
             return jsonify({'success': False, 'error': '記錄不存在'}), 404
 

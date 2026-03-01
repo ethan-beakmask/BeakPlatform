@@ -178,10 +178,20 @@ class ModuleAccessService:
         return record
 
     @classmethod
-    def remove_access(cls, secure_code: str) -> bool:
-        """軟刪除 ACL 記錄"""
+    def remove_access(cls, secure_code: str, org_secure_code: str) -> bool:
+        """
+        軟刪除 ACL 記錄
+
+        Args:
+            secure_code: ACL 記錄識別碼
+            org_secure_code: 企業識別碼（強制租戶隔離）
+
+        Returns:
+            是否成功刪除
+        """
         record = ModuleAccessControl.query.filter(
             ModuleAccessControl.secure_code == secure_code,
+            ModuleAccessControl.org_secure_code == org_secure_code,
             ModuleAccessControl.is_deleted == False
         ).first()
 

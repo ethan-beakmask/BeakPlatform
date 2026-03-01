@@ -300,9 +300,13 @@ class ModuleMenuService:
         Returns:
             停用的選單數量
         """
-        # 停用以模組名稱開頭的所有選單
+        # 停用模組選單 (精確匹配 code 或 code 以 'module_name.' 開頭)
+        from sqlalchemy import or_
         count = MenuItem.query.filter(
-            MenuItem.code.like(f"{module_name}%"),
+            or_(
+                MenuItem.code == module_name,
+                MenuItem.code.like(f"{module_name}.%"),
+            ),
             MenuItem.org_secure_code == SYSTEM_ORG_CODE,
             MenuItem.is_deleted == False,
             MenuItem.is_active == True
@@ -332,8 +336,12 @@ class ModuleMenuService:
         Returns:
             MenuItem 列表
         """
+        from sqlalchemy import or_
         return MenuItem.query.filter(
-            MenuItem.code.like(f"{module_name}%"),
+            or_(
+                MenuItem.code == module_name,
+                MenuItem.code.like(f"{module_name}.%"),
+            ),
             MenuItem.org_secure_code == SYSTEM_ORG_CODE,
             MenuItem.is_deleted == False
         ).order_by(MenuItem.depth, MenuItem.display_order).all()
