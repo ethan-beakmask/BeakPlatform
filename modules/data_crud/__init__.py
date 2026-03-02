@@ -39,6 +39,12 @@ MODULE_INFO = {
                     'url': '/data-crud/sub-systems',
                     'sort_order': 3
                 },
+                {
+                    'code': 'data_crud.lookup',
+                    'name': '選項清單',
+                    'url': '/data-crud/lookup',
+                    'sort_order': 4
+                },
             ]
         }
     ],

@@ -6,6 +6,19 @@
 
 ## [Unreleased]
 
+### Added
+- Lookup Table 完整管理功能 (4 Phase 實作)
+  - **Phase 1 -- API**: `backend/app/api/lookup.py` 11 個 REST 端點 (categories CRUD + items CRUD + reorder + by-code)，支援 RLS 租戶隔離
+  - **Phase 2 -- 管理 UI**: `/data-crud/lookup` 頁面，左側類別列表 + 右側 Wunderbaum treegrid，支援同層/跨層拖拉排序
+  - **Phase 3 -- data-crud 整合**: view-config 新增 lookup source 設定、datalist-widget label 翻譯、row-form form.io select 動態注入
+  - **Phase 4 -- data-specs 整合**: field-spec-editor 新增 lookup source 選擇器與預覽、spec_generator 雙向 lookup_category_code 轉換
+  - reorder API 支援完整格式 `[{secure_code, parent_code, sort_order}]`，跨層拖拉同時更新 parent_code
+  - create_item API 新增重複檢查 (409 Conflict)
+- Wunderbaum v0.13.0 treegrid 元件引入 (`backend/app/static/vendor/wunderbaum/`)
+  - Fancytree 繼任者，零依賴，支援虛擬渲染、treegrid 多欄、拖拉排序
+  - Bootstrap Icons 1.11.3 CSS 配套引入
+- 前端技術棧文件化: `docs/PLATFORM_MODULARIZATION_PLAN.md` 新增技術棧段落
+
 ### Fixed
 - 安全審查修正 (2026-03-02 審查範圍: 02/26~03/02)
   - **TENANT-01 違規**: `ModuleAccessService.remove_access()` 缺少 `org_secure_code` 過濾，可跨租戶刪除 ACL 記錄

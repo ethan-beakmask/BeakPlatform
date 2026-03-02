@@ -458,10 +458,37 @@ window.__SPEC_CONFIG = {
                     <input type="text" x-model="detailForm.default_value" placeholder="(無)">
                 </div>
 
-                <!-- Options (select/radio/selectboxes) -->
+                <!-- Lookup Source (select/radio/selectboxes) -->
                 <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type)">
                     <div class="fs-form-group">
-                        <label>選項</label>
+                        <label>選項來源</label>
+                        <select x-model="detailForm.lookup_category_code"
+                                @change="loadLookupPreview(detailForm.lookup_category_code)"
+                                style="margin-bottom: 6px;">
+                            <option value="">手動定義</option>
+                            <template x-for="lk in lookupCategories" :key="lk.code">
+                                <option :value="lk.code" x-text="lk.name + ' (' + lk.code + ')'"></option>
+                            </template>
+                        </select>
+                        <!-- Lookup 預覽 -->
+                        <div x-show="detailForm.lookup_category_code" style="margin-bottom: 8px; padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 3px; font-size: 12px;">
+                            <div style="font-weight: 500; margin-bottom: 4px; color: #374151;">選項預覽 (前 10 項)</div>
+                            <div x-show="lookupPreviewLoading" style="color: #9ca3af;">載入中...</div>
+                            <div x-show="!lookupPreviewLoading && lookupPreviewItems.length === 0" style="color: #9ca3af;">無選項</div>
+                            <template x-for="pi in lookupPreviewItems" :key="pi.code">
+                                <div style="padding: 2px 0; display: flex; gap: 8px;">
+                                    <span style="font-family: monospace; color: #6b7280; min-width: 80px;" x-text="pi.code"></span>
+                                    <span x-text="pi.label"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Options (select/radio/selectboxes) - 僅手動定義時顯示 -->
+                <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type) && !detailForm.lookup_category_code">
+                    <div class="fs-form-group">
+                        <label>手動選項</label>
                         <template x-for="(opt, oi) in detailOptionRows" :key="oi">
                             <div style="display: flex; gap: 6px; margin-bottom: 4px;">
                                 <input type="text" x-model="opt.label" placeholder="顯示文字" style="flex: 1;">

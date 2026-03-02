@@ -119,6 +119,7 @@ window.__DC_CONFIG = {
             <span style="min-width: 120px;">型別</span>
             <span style="flex: 1;">標籤</span>
             <span style="width: 220px; text-align: center;">選項</span>
+            <span style="width: 140px;">Lookup</span>
         </div>
 
         <!-- Column items -->
@@ -146,6 +147,15 @@ window.__DC_CONFIG = {
                         <label><input type="checkbox" x-model="col.readonly"
                                       :disabled="col.is_system"
                                       @change="if(col.is_system) col.readonly = true"> 唯讀</label>
+                    </span>
+                    <span style="min-width: 140px;"
+                          x-show="col.db_type && (col.db_type.indexOf('VARCHAR') >= 0 || col.db_type.indexOf('TEXT') >= 0 || col.db_type.indexOf('character') >= 0)">
+                        <select x-model="col.lookup_category_code" style="padding: 3px 6px; font-size: 11px; width: 100%;">
+                            <option value="">-- Lookup --</option>
+                            <template x-for="lk in lookupCategories" :key="lk.code">
+                                <option :value="lk.code" x-text="lk.name + ' (' + lk.code + ')'"></option>
+                            </template>
+                        </select>
                     </span>
                 </li>
             </template>

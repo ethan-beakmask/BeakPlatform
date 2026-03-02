@@ -13,6 +13,7 @@ function viewConfigManager() {
         dbName: '',
         loadingCols: false,
         saving: false,
+        lookupCategories: [],
         toast: { show: false, message: '', type: 'success' },
 
         form: {
@@ -32,6 +33,7 @@ function viewConfigManager() {
         async init() {
             await this.loadDbInfo();
             await this.loadTables();
+            await this.loadLookupCategories();
             if (this.isEdit) {
                 await this.loadView();
             }
@@ -58,6 +60,18 @@ function viewConfigManager() {
                 }
             } catch (e) {
                 console.error('Load tables failed:', e);
+            }
+        },
+
+        async loadLookupCategories() {
+            try {
+                const res = await fetch('/api/lookup/categories');
+                const data = await res.json();
+                if (data.success) {
+                    this.lookupCategories = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load lookup categories failed:', e);
             }
         },
 
@@ -125,6 +139,7 @@ function viewConfigManager() {
                             readonly: isSys ? true : col.is_pk,
                             width: 150,
                             sort_order: idx + 1,
+                            lookup_category_code: null,
                         };
                     });
                 }
@@ -151,6 +166,7 @@ function viewConfigManager() {
                         readonly: saved.readonly !== undefined ? saved.readonly : col.is_pk,
                         width: saved.width || 150,
                         sort_order: saved.sort_order !== undefined ? saved.sort_order : idx + 1,
+                        lookup_category_code: saved.lookup_category_code || null,
                     };
                     // 系統欄位: 強制唯讀（表單可見性尊重用戶設定）
                     if (col.is_system) {
@@ -189,6 +205,7 @@ function viewConfigManager() {
                 is_pk: col.is_pk,
                 is_system: col.is_system || false,
                 system_reason: col.system_reason || null,
+                lookup_category_code: col.lookup_category_code || null,
             }));
 
             const payload = {

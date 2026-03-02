@@ -96,6 +96,11 @@ function fieldSpecEditor() {
         showSqlApplyModal: false,
         sqlApplyPreview: null,
 
+        // Lookup 類別
+        lookupCategories: [],
+        lookupPreviewItems: [],
+        lookupPreviewLoading: false,
+
         // 給 template 使用
         FORMIO_TYPES: FORMIO_TYPES,
 
@@ -111,12 +116,43 @@ function fieldSpecEditor() {
         },
 
         async init() {
+            await this.loadLookupCategories();
             if (this.isStandalone) {
                 await this.loadStandaloneSpec();
             } else {
                 await this.loadTemplateName();
                 await this.loadSpec();
             }
+        },
+
+        async loadLookupCategories() {
+            try {
+                var res = await fetch('/api/lookup/categories');
+                var data = await res.json();
+                if (data.success) {
+                    this.lookupCategories = data.data || [];
+                }
+            } catch (e) {
+                // silent: lookup 不影響核心功能
+            }
+        },
+
+        async loadLookupPreview(code) {
+            if (!code) {
+                this.lookupPreviewItems = [];
+                return;
+            }
+            this.lookupPreviewLoading = true;
+            try {
+                var res = await fetch('/api/lookup/by-code/' + encodeURIComponent(code));
+                var data = await res.json();
+                if (data.success) {
+                    this.lookupPreviewItems = (data.data || []).slice(0, 10);
+                }
+            } catch (e) {
+                this.lookupPreviewItems = [];
+            }
+            this.lookupPreviewLoading = false;
         },
 
         // ===== API 方法 =====
@@ -722,9 +758,15 @@ function fieldSpecEditor() {
             if (dc.max === undefined) dc.max = null;
             if (dc.pattern === undefined) dc.pattern = null;
             if (dc.customValidation === undefined) dc.customValidation = null;
+            if (f.lookup_category_code === undefined) f.lookup_category_code = null;
             this.detailForm = f;
             this.detailOptionRows = (f.options || []).map(function(o) { return {label: o.label || '', value: o.value || ''}; });
             this.detailGridChildRows = (f.grid_children || []).map(function(c) { return JSON.parse(JSON.stringify(c)); });
+            // 預載 lookup 預覽
+            this.lookupPreviewItems = [];
+            if (f.lookup_category_code) {
+                this.loadLookupPreview(f.lookup_category_code);
+            }
             this.showDetailModal = true;
         },
 
@@ -734,12 +776,18 @@ function fieldSpecEditor() {
             f.options = filteredOptions.length > 0 ? filteredOptions : null;
             f.grid_children = this.detailGridChildRows.length > 0 ? this.detailGridChildRows : null;
 
+            // lookup 與手動 options 互斥
+            if (f.lookup_category_code) {
+                f.options = null;
+            }
+
             // 回寫進階欄位到 fields 陣列
             var target = this.fields[this.detailIndex];
             target.constraints = JSON.parse(JSON.stringify(f.constraints));
             target.default_value = f.default_value;
             target.options = f.options ? JSON.parse(JSON.stringify(f.options)) : null;
             target.grid_children = f.grid_children ? JSON.parse(JSON.stringify(f.grid_children)) : null;
+            target.lookup_category_code = f.lookup_category_code || null;
             this.showDetailModal = false;
             _toast('success', '進階設定已更新');
         },
@@ -862,6 +910,7 @@ function _emptyField() {
         default_value: null,
         options: null,
         grid_children: null,
+        lookup_category_code: null,
         sort_order: 0,
     };
 }

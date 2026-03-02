@@ -85,3 +85,7 @@ def register_blueprints(app: Flask) -> None:
     # Module access control (模組使用權)
     from .module_access import module_access_bp
     app.register_blueprint(module_access_bp)
+
+    # Lookup table management (通用選項清單)
+    from .lookup import lookup_bp
+    app.register_blueprint(lookup_bp)

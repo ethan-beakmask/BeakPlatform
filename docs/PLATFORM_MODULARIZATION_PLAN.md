@@ -102,6 +102,26 @@ flask module enable/disable <name>
 
 ---
 
+## 前端技術棧
+
+| 類別 | 技術 | 版本 | 用途 | 備註 |
+|------|------|------|------|------|
+| 模板引擎 | Jinja2 | Flask 內建 | 伺服器端 HTML 渲染 | |
+| 響應式框架 | Alpine.js | 3.x | 頁面互動、元件狀態管理 | 主力框架，所有頁面使用 |
+| 表單渲染 | form.io | 4.x | 動態表單 schema 渲染與驗證 | form_workflow / data_crud 模組 |
+| 佈局拖拉 | GridStack.js | 10.x | Web Builder 頁面佈局設計器 | `vendor/gridstack/` |
+| 樹/Treegrid | Wunderbaum | 0.13.0 | 樹狀結構、多欄 treegrid、拖拉排序 | `vendor/wunderbaum/`，Fancytree 繼任者，零依賴 |
+| CSS | 自建 + Bootstrap (部分) | -- | 導覽列自建 `bk-*`，內容區可用 Bootstrap | 見 CLAUDE.md CSS 規範 |
+| 圖示 | Bootstrap Icons | 1.11.3 | Wunderbaum 預設圖示、通用 icon | `vendor/fonts/` + `vendor/wunderbaum/bootstrap-icons.css` |
+
+### 技術選型原則
+
+- **禁用 CDN**：所有套件 vendor 化到 `backend/app/static/vendor/`，確保封閉網路可用
+- **零/少依賴優先**：Alpine.js (零依賴)、Wunderbaum (零依賴)、GridStack (零依賴)
+- **評估時機**：當需求涉及 tree / treegrid / 階層拖拉時，Wunderbaum 應與其他 JS 方案一起評估
+
+---
+
 ## 服務配置
 
 | 項目 | 值 |
@@ -113,4 +133,4 @@ flask module enable/disable <name>
 
 ---
 
-*最後更新: 2026-02-07*
+*最後更新: 2026-03-03*

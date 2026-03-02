@@ -96,6 +96,59 @@ class LookupService:
         db.session.flush()
         return category
 
+    @classmethod
+    def get_category_by_secure_code(cls, secure_code: str) -> Optional[LookupCategory]:
+        """用 secure_code 取得單一類別"""
+        return LookupCategory.query.filter_by(
+            secure_code=secure_code,
+            is_deleted=False
+        ).first()
+
+    @classmethod
+    def update_category(cls, secure_code: str, **kwargs) -> Optional[LookupCategory]:
+        """更新類別"""
+        category = cls.get_category_by_secure_code(secure_code)
+        if not category:
+            return None
+        if category.is_system:
+            raise ValueError('系統級類別不可修改')
+
+        allowed_fields = ('name', 'name_i18n', 'description', 'is_hierarchical')
+        for field in allowed_fields:
+            if field in kwargs:
+                setattr(category, field, kwargs[field])
+
+        category.updated_at = datetime.utcnow()
+        db.session.flush()
+        return category
+
+    @classmethod
+    def delete_category(cls, secure_code: str) -> bool:
+        """軟刪除類別 + 連帶軟刪除所有子 items"""
+        category = cls.get_category_by_secure_code(secure_code)
+        if not category:
+            return False
+        if category.is_system:
+            raise ValueError('系統級類別不可刪除')
+
+        now = datetime.utcnow()
+        category.is_deleted = True
+        category.deleted_at = now
+
+        # 連帶軟刪除所有 items
+        items = LookupItem.query.filter_by(
+            category_code=category.code,
+            org_secure_code=category.org_secure_code,
+            is_deleted=False
+        ).all()
+        for item in items:
+            item.is_deleted = True
+            item.deleted_at = now
+
+        db.session.flush()
+        cls._invalidate_cache(category.code, category.org_secure_code)
+        return True
+
     # ----------------------------------------------------------------
     # Item 操作
     # ----------------------------------------------------------------

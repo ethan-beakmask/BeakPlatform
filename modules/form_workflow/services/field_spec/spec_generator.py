@@ -94,21 +94,34 @@ def spec_field_to_formio_component(field_spec):
     if validate:
         comp['validate'] = validate
 
-    # select / radio: options
-    options = field_spec.get('options')
-    if options and ftype in ('select', 'radio', 'selectboxes'):
+    # lookup_category_code 支援
+    lookup_code = field_spec.get('lookup_category_code')
+    if lookup_code and ftype in ('select', 'radio', 'selectboxes'):
+        # 標記 lookup source，前端動態載入選項
+        if 'properties' not in comp:
+            comp['properties'] = {}
+        comp['properties']['lookup_category_code'] = lookup_code
+        # 放空陣列，前端動態填入
         if ftype == 'select':
-            comp['data'] = {
-                'values': [
+            comp['data'] = {'values': []}
+        else:
+            comp['values'] = []
+    else:
+        # select / radio: 靜態 options
+        options = field_spec.get('options')
+        if options and ftype in ('select', 'radio', 'selectboxes'):
+            if ftype == 'select':
+                comp['data'] = {
+                    'values': [
+                        {'label': o.get('label', ''), 'value': o.get('value', '')}
+                        for o in options
+                    ]
+                }
+            elif ftype in ('radio', 'selectboxes'):
+                comp['values'] = [
                     {'label': o.get('label', ''), 'value': o.get('value', '')}
                     for o in options
                 ]
-            }
-        elif ftype in ('radio', 'selectboxes'):
-            comp['values'] = [
-                {'label': o.get('label', ''), 'value': o.get('value', '')}
-                for o in options
-            ]
 
     # datagrid / editgrid: 子欄位
     if ftype in GRID_TYPES:
@@ -202,25 +215,29 @@ def formio_component_to_spec_field(comp, sort_order=0):
 
     is_pii = str(properties.get('pii', '')).lower() in ('true', '1')
 
+    # lookup_category_code
+    lookup_code = properties.get('lookup_category_code')
+
     pg_type = derive_pg_type(ftype, constraints)
 
-    # options
+    # options (僅在無 lookup 時讀取靜態 options)
     options = None
-    if ftype == 'select':
-        data = comp.get('data') or {}
-        values = data.get('values') or []
-        if values:
-            options = [
-                {'label': v.get('label', ''), 'value': v.get('value', '')}
-                for v in values
-            ]
-    elif ftype in ('radio', 'selectboxes'):
-        values = comp.get('values') or []
-        if values:
-            options = [
-                {'label': v.get('label', ''), 'value': v.get('value', '')}
-                for v in values
-            ]
+    if not lookup_code:
+        if ftype == 'select':
+            data = comp.get('data') or {}
+            values = data.get('values') or []
+            if values:
+                options = [
+                    {'label': v.get('label', ''), 'value': v.get('value', '')}
+                    for v in values
+                ]
+        elif ftype in ('radio', 'selectboxes'):
+            values = comp.get('values') or []
+            if values:
+                options = [
+                    {'label': v.get('label', ''), 'value': v.get('value', '')}
+                    for v in values
+                ]
 
     # grid children
     grid_children = None
@@ -233,7 +250,7 @@ def formio_component_to_spec_field(comp, sort_order=0):
                 continue
             grid_children.append(formio_component_to_spec_field(child, i))
 
-    return {
+    result = {
         'field_key': key,
         'label': label,
         'formio_type': ftype,
@@ -246,6 +263,9 @@ def formio_component_to_spec_field(comp, sort_order=0):
         'grid_children': grid_children,
         'sort_order': sort_order,
     }
+    if lookup_code:
+        result['lookup_category_code'] = lookup_code
+    return result
 
 
 def formio_schema_to_spec_fields(form_schema):

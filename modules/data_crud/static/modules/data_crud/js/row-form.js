@@ -29,6 +29,7 @@ function rowFormManager() {
             await this.loadFormioSchema();
 
             if (this.useFormio) {
+                await this._injectLookupOptions(this.formioSchema.components);
                 await this.renderFormio();
                 if (this.rowId) {
                     await this.loadRowIntoFormio();
@@ -119,6 +120,64 @@ function rowFormManager() {
                 }
             } catch (e) {
                 this.showToast('載入資料失敗', 'error');
+            }
+        },
+
+        // =====================================================
+        // Lookup 注入
+        // =====================================================
+
+        async _injectLookupOptions(components) {
+            if (!components || !Array.isArray(components)) return;
+
+            // 收集需要 lookup 的元件
+            const lookupComps = [];
+            const _scan = (comps) => {
+                for (const comp of comps) {
+                    const props = comp.properties || {};
+                    if (props.lookup_category_code && ['select', 'radio', 'selectboxes'].includes(comp.type)) {
+                        lookupComps.push({ comp, code: props.lookup_category_code });
+                    }
+                    if (comp.components) _scan(comp.components);
+                    if (comp.columns) {
+                        for (const col of comp.columns) {
+                            if (col.components) _scan(col.components);
+                        }
+                    }
+                }
+            };
+            _scan(components);
+
+            if (lookupComps.length === 0) return;
+
+            // 批次載入 (去重)
+            const codes = [...new Set(lookupComps.map(lc => lc.code))];
+            const cache = {};
+            await Promise.all(codes.map(async (code) => {
+                try {
+                    const res = await fetch('/api/lookup/by-code/' + encodeURIComponent(code));
+                    const data = await res.json();
+                    if (data.success) {
+                        cache[code] = (data.data || []).map(item => ({
+                            label: item.label,
+                            value: item.code,
+                        }));
+                    }
+                } catch (e) {
+                    console.warn('Lookup load failed for', code, e);
+                }
+            }));
+
+            // 注入到元件
+            for (const { comp, code } of lookupComps) {
+                const values = cache[code] || [];
+                if (comp.type === 'select') {
+                    comp.data = comp.data || {};
+                    comp.data.values = values;
+                } else {
+                    // radio / selectboxes
+                    comp.values = values;
+                }
             }
         },
 

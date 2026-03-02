@@ -56,6 +56,9 @@ class DataListWidget {
         // 外部篩選條件（由 PageContext input 注入）
         this._externalFilters = {};
 
+        // Lookup 映射: { column_name: { code: label } }
+        this._lookupMaps = {};
+
         // DOM 快取
         this._els = {};
     }
@@ -87,6 +90,7 @@ class DataListWidget {
         }
         this._renderSkeleton();
         await this._loadViewConfig();
+        await this._loadLookupMaps();
         await this._loadRows(1);
     }
 
@@ -191,6 +195,41 @@ class DataListWidget {
             }
         } catch (e) {
             this._renderEmpty('載入失敗: ' + e.message);
+        }
+    }
+
+    async _loadLookupMaps() {
+        if (!this.viewConfig || !this.viewConfig.columns_config) return;
+        const lookupCols = this.viewConfig.columns_config.filter(
+            c => c.lookup_category_code
+        );
+        if (lookupCols.length === 0) return;
+
+        // 收集唯一 category codes
+        const codes = [...new Set(lookupCols.map(c => c.lookup_category_code))];
+        const fetches = codes.map(code =>
+            fetch('/api/lookup/by-code/' + encodeURIComponent(code))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const map = {};
+                        (data.data || []).forEach(item => {
+                            map[item.code] = item.label;
+                        });
+                        return { code, map };
+                    }
+                    return { code, map: {} };
+                })
+                .catch(() => ({ code, map: {} }))
+        );
+
+        const results = await Promise.all(fetches);
+        const categoryMaps = {};
+        results.forEach(r => { categoryMaps[r.code] = r.map; });
+
+        // 建立 column -> lookup map 的映射
+        for (const col of lookupCols) {
+            this._lookupMaps[col.column] = categoryMaps[col.lookup_category_code] || {};
         }
     }
 
@@ -410,7 +449,7 @@ class DataListWidget {
 
             for (const col of cols) {
                 const td = document.createElement('td');
-                td.textContent = this._formatCell(row[col.column]);
+                td.textContent = this._formatCell(row[col.column], col.column);
                 tr.appendChild(td);
             }
             if (hasActions) {
@@ -473,11 +512,16 @@ class DataListWidget {
         });
     }
 
-    _formatCell(value) {
+    _formatCell(value, columnName) {
         if (value === null || value === undefined) return '';
         if (typeof value === 'boolean') return value ? 'Y' : 'N';
         if (typeof value === 'object') return JSON.stringify(value);
         const s = String(value);
+        // Lookup 翻譯
+        if (columnName && this._lookupMaps[columnName]) {
+            const label = this._lookupMaps[columnName][s];
+            if (label) return label;
+        }
         return s.length > 60 ? s.substring(0, 60) + '...' : s;
     }
 

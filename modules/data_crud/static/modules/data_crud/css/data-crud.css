@@ -282,3 +282,81 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* =============================================
+   Lookup Manager (dc-lk-)
+   ============================================= */
+
+.dc-lk-layout {
+    display: flex;
+    gap: 0;
+    min-height: 500px;
+    border: 1px solid #ddd;
+    background: white;
+}
+
+.dc-lk-sidebar {
+    width: 300px;
+    min-width: 260px;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+}
+.dc-lk-search { padding: 10px; border-bottom: 1px solid #eee; }
+.dc-lk-cat-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.dc-lk-cat-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+.dc-lk-cat-item:hover { background: #f5f5f5; }
+.dc-lk-cat-item.selected {
+    background: #e8f0fe;
+    border-left: 3px solid #0066cc;
+}
+.dc-lk-cat-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+.dc-lk-cat-code {
+    font-size: 11px;
+    font-family: monospace;
+    color: #999;
+    margin-top: 2px;
+}
+
+.dc-lk-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.dc-lk-detail-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+}
+
+/* Wunderbaum treegrid overrides (Demo 2 style) */
+div.wunderbaum {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+div.wunderbaum div.wb-header {
+    background: #f8f9fb;
+    border-bottom: 2px solid #e0e0e0;
+    font-weight: 600;
+    color: #555;
+}
+#wb-tree .wb-row { cursor: grab; }
+#wb-tree .wb-row:active { cursor: grabbing; }
+#wb-tree .wb-row .dc-btn.sm { padding: 1px 6px; font-size: 11px; }
+#wb-tree .wb-col { vertical-align: middle; }
