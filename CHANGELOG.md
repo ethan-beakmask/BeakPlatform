@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### Added
+- Site Map 樹狀網站地圖: 子系統頁面管理從扁平列表改為樹狀結構
+  - DB: `dc_site_map_nodes` (樹狀節點) + `dc_site_map_permissions` (節點權限白名單)，migration `005_create_site_map.sql`
+  - 節點類型: folder (資料夾) / page (頁面)，page 自動連結 DcPageLayout
+  - 細粒度權限: 支援 ROLE/DEPARTMENT/GROUP/ACCOUNT 白名單 (無記錄=全部可見)
+  - Admin 編輯器: Wunderbaum 樹 + 屬性面板 + 權限管理 + 拖曳排序，整合至子系統配置頁 tab
+  - Portal V2: 左側樹狀選單 + 右側 GridStack 動態頁面載入 (不換頁)，向下相容舊卡片模式
+  - 存取控制: `X-SiteMap-Node` header 支援，DataListWidget 自動傳遞 context headers
 - Lookup 企業級資料物理隔離: 企業 lookup 資料搬入企業專屬 DB (org_{id})，達到真正的物理隔離
   - `LookupOrgService`: 企業級 lookup CRUD 服務，psycopg2 raw SQL 操作 org DB
   - 懶建表機制: 首次存取自動建立 `lookup_categories` + `lookup_items` 表並 GRANT sync 角色

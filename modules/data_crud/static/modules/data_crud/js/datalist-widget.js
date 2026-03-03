@@ -525,12 +525,28 @@ class DataListWidget {
         return s.length > 60 ? s.substring(0, 60) + '...' : s;
     }
 
+    /**
+     * 建立子系統/SiteMap context headers
+     * 用於寫操作（create/edit/delete）的 CRUD 權限檢查
+     */
+    _buildContextHeaders() {
+        const headers = {};
+        if (this.config._siteMapNodeSc && this.config._subSystemSc) {
+            headers['X-SiteMap-Node'] = this.config._siteMapNodeSc;
+            headers['X-SubSystem-SC'] = this.config._subSystemSc;
+        } else if (this.config._subSystemSspSc && this.config._subSystemSc) {
+            headers['X-SubSystem-SSP'] = this.config._subSystemSspSc;
+            headers['X-SubSystem-SC'] = this.config._subSystemSc;
+        }
+        return headers;
+    }
+
     async _doDelete(rowId) {
         if (!confirm('確定要刪除此筆資料嗎?')) return;
         try {
             const res = await fetch(
                 '/api/data-crud/views/' + this.config.viewCode + '/rows/' + rowId,
-                { method: 'DELETE' }
+                { method: 'DELETE', headers: this._buildContextHeaders() }
             );
             const data = await res.json();
             if (data.success) {

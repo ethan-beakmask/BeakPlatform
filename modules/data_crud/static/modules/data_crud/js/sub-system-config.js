@@ -6,6 +6,7 @@ function subSystemConfigManager() {
     return {
         loading: true,
         secureCode: '',
+        activeTab: 'sitemap',
         form: {
             name: '',
             description: '',

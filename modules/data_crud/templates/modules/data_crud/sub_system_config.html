@@ -4,6 +4,8 @@
 
 {% block head %}
 <link rel="stylesheet" href="/static/modules/data_crud/css/data-crud.css">
+<link rel="stylesheet" href="/static/vendor/wunderbaum/bootstrap-icons.css">
+<link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
 <style>
     .ssc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .ssc-section {
@@ -73,6 +75,72 @@
     .ssc-crud-grid .check { text-align: center; }
     .ssc-filter-row { display: flex; gap: 4px; margin-bottom: 4px; align-items: center; }
     .ssc-filter-row input { font-size: 12px; padding: 4px 6px; }
+
+    /* Tabs */
+    .ssc-tabs {
+        display: flex;
+        border-bottom: 2px solid #ddd;
+        margin-bottom: 16px;
+    }
+    .ssc-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+    }
+    .ssc-tab:hover { color: #333; }
+    .ssc-tab.active { color: #0066cc; border-bottom-color: #0066cc; }
+
+    /* Site Map Editor */
+    .sm-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 500px; }
+    .sm-tree-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        display: flex;
+        flex-direction: column;
+    }
+    .sm-tree-toolbar {
+        padding: 8px 12px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    .sm-tree-body {
+        flex: 1;
+        overflow: auto;
+        min-height: 300px;
+    }
+    .sm-props-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+    }
+    .sm-props-empty {
+        padding: 40px;
+        text-align: center;
+        color: #999;
+    }
+    .sm-perm-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+    }
+    .sm-perm-item:last-child { border-bottom: none; }
+    .sm-perm-type {
+        display: inline-block;
+        padding: 1px 6px;
+        font-size: 11px;
+        border: 1px solid #ddd;
+        background: #f5f5f5;
+        min-width: 40px;
+        text-align: center;
+    }
 </style>
 {% endblock %}
 
@@ -92,7 +160,7 @@ window.__SSC_CONFIG = {
         </div>
         <div class="dc-toolbar">
             <a href="/data-crud/sub-systems" class="dc-btn">返回列表</a>
-            <button class="dc-btn primary" @click="save()">儲存</button>
+            <button class="dc-btn primary" @click="save()">儲存基本資訊</button>
         </div>
     </div>
 
@@ -169,94 +237,292 @@ window.__SSC_CONFIG = {
                 </div>
             </div>
 
-            <!-- 頁面管理 -->
-            <div class="ssc-section">
-                <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>頁面管理</span>
-                    <button class="dc-btn sm primary" @click="showAddPageModal = true">+ 新增頁面</button>
-                </div>
-                <div class="ssc-section-body" style="padding: 0;">
-                    <div x-show="pages.length === 0" style="padding: 40px; text-align: center; color: #999;">
-                        尚未加入任何頁面
+            <!-- Tab 切換 -->
+            <div class="ssc-tabs">
+                <div class="ssc-tab" :class="activeTab === 'sitemap' ? 'active' : ''"
+                     @click="activeTab = 'sitemap'">網站地圖</div>
+                <div class="ssc-tab" :class="activeTab === 'pages' ? 'active' : ''"
+                     @click="activeTab = 'pages'">頁面管理 (舊)</div>
+            </div>
+
+            <!-- Tab: 網站地圖 -->
+            <div x-show="activeTab === 'sitemap'" x-data="siteMapEditor(secureCode)">
+                <div class="sm-layout">
+                    <!-- 左側: 樹 -->
+                    <div class="sm-tree-panel">
+                        <div class="sm-tree-toolbar">
+                            <button class="dc-btn sm" @click="openAddModal(null)">+ 根資料夾</button>
+                            <button class="dc-btn sm" @click="addForm.node_type='page'; openAddModal(null)">+ 根頁面</button>
+                            <template x-if="selectedNode">
+                                <button class="dc-btn sm" @click="openAddModal(selectedNode.secure_code)">+ 子節點</button>
+                            </template>
+                        </div>
+                        <div class="sm-tree-body" id="sm-tree"></div>
                     </div>
-                    <template x-for="(p, idx) in pages" :key="p.secure_code">
-                        <div class="ssc-page-item" style="flex-direction: column; align-items: stretch;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="ssc-page-order" x-text="idx + 1" style="color: #999; font-size: 12px;"></span>
-                                <span class="ssc-page-name" x-text="p.display_name || p.page_name"></span>
-                                <span class="ssc-tag" style="font-size: 11px; color: #999;" x-text="'排序: ' + p.display_order"></span>
-                                <button class="dc-btn sm" @click="togglePageDetail(idx)">
-                                    <span x-text="expandedPage === idx ? '收合' : '展開'"></span>
-                                </button>
-                                <button class="dc-btn sm danger" @click="removePage(p)">移除</button>
+
+                    <!-- 右側: 屬性面板 -->
+                    <div class="sm-props-panel">
+                        <div class="sm-props-empty" x-show="!selectedNode">
+                            選擇左側節點以編輯屬性
+                        </div>
+                        <div x-show="selectedNode" style="padding: 0;">
+                            <!-- 節點屬性 -->
+                            <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>節點屬性</span>
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="dc-btn sm primary" @click="saveNode()">儲存</button>
+                                    <button class="dc-btn sm danger" @click="deleteNode()">刪除</button>
+                                </div>
                             </div>
-                            <!-- 展開的詳細設定 -->
-                            <div x-show="expandedPage === idx" style="margin-top: 12px; padding: 12px; border: 1px solid #eee; background: #fafafa;">
+                            <div class="ssc-section-body">
                                 <div class="ssc-field">
-                                    <label>顯示名稱</label>
-                                    <input type="text" x-model="p.display_name">
+                                    <label>名稱 *</label>
+                                    <input type="text" x-model="nodeForm.name">
                                 </div>
                                 <div class="ssc-field">
-                                    <label>排序</label>
-                                    <input type="number" x-model.number="p.display_order" style="width: 80px;">
+                                    <label>類型</label>
+                                    <span style="font-size: 13px;" x-text="nodeForm.node_type === 'folder' ? '資料夾' : '頁面'"></span>
                                 </div>
+                                <div class="ssc-field">
+                                    <label>圖示</label>
+                                    <input type="text" x-model="nodeForm.icon" style="width: 150px;" placeholder="bi bi-xxx">
+                                </div>
+                                <div class="ssc-field" x-show="nodeForm.node_type === 'page'">
+                                    <label>連結頁面</label>
+                                    <select x-model="nodeForm.page_layout_secure_code">
+                                        <option value="">-- 自動建立 --</option>
+                                        <template x-for="layout in availableLayouts" :key="layout.secure_code">
+                                            <option :value="layout.secure_code" x-text="layout.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="ssc-field">
+                                    <label>
+                                        <input type="checkbox" x-model="nodeForm.is_active"> 啟用
+                                    </label>
+                                </div>
+                            </div>
 
-                                <!-- visible_roles -->
-                                <div class="ssc-field">
-                                    <label>可見角色</label>
-                                    <div class="ssc-roles-editor">
-                                        <label><input type="checkbox" :checked="hasRole(p, '*')" @change="toggleRole(p, '*')"> 全部</label>
-                                        <label><input type="checkbox" :checked="hasRole(p, 'MANAGER')" @change="toggleRole(p, 'MANAGER')"> MANAGER</label>
-                                        <label><input type="checkbox" :checked="hasRole(p, 'DEPUTY')" @change="toggleRole(p, 'DEPUTY')"> DEPUTY</label>
-                                        <label><input type="checkbox" :checked="hasRole(p, 'MEMBER')" @change="toggleRole(p, 'MEMBER')"> MEMBER</label>
+                            <!-- CRUD 權限覆蓋 (僅 page) -->
+                            <template x-if="nodeForm.node_type === 'page'">
+                                <div>
+                                    <div class="ssc-section-title">CRUD 權限覆蓋</div>
+                                    <div class="ssc-section-body">
+                                        <div class="ssc-crud-grid">
+                                            <div class="header"></div>
+                                            <div class="header">新增</div>
+                                            <div class="header">編輯</div>
+                                            <div class="header">刪除</div>
+                                            <template x-for="role in ['MANAGER','MEMBER']" :key="'sm_crud_' + role">
+                                                <div style="display: contents;">
+                                                    <div class="role-name" x-text="role"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'create')" @change="setCrud(role, 'create', $event.target.checked)"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'edit')" @change="setCrud(role, 'edit', $event.target.checked)"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'delete')" @change="setCrud(role, 'delete', $event.target.checked)"></div>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- crud_overrides -->
-                                <div class="ssc-field">
-                                    <label>CRUD 權限覆蓋 (按角色)</label>
-                                    <div class="ssc-crud-grid">
-                                        <div class="header"></div>
-                                        <div class="header">新增</div>
-                                        <div class="header">編輯</div>
-                                        <div class="header">刪除</div>
-
-                                        <template x-for="role in ['MANAGER','MEMBER']" :key="role">
-                                            <div style="display: contents;">
-                                                <div class="role-name" x-text="role"></div>
-                                                <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'create')" @change="setCrud(p, role, 'create', $event.target.checked)"></div>
-                                                <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'edit')" @change="setCrud(p, role, 'edit', $event.target.checked)"></div>
-                                                <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'delete')" @change="setCrud(p, role, 'delete', $event.target.checked)"></div>
+                                    <div class="ssc-section-title">資料篩選</div>
+                                    <div class="ssc-section-body">
+                                        <template x-for="role in ['MANAGER','MEMBER']" :key="'sm_filter_' + role">
+                                            <div style="margin-bottom: 8px;">
+                                                <span style="font-size: 12px; font-weight: 500;" x-text="role + ':'"></span>
+                                                <template x-for="(val, col) in getFilters(role)" :key="role + '_' + col">
+                                                    <div class="ssc-filter-row">
+                                                        <input type="text" :value="col" @change="renameFilter(role, col, $event.target.value)" placeholder="欄位" style="width: 120px;">
+                                                        <span>=</span>
+                                                        <input type="text" :value="val" @change="setFilterValue(role, col, $event.target.value)" placeholder="值" style="width: 160px;">
+                                                        <button class="dc-btn sm danger" @click="removeFilter(role, col)" style="padding: 2px 6px;">x</button>
+                                                    </div>
+                                                </template>
+                                                <button class="dc-btn sm" @click="addFilter(role)" style="margin-top: 2px;">+ 篩選</button>
                                             </div>
                                         </template>
                                     </div>
                                 </div>
+                            </template>
 
-                                <!-- data_filters -->
-                                <div class="ssc-field">
-                                    <label>資料篩選 (按角色)</label>
-                                    <template x-for="role in ['MANAGER','MEMBER']" :key="role + '_filter'">
-                                        <div style="margin-bottom: 8px;">
-                                            <span style="font-size: 12px; font-weight: 500;" x-text="role + ':'"></span>
-                                            <template x-for="(val, col) in getFilters(p, role)" :key="role + '_' + col">
-                                                <div class="ssc-filter-row">
-                                                    <input type="text" :value="col" @change="renameFilter(p, role, col, $event.target.value)" placeholder="欄位" style="width: 120px;">
-                                                    <span>=</span>
-                                                    <input type="text" :value="val" @change="setFilterValue(p, role, col, $event.target.value)" placeholder="值" style="width: 160px;">
-                                                    <button class="dc-btn sm danger" @click="removeFilter(p, role, col)" style="padding: 2px 6px;">x</button>
-                                                </div>
-                                            </template>
-                                            <button class="dc-btn sm" @click="addFilter(p, role)" style="margin-top: 2px;">+ 篩選</button>
-                                        </div>
-                                    </template>
+                            <!-- 權限白名單 -->
+                            <div class="ssc-section-title">存取權限白名單</div>
+                            <div class="ssc-section-body">
+                                <p style="font-size: 12px; color: #999; margin: 0 0 8px 0;">
+                                    無任何權限記錄 = 所有人可見; 有記錄 = 僅白名單內可見
+                                </p>
+
+                                <!-- 新增權限 -->
+                                <div style="display: flex; gap: 4px; margin-bottom: 12px; align-items: center;">
+                                    <select x-model="addPermForm.target_type" @change="onPermTargetTypeChange()"
+                                            style="width: 100px; padding: 4px 6px; font-size: 12px; border: 1px solid #ddd;">
+                                        <option value="ROLE">角色</option>
+                                        <option value="DEPARTMENT">部門</option>
+                                        <option value="GROUP">群組</option>
+                                        <option value="ACCOUNT">帳號</option>
+                                    </select>
+                                    <select x-model="addPermForm.target_secure_code"
+                                            style="flex: 1; padding: 4px 6px; font-size: 12px; border: 1px solid #ddd;">
+                                        <option value="">-- 選擇對象 --</option>
+                                        <template x-for="t in permTargets" :key="t.secure_code">
+                                            <option :value="t.secure_code" x-text="t.name + (t.detail ? ' (' + t.detail + ')' : '')"></option>
+                                        </template>
+                                    </select>
+                                    <button class="dc-btn sm primary" @click="addPermission()">新增</button>
                                 </div>
 
-                                <div style="text-align: right; margin-top: 8px;">
-                                    <button class="dc-btn sm primary" @click="savePage(p)">儲存此頁設定</button>
+                                <!-- 權限列表 -->
+                                <div x-show="permLoading" style="color: #999; font-size: 12px;">載入中...</div>
+                                <div x-show="!permLoading && permissions.length === 0" style="color: #999; font-size: 12px;">
+                                    無權限限制 (所有成員可見)
                                 </div>
+                                <template x-for="perm in permissions" :key="perm.secure_code">
+                                    <div class="sm-perm-item">
+                                        <span class="sm-perm-type" x-text="targetTypeLabel(perm.target_type)"></span>
+                                        <span style="flex: 1;" x-text="perm.target_name"></span>
+                                        <button class="dc-btn sm danger" @click="removePermission(perm.secure_code)"
+                                                style="padding: 2px 6px;">x</button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
-                    </template>
+                    </div>
+                </div>
+
+                <!-- Add Node Modal -->
+                <div x-show="showAddModal" x-cloak class="dc-modal">
+                    <div class="dc-modal-content" style="width: 480px;">
+                        <div class="dc-modal-header">
+                            <h3>新增節點</h3>
+                            <button class="dc-close-btn" @click="showAddModal = false">&times;</button>
+                        </div>
+                        <div class="dc-modal-body">
+                            <div class="ssc-field">
+                                <label>名稱 *</label>
+                                <input type="text" x-model="addForm.name" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
+                            </div>
+                            <div class="ssc-field">
+                                <label>類型</label>
+                                <select x-model="addForm.node_type" style="width: 200px; padding: 6px 8px; border: 1px solid #ddd;">
+                                    <option value="folder">資料夾</option>
+                                    <option value="page">頁面</option>
+                                </select>
+                            </div>
+                            <div class="ssc-field">
+                                <label>圖示</label>
+                                <input type="text" x-model="addForm.icon" placeholder="bi bi-xxx" style="width: 200px; padding: 6px 8px; border: 1px solid #ddd;">
+                            </div>
+                            <div class="ssc-field" x-show="addForm.node_type === 'page'">
+                                <label>連結既有頁面 (留空自動建立)</label>
+                                <select x-model="addForm.page_layout_secure_code" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
+                                    <option value="">-- 自動建立空白頁面 --</option>
+                                    <template x-for="layout in availableLayouts" :key="layout.secure_code">
+                                        <option :value="layout.secure_code" x-text="layout.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="dc-modal-footer">
+                            <button class="dc-btn" @click="showAddModal = false">取消</button>
+                            <button class="dc-btn primary" @click="doAddNode()">建立</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast (site map) -->
+                <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
+                     x-text="toast.message" x-transition></div>
+            </div>
+
+            <!-- Tab: 頁面管理 (舊) -->
+            <div x-show="activeTab === 'pages'">
+                <div class="ssc-section">
+                    <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>頁面管理</span>
+                        <button class="dc-btn sm primary" @click="showAddPageModal = true">+ 新增頁面</button>
+                    </div>
+                    <div class="ssc-section-body" style="padding: 0;">
+                        <div x-show="pages.length === 0" style="padding: 40px; text-align: center; color: #999;">
+                            尚未加入任何頁面
+                        </div>
+                        <template x-for="(p, idx) in pages" :key="p.secure_code">
+                            <div class="ssc-page-item" style="flex-direction: column; align-items: stretch;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="ssc-page-order" x-text="idx + 1" style="color: #999; font-size: 12px;"></span>
+                                    <span class="ssc-page-name" x-text="p.display_name || p.page_name"></span>
+                                    <span class="ssc-tag" style="font-size: 11px; color: #999;" x-text="'排序: ' + p.display_order"></span>
+                                    <button class="dc-btn sm" @click="togglePageDetail(idx)">
+                                        <span x-text="expandedPage === idx ? '收合' : '展開'"></span>
+                                    </button>
+                                    <button class="dc-btn sm danger" @click="removePage(p)">移除</button>
+                                </div>
+                                <!-- 展開的詳細設定 -->
+                                <div x-show="expandedPage === idx" style="margin-top: 12px; padding: 12px; border: 1px solid #eee; background: #fafafa;">
+                                    <div class="ssc-field">
+                                        <label>顯示名稱</label>
+                                        <input type="text" x-model="p.display_name">
+                                    </div>
+                                    <div class="ssc-field">
+                                        <label>排序</label>
+                                        <input type="number" x-model.number="p.display_order" style="width: 80px;">
+                                    </div>
+
+                                    <!-- visible_roles -->
+                                    <div class="ssc-field">
+                                        <label>可見角色</label>
+                                        <div class="ssc-roles-editor">
+                                            <label><input type="checkbox" :checked="hasRole(p, '*')" @change="toggleRole(p, '*')"> 全部</label>
+                                            <label><input type="checkbox" :checked="hasRole(p, 'MANAGER')" @change="toggleRole(p, 'MANAGER')"> MANAGER</label>
+                                            <label><input type="checkbox" :checked="hasRole(p, 'DEPUTY')" @change="toggleRole(p, 'DEPUTY')"> DEPUTY</label>
+                                            <label><input type="checkbox" :checked="hasRole(p, 'MEMBER')" @change="toggleRole(p, 'MEMBER')"> MEMBER</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- crud_overrides -->
+                                    <div class="ssc-field">
+                                        <label>CRUD 權限覆蓋 (按角色)</label>
+                                        <div class="ssc-crud-grid">
+                                            <div class="header"></div>
+                                            <div class="header">新增</div>
+                                            <div class="header">編輯</div>
+                                            <div class="header">刪除</div>
+
+                                            <template x-for="role in ['MANAGER','MEMBER']" :key="role">
+                                                <div style="display: contents;">
+                                                    <div class="role-name" x-text="role"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'create')" @change="setCrud(p, role, 'create', $event.target.checked)"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'edit')" @change="setCrud(p, role, 'edit', $event.target.checked)"></div>
+                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'delete')" @change="setCrud(p, role, 'delete', $event.target.checked)"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- data_filters -->
+                                    <div class="ssc-field">
+                                        <label>資料篩選 (按角色)</label>
+                                        <template x-for="role in ['MANAGER','MEMBER']" :key="role + '_filter'">
+                                            <div style="margin-bottom: 8px;">
+                                                <span style="font-size: 12px; font-weight: 500;" x-text="role + ':'"></span>
+                                                <template x-for="(val, col) in getFilters(p, role)" :key="role + '_' + col">
+                                                    <div class="ssc-filter-row">
+                                                        <input type="text" :value="col" @change="renameFilter(p, role, col, $event.target.value)" placeholder="欄位" style="width: 120px;">
+                                                        <span>=</span>
+                                                        <input type="text" :value="val" @change="setFilterValue(p, role, col, $event.target.value)" placeholder="值" style="width: 160px;">
+                                                        <button class="dc-btn sm danger" @click="removeFilter(p, role, col)" style="padding: 2px 6px;">x</button>
+                                                    </div>
+                                                </template>
+                                                <button class="dc-btn sm" @click="addFilter(p, role)" style="margin-top: 2px;">+ 篩選</button>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div style="text-align: right; margin-top: 8px;">
+                                        <button class="dc-btn sm primary" @click="savePage(p)">儲存此頁設定</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -300,5 +566,7 @@ window.__SSC_CONFIG = {
          x-text="toast.message" x-transition></div>
 </div>
 
+<script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="/static/modules/data_crud/js/site-map-editor.js"></script>
 <script src="/static/modules/data_crud/js/sub-system-config.js"></script>
 {% endblock %}

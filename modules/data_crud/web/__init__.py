@@ -87,6 +87,7 @@ def sub_system_portal(secure_code):
     """子系統入口導航頁"""
     from ..models import DcSubSystem
     from ..services.sub_system_service import SubSystemService
+    from ..services.site_map_service import SiteMapService
     from app.security.resource_gateway import ResourceGateway
 
     ss = ResourceGateway.get(
@@ -101,6 +102,15 @@ def sub_system_portal(secure_code):
     if role_type is None:
         abort(403)
 
+    # 有 site map 時使用 V2 Portal (樹狀選單)
+    if SiteMapService.has_site_map(ss.secure_code, ss.org_secure_code):
+        return render_template(
+            'modules/data_crud/sub_system_portal_v2.html',
+            sub_system_sc=secure_code,
+            sub_system_name=ss.name,
+        )
+
+    # 無 site map 時使用舊卡片 Portal
     return render_template(
         'modules/data_crud/sub_system_portal.html',
         sub_system_sc=secure_code,

@@ -912,8 +912,9 @@ def _check_sub_system_crud(req, action):
     """
     檢查 Row 寫操作的子系統權限
 
-    如果請求帶有 X-SubSystem-SC + X-SubSystem-SSP header（或 sub/ssp query param），
-    則驗證用戶在該子系統頁面的 CRUD 權限。
+    支援兩種模式:
+    1. 舊模式: X-SubSystem-SC + X-SubSystem-SSP (DcSubSystemPage)
+    2. Site Map 模式: X-SubSystem-SC + X-SiteMap-Node (DcSiteMapNode)
 
     Args:
         req: Flask request
@@ -923,9 +924,18 @@ def _check_sub_system_crud(req, action):
         None = 通過，Response = 拒絕
     """
     sub_sc = req.headers.get('X-SubSystem-SC') or req.args.get('sub_sc', '').strip()
+    node_sc = req.headers.get('X-SiteMap-Node', '').strip()
     ssp_sc = req.headers.get('X-SubSystem-SSP') or req.args.get('ssp_sc', '').strip()
 
-    if not sub_sc or not ssp_sc:
+    if not sub_sc:
+        return None  # 無子系統 context
+
+    # Site Map 模式
+    if node_sc:
+        return _check_site_map_crud(sub_sc, node_sc, action)
+
+    # 舊模式
+    if not ssp_sc:
         return None  # 無子系統 context，回退到 view 本身權限
 
     try:
@@ -965,7 +975,49 @@ def _check_sub_system_crud(req, action):
         return None  # 檢查失敗時不阻擋（回退到 view 權限）
 
 
+def _check_site_map_crud(sub_sc, node_sc, action):
+    """
+    Site Map 模式的 CRUD 權限檢查
+
+    從 DcSiteMapNode 取 crud_overrides 做檢查。
+    """
+    try:
+        from ..models import DcSubSystem
+        from ..services.sub_system_service import SubSystemService
+        from ..services.site_map_service import SiteMapService
+
+        ss = DcSubSystem.query.filter_by(
+            secure_code=sub_sc,
+            is_deleted=False,
+        ).first()
+        if not ss or not ss.is_active:
+            return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+        role_type = SubSystemService.get_user_role_type(current_user, ss)
+        if role_type is None:
+            return jsonify({'success': False, 'error': '非子系統成員'}), 403
+
+        node = SiteMapService.get_node(node_sc, ss.org_secure_code)
+        if not node:
+            return jsonify({'success': False, 'error': 'Site map node not found'}), 404
+
+        ctx = SiteMapService.get_node_context(node, role_type)
+        crud = ctx.get('crud', {})
+
+        if not crud.get(action, False):
+            return jsonify({
+                'success': False,
+                'error': f'您的角色 ({role_type}) 不允許此操作'
+            }), 403
+
+        return None  # 通過
+    except Exception as e:
+        logger.warning('Site map CRUD check error: %s', e)
+        return None  # 檢查失敗時不阻擋
+
+
 # =============================================================================
 # Sub System API (獨立檔案)
 # =============================================================================
 from . import sub_system_api  # noqa: E402, F401
+from . import site_map_api  # noqa: E402, F401
