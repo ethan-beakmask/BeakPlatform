@@ -7,6 +7,19 @@
 ## [Unreleased]
 
 ### Added
+- Lookup 企業級資料物理隔離: 企業 lookup 資料搬入企業專屬 DB (org_{id})，達到真正的物理隔離
+  - `LookupOrgService`: 企業級 lookup CRUD 服務，psycopg2 raw SQL 操作 org DB
+  - 懶建表機制: 首次存取自動建立 `lookup_categories` + `lookup_items` 表並 GRANT sync 角色
+  - 系統級 (is_system=True) 留主庫 ORM，企業級搬入 org DB，系統級資料不暴露給企業用戶
+  - API 11 個端點改造: 讀操作僅回傳企業資料，寫操作分流系統級(拒絕)/企業級(org DB)
+  - Migration 034 (參考 DDL) + 035 (主庫企業級資料軟刪除清理)
+- IBMM 企業專屬資料庫 (org_26) 建立與 lookup 表初始化
+
+### Changed
+- `get_categories_merged()` / `get_items_merged()` 不再包含系統級資料，企業用戶僅見自己的 lookup
+- Lookup API 寫操作新增系統級衝突檢查，企業類別 code 不可與系統級重複
+
+### Added
 - Lookup Table 完整管理功能 (4 Phase 實作)
   - **Phase 1 -- API**: `backend/app/api/lookup.py` 11 個 REST 端點 (categories CRUD + items CRUD + reorder + by-code)，支援 RLS 租戶隔離
   - **Phase 2 -- 管理 UI**: `/data-crud/lookup` 頁面，左側類別列表 + 右側 Wunderbaum treegrid，支援同層/跨層拖拉排序

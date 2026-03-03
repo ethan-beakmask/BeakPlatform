@@ -254,6 +254,137 @@ class LookupService:
         return True
 
     # ----------------------------------------------------------------
+    # 合併查詢 (系統級 + 企業級)
+    # ----------------------------------------------------------------
+
+    @classmethod
+    def get_categories_merged(cls, org_secure_code: Optional[str] = None) -> List[dict]:
+        """
+        企業可見類別: 僅回傳企業級 (org DB)。
+        系統級 (is_system=True) 為平台內部使用，不暴露給企業用戶。
+        """
+        result = []
+
+        # 企業級
+        if org_secure_code:
+            try:
+                from .lookup_org_service import LookupOrgService
+                org_cats = LookupOrgService.get_categories(org_secure_code)
+                result.extend(org_cats)
+            except Exception as e:
+                logger.warning(f'[Lookup] 讀取企業類別失敗: {e}')
+
+        # 按 code 排序
+        result.sort(key=lambda c: c.get('code', ''))
+        return result
+
+    @classmethod
+    def get_items_merged(
+        cls,
+        category_code: str,
+        org_secure_code: Optional[str] = None
+    ) -> List[dict]:
+        """
+        企業可見 items (帶快取)。
+        只回傳企業 DB 中的 items，系統級 items 不暴露。
+        """
+        cache_key = (category_code, org_secure_code)
+        if cache_key in cls._cache:
+            return cls._cache[cache_key]
+
+        result = []
+
+        # 企業級
+        if org_secure_code:
+            try:
+                from .lookup_org_service import LookupOrgService
+                org_items = LookupOrgService.get_items(org_secure_code, category_code)
+                result.extend(org_items)
+            except Exception as e:
+                logger.warning(f'[Lookup] 讀取企業 items 失敗: {e}')
+
+        # 按 (sort_order, code) 排序
+        result.sort(key=lambda i: (i.get('sort_order', 0), i.get('code', '')))
+        cls._cache[cache_key] = result
+        return result
+
+    @classmethod
+    def get_all_items_merged(
+        cls,
+        category_code: str,
+        org_secure_code: Optional[str] = None
+    ) -> List[dict]:
+        """
+        管理用: 企業 items 含 inactive (不走快取)。
+        """
+        result = []
+
+        # 企業級
+        if org_secure_code:
+            try:
+                from .lookup_org_service import LookupOrgService
+                org_items = LookupOrgService.get_all_items(org_secure_code, category_code)
+                result.extend(org_items)
+            except Exception as e:
+                logger.warning(f'[Lookup] 讀取企業 items 失敗: {e}')
+
+        result.sort(key=lambda i: (i.get('sort_order', 0), i.get('code', '')))
+        return result
+
+    @classmethod
+    def resolve_item_location(cls, secure_code: str, org_secure_code: Optional[str] = None) -> str:
+        """
+        判斷 item 在 'system' 還是 'org'。
+        先查主庫，找到即為系統級；否則查 org DB。
+
+        Returns:
+            'system' | 'org' | None
+        """
+        sys_item = LookupItem.query.filter_by(
+            secure_code=secure_code,
+            is_deleted=False
+        ).first()
+        if sys_item:
+            return 'system'
+
+        if org_secure_code:
+            try:
+                from .lookup_org_service import LookupOrgService
+                org_item = LookupOrgService.get_item_by_secure_code(org_secure_code, secure_code)
+                if org_item:
+                    return 'org'
+            except Exception:
+                pass
+
+        return None
+
+    @classmethod
+    def resolve_category_location(cls, secure_code: str, org_secure_code: Optional[str] = None) -> str:
+        """
+        判斷 category 在 'system' 還是 'org'。
+
+        Returns:
+            'system' | 'org' | None
+        """
+        sys_cat = LookupCategory.query.filter_by(
+            secure_code=secure_code,
+            is_deleted=False
+        ).first()
+        if sys_cat:
+            return 'system'
+
+        if org_secure_code:
+            try:
+                from .lookup_org_service import LookupOrgService
+                org_cat = LookupOrgService.get_category_by_secure_code(org_secure_code, secure_code)
+                if org_cat:
+                    return 'org'
+            except Exception:
+                pass
+
+        return None
+
+    # ----------------------------------------------------------------
     # 模組同步
     # ----------------------------------------------------------------
 

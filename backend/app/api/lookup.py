@@ -2,37 +2,32 @@
 BeakPlatform - Lookup Table API
 通用選項清單管理 API
 
+資料隔離架構:
+  - 系統級 (is_system=True, org_secure_code=NULL): 留主庫，ORM 存取，禁止修改/刪除
+  - 企業級: 存入企業專屬 DB (org_{id})，psycopg2 raw SQL 存取
+
 端點：
-- GET    /api/lookup/categories                         列出可見類別
+- GET    /api/lookup/categories                         列出可見類別 (合併雙來源)
 - POST   /api/lookup/categories                         建立企業級類別
 - GET    /api/lookup/categories/<sc>                    單一類別詳情
-- PUT    /api/lookup/categories/<sc>                    更新類別
-- DELETE /api/lookup/categories/<sc>                    軟刪除類別
-- GET    /api/lookup/categories/<sc>/items              該類別下所有選項
-- POST   /api/lookup/categories/<sc>/items              新增選項
-- PUT    /api/lookup/items/<sc>                         更新選項
-- DELETE /api/lookup/items/<sc>                         軟刪除選項
-- PATCH  /api/lookup/categories/<sc>/items/reorder      批次更新排序
-- GET    /api/lookup/by-code/<category_code>            用 code 取選項
+- PUT    /api/lookup/categories/<sc>                    更新類別 (企業級)
+- DELETE /api/lookup/categories/<sc>                    軟刪除類別 (企業級)
+- GET    /api/lookup/categories/<sc>/items              該類別下所有選項 (合併)
+- POST   /api/lookup/categories/<sc>/items              新增選項 (企業類別)
+- PUT    /api/lookup/items/<sc>                         更新選項 (企業級)
+- DELETE /api/lookup/items/<sc>                         軟刪除選項 (企業級)
+- PATCH  /api/lookup/categories/<sc>/items/reorder      批次更新排序 (企業類別)
+- GET    /api/lookup/by-code/<category_code>            用 code 取選項 (合併)
 """
 import logging
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from sqlalchemy import text
-
 from ..security.decorators import login_required, admin_required
 from ..services.lookup_service import LookupService
-from .. import csrf, db
-
-
-def _set_rls_context(org_secure_code):
-    """設定 RLS context variables for current DB session"""
-    db.session.execute(
-        text("SELECT set_config('app.current_org', :org, false)"),
-        {'org': org_secure_code or ''}
-    )
+from ..services.lookup_org_service import LookupOrgService
+from .. import csrf
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +41,11 @@ lookup_bp = Blueprint('lookup', __name__, url_prefix='/api/lookup')
 @lookup_bp.route('/categories')
 @login_required
 def list_categories():
-    """列出可見類別（系統級 + 企業級）"""
-    _set_rls_context(current_user.org_secure_code)
-    categories = LookupService.get_categories(current_user.org_secure_code)
+    """列出可見類別（系統級 + 企業級合併）"""
+    categories = LookupService.get_categories_merged(current_user.org_secure_code)
     return jsonify({
         'success': True,
-        'data': [c.to_dict() for c in categories]
+        'data': categories
     })
 
 
@@ -59,7 +53,7 @@ def list_categories():
 @csrf.exempt
 @admin_required
 def create_category():
-    """建立企業級類別"""
+    """建立企業級類別 (寫入 org DB)"""
     data = request.get_json() or {}
     code = (data.get('code') or '').strip()
     name = (data.get('name') or '').strip()
@@ -69,30 +63,37 @@ def create_category():
     if not name:
         return jsonify({'success': False, 'error': '缺少 name'}), 400
 
-    _set_rls_context(current_user.org_secure_code)
+    org_sc = current_user.org_secure_code
 
-    # 檢查重複
-    existing = LookupService.get_category(code, current_user.org_secure_code)
-    if existing:
+    # 檢查不與系統級 code 衝突
+    sys_cat = LookupService.get_category(code)
+    if sys_cat:
+        return jsonify({'success': False, 'error': f'類別代碼 {code} 與系統級類別衝突'}), 409
+
+    # 檢查不與企業級 code 重複
+    org_cat = LookupOrgService.get_category_by_code(org_sc, code)
+    if org_cat:
         return jsonify({'success': False, 'error': f'類別代碼 {code} 已存在'}), 409
 
     try:
-        category = LookupService.create_category(
+        category = LookupOrgService.create_category(
+            org_secure_code=org_sc,
             code=code,
             name=name,
-            org_secure_code=current_user.org_secure_code,
             description=data.get('description'),
             is_hierarchical=data.get('is_hierarchical', False),
             name_i18n=data.get('name_i18n'),
         )
-        db.session.commit()
+        LookupService._invalidate_cache(code, org_sc)
         return jsonify({
             'success': True,
-            'data': category.to_dict(),
+            'data': category,
             'message': '已建立類別'
         }), 201
+    except RuntimeError as e:
+        logger.warning(f'[Lookup] create_category: {e}')
+        return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] create_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -100,52 +101,57 @@ def create_category():
 @lookup_bp.route('/categories/<secure_code>')
 @login_required
 def get_category(secure_code):
-    """單一類別詳情"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+    """單一類別詳情 (先查主庫系統級，再查 org DB)"""
+    org_sc = current_user.org_secure_code
 
-    # 租戶隔離: 企業級類別只能看自己的
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+    # 先查主庫
+    sys_cat = LookupService.get_category_by_secure_code(secure_code)
+    if sys_cat:
+        # 系統級或屬於當前企業的主庫資料
+        if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
+            return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': True, 'data': sys_cat.to_dict()})
 
-    return jsonify({'success': True, 'data': category.to_dict()})
+    # 查 org DB
+    org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
+    if org_cat:
+        return jsonify({'success': True, 'data': org_cat})
+
+    return jsonify({'success': False, 'error': '類別不存在'}), 404
 
 
 @lookup_bp.route('/categories/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @admin_required
 def update_category(secure_code):
-    """更新類別"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
+    """更新類別 (系統級 403，企業級走 org DB)"""
+    org_sc = current_user.org_secure_code
+    location = LookupService.resolve_category_location(secure_code, org_sc)
+
+    if location == 'system':
+        return jsonify({'success': False, 'error': '系統級類別不可修改'}), 403
+    if location is None:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
-    # 租戶隔離
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
-
+    # 企業級 -> org DB
     data = request.get_json() or {}
     try:
-        updated = LookupService.update_category(
-            secure_code,
+        updated = LookupOrgService.update_category(
+            org_sc, secure_code,
             **{k: v for k, v in data.items()
                if k in ('name', 'name_i18n', 'description', 'is_hierarchical')}
         )
         if not updated:
             return jsonify({'success': False, 'error': '更新失敗'}), 400
-        db.session.commit()
+        # invalidate 合併快取
+        cat_code = updated.get('code', '')
+        LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({
             'success': True,
-            'data': updated.to_dict(),
+            'data': updated,
             'message': '已更新類別'
         })
-    except ValueError as e:
-        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] update_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -154,26 +160,26 @@ def update_category(secure_code):
 @csrf.exempt
 @admin_required
 def delete_category(secure_code):
-    """軟刪除類別"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+    """軟刪除類別 (系統級 403，企業級走 org DB)"""
+    org_sc = current_user.org_secure_code
+    location = LookupService.resolve_category_location(secure_code, org_sc)
 
-    # 租戶隔離
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
+    if location == 'system':
+        return jsonify({'success': False, 'error': '系統級類別不可刪除'}), 403
+    if location is None:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
     try:
-        success = LookupService.delete_category(secure_code)
+        # 先取 code 以便 invalidate 快取
+        org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
+        cat_code = org_cat.get('code', '') if org_cat else ''
+
+        success = LookupOrgService.delete_category(org_sc, secure_code)
         if not success:
             return jsonify({'success': False, 'error': '刪除失敗'}), 400
-        db.session.commit()
+        LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': '已刪除類別'})
-    except ValueError as e:
-        return jsonify({'success': False, 'error': str(e)}), 403
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] delete_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -185,49 +191,54 @@ def delete_category(secure_code):
 @lookup_bp.route('/categories/<secure_code>/items')
 @login_required
 def list_items(secure_code):
-    """該類別下所有選項"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
+    """
+    該類別下所有選項 (合併系統+企業，含 inactive，管理用途)
+
+    category 可在主庫或 org DB:
+    - 系統類別: 只回主庫 items (系統級)
+    - 企業類別: 只回 org DB items
+    """
+    org_sc = current_user.org_secure_code
+
+    # 定位 category
+    sys_cat = LookupService.get_category_by_secure_code(secure_code)
+    if sys_cat:
+        if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
+            return jsonify({'success': False, 'error': '類別不存在'}), 404
+        # 系統類別: 回主庫 items
+        items = LookupService.get_all_items_merged(sys_cat.code, org_sc)
+        return jsonify({'success': True, 'data': items})
+
+    # 查 org DB category
+    org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
+    if not org_cat:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
-
-    # 直接查 DB（含 inactive，管理用途）
-    from ..models.lookup_item import LookupItem
-    query = LookupItem.query.filter_by(
-        category_code=category.code,
-        is_deleted=False,
-    )
-    if category.org_secure_code:
-        query = query.filter(
-            db.or_(
-                LookupItem.org_secure_code.is_(None),
-                LookupItem.org_secure_code == category.org_secure_code
-            )
-        )
-    else:
-        query = query.filter(LookupItem.org_secure_code.is_(None))
-
-    items = query.order_by(LookupItem.sort_order, LookupItem.code).all()
-    return jsonify({
-        'success': True,
-        'data': [item.to_dict() for item in items]
-    })
+    # 企業類別: 回 org DB items
+    items = LookupOrgService.get_all_items(org_sc, org_cat['code'])
+    return jsonify({'success': True, 'data': items})
 
 
 @lookup_bp.route('/categories/<secure_code>/items', methods=['POST'])
 @csrf.exempt
 @admin_required
 def create_item(secure_code):
-    """新增選項"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+    """新增選項 (定位 category 來源，企業類別才允許新增)"""
+    org_sc = current_user.org_secure_code
 
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
+    # 定位 category
+    sys_cat = LookupService.get_category_by_secure_code(secure_code)
+    if sys_cat:
+        if sys_cat.is_system:
+            return jsonify({'success': False, 'error': '系統級類別不可新增選項'}), 403
+        if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
+            return jsonify({'success': False, 'error': '類別不存在'}), 404
+        # 主庫非系統級 category -- 這種情況在遷移後不應存在
+        # 但為安全起見仍處理: 拒絕寫入
+        return jsonify({'success': False, 'error': '此類別不允許新增選項'}), 403
+
+    org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
+    if not org_cat:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
     data = request.get_json() or {}
@@ -239,36 +250,30 @@ def create_item(secure_code):
     if not label:
         return jsonify({'success': False, 'error': '缺少 label'}), 400
 
+    cat_code = org_cat['code']
+
     # 檢查重複
-    from ..models.lookup_item import LookupItem
-    existing = LookupItem.query.filter_by(
-        category_code=category.code,
-        code=code,
-        org_secure_code=current_user.org_secure_code,
-        is_deleted=False,
-    ).first()
-    if existing:
+    if LookupOrgService.check_item_code_exists(org_sc, cat_code, code):
         return jsonify({'success': False, 'error': f'選項代碼 {code} 已存在'}), 409
 
     try:
-        item = LookupService.create_item(
-            category_code=category.code,
+        item = LookupOrgService.create_item(
+            org_secure_code=org_sc,
+            category_code=cat_code,
             code=code,
             label=label,
-            org_secure_code=current_user.org_secure_code,
             label_i18n=data.get('label_i18n'),
             value=data.get('value'),
             parent_code=data.get('parent_code'),
             sort_order=data.get('sort_order', 0),
         )
-        db.session.commit()
+        LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({
             'success': True,
-            'data': item.to_dict(),
+            'data': item,
             'message': '已新增選項'
         }), 201
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] create_item error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -277,36 +282,32 @@ def create_item(secure_code):
 @csrf.exempt
 @admin_required
 def update_item(secure_code):
-    """更新選項"""
-    _set_rls_context(current_user.org_secure_code)
-    from ..models.lookup_item import LookupItem
-    item = LookupItem.query.filter_by(
-        secure_code=secure_code, is_deleted=False
-    ).first()
-    if not item:
+    """更新選項 (系統級 403，企業級走 org DB)"""
+    org_sc = current_user.org_secure_code
+    location = LookupService.resolve_item_location(secure_code, org_sc)
+
+    if location == 'system':
+        return jsonify({'success': False, 'error': '系統級選項不可修改'}), 403
+    if location is None:
         return jsonify({'success': False, 'error': '選項不存在'}), 404
 
-    # 租戶隔離
-    if item.org_secure_code and item.org_secure_code != current_user.org_secure_code:
-        return jsonify({'success': False, 'error': '選項不存在'}), 404
-
+    # 企業級 -> org DB
     data = request.get_json() or {}
     try:
-        updated = LookupService.update_item(
-            secure_code,
+        updated = LookupOrgService.update_item(
+            org_sc, secure_code,
             **{k: v for k, v in data.items()
                if k in ('label', 'label_i18n', 'value', 'parent_code', 'sort_order', 'is_active')}
         )
         if not updated:
             return jsonify({'success': False, 'error': '更新失敗'}), 400
-        db.session.commit()
+        LookupService._invalidate_cache(updated.get('category_code', ''), org_sc)
         return jsonify({
             'success': True,
-            'data': updated.to_dict(),
+            'data': updated,
             'message': '已更新選項'
         })
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] update_item error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -315,26 +316,26 @@ def update_item(secure_code):
 @csrf.exempt
 @admin_required
 def delete_item(secure_code):
-    """軟刪除選項"""
-    _set_rls_context(current_user.org_secure_code)
-    from ..models.lookup_item import LookupItem
-    item = LookupItem.query.filter_by(
-        secure_code=secure_code, is_deleted=False
-    ).first()
-    if not item:
-        return jsonify({'success': False, 'error': '選項不存在'}), 404
+    """軟刪除選項 (系統級 403，企業級走 org DB)"""
+    org_sc = current_user.org_secure_code
+    location = LookupService.resolve_item_location(secure_code, org_sc)
 
-    if item.org_secure_code and item.org_secure_code != current_user.org_secure_code:
+    if location == 'system':
+        return jsonify({'success': False, 'error': '系統級選項不可刪除'}), 403
+    if location is None:
         return jsonify({'success': False, 'error': '選項不存在'}), 404
 
     try:
-        success = LookupService.delete_item(secure_code)
+        # 取得 category_code 以便 invalidate 快取
+        org_item = LookupOrgService.get_item_by_secure_code(org_sc, secure_code)
+        cat_code = org_item.get('category_code', '') if org_item else ''
+
+        success = LookupOrgService.delete_item(org_sc, secure_code)
         if not success:
             return jsonify({'success': False, 'error': '刪除失敗'}), 400
-        db.session.commit()
+        LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': '已刪除選項'})
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] delete_item error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -343,13 +344,18 @@ def delete_item(secure_code):
 @csrf.exempt
 @admin_required
 def reorder_items(secure_code):
-    """批次更新排序"""
-    _set_rls_context(current_user.org_secure_code)
-    category = LookupService.get_category_by_secure_code(secure_code)
-    if not category:
+    """批次更新排序 (企業類別才允許)"""
+    org_sc = current_user.org_secure_code
+
+    # 定位 category
+    location = LookupService.resolve_category_location(secure_code, org_sc)
+    if location == 'system':
+        return jsonify({'success': False, 'error': '系統級類別不可排序'}), 403
+    if location is None:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
-    if category.org_secure_code and category.org_secure_code != current_user.org_secure_code:
+    org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
+    if not org_cat:
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
     data = request.get_json() or {}
@@ -357,36 +363,13 @@ def reorder_items(secure_code):
     if not order_list:
         return jsonify({'success': False, 'error': '缺少 order 陣列'}), 400
 
+    cat_code = org_cat['code']
+
     try:
-        from ..models.lookup_item import LookupItem
-        # order 支援兩種格式:
-        #   簡易: ["sc1", "sc2", ...]  -- 只更新 sort_order
-        #   完整: [{"secure_code":"sc1","parent_code":"X","sort_order":0}, ...]
-        for idx, entry in enumerate(order_list):
-            if isinstance(entry, str):
-                item_sc = entry
-                new_parent = None
-                new_sort = idx
-            elif isinstance(entry, dict):
-                item_sc = entry.get('secure_code')
-                new_parent = entry.get('parent_code')
-                new_sort = entry.get('sort_order', idx)
-            else:
-                continue
-            if not item_sc:
-                continue
-            item = LookupItem.query.filter_by(
-                secure_code=item_sc, is_deleted=False
-            ).first()
-            if item and item.category_code == category.code:
-                item.sort_order = new_sort
-                if isinstance(entry, dict) and 'parent_code' in entry:
-                    item.parent_code = new_parent or None
-        db.session.commit()
-        LookupService._invalidate_cache(category.code, category.org_secure_code)
+        LookupOrgService.reorder_items(org_sc, cat_code, order_list)
+        LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': '排序已更新'})
     except Exception as e:
-        db.session.rollback()
         logger.exception('[Lookup] reorder_items error')
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -400,10 +383,9 @@ def reorder_items(secure_code):
 def get_items_by_code(category_code):
     """
     用 category code 取選項 (form.io 動態載入用)
-    回傳 active items，帶快取。
+    回傳 active items，合併系統+企業，帶快取。
     """
-    _set_rls_context(current_user.org_secure_code)
-    items = LookupService.get_items(category_code, current_user.org_secure_code)
+    items = LookupService.get_items_merged(category_code, current_user.org_secure_code)
     return jsonify({
         'success': True,
         'data': items

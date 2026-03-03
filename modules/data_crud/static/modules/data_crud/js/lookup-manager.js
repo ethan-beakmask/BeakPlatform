@@ -173,11 +173,21 @@ function lookupManager() {
         // ===== Wunderbaum Treegrid =====
 
         /**
-         * 將扁平 items 轉為 Wunderbaum source 格式 (巢狀 children)
-         * 非階層: 全部放頂層
-         * 階層: 依 parent_code 組裝樹
+         * 將 item 屬性展開到 Wunderbaum source node 上。
+         * 注意: Wunderbaum v0.13.0 的 "data" 不在 reserved set，
+         * 若用 {data: item} 會存成 node.data.data 而非 node.data，
+         * 因此必須直接展開屬性讓 Wunderbaum 存入 node.data。
          */
+        _itemToSourceNode(item, extra) {
+            var node = Object.assign({
+                title: item.label,
+                key: item.secure_code,
+            }, item, extra || {});
+            return node;
+        },
+
         _buildTreeSource(items) {
+            var self = this;
             var isHier = this.selectedCat && this.selectedCat.is_hierarchical;
             if (!isHier) {
                 // 扁平: 按 sort_order 排列
@@ -185,11 +195,7 @@ function lookupManager() {
                     return (a.sort_order || 0) - (b.sort_order || 0);
                 });
                 return sorted.map(function(item) {
-                    return {
-                        title: item.label,
-                        key: item.secure_code,
-                        data: item,
-                    };
+                    return self._itemToSourceNode(item);
                 });
             }
             // 階層: 組裝
@@ -209,12 +215,7 @@ function lookupManager() {
                 var list = childrenMap[parentCode] || [];
                 return list.map(function(item) {
                     var kids = buildChildren(item.code);
-                    var node = {
-                        title: item.label,
-                        key: item.secure_code,
-                        expanded: true,
-                        data: item,
-                    };
+                    var node = self._itemToSourceNode(item, { expanded: true });
                     if (kids.length > 0) {
                         node.children = kids;
                     }
@@ -278,60 +279,54 @@ function lookupManager() {
                         // 狀態欄 -- 顏色文字 (Demo 2 style)
                         if (cols.status) {
                             var active = d.is_active;
-                            cols.status.elem.textContent = active ? '啟用' : '停用';
-                            cols.status.elem.style.color = active ? '#276749' : '#c53030';
-                            cols.status.elem.style.cursor = 'pointer';
-                            cols.status.elem.style.fontSize = '0.85em';
-                            // 點擊 toggle (只綁一次)
-                            if (!cols.status.elem._bound) {
-                                cols.status.elem._bound = true;
-                                cols.status.elem.addEventListener('click', function(ev) {
-                                    ev.stopPropagation();
-                                    self._toggleActive(node);
-                                });
-                            }
+                            var statusEl = cols.status.elem;
+                            statusEl.textContent = active ? '啟用' : '停用';
+                            statusEl.style.color = active ? '#276749' : '#c53030';
+                            statusEl.style.cursor = 'pointer';
+                            statusEl.style.fontSize = '0.85em';
+                            statusEl.onclick = function(ev) {
+                                ev.stopPropagation();
+                                self._toggleActive(node);
+                            };
                         }
 
-                        // 操作欄
+                        // 操作欄 -- 每次 render 都重建 (虛擬渲染會複用 DOM)
                         if (cols.actions) {
                             var td = cols.actions.elem;
-                            // 避免重複建立按鈕
-                            if (!td._built) {
-                                td._built = true;
-                                td.style.whiteSpace = 'nowrap';
+                            td.innerHTML = '';
+                            td.style.whiteSpace = 'nowrap';
 
-                                if (isHier) {
-                                    var addBtn = document.createElement('button');
-                                    addBtn.className = 'dc-btn sm';
-                                    addBtn.textContent = '+子';
-                                    addBtn.title = '新增子項';
-                                    addBtn.addEventListener('click', function(ev) {
-                                        ev.stopPropagation();
-                                        self.openItemModal(null, node.data.code);
-                                    });
-                                    td.appendChild(addBtn);
-                                    td.appendChild(document.createTextNode(' '));
-                                }
-
-                                var editBtn = document.createElement('button');
-                                editBtn.className = 'dc-btn sm';
-                                editBtn.textContent = '編輯';
-                                editBtn.addEventListener('click', function(ev) {
+                            if (isHier) {
+                                var addBtn = document.createElement('button');
+                                addBtn.className = 'dc-btn sm';
+                                addBtn.textContent = '+子';
+                                addBtn.title = '新增子項';
+                                addBtn.onclick = function(ev) {
                                     ev.stopPropagation();
-                                    self.openItemModal(node.data);
-                                });
-                                td.appendChild(editBtn);
+                                    self.openItemModal(null, node.data.code);
+                                };
+                                td.appendChild(addBtn);
                                 td.appendChild(document.createTextNode(' '));
-
-                                var delBtn = document.createElement('button');
-                                delBtn.className = 'dc-btn sm danger';
-                                delBtn.textContent = '刪除';
-                                delBtn.addEventListener('click', function(ev) {
-                                    ev.stopPropagation();
-                                    self._deleteByNode(node);
-                                });
-                                td.appendChild(delBtn);
                             }
+
+                            var editBtn = document.createElement('button');
+                            editBtn.className = 'dc-btn sm';
+                            editBtn.textContent = '編輯';
+                            editBtn.onclick = function(ev) {
+                                ev.stopPropagation();
+                                self.openItemModal(node.data);
+                            };
+                            td.appendChild(editBtn);
+                            td.appendChild(document.createTextNode(' '));
+
+                            var delBtn = document.createElement('button');
+                            delBtn.className = 'dc-btn sm danger';
+                            delBtn.textContent = '刪除';
+                            delBtn.onclick = function(ev) {
+                                ev.stopPropagation();
+                                self._deleteByNode(node);
+                            };
+                            td.appendChild(delBtn);
                         }
                     },
 
