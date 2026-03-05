@@ -10,6 +10,7 @@ function getCsrfToken() {
 function groupManager() {
     return {
         ...codeInputMixin('group'),
+        isAdmin: __groupsConfig.isAdmin || false,
         groups: [],
         expandedNodes: {},
         selectedGroup: null,
@@ -33,9 +34,12 @@ function groupManager() {
         draggedTreePerson: null,
 
         async init() {
-            // 取得帳號
+            // 取得帳號 (admin 用 /api/users, 團長用 /api/units/group-member-candidates)
             try {
-                const res = await fetch('/api/users?per_page=1000');
+                const usersUrl = this.isAdmin
+                    ? '/api/users?per_page=1000'
+                    : '/api/units/group-member-candidates?per_page=1000';
+                const res = await fetch(usersUrl);
                 if (res.ok) {
                     const data = await res.json();
                     this.allUsers = (data.users || []).filter(u => !u.is_deleted && u.is_active);
@@ -96,6 +100,8 @@ function groupManager() {
                 dnd: {
                     is_draggable: (nodes) => {
                         const type = nodes[0].data?.type;
+                        // Non-admin: only person nodes are draggable (not groups)
+                        if (!self.isAdmin && type === 'group') return false;
                         return type === 'group' || type === 'person';
                     },
                     copy: false

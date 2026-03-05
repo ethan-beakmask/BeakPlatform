@@ -481,6 +481,20 @@ class WorkflowEngine:
             except Exception as e:
                 logger.warning(f'SQL Sync enqueue 失敗: {e}')
 
+        # Post-approval provisioning: 表單審批通過後的自動配置
+        if form_instance and form_instance.status == 'APPROVED':
+            try:
+                from modules.data_crud.services.provision_service import SubSystemProvisionService
+                if SubSystemProvisionService.should_provision(form_instance):
+                    result = SubSystemProvisionService.provision(form_instance)
+                    if result.get('success'):
+                        logger.info('Post-approval provision 完成: %s', form_instance.serial_number)
+                    else:
+                        logger.warning('Post-approval provision 失敗: %s - %s',
+                                       form_instance.serial_number, result.get('error'))
+            except Exception as e:
+                logger.warning(f'Post-approval provision 異常: {e}')
+
     @staticmethod
     def cancel_pending_nodes(
         workflow_instance_secure_code: str,

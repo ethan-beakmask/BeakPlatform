@@ -12,6 +12,7 @@ from flask_login import current_user
 from sqlalchemy.orm.attributes import flag_modified
 
 from app import db
+from app.models.menu_item import MenuItem
 from app.models.organizational_unit import OrganizationalUnit, UnitType
 from app.models.user_unit_membership import (
     UserUnitMembership, MembershipType, MembershipRole,
@@ -168,7 +169,7 @@ class ProjectService:
 
     @staticmethod
     def publish(secure_code: str) -> Dict[str, Any]:
-        """上線開發案"""
+        """上線開發案 -- 同時啟用關聯選單"""
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -178,13 +179,23 @@ class ProjectService:
             return {'success': False, 'error': '開發案不存在'}
 
         ResourceGateway.update(ss, check_permission=False, status='published')
+
+        # 連動: 啟用關聯選單項
+        if ss.menu_item_secure_code:
+            menu_item = MenuItem.query.filter_by(
+                secure_code=ss.menu_item_secure_code,
+                is_deleted=False,
+            ).first()
+            if menu_item:
+                menu_item.is_active = True
+
         ResourceGateway.commit()
 
         return {'success': True, 'data': ss.to_dict()}
 
     @staticmethod
     def unpublish(secure_code: str) -> Dict[str, Any]:
-        """下線開發案"""
+        """下線開發案 -- 同時停用關聯選單"""
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -194,6 +205,16 @@ class ProjectService:
             return {'success': False, 'error': '開發案不存在'}
 
         ResourceGateway.update(ss, check_permission=False, status='draft')
+
+        # 連動: 停用關聯選單項
+        if ss.menu_item_secure_code:
+            menu_item = MenuItem.query.filter_by(
+                secure_code=ss.menu_item_secure_code,
+                is_deleted=False,
+            ).first()
+            if menu_item:
+                menu_item.is_active = False
+
         ResourceGateway.commit()
 
         return {'success': True, 'data': ss.to_dict()}

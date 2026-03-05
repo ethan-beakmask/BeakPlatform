@@ -119,6 +119,10 @@ class MenuService:
         if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
             filtered_items = cls._filter_by_module_access(filtered_items, user)
 
+        # 6.7 子系統選單過濾: 只有社群成員能看到對應子系統 (SYSTEM_ADMIN / ORG_ADMIN 不受限)
+        if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
+            filtered_items = cls._filter_by_sub_system_membership(filtered_items, user)
+
         # 7. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
         menu_permissions_map = cls._get_menu_permissions_map(
             [item.secure_code for item in filtered_items]
@@ -631,6 +635,109 @@ class MenuService:
             db.session.delete(menu_item)
 
         return True
+
+    # ========================================
+    # 子系統選單過濾 (社群成員身份)
+    # ========================================
+
+    # 子系統父選單 code
+    _SUB_SYSTEM_PARENT_CODE = 'sub_system'
+
+    @classmethod
+    def _filter_by_sub_system_membership(
+        cls,
+        items: List[MenuItem],
+        user
+    ) -> List[MenuItem]:
+        """
+        過濾子系統選單: 只有對應社群成員能看到
+
+        規則:
+        - 「子系統」header 下的子選單，link_target 格式為
+          /data-crud/sub-systems/{ss_sc}/portal
+        - 解析 ss_sc -> 查 DcSubSystem.group_unit_secure_code
+        - 查 UserUnitMembership 判斷用戶是否為社群成員
+        - 非成員移除
+        - admin 不經此過濾 (在呼叫端已判斷)
+        """
+        import re
+        try:
+            # 找出「子系統」父選單
+            sub_system_parent_sc = None
+            for item in items:
+                if item.code == cls._SUB_SYSTEM_PARENT_CODE:
+                    sub_system_parent_sc = item.secure_code
+                    break
+
+            if not sub_system_parent_sc:
+                return items  # 無子系統 header，直接回傳
+
+            # 收集需要檢查的子選單 (parent = sub_system)
+            sub_menu_items = []
+            other_items = []
+            for item in items:
+                if item.parent_secure_code == sub_system_parent_sc:
+                    sub_menu_items.append(item)
+                else:
+                    other_items.append(item)
+
+            if not sub_menu_items:
+                return items  # 無子系統子選單
+
+            # 解析 link_target 取得 sub_system SC
+            portal_pattern = re.compile(r'/data-crud/sub-systems/([^/]+)/portal')
+            ss_sc_map = {}  # menu_item_sc -> sub_system_sc
+            ss_scs = set()
+            for item in sub_menu_items:
+                if item.link_target:
+                    match = portal_pattern.search(item.link_target)
+                    if match:
+                        ss_sc = match.group(1)
+                        ss_sc_map[item.secure_code] = ss_sc
+                        ss_scs.add(ss_sc)
+
+            if not ss_scs:
+                return items  # 無可解析的子系統連結
+
+            # 批量查詢子系統的社群 SC
+            from modules.data_crud.models.sub_system import DcSubSystem
+            sub_systems = DcSubSystem.query.filter(
+                DcSubSystem.secure_code.in_(ss_scs),
+                DcSubSystem.is_deleted == False,
+            ).all()
+            ss_group_map = {ss.secure_code: ss.group_unit_secure_code for ss in sub_systems}
+
+            # 批量查詢用戶的社群成員身份
+            from ..models.user_unit_membership import UserUnitMembership
+            group_scs = set(ss_group_map.values())
+            if not group_scs:
+                return other_items  # 子系統無社群綁定，隱藏全部
+
+            memberships = UserUnitMembership.query.filter(
+                UserUnitMembership.user_secure_code == user.secure_code,
+                UserUnitMembership.unit_secure_code.in_(group_scs),
+                UserUnitMembership.is_deleted == False,
+                UserUnitMembership.is_active == True,
+            ).all()
+            user_group_scs = {m.unit_secure_code for m in memberships}
+
+            # 過濾: 保留用戶有成員身份的子系統選單
+            for item in sub_menu_items:
+                ss_sc = ss_sc_map.get(item.secure_code)
+                if not ss_sc:
+                    # 無法解析的子選單 (非 portal 連結)，保留
+                    other_items.append(item)
+                    continue
+                group_sc = ss_group_map.get(ss_sc)
+                if group_sc and group_sc in user_group_scs:
+                    other_items.append(item)
+                # else: 非成員，移除
+
+            return other_items
+
+        except Exception as e:
+            logger.warning('Sub system membership filter failed, skipping: %s', e)
+            return items
 
     # ========================================
     # 合約驅動模組選單過濾

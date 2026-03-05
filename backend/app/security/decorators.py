@@ -112,6 +112,47 @@ def system_admin_required(f):
     return decorated_function
 
 
+def module_access_required(module_code: str):
+    """
+    模組使用權路由檢查裝飾器。
+
+    檢查當前用戶是否有權存取指定模組。
+    系統管理員/企業管理員自動放行。
+
+    Usage:
+        @module_access_required('web_builder')
+        def my_route():
+            ...
+    """
+    def decorator(f):
+        f._module_access_required = module_code
+
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401, description="Authentication required")
+
+            if not current_user.is_active:
+                abort(403, description="Account is disabled")
+
+            # 系統管理員/企業管理員自動放行
+            if getattr(current_user, 'is_system_admin', False) or getattr(current_user, 'is_org_admin', False):
+                g.current_org_secure_code = current_user.org_secure_code
+                return f(*args, **kwargs)
+
+            # 一般用戶: 檢查模組使用權
+            from ..services.module_access_service import ModuleAccessService
+            if not ModuleAccessService.check_user_access(current_user, module_code):
+                abort(403, description=f"No access to module: {module_code}")
+
+            g.current_org_secure_code = current_user.org_secure_code
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
+
+
 def permission_required(resource_type: str, action: str):
     """
     資源級權限檢查裝飾器。

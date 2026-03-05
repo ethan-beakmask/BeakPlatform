@@ -46,6 +46,41 @@ def _create_member_role(unit: OrganizationalUnit) -> Role:
     return role
 
 
+def _is_admin(user) -> bool:
+    """Check if user is system admin or org admin"""
+    return (
+        getattr(user, 'is_system_admin', False)
+        or getattr(user, 'is_org_admin', False)
+    )
+
+
+def _is_group_leader(user, unit_secure_code: str) -> bool:
+    """
+    Check if user is MANAGER or DEPUTY of a specific group.
+    Admins always pass.
+    """
+    if _is_admin(user):
+        return True
+    membership = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.unit_secure_code == unit_secure_code,
+        UserUnitMembership.role_type.in_([MembershipRole.MANAGER, MembershipRole.DEPUTY]),
+        UserUnitMembership.is_deleted == False
+    ).first()
+    return membership is not None
+
+
+def _get_managed_group_scs(user) -> list:
+    """Get list of group secure_codes where user is MANAGER or DEPUTY"""
+    memberships = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.org_secure_code == user.org_secure_code,
+        UserUnitMembership.role_type.in_([MembershipRole.MANAGER, MembershipRole.DEPUTY]),
+        UserUnitMembership.is_deleted == False
+    ).all()
+    return [m.unit_secure_code for m in memberships]
+
+
 @units_bp.route('/', methods=['GET'])
 @admin_required
 def list_units():
@@ -428,12 +463,49 @@ def list_departments():
 
 
 @units_bp.route('/groups', methods=['GET'])
-@admin_required
+@login_required
 def list_groups():
-    """取得群組列表"""
-    request.args = request.args.copy()
-    request.args['type'] = UnitType.GROUP
-    return list_units()
+    """
+    取得群組列表
+
+    Admin: 回傳全部群組
+    Team leader (MANAGER/DEPUTY): 只回傳管理的群組
+    """
+    as_tree = request.args.get('tree', 'false').lower() == 'true'
+
+    if _is_admin(current_user):
+        # Admin: 走原本的 list_units 邏輯
+        all_groups = ResourceGateway.filter(
+            OrganizationalUnit,
+            is_deleted=False,
+            unit_type=UnitType.GROUP,
+            order_by='sort_order',
+        )
+        if as_tree:
+            root_groups = [u for u in all_groups if u.parent_secure_code is None]
+            return jsonify({
+                'units': [u.to_dict(include_children=True) for u in root_groups]
+            }), 200
+        return jsonify({
+            'units': [u.to_dict() for u in all_groups]
+        }), 200
+
+    # Team leader: 只回傳管理的群組
+    managed_scs = _get_managed_group_scs(current_user)
+    if not managed_scs:
+        return jsonify({'units': []}), 200
+
+    managed_groups = ResourceGateway.filter(
+        OrganizationalUnit,
+        is_deleted=False,
+        unit_type=UnitType.GROUP,
+        order_by='sort_order',
+    )
+    # 只保留管理的群組 (展平為頂層)
+    filtered = [u for u in managed_groups if u.secure_code in managed_scs]
+    return jsonify({
+        'units': [u.to_dict() for u in filtered]
+    }), 200
 
 
 @units_bp.route('/<secure_code>/members', methods=['GET'])
@@ -1094,7 +1166,7 @@ def remove_unit_leadership(secure_code: str, position: str):
 # =====================================================
 
 @units_bp.route('/<secure_code>/cross-members', methods=['GET'])
-@admin_required
+@login_required
 def get_cross_members(secure_code: str):
     """
     取得跨部門/社群成員列表
@@ -1103,8 +1175,11 @@ def get_cross_members(secure_code: str):
     Query params:
         - type: DOTTED / MEMBER (篩選成員類型)
 
-    返回該單位的所有跨部門/社群成員關係
+    Admin 或 團長/副團長 可存取
     """
+    if not _is_group_leader(current_user, secure_code):
+        return jsonify({'error': '無權限存取此社群'}), 403
+
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
@@ -1141,7 +1216,7 @@ def get_cross_members(secure_code: str):
 
 
 @units_bp.route('/<secure_code>/cross-members', methods=['POST'])
-@admin_required
+@login_required
 def add_cross_member(secure_code: str):
     """
     新增跨部門/社群成員
@@ -1155,7 +1230,12 @@ def add_cross_member(secure_code: str):
         "end_date": "2024-12-31" (optional),
         "notes": "備註" (optional)
     }
+
+    Admin 或 團長/副團長 可存取
     """
+    if not _is_group_leader(current_user, secure_code):
+        return jsonify({'error': '無權限管理此社群成員'}), 403
+
     from datetime import date
 
     unit = ResourceGateway.get_by(
@@ -1266,7 +1346,7 @@ def add_cross_member(secure_code: str):
 
 
 @units_bp.route('/<secure_code>/cross-members/<membership_secure_code>', methods=['PUT'])
-@admin_required
+@login_required
 def update_cross_member(secure_code: str, membership_secure_code: str):
     """
     更新跨部門/社群成員關係
@@ -1278,7 +1358,12 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
         "end_date": "2024-12-31",
         "notes": "備註"
     }
+
+    Admin 或 團長/副團長 可存取
     """
+    if not _is_group_leader(current_user, secure_code):
+        return jsonify({'error': '無權限管理此社群成員'}), 403
+
     from datetime import date
 
     unit = ResourceGateway.get_by(
@@ -1332,13 +1417,18 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
 
 
 @units_bp.route('/<secure_code>/cross-members/<membership_secure_code>', methods=['DELETE'])
-@admin_required
+@login_required
 def remove_cross_member(secure_code: str, membership_secure_code: str):
     """
     移除跨部門/社群成員關係
 
     DELETE /api/units/<secure_code>/cross-members/<membership_secure_code>
+
+    Admin 或 團長/副團長 可存取
     """
+    if not _is_group_leader(current_user, secure_code):
+        return jsonify({'error': '無權限管理此社群成員'}), 403
+
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
@@ -1411,4 +1501,47 @@ def get_user_cross_memberships(user_secure_code: str):
             'employee_id': user.employee_id
         },
         'memberships': [m.to_dict() for m in memberships]
+    }), 200
+
+
+@units_bp.route('/group-member-candidates', methods=['GET'])
+@login_required
+def list_group_member_candidates():
+    """
+    取得社群成員候選人列表 (供團長搜尋用戶以加入社群)
+
+    GET /api/units/group-member-candidates?per_page=1000
+
+    Admin 回傳全部帳號，團長 (MANAGER/DEPUTY) 回傳同企業帳號。
+    非 admin 且非任何社群的團長 → 403。
+    """
+    from ..models.user import UserType
+
+    if not _is_admin(current_user):
+        managed_scs = _get_managed_group_scs(current_user)
+        if not managed_scs:
+            return jsonify({'error': '無權限'}), 403
+
+    per_page = request.args.get('per_page', 100, type=int)
+    per_page = min(per_page, 1000)
+
+    users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+        User.org_secure_code == current_user.org_secure_code,
+        User.is_deleted == False,
+        User.is_active == True,
+        User.user_type != UserType.SYSTEM_ADMIN,
+    ).order_by(User.display_name).limit(per_page).all()
+
+    return jsonify({
+        'users': [
+            {
+                'id': u.secure_code,
+                'display_name': u.display_name,
+                'native_name': u.native_name,
+                'english_name': u.english_name,
+                'employee_id': u.employee_id,
+                'email': u.email,
+            }
+            for u in users
+        ]
     }), 200

@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, abort
 from flask_login import current_user
 
 from app.security.decorators import login_required as security_login_required
+from app.security.decorators import module_access_required
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +49,14 @@ def view_browse(secure_code):
 
 
 @web_bp.route('/lab')
-@security_login_required
+@module_access_required('web_builder')
 def lab():
     """Web Builder - 佈局設計器（新頁面）"""
     return render_template('modules/data_crud/lab.html')
 
 
 @web_bp.route('/lab/<secure_code>')
-@security_login_required
+@module_access_required('web_builder')
 def lab_edit(secure_code):
     """Web Builder - 佈局設計器（編輯既有頁面）"""
     return render_template('modules/data_crud/lab.html')
@@ -148,14 +149,14 @@ def lookup_manager():
 # =============================================================================
 
 @web_bp.route('/my-projects')
-@security_login_required
+@module_access_required('web_builder')
 def my_projects():
     """我的開發案列表"""
     return render_template('modules/data_crud/my_projects.html')
 
 
 @web_bp.route('/studio/<secure_code>')
-@security_login_required
+@module_access_required('web_builder')
 def studio(secure_code):
     """統一設計器 (Phase 2)"""
     return render_template(
@@ -165,7 +166,7 @@ def studio(secure_code):
 
 
 @web_bp.route('/studio-test/<secure_code>')
-@security_login_required
+@module_access_required('web_builder')
 def studio_grid_test(secure_code):
     """Grid 模式測試頁 (standalone, no base.html)"""
     return render_template(
@@ -179,14 +180,14 @@ def studio_grid_test(secure_code):
 # =============================================================================
 
 @web_bp.route('/sub-systems')
-@security_login_required
+@module_access_required('web_builder')
 def sub_system_list():
     """子系統列表"""
     return render_template('modules/data_crud/sub_system_list.html')
 
 
 @web_bp.route('/sub-systems/<secure_code>/config')
-@security_login_required
+@module_access_required('web_builder')
 def sub_system_config(secure_code):
     """子系統配置"""
     return render_template(

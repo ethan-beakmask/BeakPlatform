@@ -44,7 +44,7 @@
                     <th style="width: 80px;">頁面數</th>
                     <th style="width: 60px;">狀態</th>
                     <th style="width: 140px;">更新時間</th>
-                    <th style="width: 180px;">操作</th>
+                    <th style="width: 240px;">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,6 +63,8 @@
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(item.updated_at)"></td>
                         <td class="actions">
+                            <a :href="'/data-crud/studio/' + item.secure_code"
+                               class="dc-btn sm">設計器</a>
                             <a :href="'/data-crud/sub-systems/' + item.secure_code + '/portal'"
                                class="dc-btn sm" target="_blank">預覽</a>
                             <a :href="'/data-crud/sub-systems/' + item.secure_code + '/config'"

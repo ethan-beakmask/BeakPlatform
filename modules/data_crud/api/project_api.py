@@ -8,7 +8,7 @@ from flask import jsonify, request
 from flask_login import current_user
 
 from app import csrf
-from app.security.decorators import admin_required
+from app.security.decorators import admin_required, module_access_required
 
 from . import api_bp
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 @api_bp.route('/projects')
+@module_access_required('web_builder')
 def list_projects():
     """我的開發案列表"""
     from ..services.project_service import ProjectService
@@ -30,6 +31,7 @@ def list_projects():
 
 @api_bp.route('/projects', methods=['POST'])
 @csrf.exempt
+@module_access_required('web_builder')
 def create_project():
     """建立開發案"""
     from ..services.project_service import ProjectService
@@ -44,6 +46,7 @@ def create_project():
 
 @api_bp.route('/projects/<secure_code>', methods=['PUT'])
 @csrf.exempt
+@module_access_required('web_builder')
 def update_project(secure_code):
     """更新開發案"""
     from ..services.project_service import ProjectService
@@ -61,6 +64,7 @@ def update_project(secure_code):
 
 @api_bp.route('/projects/<secure_code>', methods=['DELETE'])
 @csrf.exempt
+@module_access_required('web_builder')
 def delete_project(secure_code):
     """刪除開發案"""
     from ..services.project_service import ProjectService
@@ -81,6 +85,7 @@ def delete_project(secure_code):
 
 @api_bp.route('/projects/<secure_code>/publish', methods=['POST'])
 @csrf.exempt
+@module_access_required('web_builder')
 def publish_project(secure_code):
     """上線開發案"""
     from ..services.project_service import ProjectService
@@ -97,6 +102,7 @@ def publish_project(secure_code):
 
 @api_bp.route('/projects/<secure_code>/unpublish', methods=['POST'])
 @csrf.exempt
+@module_access_required('web_builder')
 def unpublish_project(secure_code):
     """下線開發案"""
     from ..services.project_service import ProjectService
@@ -116,6 +122,7 @@ def unpublish_project(secure_code):
 # =============================================================================
 
 @api_bp.route('/projects/<secure_code>/developers')
+@module_access_required('web_builder')
 def list_developers(secure_code):
     """開發者名單"""
     from ..services.project_service import ProjectService
@@ -132,6 +139,7 @@ def list_developers(secure_code):
 
 @api_bp.route('/projects/<secure_code>/developers', methods=['POST'])
 @csrf.exempt
+@module_access_required('web_builder')
 def add_developer(secure_code):
     """新增開發者"""
     from ..services.project_service import ProjectService
@@ -153,6 +161,7 @@ def add_developer(secure_code):
 
 @api_bp.route('/projects/<secure_code>/developers/<user_sc>', methods=['DELETE'])
 @csrf.exempt
+@module_access_required('web_builder')
 def remove_developer(secure_code, user_sc):
     """移除開發者"""
     from ..services.project_service import ProjectService

@@ -37,7 +37,7 @@ def register_web_blueprints(app: Flask) -> None:
     from .delegations import delegations_bp
     from .sys_accounts import sys_accounts_bp
     from .departments import departments_bp
-    from .groups import groups_bp
+    from .groups import groups_bp, my_groups_bp
     from .numbering import numbering_bp
     from .approval_categories import approval_categories_bp
     from .org_admins import org_admins_bp
@@ -72,8 +72,11 @@ def register_web_blueprints(app: Flask) -> None:
     # Department settings - 部門設定 (企業管理員)
     app.register_blueprint(departments_bp, url_prefix='/admin/departments')
 
-    # Group settings - 群組設定 (企業管理員)
+    # Group settings - 群組設定 (企業管理員 + 團長)
     app.register_blueprint(groups_bp, url_prefix='/admin/groups')
+
+    # My Groups - 我的社群 (團長入口)
+    app.register_blueprint(my_groups_bp, url_prefix='/my-groups')
 
     # Host Config - 主機設定區 (系統管理員)
     app.register_blueprint(hostconfig_bp, url_prefix='/hostconfig')
