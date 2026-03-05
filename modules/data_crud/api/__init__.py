@@ -1021,3 +1021,4 @@ def _check_site_map_crud(sub_sc, node_sc, action):
 # =============================================================================
 from . import sub_system_api  # noqa: E402, F401
 from . import site_map_api  # noqa: E402, F401
+from . import project_api  # noqa: E402, F401

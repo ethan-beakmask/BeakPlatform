@@ -7,6 +7,7 @@
  */
 function rowFormManager() {
     const config = window.__DC_ROW_FORM || {};
+    const _urlParams = new URLSearchParams(window.location.search);
 
     return {
         secureCode: config.secureCode,
@@ -16,6 +17,10 @@ function rowFormManager() {
         saving: false,
         dbName: '',
         toast: { show: false, message: '', type: 'success' },
+
+        // 子系統 context (from URL params)
+        _subSystemSc: _urlParams.get('_ss') || '',
+        _siteMapNodeSc: _urlParams.get('_smn') || '',
 
         // form.io 相關
         useFormio: false,
@@ -214,9 +219,17 @@ function rowFormManager() {
                     method = 'POST';
                 }
 
+                const headers = { 'Content-Type': 'application/json' };
+                if (this._subSystemSc) {
+                    headers['X-SubSystem-SC'] = this._subSystemSc;
+                    if (this._siteMapNodeSc) {
+                        headers['X-SiteMap-Node'] = this._siteMapNodeSc;
+                    }
+                }
+
                 const res = await fetch(url, {
                     method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();

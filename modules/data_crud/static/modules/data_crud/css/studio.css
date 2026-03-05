@@ -1,0 +1,513 @@
+/* ============================================================
+   Studio 設計器樣式
+   前綴: .stu- (Studio), .gle- (Grid Layout Editor)
+   ============================================================ */
+
+/* -- 全局佈局 -- */
+.stu-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.stu-main-ui {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.stu-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 48px;
+    min-height: 48px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stu-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stu-topbar-left h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.stu-topbar-left .stu-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+}
+.stu-status.draft { background: #fef3c7; color: #92400e; }
+.stu-status.published { background: #dcfce7; color: #166534; }
+
+.stu-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stu-btn {
+    padding: 5px 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.stu-btn:hover { background: #f3f4f6; }
+.stu-btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.stu-btn.primary:hover { background: #1d4ed8; }
+.stu-btn.danger { color: #dc2626; border-color: #dc2626; }
+.stu-btn.danger:hover { background: #fef2f2; }
+.stu-btn.sm { padding: 3px 8px; font-size: 12px; }
+.stu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* -- 主體三欄 -- */
+.stu-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* -- 左側邊欄 -- */
+.stu-sidebar {
+    width: 240px;
+    min-width: 240px;
+    border-right: 1px solid #e5e7eb;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.stu-sidebar-section {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stu-sidebar-section:last-child {
+    border-bottom: none;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.stu-sidebar-title {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f3f4f6;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* 元件庫 */
+.stu-component-list {
+    padding: 8px;
+}
+
+.stu-component-item {
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    cursor: grab;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.stu-component-item:hover { border-color: #2563eb; background: #eff6ff; }
+.stu-component-item .stu-comp-icon { color: #6b7280; font-size: 14px; }
+
+/* Site Map 樹 */
+.stu-tree-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.stu-tree-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* -- 設計區 (中央) -- */
+.stu-canvas {
+    flex: 1;
+    overflow: hidden;
+    background: #f9fafb;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.stu-canvas-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Grid canvas 填滿剩餘空間 */
+#stu-grid-canvas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* -- 屬性面板 (右側，選中時展開) -- */
+.stu-props {
+    width: 300px;
+    min-width: 300px;
+    border-left: 1px solid #e5e7eb;
+    background: #fff;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.stu-props-hidden {
+    display: none;
+}
+
+.stu-props-header {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    background: #f3f4f6;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stu-props-body {
+    padding: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.stu-field {
+    margin-bottom: 10px;
+}
+
+.stu-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    color: #374151;
+}
+
+.stu-field input,
+.stu-field select,
+.stu-field textarea {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.stu-field-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.stu-field-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.stu-field-check input[type="checkbox"] { width: auto; }
+.stu-field-check label { margin: 0; }
+
+.stu-section-divider {
+    margin: 12px 0 8px;
+    padding-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* -- Grid Layout Editor Root -- */
+.gle-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* -- GLE Toolbar -- */
+.gle-toolbar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+.gle-tb-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.gle-tb-group label {
+    font-size: 12px;
+    color: #555;
+}
+.gle-tb-sep {
+    width: 1px;
+    height: 22px;
+    background: #ddd;
+}
+.gle-tb-btn {
+    padding: 4px 10px;
+    border: 1px solid #bbb;
+    background: #fff;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #333;
+}
+.gle-tb-btn:hover:not(:disabled) { background: #e4e4e4; }
+.gle-tb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.gle-tb-btn.primary { background: #2c5282; color: #fff; border-color: #2c5282; }
+.gle-tb-btn.primary:hover:not(:disabled) { background: #234876; }
+.gle-shortcut { font-size: 10px; color: #999; margin-left: 2px; }
+
+.gle-root input[type="number"] {
+    width: 48px;
+    padding: 3px 5px;
+    border: 1px solid #bbb;
+    border-radius: 2px;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* -- GLE Grid Area -- */
+.gle-wrapper {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    background: #fff;
+    border: 2px solid #888;
+    overflow: hidden;
+}
+.gle-grid {
+    display: grid;
+    width: 100%;
+    height: 100%;
+}
+
+/* -- GLE Cells -- */
+.gle-cell {
+    border: 1px solid #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    transition: background 0.08s;
+    background: #fff;
+}
+.gle-cell:hover { background: #f0f4ff; }
+.gle-cell.selected {
+    background: #d0e0ff;
+    outline: 2px solid #4a8ad9;
+    outline-offset: -2px;
+    z-index: 1;
+}
+.gle-cell.merged { background: #f0fdf4; }
+.gle-cell.has-widget { background: #fff; cursor: default; }
+.gle-cell.drag-over { background: #e6edfa; }
+
+.gle-cell-label {
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* Widget preview inside cell */
+.gle-widget-preview {
+    padding: 8px;
+    font-size: 12px;
+    width: 100%;
+    overflow: hidden;
+}
+.gle-wp-type {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.gle-wp-detail {
+    color: #6b7280;
+}
+
+/* -- Resize Handles -- */
+.gle-col-handle {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+}
+.gle-row-handle {
+    position: absolute;
+    left: 0;
+    height: 8px;
+    width: 100%;
+    cursor: row-resize;
+    z-index: 10;
+}
+.gle-col-handle:hover, .gle-col-handle.active { background: rgba(74,138,217,0.25); }
+.gle-row-handle:hover, .gle-row-handle.active { background: rgba(74,138,217,0.25); }
+
+/* -- Status Bar -- */
+.gle-statusbar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #666;
+    display: flex;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+/* -- Context Menu -- */
+.gle-ctx-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 140px;
+}
+.gle-ctx-item {
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.gle-ctx-item:hover { background: #f3f4f6; }
+.gle-ctx-sep {
+    border-top: 1px solid #e5e7eb;
+    margin: 2px 0;
+}
+
+/* -- Custom Split Modal -- */
+.gle-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+.gle-modal-overlay.show { display: flex; }
+.gle-modal {
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 20px;
+    min-width: 240px;
+}
+.gle-modal h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.gle-modal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.gle-modal-row label {
+    font-size: 13px;
+    width: 50px;
+}
+.gle-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* GridStack in Studio (Free mode) */
+.stu-canvas .grid-stack {
+    min-height: 500px;
+}
+
+.stu-canvas .grid-stack-item-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Toast */
+.stu-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    color: #fff;
+    font-size: 13px;
+    z-index: 9999;
+    border-radius: 2px;
+}
+.stu-toast.success { background: #16a34a; }
+.stu-toast.error { background: #dc2626; }
+
+/* 選中 widget 邊框 */
+.gle-cell.gle-widget-selected {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px #f59e0b;
+}
+
+/* -- Portal v3 Grid 渲染 -- */
+.portal-grid {
+    display: grid;
+    gap: 4px;
+    min-height: 400px;
+}
+
+.portal-grid-cell {
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}

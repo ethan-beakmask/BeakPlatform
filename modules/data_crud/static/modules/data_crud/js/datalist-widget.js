@@ -459,7 +459,8 @@ class DataListWidget {
                     const btn = document.createElement('a');
                     btn.className = 'dlw-btn sm';
                     btn.textContent = '編輯';
-                    btn.href = '/data-crud/views/' + this.config.viewCode + '/rows/' + row._row_id + '/edit';
+                    btn.href = '/data-crud/views/' + this.config.viewCode + '/rows/' + row._row_id + '/edit'
+                        + this._buildContextQueryString();
                     btn.target = '_blank';
                     btn.addEventListener('click', (e) => e.stopPropagation());
                     td.appendChild(btn);
@@ -539,6 +540,19 @@ class DataListWidget {
             headers['X-SubSystem-SC'] = this.config._subSystemSc;
         }
         return headers;
+    }
+
+    /**
+     * 建立 context query string
+     * 用於開新分頁（edit/new）時傳遞子系統 context
+     */
+    _buildContextQueryString() {
+        const ss = this.config._subSystemSc || '';
+        const smn = this.config._siteMapNodeSc || '';
+        if (!ss) return '';
+        let qs = '?_ss=' + encodeURIComponent(ss);
+        if (smn) qs += '&_smn=' + encodeURIComponent(smn);
+        return qs;
     }
 
     async _doDelete(rowId) {

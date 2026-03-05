@@ -144,6 +144,37 @@ def lookup_manager():
 
 
 # =============================================================================
+# 開發案管理頁面 (Web Builder Studio Phase 1)
+# =============================================================================
+
+@web_bp.route('/my-projects')
+@security_login_required
+def my_projects():
+    """我的開發案列表"""
+    return render_template('modules/data_crud/my_projects.html')
+
+
+@web_bp.route('/studio/<secure_code>')
+@security_login_required
+def studio(secure_code):
+    """統一設計器 (Phase 2)"""
+    return render_template(
+        'modules/data_crud/studio.html',
+        sub_system_sc=secure_code,
+    )
+
+
+@web_bp.route('/studio-test/<secure_code>')
+@security_login_required
+def studio_grid_test(secure_code):
+    """Grid 模式測試頁 (standalone, no base.html)"""
+    return render_template(
+        'modules/data_crud/studio_grid_test.html',
+        sub_system_sc=secure_code,
+    )
+
+
+# =============================================================================
 # 子系統管理頁面
 # =============================================================================
 

@@ -1,0 +1,296 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Studio 設計器{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/data_crud/css/data-crud.css">
+<link rel="stylesheet" href="/static/modules/data_crud/css/datalist-widget.css">
+<link rel="stylesheet" href="/static/modules/data_crud/css/studio.css">
+<link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
+<link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
+<style>
+    [x-cloak] { display: none !important; }
+    /* Studio 全屏模式：從 body 開始鎖定整條高度鏈 */
+    html, body {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    body {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .bk-navbar, .bk-menubar {
+        flex-shrink: 0 !important;
+    }
+    .main-content {
+        flex: 1 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+    window.__STUDIO_CONFIG = {
+        subSystemSc: '{{ sub_system_sc }}',
+    };
+</script>
+
+<div class="stu-wrapper" x-data="studioManager()" x-cloak>
+
+    <!-- Loading -->
+    <div x-show="loading" x-cloak style="display:flex; align-items:center; justify-content:center; flex:1; color:#999;">
+        載入中...
+    </div>
+
+    <!-- Not Found -->
+    <div x-show="!loading && !subSystem" x-cloak style="display:flex; align-items:center; justify-content:center; flex:1; color:#999;">
+        開發案不存在
+    </div>
+
+    <!-- Main UI -->
+    <div x-show="!loading && subSystem" x-cloak class="stu-main-ui">
+
+        <!-- Top Bar -->
+        <div class="stu-topbar">
+            <div class="stu-topbar-left">
+                <a href="/data-crud/my-projects" class="stu-btn sm" title="返回">&larr;</a>
+                <h2 x-text="subSystem ? subSystem.name : ''"></h2>
+                <span class="stu-status" :class="subSystem ? subSystem.status : ''"
+                      x-text="subSystem && subSystem.status === 'published' ? '上線中' : '開發中'"></span>
+                <span x-show="dirty" style="color: #f59e0b; font-size: 12px;">(未儲存)</span>
+            </div>
+            <div class="stu-topbar-right">
+                <button class="stu-btn" @click="savePage()" :disabled="!currentPageSc">儲存</button>
+                <button class="stu-btn" @click="previewPage()">預覽</button>
+                <button class="stu-btn" @click="togglePublish()"
+                        x-text="subSystem && subSystem.status === 'draft' ? '上線' : '下線'"></button>
+            </div>
+        </div>
+
+        <!-- Body: 三欄 -->
+        <div class="stu-body">
+
+            <!-- 左側邊欄 -->
+            <div class="stu-sidebar">
+                <!-- 元件庫 -->
+                <div class="stu-sidebar-section">
+                    <div class="stu-sidebar-title">元件庫</div>
+                    <div class="stu-component-list">
+                        <div class="stu-component-item"
+                             draggable="true"
+                             @dragstart="onComponentDragStart($event, 'DATALIST')"
+                             @click="onComponentClick('DATALIST')">
+                            <span class="stu-comp-icon">[T]</span>
+                            DATALIST 資料清單
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Site Map 樹 -->
+                <div class="stu-sidebar-section">
+                    <div class="stu-sidebar-title">Site Map</div>
+                    <div class="stu-tree-toolbar">
+                        <button class="stu-btn sm" @click="openAddNode()">+ 節點</button>
+                        <button class="stu-btn sm danger" @click="deleteNode()"
+                                :disabled="!selectedNode">刪除</button>
+                    </div>
+                    <div class="stu-tree-wrap">
+                        <div id="stu-tree"></div>
+                        <div x-show="tree.length === 0"
+                             style="text-align:center; padding:20px; color:#999; font-size:13px;">
+                            尚無節點，點擊「+ 節點」建立
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央設計區 -->
+            <div class="stu-canvas">
+                <!-- 無選中節點 -->
+                <div x-show="!selectedNode" class="stu-canvas-empty">
+                    點擊左側 Site Map 節點開始設計
+                </div>
+
+                <!-- 選中 folder -->
+                <div x-show="selectedNode && selectedNode.node_type === 'folder'" class="stu-canvas-empty">
+                    資料夾節點無佈局設計
+                </div>
+
+                <!-- 選中的節點資訊 -->
+                <div x-show="selectedNode" style="margin-bottom: 8px; flex-shrink: 0;">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-weight:600;" x-text="selectedNode ? selectedNode.name : ''"></span>
+                        <span style="font-size:11px; color:#999;"
+                              x-text="selectedNode ? '(' + selectedNode.node_type + ')' : ''"></span>
+                    </div>
+                </div>
+
+                <!-- Grid 宮格設計區 -->
+                <div x-show="selectedNode && selectedNode.node_type === 'page' && layoutMode === 'grid'"
+                     id="stu-grid-canvas"></div>
+
+                <!-- GridStack 自由設計區 -->
+                <div x-show="selectedNode && selectedNode.node_type === 'page' && layoutMode === 'free'">
+                    <div class="grid-stack"></div>
+                </div>
+            </div>
+
+            <!-- 右側屬性面板 -->
+            <div class="stu-props" :class="{ 'stu-props-hidden': !showProps }">
+                <div class="stu-props-header">元件設定</div>
+                <div class="stu-props-body">
+
+                    <!-- View 選擇 -->
+                    <div class="stu-field">
+                        <label>資料來源 (View)</label>
+                        <select x-model="settingViewCode">
+                            <option value="">-- 請選擇 --</option>
+                            <template x-for="v in availableViews" :key="v.secure_code">
+                                <option :value="v.secure_code" x-text="v.name + ' (' + v.table_name + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="stu-field">
+                        <label>標題</label>
+                        <input type="text" x-model="settingTitle" placeholder="自訂標題">
+                    </div>
+
+                    <div class="stu-field">
+                        <label>每頁筆數</label>
+                        <input type="number" x-model="settingPageSize" min="1" max="100">
+                    </div>
+
+                    <!-- 顯示選項 -->
+                    <div class="stu-field-check">
+                        <input type="checkbox" x-model="settingShowSearch" id="stu-search">
+                        <label for="stu-search">顯示搜尋</label>
+                    </div>
+                    <div class="stu-field-check">
+                        <input type="checkbox" x-model="settingShowPagination" id="stu-pager">
+                        <label for="stu-pager">顯示分頁</label>
+                    </div>
+
+                    <!-- CRUD -->
+                    <div class="stu-section-divider">CRUD 權限</div>
+                    <div class="stu-field-check">
+                        <input type="checkbox" x-model="settingAllowCreate" id="stu-create">
+                        <label for="stu-create">允許新增</label>
+                    </div>
+                    <div class="stu-field-check">
+                        <input type="checkbox" x-model="settingAllowEdit" id="stu-edit">
+                        <label for="stu-edit">允許編輯</label>
+                    </div>
+                    <div class="stu-field-check">
+                        <input type="checkbox" x-model="settingAllowDelete" id="stu-delete">
+                        <label for="stu-delete">允許刪除</label>
+                    </div>
+
+                    <!-- Context Outputs -->
+                    <div class="stu-section-divider">
+                        Context Outputs
+                        <button class="stu-btn sm" style="float:right;" @click="addContextOutput()">+</button>
+                    </div>
+                    <template x-for="(out, idx) in settingContextOutputs" :key="idx">
+                        <div style="display:flex; gap:4px; margin-bottom:4px; align-items:center;">
+                            <input type="text" x-model="out.contextKey" placeholder="contextKey"
+                                   style="flex:1; padding:3px 6px; font-size:12px; border:1px solid #ddd;">
+                            <select x-model="out.sourceColumn"
+                                    style="flex:1; padding:3px 6px; font-size:12px; border:1px solid #ddd;">
+                                <option value="">--</option>
+                                <template x-for="col in getViewColumns()" :key="col">
+                                    <option :value="col" x-text="col"></option>
+                                </template>
+                            </select>
+                            <button class="stu-btn sm danger" @click="removeContextOutput(idx)">x</button>
+                        </div>
+                    </template>
+
+                    <!-- Context Inputs -->
+                    <div class="stu-section-divider">
+                        Context Inputs
+                        <button class="stu-btn sm" style="float:right;" @click="addContextInput()">+</button>
+                    </div>
+                    <template x-for="(inp, idx) in settingContextInputs" :key="idx">
+                        <div style="display:flex; gap:4px; margin-bottom:4px; align-items:center;">
+                            <input type="text" x-model="inp.contextKey" placeholder="contextKey"
+                                   style="flex:1; padding:3px 6px; font-size:12px; border:1px solid #ddd;">
+                            <select x-model="inp.filterColumn"
+                                    style="flex:1; padding:3px 6px; font-size:12px; border:1px solid #ddd;">
+                                <option value="">--</option>
+                                <template x-for="col in getViewColumns()" :key="col">
+                                    <option :value="col" x-text="col"></option>
+                                </template>
+                            </select>
+                            <button class="stu-btn sm danger" @click="removeContextInput(idx)">x</button>
+                        </div>
+                    </template>
+
+                    <!-- 按鈕列 -->
+                    <div style="margin-top: 16px; display:flex; gap:8px;">
+                        <button class="stu-btn primary" @click="applyWidgetSettings()">套用</button>
+                        <button class="stu-btn danger" @click="removeSelectedWidget()">移除元件</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- stu-body -->
+
+        </div><!-- flex column / Main UI -->
+
+    <!-- 新增節點 Modal -->
+    <div x-show="showAddNodeModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width: 400px;">
+            <div class="dc-modal-header">
+                <h3>新增節點</h3>
+                <button class="dc-close-btn" @click="showAddNodeModal = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <div style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:500;">名稱 *</label>
+                    <input type="text" x-model="addNodeForm.name"
+                           style="width:100%; padding:6px 8px; border:1px solid #ddd;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="display:block; margin-bottom:4px; font-weight:500;">類型</label>
+                    <div style="display:flex; gap:16px;">
+                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                            <input type="radio" value="page" x-model="addNodeForm.node_type"> 頁面
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                            <input type="radio" value="folder" x-model="addNodeForm.node_type"> 資料夾
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-bottom: 12px;" x-show="selectedNode">
+                    <label style="display:flex; align-items:center; gap:4px;">
+                        <input type="checkbox"
+                               :checked="addNodeForm.parent_sc !== ''"
+                               @change="addNodeForm.parent_sc = $event.target.checked
+                                   ? (selectedNode ? selectedNode.secure_code : '') : ''">
+                        建立為「<span x-text="selectedNode ? selectedNode.name : ''"></span>」的子節點
+                    </label>
+                </div>
+            </div>
+            <div class="dc-modal-footer">
+                <button class="dc-btn" @click="showAddNodeModal = false">取消</button>
+                <button class="dc-btn primary" @click="doAddNode()">建立</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="stu-toast" :class="toast.type"
+         x-text="toast.message" x-transition></div>
+</div>
+
+<script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="/static/modules/data_crud/js/page-context.js"></script>
+<script src="/static/modules/data_crud/js/datalist-widget.js"></script>
+<script src="/static/modules/data_crud/js/grid-layout-editor.js"></script>
+<script src="/static/modules/data_crud/js/studio.js"></script>
+{% endblock %}

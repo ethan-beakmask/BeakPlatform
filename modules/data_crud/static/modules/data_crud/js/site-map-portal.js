@@ -78,7 +78,8 @@ function siteMapPortal() {
                     key: n.secure_code,
                     icon: icon,
                     expanded: true,
-                    data: n,
+                    // 用 refRaw 保存原始資料，避免被 Wunderbaum 內部 data 屬性覆蓋
+                    refRaw: JSON.parse(JSON.stringify(n)),
                 };
                 if (n.children && n.children.length > 0) {
                     node.children = self._treeToSource(n.children);
@@ -106,7 +107,7 @@ function siteMapPortal() {
                     selectMode: 'single',
 
                     activate: function(e) {
-                        var d = e.node.data;
+                        var d = (e.node.data && e.node.data.refRaw) || e.node.data || {};
                         if (d.node_type === 'page') {
                             self._buildBreadcrumb(e.node);
                             self.loadPage(d);
@@ -170,12 +171,16 @@ function siteMapPortal() {
                 var ctx = ctxData.data;
                 var layout = layoutData.data.layout_json || {};
 
-                // 向下相容: 舊格式 bindings
-                layout = this._migrateBindingsToContext(layout);
-                var items = layout.widgets || [];
-
-                this._initGrid();
-                this._renderLayout(items, ctx);
+                // v3 Grid 模式 or v2 GridStack 模式
+                if (layout.version === 3 && layout.mode === 'grid') {
+                    this._renderGridLayout(layout, ctx);
+                } else {
+                    // 向下相容: 舊格式 bindings
+                    layout = this._migrateBindingsToContext(layout);
+                    var items = layout.widgets || [];
+                    this._initGrid();
+                    this._renderLayout(items, ctx);
+                }
             } catch (e) {
                 this.pageError = '載入頁面失敗: ' + e.message;
             } finally {
@@ -198,9 +203,15 @@ function siteMapPortal() {
                 this._grid = null;
             }
 
-            // 清空 DOM
+            // 清空 DOM (grid-stack 或 portal-grid)
             var gsEl = document.querySelector('.sp2-content .grid-stack');
             if (gsEl) gsEl.innerHTML = '';
+            var pgEl = document.querySelector('.sp2-content .portal-grid');
+            if (pgEl) {
+                pgEl.className = 'grid-stack';
+                pgEl.removeAttribute('style');
+                pgEl.innerHTML = '';
+            }
 
             // Reset PageContext
             if (typeof PageContext !== 'undefined') {
@@ -265,6 +276,80 @@ function siteMapPortal() {
                         content2.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
                     }
                 }
+            }
+        },
+
+        // ===== v3 Grid 佈局渲染 =====
+
+        _renderGridLayout(layout, ctx) {
+            var self = this;
+            var gridSize = layout.gridSize || [4, 4];
+            var zones = layout.zones || [];
+            var widgets = layout.widgets || [];
+
+            // 建立 zone -> widget 映射
+            var widgetByZone = {};
+            for (var i = 0; i < widgets.length; i++) {
+                widgetByZone[widgets[i].zoneId] = widgets[i].widget;
+            }
+
+            // 找到渲染容器 (替代 grid-stack)
+            var container = document.querySelector('.sp2-content .grid-stack');
+            if (!container) return;
+            container.innerHTML = '';
+            container.className = 'portal-grid';
+
+            // 使用 colWidths/rowHeights (如果有)，否則用均等 fr
+            if (layout.colWidths && layout.colWidths.length > 0) {
+                container.style.gridTemplateColumns = layout.colWidths.map(function(w) { return w + 'fr'; }).join(' ');
+            } else {
+                container.style.gridTemplateColumns = 'repeat(' + gridSize[1] + ', 1fr)';
+            }
+            if (layout.rowHeights && layout.rowHeights.length > 0) {
+                container.style.gridTemplateRows = layout.rowHeights.map(function(h) { return 'minmax(120px, ' + h + 'fr)'; }).join(' ');
+            } else {
+                container.style.gridTemplateRows = 'repeat(' + gridSize[0] + ', minmax(120px, 1fr))';
+            }
+
+            for (var j = 0; j < zones.length; j++) {
+                var zone = zones[j];
+                var cell = document.createElement('div');
+                cell.className = 'portal-grid-cell';
+                cell.style.gridRow = zone.row + ' / span ' + zone.rowSpan;
+                cell.style.gridColumn = zone.col + ' / span ' + zone.colSpan;
+
+                var widgetConfig = widgetByZone[zone.id];
+                if (widgetConfig && widgetConfig.viewCode) {
+                    var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
+                    widgetConfig.id = wid;
+
+                    // 套用 CRUD 覆蓋
+                    var crud = ctx.crud || {};
+                    if ('create' in crud) widgetConfig.allowCreate = crud.create;
+                    if ('edit' in crud) widgetConfig.allowEdit = crud.edit;
+                    if ('delete' in crud) widgetConfig.allowDelete = crud.delete;
+
+                    // 套用資料篩選
+                    var dataFilters = ctx.data_filters || {};
+                    if (Object.keys(dataFilters).length > 0) {
+                        widgetConfig._subSystemFilters = dataFilters;
+                    }
+
+                    widgetConfig._siteMapNodeSc = ctx.node_secure_code;
+                    widgetConfig._subSystemSc = self.subSystemSc;
+
+                    var widget = new DataListWidget(cell, widgetConfig);
+                    widget.init();
+                    self._widgets[wid] = widget;
+                } else {
+                    cell.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
+                }
+
+                container.appendChild(cell);
+            }
+
+            if (zones.length === 0) {
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;">此頁面尚未配置佈局</div>';
             }
         },
 
