@@ -107,13 +107,25 @@
 
 ### menu_service.py 過濾鏈完整性
 
-6 步過濾流程正確：
-1. **Step 1** `_get_allowed_menu_codes`: MenuPermission 取得基礎可見集合
-2. **Step 1.5** 模組選單注入: SYSTEM_ADMIN/ORG_ADMIN 注入全部，EMPLOYEE/EXTERNAL 按 ACL
-3. **Step 3** 主查詢: `is_deleted=false` + `secure_code in allowed_codes`
-4. **Step 5** RBAC: `required_permission` 欄位過濾
-5. **Step 6** 合約過濾: 非 SYSTEM_ADMIN 需有效合約
-6. **Step 6.5** 模組使用權: 非 SYSTEM_ADMIN/ORG_ADMIN 需 ACL 授權
+> **2026-03-07 更新**: 過濾鏈架構已重構為「治理分流」模式。
+
+7 步過濾流程 + 治理分流：
+1. **Step 1** `_get_allowed_menu_codes`: MenuPermission 取得基礎可見集合 → `perm_governed_codes`
+2. **Step 1.5** 模組選單注入: SYSTEM_ADMIN/ORG_ADMIN 注入全部，EMPLOYEE/EXTERNAL 按 ACL → `module_injected_codes`
+3. **治理分流**: `module_only_codes = module_injected_codes - perm_governed_codes`
+   - `perm_governed_codes`: 管理員在 /menu/ 勾選的選單 → **直接生效，不經 Steps 6~6.7 過濾**
+   - `module_only_codes`: 純模組注入的選單 → 經 Steps 6~6.7 過濾
+4. **Step 3** 主查詢: `is_deleted=false` + `secure_code in allowed_codes`
+5. **Step 5** RBAC: `required_permission` 欄位過濾
+6. **Step 6** 合約過濾: `_filter_with_bypass()` 只過濾 `module_only_codes`，SYSTEM_ADMIN 完全豁免
+7. **Step 6.5** 模組使用權: `_filter_with_bypass()` 只過濾 `module_only_codes`，SYSTEM_ADMIN/ORG_ADMIN 豁免
+8. **Step 6.7** 子系統社群過濾: `_filter_with_bypass()` 只過濾 `module_only_codes`，SYSTEM_ADMIN/ORG_ADMIN 豁免
+
+**`_filter_with_bypass()` 分流器**: 靜態方法，將 items 分為受管轄 (subject) 與不受管轄兩組，只對受管轄組執行過濾，最後合併保持原始順序。
+
+**system.local 合約豁免**: `_get_authorized_modules()` 對 `SYSTEM_ORG_CODE` 直接回傳所有已安裝模組，不查合約。與 `Organization.get_contract_valid_range()` 永久有效邏輯一致。
+
+**`SYSTEM_ORG_CODE` 集中化**: 所有 system.local 判斷統一從 `backend/app/constants.py` 匯入常數，不再分散定義。
 
 ### module_menu_service.py is_deleted 查詢邏輯
 

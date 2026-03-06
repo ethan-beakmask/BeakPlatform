@@ -14,6 +14,10 @@
 
 ### Changed
 - 子系統選單過濾改用 DB 關聯: `_filter_by_sub_system_membership()` 從正則解析 `link_target` URL 改為透過 `DcSubSystem.menu_item_secure_code` 反查
+- `SYSTEM_ORG_CODE` 集中化: 從 4 處分散定義整合至 `backend/app/constants.py` 單一來源
+  - 移除: `menu_service.py`、`module_menu_service.py`、`system_settings.py`、`enterprise_data.py` 的本地定義
+  - 更新: `organization_service.py`、`conglomerate_service.py`、`sys_accounts.py`、`cli.py`、`organization.py`、`email_handler.py` 改用常數匯入
+- system.local 合約豁免: `_get_authorized_modules()` 對系統企業直接授權所有已安裝模組，與 `get_contract_valid_range()` 永久有效邏輯一致
 
 ### Added
 - Web Builder 子系統開發申請配置流程 (A-D 全部完成)
