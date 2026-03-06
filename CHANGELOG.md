@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- 選單治理分流: MenuPermission 勾選的選單不再被合約/ACL/社群過濾覆蓋
+  - 根因: Step 6 合約過濾對所有模組選單一律檢查合約，system.local 無合約導致 EMPLOYEE 看不到已勾選的選單
+  - 修正: 引入 `_filter_with_bypass()` 分流器，區分 `perm_governed` (MenuPermission) 與 `module_only` (模組注入) 兩種治理來源
+  - MenuPermission 治理的選單直接生效，只有純模組注入的選單才經過 Steps 6~6.7 過濾
+
+### Changed
+- 子系統選單過濾改用 DB 關聯: `_filter_by_sub_system_membership()` 從正則解析 `link_target` URL 改為透過 `DcSubSystem.menu_item_secure_code` 反查
+
 ### Added
 - Web Builder 子系統開發申請配置流程 (A-D 全部完成)
   - `SubSystemProvisionService`: 表單審批通過後自動建立子系統+社群+選單+模組權限
