@@ -7,6 +7,28 @@
 ## [Unreleased]
 
 ### Added
+- Web Builder 子系統開發申請配置流程 (A-D 全部完成)
+  - `SubSystemProvisionService`: 表單審批通過後自動建立子系統+社群+選單+模組權限
+  - 配置 hook 嵌入 `workflow_engine.py` 的 `complete_workflow()` 尾部
+  - 觸發條件: form_name='子系統開發申請' OR form_code='FORM_WF8AEB7774_EA31'
+  - 選單建立時 `is_active=false`，上線才可見
+- `@module_access_required(module_code)` decorator: 路由層模組權限攔截，admin 自動放行
+  - 保護 Web Builder 全部設計器路由 (7 條 web + 10 條 API)
+  - Portal/頁面預覽路由不受限 (保持 @login_required + 內部成員檢查)
+- 子系統選單社群成員過濾: `menu_service.py` Step 6.7 `_filter_by_sub_system_membership()`
+  - 解析 `link_target` 取得子系統 SC，查社群成員身份，非成員移除選單項
+  - admin 不受過濾
+- 社群管理權限下放給團長 (MANAGER/DEPUTY)
+  - `/admin/groups/` 從 `@admin_required` 改為 `@login_required` + 權限檢查
+  - 新增 `/my-groups/` 團長入口 (別名路由)
+  - `list_groups()` API: admin 看全部，團長只看管理的社群
+  - cross-member CRUD (4 條 API): 加 `_is_group_leader()` 檢查
+  - 新增 `/api/units/group-member-candidates`: 團長用帳號搜尋 (代替 admin-only `/api/users`)
+  - 前端 `isAdmin` flag 控制 UI: 非 admin 隱藏社群 CRUD、禁用樹狀拖放重組
+- Publish/Unpublish 連動選單: `project_service.py` 上線/下線同步切換 `menu_item.is_active`
+- 子系統列表頁新增「設計器」按鈕 (指向 `/data-crud/studio/<sc>`)
+- 進度文件: `docs/WEB_BUILDER_PROVISION_PLAN.md`
+
 - Site Map 樹狀網站地圖: 子系統頁面管理從扁平列表改為樹狀結構
   - DB: `dc_site_map_nodes` (樹狀節點) + `dc_site_map_permissions` (節點權限白名單)，migration `005_create_site_map.sql`
   - 節點類型: folder (資料夾) / page (頁面)，page 自動連結 DcPageLayout
