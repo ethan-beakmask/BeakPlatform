@@ -103,3 +103,4 @@ emailrelay.auth-backup
 E-MailRelay/spool/
 E-MailRelay/logs/
 E-MailRelay/*.pid
+temp_*
