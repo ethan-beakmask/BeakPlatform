@@ -15,9 +15,7 @@ from flask_login import current_user
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup
 from ..security.decorators import login_required
 from ..security.resource_gateway import ResourceGateway
-
-
-SYSTEM_ORG_CODE = 'system.local'
+from ..constants import SYSTEM_ORG_CODE
 
 api_enterprise_data = Blueprint(
     'api_enterprise_data',

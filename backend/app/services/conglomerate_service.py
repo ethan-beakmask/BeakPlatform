@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from ..models.conglomerate import Conglomerate
 from ..models.organization import Organization
 from ..models.conglomerate_log import ConglomerateLog
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 
@@ -102,7 +103,7 @@ class ConglomerateService:
         orgs = Organization.query.filter(
             Organization.secure_code.in_(org_secure_codes),
             Organization.is_deleted == False,
-            Organization.domain_name != 'system.local'  # 系統企業不可加入集團
+            Organization.domain_name != SYSTEM_ORG_CODE  # 系統企業不可加入集團
         ).all()
 
         if len(orgs) < 2:
@@ -241,7 +242,7 @@ class ConglomerateService:
         orgs = Organization.query.filter(
             Organization.secure_code.in_(org_secure_codes),
             Organization.is_deleted == False,
-            Organization.domain_name != 'system.local',  # 系統企業不可加入集團
+            Organization.domain_name != SYSTEM_ORG_CODE,  # 系統企業不可加入集團
             Organization.conglomerate_secure_code == None  # 未加入其他集團
         ).all()
 

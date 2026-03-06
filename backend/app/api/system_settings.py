@@ -52,10 +52,8 @@ from flask_login import current_user
 from ..security.decorators import system_admin_required
 from ..models.system_setting import SystemSetting
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
-
-# 系統級設定的 org_secure_code
-SYSTEM_ORG_CODE = 'system.local'
 
 api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/api/system-settings')
 

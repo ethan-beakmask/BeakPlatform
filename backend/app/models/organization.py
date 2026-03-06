@@ -10,6 +10,7 @@ from sqlalchemy import Column, String, Boolean, Text, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import BaseModel
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 
@@ -98,7 +99,7 @@ class Organization(BaseModel):
     @property
     def is_system_org(self) -> bool:
         """是否為系統企業"""
-        return self.domain_name == 'system.local'
+        return self.domain_name == SYSTEM_ORG_CODE
 
     def get_settings(self) -> Dict[str, Any]:
         """取得所有企業設定"""

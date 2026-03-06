@@ -14,6 +14,7 @@ from ..models import (
     BlockedEmailDomain,
     OrganizationalUnit, UnitType
 )
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -453,7 +454,7 @@ class OrganizationService:
         """
         # 檢查是否已存在
         existing = Organization.query.filter(
-            Organization.domain_name == 'system.local',
+            Organization.domain_name == SYSTEM_ORG_CODE,
             Organization.is_deleted == False
         ).first()
 
@@ -471,7 +472,7 @@ class OrganizationService:
         org = Organization(
             code='SYSTEM',
             name='BeakMask System',
-            domain_name='system.local',
+            domain_name=SYSTEM_ORG_CODE,
             customer_type=CustomerType.FORMAL,
             user_limit=100,
             description='系統管理企業',

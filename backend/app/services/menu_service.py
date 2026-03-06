@@ -17,12 +17,10 @@ from flask import g, url_for
 from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
 from ..models.user import UserType
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 logger = logging.getLogger(__name__)
-
-# system.local 企業識別碼
-SYSTEM_ORG_CODE = 'system.local'
 
 
 class MenuService:
@@ -793,6 +791,12 @@ class MenuService:
         org_sc = getattr(user, 'org_secure_code', None)
         if not org_sc:
             return set()
+
+        # 系統企業不受合約限制，授權所有已安裝模組
+        if org_sc == SYSTEM_ORG_CODE:
+            from .lookup_service import LookupService
+            installed_items = LookupService.get_items('INSTALLED_MODULES')
+            return {item['code'] for item in installed_items}
 
         today = date.today()
 

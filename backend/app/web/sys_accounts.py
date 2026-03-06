@@ -13,6 +13,7 @@ from flask_login import current_user
 
 from ..security.decorators import system_admin_required
 from ..models import User, UserType, Organization
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ MIN_PASSWORD_LENGTH = 12
 def _get_system_org():
     """取得系統企業 (system.local)"""
     return Organization.query.filter(
-        Organization.domain_name == 'system.local',
+        Organization.domain_name == SYSTEM_ORG_CODE,
         Organization.is_deleted == False
     ).first()
 

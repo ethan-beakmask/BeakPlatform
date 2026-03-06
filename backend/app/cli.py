@@ -13,6 +13,8 @@ import click
 from flask import current_app
 from flask.cli import with_appcontext
 
+from .constants import SYSTEM_ORG_CODE
+
 
 def register_cli(app):
     """註冊 CLI 命令到 Flask 應用程式"""
@@ -245,7 +247,7 @@ def module_status():
 
     # 選單統計
     module_menus = MenuItem.query.filter(
-        MenuItem.org_secure_code == 'system.local',
+        MenuItem.org_secure_code == SYSTEM_ORG_CODE,
         MenuItem.is_deleted == False
     ).count()
     click.echo(f"Module Menu Items: {module_menus}")

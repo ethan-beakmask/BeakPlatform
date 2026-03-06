@@ -13,12 +13,10 @@ from typing import Dict, List, Any, Optional, Set
 from .. import db
 from ..models import MenuItem, MenuPermission
 from ..models.user import UserType
+from ..constants import SYSTEM_ORG_CODE
 from ..services.menu_service import MenuService
 
 logger = logging.getLogger(__name__)
-
-# 系統組織識別碼（模組選單歸屬於此）
-SYSTEM_ORG_CODE = 'system.local'
 
 
 class ModuleMenuService:

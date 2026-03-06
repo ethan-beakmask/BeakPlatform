@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 
 from .base import BaseNodeHandler
+from backend.app.constants import SYSTEM_ORG_CODE
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ class EmailHandler(BaseNodeHandler):
         # 系統級 fallback
         if not smtp_config:
             smtp_config = SmtpConfig.query.filter_by(
-                org_secure_code='system.local',
+                org_secure_code=SYSTEM_ORG_CODE,
                 is_deleted=False,
                 is_active=True,
             ).order_by(SmtpConfig.priority).first()
