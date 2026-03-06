@@ -71,20 +71,26 @@ class MenuService:
         Returns:
             選單樹結構 (巢狀字典列表)
         """
-        # 1. 取得用戶 user_type 有權限的選單 secure_codes
-        allowed_menu_codes = cls._get_allowed_menu_codes(user)
+        # 1. 取得用戶 user_type 有權限的選單 secure_codes (MenuPermission 治理)
+        perm_governed_codes = cls._get_allowed_menu_codes(user)
 
-        # 1.5 模組選單注入：模組選單不走 MenuPermission，改由此處統一注入
+        # 1.5 模組選單注入 (模組治理)
+        module_injected_codes = set()
         user_type_str = str(user.user_type)
         if user_type_str == 'SYSTEM_ADMIN':
-            # 系統管理員：看到所有已安裝模組的選單
-            allowed_menu_codes |= cls._get_all_module_menu_codes()
+            module_injected_codes = cls._get_all_module_menu_codes()
         elif user_type_str == 'ORG_ADMIN':
-            # 企業管理員：看到所有已安裝模組的選單（合約過濾在 Step 6 處理）
-            allowed_menu_codes |= cls._get_all_module_menu_codes()
+            module_injected_codes = cls._get_all_module_menu_codes()
         else:
-            # 一般用戶：根據 module_access_control 授權決定
-            allowed_menu_codes |= cls._get_module_access_menu_codes(user)
+            module_injected_codes = cls._get_module_access_menu_codes(user)
+
+        # 合併兩個來源
+        allowed_menu_codes = perm_governed_codes | module_injected_codes
+
+        # 標記：純模組注入的選單 (不在 MenuPermission 中)
+        # 只有這些選單才受 Steps 6~6.7 的模組過濾
+        # MenuPermission 治理的選單 = 管理員勾選即生效，不受合約/ACL/社群過濾
+        module_only_codes = module_injected_codes - perm_governed_codes
 
         # 2. 取得用戶的 RBAC 權限列表 (用於 required_permission 檢查)
         user_permissions = cls._get_user_permission_codes(user)
@@ -110,18 +116,26 @@ class MenuService:
         # 5. 過濾需要 RBAC 權限的選單
         filtered_items = cls._filter_by_rbac_permission(items, user_permissions)
 
-        # 6. 合約驅動模組選單過濾 (SYSTEM_ADMIN 不受限)
+        # 6~6.7 模組治理過濾 (只對 module_only_codes 內的選單執行)
+        # MenuPermission 治理的選單直接通過，不受合約/ACL/社群過濾影響
         if str(user.user_type) != 'SYSTEM_ADMIN':
             authorized_modules = cls._get_authorized_modules(user)
-            filtered_items = cls._filter_by_contract(filtered_items, authorized_modules)
+            filtered_items = cls._filter_with_bypass(
+                filtered_items, module_only_codes,
+                cls._filter_by_contract, authorized_modules
+            )
 
-        # 6.5 模組使用權過濾 (SYSTEM_ADMIN / ORG_ADMIN 不受限)
         if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
-            filtered_items = cls._filter_by_module_access(filtered_items, user)
+            filtered_items = cls._filter_with_bypass(
+                filtered_items, module_only_codes,
+                cls._filter_by_module_access, user
+            )
 
-        # 6.7 子系統選單過濾: 只有社群成員能看到對應子系統 (SYSTEM_ADMIN / ORG_ADMIN 不受限)
         if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
-            filtered_items = cls._filter_by_sub_system_membership(filtered_items, user)
+            filtered_items = cls._filter_with_bypass(
+                filtered_items, module_only_codes,
+                cls._filter_by_sub_system_membership, user
+            )
 
         # 7. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
         menu_permissions_map = cls._get_menu_permissions_map(
@@ -203,6 +217,36 @@ class MenuService:
                 filtered.append(item)
 
         return filtered
+
+    @staticmethod
+    def _filter_with_bypass(items, subject_codes, filter_fn, *args):
+        """
+        治理分流：只對 subject_codes 內的選單執行 filter_fn，其餘直接保留。
+
+        用途：MenuPermission 治理的選單不受模組過濾 (合約/ACL/社群) 影響，
+        只有純模組注入的選單 (subject_codes) 才進入 filter_fn。
+
+        Args:
+            items: 完整選單列表
+            subject_codes: 需要過濾的選單 secure_code 集合
+            filter_fn: 過濾函式，簽名為 fn(items, *args)
+            *args: 傳給 filter_fn 的額外參數
+
+        Returns:
+            過濾後的選單列表 (保持原始順序)
+        """
+        if not subject_codes:
+            return items
+
+        subject = [i for i in items if i.secure_code in subject_codes]
+        if not subject:
+            return items
+
+        filtered_subject = filter_fn(subject, *args)
+        filtered_sc = {i.secure_code for i in filtered_subject}
+
+        return [i for i in items
+                if i.secure_code not in subject_codes or i.secure_code in filtered_sc]
 
     @classmethod
     def _get_menu_permissions_map(
