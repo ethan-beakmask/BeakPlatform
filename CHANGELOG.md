@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### Added
+- 社群設定頁面改用零依賴 Tree 元件，取代 jQuery + jstree
+  - 自訂 `group-tree` renderer: 社群圖示 + 角色標籤 + 外部人員警示
+  - 外部人員 (EXTERNAL) 可參加社群，一般成員顯示「外」紅底白字標籤
+  - 外部人員擔任管理層時，Tree 及成員面板名字紅字警示
+  - 成員排序: 團長 → 副團長 → 代理人 → 外人 → 員工
+  - 右側帳號面板僅顯示 EMPLOYEE + EXTERNAL 有效帳號
+- `UserUnitMembership.to_dict()` 及 `group-member-candidates` API 回傳新增 `user_type` 欄位
 - 部門設定頁面組織樹改用零依賴 Tree 元件，取代 jQuery (77KB) + jstree (139KB)
   - 自訂 `dept-tree` renderer: 部門圖示 + 人員角色標籤
   - Tree 元件 vendor 檔案: `backend/app/static/vendor/tree/`

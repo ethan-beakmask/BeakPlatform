@@ -1,282 +1,157 @@
-/* groups.js — 社群設定頁 (groupManager) */
+'use strict';
 
-const __groupsConfig = window.__GROUPS_CONFIG || {};
+/**
+ * 社群設定頁 -- 使用獨立 Tree 元件 (取代 jstree+jQuery)
+ *
+ * 載入順序: tree-model.js -> tree.js -> tree-drag.js -> tree-lines-dom.js -> groups.js
+ */
+
+// ==================== 自訂 Renderer ====================
+(function() {
+    if (typeof Tree === 'undefined') return;
+    var linesDom = Tree.renderers ? Tree.renderers['lines-dom'] : null;
+
+    Tree.registerRenderer('group-tree', {
+        renderTreeCell: function(node, ancestors, tree) {
+            var cell = document.createElement('div');
+            cell.className = 'tg-tree-cell tg-dom-cell';
+
+            for (var i = 0; i < ancestors.length; i++) {
+                var sp = document.createElement('span');
+                sp.className = 'tg-indent tg-indent-blank';
+                cell.appendChild(sp);
+            }
+            if (node.level > 0) {
+                var br = document.createElement('span');
+                br.className = 'tg-branch';
+                cell.appendChild(br);
+            }
+            var model = tree._model;
+            if (model.hasChildren(node.id)) {
+                var tog = document.createElement('span');
+                tog.className = 'tg-toggle treegrid-toggle';
+                tog.classList.add(model.isExpanded(node.id) ? 'tg-toggle-expanded' : 'tg-toggle-collapsed');
+                tog.textContent = model.isExpanded(node.id) ? '[-]' : '[+]';
+                cell.appendChild(tog);
+            } else {
+                var leaf = document.createElement('span');
+                leaf.className = 'tg-leaf-spacer';
+                cell.appendChild(leaf);
+            }
+
+            var nodeType = node.data.type;
+            if (nodeType === 'root') {
+                var icon = document.createElement('span');
+                icon.className = 'tg-node-icon root';
+                icon.textContent = '\u25A0';
+                cell.appendChild(icon);
+            } else if (nodeType === 'group') {
+                var icon2 = document.createElement('span');
+                icon2.className = 'tg-node-icon grp';
+                icon2.textContent = '\u25C6';
+                cell.appendChild(icon2);
+            } else if (nodeType === 'person') {
+                // 管理層: 團/副/代，外部人員名字紅字警示
+                // 一般成員: 員(EMPLOYEE) 或 外(EXTERNAL 紅底白字)
+                var tag = document.createElement('span');
+                var role = node.data.role;
+                if (role === 'MANAGER') { tag.className = 'role-tag leader'; tag.textContent = '\u5718'; }
+                else if (role === 'DEPUTY') { tag.className = 'role-tag leader'; tag.textContent = '\u526F'; }
+                else if (role === 'PROXY1' || role === 'PROXY2') { tag.className = 'role-tag leader'; tag.textContent = '\u4EE3'; }
+                else if (node.data.isExternal) { tag.className = 'ext-badge'; tag.textContent = '\u5916'; }
+                else { tag.className = 'role-tag employee'; tag.textContent = '\u54E1'; }
+                cell.appendChild(tag);
+            }
+
+            var lbl = document.createElement('span');
+            lbl.className = 'tg-label';
+            if (nodeType === 'person') {
+                lbl.textContent = node.data.displayName || node.label;
+                // 外部人員擔任管理層: 名字紅字
+                if (node.data.isExternal && ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(node.data.role)) {
+                    lbl.style.color = '#dc3545';
+                    lbl.style.fontWeight = 'bold';
+                }
+            } else {
+                lbl.textContent = node.label;
+            }
+            cell.appendChild(lbl);
+
+            return cell;
+        },
+        afterRender: function(tree) {
+            if (linesDom && linesDom.afterRender) {
+                linesDom.afterRender(tree);
+            }
+        }
+    });
+})();
+
 
 function getCsrfToken() {
-    const meta = document.querySelector('meta[name="csrf-token"]');
+    var meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.content : '';
 }
 
+
 function groupManager() {
+    var __cfg = window.__GROUPS_CONFIG || {};
+
     return {
         ...codeInputMixin('group'),
-        isAdmin: __groupsConfig.isAdmin || false,
+        isAdmin: __cfg.isAdmin || false,
+
+        // 資料
         groups: [],
-        expandedNodes: {},
-        selectedGroup: null,
-        members: [],  // 原始成員資料 (from cross-members API)
-        leadership: { manager: null, deputy: null, proxy1: null, proxy2: null },
         allUsers: [],
         filteredUsers: [],
         userSearch: '',
-        formData: { code: '', name: '', description: '', parent_id: '' },
-        isCreating: false,
+        selectedGroup: null,
+        members: [],
+        leadership: { manager: null, deputy: null, proxy1: null, proxy2: null },
         showPeopleInTree: false,
-        treeExpanded: false,
+        isCreating: false,
+        formData: { code: '', name: '', description: '', parent_id: '' },
         totalUsers: 0,
 
-        // 拖拉狀態
+        // Tree 實例
+        _tree: null,
+
+        // DnD 狀態
+        dragOverZone: null,
+        _dragData: null,
         draggedUser: null,
         draggedMember: null,
         draggedLeader: null,
         draggedLeaderType: null,
-        dragOverZone: null,
-        draggedTreePerson: null,
 
-        async init() {
-            // 取得帳號 (admin 用 /api/users, 團長用 /api/units/group-member-candidates)
-            try {
-                const usersUrl = this.isAdmin
-                    ? '/api/users?per_page=1000'
-                    : '/api/units/group-member-candidates?per_page=1000';
-                const res = await fetch(usersUrl);
-                if (res.ok) {
-                    const data = await res.json();
-                    this.allUsers = (data.users || []).filter(u => !u.is_deleted && u.is_active);
-                    this.filteredUsers = [...this.allUsers];
-                    this.totalUsers = this.allUsers.length;
-                }
-            } catch (e) {}
+        // ==================== 計算屬性 ====================
 
-            // 帳號 >= 30：社群模式+展開，否則成員模式
-            if (this.totalUsers >= 30) {
-                this.showPeopleInTree = false;
-                this.treeExpanded = true;
-            } else {
-                this.showPeopleInTree = true;
-                this.treeExpanded = false;
-            }
-
-            await this.loadGroups();
-            // 確保 jQuery 和 jstree 已載入
-            if (typeof $ !== 'undefined' && $.fn.jstree) {
-                this.initJsTree();
-            } else {
-                console.error('jQuery or jstree not loaded');
-            }
-        },
-
-        // jstree 初始化
-        initJsTree() {
-            const self = this;
-            const $tree = $('#group-tree');
-
-            // 銷毀舊實例
-            if ($tree.jstree(true)) {
-                $tree.jstree('destroy');
-            }
-
-            $tree.jstree({
-                core: {
-                    data: this.buildJsTreeData(),
-                    themes: { dots: true, icons: true },
-                    check_callback: (op, node, parent) => {
-                        // 允許拖放操作
-                        if (op === 'move_node') {
-                            // 人員只能放到社群節點
-                            if (node.data?.type === 'person') {
-                                return parent.data?.type === 'group';
-                            }
-                            // 社群不能放到人員節點或自己的子節點下
-                            if (node.data?.type === 'group') {
-                                return parent.id === '#' || parent.data?.type === 'group' || parent.data?.type === 'root';
-                            }
-                        }
-                        return true;
-                    },
-                    worker: false
-                },
-                plugins: ['wholerow', 'dnd'],
-                dnd: {
-                    is_draggable: (nodes) => {
-                        const type = nodes[0].data?.type;
-                        // Non-admin: only person nodes are draggable (not groups)
-                        if (!self.isAdmin && type === 'group') return false;
-                        return type === 'group' || type === 'person';
-                    },
-                    copy: false
-                }
+        get regularMembers() {
+            // 排序: 外人在前，員工在後
+            var filtered = this.members.filter(function(m) {
+                return !['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(m.role_type);
             });
-
-            // 選擇事件
-            $tree.on('select_node.jstree', (e, data) => {
-                if (data.node.data?.type === 'group') {
-                    const group = self.findGroupById(data.node.id);
-                    if (group) self.selectGroup(group);
-                }
-            });
-
-            // 拖放事件 - 社群階層調整
-            $tree.on('move_node.jstree', async (e, data) => {
-                const movedNode = data.node;
-                const newParentId = data.parent === '#' ? null : data.parent;
-
-                // 社群節點移動 = 改父社群
-                if (movedNode.data?.type === 'group') {
-                    await fetch(`/api/units/${movedNode.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-                        body: JSON.stringify({ parent_id: newParentId === 'root' ? null : newParentId })
-                    });
-                    self.showToast('社群已移動', 'success');
-                    await self.loadGroups();
-                }
-                self.refreshJsTree();
-            });
-
-            // jstree 拖動開始/結束事件
-            $(document).on('dnd_start.vakata', (e, data) => {
-                const node = data.data.nodes[0];
-                const $tree = $('#group-tree');
-                const nodeData = $tree.jstree(true).get_node(node)?.data;
-                if (nodeData?.type === 'person') {
-                    self.draggedTreePerson = {
-                        id: nodeData.userId,
-                        groupId: nodeData.groupId,
-                        role: nodeData.role,
-                        membershipId: nodeData.membershipId
-                    };
-                }
-            });
-            $(document).on('dnd_stop.vakata', (e, data) => {
-                setTimeout(() => {
-                    self.draggedTreePerson = null;
-                    $('.jstree-drop-target').removeClass('jstree-drop-target');
-                }, 100);
-            });
-
-            // jstree 拖動中
-            $(document).on('dnd_move.vakata', (e, data) => {
-                if (!self.draggedTreePerson) return;
-                const $target = $(data.event.target);
-                $('.jstree-drop-target').removeClass('jstree-drop-target');
-
-                const $proxy = $target.closest('.proxy-section');
-                const $col = $target.closest('.staff-column');
-
-                if ($proxy.length) {
-                    $proxy.addClass('jstree-drop-target');
-                } else if ($col.length) {
-                    $col.addClass('jstree-drop-target');
-                }
-            });
-
-            // 滑鼠放開時處理外部區域的 drop
-            $(document).on('mouseup', '.staff-column, .proxy-section', async function(e) {
-                if (!self.draggedTreePerson) return;
-
-                const $this = $(this);
-
-                // 代理人區
-                if ($this.hasClass('proxy-section')) {
-                    const labelText = $this.find('.proxy-label').text();
-                    const roleType = labelText.includes('(一)') ? 'PROXY1' : 'PROXY2';
-                    self.dropToRole(e, roleType);
-                }
-                // 團長/副團長欄
-                else if ($this.hasClass('staff-column') && !$this.hasClass('member-col')) {
-                    let roleType = 'MANAGER';
-                    if ($this.hasClass('deputy-col')) roleType = 'DEPUTY';
-                    self.dropToRole(e, roleType);
-                }
-                // 團員欄
-                else if ($this.hasClass('member-col')) {
-                    self.dropToRole(e, 'MEMBER');
-                }
+            return filtered.sort(function(a, b) {
+                var aExt = a.user?.user_type === 'EXTERNAL' ? 0 : 1;
+                var bExt = b.user?.user_type === 'EXTERNAL' ? 0 : 1;
+                if (aExt !== bExt) return aExt - bExt;
+                var aName = a.user?.native_name || a.user?.display_name || '';
+                var bName = b.user?.native_name || b.user?.display_name || '';
+                return aName.localeCompare(bName);
             });
         },
 
-        buildJsTreeData() {
-            const self = this;
-            const build = (items) => items.map(item => {
-                const node = {
-                    id: item.id,
-                    text: item.name,
-                    icon: 'icon-group',
-                    state: { opened: true },
-                    data: { type: 'group', ...item },
-                    children: []
-                };
-                // 成員模式：加入人員節點
-                if (self.showPeopleInTree && item._members) {
-                    item._members.forEach((m) => {
-                        let roleTag = '員';
-                        let roleClass = 'employee';
-                        if (m.role_type === 'MANAGER') { roleTag = '團'; roleClass = 'leader'; }
-                        else if (m.role_type === 'DEPUTY') { roleTag = '副'; roleClass = 'leader'; }
-                        else if (m.role_type === 'PROXY1') { roleTag = '代'; roleClass = 'leader'; }
-                        else if (m.role_type === 'PROXY2') { roleTag = '代'; roleClass = 'leader'; }
-
-                        node.children.push({
-                            id: 'p_' + item.id + '_' + m.id,
-                            text: `<span class="role-tag ${roleClass}">${roleTag}</span>${m.user?.native_name || m.user?.display_name || '?'}`,
-                            icon: false,
-                            data: {
-                                type: 'person',
-                                userId: m.user_secure_code,
-                                groupId: item.id,
-                                role: m.role_type,
-                                membershipId: m.id
-                            }
-                        });
-                    });
-                }
-                // 子社群
-                if (item.children?.length > 0) {
-                    node.children = node.children.concat(build(item.children));
-                }
-                return node;
-            });
-            // 根節點
-            return [{
-                id: 'root',
-                text: __groupsConfig.orgName || '企業',
-                icon: 'icon-company',
-                state: { opened: true },
-                data: { type: 'root' },
-                children: build(this.groups)
-            }];
+        get totalCount() {
+            return this.members.length;
         },
 
-        refreshJsTree() {
-            const $tree = $('#group-tree');
-            if ($tree.jstree(true)) {
-                $tree.jstree(true).settings.core.data = this.buildJsTreeData();
-                $tree.jstree(true).refresh();
-            }
-        },
-
-        findGroupById(id) {
-            const find = (items) => {
-                for (const item of items) {
-                    if (item.id === id) return item;
-                    if (item.children) {
-                        const found = find(item.children);
-                        if (found) return found;
-                    }
-                }
-                return null;
-            };
-            return find(this.groups);
-        },
-
-        // 計算屬性
         get allGroupsFlat() {
-            const result = [];
-            const flatten = (items, level) => {
-                for (const item of items) {
-                    result.push({ ...item, level });
-                    if (item.children?.length > 0) flatten(item.children, level + 1);
+            var result = [];
+            var flatten = function(items, level) {
+                for (var i = 0; i < items.length; i++) {
+                    result.push(Object.assign({}, items[i], { level: level }));
+                    if (items[i].children && items[i].children.length > 0) flatten(items[i].children, level + 1);
                 }
             };
             flatten(this.groups, 0);
@@ -285,15 +160,16 @@ function groupManager() {
 
         get availableParents() {
             if (this.isCreating || !this.selectedGroup) return this.allGroupsFlat;
-            const excludeIds = new Set([this.selectedGroup.id]);
-            const collectDescendants = (items) => {
-                for (const item of items) {
-                    excludeIds.add(item.id);
-                    if (item.children) collectDescendants(item.children);
+            var excludeIds = new Set([this.selectedGroup.id]);
+            var collectDescendants = function(items) {
+                for (var i = 0; i < items.length; i++) {
+                    excludeIds.add(items[i].id);
+                    if (items[i].children) collectDescendants(items[i].children);
                 }
             };
-            if (this.selectedGroup.children) collectDescendants(this.selectedGroup.children);
-            return this.allGroupsFlat.filter(g => !excludeIds.has(g.id));
+            var sel = this.findGroupById(this.selectedGroup.id);
+            if (sel && sel.children) collectDescendants(sel.children);
+            return this.allGroupsFlat.filter(function(g) { return !excludeIds.has(g.id); });
         },
 
         get leaderIds() {
@@ -305,30 +181,45 @@ function groupManager() {
             ].filter(Boolean);
         },
 
-        get regularMembers() {
-            // 排除管理層的一般團員
-            return this.members.filter(m => !['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(m.role_type));
+        isMember: function(userId) {
+            return this.members.some(function(m) { return m.user_secure_code === userId; });
         },
 
-        get totalCount() {
-            return this.members.length;
+        // ==================== 初始化 ====================
+
+        async init() {
+            // 統一使用 group-member-candidates (含 EMPLOYEE + EXTERNAL)
+            try {
+                var res = await fetch('/api/units/group-member-candidates?per_page=1000');
+                if (res.ok) {
+                    var data = await res.json();
+                    this.allUsers = (data.users || []).filter(function(u) {
+                        return !u.is_deleted && u.is_active !== false &&
+                            (u.user_type === 'EMPLOYEE' || u.user_type === 'EXTERNAL');
+                    });
+                    this.filteredUsers = this.allUsers.slice();
+                    this.totalUsers = this.allUsers.length;
+                }
+            } catch (e) {}
+
+            if (this.totalUsers >= 30) {
+                this.showPeopleInTree = false;
+            } else {
+                this.showPeopleInTree = true;
+            }
+
+            await this.loadGroups();
+            this.buildTree();
         },
 
-        // 檢查用戶是否已是成員
-        isMember(userId) {
-            return this.members.some(m => m.user_secure_code === userId);
-        },
+        // ==================== API 載入 ====================
 
-        // API
         async loadGroups() {
             try {
-                const res = await fetch('/api/units/groups?tree=true');
-                const data = await res.json();
+                var res = await fetch('/api/units/groups?tree=true');
+                var data = await res.json();
                 if (res.ok) {
                     this.groups = data.units || [];
-                    this.allGroupsFlat.forEach(g => {
-                        if (this.expandedNodes[g.id] === undefined) this.expandedNodes[g.id] = true;
-                    });
                     if (this.showPeopleInTree) await this.loadAllPeople();
                 }
             } catch (err) {
@@ -337,59 +228,45 @@ function groupManager() {
         },
 
         async loadAllPeople() {
-            // 遞迴載入每個社群的人員資料
-            const loadForGroup = async (group) => {
+            var self = this;
+            var loadForGroup = async function(group) {
                 try {
-                    const res = await fetch(`/api/units/${group.id}/cross-members`);
+                    var res = await fetch('/api/units/' + group.id + '/cross-members');
                     if (res.ok) {
-                        const data = await res.json();
+                        var data = await res.json();
                         group._members = data.cross_members || [];
                     }
                 } catch (e) {}
                 if (group.children) {
-                    for (const child of group.children) {
-                        await loadForGroup(child);
+                    for (var i = 0; i < group.children.length; i++) {
+                        await loadForGroup(group.children[i]);
                     }
                 }
             };
-            for (const group of this.groups) {
-                await loadForGroup(group);
+            for (var i = 0; i < this.groups.length; i++) {
+                await loadForGroup(this.groups[i]);
             }
-        },
-
-        switchToGroupMode() {
-            this.showPeopleInTree = false;
-            this.refreshJsTree();
-        },
-
-        async switchToDetailMode() {
-            this.showPeopleInTree = true;
-            const firstGroup = this.groups[0];
-            if (firstGroup && !firstGroup._members) {
-                await this.loadAllPeople();
-                this.groups = [...this.groups];
-            }
-            this.refreshJsTree();
         },
 
         async loadMembers(groupId) {
             try {
-                const res = await fetch(`/api/units/${groupId}/cross-members`);
-                const data = await res.json();
+                var res = await fetch('/api/units/' + groupId + '/cross-members');
+                var data = await res.json();
                 if (res.ok) {
-                    const rawMembers = data.cross_members || [];
+                    var rawMembers = data.cross_members || [];
                     this.members = rawMembers;
 
-                    // 解析管理層
-                    const newLeadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
-                    for (const m of rawMembers) {
-                        const userData = {
+                    var newLeadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
+                    for (var i = 0; i < rawMembers.length; i++) {
+                        var m = rawMembers[i];
+                        var userData = {
                             id: m.user_secure_code,
                             membershipId: m.id,
                             employee_id: m.user?.employee_id,
                             native_name: m.user?.native_name,
                             display_name: m.user?.display_name,
-                            english_name: m.user?.english_name
+                            english_name: m.user?.english_name,
+                            user_type: m.user?.user_type
                         };
                         if (m.role_type === 'MANAGER') newLeadership.manager = userData;
                         else if (m.role_type === 'DEPUTY') newLeadership.deputy = userData;
@@ -397,9 +274,8 @@ function groupManager() {
                         else if (m.role_type === 'PROXY2') newLeadership.proxy2 = userData;
                     }
                     this.leadership = newLeadership;
-                    // 強制觸發響應式更新
-                    this.members = [...this.members];
-                    this.leadership = { ...this.leadership };
+                    this.members = rawMembers.slice();
+                    this.leadership = Object.assign({}, this.leadership);
                 }
             } catch (err) {
                 this.members = [];
@@ -407,44 +283,196 @@ function groupManager() {
             }
         },
 
-        filterUsers() {
-            const search = this.userSearch.toLowerCase().trim();
+        filterUsers: function() {
+            var search = this.userSearch.toLowerCase().trim();
             if (!search) {
-                this.filteredUsers = [...this.allUsers];
+                this.filteredUsers = this.allUsers.slice();
                 return;
             }
-            this.filteredUsers = this.allUsers.filter(u =>
-                (u.display_name || '').toLowerCase().includes(search) ||
-                (u.native_name || '').toLowerCase().includes(search) ||
-                (u.english_name || '').toLowerCase().includes(search) ||
-                (u.employee_id || '').toLowerCase().includes(search)
-            );
+            this.filteredUsers = this.allUsers.filter(function(u) {
+                return (u.display_name || '').toLowerCase().includes(search) ||
+                    (u.native_name || '').toLowerCase().includes(search) ||
+                    (u.english_name || '').toLowerCase().includes(search) ||
+                    (u.employee_id || '').toLowerCase().includes(search);
+            });
         },
 
-        // 選擇
-        toggleExpand(group) { this.expandedNodes[group.id] = !this.expandedNodes[group.id]; },
+        // ==================== Tree 建構 ====================
 
-        selectRoot() {
+        buildTree: function() {
+            var container = document.getElementById('group-tree');
+            if (!container) return;
+
+            if (this._tree) {
+                this._tree.destroy();
+                this._tree = null;
+            }
+
+            var treeData = this._buildTreeData();
+            var self = this;
+
+            this._tree = new Tree(container, {
+                treeMode: 'group-tree',
+                data: treeData,
+                draggable: this.isAdmin,
+                hideRoot: false,
+                hideHeader: true,
+                maxExpanded: 500,
+                onNodeClick: function(id, node) {
+                    self._onNodeClick(id, node);
+                },
+                onNodeMoved: function(nodeId, newParentId, newIndex, node) {
+                    self._onNodeMoved(nodeId, newParentId, newIndex, node);
+                }
+            });
+
+            if (this.isAdmin) this._attachExternalDrop();
+        },
+
+        _buildTreeData: function() {
+            var self = this;
+            var rootLabel = __cfg.orgName || '\u4F01\u696D';
+
+            var build = function(items) {
+                return items.map(function(item) {
+                    var node = {
+                        id: item.id,
+                        label: item.name,
+                        expanded: true,
+                        children: [],
+                        data: { type: 'group', code: item.code, name: item.name, parent_id: item.parent_id || null, description: item.description || '' }
+                    };
+                    // 成員模式：加入人員節點 (排序: 團長→副團長→外人→員工)
+                    if (self.showPeopleInTree && item._members) {
+                        var sorted = self._sortMembers(item._members);
+                        for (var i = 0; i < sorted.length; i++) {
+                            node.children.push(self._personNode(sorted[i], item.id));
+                        }
+                    }
+                    // 子社群
+                    if (item.children && item.children.length > 0) {
+                        node.children = node.children.concat(build(item.children));
+                    }
+                    return node;
+                });
+            };
+
+            return [{
+                id: 'root',
+                label: rootLabel,
+                expanded: true,
+                children: build(this.groups),
+                data: { type: 'root' }
+            }];
+        },
+
+        _personNode: function(member, groupId) {
+            var name = member.user?.native_name || member.user?.display_name || '?';
+            var role = member.role_type || 'MEMBER';
+            var tagClass = ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(role) ? 'leader' : 'employee';
+            var isExternal = member.user?.user_type === 'EXTERNAL';
+            return {
+                id: 'p_' + role + '_' + groupId + '_' + member.user_secure_code,
+                label: name,
+                children: [],
+                data: {
+                    type: 'person',
+                    userId: member.user_secure_code,
+                    groupId: groupId,
+                    role: role,
+                    tagClass: tagClass,
+                    displayName: name,
+                    isExternal: isExternal,
+                    membershipId: member.id
+                }
+            };
+        },
+
+        // 成員排序: 團長→副團長→代理人→外人→員工
+        _sortMembers: function(members) {
+            var order = { MANAGER: 0, DEPUTY: 1, PROXY1: 2, PROXY2: 3 };
+            return members.slice().sort(function(a, b) {
+                var aRole = order[a.role_type] !== undefined ? order[a.role_type] : 10;
+                var bRole = order[b.role_type] !== undefined ? order[b.role_type] : 10;
+                if (aRole !== bRole) return aRole - bRole;
+                // 同為一般成員: 外人在前
+                var aExt = a.user?.user_type === 'EXTERNAL' ? 0 : 1;
+                var bExt = b.user?.user_type === 'EXTERNAL' ? 0 : 1;
+                if (aExt !== bExt) return aExt - bExt;
+                var aName = a.user?.native_name || a.user?.display_name || '';
+                var bName = b.user?.native_name || b.user?.display_name || '';
+                return aName.localeCompare(bName);
+            });
+        },
+
+        // ==================== Tree 事件 ====================
+
+        _onNodeClick: function(id, node) {
+            if (id === 'root') {
+                this.selectRoot();
+                return;
+            }
+            if (node.data.type === 'group') {
+                this.selectGroup(id);
+            }
+            // 選取標示
+            var container = document.getElementById('group-tree');
+            if (container) {
+                container.querySelectorAll('.tg-selected').forEach(function(el) { el.classList.remove('tg-selected'); });
+                var row = container.querySelector('tr[data-id="' + id + '"]');
+                if (row) row.classList.add('tg-selected');
+            }
+        },
+
+        async _onNodeMoved(nodeId, newParentId, newIndex, node) {
+            if (node.data.type === 'group' && this.isAdmin) {
+                var parentId = (newParentId === 'root') ? null : newParentId;
+                try {
+                    var res = await fetch('/api/units/' + nodeId, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ parent_id: parentId })
+                    });
+                    if (res.ok) {
+                        this.showToast('社群已移動', 'success');
+                    } else {
+                        var data = await res.json();
+                        this.showToast(data.error || '移動失敗', 'error');
+                    }
+                } catch (e) { this.showToast('移動失敗', 'error'); }
+                await this._refreshAll();
+            } else {
+                // 人員節點或非 admin: 還原
+                this.buildTree();
+            }
+        },
+
+        // ==================== 選擇 / CRUD ====================
+
+        selectRoot: function() {
             this.selectedGroup = null;
             this.isCreating = false;
             this.members = [];
             this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
         },
 
-        async selectGroup(group) {
+        async selectGroup(groupData) {
+            var id = groupData.id || groupData;
+            var group = this.findGroupById(id);
+            if (!group) group = groupData;
             this.selectedGroup = group;
             this.isCreating = false;
             this.formData = {
-                code: group.code,
-                name: group.name,
+                code: group.code || '',
+                name: group.name || '',
                 description: group.description || '',
                 parent_id: group.parent_id || ''
             };
-            await this.loadMembers(group.id);
+            await this.loadMembers(id);
         },
 
-        startCreate() {
-            const parentId = this.selectedGroup ? this.selectedGroup.id : '';
+        startCreate: function() {
+            var parentId = this.selectedGroup ? this.selectedGroup.id : '';
             this.isCreating = true;
             this.formData = { code: '', name: '', description: '', parent_id: parentId };
             this._ci_generatedCode = '';
@@ -453,22 +481,21 @@ function groupManager() {
             this._ci_codeError = '';
         },
 
-        cancelEdit() {
+        cancelEdit: function() {
             this.isCreating = false;
             if (this.selectedGroup) {
                 this.formData = {
-                    code: this.selectedGroup.code,
-                    name: this.selectedGroup.name,
+                    code: this.selectedGroup.code || '',
+                    name: this.selectedGroup.name || '',
                     description: this.selectedGroup.description || '',
                     parent_id: this.selectedGroup.parent_id || ''
                 };
             }
         },
 
-        // CRUD
         async createGroup() {
             try {
-                const res = await fetch('/api/units', {
+                var res = await fetch('/api/units', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
@@ -482,10 +509,9 @@ function groupManager() {
                 if (res.ok) {
                     this.showToast('社群建立成功', 'success');
                     this.isCreating = false;
-                    await this.loadGroups();
-                    this.refreshJsTree();
+                    await this._refreshAll();
                 } else {
-                    const data = await res.json();
+                    var data = await res.json();
                     this.showToast(data.error || '建立失敗', 'error');
                 }
             } catch (err) { this.showToast('建立失敗', 'error'); }
@@ -494,7 +520,7 @@ function groupManager() {
         async updateGroup() {
             if (!this.selectedGroup) return;
             try {
-                const res = await fetch(`/api/units/${this.selectedGroup.id}`, {
+                var res = await fetch('/api/units/' + this.selectedGroup.id, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
@@ -505,10 +531,9 @@ function groupManager() {
                 });
                 if (res.ok) {
                     this.showToast('更新成功', 'success');
-                    await this.loadGroups();
-                    this.refreshJsTree();
+                    await this._refreshAll();
                 } else {
-                    const data = await res.json();
+                    var data = await res.json();
                     this.showToast(data.error || '更新失敗', 'error');
                 }
             } catch (err) { this.showToast('更新失敗', 'error'); }
@@ -516,100 +541,112 @@ function groupManager() {
 
         async deleteGroup() {
             if (!this.selectedGroup) return;
-
-            // 先檢查
-            const checkRes = await fetch(`/api/units/${this.selectedGroup.id}?check_only=true&cascade=true`, {
-                method: 'DELETE',
-                headers: { 'X-CSRFToken': getCsrfToken() }
-            });
-            const checkData = await checkRes.json();
-
-            let msgs = [`確定刪除「${this.selectedGroup.name}」？`];
-            if (checkData.children_count > 0) {
-                msgs.push(`\n包含 ${checkData.children_count} 個子社群`);
-            }
-            if (checkData.members_count > 0) {
-                msgs.push(`\n共 ${checkData.members_count} 位成員將被移除`);
-            }
-
-            if (!confirm(msgs.join(''))) return;
-
             try {
-                const url = `/api/units/${this.selectedGroup.id}?cascade=true&confirm_members=true`;
-                const res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
-                const data = await res.json();
+                var checkRes = await fetch('/api/units/' + this.selectedGroup.id + '?check_only=true&cascade=true', {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': getCsrfToken() }
+                });
+                var checkData = await checkRes.json();
 
+                var msgs = ['\u78BA\u5B9A\u522A\u9664\u300C' + this.selectedGroup.name + '\u300D\uFF1F'];
+                if (checkData.children_count > 0) msgs.push('\n\u5305\u542B ' + checkData.children_count + ' \u500B\u5B50\u793E\u7FA4');
+                if (checkData.members_count > 0) msgs.push('\n\u5171 ' + checkData.members_count + ' \u4F4D\u6210\u54E1\u5C07\u88AB\u79FB\u9664');
+
+                if (!confirm(msgs.join(''))) return;
+
+                var url = '/api/units/' + this.selectedGroup.id + '?cascade=true&confirm_members=true';
+                var res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
+                var data = await res.json();
                 if (res.ok) {
                     this.showToast(data.message || '刪除成功', 'success');
                     this.selectedGroup = null;
-                    await this.loadGroups();
-                    this.refreshJsTree();
+                    await this._refreshAll();
                 } else {
                     this.showToast(data.error || '刪除失敗', 'error');
                 }
             } catch (err) { this.showToast('刪除失敗', 'error'); }
         },
 
-        // 拖拉：從右側拖入用戶
-        dragStartUser(e, user) {
+        findGroupById: function(id) {
+            var find = function(items) {
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].id === id) return items[i];
+                    if (items[i].children) {
+                        var f = find(items[i].children);
+                        if (f) return f;
+                    }
+                }
+                return null;
+            };
+            return find(this.groups);
+        },
+
+        // ==================== DnD: 拖動開始 ====================
+
+        dragStartUser: function(e, user) {
             this.draggedUser = user;
+            this._dragData = { source: 'users-panel', type: 'person', person: user };
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', user.id);
         },
 
-        // 拖拉：成員
-        dragStartMember(e, member) {
+        dragStartMember: function(e, member) {
             this.draggedMember = member;
+            this._dragData = { source: 'member-area', type: 'person', person: member };
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', member.id);
         },
 
-        // 拖拉：管理層
-        dragStartLeader(e, leader, type) {
+        dragStartLeader: function(e, leader, type) {
             this.draggedLeader = leader;
             this.draggedLeaderType = type;
+            this._dragData = { source: 'member-area', type: 'person', person: leader, role: type };
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', leader.id);
         },
 
-        // Drop 到角色欄
+        onZoneDragOver: function(e, zone) {
+            if (this._dragData || this.draggedUser || this.draggedMember || this.draggedLeader) {
+                this.dragOverZone = zone;
+            }
+        },
+
+        clearDrag: function() {
+            this.draggedUser = null;
+            this.draggedMember = null;
+            this.draggedLeader = null;
+            this.draggedLeaderType = null;
+            this._dragData = null;
+            this.dragOverZone = null;
+        },
+
+        // ==================== DnD: Drop 處理 ====================
+
         async dropToRole(e, roleType) {
             e.preventDefault();
+            e.stopPropagation();
             this.dragOverZone = null;
-            if (!this.selectedGroup) return;
+            if (!this.selectedGroup) { this.clearDrag(); return; }
 
-            // 決定要處理的用戶
-            let userId = null;
-            let existingMembership = null;
-
+            // 判斷被拖入的用戶
+            var userId = null;
             if (this.draggedUser) {
                 userId = this.draggedUser.id;
             } else if (this.draggedMember) {
                 userId = this.draggedMember.user_secure_code;
-                existingMembership = this.draggedMember;
             } else if (this.draggedLeader) {
                 userId = this.draggedLeader.id;
-                existingMembership = { id: this.draggedLeader.membershipId };
-            } else if (this.draggedTreePerson) {
-                userId = this.draggedTreePerson.id;
-                if (this.draggedTreePerson.groupId === this.selectedGroup.id) {
-                    existingMembership = { id: this.draggedTreePerson.membershipId };
-                }
             }
+            if (!userId) { this.clearDrag(); return; }
 
-            if (!userId) {
-                this.clearDrag();
-                return;
-            }
-
-            // 檢查是否已是此社群成員
-            const existing = this.members.find(m => m.user_secure_code === userId);
+            var existing = this.members.find(function(m) { return m.user_secure_code === userId; });
 
             try {
-                // 如果是唯一角色（團長/副團長/代理人），先將原本擔任者降級為團員
+                // 唯一角色（團長/副團長/代理人）：先將現任降級為團員
                 if (['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(roleType)) {
-                    const currentHolder = this.members.find(m => m.role_type === roleType);
+                    var currentHolder = this.members.find(function(m) { return m.role_type === roleType; });
                     if (currentHolder && currentHolder.user_secure_code !== userId) {
-                        // 將原本的人降級為團員
-                        await fetch(`/api/units/${this.selectedGroup.id}/cross-members/${currentHolder.id}`, {
+                        await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + currentHolder.id, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                             body: JSON.stringify({ role_type: 'MEMBER' })
@@ -618,8 +655,8 @@ function groupManager() {
                 }
 
                 if (existing) {
-                    // 已是成員，更新角色
-                    const res = await fetch(`/api/units/${this.selectedGroup.id}/cross-members/${existing.id}`, {
+                    // 已是成員：更新角色
+                    var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + existing.id, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ role_type: roleType })
@@ -627,31 +664,28 @@ function groupManager() {
                     if (res.ok) {
                         this.showToast('角色已更新', 'success');
                     } else {
-                        const data = await res.json();
-                        this.showToast(data.error || '更新失敗', 'error');
+                        var errData = await res.json();
+                        this.showToast(errData.error || '更新失敗', 'error');
                     }
                 } else {
                     // 新增成員
-                    const res = await fetch(`/api/units/${this.selectedGroup.id}/cross-members`, {
+                    var res2 = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-                        body: JSON.stringify({
-                            user_id: userId,
-                            role_type: roleType
-                        })
+                        body: JSON.stringify({ user_id: userId, role_type: roleType })
                     });
-                    if (res.ok) {
+                    if (res2.ok) {
                         this.showToast('已加入社群', 'success');
                     } else {
-                        const data = await res.json();
-                        this.showToast(data.error || '加入失敗', 'error');
+                        var errData2 = await res2.json();
+                        this.showToast(errData2.error || '加入失敗', 'error');
                     }
                 }
 
                 await this.loadMembers(this.selectedGroup.id);
                 if (this.showPeopleInTree) {
-                    await this.refreshGroupPeople(this.selectedGroup.id);
-                    this.refreshJsTree();
+                    await this._refreshGroupPeople(this.selectedGroup.id);
+                    this.buildTree();
                 }
             } catch (err) {
                 this.showToast('操作失敗', 'error');
@@ -660,14 +694,14 @@ function groupManager() {
             this.clearDrag();
         },
 
-        // 移除成員（管理層）
+        // 移除管理層成員
         async removeMember(leader, type) {
             if (!this.selectedGroup || !leader) return;
-            const userName = leader.native_name || leader.display_name || '此成員';
-            if (!confirm(`確定將 ${userName} 移出社群？`)) return;
+            var userName = leader.native_name || leader.display_name || '此成員';
+            if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
-                const res = await fetch(`/api/units/${this.selectedGroup.id}/cross-members/${leader.membershipId}`, {
+                var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + leader.membershipId, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -675,26 +709,24 @@ function groupManager() {
                     this.showToast('已移出社群', 'success');
                     await this.loadMembers(this.selectedGroup.id);
                     if (this.showPeopleInTree) {
-                        await this.refreshGroupPeople(this.selectedGroup.id);
-                        this.refreshJsTree();
+                        await this._refreshGroupPeople(this.selectedGroup.id);
+                        this.buildTree();
                     }
                 } else {
-                    const data = await res.json();
+                    var data = await res.json();
                     this.showToast(data.error || '移除失敗', 'error');
                 }
-            } catch (err) {
-                this.showToast('移除失敗', 'error');
-            }
+            } catch (err) { this.showToast('移除失敗', 'error'); }
         },
 
         // 移除團員
         async removeMemberDirect(member) {
             if (!this.selectedGroup) return;
-            const userName = member.user?.native_name || member.user?.display_name || '此成員';
-            if (!confirm(`確定將 ${userName} 移出社群？`)) return;
+            var userName = member.user?.native_name || member.user?.display_name || '此成員';
+            if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
-                const res = await fetch(`/api/units/${this.selectedGroup.id}/cross-members/${member.id}`, {
+                var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + member.id, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -702,51 +734,143 @@ function groupManager() {
                     this.showToast('已移出社群', 'success');
                     await this.loadMembers(this.selectedGroup.id);
                     if (this.showPeopleInTree) {
-                        await this.refreshGroupPeople(this.selectedGroup.id);
-                        this.refreshJsTree();
+                        await this._refreshGroupPeople(this.selectedGroup.id);
+                        this.buildTree();
                     }
                 } else {
-                    const data = await res.json();
+                    var data = await res.json();
                     this.showToast(data.error || '移除失敗', 'error');
                 }
-            } catch (err) {
-                this.showToast('移除失敗', 'error');
-            }
+            } catch (err) { this.showToast('移除失敗', 'error'); }
         },
 
-        async refreshGroupPeople(groupId) {
-            const findAndUpdate = async (items) => {
-                for (const group of items) {
-                    if (group.id === groupId) {
-                        const res = await fetch(`/api/units/${group.id}/cross-members`);
+        // ==================== 右側面板 -> Tree 拖入 (admin) ====================
+
+        _attachExternalDrop: function() {
+            var container = document.getElementById('group-tree');
+            if (!container) return;
+            var self = this;
+
+            container.addEventListener('dragover', function(e) {
+                if (!self.draggedUser) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                container.querySelectorAll('.tree-drop-highlight').forEach(function(el) { el.classList.remove('tree-drop-highlight'); });
+                var tr = e.target.closest('tr.treegrid-row');
+                if (tr) {
+                    var nodeId = tr.dataset.id;
+                    var node = self._tree._model.getNode(nodeId);
+                    if (node && node.data.type === 'group') {
+                        tr.classList.add('tree-drop-highlight');
+                    }
+                }
+            });
+
+            container.addEventListener('dragleave', function(e) {
+                var tr = e.target.closest('tr.treegrid-row');
+                if (tr) tr.classList.remove('tree-drop-highlight');
+            });
+
+            container.addEventListener('drop', async function(e) {
+                e.preventDefault();
+                container.querySelectorAll('.tree-drop-highlight').forEach(function(el) { el.classList.remove('tree-drop-highlight'); });
+                var tr = e.target.closest('tr.treegrid-row');
+                if (!tr || !self.draggedUser) return;
+                var targetId = tr.dataset.id;
+                var targetNode = self._tree._model.getNode(targetId);
+                if (!targetNode || targetNode.data.type !== 'group') return;
+
+                var userId = self.draggedUser.id;
+                try {
+                    var res = await fetch('/api/units/' + targetId + '/cross-members', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ user_id: userId, role_type: 'MEMBER' })
+                    });
+                    if (res.ok) {
+                        var group = self.findGroupById(targetId);
+                        self.showToast('已加入 ' + (group?.name || targetId), 'success');
+                    } else {
+                        var errData = await res.json();
+                        self.showToast(errData.error || '加入失敗', 'error');
+                    }
+                } catch (err) { self.showToast('加入失敗', 'error'); }
+
+                // 如果拖入的社群是當前選取的社群，重新載入成員
+                if (self.selectedGroup && self.selectedGroup.id === targetId) {
+                    await self.loadMembers(targetId);
+                }
+                if (self.showPeopleInTree) {
+                    await self._refreshGroupPeople(targetId);
+                    self.buildTree();
+                }
+                self.clearDrag();
+            });
+        },
+
+        // ==================== 模式切換 ====================
+
+        switchToGroupMode: function() {
+            this.showPeopleInTree = false;
+            this.buildTree();
+        },
+
+        async switchToDetailMode() {
+            this.showPeopleInTree = true;
+            var firstGroup = this.groups[0];
+            if (firstGroup && !firstGroup._members) {
+                await this.loadAllPeople();
+            }
+            this.buildTree();
+        },
+
+        // ==================== 工具函式 ====================
+
+        async _refreshGroupPeople(groupId) {
+            var self = this;
+            var findAndUpdate = async function(items) {
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].id === groupId) {
+                        var res = await fetch('/api/units/' + items[i].id + '/cross-members');
                         if (res.ok) {
-                            const data = await res.json();
-                            group._members = data.cross_members || [];
+                            var data = await res.json();
+                            items[i]._members = data.cross_members || [];
                         }
                         return true;
                     }
-                    if (group.children && await findAndUpdate(group.children)) return true;
+                    if (items[i].children && await findAndUpdate(items[i].children)) return true;
                 }
                 return false;
             };
             await findAndUpdate(this.groups);
-            this.groups = [...this.groups];
+            this.groups = this.groups.slice();
         },
 
-        clearDrag() {
-            this.draggedUser = null;
-            this.draggedMember = null;
-            this.draggedLeader = null;
-            this.draggedLeaderType = null;
-            this.draggedTreePerson = null;
+        async _refreshAll() {
+            await this.loadGroups();
+            if (this.selectedGroup) {
+                await this.loadMembers(this.selectedGroup.id);
+            }
+            this.buildTree();
+            if (this.selectedGroup) {
+                var self = this;
+                this.$nextTick(function() {
+                    var container = document.getElementById('group-tree');
+                    if (container) {
+                        var row = container.querySelector('tr[data-id="' + self.selectedGroup.id + '"]');
+                        if (row) row.classList.add('tg-selected');
+                    }
+                });
+            }
         },
 
-        showToast(msg, type = 'success') {
-            const toast = document.createElement('div');
+        showToast: function(msg, type) {
+            type = type || 'success';
+            var toast = document.createElement('div');
             toast.className = 'toast ' + type;
             toast.textContent = msg;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            setTimeout(function() { toast.remove(); }, 3000);
         }
     };
 }

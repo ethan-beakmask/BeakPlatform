@@ -141,6 +141,7 @@ class UserUnitMembership(TenantBaseModel):
                 'native_name': self.user.native_name,
                 'english_name': self.user.english_name,
                 'employee_id': self.user.employee_id,
+                'user_type': self.user.user_type,
             }
 
         # 包含單位資訊（如果已載入）

@@ -1544,6 +1544,7 @@ def list_group_member_candidates():
                 'english_name': u.english_name,
                 'employee_id': u.employee_id,
                 'email': u.email,
+                'user_type': u.user_type,
             }
             for u in users
         ]
