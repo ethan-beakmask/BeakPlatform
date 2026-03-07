@@ -70,6 +70,9 @@
         <tr>
             <td valign="top">{{ _('可見用戶類型') }}</td>
             <td>
+                {% if is_module_menu %}
+                <small style="color: #6b7280;">{{ _('此為模組選單，可見性由「模組使用權」控制，不使用用戶類型勾選。') }}</small>
+                {% else %}
                 {% for user_type in user_types %}
                 <label style="display: block; margin-bottom: 4px;">
                     <input type="checkbox" name="allowed_user_types" value="{{ user_type }}"
@@ -78,6 +81,7 @@
                 </label>
                 {% endfor %}
                 <small>{{ _('勾選可看見此選單的用戶類型（平行關係，非繼承）') }}</small>
+                {% endif %}
             </td>
         </tr>
         <tr>

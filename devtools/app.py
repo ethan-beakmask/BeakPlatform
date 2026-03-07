@@ -188,7 +188,16 @@ def clear_form_workflow():
         'fw_form_templates',
     ]
 
+    # 全部企業時額外清除稽核日誌
+    extra_tables_all = [
+        'audit_logs',
+    ]
+
     details = {}
+
+    # 全部企業時加入額外表
+    if org_code == '__ALL__':
+        tables = tables + extra_tables_all
 
     try:
         with engine.begin() as conn:

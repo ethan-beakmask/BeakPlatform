@@ -142,6 +142,18 @@ def delete_user(secure_code: str):
     """
     user = ResourceGateway.get(User, secure_code)
 
+    # 不能刪除自己
+    if user.secure_code == current_user.secure_code:
+        return jsonify({'error': '不能刪除自己的帳號'}), 403
+
+    # 不能刪除自己綁定的員工帳號
+    if current_user.bound_employee_secure_code == user.secure_code:
+        return jsonify({'error': '不能刪除自己綁定的員工帳號'}), 403
+
+    # 不能刪除企業原始管理員
+    if user.is_original_admin:
+        return jsonify({'error': '不能刪除企業原始管理員'}), 403
+
     ResourceGateway.delete(user, soft=True)
     ResourceGateway.commit()
 

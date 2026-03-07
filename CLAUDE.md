@@ -16,25 +16,28 @@
 
 ---
 
-## 📖 必讀文件
+## 溝通對照表
 
-開始工作前，請先閱讀：
-1. **本文件** — 專案規範
-2. **`docs/PLATFORM_MODULARIZATION_PLAN.md`** — 完整開發計劃
+用戶提到系統功能時，參照 `docs/GLOSSARY.md` 快速定位。
+
+用戶溝通慣例：
+- `/path/` — URL 路徑（如 `/menu/` = `http://192.168.0.16:7000/menu/`）
+- `'名詞'` — 功能名稱或字串，多名詞時混用 `""` 區別
+- `[按鈕]` — UI 按鈕或超連結元素
+- `(URL)` — 從瀏覽器複製的完整 URL
 
 ---
 
-## 📋 每次對話必做
+## 每次對話必做
 
 ### 0. 對話開始 (啟動檢查)
 **每次對話開始時**，主動執行：
 
-1. 讀取 `docs/PLATFORM_MODULARIZATION_PLAN.md` 了解當前進度
-2. 查看 Forgejo Issues：
+1. 查看 Forgejo Issues：
    ```bash
    curl -s http://192.168.0.16:3000/api/v1/repos/forgejoadmin/BeakPlatform/issues?state=open | jq '.[] | {number, title}'
    ```
-3. 與用戶確認本次要處理的項目
+2. 與用戶確認本次要處理的項目
 
 ### 1. Git Commit (對話結束)
 **每次對話結束前**：
@@ -47,27 +50,27 @@ git commit -m "類型: 簡短摘要
 - 完成項目 1
 - 完成項目 2
 
-🤖 Generated with Claude Code"
+Generated with Claude Code"
 ```
 
 **注意：commit 和 push 是兩件事。只 commit，不主動 push。用戶說 push 才 push。**
 
 ### 2. 更新追蹤
 - 完成 Forgejo Issue 時，用 API 關閉：`curl -X PATCH ... -d '{"state":"closed"}'`
-- 如果涉及架構變更，更新 `docs/PLATFORM_MODULARIZATION_PLAN.md`
+- 如果涉及架構變更，更新相關文件
 
 ---
 
-## 🎯 當前開發階段
+## 當前開發階段
 
-Step 1~5 全部完成。目前處於**功能完善階段**。
+平台基礎建設與模組化標準已完成。目前處於**功能完善階段**。
 
 待辦事項追蹤在 [Forgejo Issues](http://192.168.0.16:3000/forgejoadmin/BeakPlatform/issues)。
 架構與模組化標準詳見 `docs/PLATFORM_MODULARIZATION_PLAN.md`。
 
 ---
 
-## 🔒 安全標準 (必須遵守)
+## 安全標準 (必須遵守)
 
 ### AUTH-01: 全域認證攔截
 - 所有請求經過 `before_request` 認證檢查
@@ -96,7 +99,7 @@ Step 1~5 全部完成。目前處於**功能完善階段**。
 
 ---
 
-## 📁 專案結構
+## 專案結構
 
 ```
 /opt/BeakPlatform/
@@ -109,10 +112,11 @@ Step 1~5 全部完成。目前處於**功能完善階段**。
 │   │   ├── services/       # 業務邏輯
 │   │   └── templates/      # Jinja2 模板
 │   └── tests/
-├── modules/                # 模組目錄（Step 2 後建立）
+├── modules/                # 模組目錄
 ├── docs/
-│   ├── PLATFORM_MODULARIZATION_PLAN.md  # 開發計劃
-│   └── knowledge/          # 知識庫
+│   ├── GLOSSARY.md                    # 溝通對照表
+│   ├── PLATFORM_MODULARIZATION_PLAN.md  # 架構與模組化標準
+│   └── archive/                       # 已完成的歷史文件
 ├── scripts/
 │   └── migrations/         # 資料庫遷移
 └── .semgrep/               # 安全規則
@@ -120,7 +124,7 @@ Step 1~5 全部完成。目前處於**功能完善階段**。
 
 ---
 
-## 📦 模組靜態檔案規範
+## 模組靜態檔案規範
 
 模組的 JS/CSS/圖片等靜態資源由 `module_loader.py` 自動註冊 serve。
 
@@ -140,7 +144,7 @@ modules/<module_name>/static/modules/<module_name>/
 
 ---
 
-## 🎨 前端開發規範
+## 前端開發規範
 
 ### FRONT-01: JS/CSS 分離原則
 
@@ -200,7 +204,7 @@ function pageManager() {
 - **禁止**在 API 程式碼中硬編碼 node type 定義
 - `workflow_node_definitions` DB 表是 **single source of truth**
 - API 透過 `WorkflowNodeDefinition` ORM Model 查詢
-- 新增 node type 流程見 `docs/NODE_TYPE_NORMALIZATION_PLAN.md`
+- 新增 node type 流程見 `docs/archive/NODE_TYPE_NORMALIZATION_PLAN.md`
 
 ### FRONT-04: Code 欄位自動建議規範
 
@@ -222,7 +226,7 @@ function pageManager() {
 
 ---
 
-## 🚫 禁止事項
+## 禁止事項
 
 1. **禁止** 繞過認證攔截器
 2. **禁止** API 直接查詢 Model
@@ -236,35 +240,28 @@ function pageManager() {
 
 ---
 
-## 📊 資料庫資訊
+## 資料庫資訊
 
 - **Host**: localhost
 - **Port**: 5432
-- **Database**: beakplatform_dev（待建立）
+- **Database**: beakplatform_dev
 - **User**: beakplatform
 - **Password**: postgres123（開發環境）
 - **本機資料皆為測試資料**：變更後可忽略舊資料，不用修正舊資料，除非用戶要求
 
 ---
 
-## 📝 備忘
+## 備忘
 
 ### Forgejo
 - **URL**: http://192.168.0.16:3000/
 - **Repo**: http://192.168.0.16:3000/forgejoadmin/BeakPlatform
 - **API Token**: `be6f8e52f155aa026ac12c5bd470114aa7c54333`
 
-### 相關專案
-| 專案 | 路徑 | 說明 |
-|------|------|------|
-| BeakPlatform | `/opt/BeakPlatform` | 本專案（純平台）|
-| A6 (FormFlow) | `/opt/FormFlow/a6` | 表單流程 MVP（待改造為模組）|
-| BeakMask | `/opt/BeakMask` | 舊專案（參考用）|
-
 ### 服務啟動
 ```bash
 cd /opt/BeakPlatform
-source venv/bin/activate  # 如果有 venv
+source venv/bin/activate
 set -a && source .env && set +a
 cd backend && flask run --host=0.0.0.0 --port=7000
 ```
@@ -275,4 +272,4 @@ cd backend && flask run --host=0.0.0.0 --port=7000
 
 ---
 
-*最後更新: 2026-02-15*
+*最後更新: 2026-03-07*

@@ -574,6 +574,16 @@ def delete_user(secure_code: str):
         flash('不能刪除自己的帳號', 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
+    # 不能刪除自己綁定的員工帳號 (刪除後管理員將無法登入)
+    if current_user.bound_employee_secure_code == user.secure_code:
+        flash('不能刪除自己綁定的員工帳號', 'error')
+        return redirect(url_for('users.edit_user', secure_code=secure_code))
+
+    # 不能刪除企業原始管理員
+    if user.is_original_admin:
+        flash('不能刪除企業原始管理員', 'error')
+        return redirect(url_for('users.edit_user', secure_code=secure_code))
+
     try:
         user.is_deleted = True
         user.deleted_at = datetime.utcnow()
@@ -598,6 +608,11 @@ def toggle_status(secure_code: str):
     # 不能停用自己
     if user.secure_code == current_user.secure_code:
         flash('不能停用自己的帳號', 'error')
+        return redirect(url_for('users.list_users'))
+
+    # 不能停用自己綁定的員工帳號 (停用後管理員將無法登入)
+    if current_user.bound_employee_secure_code == user.secure_code and user.is_active:
+        flash('不能停用自己綁定的員工帳號', 'error')
         return redirect(url_for('users.list_users'))
 
     try:

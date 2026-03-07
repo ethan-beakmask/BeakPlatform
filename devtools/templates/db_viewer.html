@@ -541,6 +541,7 @@
         }
 
         const orgName = orgCode === '__ALL__' ? '全部企業' : orgCode;
+        const extraMsg = orgCode === '__ALL__' ? '- 稽核日誌\n' : '';
         const confirmed = confirm(
             `確定要清除「${orgName}」的表單流程資料嗎？\n\n` +
             '這將刪除：\n' +
@@ -550,7 +551,8 @@
             '- 發布版本\n' +
             '- 表單流程配對\n' +
             '- 流程範本\n' +
-            '- 表單範本\n\n' +
+            '- 表單範本\n' +
+            extraMsg + '\n' +
             '此操作無法復原！'
         );
 

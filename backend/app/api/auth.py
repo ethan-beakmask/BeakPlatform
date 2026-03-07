@@ -130,17 +130,43 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
 
     if user is None:
         logger.warning(f"Login attempt for unknown user: {username}@{domain_name} from {request.remote_addr}")
+        # 稽核記錄: 未知用戶登入嘗試
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGIN_FAILED',
+            org_secure_code=org.secure_code,
+            details=f'未知用戶: {username}@{domain_name}',
+            status_code=401,
+        )
         return error_response('帳號或密碼錯誤', 401)
 
     # 驗證密碼
     if not user.check_password(password):
         logger.warning(f"Failed login attempt for: {username}@{domain_name} from {request.remote_addr}")
+        # 稽核記錄: 密碼錯誤
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGIN_FAILED',
+            org_secure_code=org.secure_code,
+            user_secure_code=user.secure_code,
+            details=f'密碼錯誤: {username}@{domain_name}',
+            status_code=401,
+        )
         return error_response('帳號或密碼錯誤', 401)
 
     # 檢查是否可登入
     can_login, error_msg = user.can_login()
     if not can_login:
         logger.warning(f"Login denied for {username}@{domain_name}: {error_msg}")
+        # 稽核記錄: 登入被拒
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGIN_DENIED',
+            org_secure_code=org.secure_code,
+            user_secure_code=user.secure_code,
+            details=f'{error_msg}: {username}@{domain_name}',
+            status_code=403,
+        )
         return error_response(error_msg, 403)
 
     # 登入成功
@@ -153,6 +179,16 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
     session['org_domain'] = org.domain_name
 
     logger.info(f"User logged in: {username}@{domain_name} from {request.remote_addr}")
+
+    # 稽核記錄: 登入成功
+    from ..services.audit_service import AuditService
+    AuditService.log_auth_event(
+        action='LOGIN',
+        org_secure_code=org.secure_code,
+        user_secure_code=user.secure_code,
+        details=f'{username}@{domain_name} ({login_type})',
+        status_code=200,
+    )
 
     # 檢查是否需要強制變更密碼
     if user.must_change_password:
@@ -519,6 +555,16 @@ def org_public_login(domain_name: str):
 
     logger.info(f"[AUTH] 外部人員登入成功: {email} ({org.name})")
 
+    # 稽核記錄: 外部人員登入成功
+    from ..services.audit_service import AuditService
+    AuditService.log_auth_event(
+        action='LOGIN',
+        org_secure_code=org.secure_code,
+        user_secure_code=user.secure_code,
+        details=f'外部人員: {email} ({org.name})',
+        status_code=200,
+    )
+
     if is_json:
         return jsonify({
             'success': True,
@@ -546,6 +592,19 @@ def logout():
 
     # 記錄登出（若已登入）
     user_email = current_user.email if current_user.is_authenticated else 'anonymous'
+    logout_user_sc = current_user.secure_code if current_user.is_authenticated else None
+    logout_org_sc = current_user.org_secure_code if current_user.is_authenticated else None
+
+    # 稽核記錄: 登出
+    if logout_org_sc:
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGOUT',
+            org_secure_code=logout_org_sc,
+            user_secure_code=logout_user_sc,
+            details=user_email,
+            status_code=200,
+        )
 
     # 保存 org_domain 用於登出後導向
     org_domain = session.get('org_domain')
@@ -677,6 +736,16 @@ def change_password():
     session.pop('must_change_password', None)
 
     logger.info(f"Password changed for user: {current_user.email}")
+
+    # 稽核記錄: 密碼變更
+    from ..services.audit_service import AuditService
+    AuditService.log_auth_event(
+        action='CHANGE_PASSWORD',
+        org_secure_code=current_user.org_secure_code,
+        user_secure_code=current_user.secure_code,
+        details=f'密碼變更: {current_user.email}',
+        status_code=200,
+    )
 
     if is_json:
         return jsonify({'message': '密碼變更成功'}), 200

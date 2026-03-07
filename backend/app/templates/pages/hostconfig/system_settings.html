@@ -32,6 +32,11 @@
             <span class="settings-menu-icon">[R]</span>
             <span>收件人群組</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'audit' }"
+             @click="activeSection = 'audit'; loadAuditSettings()">
+            <span class="settings-menu-icon">[A]</span>
+            <span>稽核設定</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'packages' }"
              @click="activeSection = 'packages'; loadPackageVersions()">
             <span class="settings-menu-icon">[V]</span>
@@ -321,6 +326,77 @@
             </div>
         </div>
 
+        <!-- ==================== 稽核設定 ==================== -->
+        <div id="section-audit" class="settings-section" :class="{ active: activeSection === 'audit' }">
+            <h2>稽核設定</h2>
+            <p>控制操作記錄的細粒度，記錄越詳細資料量越大。</p>
+
+            <div x-show="message.audit" x-cloak
+                 :class="'message ' + (message.auditError ? 'message-error' : 'message-success')"
+                 x-text="message.audit"
+                 x-transition></div>
+
+            <div class="settings-card">
+                <h4>記錄等級</h4>
+                <div style="margin-bottom: 16px;">
+                    <template x-for="level in audit.levels" :key="level.value">
+                        <label style="display: block; padding: 8px 0; cursor: pointer;">
+                            <input type="radio" name="audit_level"
+                                   :value="level.value"
+                                   :checked="audit.level === level.value"
+                                   @change="audit.level = level.value">
+                            <strong x-text="level.value"></strong>
+                            <span style="color: #666;" x-text="' -- ' + level.label"></span>
+                        </label>
+                    </template>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h4>資料保留</h4>
+                <div class="form-group">
+                    <label>保留天數（超過自動清理）</label>
+                    <input type="number" x-model.number="audit.retentionDays"
+                           min="7" max="3650" style="width: 120px;">
+                    <div class="form-hint">最少 7 天，建議 90 天</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" @click="saveAuditSettings()">儲存稽核設定</button>
+            </div>
+
+            <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd; margin-top: 16px;">
+                <h4 style="color: #0369a1;">等級說明</h4>
+                <table class="config-table" style="font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th>等級</th>
+                            <th>記錄內容</th>
+                            <th>資料量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MINIMAL</strong></td>
+                            <td>登入/登出 + 登入失敗嘗試</td>
+                            <td>極少</td>
+                        </tr>
+                        <tr>
+                            <td><strong>STANDARD</strong></td>
+                            <td>MINIMAL + 所有寫入操作（新增/修改/刪除）</td>
+                            <td>適中</td>
+                        </tr>
+                        <tr>
+                            <td><strong>VERBOSE</strong></td>
+                            <td>STANDARD + 所有讀取操作（頁面瀏覽/API 查詢）</td>
+                            <td>大量</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ==================== 套件版本 ==================== -->
         <div id="section-packages" class="settings-section" :class="{ active: activeSection === 'packages' }">
             <h2>套件版本</h2>
@@ -475,7 +551,9 @@ function serverSettings() {
             recipients: '',
             recipientsError: false,
             packages: '',
-            packagesError: false
+            packagesError: false,
+            audit: '',
+            auditError: false
         },
 
         // 載入狀態
@@ -548,6 +626,13 @@ function serverSettings() {
             }
         },
 
+        // 稽核設定
+        audit: {
+            level: 'STANDARD',
+            retentionDays: 90,
+            levels: []
+        },
+
         // 套件版本
         packages: {
             python: [],
@@ -576,6 +661,52 @@ function serverSettings() {
 {% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
+
+        // ==================== 稽核設定 ====================
+        async loadAuditSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/audit`, {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.audit.level = data.data.audit_level;
+                    this.audit.retentionDays = data.data.audit_retention_days;
+                    this.audit.levels = data.data.levels;
+                }
+            } catch (e) {
+                this.message.audit = '載入稽核設定失敗: ' + e.message;
+                this.message.auditError = true;
+            }
+        },
+
+        async saveAuditSettings() {
+            try {
+                const res = await fetch(`${API_BASE}/audit`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        audit_level: this.audit.level,
+                        audit_retention_days: this.audit.retentionDays
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.message.audit = data.message;
+                    this.message.auditError = false;
+                } else {
+                    this.message.audit = data.error || '儲存失敗';
+                    this.message.auditError = true;
+                }
+            } catch (e) {
+                this.message.audit = '儲存失敗: ' + e.message;
+                this.message.auditError = true;
+            }
+        },
+
     };
 }
 </script>

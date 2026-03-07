@@ -42,6 +42,22 @@
 
     .status-active { color: #16a34a; }
     .status-inactive { color: #dc2626; }
+
+    /* 模組選單：紫底白字 */
+    .menu-module { background-color: #7c3aed; color: white; }
+    tr.menu-module .perm-yes { color: #4ade80; }
+    tr.menu-module .perm-no { color: rgba(255,255,255,0.3); }
+    tr.menu-module a { color: #93c5fd; }
+    tr.menu-module code { background: rgba(255,255,255,0.15); color: inherit; }
+
+    /* 標題欄固定 */
+    .menu-table thead th {
+        position: sticky;
+        top: 0;
+        background: #f3f4f6;
+        z-index: 10;
+        border-bottom: 2px solid #999;
+    }
 </style>
 {% endblock %}
 
@@ -76,8 +92,11 @@
         {% set has_ext = perms.get('EXTERNAL', false) %}
         {% set fixed_titles = ['模組區', '個人設定', '儀表板', '表單中心'] %}
         {% set is_fixed = entry.item.title in fixed_titles %}
+        {% set is_module = entry.item.code in module_menu_codes %}
         {# 依 CSV 權限顏色表: 底色=最高等級, cross=有更低等級也能存取 #}
-        {% if is_fixed %}
+        {% if is_module %}
+            {% set row_class = 'menu-module' %}
+        {% elif is_fixed %}
             {% set row_class = 'menu-fixed-black' %}
         {% elif has_sys %}
             {% set row_class = 'menu-sys-cross' if (has_org or has_emp or has_ext) else 'menu-sys-only' %}
@@ -167,4 +186,13 @@
     </tbody>
 </table>
 <p><small>{{ _('每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。') }}</small></p>
+
+<h3>{{ _('底色說明') }}</h3>
+<table border="1" cellpadding="6" cellspacing="0">
+    <tr><td style="background:#b91c1c;color:white;width:120px">{{ _('紅底') }}</td><td>{{ _('系統管理員專屬') }}</td></tr>
+    <tr><td style="background:#1d4ed8;color:white">{{ _('藍底') }}</td><td>{{ _('企業管理員專屬') }}</td></tr>
+    <tr><td style="background:#111827;color:white">{{ _('黑底') }}</td><td>{{ _('員工 / 固定選單') }}</td></tr>
+    <tr><td style="background:#f59e0b;color:#111827">{{ _('黃底') }}</td><td>{{ _('非公司成員') }}</td></tr>
+    <tr><td style="background:#7c3aed;color:white">{{ _('紫底') }}</td><td>{{ _('模組選單（權限由模組使用權控制）') }}</td></tr>
+</table>
 {% endblock %}

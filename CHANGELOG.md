@@ -6,6 +6,35 @@
 
 ## [Unreleased]
 
+### Added
+- 稽核日誌系統: after_request hook 自動記錄操作，三級細粒度控制
+  - MINIMAL: 僅認證事件 (登入/登出/密碼變更)
+  - STANDARD: 認證 + 寫入操作 (POST/PUT/PATCH/DELETE)
+  - VERBOSE: 所有請求 (含 GET)
+  - `AuditService`: 集中式稽核服務，level 快取 (每 100 次請求重讀 DB)
+  - 認證事件稽核: LOGIN / LOGIN_FAILED / LOGIN_DENIED / LOGOUT / CHANGE_PASSWORD
+  - Migration: `036_audit_log_enhancement.sql` (新增 request_method / request_path / status_code 欄位)
+  - API: `GET/PUT /api/system-settings/audit` 稽核等級設定
+- 伺服器設定頁面新增「稽核設定」區段: 三級 radio 選擇 + 保留天數 + 各級記錄範圍說明表
+- 選單管理頁面模組選單辨識: 紫底白字 (menu-module) 區分模組選單與平台選單
+- 選單管理頁面底部新增底色說明對照表 (紅/藍/黑/黃/紫 五類)
+- 溝通對照表: `docs/GLOSSARY.md` 選單名稱與 URL 路徑對照
+
+### Changed
+- 選單管理頁面標題欄改為 sticky，捲動時固定在頂部
+- 模組選單編輯頁隱藏用戶類型勾選，顯示「權限由模組使用權控制」說明
+- 模組選單儲存時跳過 MenuPermission 寫入，防止誤建權限記錄
+- DevTools 清除表單流程工具: 選擇全部企業時同步清除 audit_logs 表
+- CLAUDE.md 精簡: 移除 emoji、移除已完成的開發步驟、更新溝通對照表引用
+- 已完成的歷史文件移至 `docs/archive/` (4 份)
+- `docs/PLATFORM_MODULARIZATION_PLAN.md` 精簡為架構與模組化標準 (移除已完成步驟)
+
+### Fixed
+- 修正模組選單在選單管理頁面顯示白底的問題 (缺少 MenuPermission 導致無底色)
+- 修正模組選單編輯頁可勾選用戶類型的問題 (勾選後無法取消，因驗證要求至少一個)
+- 帳號刪除安全防護: 禁止刪除自己綁定的員工帳號和企業原始管理員 (API + Web 雙層)
+- 帳號停用安全防護: 禁止停用自己綁定的員工帳號
+
 ### Fixed
 - 選單治理分流: MenuPermission 勾選的選單不再被合約/ACL/社群過濾覆蓋
   - 根因: Step 6 合約過濾對所有模組選單一律檢查合約，system.local 無合約導致 EMPLOYEE 看不到已勾選的選單

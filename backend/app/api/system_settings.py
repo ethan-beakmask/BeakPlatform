@@ -41,6 +41,10 @@ Telegram 設定 (系統級):
 
 套件版本:
 - GET    /api/system-settings/package-versions        查詢套件版本
+
+稽核設定:
+- GET    /api/system-settings/audit                   取得稽核設定
+- PUT    /api/system-settings/audit                   更新稽核設定
 """
 import os
 import base64
@@ -1599,3 +1603,79 @@ def get_package_versions():
     data_response['cached_at'] = datetime.fromtimestamp(now).isoformat()
 
     return jsonify({'success': True, 'data': data_response})
+
+
+# =============================================================================
+# 稽核設定
+# =============================================================================
+
+@api_system_settings.route('/audit', methods=['GET'])
+@system_admin_required
+def get_audit_settings():
+    """
+    取得稽核設定
+
+    Returns:
+        audit_level: MINIMAL / STANDARD / VERBOSE
+        audit_retention_days: 保留天數
+    """
+    return jsonify({
+        'success': True,
+        'data': {
+            'audit_level': SystemSetting.get('audit_level', 'STANDARD'),
+            'audit_retention_days': SystemSetting.get('audit_retention_days', 90),
+            'levels': [
+                {'value': 'MINIMAL', 'label': '最小 -- 僅登入/登出與失敗嘗試'},
+                {'value': 'STANDARD', 'label': '標準 -- 登入/登出 + 所有寫入操作 (預設)'},
+                {'value': 'VERBOSE', 'label': '詳細 -- 記錄所有請求 (含讀取，資料量大)'},
+            ]
+        }
+    })
+
+
+@api_system_settings.route('/audit', methods=['PUT'])
+@system_admin_required
+def update_audit_settings():
+    """
+    更新稽核設定
+
+    Body: {
+        "audit_level": "STANDARD",
+        "audit_retention_days": 90
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少 request body'}), 400
+
+    from ..services.audit_service import AuditService, VALID_AUDIT_LEVELS
+
+    updated = []
+
+    if 'audit_level' in data:
+        level = data['audit_level'].upper()
+        if level not in VALID_AUDIT_LEVELS:
+            return jsonify({
+                'success': False,
+                'error': f'無效的稽核等級，允許值: {", ".join(sorted(VALID_AUDIT_LEVELS))}'
+            }), 400
+        AuditService.set_audit_level(level)
+        updated.append(f'audit_level={level}')
+
+    if 'audit_retention_days' in data:
+        days = data['audit_retention_days']
+        if not isinstance(days, int) or days < 7:
+            return jsonify({'success': False, 'error': '保留天數至少 7 天'}), 400
+        SystemSetting.set(
+            key='audit_retention_days',
+            value=days,
+            value_type='integer',
+            category='security',
+            updated_by=current_user.email
+        )
+        updated.append(f'audit_retention_days={days}')
+
+    return jsonify({
+        'success': True,
+        'message': f'稽核設定已更新: {", ".join(updated)}'
+    })

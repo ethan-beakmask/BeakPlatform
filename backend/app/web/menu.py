@@ -70,13 +70,48 @@ def list_menu():
     all_menu_codes = [entry['item'].secure_code for entry in flat_items]
     permission_matrix = _get_full_permission_matrix(all_menu_codes)
 
+    # 識別模組選單 (code 前綴匹配 INSTALLED_MODULES)
+    module_menu_codes = _get_module_menu_code_set(flat_items)
+
     return render_template(
         'pages/menu/list.html',
         menu_items=flat_items,
         permission_matrix=permission_matrix,
+        module_menu_codes=module_menu_codes,
         user_types=MenuService.USER_TYPES,
         user_type_labels=USER_TYPE_LABELS
     )
+
+
+def _get_module_menu_code_set(flat_items):
+    """取得模組選單的 code 集合，用於模板判斷"""
+    from ..services.lookup_service import LookupService
+    try:
+        installed_items = LookupService.get_items('INSTALLED_MODULES')
+        installed_module_codes = {item['code'] for item in installed_items}
+    except Exception:
+        return set()
+
+    if not installed_module_codes:
+        return set()
+
+    result = set()
+    for entry in flat_items:
+        code = entry['item'].code
+        if MenuService._get_module_code_for_menu(code, installed_module_codes) is not None:
+            result.add(code)
+    return result
+
+
+def _is_module_menu(menu_code: str) -> bool:
+    """判斷指定 menu code 是否為模組選單"""
+    from ..services.lookup_service import LookupService
+    try:
+        installed_items = LookupService.get_items('INSTALLED_MODULES')
+        installed_module_codes = {item['code'] for item in installed_items}
+    except Exception:
+        return False
+    return MenuService._get_module_code_for_menu(menu_code, installed_module_codes) is not None
 
 
 def _get_full_permission_matrix(menu_secure_codes):
@@ -241,6 +276,7 @@ def edit_menu(secure_code: str):
 
     # 取得當前權限
     current_permissions = MenuService.get_menu_permissions(item.secure_code)
+    is_module = _is_module_menu(item.code)
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
@@ -269,7 +305,7 @@ def edit_menu(secure_code: str):
 
         if not title:
             flash('標題為必填', 'error')
-        elif not allowed_user_types:
+        elif not is_module and not allowed_user_types:
             flash('請至少選擇一種用戶類型', 'error')
         else:
             try:
@@ -307,8 +343,9 @@ def edit_menu(secure_code: str):
 
                     update_children_depth(item)
 
-                # 更新權限
-                MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
+                # 模組選單不透過 MenuPermission 控制，跳過權限寫入
+                if not is_module:
+                    MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
 
                 db.session.commit()
                 flash('已更新選單項目', 'success')
@@ -322,6 +359,7 @@ def edit_menu(secure_code: str):
         item=item,
         parent_options=parent_options,
         current_permissions=current_permissions,
+        is_module_menu=is_module,
         user_types=MenuService.USER_TYPES,
         user_type_labels=USER_TYPE_LABELS
     )
