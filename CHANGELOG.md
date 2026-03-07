@@ -7,6 +7,25 @@
 ## [Unreleased]
 
 ### Added
+- 部門設定頁面組織樹改用零依賴 Tree 元件，取代 jQuery (77KB) + jstree (139KB)
+  - 自訂 `dept-tree` renderer: 部門圖示 + 人員角色標籤
+  - Tree 元件 vendor 檔案: `backend/app/static/vendor/tree/`
+  - 全部功能重寫為獨立 `departments.js` (910 行)
+- 部門設定頁面 layout 重新設計
+  - 左側 Tree 500px / 中間詳情 flex-1 / 右側未分配 360px
+  - 編輯部門與跨部門人員並排
+  - 主管+代理人(一) 與副主管+代理人(二) 左側堆疊 (330px)，員工欄右側
+  - 集團名稱顯示於 Tree 表頭 (淺藍底粉紅字)
+  - 視野切換: [部門] / [員工] 按鈕
+
+### Changed
+- 部門成員/未分配員工/跨部門人員 API 改為白名單過濾，只顯示 `user_type=EMPLOYEE`
+  - 排除企業管理員 (ORG_ADMIN)、外部人員 (EXTERNAL)、系統管理員 (SYSTEM_ADMIN)
+  - 影響: `GET /api/units/{id}/members`, `GET /api/units/unassigned-users`, `GET /api/users`
+
+### Fixed
+- 修正外部人員 (EXTERNAL) 可被分配到部門並出現在部門成員列表的問題
+
 - 稽核日誌系統: after_request hook 自動記錄操作，三級細粒度控制
   - MINIMAL: 僅認證事件 (登入/登出/密碼變更)
   - STANDARD: 認證 + 寫入操作 (POST/PUT/PATCH/DELETE)

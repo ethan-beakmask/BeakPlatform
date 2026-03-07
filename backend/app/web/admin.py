@@ -205,3 +205,10 @@ def module_list():
         'pages/admin/module_list.html',
         modules=result,
     )
+
+
+@admin_bp.route('/test-treegrid')
+@admin_required
+def test_treegrid():
+    """TreeGrid 元件測試頁（jstree 替代方案評估）"""
+    return render_template('pages/admin/test_treegrid.html')

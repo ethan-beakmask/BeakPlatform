@@ -36,8 +36,8 @@ def list_users():
         is_active=True
     )
 
-    # 排除系統管理員（他們不應該出現在企業用戶列表）
-    users = [u for u in result['items'] if u.user_type != UserType.SYSTEM_ADMIN]
+    # 只保留員工帳號（排除系統管理員、企業管理員、外部人員）
+    users = [u for u in result['items'] if u.user_type == UserType.EMPLOYEE]
 
     return jsonify({
         'users': [u.to_dict() for u in users],

@@ -529,12 +529,15 @@ def get_unit_members(secure_code: str):
     if not unit:
         return jsonify({'error': '組織單位不存在'}), 404
 
-    # 查詢主要部門為此單位的用戶 (需要 order_by(display_name) 排序)
+    from ..models.user import UserType
+
+    # 只顯示員工帳號 (與 /users/ 頁面一致)
     members = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == secure_code,
         User.is_deleted == False,
-        User.is_active == True
+        User.is_active == True,
+        User.user_type == UserType.EMPLOYEE
     ).order_by(User.display_name).all()
 
     return jsonify({
@@ -564,13 +567,13 @@ def get_unassigned_users():
     """
     from ..models.user import User, UserType
 
-    # 涉及 != 條件和 IS NULL 比較，無法使用 ResourceGateway
+    # 只顯示員工帳號 (與 /users/ 頁面一致)
     users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == None,
         User.is_deleted == False,
         User.is_active == True,
-        User.user_type != UserType.SYSTEM_ADMIN  # 排除系統管理員
+        User.user_type == UserType.EMPLOYEE
     ).order_by(User.display_name).all()
 
     return jsonify({

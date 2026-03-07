@@ -137,6 +137,9 @@ class SubSystemProvisionService:
             db.session.flush()
 
             # Step 4: 建立選單項 (子系統 header 下)
+            # code 加上模組前綴，讓選單管理頁能正確辨識為模組選單（紫底）
+            if not menu_code.startswith(f'{_WEB_BUILDER_MODULE}.'):
+                menu_code = f'{_WEB_BUILDER_MODULE}.{menu_code}'
             menu_result = cls._create_menu_item(
                 org_sc=org_sc,
                 code=menu_code,

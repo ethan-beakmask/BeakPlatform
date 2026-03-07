@@ -1,0 +1,268 @@
+/**
+ * Tree 獨立元件樣式
+ * 與 treegrid.css 共用 class 命名慣例，確保渲染器相容
+ */
+
+/* ========== 容器 ========== */
+.tree-container {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #222;
+    background: #fff;
+    border: 1px solid #ccc;
+    overflow: auto;
+}
+
+/* ========== 表格 ========== */
+.tree-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+/* ========== 表頭 ========== */
+.tree-th {
+    background: #f0f0f0;
+    border-bottom: 2px solid #999;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: bold;
+    white-space: nowrap;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tree-th-checkbox {
+    width: 32px;
+    text-align: center;
+    padding: 6px 4px;
+}
+
+.tree-th-tree {
+    min-width: 200px;
+}
+
+/* ========== 共用 row/cell 樣式（與 treegrid 相容） ========== */
+/* 渲染器輸出使用 treegrid-* class，這裡提供獨立運作時的定義 */
+
+.tree-container .treegrid-row {
+    border-bottom: 1px solid #eee;
+}
+
+.tree-container .treegrid-row:hover {
+    background: #f5f8fc;
+}
+
+.tree-container .treegrid-row-checked {
+    background: #eef4ff;
+}
+
+.tree-container .treegrid-row-checked:hover {
+    background: #e0ecff;
+}
+
+.tree-container .treegrid-td {
+    padding: 4px 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.tree-container .treegrid-td-checkbox {
+    width: 32px;
+    text-align: center;
+    padding: 4px;
+}
+
+.tree-container .treegrid-td-tree {
+    cursor: default;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+.tree-container .treegrid-has-children {
+    cursor: pointer;
+}
+
+/* ========== Checkbox ========== */
+.tree-container .treegrid-checkbox,
+.tree-container .tree-checkbox-all {
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+/* ========== Tree Cell 共用（渲染器使用） ========== */
+
+.tree-container .tg-tree-cell {
+    display: flex;
+    align-items: center;
+    height: 22px;
+    white-space: nowrap;
+}
+
+.tree-container .tg-indent {
+    display: inline-block;
+    width: 20px;
+    height: 22px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-indent-blank {
+    display: inline-block;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-branch {
+    display: inline-block;
+    width: 20px;
+    height: 22px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 16px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+    border: 1px solid #bbb;
+    background: #f8f8f8;
+    margin-right: 4px;
+}
+
+.tree-container .tg-toggle:hover {
+    background: #e8e8e8;
+    border-color: #888;
+    color: #222;
+}
+
+.tree-container .tg-leaf-spacer {
+    display: inline-block;
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-label {
+    padding-left: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========== DOM Overlay 樹線 ========== */
+
+.tree-container .tg-dom-wrapper {
+    position: relative;
+}
+
+.tree-container .tg-dom-cell {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.tree-container .tg-dom-cell .tg-indent-blank {
+    display: inline-block;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-dom-cell .tg-branch {
+    display: inline-block;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.tree-container .tg-line-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* ========== 層級色彩 ========== */
+.tree-container .treegrid-level-0 .tg-label { color: #111; font-weight: bold; }
+.tree-container .treegrid-level-1 .tg-label { color: #333; }
+.tree-container .treegrid-level-2 .tg-label { color: #555; }
+.tree-container .treegrid-level-3 .tg-label { color: #666; }
+.tree-container .treegrid-level-4 .tg-label { color: #777; }
+
+/* ========== 拖曳 ========== */
+
+/* 拖曳中的容器需要 relative 才能定位 indicator */
+.tree-container {
+    position: relative;
+}
+
+/* 被拖曳的來源列 */
+.tree-container .tree-drag-source {
+    opacity: 0.4;
+}
+
+/* 可拖曳的列 cursor */
+.tree-container tr.treegrid-row[draggable="true"] {
+    cursor: grab;
+}
+
+.tree-container tr.treegrid-row[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* 放入目標高亮（action: inside） */
+.tree-container .tree-drop-highlight {
+    background: #d0e8ff;
+    outline: 2px solid #369;
+    outline-offset: -2px;
+}
+
+/* 插入位置指示線（action: before/after） */
+.tree-drag-indicator {
+    position: absolute;
+    height: 2px;
+    background: #369;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.tree-drag-indicator::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background: #369;
+    border-radius: 50%;
+}
+
+/* ========== 捲動條 ========== */
+.tree-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 4px;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
