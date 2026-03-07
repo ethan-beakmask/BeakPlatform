@@ -120,16 +120,12 @@ details .detail-content {
     color: #888;
     text-align: center;
 }
-/* jstree 自訂樣式 */
+/* Tree 元件樣式 (部門選擇器) */
 #dept-tree-select { padding: 5px; }
-#dept-tree-select .jstree-default .jstree-clicked { background: #0066cc !important; color: white !important; }
-#dept-tree-select .jstree-default .jstree-hovered { background: #e8f4fc !important; }
-#dept-tree-select .jstree-default .jstree-node { margin-left: 12px; }
-#dept-tree-select .jstree-default .jstree-icon:empty { width: 12px; }
-.jstree-icon.icon-company { font-style: normal !important; color: #2c3e50; }
-.jstree-icon.icon-company::before { content: '\25A0'; }
-.jstree-icon.icon-dept { font-style: normal !important; color: #3498db; }
-.jstree-icon.icon-dept::before { content: '\25A1'; }
+#dept-tree-select .treegrid-row { cursor: pointer; }
+#dept-tree-select .treegrid-row:hover { background: #e8f4fc; }
+#dept-tree-select .tg-selected { background: #0066cc !important; color: white !important; }
+#dept-tree-select .tg-selected .tg-label { color: white; }
 
 /* 用戶編號選擇器 */
 .number-field {

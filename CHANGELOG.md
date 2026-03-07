@@ -7,6 +7,15 @@
 ## [Unreleased]
 
 ### Added
+- 部門設定頁面整合員工建立功能
+  - [新增] 改名 [新增部門]，新增 [新增員工] 按鈕
+  - 中間面板三模式: 部門詳情 / 新增部門 / 新增員工
+  - 選定部門下新增員工自動歸屬該部門，未選部門則歸入「未分配員工」
+  - 建立成功後 `focusNode()` 導航到目標部門
+- `user-create-mixin.js`: 共用員工建立邏輯 (名稱連動/密碼/翻譯/編號)
+- `_employee_create_form.html`: 嵌入式員工建立表單 partial
+- `POST /api/users` 增強為完整欄位支援 (native_name, english_name, employee_id, department_code 等)
+- Tree 元件新增 `focusNode(id, opts)` 方法: 展開祖先 + 捲動 + 高亮動畫
 - 社群設定頁面改用零依賴 Tree 元件，取代 jQuery + jstree
   - 自訂 `group-tree` renderer: 社群圖示 + 角色標籤 + 外部人員警示
   - 外部人員 (EXTERNAL) 可參加社群，一般成員顯示「外」紅底白字標籤
@@ -26,6 +35,8 @@
   - 視野切換: [部門] / [員工] 按鈕
 
 ### Changed
+- 用戶建立頁面 (`/users/create`) 部門選擇器改用零依賴 Tree 元件，完全移除 jQuery + jsTree 依賴
+- 全系統 jQuery + jsTree 引用歸零 (vendor 檔案可安全移除)
 - 部門成員/未分配員工/跨部門人員 API 改為白名單過濾，只顯示 `user_type=EMPLOYEE`
   - 排除企業管理員 (ORG_ADMIN)、外部人員 (EXTERNAL)、系統管理員 (SYSTEM_ADMIN)
   - 影響: `GET /api/units/{id}/members`, `GET /api/units/unassigned-users`, `GET /api/users`
@@ -60,6 +71,9 @@
 - 修正模組選單編輯頁可勾選用戶類型的問題 (勾選後無法取消，因驗證要求至少一個)
 - 帳號刪除安全防護: 禁止刪除自己綁定的員工帳號和企業原始管理員 (API + Web 雙層)
 - 帳號停用安全防護: 禁止停用自己綁定的員工帳號
+
+### Removed
+- 刪除 3 個孤兒 partial: `_departments_tree_methods.html`, `_departments_dnd_methods.html`, `_departments_crud_methods.html`
 
 ### Fixed
 - 選單治理分流: MenuPermission 勾選的選單不再被合約/ACL/社群過濾覆蓋

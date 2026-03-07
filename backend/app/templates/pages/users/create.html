@@ -3,10 +3,8 @@
 {% block title %}新增用戶 - BeakMask{% endblock %}
 
 {% block head %}
-<!-- jQuery + jstree (本地) -->
-<script src="{{ url_for('static', filename='vendor/jquery.min.js') }}"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/jstree.min.css') }}" />
-<script src="{{ url_for('static', filename='vendor/jstree.min.js') }}"></script>
+<!-- 零依賴 Tree 元件 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
 <!-- 用戶表單樣式 -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/user-form.css') }}">
 {% endblock %}
@@ -106,7 +104,7 @@
                 <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
-                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                        <div style="color: #dc2626; font-size: 12px;" x-text="'&bull; ' + err"></div>
                     </template>
                 </div>
                 <!-- 驗證通過 -->
@@ -154,14 +152,14 @@
                             <input type="hidden" name="department_code" id="department_code_input" value="{{ form_data.department_code if form_data else '' }}">
                             <div class="dept-selector">
                                 <div class="dept-display" id="dept-display"
-                                     onclick="toggleDeptPicker()">點擊選擇部門</div>
+                                     @click="toggleDeptPicker()">點擊選擇部門</div>
                                 <button type="button" id="dept-clear-btn" style="padding: 4px 8px; font-size: 12px; display: none;"
-                                        onclick="clearDeptSelection()">清除</button>
+                                        @click="clearDeptSelection()">清除</button>
                             </div>
                             <div class="dept-tree-picker" id="dept-tree-picker" style="display: none;">
                                 <div class="dept-tree-header">
                                     <span>選擇部門</span>
-                                    <button type="button" class="btn-close" onclick="closeDeptPicker()">×</button>
+                                    <button type="button" class="btn-close" @click="closeDeptPicker()">x</button>
                                 </div>
                                 <div class="dept-tree-content">
                                     <div id="dept-tree-select"></div>
@@ -252,5 +250,7 @@ window.__USER_FORM_CONFIG = {
     orgName: '{{ organization.name if organization else "企業" }}'
 };
 </script>
+<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
 <script src="{{ url_for('static', filename='js/user-form.js') }}"></script>
 {% endblock %}

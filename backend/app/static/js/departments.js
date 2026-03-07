@@ -81,8 +81,14 @@ function getCsrfToken() {
 
 
 function departmentManager() {
+    var _ucMixin = userCreateMixin({
+        orgSettings: window.__DEPT_CONFIG?.orgSettings || {},
+        orgName: window.__DEPT_CONFIG?.orgName || '\u4F01\u696D'
+    });
+
     return {
         ...codeInputMixin('department'),
+        ..._ucMixin,
 
         // 資料
         departments: [],
@@ -94,8 +100,13 @@ function departmentManager() {
         crossMembers: [],
         showPeopleInTree: false,
         isCreating: false,
+        isCreatingEmployee: false,
         formData: { code: '', name: '', parent_id: '' },
         totalUsers: 0,
+
+        // 員工表單
+        empTargetDept: null,
+        empDomainName: window.__DEPT_CONFIG?.domainName || '',
 
         // 跨部門手動新增
         newCrossMember: { user_id: '', role_type: 'MEMBER' },
@@ -183,9 +194,53 @@ function departmentManager() {
 
             await Promise.all([
                 this.loadDepartments(),
-                this.loadUnassignedUsers()
+                this.loadUnassignedUsers(),
+                this.uc_init()
             ]);
             this.buildTree();
+        },
+
+        // ==================== 新增員工 ====================
+
+        startCreateEmployee() {
+            this.isCreating = false;
+            this.isCreatingEmployee = true;
+            this.empTargetDept = this.selectedDept || null;
+            this.uc_reset();
+            if (this.empTargetDept) {
+                this.uc_departmentCode = this.empTargetDept.code;
+            } else {
+                this.uc_departmentCode = '';
+            }
+        },
+
+        cancelCreateEmployee() {
+            this.isCreatingEmployee = false;
+        },
+
+        async submitEmployee() {
+            if (this.empTargetDept) {
+                this.uc_departmentCode = this.empTargetDept.code;
+            } else {
+                this.uc_departmentCode = '';
+            }
+
+            var result = await this.uc_submit();
+            if (!result) return;
+
+            if (result.success) {
+                this.showToast('\u5DF2\u5EFA\u7ACB\u54E1\u5DE5 ' + this.uc_nativeName, 'success');
+                this.isCreatingEmployee = false;
+                // 重新載入資料
+                await this._refreshAll();
+                // 如果有目標部門，導航到該部門
+                if (this.empTargetDept && this._tree) {
+                    this._tree.focusNode(this.empTargetDept.id, { expanded: true });
+                    this.selectDepartment(this.empTargetDept.id);
+                }
+            } else {
+                this.showToast(result.error, 'error');
+            }
         },
 
         // ==================== API 載入 ====================
@@ -400,6 +455,7 @@ function departmentManager() {
         selectRoot() {
             this.selectedDept = null;
             this.isCreating = false;
+            this.isCreatingEmployee = false;
             this.members = [];
             this.leadership = { manager: null, deputy: null, proxy1: null, proxy2: null };
             this.crossMembers = [];
@@ -411,6 +467,7 @@ function departmentManager() {
             if (!dept) dept = deptData;
             this.selectedDept = dept;
             this.isCreating = false;
+            this.isCreatingEmployee = false;
             this.formData = { code: dept.code, name: dept.name, parent_id: dept.parent_id || '' };
             this.newCrossMember = { user_id: '', role_type: 'MEMBER' };
             await Promise.all([
@@ -423,6 +480,7 @@ function departmentManager() {
         startCreate() {
             var parentId = this.selectedDept ? this.selectedDept.id : '';
             this.isCreating = true;
+            this.isCreatingEmployee = false;
             this.formData = { code: '', name: '', parent_id: parentId };
             this._ci_generatedCode = '';
             this._ci_suggestions = [];

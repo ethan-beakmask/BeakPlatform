@@ -56,6 +56,16 @@
     background: #f5f8fc;
 }
 
+.tree-container .treegrid-row-focused {
+    background: #fff3cd;
+    animation: tree-focus-fade 1.5s ease-out forwards;
+}
+
+@keyframes tree-focus-fade {
+    0%   { background: #fff3cd; }
+    100% { background: #fdf6e3; }
+}
+
 .tree-container .treegrid-row-checked {
     background: #eef4ff;
 }

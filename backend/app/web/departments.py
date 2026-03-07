@@ -20,5 +20,6 @@ def department_settings():
     return render_template(
         'pages/admin/departments.html',
         organization=org,
-        conglomerate=conglomerate
+        conglomerate=conglomerate,
+        org_settings=org.get_settings() if org else {}
     )

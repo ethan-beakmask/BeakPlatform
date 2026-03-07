@@ -166,6 +166,25 @@
     }
     /* 外部面板拖入 Tree 時目標部門高亮 */
     .tree-drop-highlight { background: #e3f2fd !important; outline: 1px dashed #1976d2; }
+
+    /* 新增員工表單 */
+    .employee-create-form { padding: 4px 0; }
+    .emp-form-info {
+        padding: 6px 10px; margin-bottom: 8px; border-radius: 4px;
+        background: #e8f4fc; color: #1565c0; font-size: 12px; border: 1px solid #bbdefb;
+    }
+    .emp-form-info-warn { background: #fff3cd; color: #856404; border-color: #ffc107; }
+    .emp-form-table td { padding: 3px 6px; vertical-align: top; }
+    .emp-form-table .emp-label { width: 80px; text-align: right; padding-right: 8px; color: #666; font-size: 12px; }
+    .emp-form-table input[type="text"],
+    .emp-form-table input[type="email"],
+    .emp-form-table input[type="tel"],
+    .emp-form-table input[type="password"],
+    .emp-form-table select {
+        padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; width: 180px; font-size: 12px;
+    }
+    .emp-form-table input:focus, .emp-form-table select:focus { border-color: #0066cc; outline: none; }
+    .emp-form-table .required::after { content: " *"; color: #dc2626; }
 </style>
 {% endblock %}
 
@@ -175,7 +194,9 @@
 <script>
 window.__DEPT_CONFIG = {
     orgName: {{ (organization.name if organization else '企業') | tojson }},
-    conglomerateName: {{ (conglomerate.name if conglomerate else '') | tojson }}
+    conglomerateName: {{ (conglomerate.name if conglomerate else '') | tojson }},
+    orgSettings: {{ (org_settings | tojson) if org_settings is defined else '{}' }},
+    domainName: {{ (organization.domain_name if organization else '') | tojson }}
 };
 </script>
 
@@ -189,7 +210,8 @@ window.__DEPT_CONFIG = {
             <div class="tree-header-right">
                 <button class="btn" :class="!showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDeptMode()">部門</button>
                 <button class="btn" :class="showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDetailMode()">員工</button>
-                <button class="btn btn-success" @click="startCreate()">新增</button>
+                <button class="btn btn-success" @click="startCreate()">新增部門</button>
+                <button class="btn btn-primary" @click="startCreateEmployee()">新增員工</button>
             </div>
         </div>
         <div class="tree-body" id="dept-tree"></div>
@@ -197,12 +219,20 @@ window.__DEPT_CONFIG = {
 
     <!-- 中間：詳情 -->
     <div class="dept-detail-panel">
-        <div class="panel-header-bar" x-text="isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情')"></div>
+        <div class="panel-header-bar" x-text="isCreatingEmployee ? '新增員工' : (isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情'))"></div>
         <div class="panel-body">
-            <template x-if="!selectedDept && !isCreating">
+            <template x-if="!selectedDept && !isCreating && !isCreatingEmployee">
                 <div class="empty-message">請從左側選擇部門</div>
             </template>
-            <template x-if="selectedDept || isCreating">
+
+            <!-- 新增員工表單 -->
+            <template x-if="isCreatingEmployee">
+                <div>
+                    {% include "pages/admin/_employee_create_form.html" %}
+                </div>
+            </template>
+
+            <template x-if="(selectedDept || isCreating) && !isCreatingEmployee">
                 <div>
                     <!-- 上半：編輯部門 + 跨部門人員 並排 -->
                     <div class="detail-top-row">
@@ -437,5 +467,6 @@ window.__DEPT_CONFIG = {
 <script src="{{ url_for('static', filename='vendor/tree/tree-drag.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/tree/renderers/tree-lines-dom.js') }}"></script>
 <script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/user-create-mixin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/departments.js') }}"></script>
 {% endblock %}

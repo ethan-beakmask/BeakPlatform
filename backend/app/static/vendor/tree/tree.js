@@ -240,6 +240,9 @@ class Tree {
         // 列點擊
         tr.addEventListener('click', function(e) {
             if (e.target.tagName === 'INPUT') return;
+            // 清除 focusNode 高亮
+            var oldFocus = self.container.querySelector('.treegrid-row-focused');
+            if (oldFocus) oldFocus.classList.remove('treegrid-row-focused');
             if (self.options.onNodeClick) {
                 self.options.onNodeClick(node.id, node, e);
             }
@@ -392,6 +395,49 @@ class Tree {
         var result = this._model.updateNodeData(id, data);
         if (result) this._refresh();
         return result;
+    }
+
+    // 導航
+    focusNode(id, opts) {
+        var node = this._model.getNode(id);
+        if (!node) return false;
+
+        opts = Object.assign({ expanded: false, highlight: true }, opts || {});
+
+        // 展開所有祖先
+        var ancestors = this._model.getAncestors(id);
+        var needRefresh = false;
+        for (var i = 0; i < ancestors.length; i++) {
+            if (!this._model.isExpanded(ancestors[i].id)) {
+                this._model.expand(ancestors[i].id);
+                needRefresh = true;
+            }
+        }
+
+        // 展開節點本身
+        if (opts.expanded && node.children.length > 0 && !this._model.isExpanded(id)) {
+            this._model.expand(id);
+            needRefresh = true;
+        }
+
+        if (needRefresh) this._refresh();
+
+        // 找到 DOM row 並捲動
+        var row = this._tbodyEl ? this._tbodyEl.querySelector('tr[data-id="' + id + '"]') : null;
+        if (!row) return false;
+
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+        // 高亮
+        if (opts.highlight) {
+            // 清除前一個 focus
+            var oldFocus = this.container.querySelector('.treegrid-row-focused');
+            if (oldFocus) oldFocus.classList.remove('treegrid-row-focused');
+
+            row.classList.add('treegrid-row-focused');
+        }
+
+        return true;
     }
 
     setData(data) {
