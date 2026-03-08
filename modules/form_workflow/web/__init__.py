@@ -7,7 +7,7 @@ FormWorkflow Module - Web Routes
 from flask import Blueprint, render_template, redirect, url_for, request
 
 from app.security.decorators import login_required as security_login_required
-from app.platform.auth import current_user
+from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
 # 建立 Web Blueprint
@@ -26,38 +26,31 @@ web_bp = Blueprint(
 @web_bp.route('/')
 @security_login_required
 def index():
-    """表單流程首頁（儀表板）"""
-    return render_template('modules/form_workflow/dashboard.html')
-
-
-@web_bp.route('/dashboard')
-@security_login_required
-def dashboard():
-    """表單流程儀表板"""
-    return render_template('modules/form_workflow/dashboard.html')
+    """表單流程首頁 - 重導到表單中心"""
+    return redirect(url_for('form_workflow_web.center'))
 
 
 # =============================================================================
-# 表單模板管理
+# 表單模板管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/templates')
 @web_bp.route('/templates/')
-@security_login_required
+@require_permission('form_workflow.template.view')
 def templates():
     """表單模板列表"""
     return render_template('modules/form_workflow/template_list.html')
 
 
 @web_bp.route('/templates/new')
-@security_login_required
+@require_permission('form_workflow.template.create')
 def template_new():
     """建立表單模板（跳轉到列表頁，使用 Modal）"""
     return redirect(url_for('form_workflow_web.templates'))
 
 
 @web_bp.route('/templates/<secure_code>')
-@security_login_required
+@require_permission('form_workflow.template.view')
 def template_detail(secure_code):
     """表單設計器（重定向到查詢參數格式）"""
     created = request.args.get('created', '')
@@ -65,11 +58,11 @@ def template_detail(secure_code):
 
 
 # =============================================================================
-# 欄位規格編輯器
+# 欄位規格編輯器（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/templates/<secure_code>/spec')
-@security_login_required
+@require_permission('form_workflow.template.view')
 def template_spec(secure_code):
     """欄位規格編輯器"""
     return render_template(
@@ -79,26 +72,26 @@ def template_spec(secure_code):
 
 
 # =============================================================================
-# 工作流管理
+# 工作流管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/workflows')
 @web_bp.route('/workflows/')
-@security_login_required
+@require_permission('form_workflow.workflow.view')
 def workflows():
     """工作流列表"""
     return render_template('modules/form_workflow/workflow_list.html')
 
 
 @web_bp.route('/workflows/new')
-@security_login_required
+@require_permission('form_workflow.workflow.create')
 def workflow_new():
     """建立工作流（跳轉到列表頁，使用 Modal）"""
     return redirect(url_for('form_workflow_web.workflows'))
 
 
 @web_bp.route('/workflows/<secure_code>')
-@security_login_required
+@require_permission('form_workflow.workflow.view')
 def workflow_detail(secure_code):
     """工作流設計器（重定向到查詢參數格式）"""
     created = request.args.get('created', '')
@@ -106,14 +99,14 @@ def workflow_detail(secure_code):
 
 
 @web_bp.route('/workflows/<secure_code>/tree')
-@security_login_required
+@require_permission('form_workflow.workflow.view')
 def workflow_tree(secure_code):
     """工作流樹系圖（獨立分頁）"""
     return render_template('modules/form_workflow/workflow_tree.html', secure_code=secure_code)
 
 
 # =============================================================================
-# 表單實例（我的表單）
+# 表單實例（我的表單）- 員工可用
 # =============================================================================
 
 @web_bp.route('/instances')
@@ -133,18 +126,18 @@ def instance_detail(secure_code):
 
 
 # =============================================================================
-# 配對管理
+# 配對管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/mappings')
-@security_login_required
+@require_permission('form_workflow.workflow.manage')
 def mappings():
     """配對管理頁面"""
     return render_template('modules/form_workflow/mappings_list.html')
 
 
 # =============================================================================
-# 表單中心
+# 表單中心 - 員工可用
 # =============================================================================
 
 @web_bp.route('/center')
@@ -172,7 +165,7 @@ def center():
 
 
 # =============================================================================
-# 待簽核任務
+# 待簽核任務 - 員工可用
 # =============================================================================
 
 @web_bp.route('/pending')
@@ -184,18 +177,18 @@ def pending():
 
 
 # =============================================================================
-# 資料表規格管理
+# 資料表規格管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/data-specs')
-@security_login_required
+@require_permission('form_workflow.template.manage')
 def data_specs():
     """資料表規格管理"""
     return render_template('modules/form_workflow/data_spec_list.html')
 
 
 @web_bp.route('/data-specs/new')
-@security_login_required
+@require_permission('form_workflow.template.manage')
 def data_spec_new():
     """獨立規格編輯器（新建）"""
     return render_template(
@@ -206,7 +199,7 @@ def data_spec_new():
 
 
 @web_bp.route('/data-specs/<spec_sc>/edit')
-@security_login_required
+@require_permission('form_workflow.template.manage')
 def data_spec_edit(spec_sc):
     """獨立規格編輯器（編輯）"""
     return render_template(
@@ -218,7 +211,7 @@ def data_spec_edit(spec_sc):
 
 
 @web_bp.route('/data-specs/<form_template_sc>/sync')
-@security_login_required
+@require_permission('form_workflow.template.manage')
 def data_spec_sync(form_template_sc):
     """同步中控台"""
     return render_template(
@@ -228,22 +221,22 @@ def data_spec_sync(form_template_sc):
 
 
 # =============================================================================
-# 表單風格管理
+# 表單風格管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/form-themes')
-@security_login_required
+@require_permission('form_workflow.admin')
 def form_themes():
     """表單風格主題管理頁面"""
     return render_template('modules/form_workflow/form_theme_list.html')
 
 
 # =============================================================================
-# 分類管理
+# 分類管理（需要管理權限）
 # =============================================================================
 
 @web_bp.route('/categories')
-@security_login_required
+@require_permission('form_workflow.admin')
 def categories():
     """分類管理頁面"""
     return render_template('modules/form_workflow/category_list.html')

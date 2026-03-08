@@ -33,20 +33,14 @@
 
 <p>{{ _('歡迎，%(name)s', name=current_user.display_name) }}</p>
 
-<hr>
-
-<h2>{{ _('快速連結') }}</h2>
-<ul>
-    <li><a href="{{ url_for('profile.view') }}">{{ _('個人資料') }}</a></li>
-    {% if current_user.is_org_admin or current_user.is_system_admin %}
-    <li><a href="{{ url_for('users.list_users') }}">{{ _('用戶管理') }}</a></li>
-    <li><a href="{{ url_for('roles.list_roles') }}">{{ _('角色管理') }}</a></li>
-    <li><a href="{{ url_for('units.list_units') }}">{{ _('組織單位') }}</a></li>
-    {% endif %}
-    {% if current_user.is_system_admin %}
-    <li><a href="{{ url_for('organizations.list_orgs') }}">{{ _('企業與合約管理') }}</a></li>
-    <li><a href="{{ url_for('menu.list_menu') }}">{{ _('選單管理') }}</a></li>
-    <li><a href="{{ url_for('modules.list_modules') }}">{{ _('模組管理') }}</a></li>
-    {% endif %}
-</ul>
+<div style="margin-top: 24px;">
+    <div style="display: inline-block; padding: 20px 32px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 700; color: {% if pending_count > 0 %}#dc2626{% else %}#64748b{% endif %};">
+            {{ pending_count }}
+        </div>
+        <div style="margin-top: 4px; font-size: 14px; color: #475569;">
+            {{ _('待簽核') }}
+        </div>
+    </div>
+</div>
 {% endblock %}

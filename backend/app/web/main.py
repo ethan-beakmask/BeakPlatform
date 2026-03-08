@@ -32,15 +32,13 @@ def dashboard():
     from ..models.user import User, UserType
 
     # 企業管理員相關提示
-    show_default_admin_warning = False  # 預設 admin@ 帳號需要建立正式管理員
-    show_disable_default_admin_hint = False  # 提示停用預設 admin@ 帳號
+    show_default_admin_warning = False
+    show_disable_default_admin_hint = False
 
     if current_user.user_type == UserType.ORG_ADMIN:
-        # 判斷是否為預設 admin@ 帳號 (原始管理員)
         if current_user.is_original_admin and current_user.username == 'admin':
             show_default_admin_warning = True
         else:
-            # 非預設管理員：檢查是否有未停用的預設 admin@ 帳號
             default_admin = User.query.filter(
                 User.org_secure_code == current_user.org_secure_code,
                 User.username == 'admin',
@@ -51,10 +49,38 @@ def dashboard():
             if default_admin:
                 show_disable_default_admin_hint = True
 
+    # 待簽核數量（直接查 DB，不經模組權限）
+    pending_count = 0
+    try:
+        from modules.form_workflow.models import FwNodeExecutionQueue
+        from sqlalchemy import and_
+
+        user_code = current_user.secure_code
+        org_code = current_user.org_secure_code
+
+        if org_code:
+            tasks = FwNodeExecutionQueue.query.filter(
+                and_(
+                    FwNodeExecutionQueue.org_secure_code == org_code,
+                    FwNodeExecutionQueue.status == 'WAITING',
+                    FwNodeExecutionQueue.node_type.in_(['Approve', 'FormAdapter'])
+                )
+            ).all()
+
+            for task in tasks:
+                task_data = (task.result or {}).get('data', {})
+                assignee_type = task_data.get('assignee_type')
+                assignees = task_data.get('assignees', [])
+                if not assignee_type or user_code in assignees:
+                    pending_count += 1
+    except Exception as e:
+        logger.warning('Dashboard pending count query failed: %s', e)
+
     return render_template(
         'pages/dashboard.html',
         show_default_admin_warning=show_default_admin_warning,
-        show_disable_default_admin_hint=show_disable_default_admin_hint
+        show_disable_default_admin_hint=show_disable_default_admin_hint,
+        pending_count=pending_count
     )
 
 
