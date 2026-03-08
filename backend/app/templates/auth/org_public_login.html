@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>外部人員登入 - {{ org.name }}</title>
+    <title>外部廠商登入 - {{ org.name }}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -96,13 +96,13 @@
 <body>
     {% if logo_url and show_logo|default(true) %}
     <div class="logo-container">
-        <img src="{{ logo_url }}" alt="外部人員登入">
+        <img src="{{ logo_url }}" alt="外部廠商登入">
     </div>
     {% endif %}
     {% if show_org_name|default(true) %}
-    <h1>{{ org.name }}<br>外部人員登入</h1>
+    <h1>{{ org.name }}<br>外部廠商登入</h1>
     {% else %}
-    <h1>外部人員登入</h1>
+    <h1>外部廠商登入</h1>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}

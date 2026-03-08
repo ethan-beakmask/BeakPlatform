@@ -22,7 +22,7 @@ USER_TYPE_LABELS = {
     UserType.SYSTEM_ADMIN: '系統管理員',
     UserType.ORG_ADMIN: '企業管理員',
     UserType.EMPLOYEE: '員工',
-    UserType.EXTERNAL: '非公司成員',
+    UserType.EXTERNAL: '外部廠商',
 }
 
 

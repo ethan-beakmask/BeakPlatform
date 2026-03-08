@@ -39,7 +39,7 @@ def list_users():
         is_active=True
     )
 
-    # 只保留員工帳號（排除系統管理員、企業管理員、外部人員）
+    # 只保留員工帳號（排除系統管理員、企業管理員、外部廠商）
     users = [u for u in result['items'] if u.user_type == UserType.EMPLOYEE]
 
     return jsonify({

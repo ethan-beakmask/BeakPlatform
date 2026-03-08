@@ -1,9 +1,9 @@
 """
 BeakMask External User Management Web Routes
-非公司成員帳號管理網頁路由
+外部廠商帳號管理網頁路由
 
 功能：
-1. 管理外部人員帳號（廠商、訪客、合作夥伴）
+1. 管理外部廠商帳號（廠商、訪客、合作夥伴）
 2. 必須指定群組歸屬
 3. 必須使用「外部專用」編號規則
 4. Email 由用戶自行輸入（不自動加 domain）
@@ -40,7 +40,7 @@ def _get_external_numbering_rules(org_secure_code: str):
 
 
 def _get_default_external_rule(org_secure_code: str):
-    """取得外部人員預設編號規則"""
+    """取得外部廠商預設編號規則"""
     return NumberingService.get_default_rule(org_secure_code, default_for='EXTERNAL')
 
 
@@ -75,7 +75,7 @@ def _log_audit(action: str, target_user: User, details: str = None):
 @external_users_bp.route('/external-users')
 @admin_required
 def list_external_users():
-    """非公司成員列表"""
+    """外部廠商列表"""
     users = User.query.filter(
         User.org_secure_code == current_user.org_secure_code,
         User.user_type == UserType.EXTERNAL,
@@ -100,7 +100,7 @@ def list_external_users():
 @external_users_bp.route('/external-users/create', methods=['GET', 'POST'])
 @admin_required
 def create_external_user():
-    """新增非公司成員"""
+    """新增外部廠商"""
     org = current_user.organization
     if not org:
         flash('找不到所屬企業', 'error')
@@ -109,7 +109,7 @@ def create_external_user():
     # 檢查是否有外部專用預設編號規則
     default_rule = _get_default_external_rule(org.secure_code)
     if not default_rule:
-        flash('尚未設定「外部人員」預設編號規則，請先到「用戶編號規則」頁面設定。', 'error')
+        flash('尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。', 'error')
         return redirect(url_for('numbering.list_rules'))
 
     groups = _get_groups(org.secure_code)
@@ -151,7 +151,7 @@ def create_external_user():
                 # 處理編號：自動使用預設規則
                 default_rule = _get_default_external_rule(org.secure_code)
                 if not default_rule:
-                    flash('找不到外部人員預設編號規則，請先設定', 'error')
+                    flash('找不到外部廠商預設編號規則，請先設定', 'error')
                     return render_template(
                         'pages/external-users/create.html',
                         form_data=form_data,
@@ -217,11 +217,11 @@ def create_external_user():
                     db.session.add(membership)
 
                     # 稽核記錄
-                    _log_audit('CREATE', user, f'新增外部人員: {display_name} ({email}), 編號: {employee_id}')
+                    _log_audit('CREATE', user, f'新增外部廠商: {display_name} ({email}), 編號: {employee_id}')
 
                     db.session.commit()
 
-                    flash(f'已建立外部人員 {display_name}（編號：{employee_id}）', 'success')
+                    flash(f'已建立外部廠商 {display_name}（編號：{employee_id}）', 'success')
                     return redirect(url_for('external_users.list_external_users'))
 
                 except Exception as e:
@@ -239,14 +239,14 @@ def create_external_user():
 @external_users_bp.route('/external-users/<secure_code>')
 @admin_required
 def view_external_user(secure_code: str):
-    """查看非公司成員詳情"""
+    """查看外部廠商詳情"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     # 查詢群組歸屬
@@ -267,7 +267,7 @@ def view_external_user(secure_code: str):
 @external_users_bp.route('/external-users/<secure_code>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_external_user(secure_code: str):
-    """編輯外部人員"""
+    """編輯外部廠商"""
     org = current_user.organization
     if not org:
         flash('找不到所屬企業', 'error')
@@ -279,7 +279,7 @@ def edit_external_user(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     # 查詢群組歸屬（含角色）
@@ -340,10 +340,10 @@ def edit_external_user(secure_code: str):
                         changes.append(f'Email: {old_email} → {new_email}')
                     if old_notes != user.notes:
                         changes.append('備註已更新')
-                    _log_audit('UPDATE', user, f'編輯外部人員: {", ".join(changes)}')
+                    _log_audit('UPDATE', user, f'編輯外部廠商: {", ".join(changes)}')
 
                     db.session.commit()
-                    flash(f'已更新外部人員 {user.display_name}', 'success')
+                    flash(f'已更新外部廠商 {user.display_name}', 'success')
                     return redirect(url_for('external_users.view_external_user', secure_code=secure_code))
                 except Exception as e:
                     db.session.rollback()
@@ -373,14 +373,14 @@ def _get_role_name(role_type: str) -> str:
 @external_users_bp.route('/external-users/<secure_code>/add-group', methods=['POST'])
 @admin_required
 def add_to_group(secure_code: str):
-    """將外部人員加入群組"""
+    """將外部廠商加入群組"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     group_code = request.form.get('group_code', '').strip()
@@ -435,14 +435,14 @@ def add_to_group(secure_code: str):
 @external_users_bp.route('/external-users/<secure_code>/remove-group', methods=['POST'])
 @admin_required
 def remove_from_group(secure_code: str):
-    """將外部人員從群組移除"""
+    """將外部廠商從群組移除"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     membership_code = request.form.get('membership_code', '').strip()
@@ -460,7 +460,7 @@ def remove_from_group(secure_code: str):
         flash('找不到成員關係', 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
-    # 檢查是否還有其他群組（外部人員必須至少屬於一個群組）
+    # 檢查是否還有其他群組（外部廠商必須至少屬於一個群組）
     other_memberships = UserUnitMembership.query.filter(
         UserUnitMembership.user_secure_code == user.secure_code,
         UserUnitMembership.membership_type == MembershipType.MEMBER,
@@ -469,7 +469,7 @@ def remove_from_group(secure_code: str):
     ).count()
 
     if other_memberships == 0:
-        flash('外部人員必須至少屬於一個群組', 'error')
+        flash('外部廠商必須至少屬於一個群組', 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     try:
@@ -489,14 +489,14 @@ def remove_from_group(secure_code: str):
 @external_users_bp.route('/external-users/<secure_code>/toggle-status', methods=['POST'])
 @admin_required
 def toggle_status(secure_code: str):
-    """切換外部人員啟用狀態"""
+    """切換外部廠商啟用狀態"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     try:
@@ -508,7 +508,7 @@ def toggle_status(secure_code: str):
         _log_audit('TOGGLE_STATUS', user, f'狀態變更: {"啟用" if old_status else "停用"} → {status}')
 
         db.session.commit()
-        flash(f'已{status}外部人員 {user.display_name}', 'success')
+        flash(f'已{status}外部廠商 {user.display_name}', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'操作失敗: {str(e)}', 'error')
@@ -519,14 +519,14 @@ def toggle_status(secure_code: str):
 @external_users_bp.route('/external-users/<secure_code>/delete', methods=['POST'])
 @admin_required
 def delete_external_user(secure_code: str):
-    """刪除外部人員"""
+    """刪除外部廠商"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     try:
@@ -537,10 +537,10 @@ def delete_external_user(secure_code: str):
         user.deleted_at = datetime.utcnow()
 
         # 稽核記錄
-        _log_audit('DELETE', user, f'刪除外部人員: {display_name} ({email})')
+        _log_audit('DELETE', user, f'刪除外部廠商: {display_name} ({email})')
 
         db.session.commit()
-        flash(f'已刪除外部人員 {display_name}', 'success')
+        flash(f'已刪除外部廠商 {display_name}', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'刪除失敗: {str(e)}', 'error')
@@ -551,14 +551,14 @@ def delete_external_user(secure_code: str):
 @external_users_bp.route('/external-users/<secure_code>/change-password', methods=['POST'])
 @admin_required
 def change_password(secure_code: str):
-    """管理員變更外部人員密碼（不需要舊密碼）"""
+    """管理員變更外部廠商密碼（不需要舊密碼）"""
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部人員', 'error')
+        flash('此帳號不是外部廠商', 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     new_password = request.form.get('new_password', '').strip()

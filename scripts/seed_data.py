@@ -173,7 +173,7 @@ def seed_job_levels(org):
         ('L300', '主任級', 'Supervisor Level', 300, Decimal('100000'), True, '小組/專案'),
         ('L200', '高級職員級', 'Senior Staff Level', 200, Decimal('50000'), False, None),
         ('L100', '職員級', 'Staff Level', 100, Decimal('10000'), False, None),
-        ('L000', '非公司成員', 'External', 0, Decimal('0'), False, None),
+        ('L000', '外部廠商', 'External', 0, Decimal('0'), False, None),
     ]
 
     levels = {}
@@ -550,7 +550,7 @@ def seed_default_roles(org):
 
     互斥群組說明：
     - EMPLOYEE: 員工類角色，不能同時是 EXTERNAL
-    - EXTERNAL: 外部人員類，不能同時是 EMPLOYEE
+    - EXTERNAL: 外部廠商類，不能同時是 EMPLOYEE
     """
     print("建立預設角色...")
 

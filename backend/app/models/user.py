@@ -19,7 +19,7 @@ class UserType:
     SYSTEM_ADMIN = 'SYSTEM_ADMIN'  # 系統管理員
     ORG_ADMIN = 'ORG_ADMIN'        # 企業管理員
     EMPLOYEE = 'EMPLOYEE'          # 員工
-    EXTERNAL = 'EXTERNAL'          # 非公司成員
+    EXTERNAL = 'EXTERNAL'          # 外部廠商
 
 
 class User(TenantBaseModel, UserMixin):
@@ -168,7 +168,7 @@ class User(TenantBaseModel, UserMixin):
 
     @property
     def is_external(self) -> bool:
-        """是否為非公司成員"""
+        """是否為外部廠商"""
         return self.user_type == UserType.EXTERNAL
 
     def set_password(self, password: str) -> None:

@@ -98,7 +98,7 @@
                                 <span x-show="user.user_type === 'SYSTEM_ADMIN'" class="badge system">系統管理員</span>
                                 <span x-show="user.user_type === 'ORG_ADMIN'" class="badge org-admin">企業管理員</span>
                                 <span x-show="user.user_type === 'MEMBER'" class="badge member">一般用戶</span>
-                                <span x-show="user.user_type === 'EXTERNAL'" class="badge external">外部人員</span>
+                                <span x-show="user.user_type === 'EXTERNAL'" class="badge external">外部廠商</span>
                             </div>
                         </template>
                     </div>
@@ -136,7 +136,7 @@
                         <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== 'system.local'">
                             <div class="info-label">
                                 <i class="fas fa-user-friends" style="color: #10b981;"></i>
-                                外部人員登入（<span x-text="selectedOrgDomain"></span>）
+                                外部廠商登入（<span x-text="selectedOrgDomain"></span>）
                             </div>
                             <div class="info-content">
                                 <a :href="'/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
@@ -157,7 +157,7 @@
                                     <i class="fas fa-external-link-alt"></i>
                                     <span x-text="'/auth/org/' + selectedOrgDomain + '/public'"></span>
                                 </a>
-                                <div class="info-hint">員工 / 外部人員登入選擇頁</div>
+                                <div class="info-hint">員工 / 外部廠商登入選擇頁</div>
                             </div>
                         </div>
                     </div>

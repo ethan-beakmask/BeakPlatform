@@ -430,7 +430,7 @@ def org_public(domain_name: str):
 @limiter.limit(_get_login_limit)
 def org_public_login(domain_name: str):
     """
-    非員工（外部人員）專屬登入端點。
+    非員工（外部廠商）專屬登入端點。
 
     GET /auth/org/<domain_name>/public/login - 顯示非員工登入頁面
     POST /auth/org/<domain_name>/public/login - 處理登入請求
@@ -524,7 +524,7 @@ def org_public_login(domain_name: str):
     if not email or not password:
         return error_response('請輸入 Email 和密碼', 400)
 
-    # 查詢外部人員帳號
+    # 查詢外部廠商帳號
     user = ResourceGateway.get_by(
         User,
         email=email,
@@ -535,15 +535,15 @@ def org_public_login(domain_name: str):
     )
 
     if user is None:
-        logger.warning(f"[AUTH] 外部人員登入失敗 - 帳號不存在或非外部人員: {email}")
+        logger.warning(f"[AUTH] 外部廠商登入失敗 - 帳號不存在或非外部廠商: {email}")
         return error_response('帳號或密碼錯誤', 401)
 
     if not user.is_active:
-        logger.warning(f"[AUTH] 外部人員登入失敗 - 帳號已停用: {email}")
+        logger.warning(f"[AUTH] 外部廠商登入失敗 - 帳號已停用: {email}")
         return error_response('此帳號已停用', 403)
 
     if not user.check_password(password):
-        logger.warning(f"[AUTH] 外部人員登入失敗 - 密碼錯誤: {email}")
+        logger.warning(f"[AUTH] 外部廠商登入失敗 - 密碼錯誤: {email}")
         return error_response('帳號或密碼錯誤', 401)
 
     # 登入成功
@@ -553,15 +553,15 @@ def org_public_login(domain_name: str):
     user.last_login_at = datetime.now()
     db.session.commit()
 
-    logger.info(f"[AUTH] 外部人員登入成功: {email} ({org.name})")
+    logger.info(f"[AUTH] 外部廠商登入成功: {email} ({org.name})")
 
-    # 稽核記錄: 外部人員登入成功
+    # 稽核記錄: 外部廠商登入成功
     from ..services.audit_service import AuditService
     AuditService.log_auth_event(
         action='LOGIN',
         org_secure_code=org.secure_code,
         user_secure_code=user.secure_code,
-        details=f'外部人員: {email} ({org.name})',
+        details=f'外部廠商: {email} ({org.name})',
         status_code=200,
     )
 

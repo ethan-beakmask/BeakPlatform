@@ -92,8 +92,8 @@ class Organization(BaseModel):
         'display_name_field': 'native_name',  # 顯示名稱欄位 (native_name|english_name|nickname|username|employee_id)
         'login_employee_show_logo': True,   # 員工登入頁顯示企業 Logo
         'login_employee_show_name': True,   # 員工登入頁顯示企業名稱
-        'login_external_show_logo': True,   # 外部人員登入頁顯示企業 Logo
-        'login_external_show_name': True,   # 外部人員登入頁顯示企業名稱
+        'login_external_show_logo': True,   # 外部廠商登入頁顯示企業 Logo
+        'login_external_show_name': True,   # 外部廠商登入頁顯示企業名稱
     }
 
     @property

@@ -285,7 +285,7 @@ COMMENT ON COLUMN contracts.updated_at IS '最後更新時間';
 -- users 新增欄位註解
 -- ============================================
 COMMENT ON COLUMN users.username IS '用戶名稱，同企業內唯一';
-COMMENT ON COLUMN users.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=員工, EXTERNAL=外部人員';
+COMMENT ON COLUMN users.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=員工, EXTERNAL=外部廠商';
 COMMENT ON COLUMN users.primary_unit_secure_code IS '主要部門識別碼，員工的主要歸屬單位';
 
 -- ============================================

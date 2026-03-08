@@ -55,7 +55,7 @@ def list_users():
     此頁面只顯示一般用戶（EMPLOYEE），排除：
     - 系統管理員 → /portal/sys-accounts
     - 企業管理員 → /admin/org-admins
-    - 外部人員 → /external-users
+    - 外部廠商 → /external-users
     """
     page = request.args.get('page', 1, type=int)
 

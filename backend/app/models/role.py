@@ -43,7 +43,7 @@ class ExclusiveGroup:
     互斥群組
 
     同一互斥群組的角色不能同時指派給同一用戶。
-    例如：EMPLOYEE 和 EXTERNAL 互斥，一個人不能同時是員工和外部人員。
+    例如：EMPLOYEE 和 EXTERNAL 互斥，一個人不能同時是員工和外部廠商。
     """
     NONE = None              # 無互斥限制
     EMPLOYEE = 'EMPLOYEE'    # 員工類 (一般員工、受限員工、部門成員...)

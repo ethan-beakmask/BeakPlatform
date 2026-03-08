@@ -15,7 +15,7 @@
     </p>
     <ol style="margin: 8px 0 0 0; color: #78350f; padding-left: 20px;">
         <li>{{ _('建立您的員工帳號（需設定員工編號）') }}</li>
-        <li>{{ _('前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該員工帳號', link_start='<a href="' + url_for('org_admins.create_admin') + '">', link_end='</a>') }}</li>
+        <li>{{ _('前往') }} <a href="{{ url_for('org_admins.list_admins') }}">{{ _('系統管理 / 企業管理員') }}</a> {{ _('新增管理帳號') }}</li>
         <li>{{ _('使用新管理員帳號登入後，停用此預設帳號') }}</li>
     </ol>
 </div>
@@ -26,7 +26,7 @@
 <div style="padding: 12px 16px; margin-bottom: 16px; background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px;">
     <strong style="color: #1e40af;">{{ _('提示') }}</strong>
     <span style="color: #1e3a8a;">
-        {{ _('預設 admin 帳號容易被猜測攻擊，建議前往「%(link_start)s企業管理員%(link_end)s」頁面將其停用。', link_start='<a href="' + url_for('org_admins.list_admins') + '">', link_end='</a>') }}
+        {{ _('預設 admin 帳號容易被猜測攻擊，建議前往') }} <a href="{{ url_for('org_admins.list_admins') }}">{{ _('系統管理 / 企業管理員') }}</a> {{ _('將其停用。') }}
     </span>
 </div>
 {% endif %}

@@ -390,7 +390,7 @@ CORE_MENUS = [
     },
     {
         'code': 'external_users',
-        'title': '外部人員',
+        'title': '外部廠商',
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'external_users.list_external_users',

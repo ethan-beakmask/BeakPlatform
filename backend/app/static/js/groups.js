@@ -51,7 +51,7 @@
                 icon2.textContent = '\u25C6';
                 cell.appendChild(icon2);
             } else if (nodeType === 'person') {
-                // 管理層: 團/副/代，外部人員名字紅字警示
+                // 管理層: 團/副/代，外部廠商名字紅字警示
                 // 一般成員: 員(EMPLOYEE) 或 外(EXTERNAL 紅底白字)
                 var tag = document.createElement('span');
                 var role = node.data.role;
@@ -67,7 +67,7 @@
             lbl.className = 'bt-label';
             if (nodeType === 'person') {
                 lbl.textContent = node.data.displayName || node.label;
-                // 外部人員擔任管理層: 名字紅字
+                // 外部廠商擔任管理層: 名字紅字
                 if (node.data.isExternal && ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(node.data.role)) {
                     lbl.style.color = '#dc3545';
                     lbl.style.fontWeight = 'bold';

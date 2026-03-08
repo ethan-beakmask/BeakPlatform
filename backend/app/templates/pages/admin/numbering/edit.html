@@ -82,11 +82,11 @@
                 <select id="default_for" name="default_for">
                     <option value="" {% if not rule or not rule.default_for %}selected{% endif %}>非預設</option>
                     <option value="EMPLOYEE" {% if rule and rule.default_for == 'EMPLOYEE' %}selected{% endif %}>員工編號預設</option>
-                    <option value="EXTERNAL" {% if rule and rule.default_for == 'EXTERNAL' %}selected{% endif %}>外部人員預設</option>
+                    <option value="EXTERNAL" {% if rule and rule.default_for == 'EXTERNAL' %}selected{% endif %}>外部廠商預設</option>
                 </select>
                 <div class="help-text">
                     員工預設：新增員工帳號時自動使用 ／
-                    外部預設：新增外部人員時自動使用
+                    外部預設：新增外部廠商時自動使用
                 </div>
             </div>
         </div>

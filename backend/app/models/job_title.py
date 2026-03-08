@@ -206,7 +206,7 @@ DEFAULT_JOB_TITLES = [
     {'code': 'ENG', 'name': '專案工程師', 'name_en': 'Engineer', 'level': 'L100', 'family': 'TECH', 'is_supervisor': False},
     {'code': 'TECH_REP', 'name': '技術代表', 'name_en': 'Technical Representative', 'level': 'L100', 'family': 'TECH', 'is_supervisor': False},
 
-    # L000 - 外部人員
+    # L000 - 外部廠商
     {'code': 'CONTRACTOR', 'name': '約聘人員', 'name_en': 'Contractor', 'level': 'L000', 'family': 'PROF', 'is_supervisor': False},
     {'code': 'INTERN', 'name': '實習生', 'name_en': 'Intern', 'level': 'L000', 'family': 'PROF', 'is_supervisor': False},
     {'code': 'VENDOR', 'name': '廠商代表', 'name_en': 'Vendor Representative', 'level': 'L000', 'family': 'PROF', 'is_supervisor': False},

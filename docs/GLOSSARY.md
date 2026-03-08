@@ -89,7 +89,7 @@
 |----------|----------|------|
 | 員工帳號 | `/users/` | 使用者 CRUD |
 | 角色管理 | `/roles/` | 角色 CRUD |
-| 外部人員 | `/external-users/` | 外部人員管理 |
+| 外部廠商 | `/external-users/` | 外部廠商管理 |
 | 編號設定 | `/admin/numbering` | 自動編號規則 |
 | 基本班表 | `/admin/settings/work-schedules` | 班表與假日設定 |
 

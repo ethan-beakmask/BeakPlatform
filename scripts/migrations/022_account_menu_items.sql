@@ -18,14 +18,14 @@ INSERT INTO menu_items (
     NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
--- 3. 新增「外部人員」選單項目
+-- 3. 新增「外部廠商」選單項目
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
     created_at, updated_at
 ) VALUES (
     'EXT_USER_MENU_' || SUBSTRING(md5(random()::text), 1, 16),
-    'system.local', 'external_users', '外部人員', 'ROUTE', 'external_users.list_external_users',
+    'system.local', 'external_users', '外部廠商', 'ROUTE', 'external_users.list_external_users',
     60, 0, true, 20, false, false, false,
     NOW(), NOW()
 ) ON CONFLICT DO NOTHING;

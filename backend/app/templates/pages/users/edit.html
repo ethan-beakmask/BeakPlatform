@@ -81,7 +81,7 @@
                 <td>
                     <select id="role" name="role">
                         <option value="user" {% if user.user_type == 'EMPLOYEE' %}selected{% endif %}>一般用戶</option>
-                        <option value="external" {% if user.user_type == 'EXTERNAL' %}selected{% endif %}>非公司成員</option>
+                        <option value="external" {% if user.user_type == 'EXTERNAL' %}selected{% endif %}>外部廠商</option>
                         <option value="org_admin" {% if user.user_type == 'ORG_ADMIN' %}selected{% endif %}>企業管理員</option>
                         {% if current_user.is_system_admin %}
                         <option value="system_admin" {% if user.user_type == 'SYSTEM_ADMIN' %}selected{% endif %}>系統管理員</option>
@@ -96,7 +96,7 @@
                     <span class="readonly-info">
                         {% if user.user_type == 'SYSTEM_ADMIN' %}系統管理員
                         {% elif user.user_type == 'ORG_ADMIN' %}企業管理員
-                        {% elif user.user_type == 'EXTERNAL' %}非公司成員
+                        {% elif user.user_type == 'EXTERNAL' %}外部廠商
                         {% else %}一般用戶{% endif %}
                     </span>
                 </td>

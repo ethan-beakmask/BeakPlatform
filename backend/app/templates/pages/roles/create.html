@@ -20,7 +20,7 @@
                         <span>企業內部人員</span>
                     </label>
                     <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
-                        <span x-show="!formData.is_internal">外部人員：如訪客、廠商、合作夥伴</span>
+                        <span x-show="!formData.is_internal">外部廠商：如訪客、廠商、合作夥伴</span>
                         <span x-show="formData.is_internal">內部人員：企業正式員工</span>
                     </div>
                 </td>
@@ -92,7 +92,7 @@
                     </select>
                     <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         <span x-show="formData.is_internal">職位用於部門內職務（如主管、專員），角色用於通用權限（如表單審核者）</span>
-                        <span x-show="!formData.is_internal">外部人員只能指派角色，不能擔任職位</span>
+                        <span x-show="!formData.is_internal">外部廠商只能指派角色，不能擔任職位</span>
                     </div>
                 </td>
             </tr>
@@ -134,7 +134,7 @@
                         <span>是管理職（具有管理權限）</span>
                     </label>
                     <div x-show="!formData.is_internal" class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
-                        外部人員不能擔任管理職
+                        外部廠商不能擔任管理職
                     </div>
                 </td>
             </tr>

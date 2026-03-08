@@ -1,5 +1,5 @@
 -- 023_user_notes_field.sql
--- 新增用戶備註欄位（用於外部人員等）
+-- 新增用戶備註欄位（用於外部廠商等）
 
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT NULL;

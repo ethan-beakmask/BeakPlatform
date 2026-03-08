@@ -87,7 +87,7 @@ input::placeholder, textarea::placeholder {
 .bk-menubar .bk-menu-trigger.menu-user-only { background: #111827; color: white; }
 .bk-menubar a.menu-user-cross,
 .bk-menubar .bk-menu-trigger.menu-user-cross { background: #111827; color: #fde047; }
-/* 外部人員: 黃底黑字 */
+/* 外部廠商: 黃底黑字 */
 .bk-menubar a.menu-ext-only,
 .bk-menubar .bk-menu-trigger.menu-ext-only { background: #f59e0b; color: #111827; }
 /* 固定項目: 黑底白字 */

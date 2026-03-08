@@ -1,15 +1,15 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}新增外部人員 - BeakMask{% endblock %}
+{% block title %}新增外部廠商 - BeakMask{% endblock %}
 
 {% block head %}
 <script src="/static/js/password-form.js"></script>
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部人員列表</a></p>
+<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部廠商列表</a></p>
 
-<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">新增外部人員</h1>
+<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">新增外部廠商</h1>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -88,7 +88,7 @@
                     {% endfor %}
                 </select>
                 <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
-                    外部人員必須歸屬至少一個群組
+                    外部廠商必須歸屬至少一個群組
                 </div>
             </td>
         </tr>
@@ -109,7 +109,7 @@
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
                 <button type="submit" class="btn btn-primary">
-                    建立外部人員
+                    建立外部廠商
                 </button>
                 <a href="{{ url_for('external_users.list_external_users') }}" style="margin-left: 20px; color: #6b7280;">取消</a>
             </td>

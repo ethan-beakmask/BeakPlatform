@@ -486,7 +486,7 @@ msgid "企業內部員工帳號"
 msgstr "企業内部の従業員アカウント"
 
 #: app/templates/pages/menu/list.html:184
-msgid "非公司成員"
+msgid "外部廠商"
 msgstr "社外メンバー"
 
 #: app/templates/pages/menu/list.html:185
@@ -518,7 +518,7 @@ msgid "此頁面管理一般用戶帳號。"
 msgstr "このページでは一般ユーザーアカウントを管理します。"
 
 #: app/templates/pages/users/list.html:32
-msgid "企業管理員請至「企業管理員帳號」管理，外部人員請至「非公司成員帳號」管理。"
+msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr "企業管理者は「企業管理者アカウント」で、社外メンバーは「社外メンバーアカウント」で管理してください。"
 
 #: app/templates/pages/users/list.html:39
@@ -580,7 +580,7 @@ msgid "企業管理員帳號請至「帳號管理 > 企業管理員帳號」管�
 msgstr "企業管理者アカウントは「アカウント管理 > 企業管理者アカウント」で管理してください"
 
 #: app/templates/pages/users/list.html:109
-msgid "外部人員帳號請至「帳號管理 > 非公司成員帳號」管理"
+msgid "外部廠商帳號請至「帳號管理 > 外部廠商帳號」管理"
 msgstr "社外メンバーアカウントは「アカウント管理 > 社外メンバーアカウント」で管理してください"
 
 #: app/templates/pages/users/list.html:110

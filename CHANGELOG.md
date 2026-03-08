@@ -48,9 +48,9 @@
 - `POST /api/users` 增強為完整欄位支援 (native_name, english_name, employee_id, department_code 等)
 - Tree 元件新增 `focusNode(id, opts)` 方法: 展開祖先 + 捲動 + 高亮動畫
 - 社群設定頁面改用零依賴 Tree 元件，取代 jQuery + jstree
-  - 自訂 `group-tree` renderer: 社群圖示 + 角色標籤 + 外部人員警示
-  - 外部人員 (EXTERNAL) 可參加社群，一般成員顯示「外」紅底白字標籤
-  - 外部人員擔任管理層時，Tree 及成員面板名字紅字警示
+  - 自訂 `group-tree` renderer: 社群圖示 + 角色標籤 + 外部廠商警示
+  - 外部廠商 (EXTERNAL) 可參加社群，一般成員顯示「外」紅底白字標籤
+  - 外部廠商擔任管理層時，Tree 及成員面板名字紅字警示
   - 成員排序: 團長 → 副團長 → 代理人 → 外人 → 員工
   - 右側帳號面板僅顯示 EMPLOYEE + EXTERNAL 有效帳號
 - `UserUnitMembership.to_dict()` 及 `group-member-candidates` API 回傳新增 `user_type` 欄位
@@ -69,11 +69,11 @@
 - 用戶建立頁面 (`/users/create`) 部門選擇器改用零依賴 Tree 元件，完全移除 jQuery + jsTree 依賴
 - 全系統 jQuery + jsTree 引用歸零 (vendor 檔案可安全移除)
 - 部門成員/未分配員工/跨部門人員 API 改為白名單過濾，只顯示 `user_type=EMPLOYEE`
-  - 排除企業管理員 (ORG_ADMIN)、外部人員 (EXTERNAL)、系統管理員 (SYSTEM_ADMIN)
+  - 排除企業管理員 (ORG_ADMIN)、外部廠商 (EXTERNAL)、系統管理員 (SYSTEM_ADMIN)
   - 影響: `GET /api/units/{id}/members`, `GET /api/units/unassigned-users`, `GET /api/users`
 
 ### Fixed
-- 修正外部人員 (EXTERNAL) 可被分配到部門並出現在部門成員列表的問題
+- 修正外部廠商 (EXTERNAL) 可被分配到部門並出現在部門成員列表的問題
 
 - 稽核日誌系統: after_request hook 自動記錄操作，三級細粒度控制
   - MINIMAL: 僅認證事件 (登入/登出/密碼變更)
@@ -225,7 +225,7 @@
   - MODULE_ADMIN 角色 (module:manage 權限) 控制頁面存取
   - 模組區下新增「模組權限管理」選單項目
 - 選單權限顏色系統: 依 CSV 權限顏色表完整實作 4 級 + cross
-  - 系統管理員 (紅底白字/紅底黃字)、企業管理員 (藍底白字/藍底黃字)、企業員工 (黑底白字/黑底黃字)、外部人員 (黃底黑字)
+  - 系統管理員 (紅底白字/紅底黃字)、企業管理員 (藍底白字/藍底黃字)、企業員工 (黑底白字/黑底黃字)、外部廠商 (黃底黑字)
   - 固定項目 (儀表板、個人設定、表單中心、模組區) 黑底白字
   - viewer-independent 邏輯: 底色=最高權限等級，cross=有更低等級也能存取
   - base.html menubar + /menu/ 管理頁面 + menu.js sidebar 三處統一
@@ -490,10 +490,10 @@
 - 預設管理員帳號安全強化：建立新管理員後自動停用預設 admin 帳號，企業管理員無法自行啟用，僅系統管理員可啟用
 
 ### Added
-- 登入頁欄位偽裝：企業員工與外部人員登入頁新增 OTP1/OTP2 decoy 欄位，真正密碼從 OTP1 讀取
+- 登入頁欄位偽裝：企業員工與外部廠商登入頁新增 OTP1/OTP2 decoy 欄位，真正密碼從 OTP1 讀取
 - 登入頁反自動化：HTML/CSS 完全移除 password/pwd/pass 關鍵字，所有欄位改用 `type="text"` + CSS `text-security: disc` 遮蔽
 - 登入頁 Honeypot 偵測：decoy 欄位被填寫時記錄 `[HONEYPOT]` warning log
-- 快速登入頁新增 EXTERNAL 外部人員 badge
+- 快速登入頁新增 EXTERNAL 外部廠商 badge
 - 企業列表頁新增 flash message 顯示（修復建立企業成功訊息殘留問題）
 
 ### Changed

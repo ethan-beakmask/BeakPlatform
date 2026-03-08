@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯 {{ user.display_name }} - 外部人員 - BeakMask{% endblock %}
+{% block title %}編輯 {{ user.display_name }} - 外部廠商 - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/external-user-edit.css">
@@ -10,7 +10,7 @@
 <p><a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}">&lt; 返回詳情頁</a></p>
 
 <h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">
-    編輯外部人員：{{ user.display_name }}
+    編輯外部廠商：{{ user.display_name }}
 </h1>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -168,7 +168,7 @@
     </tbody>
 </table>
 {% else %}
-<p class="text-danger">此外部人員未加入任何群組！請立即加入群組。</p>
+<p class="text-danger">此外部廠商未加入任何群組！請立即加入群組。</p>
 {% endif %}
 
 <!-- 加入新群組 -->
@@ -191,6 +191,6 @@
 
 <div style="margin-top: 20px; padding: 12px; background: #f0f9ff; border-radius: 4px; border: 1px solid #bae6fd; max-width: 600px;">
     <strong style="color: #0369a1;">提示：</strong>
-    <span style="color: #0c4a6e;">外部人員必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。</span>
+    <span style="color: #0c4a6e;">外部廠商必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。</span>
 </div>
 {% endblock %}

@@ -66,7 +66,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Org Admin Rescue - 系統管理員管理企業管理員（救援）
     app.register_blueprint(org_admin_rescue_bp)
 
-    # External Users - 非公司成員帳號管理
+    # External Users - 外部廠商帳號管理
     app.register_blueprint(external_users_bp)
 
     # Department settings - 部門設定 (企業管理員)

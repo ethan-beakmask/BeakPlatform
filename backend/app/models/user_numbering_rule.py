@@ -43,7 +43,7 @@ class NumberingDefaultFor:
     """預設用途"""
     NONE = None              # 非預設
     EMPLOYEE = 'EMPLOYEE'    # 員工編號預設
-    EXTERNAL = 'EXTERNAL'    # 外部人員預設
+    EXTERNAL = 'EXTERNAL'    # 外部廠商預設
 
 
 class UserNumberingRule(TenantBaseModel):
@@ -74,7 +74,7 @@ class UserNumberingRule(TenantBaseModel):
     default_for = Column(
         String(20),
         nullable=True,
-        comment='預設用途: EMPLOYEE=員工預設, EXTERNAL=外部人員預設, NULL=非預設'
+        comment='預設用途: EMPLOYEE=員工預設, EXTERNAL=外部廠商預設, NULL=非預設'
     )
     is_active = Column(Boolean, default=True, nullable=False, comment='是否啟用')
 

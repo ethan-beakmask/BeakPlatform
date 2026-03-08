@@ -27,7 +27,7 @@ class MenuPermission(BaseModel):
     - SYSTEM_ADMIN: 系統管理員專屬功能
     - ORG_ADMIN: 企業管理員可見
     - EMPLOYEE: 員工可見
-    - EXTERNAL: 外部人員可見
+    - EXTERNAL: 外部廠商可見
 
     注意：這裡的權限是「平行」的，不是繼承的。
     例如：SYSTEM_ADMIN 只能看到 user_type='SYSTEM_ADMIN' 的選單，

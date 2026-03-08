@@ -85,7 +85,7 @@ COMPANIES = [
                 },
             },
             'external': {
-                'name': '外部人員編號',
+                'name': '外部廠商編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['GHX']},
@@ -175,7 +175,7 @@ COMPANIES = [
                 },
             },
             'external': {
-                'name': '外部人員編號',
+                'name': '外部廠商編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['BCX']},
@@ -263,7 +263,7 @@ COMPANIES = [
                 },
             },
             'external': {
-                'name': '外部人員編號',
+                'name': '外部廠商編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['SEX']},
@@ -342,7 +342,7 @@ STANDARD_JOB_LEVELS = [
     ('L300', '主任級', 'Supervisor Level', 300, Decimal('100000'), True, '小組/專案'),
     ('L200', '高級職員級', 'Senior Staff Level', 200, Decimal('50000'), False, None),
     ('L100', '職員級', 'Staff Level', 100, Decimal('10000'), False, None),
-    ('L000', '非公司成員', 'External', 0, Decimal('0'), False, None),
+    ('L000', '外部廠商', 'External', 0, Decimal('0'), False, None),
 ]
 
 STANDARD_JOB_FAMILIES = [
