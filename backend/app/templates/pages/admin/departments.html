@@ -3,7 +3,7 @@
 {% block title %}部門設定 - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/org-tree.css') }}">
 <style>
     .dept-container {
@@ -44,7 +44,7 @@
         font-size: 11px; padding: 3px 8px; min-width: 50px;
     }
     /* Tree 表頭集團名稱樣式 */
-    .dept-tree-panel .tree-th-tree {
+    .dept-tree-panel .bk-tree-th-tree {
         background: #e3f2fd; color: #e91e63;
         font-weight: bold; font-size: 12px;
         padding: 4px 10px; border-bottom: 1px solid #bbdefb;
@@ -55,12 +55,12 @@
         padding: 0;
     }
     /* Tree 元件樣式覆寫 */
-    .dept-tree-panel .tree-container .treegrid-row { cursor: pointer; }
-    .dept-tree-panel .tree-container .treegrid-row.tg-selected {
+    .dept-tree-panel .bk-tree-container .bt-row { cursor: pointer; }
+    .dept-tree-panel .bk-tree-container .bt-row.tg-selected {
         background: #0066cc !important; color: white !important;
     }
-    .dept-tree-panel .tree-container .treegrid-row.tg-selected .tg-label { color: white; }
-    .dept-tree-panel .tree-container .treegrid-row.tg-selected .tg-node-icon { color: white; }
+    .dept-tree-panel .bk-tree-container .bt-row.tg-selected .bt-label { color: white; }
+    .dept-tree-panel .bk-tree-container .bt-row.tg-selected .tg-node-icon { color: white; }
     .tg-node-icon { display: inline-block; width: 15px; text-align: center; margin-right: 3px; }
     .tg-node-icon.root { color: #2c3e50; }
     .tg-node-icon.dept { color: #3498db; }
@@ -462,10 +462,10 @@ window.__DEPT_CONFIG = {
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree-drag.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/renderers/tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
 <script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
 <script src="{{ url_for('static', filename='js/user-create-mixin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/departments.js') }}"></script>

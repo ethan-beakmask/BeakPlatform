@@ -4,7 +4,7 @@
 
 {% block head %}
 <!-- 零依賴 Tree 元件 -->
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
 <!-- 用戶表單樣式 -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/user-form.css') }}">
 {% endblock %}
@@ -250,7 +250,7 @@ window.__USER_FORM_CONFIG = {
     orgName: '{{ organization.name if organization else "企業" }}'
 };
 </script>
-<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.js') }}"></script>
 <script src="{{ url_for('static', filename='js/user-form.js') }}"></script>
 {% endblock %}

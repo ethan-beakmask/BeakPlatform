@@ -1,6 +1,6 @@
 /**
  * Tree - 獨立樹狀元件
- * 基於 TreeModel 的 DOM 渲染，可單獨使用
+ * 基於 BeakTreeModel 的 DOM 渲染，可單獨使用
  *
  * 功能：樹狀列表、展開/收合、checkbox 多選、可插拔渲染器
  * 依賴：tree-model.js
@@ -9,7 +9,7 @@
  */
 'use strict';
 
-class Tree {
+class BeakTree {
     /**
      * @param {HTMLElement} container - 容器元素
      * @param {Object} options
@@ -28,10 +28,10 @@ class Tree {
      */
     constructor(container, options) {
         if (!container || !(container instanceof HTMLElement)) {
-            throw new Error('Tree: container 必須是有效的 HTMLElement');
+            throw new Error('BeakTree: container 必須是有效的 HTMLElement');
         }
         if (!options || !options.data) {
-            throw new Error('Tree: options 必須包含 data');
+            throw new Error('BeakTree: options 必須包含 data');
         }
 
         this.container = container;
@@ -52,8 +52,8 @@ class Tree {
             onNodeClick: null
         }, options);
 
-        // 建立 TreeModel
-        this._model = new TreeModel(options.data, {
+        // 建立 BeakTreeModel
+        this._model = new BeakTreeModel(options.data, {
             maxExpanded: this.options.maxExpanded,
             hideRoot: this.options.hideRoot,
             onExpand: this.options.onExpand,
@@ -74,7 +74,7 @@ class Tree {
         this.render();
     }
 
-    // ========== Getter proxy（與 TreeGrid 相容，供渲染器存取） ==========
+    // ========== Getter proxy（與 BeakTrellis 相容，供渲染器存取） ==========
 
     get _flatNodes() { return this._model._flatNodes; }
     set _flatNodes(v) { this._model._flatNodes = v; }
@@ -86,7 +86,7 @@ class Tree {
     // ========== 渲染器 ==========
 
     _initRenderer() {
-        var renderers = Tree.renderers || {};
+        var renderers = BeakTree.renderers || {};
         var mode = this.options.treeMode;
 
         if (renderers[mode]) {
@@ -114,10 +114,10 @@ class Tree {
     render() {
         this._model.computeFlatNodes();
         this.container.innerHTML = '';
-        this.container.classList.add('tree-container');
+        this.container.classList.add('bk-tree-container');
 
         var table = document.createElement('table');
-        table.className = 'tree-table';
+        table.className = 'bk-tree-table';
 
         // 表頭（hideHeader=false 且 headerText 有值時才顯示）
         var showHeader = !this.options.hideHeader && !!this.options.headerText;
@@ -127,10 +127,10 @@ class Tree {
 
             if (this.options.checkbox) {
                 var thCb = document.createElement('th');
-                thCb.className = 'tree-th tree-th-checkbox';
+                thCb.className = 'tree-th bk-tree-th-checkbox';
                 var cb = document.createElement('input');
                 cb.type = 'checkbox';
-                cb.className = 'tree-checkbox-all';
+                cb.className = 'bk-tree-checkbox-all';
                 var self = this;
                 cb.addEventListener('change', function() {
                     cb.checked ? self.checkAll() : self.uncheckAll();
@@ -140,7 +140,7 @@ class Tree {
             }
 
             var thTree = document.createElement('th');
-            thTree.className = 'tree-th tree-th-tree';
+            thTree.className = 'tree-th bk-tree-th-tree';
             if (showHeader) {
                 if (this.options.onHeaderClick) {
                     var a = document.createElement('a');
@@ -184,20 +184,20 @@ class Tree {
     _createRow(node) {
         var self = this;
         var tr = document.createElement('tr');
-        tr.className = 'treegrid-row treegrid-level-' + node.level;
+        tr.className = 'bt-row bt-level-' + node.level;
         tr.dataset.id = node.id;
 
         if (this._model._checkedSet.has(node.id)) {
-            tr.classList.add('treegrid-row-checked');
+            tr.classList.add('bt-row-checked');
         }
 
         // Checkbox
         if (this.options.checkbox) {
             var tdCb = document.createElement('td');
-            tdCb.className = 'treegrid-td treegrid-td-checkbox';
+            tdCb.className = 'bt-td bt-td-checkbox';
             var cb = document.createElement('input');
             cb.type = 'checkbox';
-            cb.className = 'treegrid-checkbox';
+            cb.className = 'bt-checkbox';
             cb.dataset.id = node.id;
 
             var state = this._model.getCheckState(node.id);
@@ -214,7 +214,7 @@ class Tree {
 
         // Tree cell
         var tdTree = document.createElement('td');
-        tdTree.className = 'treegrid-td treegrid-td-tree';
+        tdTree.className = 'bt-td bt-td-tree';
 
         var ancestors = this._model.getAncestors(node.id);
         if (this._renderer && this._renderer.renderTreeCell) {
@@ -227,9 +227,9 @@ class Tree {
         }
 
         if (node.children.length > 0) {
-            tdTree.classList.add('treegrid-has-children');
+            tdTree.classList.add('bt-has-children');
             tdTree.addEventListener('click', function(e) {
-                if (e.target.classList.contains('treegrid-toggle') || e.target === tdTree) {
+                if (e.target.classList.contains('bt-toggle') || e.target === tdTree) {
                     self.toggle(node.id);
                 }
             });
@@ -241,8 +241,8 @@ class Tree {
         tr.addEventListener('click', function(e) {
             if (e.target.tagName === 'INPUT') return;
             // 清除 focusNode 高亮
-            var oldFocus = self.container.querySelector('.treegrid-row-focused');
-            if (oldFocus) oldFocus.classList.remove('treegrid-row-focused');
+            var oldFocus = self.container.querySelector('.bt-row-focused');
+            if (oldFocus) oldFocus.classList.remove('bt-row-focused');
             if (self.options.onNodeClick) {
                 self.options.onNodeClick(node.id, node, e);
             }
@@ -276,7 +276,7 @@ class Tree {
     _refreshCheckboxes() {
         if (!this._tbodyEl) return;
 
-        var checkboxes = this._tbodyEl.querySelectorAll('.treegrid-checkbox');
+        var checkboxes = this._tbodyEl.querySelectorAll('.bt-checkbox');
         for (var i = 0; i < checkboxes.length; i++) {
             var cb = checkboxes[i];
             var id = cb.dataset.id;
@@ -286,7 +286,7 @@ class Tree {
 
             var tr = cb.closest('tr');
             if (tr) {
-                tr.classList.toggle('treegrid-row-checked', state === 'checked');
+                tr.classList.toggle('bt-row-checked', state === 'checked');
             }
         }
 
@@ -294,7 +294,7 @@ class Tree {
     }
 
     _refreshHeaderCheckbox() {
-        var headerCb = this.container.querySelector('.tree-checkbox-all');
+        var headerCb = this.container.querySelector('.bk-tree-checkbox-all');
         if (!headerCb) return;
 
         var totalLeaves = this._model.countLeaves();
@@ -304,7 +304,7 @@ class Tree {
         headerCb.indeterminate = (checkedLeaves > 0 && checkedLeaves < totalLeaves);
     }
 
-    // ========== 公開 API（代理 TreeModel） ==========
+    // ========== 公開 API（代理 BeakTreeModel） ==========
 
     // 展開/收合
     expand(id, recursive) {
@@ -431,10 +431,10 @@ class Tree {
         // 高亮
         if (opts.highlight) {
             // 清除前一個 focus
-            var oldFocus = this.container.querySelector('.treegrid-row-focused');
-            if (oldFocus) oldFocus.classList.remove('treegrid-row-focused');
+            var oldFocus = this.container.querySelector('.bt-row-focused');
+            if (oldFocus) oldFocus.classList.remove('bt-row-focused');
 
-            row.classList.add('treegrid-row-focused');
+            row.classList.add('bt-row-focused');
         }
 
         return true;
@@ -460,8 +460,8 @@ class Tree {
 }
 
 // 靜態屬性：渲染器註冊表
-Tree.renderers = {};
+BeakTree.renderers = {};
 
-Tree.registerRenderer = function(name, renderer) {
-    Tree.renderers[name] = renderer;
+BeakTree.registerRenderer = function(name, renderer) {
+    BeakTree.renderers[name] = renderer;
 };

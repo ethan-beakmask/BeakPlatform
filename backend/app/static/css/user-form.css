@@ -125,10 +125,10 @@ details .detail-content {
 }
 /* Tree 元件樣式 (部門選擇器) */
 #dept-tree-select { padding: 5px; }
-#dept-tree-select .treegrid-row { cursor: pointer; }
-#dept-tree-select .treegrid-row:hover { background: var(--color-primary-light); }
+#dept-tree-select .bt-row { cursor: pointer; }
+#dept-tree-select .bt-row:hover { background: var(--color-primary-light); }
 #dept-tree-select .tg-selected { background: var(--color-primary) !important; color: white !important; }
-#dept-tree-select .tg-selected .tg-label { color: white; }
+#dept-tree-select .tg-selected .bt-label { color: white; }
 
 /* 用戶編號選擇器 */
 .number-field {

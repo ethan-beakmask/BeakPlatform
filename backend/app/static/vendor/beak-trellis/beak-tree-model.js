@@ -1,15 +1,15 @@
 /**
- * TreeModel - 純資料層
+ * BeakTreeModel - 純資料層
  * 樹狀結構的資料模型，零 DOM 依賴
  *
  * 功能：節點索引、展開/收合、checkbox 多選、扁平化計算、動態資料操作
- * 共用於 Tree（獨立元件）與 TreeGrid（組合元件）
+ * 共用於 Tree（獨立元件）與 BeakTrellis（組合元件）
  *
  * 授權：MIT
  */
 'use strict';
 
-class TreeModel {
+class BeakTreeModel {
     /**
      * @param {Array} data - 樹狀資料陣列
      * @param {Object} [options]
@@ -21,7 +21,7 @@ class TreeModel {
      */
     constructor(data, options) {
         if (!Array.isArray(data)) {
-            throw new Error('TreeModel: data 必須是陣列');
+            throw new Error('BeakTreeModel: data 必須是陣列');
         }
 
         this.options = Object.assign({
@@ -205,7 +205,7 @@ class TreeModel {
         var descendantCount = this._countVisibleDescendants(node);
         if (this._expandedCount + descendantCount > this.options.maxExpanded) {
             var requested = this._expandedCount + descendantCount;
-            console.warn('TreeModel: 展開上限 ' + this.options.maxExpanded + '，需要 ' + requested + '，無法展開');
+            console.warn('BeakTreeModel: 展開上限 ' + this.options.maxExpanded + '，需要 ' + requested + '，無法展開');
             if (this.options.onExpandLimited) {
                 this.options.onExpandLimited(requested, this.options.maxExpanded);
             }
@@ -241,7 +241,7 @@ class TreeModel {
         }
         if (this._expandedCount + totalNew > this.options.maxExpanded) {
             var requested = this._expandedCount + totalNew;
-            console.warn('TreeModel: 遞迴展開需要 ' + requested + '，超過上限 ' + this.options.maxExpanded + '，已取消');
+            console.warn('BeakTreeModel: 遞迴展開需要 ' + requested + '，超過上限 ' + this.options.maxExpanded + '，已取消');
             if (this.options.onExpandLimited) {
                 this.options.onExpandLimited(requested, this.options.maxExpanded);
             }
@@ -306,7 +306,7 @@ class TreeModel {
             }
         });
         if (count > this.options.maxExpanded) {
-            console.warn('TreeModel: 全部展開需要 ' + count + '，超過上限 ' + this.options.maxExpanded);
+            console.warn('BeakTreeModel: 全部展開需要 ' + count + '，超過上限 ' + this.options.maxExpanded);
             if (this.options.onExpandLimited) {
                 this.options.onExpandLimited(count, this.options.maxExpanded);
             }
@@ -443,7 +443,7 @@ class TreeModel {
     addChildren(parentId, childrenData) {
         var parent = this._nodeMap.get(parentId);
         if (!parent) {
-            console.warn('TreeModel.addChildren: 找不到父節點 ' + parentId);
+            console.warn('BeakTreeModel.addChildren: 找不到父節點 ' + parentId);
             return false;
         }
         if (!Array.isArray(childrenData) || childrenData.length === 0) {
@@ -471,7 +471,7 @@ class TreeModel {
     removeChildren(parentId) {
         var parent = this._nodeMap.get(parentId);
         if (!parent) {
-            console.warn('TreeModel.removeChildren: 找不到父節點 ' + parentId);
+            console.warn('BeakTreeModel.removeChildren: 找不到父節點 ' + parentId);
             return false;
         }
 
@@ -499,7 +499,7 @@ class TreeModel {
     updateNodeData(id, data) {
         var node = this._nodeMap.get(id);
         if (!node) {
-            console.warn('TreeModel.updateNodeData: 找不到節點 ' + id);
+            console.warn('BeakTreeModel.updateNodeData: 找不到節點 ' + id);
             return false;
         }
         Object.assign(node.data, data);
@@ -547,13 +547,13 @@ class TreeModel {
     moveNode(nodeId, newParentId, newIndex) {
         var node = this._nodeMap.get(nodeId);
         if (!node) {
-            console.warn('TreeModel.moveNode: 找不到節點 ' + nodeId);
+            console.warn('BeakTreeModel.moveNode: 找不到節點 ' + nodeId);
             return false;
         }
 
         // 不能移動到自己的後代下（循環檢測）
         if (newParentId && this.isDescendantOf(newParentId, nodeId)) {
-            console.warn('TreeModel.moveNode: 不能將節點移到自己的後代中');
+            console.warn('BeakTreeModel.moveNode: 不能將節點移到自己的後代中');
             return false;
         }
 
@@ -597,7 +597,7 @@ class TreeModel {
         if (newParentId) {
             var newParent = this._nodeMap.get(newParentId);
             if (!newParent) {
-                console.warn('TreeModel.moveNode: 找不到新父節點 ' + newParentId);
+                console.warn('BeakTreeModel.moveNode: 找不到新父節點 ' + newParentId);
                 return false;
             }
             // clamp index

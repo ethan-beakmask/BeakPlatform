@@ -3,7 +3,7 @@
 {% block title %}Tree 測試 - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/org-tree.css') }}">
 <style>
     .test-container {
@@ -40,8 +40,8 @@
     }
 
     /* Tree 樣式覆寫 */
-    .tg-tree-panel .tree-container .treegrid-row { cursor: pointer; }
-    .tg-tree-panel .tree-container .treegrid-row.tg-selected {
+    .tg-tree-panel .bk-tree-container .bt-row { cursor: pointer; }
+    .tg-tree-panel .bk-tree-container .bt-row.tg-selected {
         background: #dbeafe !important;
     }
 
@@ -384,9 +384,9 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree-drag.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/renderers/tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
 <script src="{{ url_for('static', filename='js/test-treegrid.js') }}"></script>
 {% endblock %}

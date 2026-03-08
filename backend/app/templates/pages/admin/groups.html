@@ -3,7 +3,7 @@
 {% block title %}{% if is_admin %}社群設定{% else %}我的社群{% endif %} - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/org-tree.css') }}">
 <style>
     .grp-container {
@@ -46,12 +46,12 @@
         padding: 0;
     }
     /* Tree 元件樣式覆寫 */
-    .grp-tree-panel .tree-container .treegrid-row { cursor: pointer; }
-    .grp-tree-panel .tree-container .treegrid-row.tg-selected {
+    .grp-tree-panel .bk-tree-container .bt-row { cursor: pointer; }
+    .grp-tree-panel .bk-tree-container .bt-row.tg-selected {
         background: #0066cc !important; color: white !important;
     }
-    .grp-tree-panel .tree-container .treegrid-row.tg-selected .tg-label { color: white; }
-    .grp-tree-panel .tree-container .treegrid-row.tg-selected .tg-node-icon { color: white; }
+    .grp-tree-panel .bk-tree-container .bt-row.tg-selected .bt-label { color: white; }
+    .grp-tree-panel .bk-tree-container .bt-row.tg-selected .tg-node-icon { color: white; }
     .tg-node-icon { display: inline-block; width: 15px; text-align: center; margin-right: 3px; }
     .tg-node-icon.root { color: #2c3e50; }
     .tg-node-icon.grp { color: #27ae60; }
@@ -403,10 +403,10 @@ window.__GROUPS_CONFIG = {
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/tree-drag.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tree/renderers/tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
 <script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
 <script src="{{ url_for('static', filename='js/groups.js') }}"></script>
 {% endblock %}

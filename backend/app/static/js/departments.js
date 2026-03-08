@@ -3,39 +3,39 @@
 /**
  * 部門設定頁 — 使用獨立 Tree 元件 (取代 jstree+jQuery)
  *
- * 載入順序: tree-model.js → tree.js → tree-drag.js → tree-lines-dom.js → departments.js
+ * 載入順序: beak-tree-model.js → beak-tree.js → beak-tree-drag.js → beak-tree-lines-dom.js → departments.js
  */
 
 // ==================== 自訂 Renderer ====================
 (function() {
-    if (typeof Tree === 'undefined') return;
-    var linesDom = Tree.renderers ? Tree.renderers['lines-dom'] : null;
+    if (typeof BeakTree === 'undefined') return;
+    var linesDom = BeakTree.renderers ? BeakTree.renderers['lines-dom'] : null;
 
-    Tree.registerRenderer('dept-tree', {
+    BeakTree.registerRenderer('dept-tree', {
         renderTreeCell: function(node, ancestors, tree) {
             var cell = document.createElement('div');
-            cell.className = 'tg-tree-cell tg-dom-cell';
+            cell.className = 'bt-tree-cell bt-dom-cell';
 
             for (var i = 0; i < ancestors.length; i++) {
                 var sp = document.createElement('span');
-                sp.className = 'tg-indent tg-indent-blank';
+                sp.className = 'bt-indent bt-indent-blank';
                 cell.appendChild(sp);
             }
             if (node.level > 0) {
                 var br = document.createElement('span');
-                br.className = 'tg-branch';
+                br.className = 'bt-branch';
                 cell.appendChild(br);
             }
             var model = tree._model;
             if (model.hasChildren(node.id)) {
                 var tog = document.createElement('span');
-                tog.className = 'tg-toggle treegrid-toggle';
-                tog.classList.add(model.isExpanded(node.id) ? 'tg-toggle-expanded' : 'tg-toggle-collapsed');
+                tog.className = 'bt-toggle';
+                tog.classList.add(model.isExpanded(node.id) ? 'bt-toggle-expanded' : 'bt-toggle-collapsed');
                 tog.textContent = model.isExpanded(node.id) ? '[-]' : '[+]';
                 cell.appendChild(tog);
             } else {
                 var leaf = document.createElement('span');
-                leaf.className = 'tg-leaf-spacer';
+                leaf.className = 'bt-leaf-spacer';
                 cell.appendChild(leaf);
             }
 
@@ -59,7 +59,7 @@
             }
 
             var lbl = document.createElement('span');
-            lbl.className = 'tg-label';
+            lbl.className = 'bt-label';
             lbl.textContent = (nodeType === 'person') ? (node.data.displayName || node.label) : node.label;
             cell.appendChild(lbl);
 
@@ -329,7 +329,7 @@ function departmentManager() {
             var self = this;
             var cgName = window.__DEPT_CONFIG?.conglomerateName || '';
 
-            this._tree = new Tree(container, {
+            this._tree = new BeakTree(container, {
                 treeMode: 'dept-tree',
                 data: treeData,
                 draggable: true,
@@ -842,26 +842,26 @@ function departmentManager() {
                 if (!self._dragData) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                container.querySelectorAll('.tree-drop-highlight').forEach(el => el.classList.remove('tree-drop-highlight'));
-                var tr = e.target.closest('tr.treegrid-row');
+                container.querySelectorAll('.bk-tree-drop-highlight').forEach(el => el.classList.remove('bk-tree-drop-highlight'));
+                var tr = e.target.closest('tr.bt-row');
                 if (tr) {
                     var nodeId = tr.dataset.id;
                     var node = self._tree._model.getNode(nodeId);
                     if (node && node.data.type === 'dept') {
-                        tr.classList.add('tree-drop-highlight');
+                        tr.classList.add('bk-tree-drop-highlight');
                     }
                 }
             });
 
             container.addEventListener('dragleave', function(e) {
-                var tr = e.target.closest('tr.treegrid-row');
-                if (tr) tr.classList.remove('tree-drop-highlight');
+                var tr = e.target.closest('tr.bt-row');
+                if (tr) tr.classList.remove('bk-tree-drop-highlight');
             });
 
             container.addEventListener('drop', async function(e) {
                 e.preventDefault();
-                container.querySelectorAll('.tree-drop-highlight').forEach(el => el.classList.remove('tree-drop-highlight'));
-                var tr = e.target.closest('tr.treegrid-row');
+                container.querySelectorAll('.bk-tree-drop-highlight').forEach(el => el.classList.remove('bk-tree-drop-highlight'));
+                var tr = e.target.closest('tr.bt-row');
                 if (!tr || !self._dragData) return;
                 var targetId = tr.dataset.id;
                 var targetNode = self._tree._model.getNode(targetId);

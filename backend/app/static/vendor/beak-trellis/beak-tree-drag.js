@@ -31,13 +31,13 @@
 
     // ========== 掛載到 Tree 原型 ==========
 
-    var _origRender = Tree.prototype.render;
-    var _origRefresh = Tree.prototype._refresh;
+    var _origRender = BeakTree.prototype.render;
+    var _origRefresh = BeakTree.prototype._refresh;
 
     /**
      * 覆寫 render，完成後初始化拖曳
      */
-    Tree.prototype.render = function() {
+    BeakTree.prototype.render = function() {
         _origRender.call(this);
         if (this.options.draggable) {
             this._initDrag();
@@ -47,7 +47,7 @@
     /**
      * 覆寫 _refresh，完成後重新綁定拖曳
      */
-    Tree.prototype._refresh = function() {
+    BeakTree.prototype._refresh = function() {
         _origRefresh.call(this);
         if (this.options.draggable) {
             this._initDrag();
@@ -56,11 +56,11 @@
 
     // ========== 拖曳初始化 ==========
 
-    Tree.prototype._initDrag = function() {
+    BeakTree.prototype._initDrag = function() {
         if (!this._tbodyEl) return;
 
         var self = this;
-        var rows = this._tbodyEl.querySelectorAll('tr.treegrid-row');
+        var rows = this._tbodyEl.querySelectorAll('tr.bt-row');
 
         for (var i = 0; i < rows.length; i++) {
             var tr = rows[i];
@@ -93,7 +93,7 @@
         // 確保 indicator 存在
         if (!this._dragIndicator) {
             var ind = document.createElement('div');
-            ind.className = 'tree-drag-indicator';
+            ind.className = 'bk-tree-drag-indicator';
             ind.style.display = 'none';
             this.container.appendChild(ind);
             this._dragIndicator = ind;
@@ -120,7 +120,7 @@
 
             // 延遲加樣式（否則 ghost 會帶上透明度）
             requestAnimationFrame(function() {
-                tr.classList.add('tree-drag-source');
+                tr.classList.add('bk-tree-drag-source');
             });
         };
     }
@@ -293,12 +293,12 @@
         if (!ind) return;
 
         // 清除所有 row 的 drop highlight
-        var oldHl = tree._tbodyEl.querySelector('.tree-drop-highlight');
-        if (oldHl) oldHl.classList.remove('tree-drop-highlight');
+        var oldHl = tree._tbodyEl.querySelector('.bk-tree-drop-highlight');
+        if (oldHl) oldHl.classList.remove('bk-tree-drop-highlight');
 
         if (action === 'inside') {
             // 高亮目標列
-            tr.classList.add('tree-drop-highlight');
+            tr.classList.add('bk-tree-drop-highlight');
             ind.style.display = 'none';
         } else {
             // 顯示插入線
@@ -331,8 +331,8 @@
         if (tree._dragIndicator) {
             tree._dragIndicator.style.display = 'none';
         }
-        var oldHl = tree._tbodyEl ? tree._tbodyEl.querySelector('.tree-drop-highlight') : null;
-        if (oldHl) oldHl.classList.remove('tree-drop-highlight');
+        var oldHl = tree._tbodyEl ? tree._tbodyEl.querySelector('.bk-tree-drop-highlight') : null;
+        if (oldHl) oldHl.classList.remove('bk-tree-drop-highlight');
     }
 
     // ========== 懸停展開 ==========
@@ -374,7 +374,7 @@
         while (el && el.tagName !== 'TR') {
             el = el.parentElement;
         }
-        if (el && el.classList.contains('treegrid-row')) return el;
+        if (el && el.classList.contains('bt-row')) return el;
         return null;
     }
 
@@ -384,7 +384,7 @@
 
         // 清除 source 樣式
         if (tree._dragSource && tree._dragSource.tr) {
-            tree._dragSource.tr.classList.remove('tree-drag-source');
+            tree._dragSource.tr.classList.remove('bk-tree-drag-source');
         }
 
         tree._dragSource = null;

@@ -18,40 +18,57 @@ hostconfig_bp = Blueprint('hostconfig', __name__)
 
 # 硬刪除涉及的資料表（按刪除順序排列，子表在前）
 # 注意：順序非常重要，必須先刪除有外鍵依賴的子表
+# 完整 FK 關聯清單由 pg_constraint 查詢產生 (2026-03-08)
 HARD_DELETE_TABLES = [
-    # 合約 (依賴 users)
-    ('contracts', 'org_secure_code', '合約'),
-
-    # 權限相關 (role_permissions 依賴 roles)
+    # Phase 1: 純葉節點（無其他表引用）
     ('role_permissions', 'role_secure_code', '角色權限', 'roles'),
-
-    # 用戶與角色相關
     ('user_role_assignments', 'org_secure_code', '用戶角色指派'),
     ('user_unit_assignments', 'org_secure_code', '用戶單位指派'),
+    ('user_unit_memberships', 'org_secure_code', '用戶單位成員'),
     ('password_reset_tokens', 'org_secure_code', '密碼重設 Token'),
+    ('password_history', 'user_secure_code', '密碼歷程', 'users'),
     ('delegations', 'org_secure_code', '代理設定'),
     ('employee_positions', 'org_secure_code', '員工職位'),
-    ('roles', 'org_secure_code', '角色'),
-    ('users', 'org_secure_code', '用戶'),
+    ('contracts', 'org_secure_code', '合約'),
+    ('personal_schedules', 'org_secure_code', '個人班表'),
+    ('schedule_adjustments', 'org_secure_code', '班表調整'),
+    ('schedule_holidays', 'schedule_secure_code', '班表假日', 'work_schedules'),
+    ('audit_logs', 'org_secure_code', '稽核日誌'),
+    ('timeout_trackers', 'org_secure_code', '逾時追蹤'),
+    ('conglomerate_logs', 'org_secure_code', '集團日誌'),
+    ('used_user_numbers', 'org_secure_code', '已用員工編號'),
+    ('user_numbering_counters', 'org_secure_code', '員工編號計數器'),
+    ('job_level_approval_limits', 'org_secure_code', '職等簽核額度'),
+    ('menu_permissions', 'menu_secure_code', '選單權限', 'menu_items'),
+    ('module_access_control', 'org_secure_code', '模組使用權'),
+    ('lookup_items', 'org_secure_code', '查找項目'),
+    ('workflow_node_definitions', 'org_secure_code', '流程節點定義'),
+    ('workflow_node_categories', 'org_secure_code', '流程節點分類'),
 
-    # 組織結構 (duties 依賴 organizational_units)
+    # Phase 2: 中層表（被 Phase 1 引用的父表）
     ('duties', 'org_secure_code', '職責'),
     ('duty_categories', 'org_secure_code', '職責分類'),
-    ('organizational_units', 'org_secure_code', '組織單位'),
+    ('approval_categories', 'org_secure_code', '簽核類別'),
+    ('lookup_categories', 'org_secure_code', '查找分類'),
     ('job_titles', 'org_secure_code', '職稱'),
+    ('user_numbering_rules', 'org_secure_code', '員工編號規則'),
+    ('users', 'org_secure_code', '用戶'),
+
+    # Phase 3: 上層表（被 Phase 2 引用的父表）
+    ('roles', 'org_secure_code', '角色'),
+    ('organizational_units', 'org_secure_code', '組織單位'),
     ('job_levels', 'org_secure_code', '職等'),
     ('job_families', 'org_secure_code', '職系'),
-
-    # 選單相關 (menu_permissions 依賴 menu_items)
-    ('menu_permissions', 'menu_secure_code', '選單權限', 'menu_items'),
     ('menu_items', 'org_secure_code', '選單項目'),
+    ('shift_types', 'org_secure_code', '班別'),
+    ('work_schedules', 'org_secure_code', '班表'),
+    ('pages', 'org_secure_code', '頁面'),
+    ('modules', 'org_secure_code', '模組'),
 
-    # 企業設定
+    # Phase 4: 企業設定 + 企業本身
     ('smtp_configs', 'org_secure_code', 'SMTP 設定'),
     ('telegram_configs', 'org_secure_code', 'Telegram 設定'),
     ('recipient_groups', 'org_secure_code', '收件人群組'),
-    ('pages', 'org_secure_code', '頁面'),
-    ('modules', 'org_secure_code', '模組'),
 
     # 企業本身 (最後刪除)
     ('organizations', 'secure_code', '企業'),
@@ -148,6 +165,9 @@ def hard_delete_preview():
         - table_counts: 各表預計刪除的筆數
     """
     try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
         # 取得已軟刪除的企業
         result = db.session.execute(db.text(
             "SELECT secure_code, code, name, domain_name "
@@ -178,16 +198,17 @@ def hard_delete_preview():
             parent_table = table_def[3] if len(table_def) > 3 else None
 
             try:
-                count_sql, _ = _get_delete_sql(table_name, key_column, placeholders, parent_table)
-                count = db.session.execute(db.text(count_sql)).scalar()
-                if count > 0:
-                    table_counts.append({
-                        'table': table_name,
-                        'display_name': display_name,
-                        'count': count
-                    })
+                with db.session.begin_nested():
+                    count_sql, _ = _get_delete_sql(table_name, key_column, placeholders, parent_table)
+                    count = db.session.execute(db.text(count_sql)).scalar()
+                    if count > 0:
+                        table_counts.append({
+                            'table': table_name,
+                            'display_name': display_name,
+                            'count': count
+                        })
             except Exception:
-                # 表可能不存在，跳過
+                # savepoint 自動 rollback，表可能不存在，跳過
                 pass
 
         return jsonify({
@@ -208,6 +229,9 @@ def hard_delete_execute():
     刪除所有已軟刪除企業的相關資料（永久刪除，無法復原）
     """
     try:
+        # 繞過 RLS，確保能刪除所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
         # 取得已軟刪除的企業
         result = db.session.execute(db.text(
             "SELECT secure_code FROM organizations WHERE is_deleted = true"
@@ -224,7 +248,7 @@ def hard_delete_execute():
         placeholders = ','.join([f"'{code}'" for code in org_codes])
         deleted_counts = {}
 
-        # 按順序刪除各表
+        # 按順序刪除各表（用 SAVEPOINT 隔離個別表的錯誤）
         for table_def in HARD_DELETE_TABLES:
             table_name = table_def[0]
             key_column = table_def[1]
@@ -232,12 +256,13 @@ def hard_delete_execute():
             parent_table = table_def[3] if len(table_def) > 3 else None
 
             try:
-                _, delete_sql = _get_delete_sql(table_name, key_column, placeholders, parent_table)
-                result = db.session.execute(db.text(delete_sql))
-                if result.rowcount > 0:
-                    deleted_counts[display_name] = result.rowcount
+                with db.session.begin_nested():
+                    _, delete_sql = _get_delete_sql(table_name, key_column, placeholders, parent_table)
+                    result = db.session.execute(db.text(delete_sql))
+                    if result.rowcount > 0:
+                        deleted_counts[display_name] = result.rowcount
             except Exception as e:
-                # 記錄錯誤但繼續
+                # savepoint 自動 rollback，不影響外部交易
                 deleted_counts[f'{display_name} (錯誤)'] = str(e)
 
         db.session.commit()
@@ -573,6 +598,9 @@ def purge_deleted_preview():
         - orgs: [{secure_code, name, domain_name}]  活躍企業列表（供前端選擇）
     """
     try:
+        # 繞過 RLS，確保能看到所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
         scope = request.args.get('scope', 'all')
 
         # 取得活躍企業列表
@@ -640,6 +668,9 @@ def purge_deleted_execute():
     對父表會先清理指向它的孤兒子記錄。
     """
     try:
+        # 繞過 RLS，確保能刪除所有企業隔離的資料
+        db.session.execute(db.text("SET LOCAL app.is_system_admin = 'true'"))
+
         data = request.get_json() or {}
         scope = data.get('scope', 'all')
 

@@ -335,7 +335,7 @@ function userForm() {
                 data: { type: 'root' }
             }];
 
-            this._deptTree = new Tree(container, {
+            this._deptTree = new BeakTree(container, {
                 data: treeData,
                 hideRoot: false,
                 maxExpanded: 500,

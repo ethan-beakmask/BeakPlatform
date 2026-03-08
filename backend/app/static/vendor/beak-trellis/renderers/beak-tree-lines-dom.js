@@ -30,38 +30,38 @@
      */
     function renderTreeCell(node, ancestors, grid) {
         var cell = document.createElement('div');
-        cell.className = 'tg-tree-cell tg-dom-cell';
+        cell.className = 'bt-tree-cell bt-dom-cell';
 
         // 祖先層佔位（空白 span，線條由 overlay 繪製）
         for (var i = 0; i < ancestors.length; i++) {
             var sp = document.createElement('span');
-            sp.className = 'tg-indent tg-indent-blank';
+            sp.className = 'bt-indent bt-indent-blank';
             cell.appendChild(sp);
         }
 
         // 分支佔位（非根節點需要）
         if (node.level > 0) {
             var br = document.createElement('span');
-            br.className = 'tg-branch';
+            br.className = 'bt-branch';
             cell.appendChild(br);
         }
 
         // 展開/收合按鈕
         if (node.children.length > 0) {
             var tog = document.createElement('span');
-            tog.className = 'tg-toggle treegrid-toggle';
-            tog.classList.add(grid.isExpanded(node.id) ? 'tg-toggle-expanded' : 'tg-toggle-collapsed');
+            tog.className = 'bt-toggle bt-toggle';
+            tog.classList.add(grid.isExpanded(node.id) ? 'bt-toggle-expanded' : 'bt-toggle-collapsed');
             tog.textContent = grid.isExpanded(node.id) ? '[-]' : '[+]';
             cell.appendChild(tog);
         } else {
             var leaf = document.createElement('span');
-            leaf.className = 'tg-leaf-spacer';
+            leaf.className = 'bt-leaf-spacer';
             cell.appendChild(leaf);
         }
 
         // 標籤
         var lbl = document.createElement('span');
-        lbl.className = 'tg-label';
+        lbl.className = 'bt-label';
         lbl.textContent = node.label;
         cell.appendChild(lbl);
 
@@ -93,21 +93,21 @@
 
         // 確保 table 包在 position:relative wrapper 內
         var wrapper = table.parentElement;
-        if (!wrapper || !wrapper.classList.contains('tg-dom-wrapper')) {
+        if (!wrapper || !wrapper.classList.contains('bt-dom-wrapper')) {
             wrapper = document.createElement('div');
-            wrapper.className = 'tg-dom-wrapper';
+            wrapper.className = 'bt-dom-wrapper';
             wrapper.style.position = 'relative';
             table.parentNode.insertBefore(wrapper, table);
             wrapper.appendChild(table);
         }
 
         // 移除舊 overlay
-        var old = wrapper.querySelector('.tg-line-overlay');
+        var old = wrapper.querySelector('.bt-line-overlay');
         if (old) old.remove();
 
         // 建立新 overlay
         var overlay = document.createElement('div');
-        overlay.className = 'tg-line-overlay';
+        overlay.className = 'bt-line-overlay';
         overlay.style.cssText =
             'position:absolute;top:0;left:0;' +
             'width:' + table.offsetWidth + 'px;' +
@@ -117,7 +117,7 @@
 
         // 收集列位置資料
         var flatNodes = grid._flatNodes;
-        var rows = tbody.querySelectorAll('tr.treegrid-row:not(.treegrid-row-closing)');
+        var rows = tbody.querySelectorAll('tr.bt-row:not(.bt-row-closing)');
         if (rows.length === 0 || flatNodes.length === 0) return;
 
         var rowData = [];
@@ -132,7 +132,7 @@
         }
 
         // tree 欄的 left offset
-        var treeTd = rows[0].querySelector('.treegrid-td-tree');
+        var treeTd = rows[0].querySelector('.bt-td-tree');
         if (!treeTd) return;
         var treeLeft = treeTd.offsetLeft;
 
@@ -177,7 +177,7 @@
 
     function _addVLine(parent, x, y1, y2) {
         var el = document.createElement('div');
-        el.className = 'tg-ol-vline';
+        el.className = 'bt-ol-vline';
         el.style.cssText =
             'position:absolute;' +
             'left:' + x + 'px;' +
@@ -189,7 +189,7 @@
 
     function _addHLine(parent, x1, x2, y) {
         var el = document.createElement('div');
-        el.className = 'tg-ol-hline';
+        el.className = 'bt-ol-hline';
         el.style.cssText =
             'position:absolute;' +
             'left:' + x1 + 'px;' +
@@ -206,10 +206,10 @@
     var MINI_LINE_COLOR = '#aaa';
 
     /**
-     * 掃描頁面上所有 .tg-minitree-dom 容器，繪製 overlay 線條
+     * 掃描頁面上所有 .bt-minitree-dom 容器，繪製 overlay 線條
      */
     function _drawAllMiniTreeLines(grid) {
-        var containers = grid.container.querySelectorAll('.tg-minitree-dom');
+        var containers = grid.container.querySelectorAll('.bt-minitree-dom');
         for (var i = 0; i < containers.length; i++) {
             _drawMiniLines(containers[i]);
         }
@@ -217,14 +217,14 @@
 
     function _drawMiniLines(container) {
         // 移除舊 overlay
-        var old = container.querySelector('.tg-mini-overlay');
+        var old = container.querySelector('.bt-mini-overlay');
         if (old) old.remove();
 
-        var rows = container.querySelectorAll('.tg-mini-dom-row');
+        var rows = container.querySelectorAll('.bt-mini-dom-row');
         if (rows.length === 0) return;
 
         var overlay = document.createElement('div');
-        overlay.className = 'tg-mini-overlay';
+        overlay.className = 'bt-mini-overlay';
         overlay.style.cssText =
             'position:absolute;top:0;left:0;' +
             'width:100%;height:100%;pointer-events:none;';
@@ -313,7 +313,7 @@
             }
 
             var container = document.createElement('div');
-            container.className = 'tg-minitree tg-minitree-dom';
+            container.className = 'bt-minitree bt-minitree-dom';
             container.style.position = 'relative';
 
             // 扁平化樹結構
@@ -340,7 +340,7 @@
             for (var i = 0; i < flatRows.length; i++) {
                 var fr = flatRows[i];
                 var rowDiv = document.createElement('div');
-                rowDiv.className = 'tg-mini-dom-row';
+                rowDiv.className = 'bt-mini-dom-row';
                 rowDiv.dataset.level = fr.level;
                 rowDiv.dataset.hasChildren = fr.hasChildren ? '1' : '0';
                 rowDiv.dataset.parentIdx = fr.parentFlatIdx;
@@ -348,7 +348,7 @@
                 // 縮排佔位（空白，線由 overlay 繪製）
                 for (var j = 0; j < fr.level; j++) {
                     var sp = document.createElement('span');
-                    sp.className = 'tg-mini-spacer';
+                    sp.className = 'bt-mini-spacer';
                     sp.style.cssText = 'display:inline-block;width:' + opts.indentPx + 'px;';
                     rowDiv.appendChild(sp);
                 }
@@ -356,14 +356,14 @@
                 // 分支佔位
                 if (fr.level > 0) {
                     var brSp = document.createElement('span');
-                    brSp.className = 'tg-mini-branch-spacer';
+                    brSp.className = 'bt-mini-branch-spacer';
                     brSp.style.cssText = 'display:inline-block;width:' + opts.indentPx + 'px;';
                     rowDiv.appendChild(brSp);
                 }
 
                 // 標籤
                 var lbl = document.createElement('span');
-                lbl.className = 'tg-mini-label';
+                lbl.className = 'bt-mini-label';
                 lbl.textContent = fr.label;
                 rowDiv.appendChild(lbl);
 
@@ -395,21 +395,21 @@
 
         // 確保 wrapper
         var wrapper = table.parentElement;
-        if (!wrapper || !wrapper.classList.contains('tg-dom-wrapper')) {
+        if (!wrapper || !wrapper.classList.contains('bt-dom-wrapper')) {
             wrapper = document.createElement('div');
-            wrapper.className = 'tg-dom-wrapper';
+            wrapper.className = 'bt-dom-wrapper';
             wrapper.style.position = 'relative';
             table.parentNode.insertBefore(wrapper, table);
             wrapper.appendChild(table);
         }
 
         // 移除舊 overlay
-        var old = wrapper.querySelector('.tg-line-overlay');
+        var old = wrapper.querySelector('.bt-line-overlay');
         if (old) old.remove();
 
         // 建立新 overlay
         var overlay = document.createElement('div');
-        overlay.className = 'tg-line-overlay';
+        overlay.className = 'bt-line-overlay';
         overlay.style.cssText =
             'position:absolute;top:0;left:0;' +
             'width:' + table.offsetWidth + 'px;' +
@@ -418,23 +418,33 @@
         wrapper.appendChild(overlay);
 
         // 從 DOM 取得 treeLeft（只需第一個可見列的偏移）
-        var dataRows = tbody.querySelectorAll('tr.treegrid-row');
+        var dataRows = tbody.querySelectorAll('tr.bt-row');
         if (dataRows.length === 0) return;
-        var treeTd = dataRows[0].querySelector('.treegrid-td-tree');
+        var treeTd = dataRows[0].querySelector('.bt-td-tree');
         if (!treeTd) return;
         var treeLeft = treeTd.offsetLeft;
 
         // 第一個可見列的 DOM offsetTop（spacer 之後）
         var firstRowTop = dataRows[0].offsetTop;
 
-        // 計算任意 flatNodes 索引的 midY（表格座標）
+        // 使用累計 Y 偏移計算 midY，支援 root 列不同高度
+        var yOffsets = grid._vsYOffsets;
+        var rootRowH = grid._vsRootRowHeight || rowHeight;
+        function getRowH(idx) {
+            return (grid._flatNodes[idx].level === 0) ? rootRowH : rowHeight;
+        }
         function midY(idx) {
+            if (yOffsets) {
+                return firstRowTop + (yOffsets[idx] - yOffsets[startIdx]) + getRowH(idx) / 2;
+            }
             return firstRowTop + (idx - startIdx) * rowHeight + rowHeight / 2;
         }
 
         // 可見繪製區域（clipping）
         var clipTop = firstRowTop;
-        var clipBottom = firstRowTop + (endIdx - startIdx) * rowHeight;
+        var clipBottom = yOffsets
+            ? firstRowTop + (yOffsets[endIdx] - yOffsets[startIdx])
+            : firstRowTop + (endIdx - startIdx) * rowHeight;
 
         // 取得父節點最後直接子節點的 flatIndex（O(1) 查找）
         function lastDirectChildFlatIdx(parentId) {
@@ -505,12 +515,12 @@
         afterRender: afterRender
     };
 
-    // 同時註冊到 TreeGrid 和 Tree（獨立元件）
-    if (typeof TreeGrid !== 'undefined' && TreeGrid.registerRenderer) {
-        TreeGrid.registerRenderer('lines-dom', rendererDef);
+    // 同時註冊到 BeakTrellis 和 Tree（獨立元件）
+    if (typeof BeakTrellis !== 'undefined' && BeakTrellis.registerRenderer) {
+        BeakTrellis.registerRenderer('lines-dom', rendererDef);
     }
-    if (typeof Tree !== 'undefined' && Tree.registerRenderer) {
-        Tree.registerRenderer('lines-dom', rendererDef);
+    if (typeof BeakTree !== 'undefined' && BeakTree.registerRenderer) {
+        BeakTree.registerRenderer('lines-dom', rendererDef);
     }
 
     // 公開 miniTree 工廠到全域
