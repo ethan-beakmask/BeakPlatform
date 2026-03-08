@@ -15,14 +15,14 @@
 
 <p>共 {{ delegations|length }} 筆代理授權</p>
 
-<table class="data-table bordered">
+<table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>授權人</th>
-            <th>被授權人</th>
-            <th>代理類型</th>
-            <th>狀態</th>
-            <th>生效期間</th>
+            <th data-sort="text">授權人</th>
+            <th data-sort="text">被授權人</th>
+            <th data-sort="text">代理類型</th>
+            <th data-sort="text">狀態</th>
+            <th data-sort="date">生效期間</th>
             <th>操作</th>
         </tr>
     </thead>

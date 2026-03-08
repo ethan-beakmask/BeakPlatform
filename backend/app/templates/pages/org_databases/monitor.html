@@ -23,9 +23,9 @@
                    placeholder="搜尋企業名稱或 domain...">
             <div class="odb-sort-bar">
                 排序:
-                <button class="odb-sort-btn" :class="{'active': sortBy==='id'}" @click="sortBy='id'">編號</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy==='tables'}" @click="sortBy='tables'">資料表</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy==='size'}" @click="sortBy='size'">容量</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('id')}" @click="toggleSort('id')" x-text="'編號' + sortIcon('id')">編號</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('tables')}" @click="toggleSort('tables')" x-text="'資料表' + sortIcon('tables')">資料表</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('size')}" @click="toggleSort('size')" x-text="'容量' + sortIcon('size')">容量</button>
             </div>
         </div>
         <div class="odb-sidebar-list">

@@ -190,7 +190,19 @@
     user-select: none;
 }
 .data-table th.sortable:hover {
-    background: #f0f0f0;
+    background: #e8e8e8;
+}
+.data-table th.sort-active {
+    background: #e8e8e8;
+    color: var(--color-text);
+}
+.sort-indicator {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-left: 2px;
+}
+.sort-active .sort-indicator {
+    color: var(--color-primary);
 }
 
 .data-table tbody tr:hover {

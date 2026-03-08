@@ -74,9 +74,9 @@ portal_base.html 繼承鏈:
 | 套件 | CSS | JS | 版本 | 使用頁面 |
 |------|-----|----|----- |----------|
 | Bootstrap | `vendor/bootstrap.min.css` (228K) | `vendor/bootstrap.bundle.min.js` (79K) | 5.3.2 | workflow_list.html (模組層) |
-| jQuery | - | `vendor/jquery.min.js` (77K) | 3.7.x | jsTree 依賴 |
+| ~~jQuery~~ | - | ~~`vendor/jquery.min.js` (77K)~~ | ~~3.7.x~~ | 已刪除 (零引用) |
 | Font Awesome | `vendor/fontawesome/css/all.min.css` (74K) | ~~已刪除~~ | 6.x | quick_login.html (dev) |
-| jsTree | `vendor/jstree/.../style.min.css` (27K) | `vendor/jstree.min.js` (139K) | 3.3.16 | 部門/群組樹 |
+| ~~jsTree~~ | ~~`vendor/jstree.min.css` (27K)~~ | ~~`vendor/jstree.min.js` (139K)~~ | ~~3.3.16~~ | 已刪除 (被自製 Tree/TreeGrid 取代) |
 | Ace Editor | - | `vendor/ace/*.js` (578K) | - | 程式碼編輯器 |
 | GridStack | `vendor/gridstack.min.css` (3.6K) | `vendor/gridstack-all.js` (81K) | - | data_crud studio/lab |
 | Wunderbaum | `vendor/wunderbaum.css` (22K) | `vendor/wunderbaum.umd.min.js` (97K) | - | data_crud studio |
@@ -166,7 +166,7 @@ portal_base.html 繼承鏈:
 
 | # | 問題 | 說明 | 狀態 |
 |---|------|------|------|
-| P2-1 | 多套樹狀元件共存 | jsTree/Wunderbaum/Tree/TreeGrid 各有用途，暫不收斂 | 評估中 |
+| P2-1 | ~~多套樹狀元件共存~~ | jsTree+jQuery 已刪除，剩 Wunderbaum/Tree/TreeGrid 各有用途 | 已清理 |
 | P2-2 | ~~workflow-main.js 730K~~ | ~~拆分~~ | 排除 |
 | P2-3 | Bootstrap 非全域 | 僅 workflow_list.html 使用 | 評估中 |
 | P2-4 | 獨立模板一致性 | auth/error 零 JS，designer 已排除 | 不需處理 |
@@ -243,10 +243,12 @@ CSS 變數:  --color-primary (#0066cc), --color-danger, --color-success, --color
 
 按鈕:      .btn .btn-primary/secondary/danger/success/warning/cancel/sm/link
 表格:      .data-table (.compact, .bordered), .info-table
+排序:      th[data-sort] + .sortable, .sort-active, .sort-indicator
+Modal:     .modal-content (.modal-sm/md/lg/xl/full)
 表單:      .form-control, .form-label, .form-group, .form-row
 頁面:      .page-header, .page-title, .page-actions
 區段:      .section-title (.optional)
-Modal:     .modal-overlay, .modal-box, .modal-content, .modal-header/body/footer, .modal-close
+Modal:     .modal-overlay, .modal-box, .modal-content (.modal-sm/md/lg/xl/full), .modal-header/body/footer, .modal-close
 Toast:     .toast (.success/.error/.warning/.info)
 Alert:     .alert (.alert-success/.alert-error/.alert-warning/.alert-info)
            .message (.message-success/.message-error) — hostconfig/organizations 別名
@@ -263,11 +265,12 @@ Badge:     .badge (.badge-success/.badge-warning/.badge-danger/.badge-info/.badg
 | 套件 | 用途 | 依賴 CSS | 備註 |
 |------|------|----------|------|
 | Alpine.js 3.14.3 | 所有頁面的反應式框架 | 無 | 全域 defer 載入 |
+| sortable-table.js (自製) | 表格排序元件 | common.css (.sortable/.sort-active/.sort-indicator) | 全域 defer 載入，用 `x-data="sortableTable()"` + `data-sort` 屬性 |
 | Bootstrap 5.3.2 | UI 元件 | bootstrap.min.css | 僅 workflow_list.html |
-| jQuery 3.7.x | jsTree 依賴 | 無 | 僅 jsTree 頁面 |
+| ~~jQuery 3.7.x~~ | ~~jsTree 依賴~~ | ~~無~~ | 已刪除 (零引用) |
 | Cytoscape | 流程圖 | 無 | 排除 (workflow_designer) |
 | Formio | 動態表單 | formio.full.min.css | 排除 (designer) |
-| jsTree 3.3.16 | 樹狀結構 | jstree style.min.css | 部門/群組 |
+| ~~jsTree 3.3.16~~ | ~~樹狀結構~~ | ~~jstree style.min.css~~ | 已刪除 (被自製 Tree/TreeGrid 取代) |
 | Ace Editor | 程式碼編輯器 | 無 | JSON/JS/HTML/CSS |
 | GridStack | 拖放格線佈局 | gridstack.min.css | data_crud studio/lab |
 | Wunderbaum | 進階樹狀檢視 | wunderbaum.css | data_crud studio |

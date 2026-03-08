@@ -32,15 +32,15 @@
 </div>
 
 {% if users %}
-<table class="data-table bordered">
+<table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th style="text-align: left;">{{ _('姓名') }}</th>
-            <th style="text-align: left;">{{ _('帳號') }}</th>
-            <th style="text-align: left;">{{ _('用戶編號') }}</th>
-            <th style="text-align: left;">{{ _('部門') }}</th>
-            <th style="text-align: center;">{{ _('狀態') }}</th>
-            <th style="text-align: left;">{{ _('建立時間') }}</th>
+            <th data-sort="text">{{ _('姓名') }}</th>
+            <th data-sort="text">{{ _('帳號') }}</th>
+            <th data-sort="text">{{ _('用戶編號') }}</th>
+            <th data-sort="text">{{ _('部門') }}</th>
+            <th data-sort="text" style="text-align: center;">{{ _('狀態') }}</th>
+            <th data-sort="date">{{ _('建立時間') }}</th>
             <th style="text-align: center;">{{ _('操作') }}</th>
         </tr>
     </thead>

@@ -19,14 +19,14 @@
 {% endwith %}
 
 {% if accounts %}
-<table class="data-table bordered">
+<table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>帳號</th>
-            <th>Email</th>
-            <th>顯示名稱</th>
-            <th>狀態</th>
-            <th>最後登入</th>
+            <th data-sort="text">帳號</th>
+            <th data-sort="text">Email</th>
+            <th data-sort="text">顯示名稱</th>
+            <th data-sort="text">狀態</th>
+            <th data-sort="date">最後登入</th>
             <th>操作</th>
         </tr>
     </thead>

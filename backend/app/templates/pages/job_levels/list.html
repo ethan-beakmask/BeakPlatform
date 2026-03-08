@@ -25,15 +25,15 @@
 </p>
 
 {% if job_levels %}
-<table class="data-table bordered" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>代碼</th>
-            <th>名稱</th>
-            <th>英文名稱</th>
-            <th>序號</th>
-            <th>管理職</th>
-            <th>狀態</th>
+            <th data-sort="text">代碼</th>
+            <th data-sort="text">名稱</th>
+            <th data-sort="text">英文名稱</th>
+            <th data-sort="number">序號</th>
+            <th data-sort="text">管理職</th>
+            <th data-sort="text">狀態</th>
             <th>操作</th>
         </tr>
     </thead>

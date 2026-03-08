@@ -9,14 +9,14 @@
 <p><a href="{{ url_for('modules.create_module') }}">[+ 新增模組]</a></p>
 
 {% if modules %}
-<table class="data-table bordered">
+<table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>模組</th>
-            <th>代碼</th>
-            <th>描述</th>
-            <th>系統模組</th>
-            <th>狀態</th>
+            <th data-sort="text">模組</th>
+            <th data-sort="text">代碼</th>
+            <th data-sort="text">描述</th>
+            <th data-sort="text">系統模組</th>
+            <th data-sort="text">狀態</th>
             <th>操作</th>
         </tr>
     </thead>

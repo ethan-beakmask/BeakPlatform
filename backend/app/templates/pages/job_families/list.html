@@ -25,15 +25,15 @@
 </p>
 
 {% if job_families %}
-<table class="data-table bordered" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>代碼</th>
-            <th>名稱</th>
-            <th>英文名稱</th>
-            <th>類型</th>
-            <th>排序</th>
-            <th>狀態</th>
+            <th data-sort="text">代碼</th>
+            <th data-sort="text">名稱</th>
+            <th data-sort="text">英文名稱</th>
+            <th data-sort="text">類型</th>
+            <th data-sort="number">排序</th>
+            <th data-sort="text">狀態</th>
             <th>操作</th>
         </tr>
     </thead>

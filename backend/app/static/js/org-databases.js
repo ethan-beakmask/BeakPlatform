@@ -25,7 +25,7 @@ function odbSystemView() {
     return {
         orgs: rawOrgs,
         search: '',
-        sortBy: 'id',
+        sortBy: 'id_asc',
         selectedCode: null,
         allLoaded: false,
         tableSortBy: null,
@@ -66,6 +66,30 @@ function odbSystemView() {
             }
         },
 
+        toggleSort(col) {
+            if (col === 'id') {
+                this.sortBy = this.sortBy === 'id_asc' ? 'id_desc' : 'id_asc';
+            } else if (col === 'tables') {
+                this.sortBy = this.sortBy === 'tables_desc' ? 'tables_asc' : 'tables_desc';
+            } else if (col === 'size') {
+                this.sortBy = this.sortBy === 'size_desc' ? 'size_asc' : 'size_desc';
+            }
+        },
+
+        sortIcon(col) {
+            if (col === 'id') {
+                if (this.sortBy === 'id_asc') return ' ^';
+                if (this.sortBy === 'id_desc') return ' v';
+            } else if (col === 'tables') {
+                if (this.sortBy === 'tables_asc') return ' ^';
+                if (this.sortBy === 'tables_desc') return ' v';
+            } else if (col === 'size') {
+                if (this.sortBy === 'size_asc') return ' ^';
+                if (this.sortBy === 'size_desc') return ' v';
+            }
+            return '';
+        },
+
         get filteredOrgs() {
             var list = this.orgs;
             if (this.search) {
@@ -76,14 +100,31 @@ function odbSystemView() {
                 });
             }
             list = [].concat(list);
-            var sortBy = this.sortBy;
-            if (sortBy === 'tables') {
+            var s = this.sortBy;
+            var _allLoaded = this.allLoaded;
+            if (s === 'id_asc') {
+                list.sort(function(a, b) { return a.id - b.id; });
+            } else if (s === 'id_desc') {
+                list.sort(function(a, b) { return b.id - a.id; });
+            } else if (s === 'tables_asc') {
+                list.sort(function(a, b) {
+                    var at = (a.data && a.data.stats) ? a.data.stats.table_count : -1;
+                    var bt = (b.data && b.data.stats) ? b.data.stats.table_count : -1;
+                    return at - bt;
+                });
+            } else if (s === 'tables_desc') {
                 list.sort(function(a, b) {
                     var at = (a.data && a.data.stats) ? a.data.stats.table_count : -1;
                     var bt = (b.data && b.data.stats) ? b.data.stats.table_count : -1;
                     return bt - at;
                 });
-            } else if (sortBy === 'size') {
+            } else if (s === 'size_asc') {
+                list.sort(function(a, b) {
+                    var as = (a.data && a.data.stats) ? a.data.stats.db_size_bytes : -1;
+                    var bs = (b.data && b.data.stats) ? b.data.stats.db_size_bytes : -1;
+                    return as - bs;
+                });
+            } else if (s === 'size_desc') {
                 list.sort(function(a, b) {
                     var as = (a.data && a.data.stats) ? a.data.stats.db_size_bytes : -1;
                     var bs = (b.data && b.data.stats) ? b.data.stats.db_size_bytes : -1;

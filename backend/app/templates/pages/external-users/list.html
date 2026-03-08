@@ -29,14 +29,14 @@
 </div>
 
 {% if users %}
-<table class="data-table bordered" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>編號</th>
-            <th>帳號</th>
-            <th>姓名</th>
-            <th>歸屬群組</th>
-            <th style="text-align: center;">狀態</th>
+            <th data-sort="text">編號</th>
+            <th data-sort="text">帳號</th>
+            <th data-sort="text">姓名</th>
+            <th data-sort="text">歸屬群組</th>
+            <th data-sort="text" style="text-align: center;">狀態</th>
             <th style="text-align: center;">操作</th>
         </tr>
     </thead>

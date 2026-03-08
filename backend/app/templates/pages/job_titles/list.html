@@ -33,15 +33,15 @@
 <div class="family-section">
     <div class="family-header">{{ family.name }}</div>
     {% if titles %}
-    <table class="data-table compact bordered">
+    <table class="data-table compact bordered" x-data="sortableTable()">
         <thead>
             <tr>
-                <th style="width: 100px;">代碼</th>
-                <th style="width: 150px;">名稱</th>
-                <th style="width: 150px;">英文名稱</th>
-                <th style="width: 180px;">職等</th>
-                <th style="width: 60px;">管理職</th>
-                <th style="width: 60px;">狀態</th>
+                <th data-sort="text" style="width: 100px;">代碼</th>
+                <th data-sort="text" style="width: 150px;">名稱</th>
+                <th data-sort="text" style="width: 150px;">英文名稱</th>
+                <th data-sort="text" style="width: 180px;">職等</th>
+                <th data-sort="text" style="width: 60px;">管理職</th>
+                <th data-sort="text" style="width: 60px;">狀態</th>
                 <th style="width: 100px;">操作</th>
             </tr>
         </thead>
@@ -85,15 +85,15 @@
 {% if titles_by_family.get('__unassigned__', []) %}
 <div class="family-section">
     <div class="family-header" style="background: #6b7280;">未分類</div>
-    <table class="data-table compact bordered">
+    <table class="data-table compact bordered" x-data="sortableTable()">
         <thead>
             <tr>
-                <th style="width: 100px;">代碼</th>
-                <th style="width: 150px;">名稱</th>
-                <th style="width: 150px;">英文名稱</th>
-                <th style="width: 180px;">職等</th>
-                <th style="width: 60px;">管理職</th>
-                <th style="width: 60px;">狀態</th>
+                <th data-sort="text" style="width: 100px;">代碼</th>
+                <th data-sort="text" style="width: 150px;">名稱</th>
+                <th data-sort="text" style="width: 150px;">英文名稱</th>
+                <th data-sort="text" style="width: 180px;">職等</th>
+                <th data-sort="text" style="width: 60px;">管理職</th>
+                <th data-sort="text" style="width: 60px;">狀態</th>
                 <th style="width: 100px;">操作</th>
             </tr>
         </thead>

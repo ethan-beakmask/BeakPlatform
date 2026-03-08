@@ -11,17 +11,17 @@
 
 <p>共 {{ positions|length }} 筆職位指派</p>
 
-<table class="data-table bordered" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;" x-data="sortableTable()">
     <thead>
         <tr>
-            <th>員工</th>
-            <th>職稱</th>
-            <th>部門</th>
-            <th>類型</th>
-            <th>部門主管</th>
-            <th>直屬主管</th>
-            <th>生效日</th>
-            <th>狀態</th>
+            <th data-sort="text">員工</th>
+            <th data-sort="text">職稱</th>
+            <th data-sort="text">部門</th>
+            <th data-sort="text">類型</th>
+            <th data-sort="text">部門主管</th>
+            <th data-sort="text">直屬主管</th>
+            <th data-sort="date">生效日</th>
+            <th data-sort="text">狀態</th>
             <th>操作</th>
         </tr>
     </thead>

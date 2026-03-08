@@ -39,18 +39,18 @@
     </div>
 
     {% if roles %}
-    <table class="data-table bordered">
+    <table class="data-table bordered" x-data="sortableTable()">
         <thead>
             <tr>
                 <th style="width: 40px;">
                     <input type="checkbox" @change="toggleAll()" :checked="allSelected">
                 </th>
-                <th>代碼</th>
-                <th>名稱</th>
-                <th>類型</th>
-                <th>適用範圍</th>
-                <th>管理職</th>
-                <th>使用中</th>
+                <th data-sort="text">代碼</th>
+                <th data-sort="text">名稱</th>
+                <th data-sort="text">類型</th>
+                <th data-sort="text">適用範圍</th>
+                <th data-sort="text">管理職</th>
+                <th data-sort="number">使用中</th>
                 <th>操作</th>
             </tr>
         </thead>
