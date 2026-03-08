@@ -1,0 +1,392 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Tree 測試 - BeakMask{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tree/tree.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/org-tree.css') }}">
+<style>
+    .test-container {
+        display: flex;
+        gap: 6px;
+        height: calc(100vh - 120px);
+        min-height: 500px;
+    }
+
+    /* 左側：Tree */
+    .tg-tree-panel {
+        width: 500px;
+        min-width: 320px;
+        border: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+    .panel-header {
+        padding: 6px 10px;
+        background: #f3f4f6;
+        border-bottom: 1px solid #ccc;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+    }
+    .panel-header .btn-group { display: flex; gap: 4px; }
+    .tg-tree-panel .panel-body {
+        flex: 1;
+        overflow: auto;
+        padding: 0;
+    }
+
+    /* Tree 樣式覆寫 */
+    .tg-tree-panel .tree-container .treegrid-row { cursor: pointer; }
+    .tg-tree-panel .tree-container .treegrid-row.tg-selected {
+        background: #dbeafe !important;
+    }
+
+    /* 節點圖示 */
+    .tg-node-icon { display: inline-block; width: 16px; text-align: center; margin-right: 3px; font-size: 13px; }
+    .tg-node-icon.dept { color: #2563eb; }
+    .tg-node-icon.root { color: #7c3aed; }
+    .tg-role-tag { display: inline-block; padding: 0 3px; border-radius: 3px; font-size: 10px; margin-right: 2px; font-weight: bold; }
+    .tg-role-tag.leader { background: #fee2e2; color: #991b1b; }
+    .tg-role-tag.deputy { background: #fef3c7; color: #92400e; }
+    .tg-role-tag.proxy { background: #e0e7ff; color: #3730a3; }
+    .tg-role-tag.employee { background: #f3f4f6; color: #374151; }
+
+    /* 中間：詳情面板 */
+    .tg-detail-panel {
+        flex: 1;
+        min-width: 300px;
+        border: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        overflow: auto;
+    }
+    .tg-detail-panel .panel-body {
+        flex: 1;
+        overflow: auto;
+        padding: 10px;
+    }
+
+    /* 上半：編輯+跨部門 並排 */
+    .detail-top-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .edit-section {
+        flex: 1;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 8px;
+    }
+    .edit-section .section-title {
+        font-weight: bold;
+        font-size: 12px;
+        color: #374151;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 4px;
+    }
+    .form-row { margin-bottom: 6px; }
+    .form-row label { display: block; font-size: 11px; color: #6b7280; margin-bottom: 2px; }
+    .form-row input, .form-row select {
+        width: 100%; padding: 3px 6px; font-size: 12px;
+        border: 1px solid #d1d5db; border-radius: 3px;
+    }
+    .cross-section {
+        flex: 1;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 8px;
+        min-width: 180px;
+    }
+    .cross-section .section-title {
+        font-weight: bold;
+        font-size: 12px;
+        color: #374151;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 4px;
+    }
+    .cross-member-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        font-size: 11px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .cross-tag { font-size: 10px; color: #7c3aed; font-weight: bold; }
+    .cross-unit { color: #9ca3af; font-size: 10px; }
+
+    /* 下半：成員 左(主管+副主管) 右(員工) */
+    .staff-layout {
+        display: flex;
+        gap: 8px;
+    }
+    .staff-left {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 200px;
+        min-width: 160px;
+    }
+    .staff-right {
+        flex: 1;
+    }
+    .staff-column {
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 6px;
+        min-height: 60px;
+        transition: background 0.15s;
+    }
+    .staff-column.drag-over {
+        background: #dcfce7;
+        border-color: #22c55e;
+    }
+    .staff-column .column-label {
+        font-weight: bold;
+        font-size: 11px;
+        color: #6b7280;
+        margin-bottom: 4px;
+        text-align: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 3px;
+    }
+    .staff-person {
+        padding: 3px 5px;
+        margin: 2px 0;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 3px;
+        cursor: grab;
+        font-size: 11px;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+    .staff-person:hover { background: #eff6ff; }
+    .staff-person.dragging { opacity: 0.4; }
+    .staff-empty { color: #9ca3af; font-size: 11px; text-align: center; padding: 8px 4px; }
+
+    /* 右側：未分配 */
+    .tg-unassigned-panel {
+        width: 360px;
+        min-width: 260px;
+        border: 1px solid #ccc;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+    .tg-unassigned-panel .panel-body { flex: 1; overflow: auto; padding: 4px; }
+    .tg-unassigned-panel.drag-over-unassigned { background: #fff7ed; border-color: #f97316; }
+
+    .emp-id { color: #6b7280; font-size: 10px; min-width: 36px; }
+    .emp-native { font-weight: 500; }
+    .emp-english { color: #9ca3af; font-size: 10px; }
+
+    .drag-hint { font-size: 10px; color: #9ca3af; text-align: center; padding: 4px; border-top: 1px dashed #e5e7eb; margin-top: 6px; }
+    .empty-message { color: #9ca3af; text-align: center; padding: 16px; font-size: 12px; }
+    .toast { position: fixed; top: 60px; right: 20px; padding: 8px 16px; border-radius: 4px; color: white; font-size: 13px; z-index: 9999; transition: opacity 0.3s; }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .toast.hidden { opacity: 0; pointer-events: none; }
+    .btn { padding: 3px 8px; font-size: 11px; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; background: #fff; }
+    .btn-primary { background: #2563eb; color: white; border-color: #2563eb; }
+    .btn-success { background: #16a34a; color: white; border-color: #16a34a; }
+    .btn-secondary { background: #6b7280; color: white; border-color: #6b7280; }
+    .btn-danger { background: #dc2626; color: white; border-color: #dc2626; }
+    .btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+    .btn-sm { padding: 1px 5px; font-size: 10px; }
+    .btn-group-actions { display: flex; gap: 4px; margin-top: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size:16px;margin-bottom:4px;">Tree 測試 (jstree 替代評估)</h1>
+<p style="font-size:11px;color:#666;margin-bottom:6px;">使用獨立 Tree 元件取代 jQuery+jstree，測試組織樹 + 拖放功能。</p>
+
+<div class="test-container" x-data="treeTest()" x-init="init()">
+    <!-- 左側：Tree -->
+    <div class="tg-tree-panel">
+        <div class="panel-header">
+            <span>組織架構</span>
+            <div class="btn-group">
+                <button class="btn" :class="showPeople ? '' : 'active'" @click="switchMode(false)">部門</button>
+                <button class="btn" :class="showPeople ? 'active' : ''" @click="switchMode(true)">成員</button>
+                <button class="btn btn-success" @click="startCreate()">+</button>
+            </div>
+        </div>
+        <div class="panel-body" id="tree-container"></div>
+    </div>
+
+    <!-- 中間：詳情 -->
+    <div class="tg-detail-panel">
+        <div class="panel-header" x-text="selectedDept ? selectedDept.name : '部門詳情'"></div>
+        <div class="panel-body">
+            <template x-if="!selectedDept && !isCreating">
+                <div class="empty-message">從左側選擇部門</div>
+            </template>
+            <template x-if="selectedDept || isCreating">
+                <div>
+                    <!-- 上半：編輯部門 + 跨部門人員 並排 -->
+                    <div class="detail-top-row">
+                        <div class="edit-section">
+                            <div class="section-title" x-text="isCreating ? '新增部門' : '編輯部門'"></div>
+                            <form @submit.prevent="isCreating ? createDepartment() : updateDepartment()">
+                                <div class="form-row">
+                                    <label>部門名稱 *</label>
+                                    <input type="text" x-model="formData.name" required maxlength="255">
+                                </div>
+                                <div class="form-row">
+                                    <label>部門代碼</label>
+                                    <input type="text" x-model="formData.code" :disabled="!isCreating" maxlength="50">
+                                </div>
+                                <div class="form-row">
+                                    <label>父部門</label>
+                                    <select x-model="formData.parent_id">
+                                        <option value="">（根層級）</option>
+                                        <template x-for="d in allDepartmentsFlat" :key="d.id">
+                                            <option :value="d.id" x-text="'\u2500'.repeat(d.level) + ' ' + d.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="btn-group-actions">
+                                    <button type="submit" class="btn btn-primary" x-text="isCreating ? '建立' : '儲存'"></button>
+                                    <button type="button" class="btn" @click="cancelEdit()">取消</button>
+                                    <button type="button" class="btn btn-danger" x-show="!isCreating && selectedDept" @click="deleteDepartment()">刪除</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="cross-section" x-show="selectedDept"
+                             :class="{'drag-over': dragOverZone==='cross'}"
+                             @dragover.prevent="onZoneDragOver($event,'cross')"
+                             @dragleave="dragOverZone=null"
+                             @drop="dropToCross($event)">
+                            <div class="section-title">
+                                跨部門人員
+                                <span style="font-weight:normal;color:#9ca3af;" x-text="'('+crossMembers.length+')'"></span>
+                            </div>
+                            <template x-for="cm in crossMembers" :key="cm.id">
+                                <div class="cross-member-item">
+                                    <span class="cross-tag" x-text="cm.is_leader ? '[跨]' : '跨'"></span>
+                                    <span class="emp-native" x-text="cm.user?.native_name||cm.user?.display_name||'?'"></span>
+                                    <span class="cross-unit" x-text="'\u2190 '+(cm.unit?.name||cm.user_primary_unit||'?')"></span>
+                                    <button class="btn btn-sm btn-danger" @click="removeCrossMember(cm)" style="margin-left:auto;">\u00D7</button>
+                                </div>
+                            </template>
+                            <div class="staff-empty" x-show="crossMembers.length===0">拖入為跨部門</div>
+                        </div>
+                    </div>
+
+                    <!-- 下半：成員 -->
+                    <div x-show="selectedDept">
+                        <div style="font-size:12px;font-weight:bold;color:#374151;margin-bottom:6px;">
+                            部門成員
+                            <span style="font-weight:normal;color:#9ca3af;" x-text="'共 '+totalCount+' 人'"></span>
+                        </div>
+                        <div class="staff-layout">
+                            <!-- 左: 主管 + 副主管(在下方) -->
+                            <div class="staff-left">
+                                <div class="staff-column" :class="{'drag-over': dragOverZone==='manager'}"
+                                     @dragover.prevent="onZoneDragOver($event,'manager')"
+                                     @dragleave="dragOverZone=null"
+                                     @drop="dropToRole($event,'manager')">
+                                    <div class="column-label">主管</div>
+                                    <template x-if="leadership.manager">
+                                        <div class="staff-person" draggable="true"
+                                             @dragstart="dragStartPerson($event, leadership.manager, 'leader', 'manager')">
+                                            <span class="emp-id" x-text="leadership.manager.employee_id||'-'"></span>
+                                            <span class="emp-native" x-text="leadership.manager.native_name||leadership.manager.display_name"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="!leadership.manager">
+                                        <div class="staff-empty">拖入設為主管</div>
+                                    </template>
+                                </div>
+                                <div class="staff-column" :class="{'drag-over': dragOverZone==='deputy'}"
+                                     @dragover.prevent="onZoneDragOver($event,'deputy')"
+                                     @dragleave="dragOverZone=null"
+                                     @drop="dropToRole($event,'deputy')">
+                                    <div class="column-label">副主管</div>
+                                    <template x-if="leadership.deputy">
+                                        <div class="staff-person" draggable="true"
+                                             @dragstart="dragStartPerson($event, leadership.deputy, 'leader', 'deputy')">
+                                            <span class="emp-id" x-text="leadership.deputy.employee_id||'-'"></span>
+                                            <span class="emp-native" x-text="leadership.deputy.native_name||leadership.deputy.display_name"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="!leadership.deputy">
+                                        <div class="staff-empty">拖入設為副主管</div>
+                                    </template>
+                                </div>
+                            </div>
+                            <!-- 右: 員工 -->
+                            <div class="staff-right">
+                                <div class="staff-column" style="height:100%;"
+                                     :class="{'drag-over': dragOverZone==='employee'}"
+                                     @dragover.prevent="onZoneDragOver($event,'employee')"
+                                     @dragleave="dragOverZone=null"
+                                     @drop="dropToEmployee($event)">
+                                    <div class="column-label">員工</div>
+                                    <template x-if="regularMembers.length > 0">
+                                        <div>
+                                            <template x-for="m in regularMembers" :key="m.id">
+                                                <div class="staff-person" draggable="true"
+                                                     @dragstart="dragStartPerson($event, m, 'member')">
+                                                    <span class="emp-id" x-text="m.employee_id||'-'"></span>
+                                                    <span class="emp-native" x-text="m.native_name||m.display_name"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="regularMembers.length===0">
+                                        <div class="staff-empty">拖入成為員工</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="drag-hint">拖入管理層/員工欄 | 拖到左側樹調職 | 拖到右側移出部門</div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 右側：未分配 -->
+    <div class="tg-unassigned-panel" :class="{'drag-over-unassigned': dragOverZone==='unassigned'}"
+         @dragover.prevent="onZoneDragOver($event,'unassigned')"
+         @dragleave="dragOverZone=null"
+         @drop="dropToUnassigned($event)">
+        <div class="panel-header">
+            未分配員工
+            <span style="font-weight:normal;font-size:11px;" x-text="'('+unassignedUsers.length+')'"></span>
+        </div>
+        <div class="panel-body">
+            <template x-for="u in unassignedUsers" :key="u.id">
+                <div class="staff-person" draggable="true"
+                     @dragstart="dragStartPerson($event, u, 'unassigned')">
+                    <span class="emp-id" x-text="u.employee_id||'-'"></span>
+                    <span class="emp-native" x-text="u.native_name||u.display_name"></span>
+                </div>
+            </template>
+            <template x-if="unassignedUsers.length===0">
+                <div class="staff-empty">所有員工皆已分配</div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="{{ url_for('static', filename='vendor/tree/tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/tree/tree.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/tree/tree-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/tree/renderers/tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='js/test-treegrid.js') }}"></script>
+{% endblock %}

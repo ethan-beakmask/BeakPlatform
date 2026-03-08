@@ -67,7 +67,7 @@
 <p><a href="{{ url_for('menu.create_menu') }}">[+ {{ _('新增選單項目') }}]</a></p>
 
 {% if menu_items %}
-<table border="1" cellpadding="8" cellspacing="0" class="menu-table">
+<table class="menu-table">
     <thead>
         <tr>
             <th>{{ _('選單項目') }}</th>
@@ -150,7 +150,7 @@
 <h2>{{ _('說明') }}</h2>
 
 <h3>{{ _('連結類型') }}</h3>
-<table border="1" cellpadding="6" cellspacing="0">
+<table class="data-table bordered">
     <tr><td><code>route</code></td><td>{{ _('Flask 路由端點 或 URL 路徑 (以 / 開頭)') }}</td></tr>
     <tr><td><code>url</code></td><td>{{ _('外部網址') }}</td></tr>
     <tr><td><code>page</code></td><td>{{ _('動態頁面') }}</td></tr>
@@ -159,7 +159,7 @@
 </table>
 
 <h3>{{ _('用戶類型說明') }}</h3>
-<table border="1" cellpadding="6" cellspacing="0">
+<table class="data-table bordered">
     <thead>
         <tr>
             <th>{{ _('類型') }}</th>
@@ -188,7 +188,7 @@
 <p><small>{{ _('每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。') }}</small></p>
 
 <h3>{{ _('底色說明') }}</h3>
-<table border="1" cellpadding="6" cellspacing="0">
+<table class="data-table bordered">
     <tr><td style="background:#b91c1c;color:white;width:120px">{{ _('紅底') }}</td><td>{{ _('系統管理員專屬') }}</td></tr>
     <tr><td style="background:#1d4ed8;color:white">{{ _('藍底') }}</td><td>{{ _('企業管理員專屬') }}</td></tr>
     <tr><td style="background:#111827;color:white">{{ _('黑底') }}</td><td>{{ _('員工 / 固定選單') }}</td></tr>

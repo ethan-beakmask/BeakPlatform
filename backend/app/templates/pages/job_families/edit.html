@@ -12,16 +12,16 @@
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">職系代碼</th>
+            <th style="width: 150px;">職系代碼</th>
             <td>
                 <code style="font-size: 1.2em;">{{ job_family.code }}</code>
-                <span style="color: #666; font-size: 0.9em;">(不可修改)</span>
+                <span class="text-muted" style="font-size: 0.9em;">(不可修改)</span>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職系名稱 *</th>
+            <th>職系名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        style="width: 100%;"
@@ -29,7 +29,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">英文名稱</th>
+            <th>英文名稱</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
                        style="width: 100%;"
@@ -37,7 +37,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職系類型 *</th>
+            <th>職系類型 *</th>
             <td>
                 {% for type_value, type_label in family_types %}
                 <label style="display: block; margin-bottom: 5px;">
@@ -49,7 +49,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">上層職系</th>
+            <th>上層職系</th>
             <td>
                 <select name="parent_secure_code" style="width: 100%;">
                     <option value="">-- 無 (根職系) --</option>
@@ -63,13 +63,13 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">描述</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', job_family.description or '') }}</textarea>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">排序順序</th>
+            <th>排序順序</th>
             <td>
                 <input type="number" name="sort_order" min="0"
                        style="width: 100%;"
@@ -77,7 +77,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">狀態</th>
+            <th>狀態</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_active" value="true"
@@ -98,7 +98,7 @@
 
 {% if not job_family.is_system_default %}
 <hr style="margin-top: 40px;">
-<h3 style="color: #c00;">危險區域</h3>
+<h3 class="text-danger">危險區域</h3>
 
 {% set confirm_cascade = request.args.get('confirm_cascade', '') | int %}
 {% if confirm_cascade %}
@@ -109,7 +109,7 @@
 <form method="POST" action="{{ url_for('job_families.delete_job_family', secure_code=job_family.secure_code) }}" style="display: inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="cascade_delete" value="true">
-    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;"
+    <button type="submit" class="btn btn-danger"
             onclick="return confirm('確定要刪除職系「{{ job_family.name }}」及其 {{ confirm_cascade }} 個職稱嗎？');">
         確認刪除職系及職稱
     </button>
@@ -122,7 +122,7 @@
 <form method="POST" action="{{ url_for('job_families.delete_job_family', secure_code=job_family.secure_code) }}"
       onsubmit="return confirm('確定要刪除職系「{{ job_family.name }}」嗎？');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+    <button type="submit" class="btn btn-danger">
         刪除此職系
     </button>
 </form>

@@ -6,8 +6,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h1 style="margin: 0;">{{ _('一般用戶管理') }}</h1>
     <div>
-        <a href="{{ url_for('users.create_user') }}"
-           style="padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;">
+        <a href="{{ url_for('users.create_user') }}" class="btn btn-primary">
             + {{ _('新增帳號') }}
         </a>
         <a href="{{ url_for('users.import_users') }}" style="margin-left: 10px; color: #2563eb;">{{ _('匯入CSV') }}</a>
@@ -33,9 +32,9 @@
 </div>
 
 {% if users %}
-<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+<table class="data-table bordered">
     <thead>
-        <tr style="background: #f9fafb;">
+        <tr>
             <th style="text-align: left;">{{ _('姓名') }}</th>
             <th style="text-align: left;">{{ _('帳號') }}</th>
             <th style="text-align: left;">{{ _('用戶編號') }}</th>
@@ -71,7 +70,7 @@
                 <form id="toggle-{{ user.secure_code }}" method="POST" action="{{ url_for('users.toggle_status', secure_code=user.secure_code) }}" style="display: none;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
-                <a href="#" style="color: #dc2626; margin-left: 8px;"
+                <a href="#" class="text-danger" style="margin-left: 8px;"
                    onclick="event.preventDefault(); if(confirm('{{ _('確定要刪除用戶「%(name)s」嗎？', name=user.display_name) }}')) document.getElementById('delete-{{ user.secure_code }}').submit();">
                     {{ _('刪除') }}
                 </a>
@@ -98,7 +97,7 @@
 {% endif %}
 
 {% else %}
-<p style="color: #6b7280;">{{ _('尚無一般用戶帳號。') }}<a href="{{ url_for('users.create_user') }}">{{ _('建立第一位用戶') }}</a></p>
+<p class="text-muted">{{ _('尚無一般用戶帳號。') }}<a href="{{ url_for('users.create_user') }}">{{ _('建立第一位用戶') }}</a></p>
 {% endif %}
 
 <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">

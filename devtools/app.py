@@ -11,7 +11,11 @@ from flask import Flask, render_template, request, abort, jsonify
 from sqlalchemy import create_engine, text, inspect
 import os
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder=os.path.join(os.path.dirname(__file__), '..', 'backend', 'app', 'static'),
+    static_url_path='/static'
+)
 
 # 資料庫連線
 DATABASE_URL = os.environ.get(

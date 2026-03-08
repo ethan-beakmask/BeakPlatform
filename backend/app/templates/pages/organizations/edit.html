@@ -17,7 +17,7 @@
 
 <form method="POST" x-data="orgEditForm()" @submit="handleSubmit($event)">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="4" cellspacing="0">
+    <table class="info-table">
         <tr>
             <td>網域名稱</td>
             <td><code>{{ organization.domain_name }}</code> (不可變更)</td>
@@ -45,7 +45,7 @@
                     <option value="false">停用</option>
                 </select>
                 {% if active_contracts %}
-                <br><small style="color: #666;">* 此企業有 {{ active_contracts|length }} 份未到期合約</small>
+                <br><small class="text-muted">* 此企業有 {{ active_contracts|length }} 份未到期合約</small>
                 {% endif %}
             </td>
         </tr>

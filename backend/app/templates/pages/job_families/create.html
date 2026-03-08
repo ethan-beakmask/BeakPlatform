@@ -15,9 +15,9 @@
       x-data="{...codeInputMixin('job_family'), codeval: '{{ request.form.get('code', '') }}'}"
       @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">職系名稱 *</th>
+            <th style="width: 150px;">職系名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        placeholder="如 工程技術職" style="width: 100%;"
@@ -26,18 +26,18 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職系代碼</th>
+            <th>職系代碼</th>
             <td>
                 <input type="text" name="code" maxlength="20" x-ref="codeField"
                        :placeholder="_ci_generatedCode || '留空自動產生'" style="width: 100%;"
                        x-model="codeval"
                        @input.debounce.500ms="ciValidateCode(codeval)">
-                <div style="font-size: 0.8em; color: #666;">選填，留空自動產生。如 MGR, SALES, TECH</div>
+                <div class="text-muted" style="font-size: 0.8em;">選填，留空自動產生。如 MGR, SALES, TECH</div>
                 {% include "partials/_code_input.html" %}
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">英文名稱</th>
+            <th>英文名稱</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
                        placeholder="如 Technical Position" style="width: 100%;"
@@ -45,7 +45,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職系類型 *</th>
+            <th>職系類型 *</th>
             <td>
                 {% for type_value, type_label in family_types %}
                 <label style="display: block; margin-bottom: 5px;">
@@ -57,7 +57,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">上層職系</th>
+            <th>上層職系</th>
             <td>
                 <select name="parent_secure_code" style="width: 100%;">
                     <option value="">-- 無 (根職系) --</option>
@@ -68,18 +68,18 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div style="font-size: 0.8em; color: #666;">子職系可選擇歸屬的上層職系</div>
+                <div class="text-muted" style="font-size: 0.8em;">子職系可選擇歸屬的上層職系</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">描述</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;"
                           placeholder="職系的詳細說明">{{ request.form.get('description', '') }}</textarea>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">排序順序</th>
+            <th>排序順序</th>
             <td>
                 <input type="number" name="sort_order" min="0"
                        style="width: 100%;"

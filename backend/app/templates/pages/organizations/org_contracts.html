@@ -32,9 +32,9 @@
 <!-- 企業資料 -->
 <h2>企業資料 <a href="{{ url_for('organizations.edit_org', secure_code=selected_org.secure_code) }}">[編輯]</a></h2>
 
-<table border="0" cellpadding="4" cellspacing="0">
+<table class="info-table">
     <tr>
-        <td width="120">企業名稱</td>
+        <td style="width: 120px;">企業名稱</td>
         <td>{{ selected_org.name }}</td>
     </tr>
     <tr>
@@ -73,7 +73,7 @@
             永久有效
             {% elif contract_period %}
             {{ contract_period.start.strftime('%Y-%m-%d') }} ~ {{ contract_period.end.strftime('%Y-%m-%d') }}
-            （{% if contract_period.is_expired %}<span style="color: red;">{{ contract_period.remaining }}</span>{% else %}<span style="color: green;">剩餘 {{ contract_period.remaining }}</span>{% endif %}）
+            （{% if contract_period.is_expired %}<span class="text-danger">{{ contract_period.remaining }}</span>{% else %}<span style="color: green;">剩餘 {{ contract_period.remaining }}</span>{% endif %}）
             {% else %}
             尚無合約
             {% endif %}
@@ -117,7 +117,7 @@
 <p><a href="{{ url_for('organizations.add_contract', org_secure_code=selected_org.secure_code) }}">[+ 新增合約]</a></p>
 
 {% if contracts %}
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="data-table bordered">
     <thead>
         <tr>
             <th>合約編號</th>
@@ -137,7 +137,7 @@
             <td>{% if contract.amount %}{{ "{:,.0f}".format(contract.amount) }}{% else %}-{% endif %}</td>
             <td>
                 {% if contract.status == 'DISABLED' %}停用
-                {% elif contract.is_expired %}<span style="color: red;">已過期</span>
+                {% elif contract.is_expired %}<span class="text-danger">已過期</span>
                 {% elif contract.is_active %}<span style="color: green;">有效</span>
                 {% else %}尚未生效{% endif %}
             </td>

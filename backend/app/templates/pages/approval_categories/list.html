@@ -20,14 +20,14 @@
     <a href="{{ url_for('approval_categories.create_category') }}">[+ 新增類別]</a>
 </p>
 
-<p style="color: #666; font-size: 0.9em;">
+<p class="text-muted" style="font-size: 0.9em;">
     說明：管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。
 </p>
 
 {% if categories %}
-<table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;">
     <thead>
-        <tr style="background: #f0f0f0;">
+        <tr>
             <th>代碼</th>
             <th>名稱</th>
             <th>英文名稱</th>
@@ -39,12 +39,12 @@
     </thead>
     <tbody>
         {% for cat in categories %}
-        <tr{% if not cat.is_active %} style="color: #999;"{% endif %}>
+        <tr{% if not cat.is_active %} class="text-muted"{% endif %}>
             <td><code>{{ cat.code }}</code></td>
             <td>
                 <strong>{{ cat.name }}</strong>
                 {% if cat.is_system_default %}
-                <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
                 {% endif %}
             </td>
             <td>{{ cat.name_en or '-' }}</td>
@@ -66,9 +66,9 @@
 
 {% if categories and job_levels %}
 <h2 style="margin-top: 40px;">核決金額矩陣</h2>
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="data-table bordered">
     <thead>
-        <tr style="background: #e5e7eb;">
+        <tr>
             <th>職等</th>
             {% for cat in categories %}
             <th style="text-align: right;">{{ cat.name }}({{ cat.currency }})</th>

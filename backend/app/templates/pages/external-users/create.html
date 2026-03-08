@@ -26,27 +26,27 @@
 <form method="POST" style="max-width: 600px;" x-data="passwordForm()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <table border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">姓名 *</th>
+            <th style="width: 150px;">姓名 *</th>
             <td>
                 <input type="text" name="display_name" value="{{ form_data.get('display_name', '') }}"
                        required maxlength="100" style="width: 100%;">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">Email *</th>
+            <th>Email *</th>
             <td>
                 <input type="email" name="email" value="{{ form_data.get('email', '') }}"
                        required maxlength="255" style="width: 100%;"
                        placeholder="例如: guest@gmail.com">
-                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                     請輸入完整的 Email 地址（此為登入帳號）
                 </div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">密碼 *</th>
+            <th style="vertical-align: top;">密碼 *</th>
             <td>
                 <div style="display: flex; gap: 8px; align-items: start;">
                     <div style="flex: 1;">
@@ -66,7 +66,7 @@
                 <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
-                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                        <div class="text-danger" style="font-size: 12px;" x-text="'• ' + err"></div>
                     </template>
                 </div>
                 <!-- 驗證通過 -->
@@ -77,7 +77,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">歸屬群組 *</th>
+            <th>歸屬群組 *</th>
             <td>
                 <select name="group_code" required style="width: 100%;">
                     <option value="">-- 請選擇 --</option>
@@ -87,20 +87,20 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                     外部人員必須歸屬至少一個群組
                 </div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">編號</th>
+            <th>編號</th>
             <td>
                 <span style="color: #059669;">自動產生</span>
                 <span style="color: #6b7280; margin-left: 8px;">（使用規則：{{ default_rule.name }}）</span>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">備註</th>
+            <th style="vertical-align: top;">備註</th>
             <td>
                 <textarea name="notes" rows="3" style="width: 100%;" maxlength="1000"
                           placeholder="選填，可記錄公司、聯絡方式等">{{ form_data.get('notes', '') }}</textarea>
@@ -108,8 +108,7 @@
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit"
-                        style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <button type="submit" class="btn btn-primary">
                     建立外部人員
                 </button>
                 <a href="{{ url_for('external_users.list_external_users') }}" style="margin-left: 20px; color: #6b7280;">取消</a>

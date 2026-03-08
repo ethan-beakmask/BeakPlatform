@@ -2,56 +2,11 @@
 
 {% block title %}職稱管理 - BeakMask{% endblock %}
 
-{% block content %}
-<style>
-    .family-section {
-        margin-bottom: 30px;
-    }
-    .family-header {
-        background: #1f2937;
-        color: white;
-        padding: 8px 12px;
-        font-weight: bold;
-        margin-bottom: 0;
-    }
-    .titles-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .titles-table th,
-    .titles-table td {
-        border: 1px solid #d1d5db;
-        padding: 6px 10px;
-        text-align: left;
-    }
-    .titles-table thead th {
-        background: #f0f0f0;
-    }
-    .titles-table tbody tr:hover {
-        background: #f9fafb;
-    }
-    .inactive-row {
-        color: #999;
-    }
-    .supervisor-badge {
-        background: #fef3c7;
-        color: #92400e;
-        padding: 1px 6px;
-        border-radius: 3px;
-        font-size: 0.75em;
-        margin-left: 4px;
-    }
-    .empty-family {
-        color: #9ca3af;
-        font-style: italic;
-        padding: 12px;
-        text-align: center;
-        background: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-top: none;
-    }
-</style>
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/job-titles.css') }}">
+{% endblock %}
 
+{% block content %}
 <h1>職稱管理</h1>
 
 <p>
@@ -69,7 +24,7 @@
     <a href="{{ url_for('job_titles.create_job_title') }}">[+ 新增職稱]</a>
 </p>
 
-<p style="color: #666; font-size: 0.9em;">
+<p class="text-muted" style="font-size: 0.9em;">
     說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。
 </p>
 
@@ -78,7 +33,7 @@
 <div class="family-section">
     <div class="family-header">{{ family.name }}</div>
     {% if titles %}
-    <table class="titles-table">
+    <table class="data-table compact bordered">
         <thead>
             <tr>
                 <th style="width: 100px;">代碼</th>
@@ -98,7 +53,7 @@
                     <strong>{{ title.name }}</strong>
                     {% if title.is_supervisor %}<span class="supervisor-badge">管理職</span>{% endif %}
                     {% if title.is_system_default %}
-                    <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                    <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
                     {% endif %}
                 </td>
                 <td>{{ title.name_en or '-' }}</td>
@@ -130,7 +85,7 @@
 {% if titles_by_family.get('__unassigned__', []) %}
 <div class="family-section">
     <div class="family-header" style="background: #6b7280;">未分類</div>
-    <table class="titles-table">
+    <table class="data-table compact bordered">
         <thead>
             <tr>
                 <th style="width: 100px;">代碼</th>
@@ -177,7 +132,7 @@
 <p>尚無職稱資料。<a href="{{ url_for('job_titles.create_job_title') }}">建立第一個職稱</a></p>
 {% endif %}
 
-<p style="margin-top: 20px; color: #666;">
+<p class="text-muted mt-16">
     共 {{ total_count }} 個職稱
 </p>
 {% endblock %}

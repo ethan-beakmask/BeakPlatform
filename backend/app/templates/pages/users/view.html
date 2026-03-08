@@ -85,7 +85,7 @@
         <tbody>
             {% for dept in cross_departments %}
             <tr>
-                <td>{{ dept.name }}{% if dept.code %} <span style="color: #999;">({{ dept.code }})</span>{% endif %}</td>
+                <td>{{ dept.name }}{% if dept.code %} <span class="text-muted">({{ dept.code }})</span>{% endif %}</td>
                 <td>
                     {% if dept.role_type in ['MANAGER', 'DEPUTY'] %}
                     <strong style="color: #1565c0;">{{ dept.role }}</strong>
@@ -101,7 +101,7 @@
         </tbody>
     </table>
     {% else %}
-    <p style="color: #999; padding: 8px 12px;">無跨部門支援關係</p>
+    <p class="text-muted" style="padding: 8px 12px;">無跨部門支援關係</p>
     {% endif %}
 
     <div class="section-title optional">個人資料</div>
@@ -153,7 +153,7 @@
         <tbody>
             {% for group in groups %}
             <tr>
-                <td>{{ group.name }}{% if group.code %} <span style="color: #999;">({{ group.code }})</span>{% endif %}</td>
+                <td>{{ group.name }}{% if group.code %} <span class="text-muted">({{ group.code }})</span>{% endif %}</td>
                 <td>
                     {% if group.role_type in ['MANAGER', 'DEPUTY'] %}
                     <strong style="color: #1565c0;">{{ group.role }}</strong>
@@ -169,7 +169,7 @@
         </tbody>
     </table>
     {% else %}
-    <p style="color: #999; padding: 8px 12px;">尚未參加任何社團</p>
+    <p class="text-muted" style="padding: 8px 12px;">尚未參加任何社團</p>
     {% endif %}
 </div>
 

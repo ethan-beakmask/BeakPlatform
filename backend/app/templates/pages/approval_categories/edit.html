@@ -23,16 +23,16 @@
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">類別代碼</th>
+            <th style="width: 150px;">類別代碼</th>
             <td>
                 <code style="font-size: 1.2em;">{{ category.code }}</code>
-                <span style="color: #666; font-size: 0.9em;">(不可修改)</span>
+                <span class="text-muted" style="font-size: 0.9em;">(不可修改)</span>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">類別名稱 *</th>
+            <th>類別名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        style="width: 100%;"
@@ -40,7 +40,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">英文名稱</th>
+            <th>英文名稱</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
                        style="width: 100%;"
@@ -48,7 +48,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">幣別</th>
+            <th>幣別</th>
             <td>
                 <select name="currency" style="width: 100%;">
                     <option value="TWD" {% if category.currency == 'TWD' %}selected{% endif %}>TWD</option>
@@ -59,7 +59,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">排序</th>
+            <th>排序</th>
             <td>
                 <input type="number" name="sort_order" min="0"
                        style="width: 100%;"
@@ -67,13 +67,13 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">描述</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', category.description or '') }}</textarea>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">狀態</th>
+            <th>狀態</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_active" value="true"
@@ -93,17 +93,17 @@
 
 {% if not category.is_system_default %}
 <hr style="margin-top: 40px;">
-<h3 style="color: #c00;">危險區域</h3>
+<h3 class="text-danger">危險區域</h3>
 <form method="POST" action="{{ url_for('approval_categories.delete_category', secure_code=category.secure_code) }}"
       onsubmit="return confirm('確定要刪除類別「{{ category.name }}」嗎？此操作無法復原。');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+    <button type="submit" class="btn btn-danger">
         刪除此類別
     </button>
 </form>
 {% else %}
 <hr style="margin-top: 40px;">
-<p style="color: #666;">
+<p class="text-muted">
     此為系統預設類別，不可刪除。
 </p>
 {% endif %}

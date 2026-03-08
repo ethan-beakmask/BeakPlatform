@@ -14,7 +14,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#f87171{% else %}#4ade80{% endif %};">
+<p class="{% if category == 'error' %}text-danger{% else %}text-success{% endif %}">
     <strong>{{ message }}</strong>
 </p>
 {% endfor %}
@@ -23,7 +23,7 @@
 
 <form method="POST" x-data="passwordForm({autoGenerate: true})" x-init="init()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0">
+    <table class="info-table">
         <tr>
             <td><label for="username">帳號 *</label></td>
             <td>
@@ -82,7 +82,7 @@
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit">建立帳號</button>
+                <button type="submit" class="btn btn-primary">建立帳號</button>
                 <a href="{{ url_for('sys_accounts.list_accounts') }}" style="margin-left: 10px;">[取消]</a>
             </td>
         </tr>

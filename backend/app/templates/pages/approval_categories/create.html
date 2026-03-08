@@ -20,9 +20,9 @@
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left;">類別名稱 *</th>
+            <th>類別名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        placeholder="如 零用金" style="width: 100%;"
@@ -30,7 +30,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">英文名稱</th>
+            <th>英文名稱</th>
             <td>
                 <input type="text" name="name_en" id="name_en" maxlength="100"
                        placeholder="如 Petty Cash" style="width: 100%;"
@@ -39,16 +39,16 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; width: 150px;">類別代碼 *</th>
+            <th style="width: 150px;">類別代碼 *</th>
             <td>
                 <input type="text" name="code" id="code" required maxlength="50"
                        placeholder="如 PETTY_CASH" style="width: 100%;"
                        value="{{ request.form.get('code', '') }}">
-                <div style="font-size: 0.8em; color: #666;">自動從英文名稱產生，可手動修改</div>
+                <div class="text-muted" style="font-size: 0.8em;">自動從英文名稱產生，可手動修改</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">幣別</th>
+            <th>幣別</th>
             <td>
                 <select name="currency" style="width: 100%;">
                     <option value="TWD" {% if request.form.get('currency', 'TWD') == 'TWD' %}selected{% endif %}>TWD</option>
@@ -59,7 +59,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">排序</th>
+            <th>排序</th>
             <td>
                 <input type="number" name="sort_order" min="0"
                        placeholder="0" style="width: 100%;"
@@ -67,7 +67,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">描述</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;"
                           placeholder="類別的詳細說明">{{ request.form.get('description', '') }}</textarea>

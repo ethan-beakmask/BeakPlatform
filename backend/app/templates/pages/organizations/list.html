@@ -155,7 +155,7 @@
                         <td>
                             {% if selected_org.is_system_org %}系統企業（永久有效）
                             {% elif selected_org.is_active %}啟用
-                            {% else %}<span style="color: #dc2626;">停用</span>{% endif %}
+                            {% else %}<span class="text-danger">停用</span>{% endif %}
                         </td>
                     </tr>
                     <tr>
@@ -238,7 +238,7 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p style="color: #999; text-align: center; padding: 20px;">
+                <p class="text-muted" style="text-align: center; padding: 20px;">
                     {% if selected_org.is_system_org %}
                     系統企業無需建立合約
                     {% else %}

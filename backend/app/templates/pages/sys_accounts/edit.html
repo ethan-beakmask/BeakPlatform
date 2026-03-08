@@ -14,7 +14,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#f87171{% else %}#4ade80{% endif %};">
+<p class="{% if category == 'error' %}text-danger{% else %}text-success{% endif %}">
     <strong>{{ message }}</strong>
 </p>
 {% endfor %}
@@ -23,7 +23,7 @@
 
 <form method="POST" x-data="passwordForm()" x-init="init()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0">
+    <table class="info-table">
         <tr>
             <td>帳號</td>
             <td><code>{{ account.username }}@system.local</code> (不可變更)</td>
@@ -43,7 +43,7 @@
             <td><label for="is_active">狀態</label></td>
             <td>
                 {% if is_self %}
-                    <span style="color: #4ade80;">啟用</span> (不能停用自己)
+                    <span class="text-success">啟用</span> (不能停用自己)
                     <input type="hidden" name="is_active" value="1">
                 {% else %}
                     <select id="is_active" name="is_active">
@@ -91,7 +91,7 @@
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit">儲存變更</button>
+                <button type="submit" class="btn btn-primary">儲存變更</button>
                 <a href="{{ url_for('sys_accounts.list_accounts') }}" style="margin-left: 10px;">[取消]</a>
             </td>
         </tr>
@@ -106,13 +106,13 @@
 <form method="POST" action="{{ url_for('sys_accounts.delete_account', secure_code=account.secure_code) }}"
       onsubmit="return confirm('確定要刪除此系統管理員嗎？');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" style="color: #f87171;">刪除帳號</button>
+    <button type="submit" class="btn btn-danger">刪除帳號</button>
 </form>
 {% endif %}
 
 <hr>
 <h3>帳號資訊</h3>
-<table border="0" cellpadding="4" cellspacing="0" style="color: #9ca3af;">
+<table class="info-table text-muted">
     <tr>
         <td>建立時間</td>
         <td>{{ account.created_at.strftime('%Y-%m-%d %H:%M') if account.created_at else '-' }}</td>

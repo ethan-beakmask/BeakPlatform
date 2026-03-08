@@ -23,7 +23,7 @@
 {% endif %}
 {% endwith %}
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="info-table">
     <tr>
         <th>模組代碼</th>
         <td><code>{{ module.code }}</code></td>
@@ -57,7 +57,7 @@
 <hr>
 <h2>頁面列表</h2>
 {% if pages %}
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="data-table bordered">
     <thead>
         <tr>
             <th>頁面標題</th>
@@ -86,7 +86,7 @@
 <hr>
 <h2>選單結構</h2>
 {% if menu_items %}
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="data-table bordered">
     <thead>
         <tr>
             <th>選單標題</th>

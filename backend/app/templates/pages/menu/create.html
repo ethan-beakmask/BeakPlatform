@@ -23,7 +23,7 @@
       x-data="{...codeInputMixin('menu_item'), codeval: ''}"
       @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="4" cellspacing="0">
+    <table class="info-table">
         <tr>
             <td><label for="title">{{ _('選單標題 (繁中)') }} *</label></td>
             <td>

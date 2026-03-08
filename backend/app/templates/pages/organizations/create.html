@@ -25,7 +25,7 @@
       x-init="init()"
       @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="4" cellspacing="0">
+    <table class="info-table">
         <tr>
             <td><label for="name">企業名稱 *</label></td>
             <td>
@@ -60,7 +60,7 @@
                        style="text-transform: lowercase;"
                        value="{{ request.form.get('domain_name', '') }}">
                 <br><small>例: example.com (用於登入帳號，如 admin@example.com，會自動轉小寫)</small>
-                <br><small style="color: #666;">不可使用公共信箱 Domain (如 gmail.com, yahoo.com)</small>
+                <br><small class="text-muted">不可使用公共信箱 Domain (如 gmail.com, yahoo.com)</small>
             </td>
         </tr>
         <tr>
@@ -90,7 +90,7 @@
                     <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
                 </div>
                 <small x-text="passwordRequirements"></small>
-                <br><small style="color: #666;">如不填則使用預設密碼 (首次登入需變更)</small>
+                <br><small class="text-muted">如不填則使用預設密碼 (首次登入需變更)</small>
                 <div class="password-errors" x-show="password && passwordErrors.length > 0">
                     <template x-for="err in passwordErrors" :key="err">
                         <div x-text="'• ' + err"></div>

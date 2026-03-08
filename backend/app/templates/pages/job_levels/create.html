@@ -15,9 +15,9 @@
       x-data="{...codeInputMixin('job_level'), codeval: '{{ request.form.get('code', '') }}'}"
       @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">職等名稱 *</th>
+            <th style="width: 150px;">職等名稱 *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        placeholder="如 職員級" style="width: 100%;"
@@ -26,18 +26,18 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職等代碼</th>
+            <th>職等代碼</th>
             <td>
                 <input type="text" name="code" maxlength="20" x-ref="codeField"
                        :placeholder="_ci_generatedCode || '留空自動產生'" style="width: 100%;"
                        x-model="codeval"
                        @input.debounce.500ms="ciValidateCode(codeval)">
-                <div style="font-size: 0.8em; color: #666;">選填，留空自動產生。建議格式：L + 序號，如 L100, L150</div>
+                <div class="text-muted" style="font-size: 0.8em;">選填，留空自動產生。建議格式：L + 序號，如 L100, L150</div>
                 {% include "partials/_code_input.html" %}
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">英文名稱</th>
+            <th>英文名稱</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
                        placeholder="如 Staff Level" style="width: 100%;"
@@ -45,18 +45,18 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">職等序號 *</th>
+            <th>職等序號 *</th>
             <td>
                 <input type="number" name="level_order" required min="0" max="9999"
                        placeholder="如 150" style="width: 100%;"
                        value="{{ request.form.get('level_order', '') }}">
-                <div style="font-size: 0.8em; color: #666;">
+                <div class="text-muted" style="font-size: 0.8em;">
                     數字越大職等越高。使用等距跳號：0, 100, 200... 900
                 </div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">管理職等</th>
+            <th>管理職等</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_manager_level" value="true"
@@ -66,7 +66,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">管理幅度</th>
+            <th>管理幅度</th>
             <td>
                 <input type="text" name="management_scope" maxlength="100"
                        placeholder="如 單一部門、全公司" style="width: 100%;"
@@ -74,7 +74,7 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">描述</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;"
                           placeholder="職等的詳細說明">{{ request.form.get('description', '') }}</textarea>
@@ -91,7 +91,7 @@
 
 <hr>
 <h3>職等序號參考</h3>
-<table border="1" cellpadding="4" cellspacing="0" style="font-size: 0.9em;">
+<table class="data-table bordered" style="font-size: 0.9em;">
     <tr>
         <th>代碼</th><th>序號</th><th>名稱</th>
     </tr>

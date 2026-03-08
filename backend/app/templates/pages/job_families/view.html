@@ -10,21 +10,21 @@
     <a href="{{ url_for('job_families.edit_job_family', secure_code=job_family.secure_code) }}">[編輯]</a>
 </p>
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="info-table">
     <tr>
-        <th style="text-align: left; background: #f0f0f0; width: 150px;">職系代碼</th>
+        <th style="width: 150px;">職系代碼</th>
         <td><code>{{ job_family.code }}</code></td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">職系名稱</th>
+        <th>職系名稱</th>
         <td>{{ job_family.name }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">英文名稱</th>
+        <th>英文名稱</th>
         <td>{{ job_family.name_en or '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">職系類型</th>
+        <th>職系類型</th>
         <td>
             {% if job_family.family_type == 'MANAGER' %}
             <strong style="color: #0066cc;">管理職</strong> (People Manager)
@@ -34,7 +34,7 @@
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">上層職系</th>
+        <th>上層職系</th>
         <td>
             {% if job_family.parent %}
             <a href="{{ url_for('job_families.view_job_family', secure_code=job_family.parent.secure_code) }}">
@@ -46,19 +46,19 @@
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">描述</th>
+        <th>描述</th>
         <td>{{ job_family.description or '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">排序順序</th>
+        <th>排序順序</th>
         <td>{{ job_family.sort_order }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">狀態</th>
+        <th>狀態</th>
         <td>{% if job_family.is_active %}啟用{% else %}停用{% endif %}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">系統預設</th>
+        <th>系統預設</th>
         <td>{% if job_family.is_system_default %}是 (不可刪除){% else %}否{% endif %}</td>
     </tr>
 </table>

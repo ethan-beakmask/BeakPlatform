@@ -12,16 +12,16 @@
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
             <th style="text-align: left; width: 150px;">授權人</th>
             <td>
                 {% if delegation.delegator %}
                 <strong>{{ delegation.delegator.display_name }}</strong>
                 {% else %}
-                <span style="color: #999;">-</span>
+                <span class="text-muted">-</span>
                 {% endif %}
-                <span style="color: #666;">(不可修改)</span>
+                <span class="text-muted">(不可修改)</span>
             </td>
         </tr>
         <tr>
@@ -30,9 +30,9 @@
                 {% if delegation.delegate %}
                 <strong>{{ delegation.delegate.display_name }}</strong>
                 {% else %}
-                <span style="color: #999;">-</span>
+                <span class="text-muted">-</span>
                 {% endif %}
-                <span style="color: #666;">(不可修改)</span>
+                <span class="text-muted">(不可修改)</span>
             </td>
         </tr>
         <tr>
@@ -79,20 +79,20 @@
             <th style="text-align: left;">目前狀態</th>
             <td>
                 {% if delegation.status == 'ACTIVE' %}
-                <span style="color: green;">生效中</span>
+                <span class="text-success">生效中</span>
                 {% elif delegation.status == 'PENDING' %}
-                <span style="color: orange;">待生效</span>
+                <span class="text-warning">待生效</span>
                 {% elif delegation.status == 'EXPIRED' %}
-                <span style="color: #999;">已過期</span>
+                <span class="text-muted">已過期</span>
                 {% elif delegation.status == 'REVOKED' %}
-                <span style="color: red;">已撤銷</span>
+                <span class="text-danger">已撤銷</span>
                 {% endif %}
-                <span style="color: #666; font-size: 0.9em;">(依日期自動判定)</span>
+                <span class="text-muted" style="font-size: 0.9em;">(依日期自動判定)</span>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">儲存變更</button>
+                <button type="submit" class="btn btn-primary">儲存變更</button>
                 <a href="{{ url_for('delegations.view_delegation', secure_code=delegation.secure_code) }}"
                    style="margin-left: 20px;">取消</a>
             </td>
@@ -101,19 +101,19 @@
 </form>
 
 <hr style="margin-top: 40px;">
-<h3 style="color: #c00;">危險區域</h3>
+<h3 class="text-danger">危險區域</h3>
 <div style="display: flex; gap: 20px;">
     <form method="POST" action="{{ url_for('delegations.revoke_delegation', secure_code=delegation.secure_code) }}"
           onsubmit="return confirm('確定要撤銷此代理授權嗎？');">
         <input type="hidden" name="revoke_reason" value="由管理員手動撤銷">
-        <button type="submit" style="background: #f90; color: white; border: none; padding: 8px 16px;">
+        <button type="submit" class="btn btn-warning">
             撤銷授權
         </button>
     </form>
     <form method="POST" action="{{ url_for('delegations.delete_delegation', secure_code=delegation.secure_code) }}"
           onsubmit="return confirm('確定要刪除此代理授權紀錄嗎？');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+        <button type="submit" class="btn btn-danger">
             刪除紀錄
         </button>
     </form>

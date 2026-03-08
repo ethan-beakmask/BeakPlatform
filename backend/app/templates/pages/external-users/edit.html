@@ -60,8 +60,7 @@
         <tr>
             <th></th>
             <td style="padding-top: 15px;">
-                <button type="submit"
-                        style="padding: 8px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                <button type="submit" class="btn btn-primary">
                     儲存變更
                 </button>
                 <a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}"
@@ -98,7 +97,7 @@
                 <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
-                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                        <div class="text-danger" style="font-size: 12px;" x-text="'• ' + err"></div>
                     </template>
                 </div>
                 <!-- 驗證通過 -->
@@ -140,7 +139,7 @@
     <tbody>
         {% for group in current_groups %}
         <tr>
-            <td>{{ group.unit.name }}{% if group.unit.code %} <span style="color: #999;">({{ group.unit.code }})</span>{% endif %}</td>
+            <td>{{ group.unit.name }}{% if group.unit.code %} <span class="text-muted">({{ group.unit.code }})</span>{% endif %}</td>
             <td>
                 {% if group.role_type in ['MANAGER', 'DEPUTY'] %}
                 <strong style="color: #1565c0;">{{ group.role_name }}</strong>
@@ -169,7 +168,7 @@
     </tbody>
 </table>
 {% else %}
-<p style="color: #dc2626;">此外部人員未加入任何群組！請立即加入群組。</p>
+<p class="text-danger">此外部人員未加入任何群組！請立即加入群組。</p>
 {% endif %}
 
 <!-- 加入新群組 -->

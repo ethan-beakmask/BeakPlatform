@@ -36,7 +36,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="section-title">帳號資訊</div>
-        <table class="form-table" border="0">
+        <table class="form-table">
             <tr>
                 <td>帳號</td>
                 <td><span class="readonly-info">{{ user.email }}</span>
@@ -142,7 +142,7 @@
                     <!-- 驗證錯誤 -->
                     <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                         <template x-for="err in passwordErrors" :key="err">
-                            <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                            <div class="text-danger" style="font-size: 12px;" x-text="'• ' + err"></div>
                         </template>
                     </div>
                     <!-- 驗證通過 -->
@@ -159,7 +159,7 @@
         </table>
 
         <div class="section-title optional">組織資訊</div>
-        <table class="form-table" border="0">
+        <table class="form-table">
             <tr>
                 <td><label for="employee_id">用戶編號</label></td>
                 <td>
@@ -209,7 +209,7 @@
         </table>
 
         <div class="section-title optional">個人資料</div>
-        <table class="form-table" border="0">
+        <table class="form-table">
             <tr>
                 <td><label for="nickname">暱稱</label></td>
                 <td>
@@ -281,7 +281,7 @@
         </table>
 
         <div class="section-title optional">聯絡方式</div>
-        <table class="form-table" border="0">
+        <table class="form-table">
             <tr>
                 <td><label for="backup_email_1">通知 Email</label></td>
                 <td>

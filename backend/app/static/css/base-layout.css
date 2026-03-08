@@ -1,0 +1,142 @@
+/* =============================================
+   BeakPlatform Base Layout CSS
+   =============================================
+   從 base.html 抽離的佈局樣式。
+   由 base.html 全域引入，僅次於 common.css。
+   ============================================= */
+
+/* ------------------------------------------
+   Body 基礎
+   ------------------------------------------ */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    background: #f5f5f5;
+}
+a { color: var(--color-primary); }
+a:hover { color: #004499; }
+code { background: #e8e8e8; padding: 2px 4px; font-family: monospace; }
+table { border-collapse: collapse; }
+th { text-align: left; background: #f0f0f0; }
+button { cursor: pointer; }
+input::placeholder, textarea::placeholder {
+    color: #999;
+    opacity: 0.5;
+}
+
+/* ------------------------------------------
+   Navbar (頂部導覽列)
+   ------------------------------------------ */
+.bk-navbar {
+    background: white;
+    border-bottom: 1px solid #ccc;
+    padding: 8px 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.bk-navbar a { text-decoration: none; }
+.bk-navbar-content {
+    display: flex;
+    align-items: center;
+}
+.bk-navbar-logo {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin-right: auto;
+}
+.bk-navbar-user { margin-left: 16px; color: #666; }
+
+/* ------------------------------------------
+   Menubar (選單列)
+   ------------------------------------------ */
+.bk-menubar {
+    background: #333;
+    padding: 4px 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.bk-menubar a {
+    color: #ccc;
+    text-decoration: none;
+    padding: 8px 12px;
+    display: inline-block;
+}
+.bk-menubar a:hover { color: white; background: #444; }
+
+/* ------------------------------------------
+   Menubar 權限等級著色 (CSV 權限顏色表, 4 級 + cross)
+   ------------------------------------------ */
+/* 系統管理員: 紅底 */
+.bk-menubar a.menu-sys-only,
+.bk-menubar .bk-menu-trigger.menu-sys-only { background: #b91c1c; color: white; }
+.bk-menubar a.menu-sys-cross,
+.bk-menubar .bk-menu-trigger.menu-sys-cross { background: #b91c1c; color: #fde047; }
+/* 企業管理員: 藍底 */
+.bk-menubar a.menu-org-only,
+.bk-menubar .bk-menu-trigger.menu-org-only { background: #1d4ed8; color: white; }
+.bk-menubar a.menu-org-cross,
+.bk-menubar .bk-menu-trigger.menu-org-cross { background: #1d4ed8; color: #fde047; }
+/* 企業員工: 黑底 */
+.bk-menubar a.menu-user-only,
+.bk-menubar .bk-menu-trigger.menu-user-only { background: #111827; color: white; }
+.bk-menubar a.menu-user-cross,
+.bk-menubar .bk-menu-trigger.menu-user-cross { background: #111827; color: #fde047; }
+/* 外部人員: 黃底黑字 */
+.bk-menubar a.menu-ext-only,
+.bk-menubar .bk-menu-trigger.menu-ext-only { background: #f59e0b; color: #111827; }
+/* 固定項目: 黑底白字 */
+.bk-menubar a.menu-fixed-black,
+.bk-menubar .bk-menu-trigger.menu-fixed-black { background: #111827; color: white; }
+/* 下拉選單內項目著色 */
+.bk-menu-dropdown-content a.menu-sys-only { background: #b91c1c; color: white; }
+.bk-menu-dropdown-content a.menu-sys-cross { background: #b91c1c; color: #fde047; }
+.bk-menu-dropdown-content a.menu-org-only { background: #1d4ed8; color: white; }
+.bk-menu-dropdown-content a.menu-org-cross { background: #1d4ed8; color: #fde047; }
+.bk-menu-dropdown-content a.menu-user-only { background: #111827; color: white; }
+.bk-menu-dropdown-content a.menu-user-cross { background: #111827; color: #fde047; }
+.bk-menu-dropdown-content a.menu-ext-only { background: #f59e0b; color: #111827; }
+.bk-menu-dropdown-content a.menu-fixed-black { background: #111827; color: white; }
+
+/* ------------------------------------------
+   Menubar 下拉選單
+   ------------------------------------------ */
+.bk-menubar-sep { color: #666; margin: 0 4px; }
+.bk-menu-dropdown {
+    display: inline-block;
+    position: relative;
+}
+.bk-menu-trigger {
+    color: #ccc;
+    padding: 8px 12px;
+    display: inline-block;
+    cursor: pointer;
+}
+.bk-menu-trigger:hover { color: white; background: #444; }
+.bk-menu-dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #444;
+    min-width: 160px;
+    z-index: 100;
+    border-radius: 0 0 4px 4px;
+}
+.bk-menu-dropdown:hover .bk-menu-dropdown-content { display: block; }
+.bk-menu-dropdown-content a {
+    display: block;
+    padding: 8px 12px;
+}
+
+/* ------------------------------------------
+   Main Content
+   ------------------------------------------ */
+.main-content {
+    padding: 16px;
+}

@@ -6,7 +6,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h1 style="margin: 0;">非公司成員帳號</h1>
     <a href="{{ url_for('external_users.create_external_user') }}"
-       style="padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;">
+       class="btn btn-primary">
         + 新增外部人員
     </a>
 </div>
@@ -29,13 +29,13 @@
 </div>
 
 {% if users %}
-<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+<table class="data-table bordered" style="width: 100%;">
     <thead>
-        <tr style="background: #f9fafb;">
-            <th style="text-align: left;">編號</th>
-            <th style="text-align: left;">帳號</th>
-            <th style="text-align: left;">姓名</th>
-            <th style="text-align: left;">歸屬群組</th>
+        <tr>
+            <th>編號</th>
+            <th>帳號</th>
+            <th>姓名</th>
+            <th>歸屬群組</th>
             <th style="text-align: center;">狀態</th>
             <th style="text-align: center;">操作</th>
         </tr>
@@ -54,7 +54,7 @@
                     </span>
                     {% endfor %}
                 {% else %}
-                    <span style="color: #9ca3af;">-</span>
+                    <span class="text-muted">-</span>
                 {% endif %}
             </td>
             <td style="text-align: center;">
@@ -75,7 +75,7 @@
                 <form id="toggle-{{ user.secure_code }}" method="POST" action="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}" style="display: none;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
-                <a href="#" style="color: #dc2626; margin-left: 8px;"
+                <a href="#" class="text-danger" style="margin-left: 8px;"
                    onclick="event.preventDefault(); if(confirm('確定要刪除外部人員「{{ user.display_name }}」嗎？')) document.getElementById('delete-{{ user.secure_code }}').submit();">
                     刪除
                 </a>
@@ -93,7 +93,7 @@
 
 <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
     <h3 style="margin-top: 0;">說明</h3>
-    <ul style="margin: 0; padding-left: 20px; color: #666;">
+    <ul class="text-muted" style="margin: 0; padding-left: 20px;">
         <li>外部人員必須歸屬至少一個群組</li>
         <li>外部人員使用「外部專用」編號規則</li>
         <li>如尚未建立外部專用編號，請先到「用戶編號規則」頁面建立</li>

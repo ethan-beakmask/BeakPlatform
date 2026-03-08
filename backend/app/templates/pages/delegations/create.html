@@ -7,13 +7,13 @@
 
 <p><a href="{{ url_for('delegations.list_delegations') }}">[返回列表]</a></p>
 
-<p style="color: #666; font-size: 0.9em;">
+<p class="text-muted" style="font-size: 0.9em;">
     代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住
 </p>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
             <th style="text-align: left; width: 150px;">授權人 *</th>
             <td>
@@ -26,7 +26,7 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div style="font-size: 0.8em; color: #666;">原本負責簽核的人 (如: 休假的主管)</div>
+                <div class="text-muted" style="font-size: 0.8em;">原本負責簽核的人 (如: 休假的主管)</div>
             </td>
         </tr>
         <tr>
@@ -41,7 +41,7 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div style="font-size: 0.8em; color: #666;">代理簽核的人 (如: 代理主管)</div>
+                <div class="text-muted" style="font-size: 0.8em;">代理簽核的人 (如: 代理主管)</div>
             </td>
         </tr>
         <tr>
@@ -63,7 +63,7 @@
                 <input type="number" name="approval_limit" min="0" step="1000" style="width: 100%;"
                        value="{{ request.form.get('approval_limit', '') }}"
                        placeholder="如: 100000">
-                <div style="font-size: 0.8em; color: #666;">超過此金額需要原授權人或更高層簽核</div>
+                <div class="text-muted" style="font-size: 0.8em;">超過此金額需要原授權人或更高層簽核</div>
             </td>
         </tr>
         <tr>
@@ -89,7 +89,7 @@
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">建立代理授權</button>
+                <button type="submit" class="btn btn-primary">建立代理授權</button>
                 <a href="{{ url_for('delegations.list_delegations') }}" style="margin-left: 20px;">取消</a>
             </td>
         </tr>

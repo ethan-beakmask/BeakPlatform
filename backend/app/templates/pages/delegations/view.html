@@ -12,35 +12,35 @@
     {% endif %}
 </p>
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table class="data-table bordered">
     <tr>
-        <th style="text-align: left; background: #f0f0f0; width: 150px;">授權人</th>
+        <th style="width: 150px;">授權人</th>
         <td>
             {% if delegation.delegator %}
             <a href="{{ url_for('users.view_user', secure_code=delegation.delegator.secure_code) }}">
                 {{ delegation.delegator.display_name }}
             </a>
-            <br><span style="color: #666; font-size: 0.9em;">(原本負責簽核的人)</span>
+            <br><span class="text-muted" style="font-size: 0.9em;">(原本負責簽核的人)</span>
             {% else %}
-            <span style="color: #999;">-</span>
+            <span class="text-muted">-</span>
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">被授權人</th>
+        <th>被授權人</th>
         <td>
             {% if delegation.delegate %}
             <a href="{{ url_for('users.view_user', secure_code=delegation.delegate.secure_code) }}">
                 {{ delegation.delegate.display_name }}
             </a>
-            <br><span style="color: #666; font-size: 0.9em;">(代理簽核的人)</span>
+            <br><span class="text-muted" style="font-size: 0.9em;">(代理簽核的人)</span>
             {% else %}
-            <span style="color: #999;">-</span>
+            <span class="text-muted">-</span>
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">代理類型</th>
+        <th>代理類型</th>
         <td>
             {% if delegation.delegation_type == 'FULL' %}
             <strong>全權代理</strong> - 代理所有權限
@@ -59,52 +59,52 @@
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">狀態</th>
+        <th>狀態</th>
         <td>
             {% if delegation.status == 'ACTIVE' %}
-            <span style="color: green; font-weight: bold;">生效中</span>
+            <span class="text-success" style="font-weight: bold;">生效中</span>
             {% elif delegation.status == 'PENDING' %}
-            <span style="color: orange; font-weight: bold;">待生效</span>
+            <span class="text-warning" style="font-weight: bold;">待生效</span>
             {% elif delegation.status == 'EXPIRED' %}
-            <span style="color: #999; font-weight: bold;">已過期</span>
+            <span class="text-muted" style="font-weight: bold;">已過期</span>
             {% elif delegation.status == 'REVOKED' %}
-            <span style="color: red; font-weight: bold;">已撤銷</span>
+            <span class="text-danger" style="font-weight: bold;">已撤銷</span>
             {% else %}
             {{ delegation.status }}
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">生效開始</th>
+        <th>生效開始</th>
         <td>{{ delegation.effective_from.strftime('%Y-%m-%d') if delegation.effective_from else '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">生效結束</th>
+        <th>生效結束</th>
         <td>{{ delegation.effective_until.strftime('%Y-%m-%d') if delegation.effective_until else '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">授權原因</th>
+        <th>授權原因</th>
         <td>{{ delegation.reason or '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">建立者</th>
+        <th>建立者</th>
         <td>{{ delegation.created_by or '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #f0f0f0;">建立時間</th>
+        <th>建立時間</th>
         <td>{{ delegation.created_at.strftime('%Y-%m-%d %H:%M') if delegation.created_at else '-' }}</td>
     </tr>
     {% if delegation.status == 'REVOKED' %}
     <tr>
-        <th style="text-align: left; background: #ffe0e0;">撤銷者</th>
+        <th class="text-danger">撤銷者</th>
         <td>{{ delegation.revoked_by or '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #ffe0e0;">撤銷時間</th>
+        <th class="text-danger">撤銷時間</th>
         <td>{{ delegation.revoked_at.strftime('%Y-%m-%d %H:%M') if delegation.revoked_at else '-' }}</td>
     </tr>
     <tr>
-        <th style="text-align: left; background: #ffe0e0;">撤銷原因</th>
+        <th class="text-danger">撤銷原因</th>
         <td>{{ delegation.revoke_reason or '-' }}</td>
     </tr>
     {% endif %}
@@ -112,7 +112,7 @@
 
 {% if delegation.status == 'ACTIVE' or delegation.status == 'PENDING' %}
 <hr style="margin-top: 40px;">
-<h3 style="color: #c00;">撤銷授權</h3>
+<h3 class="text-danger">撤銷授權</h3>
 <form method="POST" action="{{ url_for('delegations.revoke_delegation', secure_code=delegation.secure_code) }}"
       onsubmit="return confirm('確定要撤銷此代理授權嗎？');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -120,7 +120,7 @@
         <label>撤銷原因:</label><br>
         <input type="text" name="revoke_reason" style="width: 300px;" placeholder="如: 授權人已返回">
     </p>
-    <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
+    <button type="submit" class="btn btn-danger">
         撤銷代理授權
     </button>
 </form>

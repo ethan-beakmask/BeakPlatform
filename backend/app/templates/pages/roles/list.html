@@ -2,31 +2,36 @@
 
 {% block title %}角色管理 - BeakMask{% endblock %}
 
+{% block head %}
+<style>
+.selected-row { background: #fef3c7 !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="roleListManager()">
-    <h1>角色管理</h1>
+    <div class="page-header">
+        <h1 class="page-title">角色管理</h1>
+    </div>
 
-    <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
-        <a href="{{ url_for('roles.create_role') }}" style="padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 4px;">[+ 新增角色]</a>
+    <div class="page-actions mb-16">
+        <a href="{{ url_for('roles.create_role') }}" class="btn btn-primary">[+ 新增角色]</a>
 
         <!-- 多選操作 -->
         <template x-if="roles.length > 0">
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button type="button" @click="toggleAll()"
-                        style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer;">
+            <div class="page-actions">
+                <button type="button" @click="toggleAll()" class="btn btn-secondary btn-sm">
                     <span x-text="allSelected ? '取消全選' : '全選'"></span>
                 </button>
-                <button type="button" @click="invertSelection()"
-                        style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer;">
+                <button type="button" @click="invertSelection()" class="btn btn-secondary btn-sm">
                     反選
                 </button>
-                <button type="button" @click="selectUnused()"
-                        style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer;">
+                <button type="button" @click="selectUnused()" class="btn btn-secondary btn-sm">
                     選擇未使用
                 </button>
                 <button type="button" @click="confirmBatchDelete()"
                         x-show="selectedIds.length > 0"
-                        style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        class="btn btn-danger btn-sm">
                     刪除選中 (<span x-text="selectedIds.length"></span>)
                 </button>
             </div>
@@ -34,9 +39,9 @@
     </div>
 
     {% if roles %}
-    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+    <table class="data-table bordered">
         <thead>
-            <tr style="background: #f9fafb;">
+            <tr>
                 <th style="width: 40px;">
                     <input type="checkbox" @change="toggleAll()" :checked="allSelected">
                 </th>
@@ -51,8 +56,7 @@
         </thead>
         <tbody>
             {% for role in roles %}
-            <tr x-data="{ selected: false }"
-                :class="{ 'selected-row': selectedIds.includes('{{ role.secure_code }}') }"
+            <tr :class="{ 'selected-row': selectedIds.includes('{{ role.secure_code }}') }"
                 data-code="{{ role.secure_code }}"
                 data-usage="{{ usage_counts.get(role.secure_code, 0) }}"
                 data-system="{{ 'true' if role.is_system_role else 'false' }}"
@@ -63,13 +67,13 @@
                            :checked="selectedIds.includes('{{ role.secure_code }}')"
                            @change="toggleRole('{{ role.secure_code }}')">
                     {% else %}
-                    <span style="color: #9ca3af;">-</span>
+                    <span class="text-muted">-</span>
                     {% endif %}
                 </td>
                 <td><code>{{ role.code }}</code></td>
                 <td>
                     {{ role.name }}
-                    {% if role.is_system_role %}<span style="color: #666; font-size: 0.8em;">(系統)</span>{% endif %}
+                    {% if role.is_system_role %}<span class="text-muted" style="font-size: 0.8em;">(系統)</span>{% endif %}
                 </td>
                 <td>{% if role.role_type == 'POSITION' %}職位{% else %}角色{% endif %}</td>
                 <td>
@@ -78,13 +82,13 @@
                     {% elif role.scope_type == 'GROUP' %}群組
                     {% else %}{{ role.scope_type }}{% endif %}
                 </td>
-                <td style="text-align: center;">{% if role.is_manager %}V{% else %}-{% endif %}</td>
-                <td style="text-align: center;">
+                <td class="text-center">{% if role.is_manager %}V{% else %}-{% endif %}</td>
+                <td class="text-center">
                     {% set count = usage_counts.get(role.secure_code, 0) %}
                     {% if count > 0 %}
-                        <span style="color: #059669; font-weight: bold;">{{ count }} 人</span>
+                        <span class="text-success" style="font-weight: bold;">{{ count }} 人</span>
                     {% else %}
-                        <span style="color: #9ca3af;">未使用</span>
+                        <span class="text-muted">未使用</span>
                     {% endif %}
                 </td>
                 <td>
@@ -99,29 +103,25 @@
     {% endif %}
 
     <!-- 批量刪除確認對話框 -->
-    <div x-show="showBatchDeleteModal" x-cloak
-         style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-        <div style="background: white; padding: 24px; border-radius: 8px; max-width: 500px; width: 90%;">
+    <div x-show="showBatchDeleteModal" x-cloak class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px; width: 90%; padding: 24px;">
             <h3 style="margin: 0 0 16px 0; font-size: 18px;">確認批量刪除</h3>
 
             <p>確定要刪除選中的 <strong x-text="selectedIds.length"></strong> 個角色嗎？</p>
 
             <template x-if="selectedWithUsage > 0">
-                <div style="background: #fef3c7; padding: 12px; border-radius: 4px; margin: 16px 0; color: #92400e;">
+                <div class="alert alert-warning">
                     <strong>警告：</strong>其中 <span x-text="selectedWithUsage"></span> 個角色有用戶使用中。
                     刪除後這些用戶將失去相應角色的權限。
                 </div>
             </template>
 
-            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
-                <button type="button" @click="showBatchDeleteModal = false"
-                        style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer;">
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button type="button" @click="showBatchDeleteModal = false" class="btn btn-cancel">
                     取消
                 </button>
                 <button type="button" @click="doBatchDelete()"
-                        :disabled="isDeleting"
-                        style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                        :style="isDeleting ? 'opacity: 0.6;' : ''">
+                        :disabled="isDeleting" class="btn btn-danger">
                     <span x-show="!isDeleting">確認刪除</span>
                     <span x-show="isDeleting">刪除中...</span>
                 </button>
@@ -131,15 +131,11 @@
 
     <!-- 結果訊息 -->
     <div x-show="resultMsg" x-cloak
-         :style="resultIsError ? 'background: #fef2f2; border-color: #fecaca; color: #dc2626;' : 'background: #dcfce7; border-color: #86efac; color: #166534;'"
-         style="margin-top: 16px; padding: 12px; border: 1px solid; border-radius: 8px;">
+         :class="resultIsError ? 'alert alert-error' : 'alert alert-success'"
+         class="mt-16">
         <span x-text="resultMsg"></span>
     </div>
 </div>
 
 <script src="/static/js/role-list.js"></script>
-
-<style>
-.selected-row { background: #fef3c7 !important; }
-</style>
 {% endblock %}

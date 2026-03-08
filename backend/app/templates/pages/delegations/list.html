@@ -9,15 +9,15 @@
     <a href="{{ url_for('delegations.create_delegation') }}">[新增代理授權]</a>
 </p>
 
-<p style="color: #666; font-size: 0.9em;">
+<p class="text-muted" style="font-size: 0.9em;">
     代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住
 </p>
 
 <p>共 {{ delegations|length }} 筆代理授權</p>
 
-<table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+<table class="data-table bordered">
     <thead>
-        <tr style="background: #f0f0f0;">
+        <tr>
             <th>授權人</th>
             <th>被授權人</th>
             <th>代理類型</th>
@@ -33,14 +33,14 @@
                 {% if d.delegator %}
                 {{ d.delegator.display_name }}
                 {% else %}
-                <span style="color: #999;">-</span>
+                <span class="text-muted">-</span>
                 {% endif %}
             </td>
             <td>
                 {% if d.delegate %}
                 {{ d.delegate.display_name }}
                 {% else %}
-                <span style="color: #999;">-</span>
+                <span class="text-muted">-</span>
                 {% endif %}
             </td>
             <td>
@@ -54,13 +54,13 @@
             </td>
             <td>
                 {% if d.status == 'ACTIVE' %}
-                <span style="color: green;">生效中</span>
+                <span class="text-success">生效中</span>
                 {% elif d.status == 'PENDING' %}
-                <span style="color: orange;">待生效</span>
+                <span class="text-warning">待生效</span>
                 {% elif d.status == 'EXPIRED' %}
-                <span style="color: #999;">已過期</span>
+                <span class="text-muted">已過期</span>
                 {% elif d.status == 'REVOKED' %}
-                <span style="color: red;">已撤銷</span>
+                <span class="text-danger">已撤銷</span>
                 {% else %}{{ d.status }}
                 {% endif %}
             </td>
@@ -78,7 +78,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="6" style="text-align: center; color: #999;">尚無代理授權</td>
+            <td colspan="6" class="text-muted" style="text-align: center;">尚無代理授權</td>
         </tr>
         {% endfor %}
     </tbody>

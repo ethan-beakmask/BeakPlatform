@@ -18,7 +18,7 @@
 
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table border="0" cellpadding="4" cellspacing="0">
+    <table class="info-table">
         {% if contract %}
         <tr>
             <td>合約編號</td>
@@ -81,14 +81,14 @@
                            {% if mod.code in selected_modules %}checked{% endif %}>
                     {{ mod.label }}
                     {% if mod.value and mod.value.version %}
-                    <small style="color: #888;">(v{{ mod.value.version }})</small>
+                    <small class="text-muted">(v{{ mod.value.version }})</small>
                     {% endif %}
                     {% if mod.value and mod.value.description %}
-                    <br><small style="color: #666; margin-left: 20px;">{{ mod.value.description }}</small>
+                    <br><small class="text-muted" style="margin-left: 20px;">{{ mod.value.description }}</small>
                     {% endif %}
                 </label>
                 {% endfor %}
-                <small style="color: #888;">選擇此合約授權使用的功能模組</small>
+                <small class="text-muted">選擇此合約授權使用的功能模組</small>
             </td>
         </tr>
         {% endif %}
@@ -111,7 +111,7 @@
 {% if contract %}
 <hr>
 <h3>合約資訊</h3>
-<table border="0" cellpadding="4" cellspacing="0">
+<table class="info-table">
     <tr>
         <td>建立時間</td>
         <td>{{ contract.created_at.strftime('%Y-%m-%d %H:%M') if contract.created_at else '-' }}</td>
@@ -129,7 +129,7 @@
                 {% if contract.days_remaining >= 0 %}
                     {{ contract.days_remaining }} 天
                 {% else %}
-                    <span style="color: red;">已過期 {{ contract.days_remaining|abs }} 天</span>
+                    <span class="text-danger">已過期 {{ contract.days_remaining|abs }} 天</span>
                 {% endif %}
             {% else %}
                 -

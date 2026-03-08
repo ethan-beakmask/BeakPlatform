@@ -20,14 +20,14 @@
     <a href="{{ url_for('job_families.create_job_family') }}">[+ 新增職系]</a>
 </p>
 
-<p style="color: #666; font-size: 0.9em;">
+<p class="text-muted" style="font-size: 0.9em;">
     說明：職系代表職涯發展軌道。管理職 = 帶人主管；專業職 = 不帶人的專業人員。
 </p>
 
 {% if job_families %}
-<table border="1" cellpadding="8" cellspacing="0" style="width: 100%;">
+<table class="data-table bordered" style="width: 100%;">
     <thead>
-        <tr style="background: #f0f0f0;">
+        <tr>
             <th>代碼</th>
             <th>名稱</th>
             <th>英文名稱</th>
@@ -40,12 +40,12 @@
     <tbody>
         {% for family in job_families %}
         {# 根職系 #}
-        <tr{% if not family.is_active %} style="color: #999;"{% endif %}>
+        <tr{% if not family.is_active %} class="text-muted"{% endif %}>
             <td><code>{{ family.code }}</code></td>
             <td>
                 <strong>{{ family.name }}</strong>
                 {% if family.is_system_default %}
-                <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
                 {% endif %}
             </td>
             <td>{{ family.name_en or '-' }}</td>
@@ -66,12 +66,12 @@
         {# 子職系 #}
         {% if family.sub_families %}
         {% for sub in family.sub_families %}
-        <tr{% if not sub.is_active %} style="color: #999;"{% endif %} style="background: #fafafa;">
+        <tr{% if not sub.is_active %} class="text-muted"{% endif %}>
             <td style="padding-left: 30px;"><code>{{ sub.code }}</code></td>
             <td style="padding-left: 30px;">
                 -- {{ sub.name }}
                 {% if sub.is_system_default %}
-                <span style="color: #888; font-size: 0.8em;">(預設)</span>
+                <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
                 {% endif %}
             </td>
             <td>{{ sub.name_en or '-' }}</td>
@@ -91,7 +91,7 @@
     </tbody>
 </table>
 
-<p style="margin-top: 20px; color: #666;">
+<p class="text-muted" style="margin-top: 20px;">
     共 {{ all_families|length }} 個職系
 </p>
 
@@ -101,8 +101,8 @@
 
 <hr>
 <h3>雙軌制說明</h3>
-<table border="1" cellpadding="6" cellspacing="0" style="font-size: 0.9em;">
-    <tr style="background: #f0f0f0;">
+<table class="data-table bordered" style="font-size: 0.9em;">
+    <tr>
         <th>管理職 (People Manager)</th>
         <th>專業職 (Individual Contributor)</th>
     </tr>

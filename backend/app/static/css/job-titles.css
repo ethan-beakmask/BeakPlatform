@@ -1,0 +1,32 @@
+/* job_titles/list.html 專用樣式 */
+
+.family-section {
+    margin-bottom: 30px;
+}
+.family-header {
+    background: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+.inactive-row {
+    color: var(--color-text-muted);
+}
+.supervisor-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    margin-left: 4px;
+}
+.empty-family {
+    color: #9ca3af;
+    font-style: italic;
+    padding: 12px;
+    text-align: center;
+    background: var(--color-bg-light);
+    border: 1px solid #d1d5db;
+    border-top: none;
+}

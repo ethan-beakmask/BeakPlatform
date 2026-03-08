@@ -9,7 +9,7 @@
 
     <form @submit.prevent="submitForm" style="max-width: 700px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <table border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+        <table class="info-table">
             <!-- 企業內部人員 -->
             <tr>
                 <th style="text-align: left; width: 150px;">適用對象</th>
@@ -19,7 +19,7 @@
                                @change="onInternalChange()">
                         <span>企業內部人員</span>
                     </label>
-                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         <span x-show="!formData.is_internal">外部人員：如訪客、廠商、合作夥伴</span>
                         <span x-show="formData.is_internal">內部人員：企業正式員工</span>
                     </div>
@@ -33,7 +33,7 @@
                     <input type="text" x-model="formData.name" required maxlength="100"
                            @input.debounce.500ms="generateCode"
                            placeholder="如：專案經理、業務主管" style="width: 100%;">
-                    <div style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 0.85em; margin-top: 4px;">
                         輸入名稱後會自動產生代碼建議
                     </div>
                 </td>
@@ -57,8 +57,8 @@
                     </div>
 
                     <!-- 代碼驗證結果 -->
-                    <div x-show="codeError" style="color: #dc2626; font-size: 0.85em; margin-top: 4px;" x-text="codeError"></div>
-                    <div x-show="codeValid && formData.code" style="color: #16a34a; font-size: 0.85em; margin-top: 4px;">
+                    <div x-show="codeError" class="text-danger" style="font-size: 0.85em; margin-top: 4px;" x-text="codeError"></div>
+                    <div x-show="codeValid && formData.code" class="text-success" style="font-size: 0.85em; margin-top: 4px;">
                         ✓ 代碼可用
                     </div>
 
@@ -74,7 +74,7 @@
                         </template>
                     </div>
 
-                    <div style="font-size: 0.8em; color: #888; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         格式：大寫英文、數字、底線，開頭必須是英文。如 PROJECT_MANAGER
                     </div>
                 </td>
@@ -90,7 +90,7 @@
                         <option value="ROLE">角色 (通用)</option>
                         <option value="POSITION" x-show="formData.is_internal">職位 (部門專用)</option>
                     </select>
-                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         <span x-show="formData.is_internal">職位用於部門內職務（如主管、專員），角色用於通用權限（如表單審核者）</span>
                         <span x-show="!formData.is_internal">外部人員只能指派角色，不能擔任職位</span>
                     </div>
@@ -106,7 +106,7 @@
                         <option value="DEPARTMENT">部門</option>
                         <option value="GROUP">群組</option>
                     </select>
-                    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         <template x-if="formData.scope_type === 'GLOBAL'">
                             <span>此角色可在企業任何地方指派（如：表單審核者、公告管理員）</span>
                         </template>
@@ -117,7 +117,7 @@
                             <span>此角色只能在群組內指派（如：社團團長、專案召集人）</span>
                         </template>
                     </div>
-                    <div style="font-size: 0.75em; color: #999; margin-top: 2px;">
+                    <div class="text-muted" style="font-size: 0.75em; margin-top: 2px;">
                         註：這是角色的「指派範圍」，不是權限範圍。權限需另外設定。
                     </div>
                 </td>
@@ -133,7 +133,7 @@
                                :disabled="!formData.is_internal">
                         <span>是管理職（具有管理權限）</span>
                     </label>
-                    <div x-show="!formData.is_internal" style="font-size: 0.8em; color: #9ca3af; margin-top: 4px;">
+                    <div x-show="!formData.is_internal" class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         外部人員不能擔任管理職
                     </div>
                 </td>
@@ -173,7 +173,7 @@
 
     <!-- 錯誤訊息 -->
     <div x-show="submitError" x-cloak
-         style="margin-top: 20px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #dc2626;">
+         class="text-danger" style="margin-top: 20px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
         <strong>錯誤：</strong> <span x-text="submitError"></span>
     </div>
 </div>
