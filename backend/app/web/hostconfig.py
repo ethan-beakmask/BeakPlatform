@@ -316,18 +316,7 @@ PURGE_DISPLAY_NAMES = {
     'fw_form_templates': '表單範本 (FormFlow)',
     'fw_workflow_templates': '流程範本 (FormFlow)',
     'fw_org_databases': '企業資料庫 (FormFlow)',
-    # 平台表單流程
-    'form_approval_comments': '簽核意見',
-    'published_form_workflows': '已發行表單流程',
-    'form_workflow_mappings': '表單流程對應',
-    'node_execution_queue': '節點執行佇列',
-    'node_execution_queue_archive': '節點執行佇列封存',
-    'workflow_variables': '流程變數',
-    'form_instances': '表單實例',
-    'form_categories': '表單分類',
-    'workflow_instances': '流程實例',
-    'form_templates': '表單範本',
-    'workflow_templates': '流程範本',
+    # 平台流程節點定義（仍在使用）
     'workflow_node_definitions': '流程節點定義',
 }
 
@@ -349,18 +338,14 @@ PURGE_DELETE_ORDER = [
     'fw_node_execution_queue', 'fw_sync_queue', 'fw_workflow_backgrounds',
     'fw_sql_form_registries', 'fw_published_form_workflows',
     'fw_form_workflow_mappings',
-    # 平台葉節點
-    'form_approval_comments', 'published_form_workflows', 'form_workflow_mappings',
-    'node_execution_queue', 'node_execution_queue_archive', 'workflow_variables',
     # Phase 2: 中層表
     'duty_categories', 'job_titles', 'users',
     'fw_form_instances', 'fw_workflow_instances', 'fw_categories',
-    'form_instances', 'form_categories', 'workflow_instances',
     # Phase 3: 上層表
     'roles', 'organizational_units', 'job_levels', 'job_families',
     'menu_items', 'pages', 'modules', 'work_schedules', 'shift_types',
     'fw_form_templates', 'fw_workflow_templates', 'fw_org_databases',
-    'form_templates', 'workflow_templates', 'workflow_node_definitions',
+    'workflow_node_definitions',
     'permissions',
     # Phase 4: 頂層表
     'smtp_configs', 'telegram_configs', 'recipient_groups',

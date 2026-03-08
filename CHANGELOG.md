@@ -6,6 +6,13 @@
 
 ## [Unreleased]
 
+### Removed
+- 清除 12 張舊平台層表單/流程表 (form_*, workflow_*, node_* 系列)
+  - 這些表自 1/23 專案初始化時已被 fw_ 前綴模組層表完全取代，ORM 不再引用
+  - 備份: beakplatform_dev_20260308
+  - Migration: `037_drop_legacy_tables.sql`
+- 清理 `hostconfig.py` 中舊表的標籤定義與清除順序
+
 ### Added
 - 用戶編號改為必填欄位，建立帳號時自動採用自動編號
 - `NumberingService.sync_counter_to_used()`: 建立帳號後自動推進計數器到下一個可用編號
