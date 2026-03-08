@@ -266,6 +266,37 @@ class NumberingService:
         return not UsedUserNumber.is_number_used(org_secure_code, number)
 
     @classmethod
+    def sync_counter_to_used(cls, rule: UserNumberingRule) -> None:
+        """
+        同步 counter 到最新已使用的狀態。
+        從 counter 當前位置開始向前推進，直到下一個編號可用為止。
+        確保 get_next_number(consume=False) 直接回傳正確的下一個編號。
+        """
+        components = rule.get_components()
+        period_key = cls._get_period_key(components)
+        counter = cls._get_or_create_counter(rule, period_key, lock=True)
+        max_attempts = cls._calculate_max_numbers(components)
+
+        current_state = {
+            'prefix_index': counter.prefix_index,
+            'suffix_index': counter.suffix_index,
+            'current_seq': counter.current_seq
+        }
+
+        # 持續推進直到下一個編號可用
+        for _ in range(max_attempts):
+            next_state = cls._calculate_next_state_from_dict(current_state, components)
+            number = cls._compose_number(components, next_state)
+            if cls.is_number_available(rule.org_secure_code, number):
+                # 停在「前一個」狀態，讓 get_next_number 回傳這個可用編號
+                counter.prefix_index = current_state['prefix_index']
+                counter.suffix_index = current_state['suffix_index']
+                counter.current_seq = current_state['current_seq']
+                counter.updated_at = datetime.utcnow()
+                return
+            current_state = next_state
+
+    @classmethod
     def _get_period_key(cls, components: List[dict]) -> str:
         """根據元素配置判斷週期 key"""
         for comp in components:

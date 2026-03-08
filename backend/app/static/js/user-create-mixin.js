@@ -71,15 +71,16 @@ function userCreateMixin(config) {
         // 建立中狀態
         uc_submitting: false,
 
-        get uc_hasRules() {
+        // 注意: 不用 getter -- spread 運算子不保留 getter，改用普通函數
+        uc_hasRules: function() {
             return this.uc_rules.length > 0;
         },
 
-        get uc_normalizedUsername() {
+        uc_normalizedUsername: function() {
             return this.uc_usernameRaw.replace(/\s+/g, '').toLowerCase();
         },
 
-        get uc_suggestedUsername() {
+        uc_suggestedUsername: function() {
             if (!this.uc_englishName) return '';
             return this.uc_englishName.trim().replace(/\s+/g, this.uc_nameConnector).toLowerCase();
         },
@@ -122,11 +123,12 @@ function userCreateMixin(config) {
             this.uc_submitting = false;
             // 重新載入建議密碼和編號
             this.uc_loadSuggestedPassword();
-            if (this.uc_hasRules) {
+            if (this.uc_hasRules()) {
                 var rule = this.uc_rules.find(function(r) { return r.default_for === 'EMPLOYEE'; }) || this.uc_rules[0];
                 if (rule) {
                     this.uc_selectedRule = rule.secure_code;
-                    this.uc_nextNumber = rule.preview;
+                    // 從 API 取最新的下一個編號
+                    this.uc_refreshNextNumber(rule.secure_code);
                 }
             }
         },
@@ -142,7 +144,7 @@ function userCreateMixin(config) {
             if (!this.uc_englishNameManual && !this.uc_hasCJK(this.uc_nativeName)) {
                 this.uc_englishName = this.uc_nativeName;
                 if (!this.uc_usernameManual) {
-                    this.uc_usernameRaw = this.uc_suggestedUsername;
+                    this.uc_usernameRaw = this.uc_suggestedUsername();
                     this.uc_debouncedCheckUsername();
                 }
             }
@@ -151,7 +153,7 @@ function userCreateMixin(config) {
         uc_onEnglishNameChange: function() {
             this.uc_englishNameManual = true;
             if (!this.uc_usernameManual) {
-                this.uc_usernameRaw = this.uc_suggestedUsername;
+                this.uc_usernameRaw = this.uc_suggestedUsername();
                 this.uc_debouncedCheckUsername();
             }
         },
@@ -186,7 +188,7 @@ function userCreateMixin(config) {
 
         uc_debouncedCheckUsername: function() {
             clearTimeout(this.uc_usernameCheckTimer);
-            var username = this.uc_normalizedUsername;
+            var username = this.uc_normalizedUsername();
             if (!username) {
                 this.uc_usernameChecked = false;
                 this.uc_usernameChecking = false;
@@ -198,12 +200,12 @@ function userCreateMixin(config) {
         },
 
         uc_checkUsername: async function() {
-            var username = this.uc_normalizedUsername;
+            var username = this.uc_normalizedUsername();
             if (!username) return;
             try {
                 var resp = await fetch('/users/check-username?username=' + encodeURIComponent(username));
                 var data = await resp.json();
-                if (this.uc_normalizedUsername === username) {
+                if (this.uc_normalizedUsername() === username) {
                     this.uc_usernameAvailable = data.available;
                     this.uc_usernameChecked = true;
                     this.uc_usernameChecking = false;
@@ -315,10 +317,9 @@ function userCreateMixin(config) {
             } catch (err) {}
         },
 
-        uc_onRuleChange: async function() {
-            if (!this.uc_selectedRule) return;
+        uc_refreshNextNumber: async function(ruleCode) {
             try {
-                var response = await fetch('/api/numbering/next?rule=' + this.uc_selectedRule);
+                var response = await fetch('/api/numbering/next?rule=' + (ruleCode || this.uc_selectedRule));
                 var data = await response.json();
                 if (data.success) {
                     this.uc_nextNumber = data.data.number;
@@ -327,6 +328,11 @@ function userCreateMixin(config) {
                     }
                 }
             } catch (err) {}
+        },
+
+        uc_onRuleChange: async function() {
+            if (!this.uc_selectedRule) return;
+            this.uc_refreshNextNumber(this.uc_selectedRule);
         },
 
         // === 翻譯 ===
@@ -349,7 +355,7 @@ function userCreateMixin(config) {
                     this.uc_englishNameManual = true;
                     this.uc_detectedLang = data.data.language;
                     if (!this.uc_usernameManual) {
-                        this.uc_usernameRaw = this.uc_suggestedUsername;
+                        this.uc_usernameRaw = this.uc_suggestedUsername();
                         this.uc_debouncedCheckUsername();
                     }
                 }
@@ -363,8 +369,15 @@ function userCreateMixin(config) {
             if (this.uc_submitting) return null;
 
             // 驗證必填
-            if (!this.uc_nativeName || !this.uc_englishName || !this.uc_normalizedUsername) {
+            if (!this.uc_nativeName || !this.uc_englishName || !this.uc_normalizedUsername()) {
                 return { success: false, error: '\u672C\u570B\u59D3\u540D\u3001\u82F1\u6587\u59D3\u540D\u3001\u5E33\u865F\u70BA\u5FC5\u586B' };
+            }
+            // 用戶編號：空白時自動採用自動編號
+            if (!this.uc_employeeId && this.uc_nextNumber) {
+                this.uc_employeeId = this.uc_nextNumber;
+            }
+            if (!this.uc_employeeId) {
+                return { success: false, error: '\u7528\u6236\u7DE8\u865F\u70BA\u5FC5\u586B' };
             }
             if (this.uc_usernameChecked && !this.uc_usernameAvailable) {
                 return { success: false, error: '\u5E33\u865F\u5DF2\u5B58\u5728' };
@@ -380,10 +393,11 @@ function userCreateMixin(config) {
                 var payload = {
                     native_name: this.uc_nativeName,
                     english_name: this.uc_englishName,
-                    username: this.uc_normalizedUsername,
+                    username: this.uc_normalizedUsername(),
                     password: this.uc_password || null,
                     role: 'user',
                     employee_id: this.uc_employeeId || null,
+                    numbering_rule: this.uc_employeeIdManual ? null : (this.uc_selectedRule || null),
                     department_code: this.uc_departmentCode || null,
                     nickname: this.uc_nickname || null,
                     interface_language: this.uc_interfaceLanguage || null,

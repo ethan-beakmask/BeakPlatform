@@ -258,6 +258,8 @@ def create_user():
 
         if not english_name or not native_name or not username:
             flash('英文姓名、本國姓名、帳號為必填', 'error')
+        elif not employee_id:
+            flash('用戶編號為必填', 'error')
         elif password and len(password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
         else:

@@ -11,8 +11,7 @@ from ..models import (
     Contract, ContractStatus,
     User, UserType,
     Role, RoleType, ScopeType,
-    BlockedEmailDomain,
-    OrganizationalUnit, UnitType
+    BlockedEmailDomain
 )
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
@@ -125,9 +124,6 @@ class OrganizationService:
 
             # 建立預設角色
             OrganizationService._create_default_roles(org)
-
-            # 建立預設單位（管理員專用）
-            OrganizationService._create_default_units(org)
 
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
@@ -293,38 +289,6 @@ class OrganizationService:
         logger.info(f"Default roles created for org {org.code}")
 
         return roles
-
-    @staticmethod
-    def _create_default_units(org: Organization) -> Dict[str, OrganizationalUnit]:
-        """
-        建立預設單位
-
-        包含「管理員專用」系統保留單位，用於表單分類的權限控制。
-
-        Returns:
-            Dict[str, OrganizationalUnit]: 單位字典
-        """
-        units = {}
-
-        # 管理員專用單位
-        admin_only_unit = OrganizationalUnit(
-            org_secure_code=org.secure_code,
-            unit_type=UnitType.GROUP,
-            code='ADMIN_ONLY',
-            name='管理員專用',
-            description='系統保留群組，僅管理員可見',
-            is_system_unit=True,
-            is_active=True,
-            sort_order=9999
-        )
-        admin_only_unit.update_full_path()
-        db.session.add(admin_only_unit)
-        db.session.flush()  # 取得 secure_code
-        units['admin_only'] = admin_only_unit
-
-        logger.info(f"Default units created for org {org.code}")
-
-        return units
 
     @staticmethod
     def create_contract(

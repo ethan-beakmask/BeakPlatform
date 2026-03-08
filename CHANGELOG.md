@@ -7,6 +7,21 @@
 ## [Unreleased]
 
 ### Added
+- 用戶編號改為必填欄位，建立帳號時自動採用自動編號
+- `NumberingService.sync_counter_to_used()`: 建立帳號後自動推進計數器到下一個可用編號
+
+### Changed
+- 用戶編號從選填欄位搬到必填區段 (用戶建立頁 + 員工建立表單)
+- `user-create-mixin.js` getter 改為普通函數 (修正 spread 運算子不保留 getter 問題)
+- 移除企業建立時自動建立「管理員專用」預設單位 (`_create_default_units`)
+
+### Fixed
+- 修正工作流迴圈場景下重複簽核防護誤擋問題
+  - 原因: 重複簽核檢查僅用 `node_id` 判斷，同一節點在合法迴圈中第二次執行時被誤判為重複簽核
+  - 修正: 新增 `node_queue_secure_code` 欄位，改以佇列項目為粒度判斷是否重複
+  - 影響: `fw_approval_records` 表新增 `node_queue_secure_code` 欄位
+
+### Added
 - 部門設定頁面整合員工建立功能
   - [新增] 改名 [新增部門]，新增 [新增員工] 按鈕
   - 中間面板三模式: 部門詳情 / 新增部門 / 新增員工

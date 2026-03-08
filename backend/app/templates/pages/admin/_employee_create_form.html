@@ -43,13 +43,13 @@
                 <td>
                     <input type="text" x-model="uc_usernameRaw" required style="width: 120px;"
                            @input="uc_onUsernameManualChange()">@<span x-text="empDomainName"></span>
-                    <div class="field-hint" x-show="uc_usernameRaw && uc_usernameRaw !== uc_normalizedUsername">
-                        儲存時將轉換為: <code x-text="uc_normalizedUsername"></code>
+                    <div class="field-hint" x-show="uc_usernameRaw && uc_usernameRaw !== uc_normalizedUsername()">
+                        儲存時將轉換為: <code x-text="uc_normalizedUsername()"></code>
                     </div>
                     <div style="font-size: 12px; margin-top: 4px;">
                         <span x-show="uc_usernameChecking" style="color: #666;">檢查帳號中...</span>
-                        <span x-show="uc_usernameChecked && uc_usernameAvailable && uc_normalizedUsername" style="color: #16a34a;">帳號可用</span>
-                        <span x-show="uc_usernameChecked && !uc_usernameAvailable && uc_normalizedUsername" style="color: #dc2626;">帳號已存在</span>
+                        <span x-show="uc_usernameChecked && uc_usernameAvailable && uc_normalizedUsername()" style="color: #16a34a;">帳號可用</span>
+                        <span x-show="uc_usernameChecked && !uc_usernameAvailable && uc_normalizedUsername()" style="color: #dc2626;">帳號已存在</span>
                     </div>
                 </td>
             </tr>
@@ -57,7 +57,9 @@
                 <td class="emp-label" style="vertical-align: top;"><label>密碼</label></td>
                 <td>
                     <div style="display: flex; gap: 8px; align-items: start;">
-                        <input :type="uc_showPassword ? 'text' : 'password'" x-model="uc_password"
+                        <input x-show="!uc_showPassword" type="password" x-model="uc_password"
+                               @input="uc_validatePassword()" :placeholder="uc_suggestedPassword" style="flex:1;">
+                        <input x-show="uc_showPassword" type="text" x-model="uc_password"
                                @input="uc_validatePassword()" :placeholder="uc_suggestedPassword" style="flex:1;">
                         <button type="button" @click="uc_showPassword = !uc_showPassword"
                                 class="btn btn-sm btn-secondary" x-text="uc_showPassword ? '隱藏' : '顯示'"></button>
@@ -75,36 +77,32 @@
                          style="margin-top: 4px; color: #16a34a; font-size: 12px;">密碼符合要求</div>
                 </td>
             </tr>
+            <tr>
+                <td class="emp-label"><label class="required">用戶編號</label></td>
+                <td>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" x-model="uc_employeeId" required
+                               @input="uc_employeeIdManual = true"
+                               placeholder="自動產生" style="width:150px;">
+                        <select x-model="uc_selectedRule" @change="uc_onRuleChange()" x-show="uc_rules.length > 1" style="width:120px;">
+                            <template x-for="rule in uc_rules" :key="rule.secure_code">
+                                <option :value="rule.secure_code" x-text="rule.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="field-hint">
+                        <span x-show="uc_hasRules() && !uc_employeeIdManual">將使用自動編號: <span style="font-family:monospace;background:#e8f4fc;padding:2px 6px;border-radius:4px;color:#0066cc;" x-text="uc_nextNumber"></span></span>
+                        <span x-show="uc_hasRules() && uc_employeeIdManual" style="color:#666;">手動輸入模式</span>
+                        <span x-show="!uc_hasRules()" style="color:#888;">尚未設定編號規則，請手動輸入</span>
+                    </div>
+                </td>
+            </tr>
         </table>
 
         <details>
             <summary style="cursor:pointer; padding:6px 8px; background:#f9f9f9; border:1px solid #ddd; border-radius:4px; margin-top:8px;">選填欄位</summary>
             <div style="padding:8px; border:1px solid #ddd; border-top:none; border-radius:0 0 4px 4px;">
-                <div class="section-title" style="margin-top:4px;">組織資訊</div>
-                <table class="emp-form-table" border="0" cellpadding="4" cellspacing="0">
-                    <tr>
-                        <td class="emp-label"><label>用戶編號</label></td>
-                        <td>
-                            <div style="display:flex;gap:8px;align-items:center;">
-                                <input type="text" x-model="uc_employeeId"
-                                       @input="uc_employeeIdManual = true"
-                                       placeholder="自動產生" style="width:150px;">
-                                <select x-model="uc_selectedRule" @change="uc_onRuleChange()" x-show="uc_rules.length > 1" style="width:120px;">
-                                    <template x-for="rule in uc_rules" :key="rule.secure_code">
-                                        <option :value="rule.secure_code" x-text="rule.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div class="field-hint">
-                                <span x-show="uc_hasRules && !uc_employeeIdManual">將使用自動編號: <span style="font-family:monospace;background:#e8f4fc;padding:2px 6px;border-radius:4px;color:#0066cc;" x-text="uc_nextNumber"></span></span>
-                                <span x-show="uc_hasRules && uc_employeeIdManual" style="color:#666;">手動輸入模式</span>
-                                <span x-show="!uc_hasRules" style="color:#888;">尚未設定編號規則</span>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-
-                <div class="section-title">個人資料</div>
+                <div class="section-title" style="margin-top:4px;">個人資料</div>
                 <table class="emp-form-table" border="0" cellpadding="4" cellspacing="0">
                     <tr>
                         <td class="emp-label"><label>暱稱</label></td>

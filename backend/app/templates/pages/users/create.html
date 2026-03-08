@@ -114,6 +114,27 @@
                 </div>
             </td>
         </tr>
+        <tr>
+            <td><label for="employee_id" class="required">用戶編號</label></td>
+            <td>
+                <div class="number-field">
+                    <input type="text" id="employee_id" name="employee_id" required
+                           x-model="employeeId"
+                           @input="employeeIdManual = true"
+                           placeholder="自動產生">
+                    <select x-model="selectedRule" @change="onRuleChange()" x-show="rules.length > 1">
+                        <template x-for="rule in rules" :key="rule.secure_code">
+                            <option :value="rule.secure_code" x-text="rule.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="help-text">
+                    <span x-show="hasRules && !employeeIdManual">將使用自動編號: <span class="next-number" x-text="nextNumber"></span></span>
+                    <span x-show="hasRules && employeeIdManual" style="color: #666;">手動輸入模式</span>
+                    <span x-show="!hasRules" style="color: #888;">尚未設定編號規則，請手動輸入</span>
+                </div>
+            </td>
+        </tr>
     </table>
     <!-- 角色固定為一般用戶，企業管理員與外部人員由專用介面管理 -->
     <input type="hidden" name="role" value="user">
@@ -124,27 +145,6 @@
 
             <div class="section-title optional">組織資訊</div>
             <table class="form-table" border="0" cellpadding="4" cellspacing="0">
-                <tr>
-                    <td><label for="employee_id">用戶編號</label></td>
-                    <td>
-                        <div class="number-field">
-                            <input type="text" id="employee_id" name="employee_id"
-                                   x-model="employeeId"
-                                   @input="employeeIdManual = true"
-                                   placeholder="自動產生">
-                            <select x-model="selectedRule" @change="onRuleChange()" x-show="rules.length > 1">
-                                <template x-for="rule in rules" :key="rule.secure_code">
-                                    <option :value="rule.secure_code" x-text="rule.name"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="help-text">
-                            <span x-show="hasRules && !employeeIdManual">將使用自動編號: <span class="next-number" x-text="nextNumber"></span></span>
-                            <span x-show="hasRules && employeeIdManual" style="color: #666;">手動輸入模式</span>
-                            <span x-show="!hasRules" style="color: #888;">尚未設定編號規則，請手動輸入</span>
-                        </div>
-                    </td>
-                </tr>
                 <tr>
                     <td><label for="department_code">部門</label></td>
                     <td>

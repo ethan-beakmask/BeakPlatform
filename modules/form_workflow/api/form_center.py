@@ -1207,10 +1207,10 @@ def approve_task(secure_code):
                 'code': 'LOCK_EXPIRED'
             }), 409
 
-        # P1: 防止同一人重複簽核同一節點
+        # P1: 防止同一人重複簽核同一佇列項目（而非 node_id，以支援合法迴圈）
         existing_approval = FwApprovalRecord.query.filter_by(
             workflow_instance_secure_code=task.workflow_instance_secure_code,
-            node_id=task.node_id,
+            node_queue_secure_code=task.secure_code,
             approver_secure_code=current_user.secure_code
         ).filter(FwApprovalRecord.action.in_(['approved', 'rejected'])).first()
 
@@ -1303,6 +1303,7 @@ def approve_task(secure_code):
             form_instance_secure_code=task.form_instance_secure_code,
             node_id=task.node_id,
             node_name=task.node_name,
+            node_queue_secure_code=task.secure_code,
             approver_secure_code=current_user.secure_code,
             approver_name=current_user.display_name or current_user.username,
             action=decision,

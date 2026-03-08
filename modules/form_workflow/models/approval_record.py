@@ -23,6 +23,7 @@ class FwApprovalRecord(ModuleBaseModel):
     # 節點資訊
     node_id = Column(String(100), nullable=False)
     node_name = Column(String(200), nullable=True)
+    node_queue_secure_code = Column(String(32), nullable=True, index=True)
 
     # 簽核人（使用 secure_code）
     approver_secure_code = Column(String(32), nullable=True, index=True)

@@ -99,8 +99,11 @@ def create_user():
     username = (data.get('username') or '').replace(' ', '').lower()
     password = (data.get('password') or '').strip()
 
+    employee_id_raw = (data.get('employee_id') or '').strip()
     if not native_name or not english_name or not username:
         return jsonify({'error': '本國姓名、英文姓名、帳號為必填'}), 400
+    if not employee_id_raw:
+        return jsonify({'error': '用戶編號為必填'}), 400
 
     org = current_user.organization
     if not org:
@@ -114,7 +117,7 @@ def create_user():
         return jsonify({'error': f'帳號 {username} 已存在'}), 409
 
     # 檢查用戶編號唯一性
-    employee_id = (data.get('employee_id') or '').strip() or None
+    employee_id = employee_id_raw
     if employee_id:
         from ..web.users import _check_employee_id_unique
         if not _check_employee_id_unique(org.secure_code, employee_id):
@@ -179,13 +182,25 @@ def create_user():
         db.session.add(user)
         db.session.commit()
 
-        # 記錄用戶編號
+        # 記錄用戶編號並更新計數器
         if employee_id:
+            numbering_rule_code = (data.get('numbering_rule') or '').strip()
             UsedUserNumber.record_number(
                 org_secure_code=org.secure_code,
                 number=employee_id,
-                user_secure_code=user.secure_code
+                user_secure_code=user.secure_code,
+                rule_secure_code=numbering_rule_code or None
             )
+            # 自動編號：同步更新 counter
+            if numbering_rule_code:
+                from ..services.numbering_service import NumberingService
+                from ..models.user_numbering_rule import UserNumberingRule as NRule
+                rule_obj = NRule.query.filter_by(
+                    secure_code=numbering_rule_code,
+                    org_secure_code=org.secure_code
+                ).first()
+                if rule_obj:
+                    NumberingService.sync_counter_to_used(rule_obj)
             db.session.commit()
 
         return jsonify({

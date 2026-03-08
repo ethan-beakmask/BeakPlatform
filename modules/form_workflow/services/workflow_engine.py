@@ -572,6 +572,7 @@ class WorkflowEngine:
                 form_instance_secure_code=queue_item.form_instance_secure_code,
                 node_id=queue_item.node_id,
                 node_name=queue_item.node_name,
+                node_queue_secure_code=queue_item.secure_code,
                 approver_secure_code=approver_secure_code,
                 action=action,
                 comment=comment,
