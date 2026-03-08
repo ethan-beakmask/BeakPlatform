@@ -7,6 +7,9 @@
 ## [Unreleased]
 
 ### Fixed
+- 修正 CI pipeline 不穩定問題: Tests job 改為依賴 Security Scan 完成後執行
+  - Runner capacity=1 無法真正平行，改為 Security Scan → Tests → Deploy 順序執行
+  - 清理 13 個 Docker 殘留網路 (孤兒 CI 容器遺留)
 - 修正 CI Security Scan 自 2/27 起持續失敗的問題 (37 次連續失敗)
   - data_crud 模組 21 條 API 路由補上 `@login_required` decorator
   - semgrep 規則補上 `@module_access_required` 的 pattern-not (規則漏列)

@@ -44,6 +44,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Tests
+    needs: [security-scan]
 
     services:
       postgres:
