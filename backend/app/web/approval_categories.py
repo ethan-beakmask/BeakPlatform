@@ -18,16 +18,24 @@ from .. import db
 approval_categories_bp = Blueprint('approval_categories', __name__)
 
 
+def _wants_json():
+    """判斷請求是否期望 JSON 回應（AJAX 請求）"""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
 @approval_categories_bp.route('/')
 @admin_required
 def list_categories():
     """核決權限類別列表（含核決金額矩陣）"""
-    categories = ResourceGateway.filter(
+    # 左面板表格：顯示所有類別（含停用）
+    all_categories = ResourceGateway.filter(
         ApprovalCategory,
         is_deleted=False,
-        is_active=True,
         order_by='sort_order'
     )
+
+    # 核決金額矩陣：只顯示啟用的
+    active_categories = [c for c in all_categories if c.is_active]
 
     # 取得所有職等
     job_levels = ResourceGateway.filter(
@@ -47,7 +55,7 @@ def list_categories():
     limits_matrix = {}
     for level in job_levels:
         limits_matrix[level.secure_code] = {}
-        for cat in categories:
+        for cat in active_categories:
             limits_matrix[level.secure_code][cat.secure_code] = 0
 
     for lim in all_limits:
@@ -55,11 +63,50 @@ def list_categories():
             if lim.category_secure_code in limits_matrix[lim.job_level_secure_code]:
                 limits_matrix[lim.job_level_secure_code][lim.category_secure_code] = int(lim.approval_limit) if lim.approval_limit else 0
 
+    # 準備 JSON 資料給前端 Alpine.js
+    categories_json = [{
+        'secure_code': c.secure_code,
+        'code': c.code,
+        'name': c.name,
+        'name_en': c.name_en or '',
+        'currency': c.currency,
+        'description': c.description or '',
+        'sort_order': c.sort_order,
+        'is_active': c.is_active,
+        'is_system_default': c.is_system_default
+    } for c in all_categories]
+
+    # 準備 BeakTrellis 矩陣資料
+    matrix_tree = []
+    for level in job_levels:
+        node_data = {
+            'code': level.code,
+            'name': level.name,
+            'is_manager_level': level.is_manager_level,
+        }
+        for cat in active_categories:
+            node_data[cat.secure_code] = limits_matrix[level.secure_code][cat.secure_code]
+        matrix_tree.append({
+            'id': level.secure_code,
+            'label': f'{level.code} {level.name}',
+            'data': node_data,
+            'children': []
+        })
+
+    matrix_columns = [{
+        'id': cat.secure_code,
+        'label': f'{cat.name}({cat.currency})',
+    } for cat in active_categories]
+
     return render_template(
         'pages/approval_categories/list.html',
-        categories=categories,
+        categories=active_categories,
+        all_categories=all_categories,
+        categories_json=categories_json,
         job_levels=job_levels,
-        limits_matrix=limits_matrix
+        limits_matrix=limits_matrix,
+        matrix_tree_json=matrix_tree,
+        matrix_columns_json=matrix_columns
     )
 
 
@@ -89,6 +136,8 @@ def create_category():
                 errors.append('排序須為整數')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -99,7 +148,10 @@ def create_category():
                 is_deleted=False
             )
             if existing:
-                flash(f'類別代碼 {code} 已存在', 'error')
+                msg = f'類別代碼 {code} 已存在'
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [msg]}), 409
+                flash(msg, 'error')
             else:
                 try:
                     category = ApprovalCategory(
@@ -114,11 +166,35 @@ def create_category():
                     )
                     db.session.add(category)
                     db.session.commit()
+
+                    if _wants_json():
+                        return jsonify({
+                            'success': True,
+                            'message': f'已建立類別 {name}',
+                            'category': {
+                                'secure_code': category.secure_code,
+                                'code': category.code,
+                                'name': category.name,
+                                'name_en': category.name_en or '',
+                                'currency': category.currency,
+                                'description': category.description or '',
+                                'sort_order': category.sort_order,
+                                'is_active': category.is_active,
+                                'is_system_default': category.is_system_default
+                            }
+                        })
+
                     flash(f'已建立類別 {name}', 'success')
                     return redirect(url_for('approval_categories.list_categories'))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    msg = f'建立失敗: {str(e)}'
+                    if _wants_json():
+                        return jsonify({'success': False, 'errors': [msg]}), 500
+                    flash(msg, 'error')
+
+    if _wants_json():
+        return jsonify({'success': False, 'errors': ['無效的請求']}), 400
 
     return render_template('pages/approval_categories/create.html')
 
@@ -133,6 +209,8 @@ def edit_category(secure_code: str):
         is_deleted=False
     )
     if not category:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['類別不存在']}), 404
         flash('類別不存在', 'error')
         return redirect(url_for('approval_categories.list_categories'))
 
@@ -156,6 +234,8 @@ def edit_category(secure_code: str):
                 errors.append('排序須為整數')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -167,11 +247,48 @@ def edit_category(secure_code: str):
                 category.sort_order = sort_order
                 category.is_active = is_active
                 db.session.commit()
+
+                if _wants_json():
+                    return jsonify({
+                        'success': True,
+                        'message': '已更新類別',
+                        'category': {
+                            'secure_code': category.secure_code,
+                            'code': category.code,
+                            'name': category.name,
+                            'name_en': category.name_en or '',
+                            'currency': category.currency,
+                            'description': category.description or '',
+                            'sort_order': category.sort_order,
+                            'is_active': category.is_active,
+                            'is_system_default': category.is_system_default
+                        }
+                    })
+
                 flash('已更新類別', 'success')
                 return redirect(url_for('approval_categories.list_categories'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                msg = f'更新失敗: {str(e)}'
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [msg]}), 500
+                flash(msg, 'error')
+
+    if _wants_json():
+        return jsonify({
+            'success': True,
+            'category': {
+                'secure_code': category.secure_code,
+                'code': category.code,
+                'name': category.name,
+                'name_en': category.name_en or '',
+                'currency': category.currency,
+                'description': category.description or '',
+                'sort_order': category.sort_order,
+                'is_active': category.is_active,
+                'is_system_default': category.is_system_default
+            }
+        })
 
     return render_template(
         'pages/approval_categories/edit.html',
@@ -189,10 +306,14 @@ def delete_category(secure_code: str):
         is_deleted=False
     )
     if not category:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['類別不存在']}), 404
         flash('類別不存在', 'error')
         return redirect(url_for('approval_categories.list_categories'))
 
     if category.is_system_default:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['系統預設類別不可刪除']}), 403
         flash('系統預設類別不可刪除', 'error')
         return redirect(url_for('approval_categories.list_categories'))
 
@@ -200,10 +321,17 @@ def delete_category(secure_code: str):
         category.is_deleted = True
         category.deleted_at = datetime.utcnow()
         db.session.commit()
+
+        if _wants_json():
+            return jsonify({'success': True, 'message': f'已刪除類別 {category.name}'})
+
         flash(f'已刪除類別 {category.name}', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        msg = f'刪除失敗: {str(e)}'
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [msg]}), 500
+        flash(msg, 'error')
 
     return redirect(url_for('approval_categories.list_categories'))
 

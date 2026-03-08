@@ -2,11 +2,29 @@
 
 {% block title %}系統管理員帳號 - BeakMask{% endblock %}
 
-{% block content %}
-<h1>系統管理員帳號</h1>
-<p>管理 system.local 的系統管理員帳號</p>
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/master-detail.css') }}">
+<script src="/static/js/password-form.js"></script>
+<script src="/static/js/sys-accounts.js"></script>
+{% endblock %}
 
-<p><a href="{{ url_for('sys_accounts.create_account') }}">[+ 新增系統管理員]</a></p>
+{% block content %}
+<script>
+window.__SYS_ACCOUNTS_CONFIG = {
+    accounts: {{ accounts_json | tojson }},
+    csrfToken: '{{ csrf_token() }}',
+    urls: {
+        create: '{{ url_for("sys_accounts.create_account") }}',
+        edit: '{{ url_for("sys_accounts.edit_account", secure_code="__SC__") }}',
+        delete: '{{ url_for("sys_accounts.delete_account", secure_code="__SC__") }}'
+    }
+};
+</script>
+
+<div x-data="sysAccountsManager()" x-init="init()">
+
+<h1 style="margin-bottom: 4px;">系統管理員帳號</h1>
+<p style="color: #777; margin-top: 0; font-size: 13px;">管理 system.local 的系統管理員帳號</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -18,46 +36,256 @@
 {% endif %}
 {% endwith %}
 
-{% if accounts %}
-<table class="data-table bordered" x-data="sortableTable()">
-    <thead>
-        <tr>
-            <th data-sort="text">帳號</th>
-            <th data-sort="text">Email</th>
-            <th data-sort="text">顯示名稱</th>
-            <th data-sort="text">狀態</th>
-            <th data-sort="date">最後登入</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for account in accounts %}
-        <tr>
-            <td><code>{{ account.username }}</code></td>
-            <td>{{ account.email }}</td>
-            <td>{{ account.display_name }}</td>
-            <td>
-                {% if account.is_active %}
-                    <span class="text-success">啟用</span>
-                {% else %}
-                    <span class="text-muted">停用</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if account.last_login_at %}
-                    {{ account.last_login_at.strftime('%Y-%m-%d %H:%M') }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-            <td>
-                <a href="{{ url_for('sys_accounts.edit_account', secure_code=account.secure_code) }}">[編輯]</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>尚無系統管理員帳號。</p>
-{% endif %}
+<div class="master-detail">
+    <!-- 左面板: 列表 -->
+    <div class="master-panel">
+        <button type="button" class="btn btn-primary" style="margin-bottom: 12px;" @click="openCreateModal()">+ 新增系統管理員</button>
+
+        <template x-if="accounts.length === 0">
+            <p style="color: #888;">尚無系統管理員帳號。</p>
+        </template>
+
+        <template x-if="accounts.length > 0">
+            <table class="master-table">
+                <thead>
+                    <tr>
+                        <th>帳號</th>
+                        <th>顯示名稱</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="account in accounts" :key="account.secure_code">
+                        <tr class="clickable-row"
+                            :class="{'active-row': selected && selected.secure_code === account.secure_code}"
+                            @click="selectAccount(account)">
+                            <td><code x-text="account.username"></code></td>
+                            <td x-text="account.display_name"></td>
+                            <td>
+                                <span :class="account.is_active ? 'status-active' : 'status-inactive'"
+                                      x-text="account.is_active ? '啟用' : '停用'"></span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>
+
+    <!-- 右面板: 編輯 -->
+    <div class="detail-panel">
+        <!-- 未選取 -->
+        <template x-if="!selected">
+            <div class="detail-placeholder">請從左側選擇帳號進行編輯</div>
+        </template>
+
+        <!-- 已選取 -->
+        <template x-if="selected">
+            <div>
+                <div class="edit-section">
+                    <h3 x-text="'編輯: ' + selected.username"></h3>
+
+                    <!-- 錯誤訊息 -->
+                    <div class="form-errors" x-show="formErrors.length > 0">
+                        <template x-for="err in formErrors" :key="err">
+                            <div x-text="err"></div>
+                        </template>
+                    </div>
+
+                    <!-- 帳號 (唯讀) -->
+                    <div class="field-row">
+                        <label>帳號</label>
+                        <span class="field-value"><code x-text="selected.username + '@system.local'"></code> (不可變更)</span>
+                    </div>
+
+                    <!-- Email (唯讀) -->
+                    <div class="field-row">
+                        <label>Email</label>
+                        <span class="field-value" x-text="selected.email + ' (不可變更)'"></span>
+                    </div>
+
+                    <!-- 顯示名稱 -->
+                    <div class="field-row">
+                        <label for="edit_display_name">顯示名稱 *</label>
+                        <input type="text" id="edit_display_name" x-model="editForm.display_name">
+                    </div>
+
+                    <!-- 狀態 -->
+                    <div class="field-row">
+                        <label for="edit_is_active">狀態</label>
+                        <template x-if="selected.is_self">
+                            <span class="field-value status-active">啟用 (不能停用自己)</span>
+                        </template>
+                        <template x-if="!selected.is_self">
+                            <select id="edit_is_active" x-model="editForm.is_active">
+                                <option :value="true">啟用</option>
+                                <option :value="false">停用</option>
+                            </select>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 密碼變更 -->
+                <div class="password-section">
+                    <h4>變更密碼 (留空表示不變更)</h4>
+
+                    <div class="field-row">
+                        <label>新密碼</label>
+                        <div class="password-inline">
+                            <input :type="showEditPassword ? 'text' : 'password'"
+                                   x-model="editForm.new_password"
+                                   @input="_validatePasswordInput(editForm.new_password)"
+                                   placeholder="留空不變更">
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                    @click="showEditPassword = !showEditPassword"
+                                    x-text="showEditPassword ? '隱藏' : '顯示'"></button>
+                            <button type="button" class="btn btn-sm btn-secondary" @click="generateEditPassword()">建議密碼</button>
+                        </div>
+                        <div class="pw-requirements" x-show="passwordRequirements" x-text="passwordRequirements" style="margin-left: 100px;"></div>
+                        <div class="pw-errors" x-show="editForm.new_password && passwordErrors.length > 0" style="margin-left: 100px;">
+                            <template x-for="err in passwordErrors" :key="err">
+                                <div x-text="'- ' + err"></div>
+                            </template>
+                        </div>
+                        <div class="pw-ok" x-show="editForm.new_password && passwordErrors.length === 0 && passwordChecked" style="margin-left: 100px;">
+                            密碼符合要求
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <label>確認密碼</label>
+                        <input :type="showEditPassword ? 'text' : 'password'"
+                               x-model="editForm.confirm_password"
+                               placeholder="再次輸入新密碼"
+                               style="width: 260px;">
+                        <div class="pw-mismatch"
+                             x-show="editForm.confirm_password && editForm.new_password !== editForm.confirm_password"
+                             style="margin-left: 100px;">
+                            密碼不一致
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 儲存按鈕 -->
+                <div class="btn-row">
+                    <button type="button" class="btn btn-primary"
+                            @click="submitEdit()"
+                            :disabled="submitting"
+                            x-text="submitting ? '處理中...' : '儲存變更'"></button>
+                </div>
+
+                <!-- 帳號資訊 -->
+                <div class="edit-section" style="margin-top: 20px;">
+                    <h3>帳號資訊</h3>
+                    <table class="account-info-table">
+                        <tr>
+                            <td>建立時間</td>
+                            <td x-text="selected.created_at || '-'"></td>
+                        </tr>
+                        <tr>
+                            <td>最後登入</td>
+                            <td x-text="selected.last_login_at || '-'"></td>
+                        </tr>
+                        <tr>
+                            <td>密碼變更</td>
+                            <td x-text="selected.password_changed_at || '-'"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- 刪除區段 -->
+                <template x-if="!selected.is_self">
+                    <div class="delete-section">
+                        <h4>刪除帳號</h4>
+                        <p>刪除此系統管理員帳號將無法復原，請謹慎操作。</p>
+                        <button type="button" class="btn btn-danger btn-sm"
+                                @click="submitDelete()"
+                                :disabled="submitting">刪除帳號</button>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
+
+<!-- 新增 Modal -->
+<template x-if="showCreateModal">
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增系統管理員</h3>
+                <button type="button" class="modal-close" @click="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 錯誤訊息 -->
+                <div class="form-errors" x-show="formErrors.length > 0">
+                    <template x-for="err in formErrors" :key="err">
+                        <div x-text="err"></div>
+                    </template>
+                </div>
+
+                <div class="field-row">
+                    <label for="create_username">帳號 *</label>
+                    <input type="text" id="create_username" x-model="createForm.username"
+                           placeholder="英數字和底線">
+                    <small>登入時為: username@system.local</small>
+                </div>
+
+                <div class="field-row">
+                    <label for="create_email">Email *</label>
+                    <input type="email" id="create_email" x-model="createForm.email"
+                           placeholder="admin@example.com">
+                    <small>可使用任何 Email (含 Gmail 等公共信箱)</small>
+                </div>
+
+                <div class="field-row">
+                    <label for="create_display_name">顯示名稱 *</label>
+                    <input type="text" id="create_display_name" x-model="createForm.display_name">
+                </div>
+
+                <div class="field-row">
+                    <label>密碼 *</label>
+                    <div class="password-inline">
+                        <input :type="showCreatePassword ? 'text' : 'password'"
+                               x-model="createForm.password"
+                               @input="_validatePasswordInput(createForm.password)">
+                        <button type="button" class="btn btn-sm btn-secondary"
+                                @click="showCreatePassword = !showCreatePassword"
+                                x-text="showCreatePassword ? '隱藏' : '顯示'"></button>
+                        <button type="button" class="btn btn-sm btn-secondary" @click="generateCreatePassword()">建議密碼</button>
+                    </div>
+                    <div class="pw-requirements" x-show="passwordRequirements" x-text="passwordRequirements" style="margin-left: 100px;"></div>
+                    <div class="pw-errors" x-show="createForm.password && passwordErrors.length > 0" style="margin-left: 100px;">
+                        <template x-for="err in passwordErrors" :key="err">
+                            <div x-text="'- ' + err"></div>
+                        </template>
+                    </div>
+                    <div class="pw-ok" x-show="createForm.password && passwordErrors.length === 0 && passwordChecked" style="margin-left: 100px;">
+                        密碼符合要求
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <label>確認密碼 *</label>
+                    <input :type="showCreatePassword ? 'text' : 'password'"
+                           x-model="createForm.confirm_password">
+                    <div class="pw-mismatch"
+                         x-show="createForm.confirm_password && createForm.password !== createForm.confirm_password"
+                         style="margin-left: 100px;">
+                        密碼不一致
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">取消</button>
+                <button type="button" class="btn btn-primary"
+                        @click="submitCreate()"
+                        :disabled="submitting"
+                        x-text="submitting ? '建立中...' : '建立帳號'"></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+</div>
 {% endblock %}

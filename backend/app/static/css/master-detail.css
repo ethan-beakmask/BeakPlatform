@@ -1,0 +1,250 @@
+/**
+ * Master-Detail 共用布局樣式
+ * 適用: sys-accounts, job-levels, approval-categories 等左表右編輯頁面
+ *
+ * 按鈕/Modal 使用 common.css 統一風格（.btn .btn-primary / .modal-content）
+ */
+
+/* Master-Detail 布局 */
+.master-detail {
+    display: flex;
+    gap: 20px;
+    min-height: 500px;
+}
+.master-panel {
+    flex: 0 0 420px;
+    min-width: 0;
+}
+.detail-panel {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    padding: 20px;
+    background: var(--color-bg-light);
+    min-width: 0;
+}
+.detail-placeholder {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding-top: 120px;
+}
+
+/* 列表表格 */
+.master-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.master-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 2px solid #333;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+.master-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: var(--font-size-sm);
+}
+.master-table tr.clickable-row {
+    cursor: pointer;
+}
+.master-table tr.clickable-row:hover {
+    background: var(--color-bg-header);
+}
+.master-table tr.active-row {
+    background: var(--color-primary-light);
+}
+.master-table tr.active-row:hover {
+    background: #d4e4f4;
+}
+
+/* 狀態標記 */
+.status-active { color: var(--color-success); }
+.status-inactive { color: var(--color-text-muted); }
+
+/* 編輯面板 */
+.edit-section {
+    margin-bottom: 20px;
+}
+.edit-section h3 {
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 15px;
+}
+.edit-section label {
+    display: inline-block;
+    width: 100px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    vertical-align: top;
+    padding-top: 6px;
+}
+.edit-section .field-row {
+    margin-bottom: 10px;
+}
+.edit-section .field-value {
+    display: inline-block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    padding-top: 6px;
+}
+.edit-section input[type="text"],
+.edit-section input[type="email"],
+.edit-section input[type="password"],
+.edit-section input[type="number"] {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    width: 260px;
+}
+.edit-section input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.edit-section select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    width: 140px;
+}
+.edit-section select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.edit-section textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    width: 260px;
+    resize: vertical;
+}
+.edit-section textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* 密碼區段 */
+.password-section {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius);
+}
+.password-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+.password-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.password-inline input {
+    flex: 1;
+    max-width: 260px;
+}
+
+/* 按鈕列 */
+.btn-row {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+/* 帳號/項目資訊 */
+.account-info-table,
+.info-meta-table {
+    width: 100%;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+.account-info-table td,
+.info-meta-table td {
+    padding: 3px 0;
+}
+.account-info-table td:first-child,
+.info-meta-table td:first-child {
+    width: 100px;
+}
+
+/* 錯誤/成功訊息 */
+.form-errors {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: var(--color-danger-light);
+    border: 1px solid #ef9a9a;
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+}
+
+/* 密碼驗證提示 */
+.pw-errors { color: var(--color-danger); font-size: var(--font-size-xs); margin-top: 4px; }
+.pw-ok { color: var(--color-success); font-size: var(--font-size-xs); margin-top: 4px; }
+.pw-mismatch { color: var(--color-danger); font-size: var(--font-size-xs); margin-top: 4px; }
+.pw-requirements { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: 4px; }
+
+/* Modal 內表單布局（field-row + label 模式）*/
+.modal-content .field-row {
+    margin-bottom: 12px;
+}
+.modal-content .field-row label {
+    display: inline-block;
+    width: 100px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    vertical-align: top;
+    padding-top: 6px;
+}
+.modal-content .field-row input[type="text"],
+.modal-content .field-row input[type="email"],
+.modal-content .field-row input[type="password"],
+.modal-content .field-row input[type="number"] {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    width: 260px;
+}
+.modal-content .field-row input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+.modal-content .field-row select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    width: 140px;
+}
+.modal-content .field-row small {
+    display: block;
+    margin-left: 100px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+/* 刪除區段 */
+.delete-section {
+    margin-top: 20px;
+    padding: 12px;
+    border: 1px solid #ef9a9a;
+    background: var(--color-danger-light);
+    border-radius: var(--border-radius);
+}
+.delete-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--color-danger);
+}
+.delete-section p {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin: 0 0 10px 0;
+}

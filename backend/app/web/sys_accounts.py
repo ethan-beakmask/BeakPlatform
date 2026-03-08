@@ -5,10 +5,11 @@ BeakMask System Accounts Management
 功能：
 - 系統管理員帳號的增刪改
 - Email 不受 blocked_email_domains 限制
+- 左表格 + 右編輯面板布局，新增使用 Modal
 """
 import logging
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -24,6 +25,11 @@ sys_accounts_bp = Blueprint('sys_accounts', __name__)
 MIN_PASSWORD_LENGTH = 12
 
 
+def _wants_json():
+    """判斷是否為 AJAX 請求"""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
 def _get_system_org():
     """取得系統企業 (system.local)"""
     return Organization.query.filter(
@@ -32,10 +38,25 @@ def _get_system_org():
     ).first()
 
 
+def _serialize_account(account, current_user_id):
+    """序列化帳號為 JSON 物件"""
+    return {
+        'secure_code': account.secure_code,
+        'username': account.username,
+        'email': account.email,
+        'display_name': account.display_name,
+        'is_active': account.is_active,
+        'last_login_at': account.last_login_at.strftime('%Y-%m-%d %H:%M') if account.last_login_at else '',
+        'created_at': account.created_at.strftime('%Y-%m-%d %H:%M') if account.created_at else '',
+        'password_changed_at': account.password_changed_at.strftime('%Y-%m-%d %H:%M') if account.password_changed_at else '',
+        'is_self': account.id == current_user_id
+    }
+
+
 @sys_accounts_bp.route('/')
 @system_admin_required
 def list_accounts():
-    """系統管理員列表"""
+    """系統管理員列表（左右分欄布局）"""
     sys_org = _get_system_org()
     if not sys_org:
         flash('系統企業不存在', 'error')
@@ -47,104 +68,118 @@ def list_accounts():
         User.is_deleted == False
     ).order_by(User.created_at.desc()).all()
 
+    accounts_json = [_serialize_account(a, current_user.id) for a in accounts]
+
     return render_template(
         'pages/sys_accounts/list.html',
-        accounts=accounts
+        accounts=accounts,
+        accounts_json=accounts_json
     )
 
 
-@sys_accounts_bp.route('/create', methods=['GET', 'POST'])
+@sys_accounts_bp.route('/create', methods=['POST'])
 @system_admin_required
 def create_account():
-    """新增系統管理員"""
+    """新增系統管理員（僅接受 POST）"""
     sys_org = _get_system_org()
     if not sys_org:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
         flash('系統企業不存在', 'error')
         return redirect(url_for('main.dashboard'))
 
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        display_name = request.form.get('display_name', '').strip()
-        password = request.form.get('password', '').strip()
-        confirm_password = request.form.get('confirm_password', '').strip()
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    display_name = request.form.get('display_name', '').strip()
+    password = request.form.get('password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
 
-        # 驗證
-        errors = []
-        if not username:
-            errors.append('帳號為必填')
-        elif not username.replace('_', '').isalnum():
-            errors.append('帳號只能包含英數字和底線')
+    # 驗證
+    errors = []
+    if not username:
+        errors.append('帳號為必填')
+    elif not username.replace('_', '').isalnum():
+        errors.append('帳號只能包含英數字和底線')
 
-        if not email:
-            errors.append('Email 為必填')
-        elif '@' not in email:
-            errors.append('Email 格式不正確')
+    if not email:
+        errors.append('Email 為必填')
+    elif '@' not in email:
+        errors.append('Email 格式不正確')
 
-        if not display_name:
-            errors.append('顯示名稱為必填')
+    if not display_name:
+        errors.append('顯示名稱為必填')
 
-        if not password:
-            errors.append('密碼為必填')
-        elif len(password) < MIN_PASSWORD_LENGTH:
-            errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
-        elif password != confirm_password:
-            errors.append('兩次輸入的密碼不一致')
+    if not password:
+        errors.append('密碼為必填')
+    elif len(password) < MIN_PASSWORD_LENGTH:
+        errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
+    elif password != confirm_password:
+        errors.append('兩次輸入的密碼不一致')
 
-        # 檢查帳號/Email 是否重複
-        if username:
-            existing = User.query.filter(
-                User.org_secure_code == sys_org.secure_code,
-                User.username == username,
-                User.is_deleted == False
-            ).first()
-            if existing:
-                errors.append(f'帳號 {username} 已存在')
+    # 檢查帳號/Email 是否重複
+    if username:
+        existing = User.query.filter(
+            User.org_secure_code == sys_org.secure_code,
+            User.username == username,
+            User.is_deleted == False
+        ).first()
+        if existing:
+            errors.append(f'帳號 {username} 已存在')
 
-        if email:
-            existing = User.query.filter(
-                User.email == email,
-                User.is_deleted == False
-            ).first()
-            if existing:
-                errors.append(f'Email {email} 已被使用')
+    if email:
+        existing = User.query.filter(
+            User.email == email,
+            User.is_deleted == False
+        ).first()
+        if existing:
+            errors.append(f'Email {email} 已被使用')
 
-        if errors:
-            for error in errors:
-                flash(error, 'error')
-        else:
-            try:
-                user = User(
-                    org_secure_code=sys_org.secure_code,
-                    username=username,
-                    email=email,
-                    display_name=display_name,
-                    user_type=UserType.SYSTEM_ADMIN,
-                    is_active=True,
-                    must_change_password=False  # 系統管理員不強制變更密碼
-                )
-                user.set_password(password)
-                db.session.add(user)
-                db.session.commit()
+    if errors:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': errors}), 400
+        for error in errors:
+            flash(error, 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
-                logger.info(f"System admin created: {email} by {current_user.email}")
-                flash(f'已建立系統管理員 {username}', 'success')
-                return redirect(url_for('sys_accounts.list_accounts'))
+    try:
+        user = User(
+            org_secure_code=sys_org.secure_code,
+            username=username,
+            email=email,
+            display_name=display_name,
+            user_type=UserType.SYSTEM_ADMIN,
+            is_active=True,
+            must_change_password=False
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
 
-            except Exception as e:
-                db.session.rollback()
-                logger.error(f"Failed to create system admin: {e}")
-                flash(f'建立失敗: {str(e)}', 'error')
+        logger.info(f"System admin created: {email} by {current_user.email}")
 
-    return render_template('pages/sys_accounts/create.html')
+        if _wants_json():
+            return jsonify({'success': True, 'message': f'已建立系統管理員 {username}'})
+
+        flash(f'已建立系統管理員 {username}', 'success')
+        return redirect(url_for('sys_accounts.list_accounts'))
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to create system admin: {e}")
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [f'建立失敗: {str(e)}']}), 500
+        flash(f'建立失敗: {str(e)}', 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
 
-@sys_accounts_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
+@sys_accounts_bp.route('/<secure_code>/edit', methods=['POST'])
 @system_admin_required
 def edit_account(secure_code: str):
-    """編輯系統管理員（修改密碼）"""
+    """編輯系統管理員（僅接受 POST）"""
     sys_org = _get_system_org()
     if not sys_org:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
         flash('系統企業不存在', 'error')
         return redirect(url_for('main.dashboard'))
 
@@ -156,56 +191,61 @@ def edit_account(secure_code: str):
     ).first()
 
     if not user:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['帳號不存在']}), 404
         abort(404)
 
-    if request.method == 'POST':
-        display_name = request.form.get('display_name', '').strip()
-        new_password = request.form.get('new_password', '').strip()
-        confirm_password = request.form.get('confirm_password', '').strip()
-        is_active = request.form.get('is_active') == '1'
+    display_name = request.form.get('display_name', '').strip()
+    new_password = request.form.get('new_password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+    is_active = request.form.get('is_active') == '1'
 
-        errors = []
-        if not display_name:
-            errors.append('顯示名稱為必填')
+    errors = []
+    if not display_name:
+        errors.append('顯示名稱為必填')
 
-        # 只有輸入新密碼時才驗證
+    # 只有輸入新密碼時才驗證
+    if new_password:
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
+        elif new_password != confirm_password:
+            errors.append('兩次輸入的密碼不一致')
+
+    # 不能停用自己
+    if user.id == current_user.id and not is_active:
+        errors.append('不能停用自己的帳號')
+
+    if errors:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': errors}), 400
+        for error in errors:
+            flash(error, 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
+
+    try:
+        user.display_name = display_name
+        user.is_active = is_active
+
         if new_password:
-            if len(new_password) < MIN_PASSWORD_LENGTH:
-                errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
-            elif new_password != confirm_password:
-                errors.append('兩次輸入的密碼不一致')
+            user.set_password(new_password)
+            user.password_changed_at = datetime.utcnow()
+            logger.info(f"Password changed for system admin: {user.email} by {current_user.email}")
 
-        # 不能停用自己
-        if user.id == current_user.id and not is_active:
-            errors.append('不能停用自己的帳號')
+        db.session.commit()
 
-        if errors:
-            for error in errors:
-                flash(error, 'error')
-        else:
-            try:
-                user.display_name = display_name
-                user.is_active = is_active
+        if _wants_json():
+            return jsonify({'success': True, 'message': '已更新帳號資料'})
 
-                if new_password:
-                    user.set_password(new_password)
-                    user.password_changed_at = datetime.utcnow()
-                    logger.info(f"Password changed for system admin: {user.email} by {current_user.email}")
+        flash('已更新帳號資料', 'success')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
-                db.session.commit()
-                flash('已更新帳號資料', 'success')
-                return redirect(url_for('sys_accounts.list_accounts'))
-
-            except Exception as e:
-                db.session.rollback()
-                logger.error(f"Failed to update system admin: {e}")
-                flash(f'更新失敗: {str(e)}', 'error')
-
-    return render_template(
-        'pages/sys_accounts/edit.html',
-        account=user,
-        is_self=(user.id == current_user.id)
-    )
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update system admin: {e}")
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [f'更新失敗: {str(e)}']}), 500
+        flash(f'更新失敗: {str(e)}', 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
 
 @sys_accounts_bp.route('/<secure_code>/delete', methods=['POST'])
@@ -214,6 +254,8 @@ def delete_account(secure_code: str):
     """刪除系統管理員"""
     sys_org = _get_system_org()
     if not sys_org:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
         flash('系統企業不存在', 'error')
         return redirect(url_for('main.dashboard'))
 
@@ -225,12 +267,17 @@ def delete_account(secure_code: str):
     ).first()
 
     if not user:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['帳號不存在']}), 404
         abort(404)
 
     # 不能刪除自己
     if user.id == current_user.id:
-        flash('不能刪除自己的帳號', 'error')
-        return redirect(url_for('sys_accounts.edit_account', secure_code=secure_code))
+        msg = '不能刪除自己的帳號'
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [msg]}), 400
+        flash(msg, 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
     # 確保至少保留一個系統管理員
     count = User.query.filter(
@@ -241,8 +288,11 @@ def delete_account(secure_code: str):
     ).count()
 
     if count <= 1:
-        flash('至少需要保留一個啟用的系統管理員', 'error')
-        return redirect(url_for('sys_accounts.edit_account', secure_code=secure_code))
+        msg = '至少需要保留一個啟用的系統管理員'
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [msg]}), 400
+        flash(msg, 'error')
+        return redirect(url_for('sys_accounts.list_accounts'))
 
     try:
         user.is_deleted = True
@@ -250,11 +300,17 @@ def delete_account(secure_code: str):
         db.session.commit()
 
         logger.info(f"System admin deleted: {user.email} by {current_user.email}")
+
+        if _wants_json():
+            return jsonify({'success': True, 'message': f'已刪除系統管理員 {user.username}'})
+
         flash(f'已刪除系統管理員 {user.username}', 'success')
         return redirect(url_for('sys_accounts.list_accounts'))
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete system admin: {e}")
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [f'刪除失敗: {str(e)}']}), 500
         flash(f'刪除失敗: {str(e)}', 'error')
-        return redirect(url_for('sys_accounts.edit_account', secure_code=secure_code))
+        return redirect(url_for('sys_accounts.list_accounts'))

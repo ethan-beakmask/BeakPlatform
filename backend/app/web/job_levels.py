@@ -9,7 +9,7 @@ URL 安全設計：
 """
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -24,6 +24,27 @@ from .. import db
 job_levels_bp = Blueprint('job_levels', __name__)
 
 
+def _wants_json():
+    """判斷請求是否期望 JSON 回應（AJAX 請求）"""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
+def _level_to_dict(level):
+    """將 JobLevel 物件轉為 dict"""
+    return {
+        'secure_code': level.secure_code,
+        'code': level.code,
+        'name': level.name,
+        'name_en': level.name_en or '',
+        'level_order': level.level_order,
+        'is_manager_level': level.is_manager_level,
+        'management_scope': level.management_scope or '',
+        'description': level.description or '',
+        'is_active': level.is_active,
+        'is_system_default': level.is_system_default
+    }
+
+
 @job_levels_bp.route('/')
 @admin_required
 def list_job_levels():
@@ -35,9 +56,12 @@ def list_job_levels():
         order_by='-level_order'  # 由高到低排序
     )
 
+    levels_json = [_level_to_dict(l) for l in result['items']]
+
     return render_template(
         'pages/job_levels/list.html',
         job_levels=result['items'],
+        levels_json=levels_json,
         pagination=result
     )
 
@@ -57,8 +81,10 @@ def view_job_level(secure_code: str):
 @job_levels_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
 def create_job_level():
-    """建立職等頁面"""
+    """建立職等"""
     if request.method == 'POST':
+        is_ajax = _wants_json()
+
         code = request.form.get('code', '').strip()
         name = request.form.get('name', '').strip()
         name_en = request.form.get('name_en', '').strip() or None
@@ -110,6 +136,8 @@ def create_job_level():
                 errors.append('無法自動產生代碼，請手動輸入')
 
         if errors:
+            if is_ajax:
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -121,7 +149,10 @@ def create_job_level():
             ).first()
 
             if existing:
-                flash(f'職等代碼 {code} 已存在', 'error')
+                msg = f'職等代碼 {code} 已存在'
+                if is_ajax:
+                    return jsonify({'success': False, 'errors': [msg]}), 400
+                flash(msg, 'error')
             else:
                 try:
                     job_level = JobLevel(
@@ -139,11 +170,21 @@ def create_job_level():
                     db.session.add(job_level)
                     db.session.commit()
 
+                    if is_ajax:
+                        return jsonify({
+                            'success': True,
+                            'message': f'已建立職等 {name}',
+                            'data': _level_to_dict(job_level)
+                        })
+
                     flash(f'已建立職等 {name}', 'success')
                     return redirect(url_for('job_levels.list_job_levels'))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    msg = f'建立失敗: {str(e)}'
+                    if is_ajax:
+                        return jsonify({'success': False, 'errors': [msg]}), 500
+                    flash(msg, 'error')
 
     return render_template('pages/job_levels/create.html')
 
@@ -151,13 +192,17 @@ def create_job_level():
 @job_levels_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_job_level(secure_code: str):
-    """編輯職等頁面"""
+    """編輯職等"""
     try:
         job_level = ResourceGateway.get(JobLevel, secure_code)
     except Exception:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['職等不存在']}), 404
         abort(404)
 
     if request.method == 'POST':
+        is_ajax = _wants_json()
+
         name = request.form.get('name', '').strip()
         name_en = request.form.get('name_en', '').strip() or None
         level_order_str = request.form.get('level_order', '').strip()
@@ -195,6 +240,8 @@ def edit_job_level(secure_code: str):
                 errors.append('簽核金額上限格式錯誤')
 
         if errors:
+            if is_ajax:
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -209,11 +256,22 @@ def edit_job_level(secure_code: str):
                 job_level.is_active = is_active
 
                 db.session.commit()
+
+                if is_ajax:
+                    return jsonify({
+                        'success': True,
+                        'message': '已更新職等',
+                        'data': _level_to_dict(job_level)
+                    })
+
                 flash('已更新職等', 'success')
                 return redirect(url_for('job_levels.view_job_level', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                msg = f'更新失敗: {str(e)}'
+                if is_ajax:
+                    return jsonify({'success': False, 'errors': [msg]}), 500
+                flash(msg, 'error')
 
     return render_template('pages/job_levels/edit.html', job_level=job_level)
 
@@ -222,32 +280,50 @@ def edit_job_level(secure_code: str):
 @admin_required
 def delete_job_level(secure_code: str):
     """刪除職等"""
+    is_ajax = _wants_json()
+
     try:
         job_level = ResourceGateway.get(JobLevel, secure_code)
     except Exception:
+        if is_ajax:
+            return jsonify({'success': False, 'errors': ['職等不存在']}), 404
         abort(404)
 
     # 系統預設不可刪除
     if job_level.is_system_default:
-        flash('系統預設職等不可刪除', 'error')
+        msg = '系統預設職等不可刪除'
+        if is_ajax:
+            return jsonify({'success': False, 'errors': [msg]}), 400
+        flash(msg, 'error')
         return redirect(url_for('job_levels.edit_job_level', secure_code=secure_code))
 
     # 檢查是否有職稱使用此職等
     if job_level.job_titles:
         active_titles = [t for t in job_level.job_titles if not t.is_deleted]
         if active_titles:
-            flash(f'此職等有 {len(active_titles)} 個職稱使用中，請先移除關聯', 'error')
+            msg = f'此職等有 {len(active_titles)} 個職稱使用中，請先移除關聯'
+            if is_ajax:
+                return jsonify({'success': False, 'errors': [msg]}), 400
+            flash(msg, 'error')
             return redirect(url_for('job_levels.edit_job_level', secure_code=secure_code))
 
     try:
+        level_name = job_level.name
         job_level.is_deleted = True
         job_level.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除職等 {job_level.name}', 'success')
+
+        if is_ajax:
+            return jsonify({'success': True, 'message': f'已刪除職等 {level_name}'})
+
+        flash(f'已刪除職等 {level_name}', 'success')
         return redirect(url_for('job_levels.list_job_levels'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        msg = f'刪除失敗: {str(e)}'
+        if is_ajax:
+            return jsonify({'success': False, 'errors': [msg]}), 500
+        flash(msg, 'error')
         return redirect(url_for('job_levels.edit_job_level', secure_code=secure_code))
 
 
@@ -316,8 +392,6 @@ def update_title_position():
         "new_family_secure_code": "xxx"
     }
     """
-    from flask import jsonify
-
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'error': '無效的請求'}), 400

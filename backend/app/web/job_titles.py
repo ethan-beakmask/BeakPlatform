@@ -6,7 +6,7 @@ BeakMask Job Title Management Web Routes
 例如：經理 = L500 經理級 + 管理職
 """
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -21,48 +21,143 @@ from .. import db
 job_titles_bp = Blueprint('job_titles', __name__)
 
 
+def _wants_json():
+    """判斷請求是否期望 JSON 回應（AJAX 請求）"""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
+def _title_to_tree_node(title):
+    """將 JobTitle ORM 物件轉為 BeakTrellis 樹節點"""
+    level_text = ''
+    if title.job_level:
+        level_text = f'{title.job_level.code} {title.job_level.name}'
+    return {
+        'id': title.secure_code,
+        'label': title.name,
+        'data': {
+            '_isTitle': True,
+            'secure_code': title.secure_code,
+            'code': title.code,
+            'name': title.name,
+            'name_en': title.name_en or '',
+            'short_name': title.short_name or '',
+            'job_level_secure_code': title.job_level_secure_code,
+            'job_family_secure_code': title.job_family_secure_code,
+            'job_level_text': level_text,
+            'is_supervisor': title.is_supervisor,
+            'is_active': title.is_active,
+            'is_system_default': title.is_system_default,
+            'description': title.description or '',
+            'sort_order': title.sort_order
+        },
+        'children': []
+    }
+
+
+def _family_tree_node(family, children_nodes):
+    """將 JobFamily 包裝為群組節點（不可編輯）"""
+    return {
+        'id': 'family_' + family.secure_code,
+        'label': family.name,
+        'expanded': True,
+        'data': {
+            '_isFamily': True,
+            'code': family.code,
+            'name_en': family.name_en or '',
+            'family_type': family.family_type,
+        },
+        'children': children_nodes
+    }
+
+
 @job_titles_bp.route('/')
 @admin_required
 def list_job_titles():
-    """職稱列表頁面 - 按職系分組顯示"""
-    # 取得所有職系 (用於分組)
-    job_families = ResourceGateway.filter(
+    """職稱列表頁面 - BeakTrellis 樹狀格線"""
+    # 取得所有啟用職系（建樹用）
+    all_families = ResourceGateway.filter(
         JobFamily,
         is_deleted=False,
         is_active=True,
         order_by='sort_order'
     )
 
-    # 找出所有「父層級」的 secure_code（有子節點的職系）
-    parent_codes = {f.parent_secure_code for f in job_families if f.parent_secure_code}
-
-    # 過濾：只保留葉節點（沒有子節點的職系）
-    display_families = [f for f in job_families if f.secure_code not in parent_codes]
-
-    # 取得所有職稱
-    job_titles = ResourceGateway.filter(
+    # 取得所有職稱（含停用，不含已刪除）
+    all_titles = ResourceGateway.filter(
         JobTitle,
         is_deleted=False,
         order_by='sort_order'
     )
 
-    # 按職系分組
-    titles_by_family = {f.secure_code: [] for f in display_families}
-    # 加入「未分類」
-    titles_by_family['__unassigned__'] = []
+    # 取得所有啟用職等（Modal 下拉選單用）
+    all_levels = ResourceGateway.filter(
+        JobLevel,
+        is_deleted=False,
+        is_active=True,
+        order_by='-level_order'
+    )
 
-    for title in job_titles:
-        family_code = title.job_family_secure_code
-        if family_code in titles_by_family:
-            titles_by_family[family_code].append(title)
+    # ---- 建構樹狀結構 ----
+    family_map = {f.secure_code: f for f in all_families}
+    root_families = [f for f in all_families if not f.parent_secure_code]
+    sub_by_parent = {}
+    for f in all_families:
+        if f.parent_secure_code:
+            sub_by_parent.setdefault(f.parent_secure_code, []).append(f)
+
+    # 職稱按職系分組
+    titles_by_family = {}
+    unassigned = []
+    for t in all_titles:
+        if t.job_family_secure_code in family_map:
+            titles_by_family.setdefault(t.job_family_secure_code, []).append(t)
         else:
-            titles_by_family['__unassigned__'].append(title)
+            unassigned.append(t)
+
+    tree_data = []
+    for root in root_families:
+        subs = sub_by_parent.get(root.secure_code, [])
+        if subs:
+            # 根職系有子職系：子職系各自掛職稱
+            sub_nodes = []
+            for sub in subs:
+                sub_titles = titles_by_family.get(sub.secure_code, [])
+                sub_nodes.append(_family_tree_node(sub, [_title_to_tree_node(t) for t in sub_titles]))
+            tree_data.append(_family_tree_node(root, sub_nodes))
+        else:
+            # 根職系本身就是葉節點：職稱直接掛底下
+            root_titles = titles_by_family.get(root.secure_code, [])
+            tree_data.append(_family_tree_node(root, [_title_to_tree_node(t) for t in root_titles]))
+
+    if unassigned:
+        tree_data.append({
+            'id': 'family_unassigned',
+            'label': '未分類',
+            'expanded': True,
+            'data': {'_isFamily': True, 'code': '-', 'name_en': '', 'family_type': ''},
+            'children': [_title_to_tree_node(t) for t in unassigned]
+        })
+
+    # ---- 下拉選單選項 ----
+    # 職系：只有葉節點可選
+    parent_codes = {f.parent_secure_code for f in all_families if f.parent_secure_code}
+    leaf_families = [f for f in all_families if f.secure_code not in parent_codes]
+    family_options = [
+        {'secure_code': f.secure_code, 'name': f.name, 'code': f.code}
+        for f in leaf_families
+    ]
+
+    level_options = [
+        {'secure_code': l.secure_code, 'name': l.name, 'code': l.code, 'level_order': l.level_order}
+        for l in all_levels
+    ]
 
     return render_template(
         'pages/job_titles/list.html',
-        job_families=display_families,
-        titles_by_family=titles_by_family,
-        total_count=len(job_titles)
+        tree_data_json=tree_data,
+        family_options_json=family_options,
+        level_options_json=level_options,
+        total_count=len(all_titles)
     )
 
 
@@ -81,20 +176,12 @@ def view_job_title(secure_code: str):
 @job_titles_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
 def create_job_title():
-    """建立職稱頁面"""
-    # 取得職等和職系選項
+    """建立職稱（支援 AJAX JSON 回應）"""
     job_levels = ResourceGateway.filter(
-        JobLevel,
-        is_deleted=False,
-        is_active=True,
-        order_by='-level_order'
+        JobLevel, is_deleted=False, is_active=True, order_by='-level_order'
     )
-
     job_families = ResourceGateway.filter(
-        JobFamily,
-        is_deleted=False,
-        is_active=True,
-        order_by='sort_order'
+        JobFamily, is_deleted=False, is_active=True, order_by='sort_order'
     )
 
     if request.method == 'POST':
@@ -138,10 +225,11 @@ def create_job_title():
             errors.append('排序順序須為整數')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
-            # 檢查代碼是否已存在 (case-insensitive)
             existing = JobTitle.query.filter(
                 func.upper(JobTitle.code) == code.upper(),
                 JobTitle.org_secure_code == current_user.org_secure_code,
@@ -149,7 +237,10 @@ def create_job_title():
             ).first()
 
             if existing:
-                flash(f'職稱代碼 {code} 已存在', 'error')
+                msg = f'職稱代碼 {code} 已存在'
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [msg]}), 400
+                flash(msg, 'error')
             else:
                 try:
                     job_title = JobTitle(
@@ -168,10 +259,14 @@ def create_job_title():
                     db.session.add(job_title)
                     db.session.commit()
 
+                    if _wants_json():
+                        return jsonify({'success': True, 'message': f'已建立職稱 {name}'})
                     flash(f'已建立職稱 {name}', 'success')
                     return redirect(url_for('job_titles.list_job_titles'))
                 except Exception as e:
                     db.session.rollback()
+                    if _wants_json():
+                        return jsonify({'success': False, 'errors': [f'建立失敗: {str(e)}']}), 500
                     flash(f'建立失敗: {str(e)}', 'error')
 
     return render_template(
@@ -184,24 +279,19 @@ def create_job_title():
 @job_titles_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_job_title(secure_code: str):
-    """編輯職稱頁面"""
+    """編輯職稱（支援 AJAX JSON 回應）"""
     try:
         job_title = ResourceGateway.get(JobTitle, secure_code)
     except Exception:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['職稱不存在']}), 404
         abort(404)
 
     job_levels = ResourceGateway.filter(
-        JobLevel,
-        is_deleted=False,
-        is_active=True,
-        order_by='-level_order'
+        JobLevel, is_deleted=False, is_active=True, order_by='-level_order'
     )
-
     job_families = ResourceGateway.filter(
-        JobFamily,
-        is_deleted=False,
-        is_active=True,
-        order_by='sort_order'
+        JobFamily, is_deleted=False, is_active=True, order_by='sort_order'
     )
 
     if request.method == 'POST':
@@ -231,6 +321,8 @@ def edit_job_title(secure_code: str):
             errors.append('排序順序須為整數')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -246,10 +338,14 @@ def edit_job_title(secure_code: str):
                 job_title.is_active = is_active
 
                 db.session.commit()
+                if _wants_json():
+                    return jsonify({'success': True, 'message': '已更新職稱'})
                 flash('已更新職稱', 'success')
                 return redirect(url_for('job_titles.view_job_title', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [f'更新失敗: {str(e)}']}), 500
                 flash(f'更新失敗: {str(e)}', 'error')
 
     return render_template(
@@ -263,30 +359,44 @@ def edit_job_title(secure_code: str):
 @job_titles_bp.route('/<secure_code>/delete', methods=['POST'])
 @admin_required
 def delete_job_title(secure_code: str):
-    """刪除職稱"""
+    """刪除職稱（支援 AJAX JSON 回應）"""
     try:
         job_title = ResourceGateway.get(JobTitle, secure_code)
     except Exception:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['職稱不存在']}), 404
         abort(404)
 
     if job_title.is_system_default:
-        flash('系統預設職稱不可刪除', 'error')
+        msg = '系統預設職稱不可刪除'
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [msg]}), 400
+        flash(msg, 'error')
         return redirect(url_for('job_titles.edit_job_title', secure_code=secure_code))
 
     # 檢查是否有員工使用此職稱
     if job_title.employees:
         active_employees = [e for e in job_title.employees if not e.is_deleted]
         if active_employees:
-            flash(f'此職稱有 {len(active_employees)} 位員工使用中，請先移除關聯', 'error')
+            msg = f'此職稱有 {len(active_employees)} 位員工使用中，請先移除關聯'
+            if _wants_json():
+                return jsonify({'success': False, 'errors': [msg]}), 400
+            flash(msg, 'error')
             return redirect(url_for('job_titles.edit_job_title', secure_code=secure_code))
 
     try:
         job_title.is_deleted = True
         job_title.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除職稱 {job_title.name}', 'success')
+
+        msg = f'已刪除職稱 {job_title.name}'
+        if _wants_json():
+            return jsonify({'success': True, 'message': msg})
+        flash(msg, 'success')
         return redirect(url_for('job_titles.list_job_titles'))
     except Exception as e:
         db.session.rollback()
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [f'刪除失敗: {str(e)}']}), 500
         flash(f'刪除失敗: {str(e)}', 'error')
         return redirect(url_for('job_titles.edit_job_title', secure_code=secure_code))

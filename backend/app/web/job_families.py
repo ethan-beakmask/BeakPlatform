@@ -8,7 +8,7 @@ BeakMask Job Family Management Web Routes
   - 業務職、客服職、行政職、工程技術職
 """
 from datetime import datetime
-from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -21,10 +21,15 @@ from .. import db
 job_families_bp = Blueprint('job_families', __name__)
 
 
+def _wants_json():
+    """判斷請求是否期望 JSON 回應（AJAX 請求）"""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json
+
+
 @job_families_bp.route('/')
 @admin_required
 def list_job_families():
-    """職系列表頁面"""
+    """職系列表頁面（BeakTrellis 樹狀格線）"""
     result = ResourceGateway.list(
         JobFamily,
         page=1,
@@ -41,10 +46,64 @@ def list_job_families():
     for root in root_families:
         root.sub_families = [f for f in families if f.parent_secure_code == root.secure_code]
 
+    # 準備樹狀 JSON 資料給 BeakTrellis
+    tree_data = []
+    for root in root_families:
+        node = {
+            'id': root.secure_code,
+            'label': root.name,
+            'expanded': True,
+            'data': {
+                'secure_code': root.secure_code,
+                'code': root.code,
+                'name': root.name,
+                'name_en': root.name_en or '',
+                'family_type': root.family_type,
+                'sort_order': root.sort_order,
+                'is_active': root.is_active,
+                'is_system_default': root.is_system_default,
+                'parent_secure_code': '',
+                'description': root.description or ''
+            },
+            'children': []
+        }
+        for sub in root.sub_families:
+            child = {
+                'id': sub.secure_code,
+                'label': sub.name,
+                'data': {
+                    'secure_code': sub.secure_code,
+                    'code': sub.code,
+                    'name': sub.name,
+                    'name_en': sub.name_en or '',
+                    'family_type': sub.family_type,
+                    'sort_order': sub.sort_order,
+                    'is_active': sub.is_active,
+                    'is_system_default': sub.is_system_default,
+                    'parent_secure_code': root.secure_code,
+                    'description': sub.description or ''
+                },
+                'children': []
+            }
+            node['children'].append(child)
+        tree_data.append(node)
+
+    # parent options 給建立/編輯 modal 用
+    parent_options = [
+        {'secure_code': r.secure_code, 'name': r.name, 'code': r.code}
+        for r in root_families
+    ]
+
     return render_template(
         'pages/job_families/list.html',
         job_families=root_families,
-        all_families=families
+        all_families=families,
+        tree_data_json=tree_data,
+        parent_options_json=parent_options,
+        family_types_json=[
+            {'value': 'MANAGER', 'label': '管理職 (People Manager)'},
+            {'value': 'PROFESSIONAL', 'label': '專業職 (Individual Contributor)'}
+        ]
     )
 
 
@@ -63,7 +122,7 @@ def view_job_family(secure_code: str):
 @job_families_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
 def create_job_family():
-    """建立職系頁面"""
+    """建立職系（支援 AJAX JSON 回應）"""
     # 取得可作為父職系的選項 (只有根職系可作為父)
     parent_options = ResourceGateway.filter(
         JobFamily,
@@ -109,6 +168,8 @@ def create_job_family():
             errors.append('排序順序須為整數')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -120,6 +181,8 @@ def create_job_family():
             ).first()
 
             if existing:
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [f'職系代碼 {code} 已存在']}), 400
                 flash(f'職系代碼 {code} 已存在', 'error')
             else:
                 try:
@@ -137,10 +200,14 @@ def create_job_family():
                     db.session.add(job_family)
                     db.session.commit()
 
+                    if _wants_json():
+                        return jsonify({'success': True, 'message': f'已建立職系 {name}'})
                     flash(f'已建立職系 {name}', 'success')
                     return redirect(url_for('job_families.list_job_families'))
                 except Exception as e:
                     db.session.rollback()
+                    if _wants_json():
+                        return jsonify({'success': False, 'errors': [f'建立失敗: {str(e)}']}), 500
                     flash(f'建立失敗: {str(e)}', 'error')
 
     return render_template(
@@ -156,10 +223,12 @@ def create_job_family():
 @job_families_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_job_family(secure_code: str):
-    """編輯職系頁面"""
+    """編輯職系（支援 AJAX JSON 回應）"""
     try:
         job_family = ResourceGateway.get(JobFamily, secure_code)
     except Exception:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['職系不存在']}), 404
         abort(404)
 
     # 取得可作為父職系的選項 (排除自己)
@@ -196,6 +265,8 @@ def edit_job_family(secure_code: str):
             errors.append('不能將自己設為父職系')
 
         if errors:
+            if _wants_json():
+                return jsonify({'success': False, 'errors': errors}), 400
             for err in errors:
                 flash(err, 'error')
         else:
@@ -209,10 +280,14 @@ def edit_job_family(secure_code: str):
                 job_family.is_active = is_active
 
                 db.session.commit()
+                if _wants_json():
+                    return jsonify({'success': True, 'message': '已更新職系'})
                 flash('已更新職系', 'success')
                 return redirect(url_for('job_families.view_job_family', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
+                if _wants_json():
+                    return jsonify({'success': False, 'errors': [f'更新失敗: {str(e)}']}), 500
                 flash(f'更新失敗: {str(e)}', 'error')
 
     return render_template(
@@ -229,14 +304,18 @@ def edit_job_family(secure_code: str):
 @job_families_bp.route('/<secure_code>/delete', methods=['POST'])
 @admin_required
 def delete_job_family(secure_code: str):
-    """刪除職系"""
+    """刪除職系（支援 AJAX JSON 回應）"""
     try:
         job_family = ResourceGateway.get(JobFamily, secure_code)
     except Exception:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['職系不存在']}), 404
         abort(404)
 
     # 系統預設不可刪除
     if job_family.is_system_default:
+        if _wants_json():
+            return jsonify({'success': False, 'errors': ['系統預設職系不可刪除']}), 400
         flash('系統預設職系不可刪除', 'error')
         return redirect(url_for('job_families.edit_job_family', secure_code=secure_code))
 
@@ -247,7 +326,10 @@ def delete_job_family(secure_code: str):
         is_deleted=False
     )
     if children > 0:
-        flash(f'此職系有 {children} 個子職系，請先刪除子職系', 'error')
+        msg = f'此職系有 {children} 個子職系，請先刪除子職系'
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [msg]}), 400
+        flash(msg, 'error')
         return redirect(url_for('job_families.edit_job_family', secure_code=secure_code))
 
     # 檢查是否有職稱使用此職系
@@ -255,8 +337,15 @@ def delete_job_family(secure_code: str):
     active_titles = [t for t in job_family.job_titles if not t.is_deleted] if job_family.job_titles else []
 
     if active_titles and not cascade_delete:
-        # 尚未確認連動刪除，顯示確認訊息
-        flash(f'此職系有 {len(active_titles)} 個職稱使用中，請確認是否連同職稱一併刪除', 'warning')
+        msg = f'此職系有 {len(active_titles)} 個職稱使用中，需連同職稱一併刪除'
+        if _wants_json():
+            return jsonify({
+                'success': False,
+                'errors': [msg],
+                'confirm_cascade': True,
+                'title_count': len(active_titles)
+            }), 409
+        flash(msg, 'warning')
         return redirect(url_for('job_families.edit_job_family', secure_code=secure_code, confirm_cascade=len(active_titles)))
 
     try:
@@ -271,11 +360,17 @@ def delete_job_family(secure_code: str):
         db.session.commit()
 
         if active_titles and cascade_delete:
-            flash(f'已刪除職系 {job_family.name} 及 {len(active_titles)} 個職稱', 'success')
+            msg = f'已刪除職系 {job_family.name} 及 {len(active_titles)} 個職稱'
         else:
-            flash(f'已刪除職系 {job_family.name}', 'success')
+            msg = f'已刪除職系 {job_family.name}'
+
+        if _wants_json():
+            return jsonify({'success': True, 'message': msg})
+        flash(msg, 'success')
         return redirect(url_for('job_families.list_job_families'))
     except Exception as e:
         db.session.rollback()
+        if _wants_json():
+            return jsonify({'success': False, 'errors': [f'刪除失敗: {str(e)}']}), 500
         flash(f'刪除失敗: {str(e)}', 'error')
         return redirect(url_for('job_families.edit_job_family', secure_code=secure_code))
