@@ -368,14 +368,28 @@ textarea.form-control {
     justify-content: flex-end;
     gap: 10px;
 }
-.close-btn {
+.close-btn,
+.modal-close {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
     color: var(--color-text-secondary);
 }
-.close-btn:hover { color: var(--color-text); }
+.close-btn:hover,
+.modal-close:hover { color: var(--color-text); }
+
+/* 密碼重設連結按鈕（管理員列表等多頁共用） */
+.btn-reset-pwd {
+    background: none;
+    border: none;
+    color: var(--color-warning);
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.btn-reset-pwd:hover {
+    color: var(--color-warning-hover);
+}
 
 /* Modal: 密碼重設 (user-view, org-admins 共用) */
 .modal-content h3 {
@@ -542,6 +556,22 @@ textarea.form-control {
     background: var(--color-info-light);
     color: var(--color-info-hover);
     border: 1px solid #93c5fd;
+}
+
+/* .message 別名（hostconfig/organizations 等使用） */
+.message {
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    margin-bottom: 12px;
+    font-size: var(--font-size-sm);
+}
+.message-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+.message-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
 }
 
 /* ------------------------------------------

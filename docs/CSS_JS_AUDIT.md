@@ -104,30 +104,30 @@ portal_base.html 繼承鏈:
 | `css/job-titles.css` | 職稱列表頁面專用 (family-header/supervisor-badge) | 新建 |
 | `css/approval-limits.css` | 簽核限額 | 保留 (有自己的 .matrix-table) |
 | `css/external-user-edit.css` | 外部人員編輯 | 保留 |
-| `css/holidays.css` | 假期設定 | 待統一 |
-| `css/hostconfig-index.css` | 主機設定 | 待統一 |
+| `css/holidays.css` | 假期設定（日曆/圖例） | 已裁剪 (150→122行) |
+| `css/hostconfig-index.css` | 主機設定 | 保留 (75% 唯一佈局) |
 | `css/job-matrix.css` | 職等矩陣 | 保留 (特殊佈局) |
-| `css/menu.css` | 選單管理 | 待統一 |
+| `css/menu.css` | 選單管理（權限著色系統） | 保留 (75% 唯一，核心功能) |
 | `css/module-permissions.css` | 模組權限 | 保留 (有自己的 .mp-* 體系) |
-| `css/numbering-edit.css` | 編號規則編輯 | 待統一 |
-| `css/org-admin-create.css` | 企業管理員建立 | 待統一 |
-| `css/org-admin-rescue.css` | 企業管理員救援 | 待統一 |
-| `css/org-admins.css` | 企業管理員列表 | 待統一 |
-| `css/org-databases.css` | 組織資料庫 | 待統一 |
+| `css/numbering-edit.css` | 編號規則編輯（元素/預覽） | 已裁剪 (156→134行) |
+| `css/org-admin-create.css` | 企業管理員建立（email佈局） | 已裁剪 (25→16行) |
+| `css/org-admin-rescue.css` | 企業管理員救援（重設密碼） | 已裁剪 (130→22行) |
+| ~~`css/org-admins.css`~~ | ~~企業管理員列表~~ | 已刪除 (100% 重複) |
+| `css/org-databases.css` | 組織資料庫（master-detail） | 保留 (60% 唯一) |
 | `css/org-tree.css` | 組織/部門/群組樹 | 保留 (樹狀結構專用) |
-| `css/organizations.css` | 組織列表 | 待統一 |
+| `css/organizations.css` | 組織列表（Outlook佈局） | 已裁剪 (418→296行) |
 | `css/quick-login.css` | 快速登入 (dev) | 保留 |
-| `css/schedules.css` | 排程設定 | 待統一 |
-| `css/settings.css` | 系統設定 | 待統一 |
-| `css/system-settings.css` | 主機系統設定 | 待統一 |
-| `css/user-form.css` | 使用者表單 | 待統一 |
-| `css/user-view.css` | 使用者檢視 | 待統一 |
+| `css/schedules.css` | 排程設定（週間工時） | 已裁剪 (100→70行) |
+| `css/settings.css` | 系統設定（左側選單） | 保留 (75% 唯一) |
+| `css/system-settings.css` | 主機系統設定（設定卡片/頻道） | 已裁剪 (376→223行) |
+| `css/user-form.css` | 使用者表單（部門選擇器） | 已裁剪 (230→218行) |
+| `css/user-view.css` | 使用者檢視（狀態/操作） | 已裁剪 (62→49行) |
 
 ### 孤立/僅排除項目使用
 
 | 檔案 | 說明 | 狀態 |
 |------|------|------|
-| `css/app.css` | 無任何模板引用 | 孤立 (可考慮刪除) |
+| ~~`css/app.css`~~ | ~~無任何模板引用~~ | 已刪除 (孤立) |
 | `css/themes.css` | 僅 workflow_designer.html (排除) | 排除項目專用 |
 | `css/theme-styles.css` | 僅 form_designer.html (排除) | 排除項目專用 |
 
@@ -158,8 +158,9 @@ portal_base.html 繼承鏈:
 | P1-1 | 按鈕樣式統一 | common.css 定義 .btn 系列，平台層 ~59 頁已套用 | 完成 |
 | P1-2 | 表格樣式統一 | common.css 定義 .data-table/.info-table，平台層已套用 | 完成 |
 | P1-3 | 表單元素統一 | common.css 定義 .form-control/.form-label/.form-group | 完成 |
-| P1-4 | 內嵌 `<style>` 清理 | 平台層高優先頁面已處理 | 大部分完成 |
-| P1-5 | 文字色/間距統一 | 平台層已批量 inline → class (.text-muted/.text-danger 等) | 大部分完成 |
+| P1-4 | 內嵌 `<style>` 清理 | 平台層高優先頁面已處理 | 完成 |
+| P1-5 | 文字色/間距統一 | 平台層已批量 inline → class (.text-muted/.text-danger 等) | 完成 |
+| P1-6 | 頁面 CSS 重複定義清理 | 9 個 CSS 檔裁剪 + 2 個刪除，削減 ~522 行重複 | 完成 |
 
 ### P2 - 技術債
 
@@ -201,16 +202,34 @@ portal_base.html 繼承鏈:
 - inline color → `.text-muted/.text-danger/.text-success`
 - 表頭 inline background → 移除
 
-### 待後續處理
+### 第四階段: 頁面 CSS 重複裁剪 -- 完成
 
-| 項目 | 說明 | 優先度 |
-|------|------|--------|
-| admin 頁面 | departments/groups/settings/holidays/schedules 等有專屬 CSS，內部一致 | 低 |
-| data_crud 模組 | `dc-*` 體系，內部一致 | 不改 |
-| form_workflow 模組 | `fw-*` 體系，內部一致 | 不改 |
-| auth 獨立模板 | 零 JS，各自內嵌 CSS | 低 |
-| error 頁面 | 極簡 | 不需處理 |
-| `app.css` 孤立檔案 | 無模板引用 | 可刪除 |
+已處理 14 個頁面專屬 CSS 檔案，移除與 common.css 重複的定義：
+- [x] 刪除 `org-admins.css` (100% 重複)、`app.css` (孤立)
+- [x] 裁剪 9 個 CSS 檔：移除重複的 btn/modal/form-group/badge/message 定義
+- [x] 硬編碼色值轉 CSS 變數 (如 `#0066cc` → `var(--color-primary)`)
+- [x] common.css 新增 `.modal-close`、`.btn-reset-pwd`、`.message` / `.message-success` / `.message-error`
+- [x] 3 個 admin 模板 inline styles → common.css 類別
+- [x] holidays/schedules 模板 `.holidays-table/.schedules-table` → `.data-table`
+- [x] numbering 模板按鈕加 `.btn` 基底類
+
+### 保留不動的頁面 CSS（已為最終狀態）
+
+| 檔案 | 保留原因 |
+|------|----------|
+| `css/hostconfig-index.css` | 工具卡片佈局，75% 唯一 |
+| `css/menu.css` | 權限等級著色系統，核心功能 |
+| `css/org-databases.css` | master-detail 佈局，60% 唯一 |
+| `css/settings.css` | 左側設定選單，75% 唯一 |
+| `css/approval-limits.css` | 簽核矩陣表格 |
+| `css/external-user-edit.css` | 外部人員編輯 |
+| `css/job-matrix.css` | 職等矩陣佈局 |
+| `css/module-permissions.css` | `.mp-*` 獨立體系 |
+| `css/org-tree.css` | 樹狀結構專用 |
+| `css/quick-login.css` | 開發用快速登入 |
+| data_crud 模組 | `dc-*` 體系，不改 |
+| form_workflow 模組 | `fw-*` 體系，不改 |
+| auth/error 模板 | 零 JS，極簡，不需處理 |
 
 ---
 
@@ -227,11 +246,12 @@ CSS 變數:  --color-primary (#0066cc), --color-danger, --color-success, --color
 表單:      .form-control, .form-label, .form-group, .form-row
 頁面:      .page-header, .page-title, .page-actions
 區段:      .section-title (.optional)
-Modal:     .modal-overlay, .modal-box, .modal-content, .modal-header/body/footer
+Modal:     .modal-overlay, .modal-box, .modal-content, .modal-header/body/footer, .modal-close
 Toast:     .toast (.success/.error/.warning/.info)
 Alert:     .alert (.alert-success/.alert-error/.alert-warning/.alert-info)
+           .message (.message-success/.message-error) — hostconfig/organizations 別名
 Badge:     .badge (.badge-success/.badge-warning/.badge-danger/.badge-info/.badge-secondary)
-密碼:      .password-field, .btn-toggle, .btn-generate
+密碼:      .password-field, .btn-toggle, .btn-generate, .btn-reset-pwd
 工具:      .text-muted/danger/success/warning/center/right/left/nowrap
            .mt-0/8/16, .mb-0/8/16, .hidden
 ```

@@ -95,7 +95,7 @@
 
 <div class="rules-header">
     <h1>用戶編號規則</h1>
-    <a href="{{ url_for('numbering.create_rule') }}" class="btn-primary">+ 新增規則</a>
+    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">+ 新增規則</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -169,7 +169,7 @@
 {% else %}
 <div class="empty-state">
     <p>尚未建立任何編號規則</p>
-    <a href="{{ url_for('numbering.create_rule') }}" class="btn-primary">建立第一個規則</a>
+    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">建立第一個規則</a>
 </div>
 {% endif %}
 

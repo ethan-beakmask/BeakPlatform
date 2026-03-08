@@ -23,7 +23,7 @@
                 <span x-text="year"></span>
                 <button @click="changeYear(1)">&gt;</button>
             </div>
-            <button class="btn-primary" @click="openAddModal()">+ 新增假日</button>
+            <button class="btn btn-primary" @click="openAddModal()">+ 新增假日</button>
         </div>
     </div>
 
@@ -81,7 +81,7 @@
     <div class="holidays-list">
         <h3>假日/補班列表</h3>
         <template x-if="holidays.length > 0">
-            <table class="holidays-table">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>日期</th>
@@ -121,7 +121,7 @@
         <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
             匯入 <span x-text="year"></span> 年台灣國定假日
         </p>
-        <button class="btn-secondary" @click="importTWHolidays()">匯入 <span x-text="year"></span> 年台灣假日</button>
+        <button class="btn btn-secondary" @click="importTWHolidays()">匯入 <span x-text="year"></span> 年台灣假日</button>
     </div>
 
     <!-- Add/Edit Modal -->
@@ -179,8 +179,8 @@
                     </template>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-secondary" @click="closeModal()">取消</button>
-                    <button class="btn-primary"
+                    <button class="btn btn-secondary" @click="closeModal()">取消</button>
+                    <button class="btn btn-primary"
                             :style="form.cancelMode ? 'background: #dc2626' : ''"
                             @click="saveHoliday()"
                             :disabled="saving">

@@ -259,8 +259,8 @@
 
     <!-- 提交按鈕 -->
     <div class="btn-row">
-        <button type="submit" class="btn-primary">{% if rule %}儲存變更{% else %}建立規則{% endif %}</button>
-        <a href="{{ url_for('numbering.list_rules') }}" class="btn-secondary" style="text-decoration: none;">取消</a>
+        <button type="submit" class="btn btn-primary">{% if rule %}儲存變更{% else %}建立規則{% endif %}</button>
+        <a href="{{ url_for('numbering.list_rules') }}" class="btn btn-secondary" style="text-decoration: none;">取消</a>
     </div>
 </form>
 

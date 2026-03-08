@@ -1,9 +1,11 @@
-/* user-form.css — 新增/編輯用戶頁面共用樣式 */
+/* user-form.css — 新增/編輯用戶頁面共用樣式
+   section-title/help-text 由 common.css 提供 */
 
 .form-section {
     margin-bottom: 20px;
 }
-/* .section-title 和 .section-title.optional 由 common.css 提供 */
+
+/* 表單表格佈局（此頁使用 table 而非 flex） */
 .form-table td {
     padding: 4px 8px;
     vertical-align: top;
@@ -12,7 +14,7 @@
     width: 120px;
     text-align: right;
     padding-right: 12px;
-    color: #666;
+    color: var(--color-text-secondary);
 }
 .form-table input[type="text"],
 .form-table input[type="email"],
@@ -20,20 +22,21 @@
 .form-table input[type="password"],
 .form-table select {
     padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
     width: 200px;
 }
 .form-table input:focus,
 .form-table select:focus {
-    border-color: #0066cc;
+    border-color: var(--color-primary);
     outline: none;
 }
-/* .help-text 由 common.css 提供 */
 .required::after {
     content: " *";
-    color: #dc2626;
+    color: var(--color-danger);
 }
+
+/* <details> 展開/收起 */
 details {
     margin-top: 10px;
 }
@@ -41,11 +44,11 @@ details summary {
     cursor: pointer;
     padding: 8px;
     background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
 }
 details summary:hover {
-    background: #f0f0f0;
+    background: var(--color-bg-header);
 }
 details[open] summary {
     border-bottom-left-radius: 0;
@@ -53,12 +56,12 @@ details[open] summary {
 }
 details .detail-content {
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-top: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
-/* 部門選擇器樣式 - 組織樹版本 */
+/* 部門選擇器 - 組織樹版本 */
 .dept-selector {
     display: flex;
     align-items: center;
@@ -66,25 +69,25 @@ details .detail-content {
 }
 .dept-display {
     padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
     background: #f9f9f9;
     min-width: 200px;
     cursor: pointer;
 }
 .dept-display:hover {
-    background: #f0f0f0;
-    border-color: #0066cc;
+    background: var(--color-bg-header);
+    border-color: var(--color-primary);
 }
 .dept-display.empty {
-    color: #888;
+    color: var(--color-text-muted);
     font-style: italic;
 }
 .dept-tree-picker {
     position: absolute;
     background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 100;
     min-width: 300px;
@@ -92,8 +95,8 @@ details .detail-content {
 }
 .dept-tree-header {
     padding: 8px 12px;
-    background: #f0f0f0;
-    border-bottom: 1px solid #ddd;
+    background: var(--color-bg-header);
+    border-bottom: 1px solid var(--color-border);
     font-weight: 500;
     display: flex;
     justify-content: space-between;
@@ -104,11 +107,11 @@ details .detail-content {
     border: none;
     font-size: 16px;
     cursor: pointer;
-    color: #666;
+    color: var(--color-text-secondary);
     padding: 0 4px;
 }
 .dept-tree-header .btn-close:hover {
-    color: #333;
+    color: var(--color-text);
 }
 .dept-tree-content {
     padding: 8px;
@@ -117,14 +120,14 @@ details .detail-content {
 }
 .dept-tree-empty {
     padding: 20px;
-    color: #888;
+    color: var(--color-text-muted);
     text-align: center;
 }
 /* Tree 元件樣式 (部門選擇器) */
 #dept-tree-select { padding: 5px; }
 #dept-tree-select .treegrid-row { cursor: pointer; }
-#dept-tree-select .treegrid-row:hover { background: #e8f4fc; }
-#dept-tree-select .tg-selected { background: #0066cc !important; color: white !important; }
+#dept-tree-select .treegrid-row:hover { background: var(--color-primary-light); }
+#dept-tree-select .tg-selected { background: var(--color-primary) !important; color: white !important; }
 #dept-tree-select .tg-selected .tg-label { color: white; }
 
 /* 用戶編號選擇器 */
@@ -142,89 +145,74 @@ details .detail-content {
 }
 .number-field .btn-use {
     padding: 6px 12px;
-    background: #0066cc;
+    background: var(--color-primary);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
 }
 .number-field .btn-use:hover {
-    background: #0052a3;
+    background: var(--color-primary-hover);
 }
 .next-number {
     font-family: monospace;
-    background: #e8f4fc;
+    background: var(--color-primary-light);
     padding: 2px 8px;
-    border-radius: 4px;
-    color: #0066cc;
+    border-radius: var(--border-radius);
+    color: var(--color-primary);
 }
 
-/* === 編輯頁面特有樣式 === */
+/* === 編輯頁面特有 === */
 
 .edit-form {
     max-width: 700px;
 }
 .form-table input:disabled,
 .form-table select:disabled {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
     cursor: not-allowed;
 }
 .readonly-info {
-    color: #666;
+    color: var(--color-text-secondary);
     background: #f9f9f9;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     display: inline-block;
 }
 .btn-row {
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid #eee;
-}
-.btn-row button {
-    padding: 8px 20px;
-    background: #0066cc;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.btn-row button:hover {
-    background: #0052a3;
-}
-.btn-row button:disabled {
-    background: #999;
-    cursor: not-allowed;
+    border-top: 1px solid var(--color-border-light);
 }
 .danger-zone {
     margin-top: 30px;
     padding: 15px;
     border: 1px solid #fecaca;
-    border-radius: 4px;
-    background: #fef2f2;
+    border-radius: var(--border-radius);
+    background: var(--color-danger-light);
 }
 .danger-zone h3 {
-    color: #dc2626;
+    color: var(--color-danger);
     margin-top: 0;
 }
 .danger-zone button {
-    background: #dc2626;
+    background: var(--color-danger);
     color: white;
     border: none;
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
 }
 .danger-zone button:hover {
-    background: #b91c1c;
+    background: var(--color-danger-hover);
 }
 .readonly-notice {
-    background: #fff3cd;
-    border: 1px solid #ffc107;
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
     padding: 12px;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     margin-bottom: 16px;
     color: #856404;
 }

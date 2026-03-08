@@ -3,22 +3,20 @@
 {% block title %}新增企業管理員 - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/org-admin-create.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/org-admin-create.css') }}">
 {% endblock %}
 
 {% block content %}
 <p><a href="{{ url_for('org_admins.list_admins') }}">&lt; 返回管理員列表</a></p>
 
-<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">新增企業管理員</h1>
+<h1 class="page-title" style="margin: 16px 0;">新增企業管理員</h1>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
-          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
-          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+<div class="alert {% if category == 'error' %}alert-error{% else %}alert-success{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -27,12 +25,12 @@
 <form method="POST" style="max-width: 550px;" x-data="createAdminForm()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <table class="form-table" border="0" cellpadding="10" cellspacing="0" style="width: 100%;">
+    <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 120px;">綁定員工 *</th>
+            <th>綁定員工 *</th>
             <td>
                 <select name="bound_employee" required x-model="selectedEmployee" @change="onEmployeeChange()"
-                        style="padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                        class="form-control">
                     <option value="">-- 請選擇員工 --</option>
                     {% for emp in available_employees %}
                     <option value="{{ emp.secure_code }}"
@@ -48,72 +46,66 @@
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">姓名 *</th>
+            <th>姓名 *</th>
             <td>
                 <input type="text" name="display_name" x-model="displayName"
-                       required maxlength="100" style="width: 100%; background: #f3f4f6;" readonly>
+                       required maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
                 <div class="help-text">自動帶入綁定員工姓名</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">管理員帳號</th>
+            <th>管理員帳號</th>
             <td>
                 <div class="email-input">
-                    <span style="color: #666;">admin-</span>
-                    <input type="text" x-model="username" readonly
-                           style="background: #f3f4f6; width: 100px; border: 1px solid #ccc; padding: 6px 8px; border-radius: 4px;">
+                    <span class="text-muted">admin-</span>
+                    <input type="text" x-model="username" readonly class="form-control"
+                           style="background: #f3f4f6; width: 100px;">
                     <span class="email-domain">@{{ current_user.organization.domain_name if current_user.organization else 'domain' }}</span>
                 </div>
                 <div class="help-text">管理員登入帳號（自動加上 admin- 前綴）</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">通知 Email</th>
+            <th>通知 Email</th>
             <td>
                 <input type="text" name="notify_email" x-model="notifyEmail"
-                       maxlength="100" style="width: 100%; background: #f3f4f6;" readonly>
+                       maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
                 <div class="help-text">自動帶入綁定員工通知信箱</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">密碼 *</th>
+            <th style="vertical-align: top;">密碼 *</th>
             <td>
-                <div style="display: flex; gap: 8px; align-items: start;">
-                    <div style="flex: 1;">
-                        <input :type="showPassword ? 'text' : 'password'" name="password"
-                               x-model="password" @input="validatePassword()"
-                               required minlength="8" style="width: 100%;">
-                    </div>
-                    <button type="button" @click="showPassword = !showPassword"
-                            style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
+                <div class="password-field">
+                    <input :type="showPassword ? 'text' : 'password'" name="password"
+                           x-model="password" @input="validatePassword()"
+                           required minlength="8" class="form-control">
+                    <button type="button" class="btn-toggle"
+                            @click="showPassword = !showPassword"
                             x-text="showPassword ? '隱藏' : '顯示'"></button>
-                    <button type="button" @click="generatePassword()"
-                            style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    <button type="button" class="btn-generate" @click="generatePassword()">
                         建議密碼
                     </button>
                 </div>
                 <div class="help-text" x-text="passwordRequirements"></div>
-                <!-- 驗證錯誤 -->
                 <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                     <template x-for="err in passwordErrors" :key="err">
-                        <div style="color: #dc2626; font-size: 12px;" x-text="'• ' + err"></div>
+                        <div class="password-errors" x-text="'• ' + err"></div>
                     </template>
                 </div>
-                <!-- 驗證通過 -->
                 <div x-show="password && passwordErrors.length === 0 && passwordChecked"
-                     style="margin-top: 6px; color: #16a34a; font-size: 12px;">
-                    ✓ 密碼符合要求
+                     class="password-ok" style="margin-top: 6px;">
+                    密碼符合要求
                 </div>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit" :disabled="!selectedEmployee"
-                        style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                <button type="submit" :disabled="!selectedEmployee" class="btn btn-primary"
                         :style="!selectedEmployee && 'opacity: 0.5; cursor: not-allowed'">
                     建立管理員
                 </button>
-                <a href="{{ url_for('org_admins.list_admins') }}" style="margin-left: 20px; color: #6b7280;">取消</a>
+                <a href="{{ url_for('org_admins.list_admins') }}" class="text-muted" style="margin-left: 20px;">取消</a>
             </td>
         </tr>
     </table>
@@ -127,21 +119,21 @@ window.__ADMIN_CREATE_CONFIG = {
     notifyEmail: '{{ form_data.get("notify_email", "") }}'
 };
 </script>
-<script src="/static/js/org-admin-create.js"></script>
+<script src="{{ url_for('static', filename='js/org-admin-create.js') }}"></script>
 {% else %}
-<div style="padding: 20px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
-    <strong style="color: #92400e;">無法建立管理員</strong>
-    <p style="margin: 8px 0 0 0; color: #78350f;">
+<div class="alert alert-warning">
+    <strong>無法建立管理員</strong>
+    <p style="margin: 8px 0 0 0;">
         目前沒有可綁定的員工帳號。請先建立至少一個具有員工編號的員工帳號。
     </p>
     <p style="margin: 12px 0 0 0;">
-        <a href="{{ url_for('users.create_user') }}" style="color: #1e40af;">前往新增員工</a>
+        <a href="{{ url_for('users.create_user') }}">前往新增員工</a>
     </p>
 </div>
 {% endif %}
 
-<div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 4px; border: 1px solid #fcd34d;">
-    <strong style="color: #92400e;">注意：</strong>
-    <span style="color: #78350f;">企業管理員擁有管理企業設定、用戶帳號的權限。請謹慎授予。</span>
+<div class="alert alert-warning mt-16">
+    <strong>注意：</strong>
+    <span>企業管理員擁有管理企業設定、用戶帳號的權限。請謹慎授予。</span>
 </div>
 {% endblock %}

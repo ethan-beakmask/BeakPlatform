@@ -1,16 +1,7 @@
-/* org-admin-create.css — 新增企業管理員頁面 */
+/* org-admin-create.css — 新增企業管理員頁面
+   form-control/help-text 等由 common.css 提供 */
 
-.form-table input[type="text"],
-.form-table input[type="email"],
-.form-table input[type="password"] {
-    padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-.form-table input:focus {
-    border-color: #2563eb;
-    outline: none;
-}
+/* Email 帳號輸入佈局 */
 .email-input {
     display: flex;
     align-items: center;
@@ -20,6 +11,6 @@
     width: 150px;
 }
 .email-domain {
-    color: #666;
+    color: var(--color-text-secondary);
     font-family: monospace;
 }

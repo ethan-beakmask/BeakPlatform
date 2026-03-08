@@ -12,7 +12,7 @@
 
     <div class="page-header">
         <h1>基本班表</h1>
-        <button class="btn-primary" @click="openCreateModal()">+ 新增班表</button>
+        <button class="btn btn-primary" @click="openCreateModal()">+ 新增班表</button>
     </div>
 
     <!-- Flash Messages -->
@@ -22,7 +22,7 @@
 
     <!-- Schedules Table -->
     <template x-if="schedules.length > 0">
-        <table class="schedules-table">
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>班表名稱</th>
@@ -87,7 +87,7 @@
     <template x-if="schedules.length === 0">
         <div class="empty-state">
             <p>尚未建立任何班表</p>
-            <button class="btn-primary" @click="openCreateModal()">建立第一個班表</button>
+            <button class="btn btn-primary" @click="openCreateModal()">建立第一個班表</button>
         </div>
     </template>
 
@@ -205,8 +205,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-secondary" @click="closeModal()">取消</button>
-                    <button class="btn-primary" @click="saveSchedule()" :disabled="saving">
+                    <button class="btn btn-secondary" @click="closeModal()">取消</button>
+                    <button class="btn btn-primary" @click="saveSchedule()" :disabled="saving">
                         <span x-text="saving ? '儲存中...' : '儲存'"></span>
                     </button>
                 </div>

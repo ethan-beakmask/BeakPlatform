@@ -1,62 +1,49 @@
-/* user-view.css — 用戶詳情頁面 */
+/* user-view.css — 用戶詳情頁面
+   info-table/modal/password-field 等由 common.css 提供 */
 
 .user-info {
     max-width: 700px;
 }
 
-.info-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.info-table th, .info-table td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-.info-table th {
-    width: 120px;
-    color: #666;
-    font-weight: normal;
-}
-.info-table td {
-    color: #333;
-}
-
 .empty-value {
-    color: #999;
+    color: var(--color-text-muted);
     font-style: italic;
 }
 .status-active {
-    color: #16a34a;
+    color: var(--color-success);
 }
 .status-inactive {
-    color: #dc2626;
+    color: var(--color-danger);
 }
 
+/* 操作按鈕 */
 .action-btn {
     display: inline-block;
     padding: 6px 12px;
-    background: #0066cc;
+    background: var(--color-primary);
     color: white;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 .action-btn:hover {
-    background: #0052a3;
+    background: var(--color-primary-hover);
 }
 .action-btn.warning {
-    background: #f59e0b;
+    background: var(--color-warning);
 }
 .action-btn.warning:hover {
-    background: #d97706;
+    background: var(--color-warning-hover);
 }
 
-/* 密碼模態框尺寸覆蓋 (base in common.css) */
-.modal-content {
-    min-width: 350px;
-    max-width: 450px;
-    padding: 24px;
+/* 密碼模態框確認按鈕使用警告色 */
+.modal-buttons .btn-submit {
+    background: var(--color-warning);
+    color: white;
+    border: none;
+}
+.modal-buttons .btn-submit:hover {
+    background: var(--color-warning-hover);
 }
