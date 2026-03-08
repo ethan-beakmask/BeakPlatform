@@ -101,7 +101,7 @@
 
 <!-- 重設密碼對話框 -->
 <div class="modal-overlay" x-show="resetTarget" x-cloak>
-    <div class="modal-content" style="min-width: 350px; max-width: 450px; padding: 24px;">
+    <div class="modal-content modal-sm">
         <h3>重設密碼</h3>
         <p style="margin-bottom: 16px;">為 <strong x-text="resetName"></strong> 設定新密碼</p>
         <form method="POST" :action="'/admin/org-admins/' + resetTarget + '/reset-password'">

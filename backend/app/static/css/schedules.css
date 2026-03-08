@@ -35,8 +35,7 @@
 .actions .danger { color: var(--color-danger); }
 .empty-state { text-align: center; padding: 40px; color: var(--color-text-secondary); }
 
-/* 模態框尺寸覆蓋 */
-.modal-content { width: 90%; max-width: 1000px; }
+/* 模態框尺寸：使用 common.css 的 modal-xl class */
 
 /* 週間工時設定 */
 .weekly-hours-section { margin-top: 10px; }

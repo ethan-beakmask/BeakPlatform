@@ -1,6 +1,6 @@
     <!-- ==================== SMTP 編輯 Modal ==================== -->
     <div x-show="smtp.showModal" x-cloak class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3 x-text="smtp.editing ? '編輯 SMTP 設定' : '新增 SMTP 設定'"></h3>
                 <button class="modal-close" @click="smtp.showModal = false">&times;</button>
@@ -105,7 +105,7 @@
 
     <!-- ==================== Telegram 編輯 Modal ==================== -->
     <div x-show="telegram.showModal" x-cloak class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3 x-text="telegram.editing ? '編輯 Telegram 設定' : '新增 Telegram 設定'"></h3>
                 <button class="modal-close" @click="telegram.showModal = false">&times;</button>
@@ -170,7 +170,7 @@
 
     <!-- ==================== 收件人群組編輯 Modal ==================== -->
     <div x-show="recipients.showModal" x-cloak class="modal-overlay">
-        <div class="modal-content">
+        <div class="modal-content modal-md">
             <div class="modal-header">
                 <h3 x-text="recipients.editing ? '編輯收件人群組' : '新增收件人群組'"></h3>
                 <button class="modal-close" @click="recipients.showModal = false">&times;</button>

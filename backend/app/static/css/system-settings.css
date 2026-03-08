@@ -97,11 +97,7 @@
     box-sizing: border-box;
 }
 
-/* 模態框尺寸覆蓋 */
-.modal-content {
-    width: 700px;
-    max-width: 90vw;
-}
+/* 模態框尺寸：使用 common.css 的 modal-lg class */
 
 /* 狀態指示器 */
 .status-indicator {

@@ -114,8 +114,7 @@
 .actions button:hover { text-decoration: underline; }
 .actions .danger { color: var(--color-danger); }
 
-/* 模態框尺寸覆蓋 */
-.modal-content { width: 90%; max-width: 500px; }
+/* 模態框尺寸：使用 common.css 的 modal-sm class */
 
 /* 匯入 */
 .import-section { margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: var(--border-radius); }

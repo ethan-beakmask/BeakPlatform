@@ -176,7 +176,7 @@
 {% if can_reset_password %}
 <!-- 重設密碼對話框 -->
 <div class="modal-overlay" x-show="showResetPassword" x-cloak>
-    <div class="modal-content">
+    <div class="modal-content modal-sm">
         <h3>重設密碼</h3>
         <p style="margin-bottom: 16px;">為 <strong>{{ user.display_name }}</strong> 設定新密碼</p>
         <form method="POST" action="{{ url_for('users.reset_password', secure_code=user.secure_code) }}">
