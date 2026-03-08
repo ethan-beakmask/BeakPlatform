@@ -182,17 +182,8 @@ def list_orgs():
 @organizations_bp.route('/<secure_code>')
 @system_admin_required
 def view_org(secure_code: str):
-    """查看企業詳情"""
-    org = ResourceGateway.get_by(
-        Organization,
-        secure_code=secure_code,
-        is_deleted=False,
-        check_permission=False
-    )
-    if not org:
-        abort(404)
-
-    return render_template('pages/organizations/view.html', organization=org)
+    """企業詳情 - 已併入 list.html 右側面板，重導至列表頁"""
+    return redirect(url_for('organizations.list_orgs', org=secure_code))
 
 
 @organizations_bp.route('/create', methods=['GET', 'POST'])

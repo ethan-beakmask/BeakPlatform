@@ -28,7 +28,6 @@
 | 表單中心 | `/forms/center` | 使用者填寫表單的入口 |
 | 個人設定 | `/personal-settings` | 個人資料與密碼 |
 | 主機設定 | `/hostconfig/` | 主機環境設定 |
-| 功能展示 | `/sample/` | 範例模組展示 |
 
 ### 表單流程（模組：form_workflow）
 

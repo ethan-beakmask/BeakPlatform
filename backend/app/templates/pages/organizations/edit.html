@@ -3,7 +3,7 @@
 {% block title %}編輯企業 - {{ organization.name }} - BeakMask{% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('organizations.view_org', secure_code=organization.secure_code) }}">&lt; 返回企業詳情</a></p>
+<p><a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a></p>
 
 <h1>編輯企業 {{ organization.name }}</h1>
 
@@ -53,7 +53,7 @@
             <td colspan="2">
                 <br>
                 <button type="submit">儲存變更</button>
-                <a href="{{ url_for('organizations.view_org', secure_code=organization.secure_code) }}">[取消]</a>
+                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">[取消]</a>
             </td>
         </tr>
     </table>
