@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+### Fixed
+- 修正 CI Security Scan 自 2/27 起持續失敗的問題 (37 次連續失敗)
+  - data_crud 模組 21 條 API 路由補上 `@login_required` decorator
+  - semgrep 規則補上 `@module_access_required` 的 pattern-not (規則漏列)
+  - 安全性無實際漏洞 (全域 before_request 攔截器仍有效)，但違反防禦深度原則
+
 ### Removed
 - 清除 12 張舊平台層表單/流程表 (form_*, workflow_*, node_* 系列)
   - 這些表自 1/23 專案初始化時已被 fw_ 前綴模組層表完全取代，ORM 不再引用

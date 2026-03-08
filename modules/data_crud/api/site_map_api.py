@@ -11,7 +11,7 @@ from flask import jsonify, request
 from flask_login import current_user
 
 from app import csrf, db
-from app.security.decorators import admin_required
+from app.security.decorators import login_required, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -271,6 +271,7 @@ def remove_site_map_permission(ss_sc, perm_sc):
 # =============================================================================
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/user-tree')
+@login_required
 def get_user_site_map_tree(ss_sc):
     """取得用戶可見的 site map 樹"""
     from ..models import DcSubSystem
@@ -292,6 +293,7 @@ def get_user_site_map_tree(ss_sc):
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/context')
+@login_required
 def get_site_map_node_context(ss_sc, node_sc):
     """取得節點權限 context (CRUD + data_filters)"""
     from ..models import DcSubSystem

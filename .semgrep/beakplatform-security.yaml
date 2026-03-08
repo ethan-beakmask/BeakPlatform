@@ -41,7 +41,12 @@ rules:
           @security_login_required
           def $FUNC(...):
             ...
-    message: "Route missing authentication decorator. Use @public_route, @login_required, @admin_required, @system_admin_required, @require_permission, or @security_login_required"
+      - pattern-not: |
+          @$BP.route(...)
+          @module_access_required(...)
+          def $FUNC(...):
+            ...
+    message: "Route missing authentication decorator. Use @public_route, @login_required, @admin_required, @system_admin_required, @require_permission, @security_login_required, or @module_access_required"
     languages: [python]
     severity: ERROR
     metadata:
