@@ -76,7 +76,7 @@ class MenuService:
         module_injected_codes = set()
         user_type_str = str(user.user_type)
         if user_type_str == 'SYSTEM_ADMIN':
-            module_injected_codes = cls._get_all_module_menu_codes()
+            module_injected_codes = set()  # 系統管理員不看模組選單
         elif user_type_str == 'ORG_ADMIN':
             module_injected_codes = cls._get_all_module_menu_codes()
         else:

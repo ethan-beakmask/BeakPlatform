@@ -30,31 +30,8 @@ MODULE_INFO = {
             'icon': 'F',
             'parent': None,
             'sort_order': 100,
+            'user_types': ['ORG_ADMIN'],
             'children': [
-                {
-                    'code': 'form_workflow.dashboard',
-                    'name': '儀表板',
-                    'url': '/forms/',
-                    'sort_order': 1
-                },
-                {
-                    'code': 'form_workflow.center',
-                    'name': '表單中心',
-                    'url': '/forms/center',
-                    'sort_order': 2
-                },
-                {
-                    'code': 'form_workflow.my_forms',
-                    'name': '我的表單',
-                    'url': '/forms/my/',
-                    'sort_order': 3
-                },
-                {
-                    'code': 'form_workflow.pending',
-                    'name': '待簽核',
-                    'url': '/forms/pending/',
-                    'sort_order': 4
-                },
                 {
                     'code': 'form_workflow.templates',
                     'name': '表單範本',

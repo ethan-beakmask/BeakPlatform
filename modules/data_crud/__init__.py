@@ -20,6 +20,7 @@ MODULE_INFO = {
             'icon': 'database-2',
             'parent': None,
             'sort_order': 200,
+            'user_types': ['ORG_ADMIN'],
             'children': [
                 {
                     'code': 'data_crud.views',

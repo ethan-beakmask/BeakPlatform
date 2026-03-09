@@ -2,10 +2,18 @@
 """
 BeakPlatform 選單初始化腳本
 用於在新安裝的環境中建立核心平台選單
+
+注意：
+- 只包含平台級選單，不包含模組選單（form_workflow, data_crud 等）
+- 模組選單由 ModuleMenuService.sync_all_module_menus() 在 Flask 啟動時自動建立
+- 使用 --force 可強制重建所有平台選單
 """
 
 import sys
 import os
+
+# 跳過模組同步：init_menus 只負責平台選單，模組選單由 Flask 啟動時同步
+os.environ['SKIP_MODULE_SYNC'] = '1'
 
 # 加入 backend 路徑
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
@@ -18,6 +26,7 @@ import secrets
 # 用戶類型列表
 ALL_USER_TYPES = ['SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL']
 
+
 def generate_secure_code(length=22):
     """產生安全的隨機碼"""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'
@@ -29,10 +38,11 @@ def get_allowed_user_types(required_level, is_shared):
     根據 required_level 和 is_shared 決定允許的用戶類型
 
     required_level:
-        0 = 系統管理員專用 (只有 is_shared=False 的情況)
+        0 = 系統管理員專用
         1 = 系統管理員專用
         2 = 一般用戶（若 is_shared=True 則所有人，否則企業管理員以上）
-        20 = 企業管理員以上
+        20 = 企業管理員 + 系統管理員
+        30 = 企業管理員專用（不含系統管理員）
     """
     if is_shared:
         # 共享選單：所有用戶類型都可見
@@ -42,8 +52,11 @@ def get_allowed_user_types(required_level, is_shared):
         if required_level == 0 or required_level == 1:
             # 系統管理員專用
             return ['SYSTEM_ADMIN']
+        elif required_level == 30:
+            # 企業管理員專用（系統管理員不可見）
+            return ['ORG_ADMIN']
         elif required_level == 20:
-            # 企業管理員以上
+            # 企業管理員以上（含系統管理員）
             return ['SYSTEM_ADMIN', 'ORG_ADMIN']
         else:
             # 預設企業管理員以上
@@ -59,16 +72,30 @@ def set_menu_permissions(menu_secure_code, user_types):
         )
         db.session.add(permission)
 
+
+# ============================================================================
 # 核心平台選單定義
-# 先定義 depth=0 的父選單，再定義 depth=1 的子選單
+# 只包含平台級選單，模組選單（form_workflow, data_crud 等）由模組自行註冊
+# ============================================================================
 CORE_MENUS = [
     # ===== 深度 0 的選單 =====
     {
-        'code': 'form_workflow',
-        'title': '表單流程',
-        'icon': 'F',
-        'link_type': 'header',
-        'link_target': None,
+        'code': 'form_workflow.center',
+        'title': '表單中心',
+        'icon': None,
+        'link_type': 'route',
+        'link_target': '/forms/center',
+        'display_order': 20,
+        'depth': 0,
+        'required_level': 2,
+        'is_shared': True,
+    },
+    {
+        'code': 'dashboard',
+        'title': '儀表板',
+        'icon': None,
+        'link_type': 'route',
+        'link_target': 'main.dashboard',
         'display_order': 100,
         'depth': 0,
         'required_level': 2,
@@ -89,22 +116,35 @@ CORE_MENUS = [
         'code': 'module_area',
         'title': '模組區',
         'icon': None,
-        'link_type': 'route',
-        'link_target': '/modules/',  # 直接 URL
+        'link_type': 'header',
+        'link_target': None,
         'display_order': 140,
         'depth': 0,
-        'required_level': 0,
-        'is_shared': True,
+        'required_level': 30,
+        'is_shared': False,
+        'is_expanded': True,
     },
     {
-        'code': 'organizations_contracts',
-        'title': '企業與合約管理',
+        'code': 'org_management',
+        'title': '企業管理',
         'icon': None,
-        'link_type': 'route',
-        'link_target': 'organizations.list_orgs',
+        'link_type': 'header',
+        'link_target': None,
         'display_order': 310,
         'depth': 0,
-        'required_level': 1,  # 系統管理員
+        'required_level': 0,
+        'is_shared': False,
+        'is_expanded': True,
+    },
+    {
+        'code': 'server_settings',
+        'title': '主機設定',
+        'icon': None,
+        'link_type': 'route',
+        'link_target': 'hostconfig.index',
+        'display_order': 320,
+        'depth': 0,
+        'required_level': 1,
         'is_shared': False,
     },
     {
@@ -127,19 +167,19 @@ CORE_MENUS = [
         'link_target': 'sys_accounts.list_accounts',
         'display_order': 340,
         'depth': 0,
-        'required_level': 0,  # 系統管理員
+        'required_level': 0,
         'is_shared': False,
     },
     {
         'code': 'org_config_mgr',
         'title': '系統管理',
         'icon': None,
-        'link_type': 'route',
+        'link_type': 'header',
         'link_target': None,
         'display_order': 1000,
         'depth': 0,
-        'required_level': 2,
-        'is_shared': True,
+        'required_level': 30,
+        'is_shared': False,
         'is_expanded': True,
     },
     {
@@ -150,29 +190,29 @@ CORE_MENUS = [
         'link_target': 'departments.department_settings',
         'display_order': 2000,
         'depth': 0,
-        'required_level': 0,
+        'required_level': 30,
         'is_shared': False,
     },
     {
         'code': 'org_account',
         'title': '帳號管理',
         'icon': None,
-        'link_type': 'route',
+        'link_type': 'header',
         'link_target': None,
         'display_order': 3000,
         'depth': 0,
-        'required_level': 2,
+        'required_level': 30,
         'is_shared': False,
     },
     {
         'code': 'jobs_config',
         'title': '職級職稱',
         'icon': None,
-        'link_type': 'route',
+        'link_type': 'header',
         'link_target': None,
         'display_order': 5000,
         'depth': 0,
-        'required_level': 2,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -183,7 +223,7 @@ CORE_MENUS = [
         'link_target': 'groups.group_settings',
         'display_order': 22000,
         'depth': 0,
-        'required_level': 0,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -191,82 +231,54 @@ CORE_MENUS = [
         'title': '模組用戶設定',
         'icon': None,
         'link_type': 'route',
-        'link_target': '/admin/settings',  # 暫時導向設定頁
+        'link_target': 'admin.module_users',
         'display_order': 25000,
         'depth': 0,
-        'required_level': 0,
+        'required_level': 30,
         'is_shared': False,
     },
 
     # ===== 深度 1 的選單 (有父選單) =====
+
+    # -- 模組區 子選單 --
     {
-        'code': 'form_workflow.dashboard',
-        'title': '儀表板',
-        'parent_code': 'form_workflow',
+        'code': 'module_perm_mgmt',
+        'title': '模組權限管理',
+        'parent_code': 'module_area',
         'link_type': 'route',
-        'link_target': '/forms/',
-        'display_order': 1,
+        'link_target': '/admin/module-permissions',
+        'display_order': 50,
         'depth': 1,
-        'required_level': 2,
-        'is_shared': True,
+        'required_level': 30,
+        'is_shared': False,
+        'required_permission': 'module:manage',
     },
+
+    # -- 企業管理 子選單 --
     {
-        'code': 'form_workflow.my_forms',
-        'title': '我的表單',
-        'parent_code': 'form_workflow',
+        'code': 'organizations_contracts',
+        'title': '企業與合約管理',
+        'parent_code': 'org_management',
         'link_type': 'route',
-        'link_target': '/forms/instances',  # 修正：原 /forms/my/ 不存在
-        'display_order': 2,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': True,
-    },
-    {
-        'code': 'form_workflow.pending',
-        'title': '待簽核',
-        'parent_code': 'form_workflow',
-        'link_type': 'route',
-        'link_target': '/forms/pending',  # 修正：移除尾斜線
-        'display_order': 3,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': True,
-    },
-    {
-        'code': 'form_workflow.templates',
-        'title': '表單範本',
-        'parent_code': 'form_workflow',
-        'link_type': 'route',
-        'link_target': '/forms/templates',  # 修正：移除尾斜線
+        'link_target': 'organizations.list_orgs',
         'display_order': 10,
         'depth': 1,
-        'required_level': 2,
-        'is_shared': True,
-        'required_permission': 'form_workflow.template.manage',
-    },
-    {
-        'code': 'form_workflow.workflows',
-        'title': '流程設計',
-        'parent_code': 'form_workflow',
-        'link_type': 'route',
-        'link_target': '/forms/workflows',  # 修正：移除尾斜線
-        'display_order': 11,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': True,
-        'required_permission': 'form_workflow.workflow.manage',
-    },
-    {
-        'code': 'org_admins',
-        'title': '企業管理員',
-        'parent_code': 'org_config_mgr',
-        'link_type': 'route',
-        'link_target': 'org_admins.list_admins',
-        'display_order': 59,
-        'depth': 1,
-        'required_level': 20,  # 企業管理員
+        'required_level': 1,
         'is_shared': False,
     },
+    {
+        'code': 'org_databases_system',
+        'title': '企業獨立資料庫管理',
+        'parent_code': 'org_management',
+        'link_type': 'route',
+        'link_target': 'org_databases.system_view',
+        'display_order': 20,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
+
+    # -- 權限管理 子選單 --
     {
         'code': 'menu_manage',
         'title': '選單管理',
@@ -275,7 +287,7 @@ CORE_MENUS = [
         'link_target': 'menu.list_menu',
         'display_order': 21,
         'depth': 1,
-        'required_level': 1,  # 系統管理員
+        'required_level': 1,
         'is_shared': False,
     },
     {
@@ -286,20 +298,46 @@ CORE_MENUS = [
         'link_target': 'modules.list_modules',
         'display_order': 22,
         'depth': 1,
-        'required_level': 1,  # 系統管理員
-        'is_shared': False,
-    },
-    {
-        'code': 'job_matrix',
-        'title': '職級職稱矩陣',
-        'parent_code': 'jobs_config',
-        'link_type': 'route',
-        'link_target': 'job_levels.job_matrix',
-        'display_order': 3100,
-        'depth': 1,
         'required_level': 1,
         'is_shared': False,
     },
+
+    # -- 系統管理 子選單 --
+    {
+        'code': 'system_settings',
+        'title': '系統設定',
+        'parent_code': 'org_config_mgr',
+        'link_type': 'route',
+        'link_target': 'admin.settings',
+        'display_order': 201,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'org_admins',
+        'title': '企業管理員',
+        'parent_code': 'org_config_mgr',
+        'link_type': 'route',
+        'link_target': 'org_admins.list_admins',
+        'display_order': 590,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'org_databases_org',
+        'title': '獨立資料庫',
+        'parent_code': 'org_config_mgr',
+        'link_type': 'route',
+        'link_target': 'org_databases.org_view',
+        'display_order': 600,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+
+    # -- 帳號管理 子選單 --
     {
         'code': 'numbering',
         'title': '編號設定',
@@ -308,7 +346,7 @@ CORE_MENUS = [
         'link_target': '/admin/numbering',
         'display_order': 3100,
         'depth': 1,
-        'required_level': 2,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -319,7 +357,7 @@ CORE_MENUS = [
         'link_target': 'roles.list_roles',
         'display_order': 3150,
         'depth': 1,
-        'required_level': 1,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -330,29 +368,7 @@ CORE_MENUS = [
         'link_target': 'users.list_users',
         'display_order': 3200,
         'depth': 1,
-        'required_level': 1,
-        'is_shared': False,
-    },
-    {
-        'code': 'job_levels',
-        'title': '職等設定',
-        'parent_code': 'jobs_config',
-        'link_type': 'route',
-        'link_target': '/job-levels/',
-        'display_order': 3200,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': False,
-    },
-    {
-        'code': 'job_families',
-        'title': '職系設定',
-        'parent_code': 'jobs_config',
-        'link_type': 'route',
-        'link_target': '/job-families/',
-        'display_order': 3300,
-        'depth': 1,
-        'required_level': 2,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -363,29 +379,7 @@ CORE_MENUS = [
         'link_target': '/admin/settings/work-schedules',
         'display_order': 3300,
         'depth': 1,
-        'required_level': 1,
-        'is_shared': False,
-    },
-    {
-        'code': 'job_titles',
-        'title': '職稱設定',
-        'parent_code': 'jobs_config',
-        'link_type': 'route',
-        'link_target': '/job-titles/',
-        'display_order': 3400,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': False,
-    },
-    {
-        'code': 'job_approval_categories',
-        'title': '核決權限',
-        'parent_code': 'jobs_config',
-        'link_type': 'route',
-        'link_target': '/job-approval-categories/',
-        'display_order': 3500,
-        'depth': 1,
-        'required_level': 2,
+        'required_level': 30,
         'is_shared': False,
     },
     {
@@ -396,7 +390,64 @@ CORE_MENUS = [
         'link_target': 'external_users.list_external_users',
         'display_order': 3900,
         'depth': 1,
-        'required_level': 20,
+        'required_level': 30,
+        'is_shared': False,
+    },
+
+    # -- 職級職稱 子選單 --
+    {
+        'code': 'job_matrix',
+        'title': '職級職稱矩陣',
+        'parent_code': 'jobs_config',
+        'link_type': 'route',
+        'link_target': 'job_levels.job_matrix',
+        'display_order': 3100,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'job_levels',
+        'title': '職等設定',
+        'parent_code': 'jobs_config',
+        'link_type': 'route',
+        'link_target': '/job-levels/',
+        'display_order': 3200,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'job_families',
+        'title': '職系設定',
+        'parent_code': 'jobs_config',
+        'link_type': 'route',
+        'link_target': '/job-families/',
+        'display_order': 3300,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'job_titles',
+        'title': '職稱設定',
+        'parent_code': 'jobs_config',
+        'link_type': 'route',
+        'link_target': '/job-titles/',
+        'display_order': 3400,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
+    {
+        'code': 'job_approval_categories',
+        'title': '核決權限',
+        'parent_code': 'jobs_config',
+        'link_type': 'route',
+        'link_target': '/job-approval-categories/',
+        'display_order': 3500,
+        'depth': 1,
+        'required_level': 30,
         'is_shared': False,
     },
 ]
@@ -417,7 +468,8 @@ def init_menus(force=False):
             print("錯誤: system.local 企業不存在，請先執行 init_database.sh")
             return False
 
-        # 檢查是否已有選單
+        # 統計現有平台選單（排除模組選單）
+        # 模組選單以模組名開頭 (如 form_workflow.*, data_crud.*)
         existing_count = MenuItem.query.filter_by(
             org_secure_code='system.local',
             is_deleted=False
@@ -445,7 +497,7 @@ def init_menus(force=False):
                     MenuItem.org_secure_code == 'system.local'
                 ).delete(synchronize_session=False)
                 db.session.commit()
-                print("✓ 選單已清除")
+                print("選單已清除")
             else:
                 print(f"已存在 {existing_count} 個選單項目")
                 print("使用 --force 參數可強制重建選單")
@@ -536,7 +588,8 @@ def init_menus(force=False):
             created_count += 1
 
         db.session.commit()
-        print(f"✓ 成功建立 {created_count} 個選單項目")
+        print(f"成功建立 {created_count} 個選單項目")
+        print("模組選單（表單流程、資料表工具等）將在 Flask 啟動時自動同步")
         return True
 
 

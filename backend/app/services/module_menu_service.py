@@ -87,7 +87,8 @@ class ModuleMenuService:
         module_name: str,
         menu_def: Dict[str, Any],
         parent_secure_code: Optional[str],
-        force: bool = False
+        force: bool = False,
+        parent_user_types: Optional[List] = None
     ) -> Dict[str, int]:
         """
         註冊單一選單項目（遞迴處理子選單）
@@ -97,6 +98,7 @@ class ModuleMenuService:
             menu_def: 選單定義
             parent_secure_code: 父選單 secure_code
             force: 是否強制覆蓋已存在的選單
+            parent_user_types: 父選單的 user_types（子選單未指定時繼承）
 
         Returns:
             {'created': n, 'updated': n, 'unchanged': n}
@@ -131,7 +133,9 @@ class ModuleMenuService:
         sort_order = menu_def.get('sort_order', 0)
         is_expanded = menu_def.get('is_expanded', False)
         required_permission = menu_def.get('required_permission')
-        user_types = menu_def.get('user_types', cls.DEFAULT_USER_TYPES)
+        # 子選單未指定 user_types 時，繼承父選單；頂層未指定則使用預設
+        fallback_types = parent_user_types if parent_user_types else cls.DEFAULT_USER_TYPES
+        user_types = menu_def.get('user_types', fallback_types)
 
         # 決定連結類型和目標
         link_type = 'route'
@@ -223,14 +227,15 @@ class ModuleMenuService:
 
             menu_secure_code = new_menu.secure_code
 
-        # 遞迴處理子選單
+        # 遞迴處理子選單（繼承當前選單的 user_types）
         children = menu_def.get('children', [])
         for child_def in children:
             sub_result = cls._register_menu_item(
                 module_name=module_name,
                 menu_def=child_def,
                 parent_secure_code=menu_secure_code,
-                force=force
+                force=force,
+                parent_user_types=list(user_types)
             )
             result['created'] += sub_result['created']
             result['updated'] += sub_result['updated']
