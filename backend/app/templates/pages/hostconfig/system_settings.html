@@ -56,6 +56,21 @@
                  x-text="message.emailrelay"
                  x-transition></div>
 
+            <!-- 安裝路徑 -->
+            <div class="settings-card">
+                <h4>安裝路徑</h4>
+                <form @submit.prevent="saveEmailrelayInstallDir()">
+                    <div class="form-group">
+                        <label>E-MailRelay 安裝目錄</label>
+                        <input type="text" x-model="emailrelay.install_dir" placeholder="/opt/E-MailRelay">
+                        <div class="form-hint">安裝目錄需包含 sbin/emailrelay-submit、spool/ 等子目錄</div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">儲存路徑</button>
+                    </div>
+                </form>
+            </div>
+
             <!-- 服務狀態 -->
             <div class="settings-card">
                 <h4>服務狀態</h4>
@@ -567,6 +582,7 @@ function serverSettings() {
         // E-MailRelay
         emailrelay: {
             service: null,
+            install_dir: '',
             auth: { email: '', password: '' },
             from_email: '',
             from_name: '',

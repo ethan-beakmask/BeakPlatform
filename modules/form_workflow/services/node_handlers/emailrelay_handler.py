@@ -16,13 +16,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 
+from app.services.emailrelay_config import get_paths as _get_emailrelay_paths
 from .base import BaseNodeHandler
 
 logger = logging.getLogger(__name__)
 
-# emailrelay-submit 路徑與 spool 目錄
-EMAILRELAY_SUBMIT = '/opt/E-MailRelay/sbin/emailrelay-submit'
-SPOOL_DIR = '/opt/E-MailRelay/spool'
 DEFAULT_FROM = 'beakmask@beakplatform.local'
 
 # 郵件優先級對應 X-Priority 值
@@ -38,15 +36,17 @@ class EmailRelayHandler(BaseNodeHandler):
 
     def validate(self) -> bool:
         """驗證節點配置"""
+        paths = _get_emailrelay_paths()
+
         # 檢查 emailrelay-submit 是否存在
-        if not os.path.isfile(EMAILRELAY_SUBMIT):
+        if not os.path.isfile(paths['submit_bin']):
             raise ValueError(
-                f'emailrelay-submit 不存在: {EMAILRELAY_SUBMIT}'
+                f'emailrelay-submit 不存在: {paths["submit_bin"]}'
             )
 
         # 檢查 spool 目錄
-        if not os.path.isdir(SPOOL_DIR):
-            raise ValueError(f'Spool 目錄不存在: {SPOOL_DIR}')
+        if not os.path.isdir(paths['spool_dir']):
+            raise ValueError(f'Spool 目錄不存在: {paths["spool_dir"]}')
 
         subject = self.get_config_value('subject')
         if not subject:
@@ -291,10 +291,11 @@ class EmailRelayHandler(BaseNodeHandler):
         將其寫入 spool 目錄等待 daemon 轉發。
         """
         try:
+            paths = _get_emailrelay_paths()
             cmd = [
-                EMAILRELAY_SUBMIT,
+                paths['submit_bin'],
                 '--from', DEFAULT_FROM,
-                '-s', SPOOL_DIR,
+                '-s', paths['spool_dir'],
             ] + recipients
 
             result = subprocess.run(

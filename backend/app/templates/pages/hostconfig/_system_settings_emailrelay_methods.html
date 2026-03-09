@@ -7,6 +7,7 @@
                 const data = await res.json();
                 if (data.success) {
                     this.emailrelay.service = data.data.service;
+                    this.emailrelay.install_dir = data.data.install_dir || '';
                     if (data.data.auth && data.data.auth.configured) {
                         this.emailrelay.auth.email = data.data.auth.email || '';
                         this.emailrelay.auth.password = data.data.auth.password || '';
@@ -16,6 +17,34 @@
                 }
             } catch (e) {
                 this.showMessage('emailrelay', '載入設定失敗: ' + e.message, true);
+            }
+        },
+
+        async saveEmailrelayInstallDir() {
+            try {
+                const res = await fetch(`${API_BASE}/emailrelay`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        install_dir: this.emailrelay.install_dir
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showMessage('emailrelay', data.message, false);
+                    await this.loadEmailrelaySettings();
+                } else {
+                    let msg = data.message;
+                    if (data.errors && data.errors.length > 0) {
+                        msg += ': ' + data.errors.join('; ');
+                    }
+                    this.showMessage('emailrelay', msg, true);
+                }
+            } catch (e) {
+                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
             }
         },
 

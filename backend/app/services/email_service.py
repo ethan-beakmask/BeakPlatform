@@ -14,11 +14,9 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 from typing import Optional, List
 
-logger = logging.getLogger(__name__)
+from .emailrelay_config import get_paths as _get_emailrelay_paths
 
-# E-MailRelay 設定
-EMAILRELAY_SPOOL_DIR = '/opt/E-MailRelay/spool'
-EMAILRELAY_SUBMIT = '/opt/E-MailRelay/sbin/emailrelay-submit'
+logger = logging.getLogger(__name__)
 
 # 預設發件人設定
 DEFAULT_FROM_EMAIL = 'system@beakplatform.local'
@@ -42,20 +40,18 @@ class EmailService:
     @staticmethod
     def _get_spool_dir() -> str:
         """取得 spool 目錄"""
-        try:
-            from ..models.system_setting import SystemSetting
-            return SystemSetting.get('emailrelay_spool_dir', EMAILRELAY_SPOOL_DIR)
-        except Exception:
-            return EMAILRELAY_SPOOL_DIR
+        return _get_emailrelay_paths()['spool_dir']
 
     @staticmethod
     def _is_emailrelay_available() -> bool:
         """檢查 E-MailRelay 是否可用"""
-        spool_dir = EmailService._get_spool_dir()
+        paths = _get_emailrelay_paths()
+        submit_bin = paths['submit_bin']
+        spool_dir = paths['spool_dir']
 
         # 檢查 emailrelay-submit 是否存在
-        if not os.path.exists(EMAILRELAY_SUBMIT):
-            logger.warning(f"[EMAIL] emailrelay-submit not found: {EMAILRELAY_SUBMIT}")
+        if not os.path.exists(submit_bin):
+            logger.warning(f"[EMAIL] emailrelay-submit not found: {submit_bin}")
             return False
 
         # 檢查 spool 目錄是否存在且可寫入
@@ -126,7 +122,7 @@ class EmailService:
                 tmp_filepath = tmp_file.name
 
             cmd = [
-                EMAILRELAY_SUBMIT,
+                _get_emailrelay_paths()['submit_bin'],
                 '--spool-dir', spool_dir,
                 '--from', from_email,
                 '--input-file', tmp_filepath,

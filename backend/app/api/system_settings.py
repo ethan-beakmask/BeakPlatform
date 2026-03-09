@@ -58,6 +58,8 @@ from ..models.system_setting import SystemSetting
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
+from ..services.emailrelay_config import get_paths as _get_emailrelay_paths
+from ..services.emailrelay_config import validate_install_dir as _validate_install_dir
 
 api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/api/system-settings')
 
@@ -65,9 +67,6 @@ api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/ap
 # =============================================================================
 # E-MailRelay 設定
 # =============================================================================
-
-EMAILRELAY_AUTH_FILE = '/opt/E-MailRelay/etc/emailrelay.auth'
-EMAILRELAY_SPOOL_DIR = '/opt/E-MailRelay/spool'
 
 
 @api_system_settings.route('/emailrelay', methods=['GET'])
@@ -81,10 +80,13 @@ def get_emailrelay_settings():
     - Auth 設定（從檔案讀取並解碼）
     - 服務狀態
     """
+    paths = _get_emailrelay_paths()
+
     # 基本設定
     settings = {
         'enabled': SystemSetting.get('emailrelay_enabled', True),
-        'spool_dir': SystemSetting.get('emailrelay_spool_dir', EMAILRELAY_SPOOL_DIR),
+        'install_dir': paths['install_dir'],
+        'spool_dir': paths['spool_dir'],
         'from_email': SystemSetting.get('emailrelay_from_email', 'system@beakplatform.local'),
         'from_name': SystemSetting.get('emailrelay_from_name', 'BeakPlatform System'),
     }
@@ -111,6 +113,7 @@ def update_emailrelay_settings():
     Request JSON:
     {
         "enabled": true,
+        "install_dir": "/opt/E-MailRelay",
         "from_email": "system@beakmask.local",
         "from_name": "BeakMask System"
     }
@@ -118,6 +121,41 @@ def update_emailrelay_settings():
     data = request.get_json()
 
     updated = []
+
+    # 安裝路徑變更需要驗證
+    if 'install_dir' in data:
+        new_dir = data['install_dir'].strip().rstrip('/')
+        if not new_dir:
+            return jsonify({
+                'success': False,
+                'message': '安裝路徑不可為空'
+            }), 400
+
+        is_valid, errors = _validate_install_dir(new_dir)
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'message': '安裝路徑驗證失敗',
+                'errors': errors
+            }), 400
+
+        SystemSetting.set(
+            'emailrelay_install_dir',
+            new_dir,
+            updated_by=current_user.username,
+            value_type='string',
+            description='E-MailRelay 安裝目錄',
+            category='emailrelay'
+        )
+        updated.append('install_dir')
+
+        # 同步更新 systemd service 檔案
+        svc_result = _update_systemd_service(new_dir)
+        if not svc_result['success']:
+            logger.warning(
+                f"[EMAILRELAY] systemd service 更新失敗: {svc_result.get('error')}"
+            )
+
     if 'enabled' in data:
         SystemSetting.set(
             'emailrelay_enabled',
@@ -199,7 +237,8 @@ def update_emailrelay_auth():
     if not password:
         return jsonify({'success': False, 'message': '請填寫應用程式密碼'}), 400
 
-    auth_dir = os.path.dirname(EMAILRELAY_AUTH_FILE)
+    auth_file = _get_emailrelay_paths()['auth_file']
+    auth_dir = os.path.dirname(auth_file)
 
     try:
         # 確保目錄存在
@@ -217,18 +256,18 @@ def update_emailrelay_auth():
         auth_content = f'client plain:b {email_b64} {password_b64}\n'
 
         # 寫入檔案
-        with open(EMAILRELAY_AUTH_FILE, 'w') as f:
+        with open(auth_file, 'w') as f:
             f.write(auth_content)
 
         # 設定權限為 600
-        os.chmod(EMAILRELAY_AUTH_FILE, 0o600)
+        os.chmod(auth_file, 0o600)
 
         return jsonify({
             'success': True,
             'message': 'SMTP 認證設定已儲存',
             'data': {
                 'email': email,
-                'file': EMAILRELAY_AUTH_FILE,
+                'file': auth_file,
                 'format': 'plain:b (Base64 encoded)'
             }
         })
@@ -264,7 +303,7 @@ def test_emailrelay():
     data = request.get_json() or {}
 
     # 1. 檢查 spool 目錄
-    spool_dir = SystemSetting.get('emailrelay_spool_dir', EMAILRELAY_SPOOL_DIR)
+    spool_dir = _get_emailrelay_paths()['spool_dir']
     if not os.path.exists(spool_dir):
         return jsonify({
             'success': False,
@@ -334,7 +373,7 @@ BeakPlatform System
             tmp_filepath = tmp_file.name
 
         cmd = [
-            '/opt/E-MailRelay/sbin/emailrelay-submit',
+            _get_emailrelay_paths()['submit_bin'],
             '--spool-dir', spool_dir,
             '--from', from_email,
             '--input-file', tmp_filepath,
@@ -454,9 +493,56 @@ def control_emailrelay_service(action):
 # Helper Functions
 # =============================================================================
 
+def _update_systemd_service(install_dir: str) -> dict:
+    """更新 systemd service 檔案以對應新的安裝路徑"""
+    import getpass
+    user = getpass.getuser()
+
+    service_content = f"""[Unit]
+Description=E-MailRelay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=10
+User={user}
+Group={user}
+WorkingDirectory={install_dir}
+ExecStart={install_dir}/sbin/emailrelay --as-server --pid-file {install_dir}/emailrelay.pid {install_dir}/etc/emailrelay.conf
+ExecStop=/bin/kill -15 $MAINPID
+PIDFile={install_dir}/emailrelay.pid
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+    try:
+        result = subprocess.run(
+            ['sudo', 'tee', '/etc/systemd/system/emailrelay.service'],
+            input=service_content,
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode != 0:
+            return {'success': False, 'error': result.stderr}
+
+        subprocess.run(
+            ['sudo', 'systemctl', 'daemon-reload'],
+            capture_output=True, text=True, timeout=10
+        )
+
+        return {'success': True}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
 def _read_emailrelay_auth() -> dict:
     """讀取並解碼 emailrelay.auth 檔案"""
-    if not os.path.exists(EMAILRELAY_AUTH_FILE):
+    auth_file_path = _get_emailrelay_paths()['auth_file']
+    if not os.path.exists(auth_file_path):
         return {
             'configured': False,
             'email': '',
@@ -465,7 +551,7 @@ def _read_emailrelay_auth() -> dict:
         }
 
     try:
-        with open(EMAILRELAY_AUTH_FILE, 'r') as f:
+        with open(auth_file_path, 'r') as f:
             content = f.read().strip()
 
         parts = content.split()
@@ -564,7 +650,7 @@ def _get_emailrelay_service_status() -> dict:
     # 取得版本
     try:
         version_result = subprocess.run(
-            ['/opt/E-MailRelay/sbin/emailrelay', '--version'],
+            [_get_emailrelay_paths()['server_bin'], '--version'],
             capture_output=True,
             text=True,
             timeout=5
