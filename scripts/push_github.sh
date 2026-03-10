@@ -98,7 +98,8 @@ else
 fi
 
 # 回到 main，清理
-git checkout "$BRANCH" --quiet
+# --force: git rm --cached 留下的檔案會變成 untracked，需強制切回
+git checkout "$BRANCH" --force --quiet
 git branch -D "$TEMP_BRANCH" 2>/dev/null || true
 
 echo "=== GitHub 推送完成 (排除 ${excluded} 項) ==="
