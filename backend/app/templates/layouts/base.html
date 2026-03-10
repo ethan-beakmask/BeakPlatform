@@ -18,49 +18,58 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base-layout.css') }}">
 
+    {% if menu_color_overrides %}
+    <style>:root {
+    {% for key, val in menu_color_overrides.items() %}--{{ key }}: {{ val }};
+    {% endfor %}}</style>
+    {% endif %}
+
     {% block head %}{% endblock %}
 </head>
 <body>
     {% if current_user.is_authenticated %}
-    <!-- Navbar -->
-    <div class="bk-navbar">
-        <div class="bk-navbar-content">
-            <a href="{{ url_for('main.dashboard') }}" class="bk-navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
-            <span class="bk-navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
-            <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">{{ _('登出') }}</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Menu Bar (動態選單) -->
-    <div class="bk-menubar">
-        {% for item in nav_menu %}
-            {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
-            {% set item_class = _menu_color_class(item) %}
-
-            {% if item.children %}
-            <div class="bk-menu-dropdown">
-                <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
-                <div class="bk-menu-dropdown-content">
-                    {% for child in item.children %}
-                    {% set child_class = _menu_color_class(child) %}
-                    <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
-                        {% if child.icon %}{{ child.icon }} {% endif %}{{ child.title }}
-                    </a>
-                    {% endfor %}
-                </div>
+    <!-- Fixed Top Bar -->
+    <div class="bk-topbar-fixed">
+        <!-- Navbar -->
+        <div class="bk-navbar">
+            <div class="bk-navbar-content">
+                <a href="{{ url_for('main.dashboard') }}" class="bk-navbar-logo">BeakPlatform{% if current_user.organization %} - {{ current_user.organization.display_name or current_user.organization.name }}{% endif %}</a>
+                <span class="bk-navbar-user">{% if current_user.navbar_display == 'nickname' %}{{ current_user.nickname or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id' %}{{ current_user.employee_id or current_user.display_name }}{% elif current_user.navbar_display == 'employee_id_dept' %}{{ current_user.employee_id or current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% else %}{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}{% if current_user.employee_id %} ({{ current_user.employee_id }}){% endif %}{% endif %}</span>
+                <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">{{ _('登出') }}</button>
+                </form>
             </div>
+        </div>
+
+        <!-- Menu Bar (動態選單) -->
+        <div class="bk-menubar">
+            {% for item in nav_menu %}
+                {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
+                {% set item_class = _menu_color_class(item) %}
+
+                {% if item.children %}
+                <div class="bk-menu-dropdown">
+                    <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
+                    <div class="bk-menu-dropdown-content">
+                        {% for child in item.children %}
+                        {% set child_class = _menu_color_class(child) %}
+                        <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
+                            {% if child.icon %}{{ child.icon }} {% endif %}{{ child.title }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
+                    {% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }}
+                </a>
+                {% endif %}
             {% else %}
-            <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
-                {% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }}
-            </a>
-            {% endif %}
-        {% else %}
-        <!-- 無選單資料時的 fallback -->
-        <a href="{{ url_for('main.dashboard') }}">{{ _('首頁') }}</a>
-        {% endfor %}
+            <!-- 無選單資料時的 fallback -->
+            <a href="{{ url_for('main.dashboard') }}">{{ _('首頁') }}</a>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
@@ -69,6 +78,8 @@
         {% block content %}{% endblock %}
     </div>
 
+    <!-- 置頂列高度偏移計算 -->
+    <script src="{{ url_for('static', filename='js/topbar-offset.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

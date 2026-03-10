@@ -5,6 +5,11 @@ BeakPlatform System Settings API
 [標準 AUTH-02] 使用 @system_admin_required 裝飾器
 
 端點：
+選單配色:
+- GET    /api/system-settings/menu-colors             取得選單配色
+- PUT    /api/system-settings/menu-colors             更新選單配色
+- POST   /api/system-settings/menu-colors/reset       重置為預設值
+
 E-MailRelay:
 - GET    /api/system-settings/emailrelay              取得設定
 - PUT    /api/system-settings/emailrelay              更新設定
@@ -1843,4 +1848,99 @@ def update_audit_settings():
     return jsonify({
         'success': True,
         'message': f'稽核設定已更新: {", ".join(updated)}'
+    })
+
+
+# ==================== 選單配色 ====================
+
+# CSS 變數名稱 -> 預設值 對照表
+MENU_COLOR_DEFAULTS = {
+    'menu-sys-bg': '#b91c1c',
+    'menu-sys-text': '#ffffff',
+    'menu-org-bg': '#1d4ed8',
+    'menu-org-text': '#ffffff',
+    'menu-user-bg': '#111827',
+    'menu-user-text': '#ffffff',
+    'menu-ext-bg': '#f59e0b',
+    'menu-ext-text': '#111827',
+    'menu-cross-text': '#fde047',
+    'menu-fixed-bg': '#111827',
+    'menu-fixed-text': '#ffffff',
+    'menu-module-bg': '#7c3aed',
+    'menu-module-text': '#ffffff',
+    'menu-header-bg': '#1e3a5f',
+    'menu-header-text': '#ffffff',
+    'menubar-bg': '#333333',
+}
+
+
+@api_system_settings.route('/menu-colors', methods=['GET'])
+@system_admin_required
+def get_menu_colors():
+    """取得選單配色設定"""
+    saved = SystemSetting.get('menu_colors', default=None)
+    colors = dict(MENU_COLOR_DEFAULTS)
+    if saved and isinstance(saved, dict):
+        colors.update(saved)
+    return jsonify({
+        'success': True,
+        'data': {
+            'colors': colors,
+            'defaults': MENU_COLOR_DEFAULTS
+        }
+    })
+
+
+@api_system_settings.route('/menu-colors', methods=['PUT'])
+@system_admin_required
+def update_menu_colors():
+    """更新選單配色設定"""
+    import re
+    data = request.get_json()
+    if not data or 'colors' not in data:
+        return jsonify({'success': False, 'error': '缺少 colors 欄位'}), 400
+
+    colors = data['colors']
+    if not isinstance(colors, dict):
+        return jsonify({'success': False, 'error': 'colors 必須是物件'}), 400
+
+    hex_pattern = re.compile(r'^#[0-9a-fA-F]{6}$')
+    cleaned = {}
+    for key, value in colors.items():
+        if key not in MENU_COLOR_DEFAULTS:
+            continue
+        if not hex_pattern.match(value):
+            return jsonify({
+                'success': False,
+                'error': f'{key} 的值 "{value}" 不是有效的 hex 色碼（格式: #RRGGBB）'
+            }), 400
+        cleaned[key] = value.lower()
+
+    SystemSetting.set(
+        key='menu_colors',
+        value=cleaned,
+        value_type='json',
+        category='appearance',
+        description='選單配色設定',
+        updated_by=current_user.email
+    )
+
+    return jsonify({
+        'success': True,
+        'message': '選單配色已更新，重新整理頁面後生效'
+    })
+
+
+@api_system_settings.route('/menu-colors/reset', methods=['POST'])
+@system_admin_required
+def reset_menu_colors():
+    """重置選單配色為預設值"""
+    setting = SystemSetting.query.filter_by(key='menu_colors').first()
+    if setting:
+        db.session.delete(setting)
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': '選單配色已重置為預設值，重新整理頁面後生效'
     })

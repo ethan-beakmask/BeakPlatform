@@ -32,6 +32,11 @@
             <span class="settings-menu-icon">[R]</span>
             <span>收件人群組</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'menucolors' }"
+             @click="activeSection = 'menucolors'; loadMenuColors()">
+            <span class="settings-menu-icon">[C]</span>
+            <span>選單配色</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'audit' }"
              @click="activeSection = 'audit'; loadAuditSettings()">
             <span class="settings-menu-icon">[A]</span>
@@ -341,6 +346,148 @@
             </div>
         </div>
 
+        <!-- ==================== 選單配色 ==================== -->
+        <div id="section-menucolors" class="settings-section" :class="{ active: activeSection === 'menucolors' }">
+            <h2>選單配色</h2>
+            <p>調整主選單列與選單管理頁面的權限著色。儲存後重新整理頁面生效。</p>
+
+            <div x-show="message.menuColors" x-cloak
+                 :class="'message ' + (message.menuColorsError ? 'message-error' : 'message-success')"
+                 x-text="message.menuColors"
+                 x-transition></div>
+
+            <!-- 選單列底色 -->
+            <div class="settings-card">
+                <h4>選單列</h4>
+                <div class="color-grid">
+                    <label class="color-row">
+                        <span class="color-label">選單列背景</span>
+                        <input type="color" x-model="menuColors.colors['menubar-bg']">
+                        <code x-text="menuColors.colors['menubar-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menubar-bg')" title="重置">R</button>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 權限著色 -->
+            <div class="settings-card">
+                <h4>權限等級著色</h4>
+                <div class="color-grid">
+                    <label class="color-row">
+                        <span class="color-label">系統管理員 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-sys-bg']">
+                        <code x-text="menuColors.colors['menu-sys-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">系統管理員 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-sys-text']">
+                        <code x-text="menuColors.colors['menu-sys-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-text')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">企業管理員 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-org-bg']">
+                        <code x-text="menuColors.colors['menu-org-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">企業管理員 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-org-text']">
+                        <code x-text="menuColors.colors['menu-org-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-text')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">員工 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-user-bg']">
+                        <code x-text="menuColors.colors['menu-user-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-user-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">員工 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-user-text']">
+                        <code x-text="menuColors.colors['menu-user-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-user-text')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">外部廠商 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-ext-bg']">
+                        <code x-text="menuColors.colors['menu-ext-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">外部廠商 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-ext-text']">
+                        <code x-text="menuColors.colors['menu-ext-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-text')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">跨級標記文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-cross-text']">
+                        <code x-text="menuColors.colors['menu-cross-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-cross-text')" title="重置">R</button>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 特殊項目 -->
+            <div class="settings-card">
+                <h4>特殊項目</h4>
+                <div class="color-grid">
+                    <label class="color-row">
+                        <span class="color-label">固定選單 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-fixed-bg']">
+                        <code x-text="menuColors.colors['menu-fixed-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-fixed-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">固定選單 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-fixed-text']">
+                        <code x-text="menuColors.colors['menu-fixed-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-fixed-text')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">模組 (/menu/ 表格) - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-module-bg']">
+                        <code x-text="menuColors.colors['menu-module-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">模組 (/menu/ 表格) - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-module-text']">
+                        <code x-text="menuColors.colors['menu-module-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-text')" title="重置">R</button>
+                    </label>
+                </div>
+            </div>
+
+            <!-- /menu/ 表格標題 -->
+            <div class="settings-card">
+                <h4>/menu/ 表格標題列</h4>
+                <div class="color-grid">
+                    <label class="color-row">
+                        <span class="color-label">標題列 - 底色</span>
+                        <input type="color" x-model="menuColors.colors['menu-header-bg']">
+                        <code x-text="menuColors.colors['menu-header-bg']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-bg')" title="重置">R</button>
+                    </label>
+                    <label class="color-row">
+                        <span class="color-label">標題列 - 文字</span>
+                        <input type="color" x-model="menuColors.colors['menu-header-text']">
+                        <code x-text="menuColors.colors['menu-header-text']"></code>
+                        <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-text')" title="重置">R</button>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="btn-group" style="margin-top: 16px;">
+                <button class="btn btn-primary" @click="previewMenuColors()">即時預覽</button>
+                <button class="btn btn-success" @click="saveMenuColors()">儲存配色</button>
+                <button class="btn btn-danger" @click="resetMenuColors()">重置為預設</button>
+            </div>
+        </div>
+
         <!-- ==================== 稽核設定 ==================== -->
         <div id="section-audit" class="settings-section" :class="{ active: activeSection === 'audit' }">
             <h2>稽核設定</h2>
@@ -568,7 +715,9 @@ function serverSettings() {
             packages: '',
             packagesError: false,
             audit: '',
-            auditError: false
+            auditError: false,
+            menuColors: '',
+            menuColorsError: false
         },
 
         // 載入狀態
@@ -642,6 +791,13 @@ function serverSettings() {
             }
         },
 
+        // 選單配色
+        menuColors: {
+            colors: {},
+            defaults: {},
+            saved: '{}'
+        },
+
         // 稽核設定
         audit: {
             level: 'STANDARD',
@@ -677,6 +833,7 @@ function serverSettings() {
 {% include "pages/hostconfig/_system_settings_emailrelay_methods.html" %}
 {% include "pages/hostconfig/_system_settings_notification_methods.html" %}
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
+{% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}
 
         // ==================== 稽核設定 ====================
         async loadAuditSettings() {

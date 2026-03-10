@@ -19,15 +19,15 @@
     .perm-yes { color: #2e7d32; font-weight: bold; }
     .perm-no { color: #ccc; }
 
-    /* 動態著色：依 CSV 權限顏色表 (完整 4 級 + cross) */
-    .menu-sys-only { background-color: #b91c1c; color: white; }
-    .menu-sys-cross { background-color: #b91c1c; color: #fde047; }
-    .menu-org-only { background-color: #1d4ed8; color: white; }
-    .menu-org-cross { background-color: #1d4ed8; color: #fde047; }
-    .menu-user-only { background-color: #111827; color: white; }
-    .menu-user-cross { background-color: #111827; color: #fde047; }
-    .menu-ext-only { background-color: #f59e0b; color: #111827; }
-    .menu-fixed-black { background-color: #111827; color: white; }
+    /* 動態著色：CSS 變數驅動 */
+    .menu-sys-only { background-color: var(--menu-sys-bg); color: var(--menu-sys-text); }
+    .menu-sys-cross { background-color: var(--menu-sys-bg); color: var(--menu-cross-text); }
+    .menu-org-only { background-color: var(--menu-org-bg); color: var(--menu-org-text); }
+    .menu-org-cross { background-color: var(--menu-org-bg); color: var(--menu-cross-text); }
+    .menu-user-only { background-color: var(--menu-user-bg); color: var(--menu-user-text); }
+    .menu-user-cross { background-color: var(--menu-user-bg); color: var(--menu-cross-text); }
+    .menu-ext-only { background-color: var(--menu-ext-bg); color: var(--menu-ext-text); }
+    .menu-fixed-black { background-color: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
 
     /* 有底色時的勾選標記與連結調整 */
     tr[class*="menu-"] .perm-yes { color: #4ade80; }
@@ -43,20 +43,21 @@
     .status-active { color: #16a34a; }
     .status-inactive { color: #dc2626; }
 
-    /* 模組選單：紫底白字 */
-    .menu-module { background-color: #7c3aed; color: white; }
+    /* 模組選單 */
+    .menu-module { background-color: var(--menu-module-bg); color: var(--menu-module-text); }
     tr.menu-module .perm-yes { color: #4ade80; }
     tr.menu-module .perm-no { color: rgba(255,255,255,0.3); }
     tr.menu-module a { color: #93c5fd; }
     tr.menu-module code { background: rgba(255,255,255,0.15); color: inherit; }
 
-    /* 標題欄固定 */
+    /* 標題欄固定（top 使用 topbar-offset.js 設定的 CSS 變數） */
     .menu-table thead th {
         position: sticky;
-        top: 0;
-        background: #f3f4f6;
+        top: var(--topbar-height, 0px);
+        background: var(--menu-header-bg);
+        color: var(--menu-header-text);
         z-index: 10;
-        border-bottom: 2px solid #999;
+        border-bottom: 2px solid #0f2440;
     }
 </style>
 {% endblock %}

@@ -133,6 +133,19 @@ def register_context_processors(app: Flask) -> None:
         return {'_menu_color_class': _menu_color_class}
 
     @app.context_processor
+    def inject_menu_colors():
+        """注入選單配色 CSS 變數覆蓋"""
+        if current_user and current_user.is_authenticated:
+            from .models.system_setting import SystemSetting
+            try:
+                saved = SystemSetting.get('menu_colors', default=None)
+                if saved and isinstance(saved, dict):
+                    return {'menu_color_overrides': saved}
+            except Exception:
+                pass
+        return {'menu_color_overrides': None}
+
+    @app.context_processor
     def inject_i18n():
         """將 i18n 相關資料注入到所有模板"""
         from .i18n import SUPPORTED_LANGUAGES

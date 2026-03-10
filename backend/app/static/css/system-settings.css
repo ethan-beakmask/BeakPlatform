@@ -217,3 +217,39 @@
 .empty-state p {
     margin: 8px 0;
 }
+
+/* 選單配色 */
+.color-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.color-row .color-label {
+    width: 180px;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+.color-row input[type="color"] {
+    width: 40px;
+    height: 28px;
+    border: 1px solid #ccc;
+    padding: 1px;
+    cursor: pointer;
+    background: none;
+}
+.color-row code {
+    font-size: 12px;
+    width: 70px;
+    text-align: center;
+}
+.btn-xs {
+    padding: 2px 6px;
+    font-size: 11px;
+    line-height: 1.2;
+}
