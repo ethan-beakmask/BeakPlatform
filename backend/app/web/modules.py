@@ -1,13 +1,19 @@
 """
 BeakMask Modules Management Web Routes
-模組管理頁面路由 (No-Code Builder)
+模組管理頁面路由
+
+NOTE: /modules/ 頁面內容與 /admin/module-permissions 同步顯示模組權限資訊。
+      修改模組清單顯示邏輯時，請同步檢查 backend/app/web/admin.py module_permissions()
+      以及 templates/pages/admin/module_permissions.html
 """
-from datetime import datetime
+import json
+from datetime import date, datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 
 from ..security.decorators import admin_required
 from ..services.module_builder_service import ModuleBuilderService
+from ..services.lookup_service import LookupService
 from ..models.module import Module
 from .. import db
 
@@ -17,12 +23,62 @@ modules_web_bp = Blueprint('modules', __name__)
 @modules_web_bp.route('/')
 @admin_required
 def list_modules():
-    """模組列表頁面"""
-    modules = Module.query.filter(
-        Module.is_deleted == False
-    ).order_by(Module.display_order, Module.name).all()
+    """
+    模組列表頁面
 
-    return render_template('pages/modules/list.html', modules=modules)
+    顯示內容與 /admin/module-permissions 一致（模組授權狀態 + 合約資訊）。
+    參考: backend/app/web/admin.py module_permissions()
+    """
+    from ..models.contract import Contract, ContractStatus
+
+    org_sc = current_user.org_secure_code
+    today = date.today()
+
+    # 查詢企業的有效合約
+    contracts = Contract.query.filter(
+        Contract.org_secure_code == org_sc,
+        Contract.status == ContractStatus.ACTIVE,
+        Contract.start_date <= today,
+        Contract.end_date >= today,
+        Contract.is_deleted == False
+    ).order_by(Contract.end_date.desc()).all()
+
+    # 聯集所有已授權的模組代碼
+    authorized_codes = set()
+    contract_module_map = []
+    for contract in contracts:
+        modules = []
+        if contract.modules_config:
+            try:
+                modules = json.loads(contract.modules_config)
+                if isinstance(modules, list):
+                    authorized_codes.update(modules)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        contract_module_map.append({
+            'contract': contract,
+            'modules': modules,
+        })
+
+    # 取得已安裝模組的詳細資訊
+    installed_modules = LookupService.get_items('INSTALLED_MODULES')
+
+    # 合併：標記哪些已授權
+    module_list = []
+    for mod in installed_modules:
+        module_list.append({
+            'code': mod['code'],
+            'label': mod['label'],
+            'authorized': mod['code'] in authorized_codes,
+        })
+
+    return render_template(
+        'pages/modules/list.html',
+        module_list=module_list,
+        contracts=contract_module_map,
+        authorized_count=len(authorized_codes),
+        total_count=len(installed_modules),
+    )
 
 
 @modules_web_bp.route('/create', methods=['GET', 'POST'])

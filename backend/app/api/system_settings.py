@@ -1368,54 +1368,21 @@ _package_versions_cache = {
     'ttl': 1800  # 30 分鐘
 }
 
-# 前端 vendor 套件定義
-# header_pattern: 在檔案前 2000 字元搜尋（header 註解）
-# full_pattern: header 找不到時掃描全檔（minified 內嵌版本）
-FRONTEND_VENDOR_REGISTRY = [
-    {
-        'name': 'Bootstrap',
-        'file': 'vendor/bootstrap.bundle.min.js',
-        'header_pattern': r'Bootstrap\s+v([\d.]+)',
-        'npm_name': 'bootstrap',
-    },
-    {
-        'name': 'Alpine.js',
-        'file': 'vendor/alpine.min.js',
-        'full_pattern': r'version["\s:=]*"(\d+\.\d+\.\d+)"',
-        'npm_name': 'alpinejs',
-    },
-    {
-        'name': 'jQuery',
-        'file': 'vendor/jquery.min.js',
-        'header_pattern': r'jQuery\s+v([\d.]+)',
-        'npm_name': 'jquery',
-    },
-    {
-        'name': 'jsTree',
-        'file': 'vendor/jstree.min.js',
-        'header_pattern': r'jsTree\s+-\s+v([\d.]+)',
-        'npm_name': 'jstree',
-    },
-    {
-        'name': 'Cytoscape.js',
-        'file': 'vendor/cytoscape.min.js',
-        'full_pattern': r'version["\s:=]*"(\d+\.\d+\.\d+)"',
-        'npm_name': 'cytoscape',
-    },
-    {
-        'name': 'Formio',
-        'file': 'vendor/formio.full.min.js',
-        'header_pattern': r'[Ff]ormio[^\d]*([\d]+\.[\d]+\.[\d]+)',
-        'full_pattern': r'Formio\.version\s*=\s*"(\d+\.\d+\.\d+)"',
-        'npm_name': '@formio/js',
-    },
-    {
-        'name': 'Font Awesome',
-        'file': 'vendor/fontawesome/css/all.min.css',
-        'header_pattern': r'Font Awesome[^\d]*([\d.]+)',
-        'npm_name': '@fortawesome/fontawesome-free',
-    },
-]
+# Vendor 套件 metadata（顯示名稱 + npm 套件名）
+# 清單由掃描 vendor/ 目錄自動產生，此處僅提供 npm 名稱對照
+VENDOR_META = {
+    'bootstrap': {'display': 'Bootstrap', 'npm': 'bootstrap'},
+    'alpine': {'display': 'Alpine.js', 'npm': 'alpinejs'},
+    'cytoscape': {'display': 'Cytoscape.js', 'npm': 'cytoscape'},
+    'formio': {'display': 'Formio', 'npm': '@formio/js'},
+    'fontawesome': {'display': 'Font Awesome', 'npm': '@fortawesome/fontawesome-free'},
+    'ace': {'display': 'Ace Editor', 'npm': 'ace-builds'},
+    'gridstack': {'display': 'GridStack', 'npm': 'gridstack'},
+    'wunderbaum': {'display': 'Wunderbaum', 'npm': 'wunderbaum'},
+}
+
+# 掃描時略過的目錄/檔案（非套件項目）
+VENDOR_SCAN_SKIP = {'fonts', 'jstree-theme'}
 
 
 def _parse_requirements():
@@ -1538,34 +1505,146 @@ def _compare_versions(installed, latest):
     return 'minor_update'
 
 
-def _detect_vendor_version(entry):
-    """從 vendor 檔案偵測版本（先 header，再 full scan）"""
-    static_dir = os.path.join(os.path.dirname(__file__), '..', 'static')
-    file_path = os.path.join(static_dir, entry['file'])
-    file_path = os.path.normpath(file_path)
+def _get_vendor_key(name):
+    """從檔名或目錄名提取套件識別 key"""
+    return name.split('.')[0].lower()
 
-    if not os.path.exists(file_path):
+
+def _find_main_file_in_dir(dir_path, dir_name):
+    """在 vendor 子目錄中找主要 JS 或 CSS 檔用於版本偵測"""
+    js_files = []
+    css_files = []
+    for root, _, files in os.walk(dir_path):
+        for f in files:
+            full = os.path.join(root, f)
+            if f.endswith('.js'):
+                js_files.append(full)
+            elif f.endswith('.css'):
+                css_files.append(full)
+
+    if not js_files and not css_files:
         return None
 
+    # JS 優先，找跟目錄名相關的
+    dn = dir_name.lower().replace('-', '')
+    for f in js_files:
+        bn = os.path.basename(f).lower().replace('-', '')
+        if dn in bn:
+            return f
+    if js_files:
+        return js_files[0]
+
+    # CSS，找 all.min.css 或跟目錄名相關的
+    for f in css_files:
+        bn = os.path.basename(f).lower()
+        if 'all' in bn or dn in bn:
+            return f
+    return css_files[0] if css_files else None
+
+
+def _detect_version_from_file(file_path):
+    """從檔案內容自動偵測版本號"""
     try:
-        # 階段 1: header pattern（前 2000 字元）
-        if 'header_pattern' in entry:
-            with open(file_path, 'r', errors='ignore') as f:
-                header = f.read(2000)
-            match = re.search(entry['header_pattern'], header, re.IGNORECASE)
+        with open(file_path, 'r', errors='ignore') as f:
+            header = f.read(3000)
+
+        # Header patterns（前 3000 字元，依優先順序）
+        header_patterns = [
+            r'@version\s+v?([\d]+\.[\d]+\.[\d]+)',
+            r'(?:Version|VERSION)[\s:]+v?([\d]+\.[\d]+\.[\d]+)',
+            # 套件名 + 任意非數字字元 + 版本（處理 "Font Awesome Free 7.2.0" 等）
+            r'(?:Bootstrap|Font Awesome|Formio|Cytoscape|GridStack|'
+            r'Wunderbaum|Ace)[^\d]*([\d]+\.[\d]+\.[\d]+)',
+            r'[/*#!]\s*v([\d]+\.[\d]+\.[\d]+)',
+        ]
+        for pattern in header_patterns:
+            match = re.search(pattern, header, re.IGNORECASE)
             if match:
                 return match.group(1)
 
-        # 階段 2: full pattern（掃描全檔，用於 minified 檔案）
-        if 'full_pattern' in entry:
-            with open(file_path, 'r', errors='ignore') as f:
-                content = f.read()
-            match = re.search(entry['full_pattern'], content)
+        # Header 找不到，掃描全檔找 inline version
+        with open(file_path, 'r', errors='ignore') as f:
+            content = f.read()
+        full_patterns = [
+            # 已知大型套件的命名版本（避免抓到內嵌依賴的版本）
+            r'Formio\.version\s*=\s*["\'](\d+\.\d+\.\d+)["\']',
+            # 屬性賦值: .version="X.Y.Z" 或 .GDRev="X.Y.Z"
+            r'\.(?:version|GDRev)\s*=\s*["\'](\d+\.\d+\.\d+)["\']',
+            # 通用: version:"X.Y.Z"（物件字面值，最後手段）
+            r'version["\s:=]*["\'](\d+\.\d+\.\d+)["\']',
+        ]
+        for pattern in full_patterns:
+            match = re.search(pattern, content)
             if match:
                 return match.group(1)
     except Exception:
         pass
     return None
+
+
+def _scan_vendor_packages():
+    """掃描 vendor/ 目錄，自動偵測所有前端套件"""
+    static_dir = os.path.join(os.path.dirname(__file__), '..', 'static')
+    static_dir = os.path.normpath(static_dir)
+    vendor_dir = os.path.join(static_dir, 'vendor')
+
+    if not os.path.isdir(vendor_dir):
+        return []
+
+    packages = {}  # key -> package info
+
+    for entry in sorted(os.listdir(vendor_dir)):
+        entry_path = os.path.join(vendor_dir, entry)
+
+        # 跳過隱藏檔案、JSON 資料檔、已知非套件項目
+        if (entry.startswith('.')
+                or entry.endswith('.json')
+                or entry in VENDOR_SCAN_SKIP):
+            continue
+
+        key = _get_vendor_key(entry)
+
+        # 同 key 已處理（CSS + JS 同名時，JS 優先偵測版本）
+        if key in packages:
+            if entry.endswith('.js') and not packages[key]['source'].endswith('.js'):
+                installed = _detect_version_from_file(entry_path)
+                if installed:
+                    packages[key]['installed_version'] = installed
+                packages[key]['source'] = f'vendor/{entry}'
+            continue
+
+        # 判斷主要檔案
+        if os.path.isdir(entry_path):
+            main_file = _find_main_file_in_dir(entry_path, entry)
+            if not main_file:
+                continue
+            rel = os.path.relpath(main_file, static_dir)
+            source = rel.replace(os.sep, '/')
+        else:
+            main_file = entry_path
+            source = f'vendor/{entry}'
+
+        # 偵測版本
+        installed = _detect_version_from_file(main_file)
+
+        # 取得 metadata
+        meta = VENDOR_META.get(key, {})
+        display_name = meta.get('display', key.replace('-', ' ').title())
+        npm_name = meta.get('npm')
+        is_custom = entry.startswith('beak-')
+
+        packages[key] = {
+            'name': display_name,
+            'installed_version': installed or '未偵測',
+            'latest_version': None,
+            'status': ('custom' if is_custom
+                       else ('check_failed' if not installed else 'checking')),
+            'source': source,
+            '_npm_name': npm_name,
+            '_is_custom': is_custom,
+        }
+
+    return list(packages.values())
 
 
 def _check_package_versions():
@@ -1610,25 +1689,20 @@ def _check_package_versions():
                 python_packages[idx]['latest_version'] = '無法檢查'
                 python_packages[idx]['status'] = 'check_failed'
 
-    # === 前端 vendor 套件 ===
-    frontend_packages = []
-    for entry in FRONTEND_VENDOR_REGISTRY:
-        installed = _detect_vendor_version(entry)
-        frontend_packages.append({
-            'name': entry['name'],
-            'installed_version': installed or '未偵測',
-            'latest_version': None,
-            'status': 'check_failed' if not installed else 'checking',
-            'source': entry['file'],
-        })
+    # === 前端 vendor 套件（自動掃描 vendor/ 目錄）===
+    frontend_packages = _scan_vendor_packages()
 
-    # 並行查詢 npm 最新版本
+    # 並行查詢 npm 最新版本（跳過自製套件和未偵測版本的）
     with ThreadPoolExecutor(max_workers=5) as executor:
         future_map = {}
-        for i, entry in enumerate(FRONTEND_VENDOR_REGISTRY):
-            if frontend_packages[i]['installed_version'] != '未偵測':
-                future = executor.submit(_fetch_npm_latest, entry['npm_name'])
-                future_map[future] = i
+        for i, pkg in enumerate(frontend_packages):
+            npm_name = pkg.get('_npm_name')
+            if pkg.get('_is_custom') or not npm_name:
+                continue
+            if pkg['installed_version'] == '未偵測':
+                continue
+            future = executor.submit(_fetch_npm_latest, npm_name)
+            future_map[future] = i
 
         for future in as_completed(future_map):
             idx = future_map[future]
@@ -1644,6 +1718,11 @@ def _check_package_versions():
             except Exception:
                 frontend_packages[idx]['latest_version'] = '無法檢查'
                 frontend_packages[idx]['status'] = 'check_failed'
+
+    # 清理內部欄位
+    for pkg in frontend_packages:
+        pkg.pop('_npm_name', None)
+        pkg.pop('_is_custom', None)
 
     duration_ms = int((time.time() - start_time) * 1000)
 

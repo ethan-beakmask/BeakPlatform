@@ -1,4 +1,13 @@
 {% extends 'layouts/base.html' %}
+{#
+    模組權限管理頁面 (/admin/module-permissions)
+
+    此頁面內容與 /modules/ 同步顯示模組權限資訊。
+    修改時請同步檢查:
+      - templates/pages/modules/list.html
+      - backend/app/web/modules.py list_modules()
+      - backend/app/web/admin.py module_permissions()
+#}
 
 {% block title %}模組權限管理 - BeakMask{% endblock %}
 

@@ -43,6 +43,7 @@
                 'minor_update': 'badge-warning',
                 'major_update': 'badge-danger',
                 'check_failed': 'badge-secondary',
+                'custom': 'badge-info',
             };
             return 'badge ' + (map[status] || 'badge-secondary');
         },
@@ -53,6 +54,7 @@
                 'minor_update': '小版本更新',
                 'major_update': '大版本更新',
                 'check_failed': '無法檢查',
+                'custom': '平台自製',
             };
             return map[status] || '未知';
         },

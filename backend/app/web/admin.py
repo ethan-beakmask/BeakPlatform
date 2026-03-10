@@ -82,6 +82,10 @@ def module_permissions():
     模組權限管理頁面
 
     列出企業已授權的模組清單（根據有效合約的 modules_config）。
+
+    NOTE: 此頁面內容與 /modules/ 同步。修改時請同步檢查:
+          - backend/app/web/modules.py list_modules()
+          - templates/pages/modules/list.html
     """
     from ..models.contract import Contract, ContractStatus
 
