@@ -1017,17 +1017,15 @@
                             'border-color': '#4CAF50'
                         }
                     },
-                    // 一般節點選中樣式（邊框 + 陰影光暈）
+                    // 一般節點選中樣式（邊框 + overlay 光暈）
                     {
                         selector: 'node:selected',
                         style: {
                             'border-width': 3,
                             'border-color': '#2196F3',
-                            'shadow-blur': 8,
-                            'shadow-color': '#2196F3',
-                            'shadow-offset-x': 0,
-                            'shadow-offset-y': 0,
-                            'shadow-opacity': 0.6
+                            'overlay-color': '#2196F3',
+                            'overlay-padding': 4,
+                            'overlay-opacity': 0.15
                         }
                     }
                 ],
@@ -5356,6 +5354,88 @@
                 `;
             }
 
+            // SubSystemProvision 子系統配置節點
+            if (type === 'SubSystemProvision') {
+                const currentConfig = node.data('config') || {};
+                const action = currentConfig.action || 'create';
+                const ssName = currentConfig.sub_system_name || '';
+                const ssIcon = currentConfig.sub_system_icon || '';
+                const ssDeveloper = currentConfig.sub_system_developer || '';
+                const ssCode = currentConfig.sub_system_code || '';
+
+                const actions = [
+                    { value: 'create',  label: '建立子系統', color: '#28a745', desc: '建立子系統 + 選單 + 授予開發者權限' },
+                    { value: 'suspend', label: '停用子系統', color: '#ff6b00', desc: '停用子系統 + 停用選單' },
+                    { value: 'delete',  label: '刪除子系統', color: '#dc3545', desc: '軟刪除子系統 + 停用選單 + 撤銷權限' },
+                ];
+
+                info += `
+                    <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #8B5CF6;">
+                            <i class="fas fa-cog"></i> 動作類型
+                        </div>
+                        ${actions.map(a => `
+                            <label style="display: block; padding: 8px; border: 2px solid ${action === a.value ? a.color : '#e0e0e0'}; border-radius: 6px; margin-bottom: 6px; cursor: pointer; background: ${action === a.value ? a.color + '10' : 'white'};">
+                                <input type="radio" name="sspAction" value="${a.value}" ${action === a.value ? 'checked' : ''} onchange="toggleSSPFields()" style="margin-right: 8px;">
+                                <strong style="color: ${a.color};">${a.label}</strong>
+                                <p style="margin: 3px 0 0 22px; font-size: 11px; color: #666;">${a.desc}</p>
+                            </label>
+                        `).join('')}
+                    </div>
+
+                    <div id="sspCreateFields" style="display: ${action === 'create' ? 'block' : 'none'};">
+                        <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                            <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #333;">
+                                建立參數
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                    子系統名稱 <span style="color: #dc3545;">*</span>
+                                </label>
+                                <input type="text" id="sspName" value="${ssName}" placeholder="\${f.sub_system_name}"
+                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+                                <div style="font-size: 10px; color: #999; margin-top: 2px;">支援變數，如 \${f.sub_system_name}</div>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                    開發者
+                                </label>
+                                <input type="text" id="sspDeveloper" value="${ssDeveloper}" placeholder="\${fi.applicant_code}"
+                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+                                <div style="font-size: 10px; color: #999; margin-top: 2px;">空白時預設為申請者。變數如 \${f.sub_system_developer}</div>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                    圖示 (選填)
+                                </label>
+                                <input type="text" id="sspIcon" value="${ssIcon}" placeholder="bi-box-seam"
+                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="sspTargetFields" style="display: ${action !== 'create' ? 'block' : 'none'};">
+                        <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+                            <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #333;">
+                                目標子系統
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">
+                                    子系統代碼 <span style="color: #dc3545;">*</span>
+                                </label>
+                                <input type="text" id="sspCode" value="${ssCode}" placeholder="\${v.sub_system_code}"
+                                       style="width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; box-sizing: border-box;">
+                                <div style="font-size: 10px; color: #999; margin-top: 2px;">子系統的唯一代碼。變數如 \${v.sub_system_code}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="applySSPConfig('${nodeId}')" style="width: 100%; background: #8B5CF6; border-color: #8B5CF6;">
+                        <i class="fas fa-check"></i> 套用
+                    </button>
+                `;
+            }
+
             document.getElementById('nodeSettings').innerHTML = info;
 
             // 如果是子流程節點，載入可用子流程清單
@@ -8347,6 +8427,61 @@
         }
         window.applyAbandonConfig = applyAbandonConfig;
 
+        // SubSystemProvision 子系統配置節點
+
+        function toggleSSPFields() {
+            const action = document.querySelector('input[name="sspAction"]:checked');
+            if (!action) return;
+            const createFields = document.getElementById('sspCreateFields');
+            const targetFields = document.getElementById('sspTargetFields');
+            if (createFields) createFields.style.display = action.value === 'create' ? 'block' : 'none';
+            if (targetFields) targetFields.style.display = action.value !== 'create' ? 'block' : 'none';
+        }
+        window.toggleSSPFields = toggleSSPFields;
+
+        function applySSPConfig(nodeId) {
+            const node = applyNodeBasicInfo(nodeId, true);
+            if (!node) return;
+
+            const actionEl = document.querySelector('input[name="sspAction"]:checked');
+            if (!actionEl) {
+                updateStatus('請選擇動作類型', 'warning');
+                return;
+            }
+            const action = actionEl.value;
+            const currentConfig = node.data('config') || {};
+            const updatedConfig = { ...currentConfig, action };
+
+            if (action === 'create') {
+                const nameEl = document.getElementById('sspName');
+                const devEl = document.getElementById('sspDeveloper');
+                const iconEl = document.getElementById('sspIcon');
+                updatedConfig.sub_system_name = nameEl ? nameEl.value.trim() : '';
+                updatedConfig.sub_system_developer = devEl ? devEl.value.trim() : '';
+                updatedConfig.sub_system_icon = iconEl ? iconEl.value.trim() : '';
+                if (!updatedConfig.sub_system_name) {
+                    updateStatus('子系統名稱為必填', 'warning');
+                    return;
+                }
+            } else {
+                const codeEl = document.getElementById('sspCode');
+                updatedConfig.sub_system_code = codeEl ? codeEl.value.trim() : '';
+                if (!updatedConfig.sub_system_code) {
+                    updateStatus('子系統代碼為必填', 'warning');
+                    return;
+                }
+            }
+
+            node.data('config', updatedConfig);
+            const labels = { create: '建立', suspend: '停用', delete: '刪除' };
+            updateStatus(`子系統配置：${labels[action] || action}`, 'success');
+
+            console.log('SubSystemProvision 配置已更新:', {
+                nodeId, action, config: updatedConfig
+            });
+        }
+        window.applySSPConfig = applySSPConfig;
+
         // 更新匯聚節點的模式
         function updateConvergeMode(nodeId, mode) {
             const node = cy.getElementById(nodeId);
@@ -8467,6 +8602,25 @@
                     if (abandonWait && abandonWait.value) {
                         config.finish_mode = 'cancel';
                         config.wait_seconds = parseInt(abandonWait.value) || 1;
+                        changed = true;
+                    }
+                    break;
+                }
+                case 'SubSystemProvision': {
+                    const sspAction = document.querySelector('input[name="sspAction"]:checked');
+                    if (sspAction) {
+                        config.action = sspAction.value;
+                        if (sspAction.value === 'create') {
+                            const nameEl = document.getElementById('sspName');
+                            const devEl = document.getElementById('sspDeveloper');
+                            const iconEl = document.getElementById('sspIcon');
+                            if (nameEl) config.sub_system_name = nameEl.value.trim();
+                            if (devEl) config.sub_system_developer = devEl.value.trim();
+                            if (iconEl) config.sub_system_icon = iconEl.value.trim();
+                        } else {
+                            const codeEl = document.getElementById('sspCode');
+                            if (codeEl) config.sub_system_code = codeEl.value.trim();
+                        }
                         changed = true;
                     }
                     break;

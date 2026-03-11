@@ -6,24 +6,25 @@ Data CRUD Module - Project Service
 """
 import copy
 import logging
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Dict, List, Any
 
 from flask_login import current_user
 from sqlalchemy.orm.attributes import flag_modified
 
 from app import db
 from app.models.menu_item import MenuItem
-from app.models.organizational_unit import OrganizationalUnit, UnitType
-from app.models.user_unit_membership import (
-    UserUnitMembership, MembershipType, MembershipRole,
-)
+from app.models.module_access_control import ModuleAccessControl
 from app.models.user import User
+from app.services.module_access_service import ModuleAccessService
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
 from ..models.sub_system import DcSubSystem
 
 logger = logging.getLogger(__name__)
+
+_WEB_BUILDER_MODULE = 'web_builder'
 
 
 class ProjectService:
@@ -66,12 +67,9 @@ class ProjectService:
     @staticmethod
     def create_project(user, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        建立開發案
+        建立開發案（手動建立，非流程觸發）
 
-        自動:
-        1. 建立社群 (OrganizationalUnit type=GROUP)
-        2. 將建立者加入 developers 名單
-        3. 建立者成為社群 MANAGER
+        自動將建立者加入 developers 名單
         """
         org = get_current_org()
         if not org:
@@ -85,43 +83,17 @@ class ProjectService:
         if layout_mode not in ('grid', 'free'):
             layout_mode = 'grid'
 
-        # 自動建立社群
-        group_code = 'PRJ_' + name.upper().replace(' ', '_')[:30]
-        group = OrganizationalUnit(
-            org_secure_code=org.secure_code,
-            unit_type=UnitType.GROUP,
-            code=group_code,
-            name=name,
-            description=f'開發案「{name}」社群',
-            is_active=True,
-        )
-        group.update_full_path()
-        db.session.add(group)
-        db.session.flush()  # 取得 secure_code
-
-        # 建立子系統
         ss = ResourceGateway.create(
             DcSubSystem,
             check_permission=False,
             name=name,
             description=data.get('description', ''),
             icon=data.get('icon', ''),
-            group_unit_secure_code=group.secure_code,
             status='draft',
             developers=[user.secure_code],
             layout_mode=layout_mode,
             is_active=True,
         )
-
-        # 建立者成為社群 MANAGER
-        membership = UserUnitMembership(
-            org_secure_code=org.secure_code,
-            user_secure_code=user.secure_code,
-            unit_secure_code=group.secure_code,
-            membership_type=MembershipType.MEMBER,
-            role_type=MembershipRole.MANAGER,
-        )
-        db.session.add(membership)
 
         ResourceGateway.commit()
 
@@ -129,7 +101,11 @@ class ProjectService:
 
     @staticmethod
     def update_project(secure_code: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        """更新開發案基本資訊"""
+        """
+        更新開發案基本資訊
+
+        name 為 Single Source of Truth，同步更新關聯選單標題
+        """
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -147,13 +123,30 @@ class ProjectService:
             return {'success': False, 'error': '名稱不可為空'}
 
         ResourceGateway.update(ss, check_permission=False, **update_fields)
+
+        # name 改變時同步選單標題
+        if 'name' in update_fields and ss.menu_item_secure_code:
+            org = get_current_org()
+            if org:
+                menu_item = MenuItem.query.filter_by(
+                    secure_code=ss.menu_item_secure_code,
+                    org_secure_code=org.secure_code,
+                    is_deleted=False,
+                ).first()
+                if menu_item:
+                    menu_item.title = update_fields['name']
+
         ResourceGateway.commit()
 
         return {'success': True, 'data': ss.to_dict()}
 
     @staticmethod
     def delete_project(secure_code: str) -> Dict[str, Any]:
-        """軟刪除開發案"""
+        """
+        軟刪除開發案
+
+        同時：停用選單 + 撤銷無其他開發案的開發者 web_builder 權限
+        """
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -161,6 +154,23 @@ class ProjectService:
         )
         if not ss or ss.is_deleted:
             return {'success': False, 'error': '開發案不存在'}
+
+        org = get_current_org()
+        org_sc = org.secure_code if org else ss.org_secure_code
+
+        # 停用關聯選單
+        if ss.menu_item_secure_code:
+            menu_item = MenuItem.query.filter_by(
+                secure_code=ss.menu_item_secure_code,
+                org_secure_code=org_sc,
+                is_deleted=False,
+            ).first()
+            if menu_item:
+                menu_item.is_active = False
+
+        # 撤銷開發者 web_builder 權限（無其他開發案時才撤銷）
+        for dev_sc in (ss.developers or []):
+            _revoke_if_no_other_projects(org_sc, dev_sc, ss.secure_code)
 
         ResourceGateway.delete(ss, check_permission=False, soft=True)
         ResourceGateway.commit()
@@ -180,10 +190,11 @@ class ProjectService:
 
         ResourceGateway.update(ss, check_permission=False, status='published')
 
-        # 連動: 啟用關聯選單項
+        # 連動: 啟用關聯選單項（加 org_secure_code 過濾）
         if ss.menu_item_secure_code:
             menu_item = MenuItem.query.filter_by(
                 secure_code=ss.menu_item_secure_code,
+                org_secure_code=ss.org_secure_code,
                 is_deleted=False,
             ).first()
             if menu_item:
@@ -206,10 +217,11 @@ class ProjectService:
 
         ResourceGateway.update(ss, check_permission=False, status='draft')
 
-        # 連動: 停用關聯選單項
+        # 連動: 停用關聯選單項（加 org_secure_code 過濾）
         if ss.menu_item_secure_code:
             menu_item = MenuItem.query.filter_by(
                 secure_code=ss.menu_item_secure_code,
+                org_secure_code=ss.org_secure_code,
                 is_deleted=False,
             ).first()
             if menu_item:
@@ -249,7 +261,11 @@ class ProjectService:
 
     @staticmethod
     def add_developer(secure_code: str, user_sc: str) -> Dict[str, Any]:
-        """新增開發者"""
+        """
+        新增開發者
+
+        同時授予 web_builder 模組使用權
+        """
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -274,22 +290,15 @@ class ProjectService:
         ss.developers = developers
         flag_modified(ss, 'developers')
 
-        # 同時加入社群 (如果尚未加入)
+        # 授予 web_builder 模組使用權
         org = get_current_org()
-        existing_membership = UserUnitMembership.query.filter_by(
-            user_secure_code=user_sc,
-            unit_secure_code=ss.group_unit_secure_code,
-            is_deleted=False,
-        ).first()
-        if not existing_membership and org:
-            membership = UserUnitMembership(
-                org_secure_code=org.secure_code,
-                user_secure_code=user_sc,
-                unit_secure_code=ss.group_unit_secure_code,
-                membership_type=MembershipType.MEMBER,
-                role_type=MembershipRole.MEMBER,
+        if org:
+            ModuleAccessService.add_access(
+                org_sc=org.secure_code,
+                module_code=_WEB_BUILDER_MODULE,
+                target_type='ACCOUNT',
+                target_sc=user_sc,
             )
-            db.session.add(membership)
 
         db.session.commit()
 
@@ -297,7 +306,11 @@ class ProjectService:
 
     @staticmethod
     def remove_developer(secure_code: str, user_sc: str) -> Dict[str, Any]:
-        """移除開發者"""
+        """
+        移除開發者
+
+        同時撤銷 web_builder 權限（若無其他開發案）+ 移除社群 membership
+        """
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -316,6 +329,25 @@ class ProjectService:
         developers.remove(user_sc)
         ss.developers = developers
         flag_modified(ss, 'developers')
+
+        org = get_current_org()
+        org_sc = org.secure_code if org else ss.org_secure_code
+
+        # 撤銷 web_builder 權限（若無其他開發案）
+        _revoke_if_no_other_projects(org_sc, user_sc, ss.secure_code)
+
+        # 移除社群 membership（如有關聯社群）
+        if ss.group_unit_secure_code:
+            from app.models.user_unit_membership import UserUnitMembership
+            membership = UserUnitMembership.query.filter_by(
+                user_secure_code=user_sc,
+                unit_secure_code=ss.group_unit_secure_code,
+                is_deleted=False,
+            ).first()
+            if membership:
+                membership.is_deleted = True
+                membership.deleted_at = datetime.utcnow()
+
         db.session.commit()
 
         return {'success': True}
@@ -327,3 +359,27 @@ class ProjectService:
             return True
         developers = sub_system.developers or []
         return user.secure_code in developers
+
+
+def _revoke_if_no_other_projects(org_sc: str, user_sc: str, exclude_ss_sc: str):
+    """撤銷 web_builder 權限 -- 用戶沒有其他開發案時才撤銷"""
+    other_count = DcSubSystem.query.filter(
+        DcSubSystem.org_secure_code == org_sc,
+        DcSubSystem.is_deleted == False,
+        DcSubSystem.secure_code != exclude_ss_sc,
+        DcSubSystem.developers.op('?')(user_sc),
+    ).count()
+
+    if other_count > 0:
+        return
+
+    record = ModuleAccessControl.query.filter(
+        ModuleAccessControl.org_secure_code == org_sc,
+        ModuleAccessControl.module_code == _WEB_BUILDER_MODULE,
+        ModuleAccessControl.target_type == 'ACCOUNT',
+        ModuleAccessControl.target_secure_code == user_sc,
+        ModuleAccessControl.is_deleted == False,
+    ).first()
+    if record:
+        record.is_deleted = True
+        record.deleted_at = datetime.utcnow()

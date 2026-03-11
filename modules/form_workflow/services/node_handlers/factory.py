@@ -117,6 +117,7 @@ def register_builtin_handlers():
     from .emailrelay_handler import EmailRelayHandler
     from .subflow_handler import SubFlowHandler
     from .abandon_handler import AbandonHandler
+    from .sub_system_provision_handler import SubSystemProvisionHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -148,6 +149,9 @@ def register_builtin_handlers():
     NodeHandlerFactory.register('OpSet', OpSetHandler)
     NodeHandlerFactory.register('OpFieldRead', FieldReadHandler)
     NodeHandlerFactory.register('OpFieldWrite', FieldWriteHandler)
+
+    # 整合（系統動作）
+    NodeHandlerFactory.register('SubSystemProvision', SubSystemProvisionHandler)
 
 
 # 自動執行註冊

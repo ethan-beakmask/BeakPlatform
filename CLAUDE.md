@@ -55,6 +55,14 @@ Generated with Claude Code"
 
 **注意：commit 和 push 是兩件事。只 commit，不主動 push。用戶說 push 才 push。**
 
+**GitHub 推送必須使用過濾腳本：**
+- **push** → `git push origin main` (Forgejo，直接推)
+- **push github** → `bash scripts/push_github.sh` (GitHub，過濾推送)
+- **push both** → 先 `git push origin main`，再 `bash scripts/push_github.sh`
+- **禁止** 直接執行 `git push github main`，會把 CLAUDE.md 等內部檔案推上去
+- 過濾腳本要求工作區乾淨，有未 commit 的變更時先 `git stash --include-untracked`，推完再 `git stash pop`
+- GitHub 的 history 與 origin 不同步是正常的（過濾 commit），不要 merge github/main 回 local
+
 ### 2. 更新追蹤
 - 完成 Forgejo Issue 時，用 API 關閉：`curl -X PATCH ... -d '{"state":"closed"}'`
 - 如果涉及架構變更，更新相關文件

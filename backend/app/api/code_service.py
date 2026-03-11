@@ -15,6 +15,10 @@ from ..services.code_generator import get_code_generator
 from ..models import (
     Role, OrganizationalUnit, JobTitle, JobFamily, JobLevel, MenuItem, Organization
 )
+# 延遲匯入模組 model（避免循環依賴）
+def _get_dc_sub_system():
+    from modules.data_crud.models.sub_system import DcSubSystem
+    return DcSubSystem
 from .. import csrf
 
 logger = logging.getLogger(__name__)
@@ -65,12 +69,19 @@ ENTITY_REGISTRY = {
         'tenant': False,
         'code_field': 'code',
     },
+    'sub_system': {
+        'model': None,  # 延遲載入
+        'tenant': True,
+        'code_field': 'code',
+        '_lazy_model': _get_dc_sub_system,
+    },
 }
 
 
 def _build_exists_checker(entity_config):
     """建立 case-insensitive 的重複檢查函數"""
-    model = entity_config['model']
+    lazy_loader = entity_config.get('_lazy_model')
+    model = lazy_loader() if lazy_loader else entity_config['model']
     code_field = entity_config['code_field']
     extra = entity_config.get('extra', {})
 
