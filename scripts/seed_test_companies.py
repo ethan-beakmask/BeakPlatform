@@ -454,10 +454,11 @@ def create_job_titles(org_sc, levels, families, extra_titles=None):
 
 
 def create_numbering_rules(org_sc, numbering_config):
-    """建立編號規則"""
+    """建立編號規則 (公司特定，非預設)"""
     rules = {}
     for key, cfg in numbering_config.items():
-        default_for = NumberingDefaultFor.EMPLOYEE if key == 'employee' else NumberingDefaultFor.EXTERNAL
+        # 公司特定規則不設為預設 (預設規則由 create_default_numbering_rule 建立)
+        default_for = NumberingDefaultFor.EXTERNAL if key == 'external' else None
         usage_scope = NumberingUsageScope.INTERNAL_ONLY if key == 'employee' else NumberingUsageScope.EXTERNAL_ONLY
         rule = UserNumberingRule(
             org_secure_code=org_sc,
@@ -472,6 +473,31 @@ def create_numbering_rules(org_sc, numbering_config):
         db.session.flush()
         rules[key] = rule
     return rules
+
+
+def create_default_numbering_rule(org_sc):
+    """建立預設 4 位數員工編號規則 (0001, 0002, ...)
+
+    此規則模擬新企業建立時自動產生的預設編號規則。
+    後續會移植到 OrganizationService.create_organization() 內。
+    """
+    rule = UserNumberingRule(
+        org_secure_code=org_sc,
+        name='預設員工編號',
+        description='4 位數序號 (新企業預設)',
+        elements={
+            'components': [
+                {'type': 'sequence', 'order': 1, 'start': 1, 'digits': 4, 'reset_period': 'never'},
+            ],
+            'total_length': 4,
+        },
+        usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+        default_for=NumberingDefaultFor.EMPLOYEE,
+        is_active=True,
+    )
+    db.session.add(rule)
+    db.session.flush()
+    return rule
 
 
 def create_departments(org_sc, dept_list):
@@ -605,7 +631,7 @@ def seed_one_company(company_def):
     print(f"{'='*60}")
 
     # 1. 企業 + 合約 + 原始管理員
-    print(f"  [1/8] 企業 + 合約 + 原始管理員...")
+    print(f"  [1/9] 企業 + 合約 + 原始管理員...")
     org, admin_user, contract = OrganizationService.create_organization_with_contract(
         code=code,
         name=name,
@@ -628,38 +654,42 @@ def seed_one_company(company_def):
     print(f"         admin: admin@{domain}")
 
     # 2. 第二管理員
-    print(f"  [2/8] 第二管理員...")
+    print(f"  [2/9] 第二管理員...")
     admin2 = create_admin_accounts(org, org_sc, domain)
     print(f"         admin2: admin2@{domain}")
 
     # 3. 編號規則
-    print(f"  [3/8] 編號規則...")
+    print(f"  [3/9] 預設編號規則...")
+    default_rule = create_default_numbering_rule(org_sc)
+    print(f"         default: {default_rule.name} (0001, 0002, ...)")
+
+    print(f"  [4/9] 公司編號規則...")
     numbering_rules = create_numbering_rules(org_sc, company_def['numbering'])
     for key, rule in numbering_rules.items():
         print(f"         {key}: {rule.name}")
 
-    # 4. 職等
-    print(f"  [4/8] 職等 (10 級)...")
+    # 5. 職等
+    print(f"  [5/9] 職等 (10 級)...")
     levels = create_job_levels(org_sc)
 
-    # 5. 職系
+    # 6. 職系
     extra_fam = company_def.get('extra_families', [])
-    print(f"  [5/8] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
+    print(f"  [6/9] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
     families = create_job_families(org_sc, extra_fam)
 
-    # 6. 職稱
+    # 7. 職稱
     extra_titles = company_def.get('extra_titles', [])
-    print(f"  [6/8] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
+    print(f"  [7/9] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
     titles = create_job_titles(org_sc, levels, families, extra_titles)
 
-    # 7. 部門
+    # 8. 部門
     dept_list = company_def['departments']
-    print(f"  [7/8] 部門 ({len(dept_list)} 個)...")
+    print(f"  [8/9] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
-    # 8. 員工帳號 + 職位
+    # 9. 員工帳號 + 職位
     emp_list = company_def['employees']
-    print(f"  [8/8] 員工帳號 ({len(emp_list)} 人) + 職位指派...")
+    print(f"  [9/9] 員工帳號 ({len(emp_list)} 人) + 職位指派...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
 
     db.session.commit()
@@ -674,6 +704,8 @@ def seed_one_company(company_def):
 
 def clean_test_companies():
     """清除本腳本建立的三家測試企業資料"""
+    from sqlalchemy import text
+
     domains = [c['domain'] for c in COMPANIES]
 
     print("清除測試企業資料...")
@@ -689,40 +721,104 @@ def clean_test_companies():
         org_sc = org.secure_code
         print(f"  清除 {org.name} ({domain})...")
 
-        # 按外鍵依賴順序刪除
-        EmployeePosition.query.filter_by(org_secure_code=org_sc).delete()
-        UsedUserNumber.query.filter_by(org_secure_code=org_sc).delete()
-        UserNumberingCounter.query.filter_by(org_secure_code=org_sc).delete()
-        UserNumberingRule.query.filter_by(org_secure_code=org_sc).delete()
-        JobTitle.query.filter_by(org_secure_code=org_sc).delete()
-        JobFamily.query.filter_by(org_secure_code=org_sc).delete()
-        JobLevel.query.filter_by(org_secure_code=org_sc).delete()
+        # 完整按 FK 依賴順序刪除 (葉表先刪)
+        # Phase 1: 葉表 (有 org_secure_code，無其他表依賴它們)
+        phase1_tables = [
+            'employee_positions',
+            'user_role_assignments',
+            'user_unit_assignments',
+            'user_unit_memberships',
+            'used_user_numbers',
+            'user_numbering_counters',
+            'job_level_approval_limits',
+            'audit_logs',
+            'delegations',
+            'personal_schedules',
+            'schedule_adjustments',
+            'timeout_trackers',
+            'approval_categories',
+            'duties',
+            'duty_categories',
+            'lookup_items',
+            'lookup_categories',
+            'workflow_node_definitions',
+            'workflow_node_categories',
+            'work_schedules',
+            'shift_types',
+            'conglomerate_logs',
+            'module_access_control',
+            'modules',
+            'pages',
+            'recipient_groups',
+            'smtp_configs',
+            'telegram_configs',
+        ]
+        for table in phase1_tables:
+            db.session.execute(
+                text(f"DELETE FROM {table} WHERE org_secure_code = :osc"),
+                {'osc': org_sc}
+            )
 
-        # 刪除成員關係 (user_unit_memberships)
-        from app.models.user_unit_membership import UserUnitMembership
-        users = User.query.filter_by(org_secure_code=org_sc).all()
-        user_scs = [u.secure_code for u in users]
-        if user_scs:
-            UserUnitMembership.query.filter(
-                UserUnitMembership.user_secure_code.in_(user_scs)
-            ).delete(synchronize_session=False)
+        # menu_permissions 透過 menu_items 子查詢 (無 org_secure_code)
+        db.session.execute(
+            text("DELETE FROM menu_permissions WHERE menu_secure_code IN "
+                 "(SELECT secure_code FROM menu_items WHERE org_secure_code = :osc)"),
+            {'osc': org_sc}
+        )
 
-        OrganizationalUnit.query.filter_by(org_secure_code=org_sc).delete()
+        # password_history 透過 user_secure_code (無 org_secure_code)
+        db.session.execute(
+            text("DELETE FROM password_history WHERE user_secure_code IN "
+                 "(SELECT secure_code FROM users WHERE org_secure_code = :osc)"),
+            {'osc': org_sc}
+        )
 
-        from app.models.role import Role
-        from app.models.menu_permission import MenuPermission
-        from app.models.menu_item import MenuItem
+        # Phase 2: 中層表
+        phase2_tables = [
+            'menu_items',
+            'user_numbering_rules',
+            'job_titles',
+            'job_families',
+            'job_levels',
+            'roles',
+        ]
+        for table in phase2_tables:
+            db.session.execute(
+                text(f"DELETE FROM {table} WHERE org_secure_code = :osc"),
+                {'osc': org_sc}
+            )
 
-        # 清 MenuPermission (透過 menu_items)
-        menus = MenuItem.query.filter_by(org_secure_code=org_sc).all()
-        for menu in menus:
-            MenuPermission.query.filter_by(menu_secure_code=menu.secure_code).delete()
-        MenuItem.query.filter_by(org_secure_code=org_sc).delete()
+        # Phase 3: users (先清自參照和部門 FK)
+        db.session.execute(
+            text("UPDATE users SET bound_employee_secure_code = NULL, "
+                 "primary_unit_secure_code = NULL WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
+        db.session.execute(
+            text("DELETE FROM organizational_units WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
 
-        Role.query.filter_by(org_secure_code=org_sc).delete()
-        User.query.filter_by(org_secure_code=org_sc).delete()
-        Contract.query.filter_by(org_secure_code=org_sc).delete()
-        Organization.query.filter(Organization.secure_code == org_sc).delete()
+        # contracts 有 FK 到 users (created_by, modified_by)，先清
+        db.session.execute(
+            text("UPDATE contracts SET created_by_secure_code = NULL, "
+                 "modified_by_secure_code = NULL WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
+        db.session.execute(
+            text("DELETE FROM users WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
+
+        # Phase 4: 企業核心
+        db.session.execute(
+            text("DELETE FROM contracts WHERE org_secure_code = :osc"),
+            {'osc': org_sc}
+        )
+        db.session.execute(
+            text("DELETE FROM organizations WHERE secure_code = :osc"),
+            {'osc': org_sc}
+        )
 
     db.session.commit()
     print("清除完成")

@@ -6,15 +6,21 @@ BeakMask Enterprise Admin Management Web Routes
 1. 專門管理企業管理員帳號
 2. 至少保留一個管理員
 3. 可停用預設 admin 帳號
+4. 原始管理員初始設定（建立員工帳號並自動產生綁定管理員）
 """
+import logging
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
-from flask_login import current_user
+from flask_login import current_user, logout_user
 
-from ..security.decorators import admin_required
+from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
+from ..models.user_numbering_rule import UsedUserNumber
+from ..services.numbering_service import NumberingService
 from .. import db
+
+logger = logging.getLogger(__name__)
 
 org_admins_bp = Blueprint('org_admins', __name__)
 
@@ -27,6 +33,228 @@ def _count_active_admins(org_secure_code: str) -> int:
         User.is_active == True,
         User.is_deleted == False
     ).count()
+
+
+@org_admins_bp.route('/admin/initial-setup', methods=['GET', 'POST'])
+@login_required
+def initial_setup():
+    """
+    原始管理員初始設定頁面
+
+    原始管理員 (admin@domain) 首次登入後，強制在此頁建立員工帳號。
+    建立完成後自動產生綁定的管理員帳號 (admin-{username})，
+    並停用原始管理員帳號。
+
+    此頁面無選單，為獨立的初始化精靈。
+    不可被誤刪：由 auth_interceptor [AUTH-03] 強制導向。
+    """
+    # 只有原始管理員才能存取
+    if not current_user.is_original_admin:
+        return redirect(url_for('main.dashboard'))
+
+    # 如果已有綁定管理員，不需要再設定
+    has_bound_admin = User.query.filter(
+        User.org_secure_code == current_user.org_secure_code,
+        User.user_type == UserType.ORG_ADMIN,
+        User.bound_employee_secure_code.isnot(None),
+        User.is_active == True,
+        User.is_deleted == False
+    ).first() is not None
+    if has_bound_admin:
+        return redirect(url_for('main.dashboard'))
+
+    org = current_user.organization
+    if not org:
+        flash('找不到所屬企業', 'error')
+        return redirect(url_for('auth.login'))
+
+    form_data = {}
+
+    if request.method == 'POST':
+        # 收集表單資料
+        form_data = {
+            'native_name': request.form.get('native_name', '').strip(),
+            'english_name': request.form.get('english_name', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'employee_id': request.form.get('employee_id', '').strip(),
+            'nickname': request.form.get('nickname', '').strip(),
+            'backup_email_1': request.form.get('backup_email_1', '').strip(),
+            'mobile_phone_1': request.form.get('mobile_phone_1', '').strip(),
+        }
+
+        native_name = form_data['native_name']
+        english_name = form_data['english_name']
+        username_raw = form_data['username']
+        username = ''.join(username_raw.split()).lower()
+        employee_id = form_data['employee_id'] or None
+        password = request.form.get('password', '').strip()
+        nickname = form_data['nickname'] or None
+        backup_email_1 = form_data['backup_email_1'] or None
+        mobile_phone_1 = form_data['mobile_phone_1'] or None
+
+        # 用戶編號: 留空時自動從預設編號規則產生
+        auto_generated_id = False
+        if not employee_id:
+            default_rule = NumberingService.get_default_rule(
+                org.secure_code, 'EMPLOYEE'
+            )
+            if default_rule:
+                try:
+                    employee_id = NumberingService.get_next_number(
+                        default_rule, consume=False
+                    )
+                    auto_generated_id = True
+                except ValueError:
+                    pass
+
+        # 驗證必填欄位
+        if not native_name or not english_name or not username:
+            flash('本國姓名、英文姓名、帳號為必填', 'error')
+        elif not employee_id:
+            flash('用戶編號為必填，且無可用的預設編號規則', 'error')
+        elif not password:
+            flash('密碼為必填', 'error')
+        elif len(password) < 8:
+            flash('密碼至少需要 8 個字元', 'error')
+        else:
+            employee_email = f"{username}@{org.domain_name}"
+            admin_username = f"admin-{username}"
+            admin_email = f"{admin_username}@{org.domain_name}"
+
+            # 檢查帳號衝突
+            existing_emp = User.query.filter_by(email=employee_email, is_deleted=False).first()
+            existing_adm = User.query.filter_by(email=admin_email, is_deleted=False).first()
+
+            if existing_emp:
+                flash(f'帳號 {username} 已存在', 'error')
+            elif existing_adm:
+                flash(f'管理員帳號 {admin_username} 已存在', 'error')
+            else:
+                # 檢查員工編號唯一性
+                emp_id_exists = User.query.filter_by(
+                    org_secure_code=org.secure_code,
+                    employee_id=employee_id,
+                    is_deleted=False
+                ).first()
+                if emp_id_exists:
+                    flash(f'用戶編號 {employee_id} 已存在', 'error')
+                else:
+                    try:
+                        # display_name 依企業設定
+                        display_name_field = org.get_setting('display_name_field', 'native_name')
+                        display_name_map = {
+                            'native_name': native_name,
+                            'english_name': english_name,
+                            'nickname': nickname or native_name,
+                            'username': username,
+                            'employee_id': employee_id,
+                        }
+                        display_name = display_name_map.get(display_name_field, native_name)
+
+                        if not backup_email_1:
+                            backup_email_1 = employee_email
+
+                        # 1. 建立員工帳號
+                        employee = User(
+                            username=username,
+                            email=employee_email,
+                            display_name=display_name,
+                            org_secure_code=org.secure_code,
+                            user_type=UserType.EMPLOYEE,
+                            is_active=True,
+                            employee_id=employee_id,
+                            english_name=english_name,
+                            native_name=native_name,
+                            nickname=nickname,
+                            backup_email_1=backup_email_1,
+                            mobile_phone_1=mobile_phone_1,
+                        )
+                        employee.set_password(password)
+                        db.session.add(employee)
+                        db.session.flush()  # 取得 secure_code
+
+                        # 記錄用戶編號
+                        if employee_id:
+                            if auto_generated_id:
+                                # 自動產生的編號: consume 並記錄
+                                default_rule = NumberingService.get_default_rule(
+                                    org.secure_code, 'EMPLOYEE'
+                                )
+                                if default_rule:
+                                    NumberingService.get_next_number(
+                                        default_rule, consume=True
+                                    )
+                                    # consume 已經記錄了 UsedUserNumber，
+                                    # 但 user_secure_code 尚未關聯，補上
+                                    used = UsedUserNumber.query.filter_by(
+                                        org_secure_code=org.secure_code,
+                                        number=employee_id
+                                    ).first()
+                                    if used:
+                                        used.user_secure_code = employee.secure_code
+                            else:
+                                UsedUserNumber.record_number(
+                                    org_secure_code=org.secure_code,
+                                    number=employee_id,
+                                    user_secure_code=employee.secure_code
+                                )
+
+                        # 2. 自動建立管理員帳號並綁定
+                        admin_user = User(
+                            username=admin_username,
+                            email=admin_email,
+                            display_name=display_name,
+                            org_secure_code=org.secure_code,
+                            user_type=UserType.ORG_ADMIN,
+                            is_active=True,
+                            backup_email_1=backup_email_1,
+                            bound_employee_secure_code=employee.secure_code,
+                        )
+                        admin_user.set_password(password)
+                        db.session.add(admin_user)
+
+                        # 3. 停用原始管理員
+                        current_user.is_active = False
+                        logger.info(
+                            f"[INITIAL-SETUP] org={org.domain_name} "
+                            f"employee={username} admin={admin_username} "
+                            f"original_admin={current_user.username} deactivated"
+                        )
+
+                        db.session.commit()
+
+                        # 4. 登出，導向登入頁
+                        logout_user()
+
+                        flash(
+                            f'初始設定完成。已建立員工帳號 {username} 與管理員帳號 {admin_username}。'
+                            f'原始管理員已停用。請使用新的管理員帳號登入。',
+                            'success'
+                        )
+                        return redirect(url_for('auth.org_login', domain_name=org.domain_name))
+
+                    except Exception as e:
+                        db.session.rollback()
+                        logger.error(f"[INITIAL-SETUP] Failed: {e}")
+                        flash(f'建立失敗: {str(e)}', 'error')
+
+    # 取得預設編號規則的下一個建議值
+    suggested_employee_id = None
+    default_rule = NumberingService.get_default_rule(org.secure_code, 'EMPLOYEE')
+    if default_rule:
+        try:
+            suggested_employee_id = NumberingService.get_next_number(
+                default_rule, consume=False
+            )
+        except ValueError:
+            pass
+
+    return render_template(
+        'pages/admin/initial_setup.html',
+        form_data=form_data,
+        org=org,
+        suggested_employee_id=suggested_employee_id
+    )
 
 
 @org_admins_bp.route('/admin/org-admins')

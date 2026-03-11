@@ -11,8 +11,10 @@ from ..models import (
     Contract, ContractStatus,
     User, UserType,
     Role, RoleType, ScopeType,
-    BlockedEmailDomain
+    BlockedEmailDomain,
+    UserNumberingRule,
 )
+from ..models.user_numbering_rule import NumberingUsageScope, NumberingDefaultFor
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
@@ -124,6 +126,9 @@ class OrganizationService:
 
             # 建立預設角色
             OrganizationService._create_default_roles(org)
+
+            # 建立預設編號規則
+            OrganizationService._create_default_numbering_rule(org)
 
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
@@ -289,6 +294,34 @@ class OrganizationService:
         logger.info(f"Default roles created for org {org.code}")
 
         return roles
+
+    @staticmethod
+    def _create_default_numbering_rule(org: Organization) -> UserNumberingRule:
+        """
+        建立預設員工編號規則 (4 位數序號: 0001, 0002, ...)
+
+        新企業建立時自動產生，供初始設定精靈自動編號使用。
+        """
+        rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='預設員工編號',
+            description='4 位數序號',
+            elements={
+                'components': [
+                    {'type': 'sequence', 'order': 1, 'start': 1,
+                     'digits': 4, 'reset_period': 'never'},
+                ],
+                'total_length': 4,
+            },
+            usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+            default_for=NumberingDefaultFor.EMPLOYEE,
+            is_active=True,
+        )
+        db.session.add(rule)
+
+        logger.info(f"Default numbering rule created for org {org.code}")
+
+        return rule
 
     @staticmethod
     def create_contract(

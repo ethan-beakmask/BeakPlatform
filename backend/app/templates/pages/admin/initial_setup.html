@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale|default('zh-TW') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>企業初始設定 - {{ org.name }}</title>
+    <!-- Alpine.js -->
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 680px;
+            margin: 30px auto;
+            padding: 20px;
+            color: #1f2937;
+        }
+        h1 { font-size: 22px; margin-bottom: 8px; }
+        .setup-banner {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 4px solid #3b82f6;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+        .setup-banner strong { color: #1e40af; }
+        .result-preview {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 4px solid #22c55e;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .result-preview .label { color: #666; display: inline-block; width: 120px; }
+        .result-preview .value { font-weight: 600; color: #15803d; }
+        .flash-msg {
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+            font-size: 14px;
+        }
+        .flash-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .flash-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .section-title {
+            font-weight: 600;
+            font-size: 15px;
+            padding: 8px 0 4px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 12px;
+            margin-top: 20px;
+        }
+        .form-table { width: 100%; border-collapse: collapse; }
+        .form-table td { padding: 8px 4px; vertical-align: top; }
+        .form-table td:first-child { width: 120px; font-weight: 500; white-space: nowrap; padding-top: 12px; }
+        .form-table input[type="text"],
+        .form-table input[type="email"],
+        .form-table input[type="tel"],
+        .form-table input[type="password"] {
+            padding: 7px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-table input:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59,130,246,.15); }
+        label.required::after { content: " *"; color: #dc2626; }
+        .help-text { font-size: 12px; color: #888; margin-top: 4px; }
+        .text-danger { color: #dc2626; }
+        button[type="submit"] {
+            padding: 10px 28px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        button[type="submit"]:hover { background: #1d4ed8; }
+        .btn-secondary {
+            padding: 7px 14px;
+            background: #f3f4f6;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-translate {
+            padding: 6px 10px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-translate:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-password {
+            padding: 6px 10px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .footer-note {
+            margin-top: 30px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #999;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>企業初始設定</h1>
+    <p style="color: #6b7280; margin-bottom: 16px;">{{ org.name }} ({{ org.domain_name }})</p>
+
+    <div class="setup-banner">
+        <strong>安全設定步驟</strong><br>
+        預設管理員帳號 ({{ current_user.username }}@{{ org.domain_name }}) 名稱易被猜測，必須完成以下設定後才能使用系統：<br>
+        1. 建立您的員工帳號<br>
+        2. 系統自動產生對應的管理員帳號 (admin-帳號名稱) 並綁定<br>
+        3. 預設管理員帳號自動停用<br>
+        4. 請使用新的管理員帳號重新登入
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash-msg {% if category == 'error' %}flash-error{% else %}flash-success{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" id="setup-form" x-data="setupForm()">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="section-title">員工帳號資料</div>
+        <table class="form-table">
+            <tr>
+                <td><label for="native_name" class="required">本國姓名</label></td>
+                <td>
+                    <input type="text" id="native_name" name="native_name" required
+                           x-model="nativeName" @input="onNativeNameChange()">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="english_name" class="required">英文姓名</label></td>
+                <td>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="english_name" name="english_name" required
+                               x-model="englishName" @input="onEnglishNameChange()"
+                               placeholder="English Name">
+                        <button type="button" class="btn-translate"
+                                @click="transliterateName()"
+                                :disabled="!nativeName || transliterating">
+                            <span x-show="!transliterating">自動翻譯</span>
+                            <span x-show="transliterating">翻譯中...</span>
+                        </button>
+                    </div>
+                    <div class="help-text">帳號與 Email 名稱來源</div>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="username" class="required">帳號</label></td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="text" id="username" name="username" required
+                               style="width: 180px;"
+                               x-model="usernameRaw" @input="onUsernameChange()">
+                        <span>@{{ org.domain_name }}</span>
+                    </div>
+                    <div class="help-text" x-show="usernameRaw && usernameRaw !== normalizedUsername">
+                        儲存時將轉換為: <code x-text="normalizedUsername"></code>
+                    </div>
+                    <div style="font-size: 12px; margin-top: 4px;">
+                        <span x-show="usernameChecking" style="color: #888;">檢查帳號中...</span>
+                        <span x-show="usernameChecked && usernameAvailable && normalizedUsername" style="color: #16a34a;">帳號可用</span>
+                        <span x-show="usernameChecked && !usernameAvailable && normalizedUsername" class="text-danger">帳號已存在</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="employee_id">用戶編號</label></td>
+                <td>
+                    <input type="text" id="employee_id" name="employee_id"
+                           x-model="employeeId"
+                           placeholder="{{ suggested_employee_id or '' }}">
+                    {% if suggested_employee_id %}
+                    <div class="help-text">留空將自動使用 {{ suggested_employee_id }}</div>
+                    {% else %}
+                    <div class="help-text">手動輸入編號</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;"><label for="password" class="required">密碼</label></td>
+                <td>
+                    <div style="display: flex; gap: 8px; align-items: start;">
+                        <div style="flex: 1;">
+                            <input :type="showPassword ? 'text' : 'password'" id="password" name="password"
+                                   required x-model="password" @input="validatePassword()"
+                                   :placeholder="suggestedPassword">
+                        </div>
+                        <button type="button" class="btn-secondary"
+                                @click="showPassword = !showPassword"
+                                x-text="showPassword ? '隱藏' : '顯示'"></button>
+                        <button type="button" class="btn-password"
+                                @click="useSuggestedPassword()">使用建議密碼</button>
+                    </div>
+                    <div class="help-text" x-text="passwordRequirements"></div>
+                    <div class="help-text">此密碼同時用於員工帳號和管理員帳號</div>
+                    <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
+                        <template x-for="err in passwordErrors" :key="err">
+                            <div class="text-danger" style="font-size: 12px;" x-text="err"></div>
+                        </template>
+                    </div>
+                    <div x-show="password && passwordErrors.length === 0 && passwordChecked"
+                         style="margin-top: 6px; color: #16a34a; font-size: 12px;">
+                        密碼符合要求
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">選填欄位</div>
+        <table class="form-table">
+            <tr>
+                <td><label for="nickname">暱稱</label></td>
+                <td>
+                    <input type="text" id="nickname" name="nickname"
+                           x-model="nickname" placeholder="留空自動遮罩處理">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="backup_email_1">通知 Email</label></td>
+                <td>
+                    <input type="email" id="backup_email_1" name="backup_email_1"
+                           x-model="backupEmail1" placeholder="留空使用帳號 Email">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="mobile_phone_1">手機號碼</label></td>
+                <td>
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1"
+                           x-model="mobilePhone1" placeholder="+886-912-345-678">
+                </td>
+            </tr>
+        </table>
+
+        <!-- 即時預覽 -->
+        <div class="result-preview" x-show="normalizedUsername">
+            <strong>建立預覽</strong><br>
+            <span class="label">員工帳號:</span>
+            <span class="value" x-text="normalizedUsername + '@{{ org.domain_name }}'"></span><br>
+            <span class="label">管理員帳號:</span>
+            <span class="value" x-text="'admin-' + normalizedUsername + '@{{ org.domain_name }}'"></span><br>
+            <span class="label">用戶編號:</span>
+            <span class="value" x-text="employeeId || '{{ suggested_employee_id or "(未設定)" }}'"></span>
+            <span x-show="!employeeId && '{{ suggested_employee_id }}'" style="color: #888; font-size: 12px;">(自動產生)</span>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button type="submit">建立帳號並完成設定</button>
+        </div>
+    </form>
+
+    <div class="footer-note">
+        此頁面為企業初始化精靈，完成後預設管理員帳號 ({{ current_user.username }}) 將自動停用。<br>
+        如需協助，請聯繫系統管理員。
+        <form action="{{ url_for('auth.logout') }}" method="POST" style="display: inline; margin-left: 12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" style="background: none; border: none; color: #6b7280; cursor: pointer; text-decoration: underline; font-size: 12px;">登出</button>
+        </form>
+    </div>
+
+    <script>
+    function setupForm() {
+        return {
+            nativeName: '{{ form_data.native_name|default("", true)|e }}',
+            englishName: '{{ form_data.english_name|default("", true)|e }}',
+            englishNameManual: {{ 'true' if form_data.get('english_name') else 'false' }},
+            usernameRaw: '{{ form_data.username|default("", true)|e }}',
+            usernameManual: {{ 'true' if form_data.get('username') else 'false' }},
+            employeeId: '{{ form_data.employee_id|default("", true)|e }}',
+            nickname: '{{ form_data.nickname|default("", true)|e }}',
+            backupEmail1: '{{ form_data.backup_email_1|default("", true)|e }}',
+            mobilePhone1: '{{ form_data.mobile_phone_1|default("", true)|e }}',
+
+            nameConnector: '{{ org.get_setting("name_connector", ".")|e }}',
+
+            password: '',
+            suggestedPassword: '',
+            showPassword: false,
+            passwordErrors: [],
+            passwordChecked: false,
+            passwordRequirements: '',
+            validateTimer: null,
+
+            usernameCheckTimer: null,
+            usernameAvailable: null,
+            usernameChecking: false,
+            usernameChecked: false,
+
+            transliterating: false,
+
+            get normalizedUsername() { return this.usernameRaw.replace(/\s+/g, '').toLowerCase(); },
+            get suggestedUsername() {
+                if (!this.englishName) return '';
+                return this.englishName.trim().replace(/\s+/g, this.nameConnector).toLowerCase();
+            },
+
+            async init() {
+                await Promise.all([
+                    this.loadPasswordRequirements(),
+                    this.loadSuggestedPassword()
+                ]);
+            },
+
+            hasCJK(text) { return /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(text); },
+
+            onNativeNameChange() {
+                if (!this.englishNameManual && !this.hasCJK(this.nativeName)) {
+                    this.englishName = this.nativeName;
+                    if (!this.usernameManual) {
+                        this.usernameRaw = this.suggestedUsername;
+                        this.debouncedCheckUsername();
+                    }
+                }
+            },
+            onEnglishNameChange() {
+                this.englishNameManual = true;
+                if (!this.usernameManual) {
+                    this.usernameRaw = this.suggestedUsername;
+                    this.debouncedCheckUsername();
+                }
+            },
+            onUsernameChange() {
+                this.usernameManual = true;
+                this.debouncedCheckUsername();
+            },
+
+            debouncedCheckUsername() {
+                clearTimeout(this.usernameCheckTimer);
+                var username = this.normalizedUsername;
+                if (!username) { this.usernameChecked = false; this.usernameChecking = false; return; }
+                this.usernameChecking = true;
+                var self = this;
+                this.usernameCheckTimer = setTimeout(function() { self._checkUsername(); }, 500);
+            },
+            async _checkUsername() {
+                var username = this.normalizedUsername;
+                if (!username) return;
+                try {
+                    var resp = await fetch('/users/check-username?username=' + encodeURIComponent(username));
+                    var data = await resp.json();
+                    if (this.normalizedUsername === username) {
+                        this.usernameAvailable = data.available;
+                        this.usernameChecked = true;
+                        this.usernameChecking = false;
+                    }
+                } catch (e) { this.usernameChecking = false; }
+            },
+
+            async loadPasswordRequirements() {
+                try {
+                    var response = await fetch('/auth/password-policy');
+                    if (response.ok) {
+                        var data = await response.json();
+                        if (data.success && data.data.policy.enabled) {
+                            var p = data.data.policy;
+                            var reqs = ['\u9577\u5EA6\u81F3\u5C11 ' + p.min_length + ' \u500B\u5B57\u5143'];
+                            if (p.require_uppercase) reqs.push('\u5305\u542B\u5927\u5BEB\u5B57\u6BCD');
+                            if (p.require_lowercase) reqs.push('\u5305\u542B\u5C0F\u5BEB\u5B57\u6BCD');
+                            if (p.require_digit) reqs.push('\u5305\u542B\u6578\u5B57');
+                            if (p.require_special) reqs.push('\u5305\u542B\u7279\u6B8A\u7B26\u865F');
+                            this.passwordRequirements = reqs.join('\u3001');
+                        } else { this.passwordRequirements = '\u5BC6\u78BC\u9577\u5EA6\u81F3\u5C11 8 \u500B\u5B57\u5143'; }
+                    }
+                } catch (err) { this.passwordRequirements = '\u5BC6\u78BC\u9577\u5EA6\u81F3\u5C11 8 \u500B\u5B57\u5143'; }
+            },
+            async loadSuggestedPassword() {
+                try {
+                    var csrfToken = (document.querySelector('input[name="csrf_token"]') || {}).value;
+                    var response = await fetch('/auth/password-policy/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
+                    });
+                    if (response.ok) {
+                        var data = await response.json();
+                        if (data.success) this.suggestedPassword = data.data.password;
+                    }
+                } catch (err) {}
+            },
+            useSuggestedPassword() {
+                if (this.suggestedPassword) {
+                    this.password = this.suggestedPassword;
+                    this.showPassword = true;
+                    this.validatePassword();
+                }
+            },
+            validatePassword() {
+                clearTimeout(this.validateTimer);
+                var self = this;
+                this.validateTimer = setTimeout(function() { self._doValidate(); }, 300);
+            },
+            async _doValidate() {
+                if (!this.password) { this.passwordErrors = []; this.passwordChecked = false; return; }
+                try {
+                    var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+                                    (document.querySelector('input[name="csrf_token"]') || {}).value;
+                    var response = await fetch('/auth/password-policy/validate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify({ password: this.password })
+                    });
+                    if (response.ok) {
+                        var data = await response.json();
+                        if (data.success) { this.passwordErrors = data.data.errors || []; this.passwordChecked = true; }
+                    }
+                } catch (err) {}
+            },
+
+            async transliterateName() {
+                if (!this.nativeName || this.transliterating) return;
+                this.transliterating = true;
+                try {
+                    var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+                                    (document.querySelector('input[name="csrf_token"]') || {}).value;
+                    var response = await fetch('/api/transliterate/name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                        body: JSON.stringify({ name: this.nativeName })
+                    });
+                    var data = await response.json();
+                    if (data.success) {
+                        this.englishName = data.data.romanized;
+                        this.englishNameManual = true;
+                        if (!this.usernameManual) {
+                            this.usernameRaw = this.suggestedUsername;
+                            this.debouncedCheckUsername();
+                        }
+                    }
+                } catch (err) {}
+                this.transliterating = false;
+            }
+        };
+    }
+    </script>
+</body>
+</html>

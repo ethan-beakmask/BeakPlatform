@@ -4,9 +4,13 @@ BeakMask Global Authentication Interceptor
 
 [標準 AUTH-01] 全域認證攔截
 所有請求必須經過認證檢查，除非明確列入白名單
+
+[標準 AUTH-03] 原始管理員強制初始設定
+is_original_admin 帳號登入後，若該企業尚未建立綁定管理員，
+強制導向初始設定頁面，完成後停用原始管理員。
 """
 import logging
-from flask import Flask, request, abort, g
+from flask import Flask, request, abort, g, redirect, url_for
 from flask_login import current_user
 
 logger = logging.getLogger(__name__)
@@ -111,6 +115,32 @@ def register_auth_interceptor(app: Flask) -> None:
         g.locale = current_user.interface_language or \
             (current_user.organization.get_setting('locale', 'zh-TW')
              if current_user.organization else 'zh-TW')
+
+        # [AUTH-03] 原始管理員強制初始設定
+        # 原始管理員登入後，若企業尚未建立綁定管理員，強制導向初始設定頁面
+        if current_user.is_original_admin and current_user.is_active:
+            # 允許通過的路徑: 初始設定頁面本身、變更密碼、登出、靜態資源、API
+            allowed_prefixes = (
+                '/admin/initial-setup',
+                '/auth/change-password',
+                '/auth/logout',
+                '/auth/password-policy',
+                '/users/check-username',
+                '/api/numbering/',
+                '/api/transliterate/',
+            )
+            if not request.path.startswith(allowed_prefixes):
+                from ..models.user import User, UserType
+                has_bound_admin = User.query.filter(
+                    User.org_secure_code == current_user.org_secure_code,
+                    User.user_type == UserType.ORG_ADMIN,
+                    User.bound_employee_secure_code.isnot(None),
+                    User.is_active == True,
+                    User.is_deleted == False
+                ).first() is not None
+
+                if not has_bound_admin:
+                    return redirect(url_for('org_admins.initial_setup'))
 
         return None
 
