@@ -413,7 +413,7 @@ def preview_table(table_name):
 def check_references():
     """檢查待刪除表的引用關係（FwSqlFormRegistry、DcCrudView）"""
     from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
-    from modules.data_crud.models.crud_view import DcCrudView
+    from modules.nocode_builder.models.crud_view import DcCrudView
 
     data = request.get_json()
     if not data or not isinstance(data.get('tables'), list):
@@ -474,7 +474,7 @@ def drop_tables():
     流程：驗證表存在 → 標記主 DB 引用 → DROP TABLE CASCADE
     """
     from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
-    from modules.data_crud.models.crud_view import DcCrudView
+    from modules.nocode_builder.models.crud_view import DcCrudView
 
     data = request.get_json()
     if not data or not isinstance(data.get('tables'), list):

@@ -1,0 +1,83 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ page_name or '頁面預覽' }} - 資料表工具{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="/static/modules/nocode_builder/css/datalist-widget.css">
+<style>
+    .viewer-container {
+        padding: 16px;
+        background: #f0f0f0;
+        min-height: calc(100vh - 60px);
+    }
+    .viewer-container .grid-stack {
+        background: #fff;
+        min-height: 400px;
+    }
+    .viewer-container .grid-stack-item-content .dlw-root {
+        border: 1px solid #ddd;
+    }
+    .viewer-container .grid-stack-item-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .viewer-error {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+        font-size: 14px;
+    }
+    .viewer-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 16px;
+        background: #fff;
+        border-bottom: 1px solid #ddd;
+    }
+    .viewer-topbar-title { font-weight: 600; font-size: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+window.__PAGE_CONFIG = {
+    secureCode: {{ secure_code | tojson }},
+    subSystemContext: {{ sub_system_context | default({}) | tojson }}
+};
+</script>
+
+<div x-data="labViewer()" x-cloak>
+    <div class="viewer-topbar">
+        <span class="viewer-topbar-title" x-text="pageName || '頁面預覽'"></span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <template x-if="subCtx && subCtx.role_type">
+                <span style="font-size: 12px; padding: 2px 8px; border: 1px solid #ddd; background: #f5f5f5;"
+                      x-text="subCtx.is_admin ? '管理' : '成員'"></span>
+            </template>
+            <template x-if="subCtx && subCtx.sub_sc">
+                <a :href="'/nocode-builder/sub-systems/' + subCtx.sub_sc + '/portal'" class="dc-btn">返回子系統</a>
+            </template>
+            <template x-if="!subCtx || !subCtx.sub_sc">
+                <a href="/nocode-builder/lab/{{ secure_code }}" class="dc-btn">編輯此頁</a>
+            </template>
+            <template x-if="!subCtx || !subCtx.sub_sc">
+                <a href="/nocode-builder/" class="dc-btn">返回</a>
+            </template>
+        </div>
+    </div>
+
+    <div class="viewer-error" x-show="error" x-text="error"></div>
+
+    <div class="viewer-container" x-show="!error">
+        <div class="grid-stack"></div>
+    </div>
+</div>
+
+<script src="/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="/static/modules/nocode_builder/js/page-context.js"></script>
+<script src="/static/modules/nocode_builder/js/datalist-widget.js"></script>
+<script src="/static/modules/nocode_builder/js/lab-viewer.js"></script>
+{% endblock %}

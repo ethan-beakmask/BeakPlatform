@@ -64,9 +64,9 @@ def template_detail(secure_code):
 @web_bp.route('/templates/<secure_code>/spec')
 @require_permission('form_workflow.template.view')
 def template_spec(secure_code):
-    """欄位規格編輯器"""
+    """欄位規格編輯器（由 spec_formulate 模組提供）"""
     return render_template(
-        'modules/form_workflow/field_spec_editor.html',
+        'modules/spec_formulate/field_spec_editor.html',
         form_template_secure_code=secure_code
     )
 
@@ -174,50 +174,6 @@ def center():
 def pending():
     """待簽核任務列表"""
     return render_template('modules/form_workflow/pending_list.html')
-
-
-# =============================================================================
-# 資料表規格管理（需要管理權限）
-# =============================================================================
-
-@web_bp.route('/data-specs')
-@require_permission('form_workflow.template.manage')
-def data_specs():
-    """資料表規格管理"""
-    return render_template('modules/form_workflow/data_spec_list.html')
-
-
-@web_bp.route('/data-specs/new')
-@require_permission('form_workflow.template.manage')
-def data_spec_new():
-    """獨立規格編輯器（新建）"""
-    return render_template(
-        'modules/form_workflow/field_spec_editor.html',
-        mode='standalone',
-        form_template_secure_code='',
-    )
-
-
-@web_bp.route('/data-specs/<spec_sc>/edit')
-@require_permission('form_workflow.template.manage')
-def data_spec_edit(spec_sc):
-    """獨立規格編輯器（編輯）"""
-    return render_template(
-        'modules/form_workflow/field_spec_editor.html',
-        mode='standalone',
-        spec_sc=spec_sc,
-        form_template_secure_code='',
-    )
-
-
-@web_bp.route('/data-specs/<form_template_sc>/sync')
-@require_permission('form_workflow.template.manage')
-def data_spec_sync(form_template_sc):
-    """同步中控台"""
-    return render_template(
-        'modules/form_workflow/sync_control.html',
-        form_template_secure_code=form_template_sc,
-    )
 
 
 # =============================================================================

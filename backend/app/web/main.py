@@ -177,7 +177,7 @@ def published_page(secure_code):
 
     try:
         # 動態 import 模組 Model（避免循環引用）
-        from modules.data_crud.models import DcPageLayout
+        from modules.nocode_builder.models import DcPageLayout
 
         page = ResourceGateway.get(
             DcPageLayout, secure_code,
@@ -198,13 +198,13 @@ def published_page(secure_code):
     sub_system_context = None
     if sub_sc and ssp_sc:
         try:
-            from modules.data_crud.web import _build_sub_system_context
+            from modules.nocode_builder.web import _build_sub_system_context
             sub_system_context = _build_sub_system_context(sub_sc, ssp_sc)
         except Exception as e:
             logger.warning('Failed to build sub system context for /p/: %s', e)
 
     return render_template(
-        'modules/data_crud/lab_view.html',
+        'modules/nocode_builder/lab_view.html',
         secure_code=secure_code,
         page_name=page.name or '',
         sub_system_context=sub_system_context,

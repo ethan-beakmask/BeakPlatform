@@ -4,7 +4,7 @@ BeakPlatform 選單初始化腳本
 用於在新安裝的環境中建立核心平台選單
 
 注意：
-- 只包含平台級選單，不包含模組選單（form_workflow, data_crud 等）
+- 只包含平台級選單，不包含模組選單（form_workflow, nocode_builder, spec_formulate 等）
 - 模組選單由 ModuleMenuService.sync_all_module_menus() 在 Flask 啟動時自動建立
 - 使用 --force 可強制重建所有平台選單
 """
@@ -75,7 +75,7 @@ def set_menu_permissions(menu_secure_code, user_types):
 
 # ============================================================================
 # 核心平台選單定義
-# 只包含平台級選單，模組選單（form_workflow, data_crud 等）由模組自行註冊
+# 只包含平台級選單，模組選單（form_workflow, nocode_builder, spec_formulate 等）由模組自行註冊
 # ============================================================================
 CORE_MENUS = [
     # ===== 深度 0 的選單 =====
@@ -469,7 +469,7 @@ def init_menus(force=False):
             return False
 
         # 統計現有平台選單（排除模組選單）
-        # 模組選單以模組名開頭 (如 form_workflow.*, data_crud.*)
+        # 模組選單以模組名開頭 (如 form_workflow.*, nocode_builder.*, spec_formulate.*)
         existing_count = MenuItem.query.filter_by(
             org_secure_code='system.local',
             is_deleted=False

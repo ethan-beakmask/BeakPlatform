@@ -1,0 +1,120 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}資料瀏覽 - 資料表工具{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
+{% endblock %}
+
+{% block content %}
+<script>
+window.__DC_BROWSE = {
+    secureCode: {{ secure_code | tojson }}
+};
+</script>
+
+<div class="dc-container" x-data="viewBrowseManager()" x-cloak>
+
+    <!-- Header -->
+    <div class="dc-header">
+        <div>
+            <h1 x-text="viewConfig.name || '載入中...'"></h1>
+            <p>
+                <span style="font-family: monospace; color: #999;" x-text="viewConfig.table_name"></span>
+                <span x-show="viewConfig.description" style="margin-left: 8px;" x-text="viewConfig.description"></span>
+                <span style="margin-left: 12px; font-size: 12px; color: #999;">DB: <span x-text="dbName"></span></span>
+            </p>
+        </div>
+        <div class="dc-toolbar">
+            <input type="text" class="dc-search-input" x-model="search"
+                   @input.debounce.400ms="loadRows(1)" placeholder="搜尋...">
+            <button class="dc-btn" @click="loadRows()">重新載入</button>
+            <a :href="'/nocode-builder/views/' + secureCode + '/config'" class="dc-btn">設定</a>
+            <a :href="'/nocode-builder/views/' + secureCode + '/rows/new'" class="dc-btn primary" x-show="viewConfig.allow_create">+ 新增</a>
+            <a href="/nocode-builder/" class="dc-btn">返回列表</a>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="dc-card" x-show="loading">
+        <div class="dc-loading">載入中...</div>
+    </div>
+
+    <!-- Empty -->
+    <div class="dc-card" x-show="!loading && rows.length === 0">
+        <div class="dc-empty">
+            <p>尚無資料</p>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="dc-card" x-show="!loading && rows.length > 0">
+        <div style="overflow-x: auto;">
+            <table class="dc-table">
+                <thead>
+                    <tr>
+                        <template x-for="col in displayColumns" :key="col.column">
+                            <th class="sortable" @click="toggleSort(col.column)"
+                                :style="'min-width:' + (col.width || 120) + 'px'">
+                                <span x-text="col.label || col.column"></span>
+                                <span x-show="sortCol === col.column" x-text="sortDir === 'ASC' ? ' ^' : ' v'"
+                                      style="font-size: 11px; color: #0066cc;"></span>
+                            </th>
+                        </template>
+                        <th style="width: 120px;" x-show="viewConfig.allow_edit || viewConfig.allow_delete">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="row in rows" :key="row._row_id">
+                        <tr>
+                            <template x-for="col in displayColumns" :key="'r_' + col.column">
+                                <td x-text="formatCell(row[col.column], col)"></td>
+                            </template>
+                            <td class="actions" x-show="viewConfig.allow_edit || viewConfig.allow_delete">
+                                <a :href="'/nocode-builder/views/' + secureCode + '/rows/' + row._row_id + '/edit'" class="dc-btn sm" x-show="viewConfig.allow_edit">編輯</a>
+                                <button class="dc-btn sm danger" x-show="viewConfig.allow_delete" @click="confirmDelete(row)">刪除</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="dc-pagination">
+            <span>
+                共 <strong x-text="pagination.total"></strong> 筆，
+                第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
+            </span>
+            <div class="page-btns">
+                <button class="dc-btn sm" @click="loadRows(pagination.page - 1)" :disabled="pagination.page <= 1">上一頁</button>
+                <button class="dc-btn sm" @click="loadRows(pagination.page + 1)" :disabled="pagination.page >= pagination.pages">下一頁</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div x-show="showDeleteModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width: 400px;">
+            <div class="dc-modal-header">
+                <h3>確認刪除</h3>
+                <button class="dc-close-btn" @click="showDeleteModal = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <p>確定要刪除此筆資料嗎?</p>
+                <p style="font-size: 12px; color: #999;">row_id: <span x-text="deletingRow?._row_id"></span></p>
+            </div>
+            <div class="dc-modal-footer">
+                <button class="dc-btn" @click="showDeleteModal = false">取消</button>
+                <button class="dc-btn danger" @click="doDelete()" style="background: #dc2626; color: white;">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
+         x-text="toast.message" x-transition></div>
+</div>
+
+<script src="/static/modules/nocode_builder/js/view-browse.js"></script>
+{% endblock %}

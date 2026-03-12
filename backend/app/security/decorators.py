@@ -120,7 +120,7 @@ def module_access_required(module_code: str):
     系統管理員/企業管理員自動放行。
 
     Usage:
-        @module_access_required('web_builder')
+        @module_access_required('nocode_builder')
         def my_route():
             ...
     """

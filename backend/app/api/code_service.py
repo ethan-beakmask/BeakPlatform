@@ -17,7 +17,7 @@ from ..models import (
 )
 # 延遲匯入模組 model（避免循環依賴）
 def _get_dc_sub_system():
-    from modules.data_crud.models.sub_system import DcSubSystem
+    from modules.nocode_builder.models.sub_system import DcSubSystem
     return DcSubSystem
 from .. import csrf
 

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 _SUB_SYSTEM_MENU_PARENT = 'sub_system'
 
 # 模組代碼
-_WEB_BUILDER_MODULE = 'web_builder'
+_WEB_BUILDER_MODULE = 'nocode_builder'
 
 # code 格式驗證
 _CODE_PATTERN = re.compile(r'^[A-Za-z][A-Za-z0-9_]{0,58}$')
@@ -55,7 +55,7 @@ class SubSystemProvisionHandler(BaseNodeHandler):
     # create
     # ========================================
     def _handle_create(self) -> Dict[str, Any]:
-        from modules.data_crud.services.provision_service import SubSystemProvisionService
+        from modules.nocode_builder.services.provision_service import SubSystemProvisionService
 
         # 讀取配置（支援變數替換）
         raw_name = self.get_config_value('sub_system_name', '')
@@ -113,7 +113,7 @@ class SubSystemProvisionHandler(BaseNodeHandler):
     # suspend
     # ========================================
     def _handle_suspend(self) -> Dict[str, Any]:
-        from modules.data_crud.services.provision_service import SubSystemProvisionService
+        from modules.nocode_builder.services.provision_service import SubSystemProvisionService
 
         sub_system_code = self._resolve_sub_system_code()
         if not sub_system_code:
@@ -141,7 +141,7 @@ class SubSystemProvisionHandler(BaseNodeHandler):
     # delete
     # ========================================
     def _handle_delete(self) -> Dict[str, Any]:
-        from modules.data_crud.services.provision_service import SubSystemProvisionService
+        from modules.nocode_builder.services.provision_service import SubSystemProvisionService
 
         sub_system_code = self._resolve_sub_system_code()
         if not sub_system_code:

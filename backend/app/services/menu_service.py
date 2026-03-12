@@ -114,13 +114,14 @@ class MenuService:
         # 5. 過濾需要 RBAC 權限的選單
         filtered_items = cls._filter_by_rbac_permission(items, user_permissions)
 
-        # 6~6.7 模組治理過濾 (只對 module_only_codes 內的選單執行)
-        # MenuPermission 治理的選單直接通過，不受合約/ACL/社群過濾影響
+        # 6~6.7 模組治理過濾
+        # 6. 合約過濾：對所有模組選單生效（含 MenuPermission 治理的）
+        #    合約是商業層級控制，優先於 MenuPermission，不可繞過
+        # 6.5~6.7 ACL/社群過濾：只對 module_only_codes 執行（MenuPermission 可繞過）
         if str(user.user_type) != 'SYSTEM_ADMIN':
             authorized_modules = cls._get_authorized_modules(user)
-            filtered_items = cls._filter_with_bypass(
-                filtered_items, module_only_codes,
-                cls._filter_by_contract, authorized_modules
+            filtered_items = cls._filter_by_contract(
+                filtered_items, authorized_modules
             )
 
         if str(user.user_type) not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
@@ -718,7 +719,7 @@ class MenuService:
                 return items
 
             # 透過 DB 關聯查詢：哪些子系統綁定了這些選單
-            from modules.data_crud.models.sub_system import DcSubSystem
+            from modules.nocode_builder.models.sub_system import DcSubSystem
             sub_systems = DcSubSystem.query.filter(
                 DcSubSystem.menu_item_secure_code.in_(sub_menu_scs),
                 DcSubSystem.is_deleted == False,
@@ -784,7 +785,7 @@ class MenuService:
             user: 當前用戶
 
         Returns:
-            已授權的模組代碼集合 (如 {'form_workflow', 'data_crud'})
+            已授權的模組代碼集合 (如 {'form_workflow', 'nocode_builder'})
         """
         from ..models.contract import Contract, ContractStatus
 

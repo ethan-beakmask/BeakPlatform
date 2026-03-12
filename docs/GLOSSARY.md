@@ -29,7 +29,7 @@
 | 個人設定 | `/personal-settings` | 個人資料與密碼 |
 | 主機設定 | `/hostconfig/` | 主機環境設定 |
 
-### 表單流程（模組：form_workflow）
+### 人機互動流程模組（模組：form_workflow）
 
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
@@ -38,22 +38,22 @@
 | 流程設計 | `/forms/workflows/` | 工作流範本 CRUD |
 | 配對管理 | `/forms/mappings` | 表單-流程配對 |
 | 分類管理 | `/forms/categories` | 表單分類 |
-| 資料表規格 | `/forms/data-specs` | 表單欄位規格定義 |
 | 表單風格管理 | `/forms/form-themes` | Form.io 主題管理 |
 
-### 資料表工具（模組：data_crud）
+### 規格制定模組（模組：spec_formulate）
 
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
-| 視圖管理 | `/data-crud/` | CRUD 視圖管理 |
-| Lookup Table 類別與選項 | `/data-crud/lookup` | 查找表管理 |
+| 資料表規格 | `/spec-formulate/` | 資料表欄位規格定義（SQL/JSON/規格三相工具） |
 
-### Web Builder（模組：data_crud 的子系統功能）
+### 子系統開發模組（模組：nocode_builder）
 
 | 選單名稱 | URL 路徑 | 說明 |
 |----------|----------|------|
-| 子系統管理 | `/data-crud/sub-systems` | 子系統列表與申請 |
-| 設計器 | `/data-crud/lab` | Web Builder Studio 設計器 |
+| 子系統開發 | `/nocode-builder/sub-systems` | 子系統列表與開發入口 |
+| 視圖管理 | `/nocode-builder/` | CRUD 視圖管理 |
+| 頁面管理 | `/nocode-builder/lab` | 自由介面頁面設計器 |
+| 選項清單 | `/nocode-builder/lookup` | 子系統選單開發測試 |
 
 ### 企業管理
 
@@ -119,15 +119,15 @@
 | 術語 | 指的是 |
 |------|--------|
 | 平台 | BeakPlatform 本體（安全、權限、多租戶） |
-| 模組 | 掛載在平台上的業務功能（form_workflow、data_crud 等） |
+| 模組 | 掛載在平台上的業務功能（form_workflow、nocode_builder、spec_formulate） |
 | 企業 / 租戶 | 多租戶架構中的一個組織單位 |
 | secure_code | 32 字元唯一識別碼，取代自增 ID 用於 URL |
 | RLS | PostgreSQL Row Level Security，租戶隔離最後防線 |
 | ResourceGateway | API 層強制租戶隔離的資料存取層 |
 | 配對 | 表單範本與工作流範本的綁定關係 |
-| 子系統 | Web Builder 中開發的獨立應用 |
+| 子系統 | NoCode Builder 中開發的獨立應用 |
 | provision | 子系統申請通過後的自動配置流程 |
 
 ---
 
-*最後更新: 2026-03-07*
+*最後更新: 2026-03-13*
