@@ -146,6 +146,31 @@ function jobLevelsManager() {
                 return;
             }
 
+            // 停用檢查：從啟用變停用時，查詢引用此職等的職稱
+            if (this.selected.is_active && !this.editForm.is_active) {
+                const checkUrl = config.urls.checkUsage.replace('__SC__', this.selected.secure_code);
+                try {
+                    const checkResp = await fetch(checkUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const checkData = await checkResp.json();
+                    if (checkData.success && checkData.count > 0) {
+                        const titleList = checkData.titles.join(', ');
+                        const msg = '此職等有 ' + checkData.count + ' 個啟用中的職稱引用:\n' +
+                                    titleList + '\n\n' +
+                                    '停用後可能影響簽核流程，確定要停用嗎?';
+                        if (!confirm(msg)) {
+                            this.editForm.is_active = true;
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    this.editMessage = '檢查引用失敗: ' + err.message;
+                    this.editMessageType = 'error';
+                    return;
+                }
+            }
+
             this.editSaving = true;
             this.editMessage = '';
 

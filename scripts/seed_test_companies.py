@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BeakMask 測試企業種子資料
-建立三家虛擬企業的完整資料：企業、合約、編號規則、職等、職系、職稱、部門、帳號、職位指派
+建立四家虛擬企業的完整資料：企業、合約、編號規則、職等、職系、職稱、部門、帳號、職位指派
 
 使用方式:
     cd /opt/BeakPlatform
@@ -57,20 +57,20 @@ SEED_TAG = 'seed_test_companies_v1'
 
 
 # ============================================================================
-# 三家企業定義
+# 四家企業定義
 # ============================================================================
 
 COMPANIES = [
-    # --- 1. 大型旅行業 ---
+    # --- 1. 傳統製造業 ---
     {
         'code': 'GHTRAVEL',
-        'name': '環宇國際旅行社',
+        'name': '傳統文化製造集團',
         'domain': 'ghtravelexample.com.zz',
-        'display_name': 'Global Horizon Travel',
+        'display_name': 'Traditional Culture Manufacturing',
         'contact_person': '晧志遠',
         'contact_email': 'contact@ghtravelexample.com.zz',
         'contact_phone': '02-2700-0001',
-        'description': '大型旅行業 -- 團體旅遊、自由行、企業旅遊',
+        'description': '傳統製造業 -- 文化商品製造、品牌經營、通路管理',
         'user_limit': 50,
         # 員工編號格式: GH + 4位序號
         'numbering': {
@@ -155,9 +155,9 @@ COMPANIES = [
     # --- 2. 資訊公司 ---
     {
         'code': 'BRIGHTCODE',
-        'name': '耀達科技股份有限公司',
+        'name': '外星萊德科技公司',
         'domain': 'brightcodeexample.com.zz',
-        'display_name': 'BrightCode Technology',
+        'display_name': 'Alien Rider Technology',
         'contact_person': '霄伯達',
         'contact_email': 'contact@brightcodeexample.com.zz',
         'contact_phone': '02-2700-0002',
@@ -243,9 +243,9 @@ COMPANIES = [
     # --- 3. 資安公司 ---
     {
         'code': 'SHIELDEDGE',
-        'name': '盾策資安科技股份有限公司',
+        'name': '綠色乖乖資安網',
         'domain': 'shieldedgeexample.com.zz',
-        'display_name': 'ShieldEdge Security',
+        'display_name': 'Green Kuai Kuai CyberSec',
         'contact_person': '燁守誠',
         'contact_email': 'contact@shieldedgeexample.com.zz',
         'contact_phone': '02-2700-0003',
@@ -326,6 +326,20 @@ COMPANIES = [
             ('zane.xiao', '霄乍恩', 'Zane Xiao', 'TOOL_DEV', 'MALWARE_ANALYST', False),
         ],
     },
+
+    # --- 4. 個人測試環境 (僅 admin) ---
+    {
+        'code': 'TESTPERSONAL',
+        'name': '測試用個人環境',
+        'domain': 'testpersonalexample.com.zz',
+        'display_name': 'Test Personal Environment',
+        'contact_person': '澈測試',
+        'contact_email': 'contact@testpersonalexample.com.zz',
+        'contact_phone': '02-2700-0004',
+        'description': '個人測試環境 -- 僅含管理員帳號',
+        'user_limit': 10,
+        'admin_only': True,
+    },
 ]
 
 # ============================================================================
@@ -342,7 +356,7 @@ STANDARD_JOB_LEVELS = [
     ('L300', '主任級', 'Supervisor Level', 300, Decimal('100000'), True, '小組/專案'),
     ('L200', '高級職員級', 'Senior Staff Level', 200, Decimal('50000'), False, None),
     ('L100', '職員級', 'Staff Level', 100, Decimal('10000'), False, None),
-    ('L000', '外部廠商', 'External', 0, Decimal('0'), False, None),
+    ('L000', '約聘人員', 'Contract Staff', 0, Decimal('0'), False, None),
 ]
 
 STANDARD_JOB_FAMILIES = [
@@ -598,24 +612,6 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
     return users
 
 
-def create_admin_accounts(org, org_sc, domain):
-    """建立 2 個企業管理員 (admin 已由 OrganizationService 建立，再建 admin2)"""
-    admin2_email = f'admin2@{domain}'
-    admin2 = User(
-        org_secure_code=org_sc,
-        username='admin2',
-        email=admin2_email,
-        display_name=f'{org.name} 管理員2',
-        user_type=UserType.ORG_ADMIN,
-        is_active=True,
-        must_change_password=False,
-    )
-    admin2.set_password(TEST_PASSWORD)
-    db.session.add(admin2)
-    db.session.flush()
-    return admin2
-
-
 # ============================================================================
 # 主流程
 # ============================================================================
@@ -625,13 +621,16 @@ def seed_one_company(company_def):
     code = company_def['code']
     name = company_def['name']
     domain = company_def['domain']
+    admin_only = company_def.get('admin_only', False)
+
+    total_steps = 1 if admin_only else 8
 
     print(f"\n{'='*60}")
     print(f"  建立企業: {name} ({code})")
     print(f"{'='*60}")
 
     # 1. 企業 + 合約 + 原始管理員
-    print(f"  [1/9] 企業 + 合約 + 原始管理員...")
+    print(f"  [1/{total_steps}] 企業 + 合約 + 原始管理員...")
     org, admin_user, contract = OrganizationService.create_organization_with_contract(
         code=code,
         name=name,
@@ -653,49 +652,51 @@ def seed_one_company(company_def):
     print(f"         org_sc: {org_sc}")
     print(f"         admin: admin@{domain}")
 
-    # 2. 第二管理員
-    print(f"  [2/9] 第二管理員...")
-    admin2 = create_admin_accounts(org, org_sc, domain)
-    print(f"         admin2: admin2@{domain}")
+    if admin_only:
+        db.session.commit()
+        print(f"\n  完成! 企業 {name} (僅管理員):")
+        print(f"    管理員: admin@{domain}")
+        print(f"    密碼: {TEST_PASSWORD}")
+        return org
 
-    # 3. 編號規則
-    print(f"  [3/9] 預設編號規則...")
+    # 2. 編號規則
+    print(f"  [2/{total_steps}] 預設編號規則...")
     default_rule = create_default_numbering_rule(org_sc)
     print(f"         default: {default_rule.name} (0001, 0002, ...)")
 
-    print(f"  [4/9] 公司編號規則...")
+    print(f"  [3/{total_steps}] 公司編號規則...")
     numbering_rules = create_numbering_rules(org_sc, company_def['numbering'])
     for key, rule in numbering_rules.items():
         print(f"         {key}: {rule.name}")
 
-    # 5. 職等
-    print(f"  [5/9] 職等 (10 級)...")
+    # 4. 職等
+    print(f"  [4/{total_steps}] 職等 (10 級)...")
     levels = create_job_levels(org_sc)
 
-    # 6. 職系
+    # 5. 職系
     extra_fam = company_def.get('extra_families', [])
-    print(f"  [6/9] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
+    print(f"  [5/{total_steps}] 職系 ({len(STANDARD_JOB_FAMILIES) + len(extra_fam)} 個)...")
     families = create_job_families(org_sc, extra_fam)
 
-    # 7. 職稱
+    # 6. 職稱
     extra_titles = company_def.get('extra_titles', [])
-    print(f"  [7/9] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
+    print(f"  [6/{total_steps}] 職稱 ({len(STANDARD_JOB_TITLES) + len(extra_titles)} 個)...")
     titles = create_job_titles(org_sc, levels, families, extra_titles)
 
-    # 8. 部門
+    # 7. 部門
     dept_list = company_def['departments']
-    print(f"  [8/9] 部門 ({len(dept_list)} 個)...")
+    print(f"  [7/{total_steps}] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
-    # 9. 員工帳號 + 職位
+    # 8. 員工帳號 + 職位
     emp_list = company_def['employees']
-    print(f"  [9/9] 員工帳號 ({len(emp_list)} 人) + 職位指派...")
+    print(f"  [8/{total_steps}] 員工帳號 ({len(emp_list)} 人) + 職位指派...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
 
     db.session.commit()
 
     print(f"\n  完成! 企業 {name}:")
-    print(f"    管理員: admin@{domain}, admin2@{domain}")
+    print(f"    管理員: admin@{domain}")
     print(f"    員工: {len(users)} 人")
     print(f"    密碼: {TEST_PASSWORD}")
 
@@ -827,20 +828,21 @@ def clean_test_companies():
 def dry_run():
     """預覽模式"""
     for company in COMPANIES:
+        admin_only = company.get('admin_only', False)
         print(f"\n{'='*60}")
         print(f"企業: {company['name']} ({company['code']})")
         print(f"網域: {company['domain']}")
         print(f"{'='*60}")
-        print(f"  管理員: admin@{company['domain']}, admin2@{company['domain']}")
+        print(f"  管理員: admin@{company['domain']}")
+        if admin_only:
+            print(f"  (僅管理員，無其他資料)")
+            continue
         print(f"  編號規則: {len(company['numbering'])} 組")
         print(f"  職系: {len(STANDARD_JOB_FAMILIES) + len(company.get('extra_families', []))} 個")
         print(f"  職稱: {len(STANDARD_JOB_TITLES) + len(company.get('extra_titles', []))} 個")
         print(f"  部門: {len(company['departments'])} 個")
         print(f"  員工: {len(company['employees'])} 人")
         print(f"  部門結構:")
-        dept_map = {}
-        for name, code, parent in company['departments']:
-            dept_map[code] = (name, parent)
         for name, code, parent in company['departments']:
             indent = '    '
             if parent:
@@ -863,12 +865,13 @@ def main():
   python scripts/seed_test_companies.py --clean      清除測試企業
 
 建立的企業:
-  1. 環宇國際旅行社 (GHTRAVEL) - ghtravelexample.com.zz
-  2. 耀達科技 (BRIGHTCODE) - brightcodeexample.com.zz
-  3. 盾策資安 (SHIELDEDGE) - shieldedgeexample.com.zz
+  1. 傳統文化製造集團 (GHTRAVEL) - ghtravelexample.com.zz
+  2. 外星萊德科技公司 (BRIGHTCODE) - brightcodeexample.com.zz
+  3. 綠色乖乖資安網 (SHIELDEDGE) - shieldedgeexample.com.zz
+  4. 測試用個人環境 (TESTPERSONAL) - testpersonalexample.com.zz (僅 admin)
 
-每家企業包含:
-  - 2 個管理員 (admin / admin2)
+前三家企業包含:
+  - 1 個管理員 (admin)
   - 20 個員工帳號 (含職位指派)
   - 編號規則、職等、職系、職稱、部門
   - 密碼統一: Test1234!
@@ -916,12 +919,17 @@ def main():
             print("\n" + "=" * 60)
             print("  全部完成!")
             print("=" * 60)
-            print(f"\n共建立 {len(COMPANIES)} 家企業，每家 2 管理員 + 20 員工")
+            full_companies = [c for c in COMPANIES if not c.get('admin_only')]
+            admin_only_companies = [c for c in COMPANIES if c.get('admin_only')]
+            print(f"\n共建立 {len(COMPANIES)} 家企業")
+            if full_companies:
+                print(f"  完整企業 {len(full_companies)} 家 (admin + 20 員工)")
+            if admin_only_companies:
+                print(f"  僅管理員 {len(admin_only_companies)} 家")
             print(f"統一密碼: {TEST_PASSWORD}")
             print(f"\n登入方式:")
             for company in COMPANIES:
                 print(f"  admin@{company['domain']}")
-                print(f"  admin2@{company['domain']}")
 
 
 if __name__ == '__main__':

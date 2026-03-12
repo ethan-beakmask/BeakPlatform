@@ -271,7 +271,8 @@ window.__JOB_LEVELS_CONFIG = {
     urls: {
         create: '{{ url_for("job_levels.create_job_level") }}',
         edit: '{{ url_for("job_levels.edit_job_level", secure_code="__SC__") }}',
-        delete: '{{ url_for("job_levels.delete_job_level", secure_code="__SC__") }}'
+        delete: '{{ url_for("job_levels.delete_job_level", secure_code="__SC__") }}',
+        checkUsage: '{{ url_for("job_levels.check_usage", secure_code="__SC__") }}'
     }
 };
 </script>

@@ -188,7 +188,7 @@ class JobLevel(TenantBaseModel, I18nMixin):
 #
 # 設計原則：
 # - 基礎間距：100 (每個主要職等間隔 100)
-# - 外部廠商：L000 (非員工，如外包、顧問)
+# - 約聘人員：L000 (約聘、外包、顧問等)
 # - 最基層：L100 (職員級)
 # - 最高層：L900 (總經理級)
 #
@@ -287,8 +287,8 @@ DEFAULT_JOB_LEVELS = [
     },
     {
         'code': 'L000',
-        'name': '外部廠商',
-        'name_en': 'External',
+        'name': '約聘人員',
+        'name_en': 'Contract Staff',
         'level_order': 0,
         'approval_limit': 0,  # 無簽核權限
         'is_manager_level': False,

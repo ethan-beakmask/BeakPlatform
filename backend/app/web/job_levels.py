@@ -327,6 +327,30 @@ def delete_job_level(secure_code: str):
         return redirect(url_for('job_levels.edit_job_level', secure_code=secure_code))
 
 
+@job_levels_bp.route('/<secure_code>/check-usage')
+@admin_required
+def check_usage(secure_code: str):
+    """檢查職等被引用的情況（停用前檢查）"""
+    try:
+        job_level = ResourceGateway.get(JobLevel, secure_code)
+    except Exception:
+        return jsonify({'success': False, 'errors': ['職等不存在']}), 404
+
+    active_titles = JobTitle.query.filter(
+        JobTitle.job_level_secure_code == job_level.secure_code,
+        JobTitle.org_secure_code == current_user.org_secure_code,
+        JobTitle.is_deleted == False,
+        JobTitle.is_active == True,
+    ).all()
+
+    title_names = [t.name for t in active_titles]
+    return jsonify({
+        'success': True,
+        'count': len(active_titles),
+        'titles': title_names,
+    })
+
+
 @job_levels_bp.route('/matrix')
 @admin_required
 def job_matrix():
