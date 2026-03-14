@@ -39,6 +39,8 @@ class BeakTreeModel {
         this._checkedSet = new Set();    // 已勾選的節點 ID
         this._flatNodes = [];            // 扁平化的可見節點列表
         this._expandedCount = 0;         // 當前展開節點總數
+        this._rootChildren = [];         // 根層節點有序列表
+        this._rootChildIds = [];         // 根層節點 ID 有序列表
 
         // 建立索引
         this._buildNodeMap(data, null, 0);
@@ -76,6 +78,9 @@ class BeakTreeModel {
                     parent.children.push(node);
                     parent.childIds.push(node.id);
                 }
+            } else {
+                this._rootChildren.push(node);
+                this._rootChildIds.push(node.id);
             }
 
             // 預設展開狀態
@@ -107,14 +112,7 @@ class BeakTreeModel {
     }
 
     getRootNodes() {
-        var roots = [];
-        this._nodeMap.forEach(function(node) {
-            if (node.parentId === null) {
-                roots.push(node);
-            }
-        });
-        roots.sort(function(a, b) { return a._index - b._index; });
-        return roots;
+        return this._rootChildren.slice();
     }
 
     getAncestors(id) {
@@ -519,6 +517,8 @@ class BeakTreeModel {
         this._checkedSet.clear();
         this._expandedCount = 0;
         this._flatNodes = [];
+        this._rootChildren = [];
+        this._rootChildIds = [];
         this._buildNodeMap(data, null, 0);
     }
 
@@ -586,9 +586,16 @@ class BeakTreeModel {
                 }
             }
         } else {
-            // 節點原本在根層，需要從根層移除
-            // 根層節點沒有顯式的 children 陣列，靠 parentId === null 識別
-            // 不需要特別處理，只需更新 parentId
+            // 節點原本在根層，從 _rootChildren 移除
+            var oldIdx = this._rootChildren.indexOf(node);
+            if (oldIdx >= 0) {
+                this._rootChildren.splice(oldIdx, 1);
+                this._rootChildIds.splice(oldIdx, 1);
+            }
+            for (var i = 0; i < this._rootChildren.length; i++) {
+                this._rootChildren[i]._isLast = (i === this._rootChildren.length - 1);
+                this._rootChildren[i]._index = i;
+            }
         }
 
         // === 插入新位置 ===
@@ -620,8 +627,17 @@ class BeakTreeModel {
             }
         } else {
             // 移到根層
+            var insertIdx = Math.max(0, Math.min(newIndex, this._rootChildren.length));
+            this._rootChildren.splice(insertIdx, 0, node);
+            this._rootChildIds.splice(insertIdx, 0, node.id);
+
             node.level = 0;
             this._updateLevel(node, 0);
+
+            for (var i = 0; i < this._rootChildren.length; i++) {
+                this._rootChildren[i]._isLast = (i === this._rootChildren.length - 1);
+                this._rootChildren[i]._index = i;
+            }
         }
 
         this._recountExpanded();
@@ -667,5 +683,7 @@ class BeakTreeModel {
         this._expandedSet.clear();
         this._checkedSet.clear();
         this._flatNodes = [];
+        this._rootChildren = [];
+        this._rootChildIds = [];
     }
 }

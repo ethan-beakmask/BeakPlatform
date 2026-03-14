@@ -49,12 +49,9 @@
     max-width: 270px;
 }
 
-/* 展開/收合按鈕：預設黑字，著色行內繼承行色 */
+/* 展開/收合按鈕：固定配色，不受著色行影響 */
 #menu-trellis .bt-toggle {
-    color: #111;
-}
-#menu-trellis tr[class*="menu-"] .bt-toggle {
-    color: inherit;
+    color: #555;
 }
 
 /* 權限四欄置中 */
@@ -110,9 +107,9 @@
 #menu-trellis .menu-common td     { background: var(--menu-common-bg); }
 #menu-trellis .menu-module td     { background: var(--menu-module-bg); }
 
-/* 著色行內所有子元素繼承 tr 的文字色 */
+/* 著色行內所有子元素繼承 tr 的文字色（但 toggle 按鈕除外） */
 #menu-trellis tr[class*="menu-"] td,
-#menu-trellis tr[class*="menu-"] td span,
+#menu-trellis tr[class*="menu-"] td span:not(.bt-toggle),
 #menu-trellis tr[class*="menu-"] td a,
 #menu-trellis tr[class*="menu-"] td code,
 #menu-trellis tr[class*="menu-"] td i {
