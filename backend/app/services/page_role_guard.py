@@ -72,7 +72,13 @@ class PageRoleGuard:
         )
 
         if not required_role_scs:
-            return None  # 無角色設定 → 放行
+            # 無角色設定 → 擋下（雙鑰匙：四階層+角色都必須通過）
+            return (
+                f"User {user.username} (sc={user.secure_code}) "
+                f"denied access to {path} "
+                f"(menu={menu_item.code}, "
+                f"NO role requirements configured for org={org_sc})"
+            )
 
         # 取得用戶當前持有的角色
         user_role_scs = cls._get_user_roles(user.secure_code)
@@ -254,17 +260,12 @@ class PageRoleGuard:
         Returns:
             設定的角色數量
         """
-        from datetime import datetime
-
-        # 軟刪除現有記錄
-        existing = MenuRoleRequirement.query.filter(
+        # 硬刪除現有記錄（關聯表不需軟刪除，且 unique constraint 不含 is_deleted）
+        MenuRoleRequirement.query.filter(
             MenuRoleRequirement.menu_secure_code == menu_secure_code,
             MenuRoleRequirement.org_secure_code == org_secure_code,
             MenuRoleRequirement.is_deleted == False,
-        ).all()
-        for e in existing:
-            e.is_deleted = True
-            e.deleted_at = datetime.utcnow()
+        ).delete(synchronize_session='fetch')
 
         # 建立新記錄
         count = 0
@@ -287,18 +288,11 @@ class PageRoleGuard:
         org_secure_code: str,
     ) -> bool:
         """移除單一角色需求"""
-        from datetime import datetime
-
-        req = MenuRoleRequirement.query.filter(
+        count = MenuRoleRequirement.query.filter(
             MenuRoleRequirement.menu_secure_code == menu_secure_code,
             MenuRoleRequirement.role_secure_code == role_secure_code,
             MenuRoleRequirement.org_secure_code == org_secure_code,
             MenuRoleRequirement.is_deleted == False,
-        ).first()
+        ).delete(synchronize_session='fetch')
 
-        if not req:
-            return False
-
-        req.is_deleted = True
-        req.deleted_at = datetime.utcnow()
-        return True
+        return count > 0

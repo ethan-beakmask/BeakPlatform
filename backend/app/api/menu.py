@@ -5,6 +5,10 @@ BeakMask Menu API
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
+import logging
+
+from sqlalchemy import text
+
 from ..security.decorators import login_required, admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.menu_service import MenuService
@@ -12,6 +16,8 @@ from ..services.page_role_guard import PageRoleGuard
 from ..models.menu_item import MenuItem
 from ..models.role import Role
 from .. import db
+
+logger = logging.getLogger(__name__)
 
 menu_bp = Blueprint('api_menu', __name__)
 
@@ -289,6 +295,9 @@ def get_menu_roles(secure_code: str):
     """
     menu_item = ResourceGateway.get(MenuItem, secure_code)
 
+    # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
+    db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
     # 已設定的角色需求
     requirements = PageRoleGuard.get_menu_roles(
         menu_item.secure_code,
@@ -339,12 +348,21 @@ def set_menu_roles(secure_code: str):
 
     role_secure_codes = data.get('role_secure_codes', [])
 
-    count = PageRoleGuard.set_menu_roles(
-        menu_item.secure_code,
-        current_user.org_secure_code,
-        role_secure_codes,
-    )
+    try:
+        # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
 
-    db.session.commit()
+        count = PageRoleGuard.set_menu_roles(
+            menu_item.secure_code,
+            current_user.org_secure_code,
+            role_secure_codes,
+        )
 
-    return jsonify({'success': True, 'count': count})
+        db.session.commit()
+
+        return jsonify({'success': True, 'count': count})
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to set menu roles: {e}")
+        return jsonify({'error': '更新角色需求失敗'}), 500

@@ -379,7 +379,7 @@ def edit_menu(secure_code: str):
 
         if not title:
             flash('標題為必填', 'error')
-        elif not is_module and not allowed_user_types:
+        elif not allowed_user_types:
             flash('請至少選擇一種用戶類型', 'error')
         else:
             try:
@@ -417,9 +417,8 @@ def edit_menu(secure_code: str):
 
                     update_children_depth(item)
 
-                # 模組選單不透過 MenuPermission 控制，跳過權限寫入
-                if not is_module:
-                    MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
+                # 所有選單（含模組選單）都寫入 MenuPermission（鑰匙1: 用戶類型資格）
+                MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
 
                 db.session.commit()
                 flash('已更新選單項目', 'success')
