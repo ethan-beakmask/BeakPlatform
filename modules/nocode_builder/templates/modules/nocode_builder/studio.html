@@ -94,6 +94,8 @@
                     <div class="stu-sidebar-title">Site Map</div>
                     <div class="stu-tree-toolbar">
                         <button class="stu-btn sm" @click="openAddNode()">+ 節點</button>
+                        <button class="stu-btn sm" @click="openNodePerms()"
+                                :disabled="!selectedNode">權限</button>
                         <button class="stu-btn sm danger" @click="deleteNode()"
                                 :disabled="!selectedNode">刪除</button>
                     </div>
@@ -140,6 +142,72 @@
 
             <!-- 右側屬性面板 -->
             <div class="stu-props" :class="{ 'stu-props-hidden': !showProps }">
+
+                <!-- 節點權限管理模式 -->
+                <template x-if="propsMode === 'perm'">
+                    <div>
+                        <div class="stu-props-header">
+                            節點權限
+                            <button class="stu-btn sm" @click="showProps = false; propsMode = 'node';"
+                                    style="float:right; font-size:11px;">X</button>
+                        </div>
+                        <div class="stu-props-body">
+                            <div style="margin-bottom:8px; font-size:12px; color:#666;">
+                                <span x-text="selectedNode ? selectedNode.name : ''"></span>
+                            </div>
+                            <p style="font-size:11px; color:#999; margin:0 0 12px 0;">
+                                白名單制：無記錄=所有人可見；有記錄=只有匹配的帳號/角色/部門/群組可見。
+                            </p>
+
+                            <!-- 已設定的權限 -->
+                            <div class="stu-section-divider">已設定</div>
+                            <div x-show="nodePerms.length === 0" style="font-size:12px; color:#999; padding:4px 0;">
+                                (無限制，所有成員可見)
+                            </div>
+                            <template x-for="p in nodePerms" :key="p.secure_code">
+                                <div style="display:flex; align-items:center; gap:4px; margin-bottom:4px; font-size:12px;">
+                                    <span style="color:#666; width:60px; flex-shrink:0;"
+                                          x-text="p.target_type"></span>
+                                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                                          x-text="p.target_name || p.target_secure_code"></span>
+                                    <button class="stu-btn sm danger" @click="removeNodePerm(p.secure_code)"
+                                            style="flex-shrink:0;">x</button>
+                                </div>
+                            </template>
+
+                            <!-- 新增權限 -->
+                            <div class="stu-section-divider" style="margin-top:16px;">新增</div>
+                            <div class="stu-field">
+                                <label>目標類型</label>
+                                <select x-model="permForm.target_type" @change="loadPermTargets()">
+                                    <option value="">-- 選擇 --</option>
+                                    <option value="ROLE">角色</option>
+                                    <option value="DEPARTMENT">部門</option>
+                                    <option value="GROUP">群組</option>
+                                    <option value="ACCOUNT">帳號</option>
+                                </select>
+                            </div>
+                            <div class="stu-field" x-show="permForm.target_type">
+                                <label>目標</label>
+                                <select x-model="permForm.target_sc">
+                                    <option value="">-- 選擇 --</option>
+                                    <template x-for="t in permTargets" :key="t.secure_code">
+                                        <option :value="t.secure_code"
+                                                x-text="t.display_name || t.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <button class="stu-btn primary" @click="addNodePerm()"
+                                    :disabled="!permForm.target_type || !permForm.target_sc"
+                                    style="margin-top:8px;">
+                                新增權限
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 元件設定模式 -->
+                <div x-show="propsMode !== 'perm'">
                 <div class="stu-props-header">元件設定</div>
                 <div class="stu-props-body">
 
@@ -235,6 +303,7 @@
                         <button class="stu-btn danger" @click="removeSelectedWidget()">移除元件</button>
                     </div>
                 </div>
+                </div><!-- propsMode !== 'perm' -->
             </div>
 
         </div><!-- stu-body -->

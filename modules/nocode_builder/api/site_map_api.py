@@ -186,39 +186,61 @@ def reorder_site_map_nodes(ss_sc):
 
 
 # =============================================================================
-# 節點權限管理 API (@admin_required)
+# 節點權限管理 API (開發者 + 管理員)
 # =============================================================================
 
+def _check_developer(ss_sc):
+    """
+    檢查當前用戶是否為子系統開發者（或管理員）。
+    返回 (DcSubSystem, error_response)，其中一個為 None。
+    """
+    from ..models import DcSubSystem
+    from ..services.project_service import ProjectService
+
+    ss = ResourceGateway.get(
+        DcSubSystem, ss_sc,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return None, (jsonify({'success': False, 'error': 'Sub system not found'}), 404)
+
+    if not ProjectService.is_developer(current_user, ss):
+        return None, (jsonify({'success': False, 'error': '您不是此子系統的開發者'}), 403)
+
+    return ss, None
+
+
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/permissions')
-@admin_required
+@login_required
 def get_site_map_node_permissions(ss_sc, node_sc):
-    """取得節點權限列表"""
+    """取得節點權限列表（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
 
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+    ss, err = _check_developer(ss_sc)
+    if err:
+        return err
 
-    node = SiteMapService.get_node(node_sc, org.secure_code)
+    node = SiteMapService.get_node(node_sc, ss.org_secure_code)
     if not node:
         return jsonify({'success': False, 'error': 'Node not found'}), 404
 
-    perms = SiteMapService.get_node_permissions(node_sc, org.secure_code)
+    perms = SiteMapService.get_node_permissions(node_sc, ss.org_secure_code)
     return jsonify({'success': True, 'data': perms})
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/permissions', methods=['POST'])
 @csrf.exempt
-@admin_required
+@login_required
 def add_site_map_node_permission(ss_sc, node_sc):
-    """新增節點權限"""
+    """新增節點權限（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
 
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+    ss, err = _check_developer(ss_sc)
+    if err:
+        return err
 
-    node = SiteMapService.get_node(node_sc, org.secure_code)
+    node = SiteMapService.get_node(node_sc, ss.org_secure_code)
     if not node:
         return jsonify({'success': False, 'error': 'Node not found'}), 404
 
@@ -230,7 +252,7 @@ def add_site_map_node_permission(ss_sc, node_sc):
         return jsonify({'success': False, 'error': 'target_type and target_secure_code are required'}), 400
 
     try:
-        perm = SiteMapService.add_permission(node_sc, org.secure_code, target_type, target_sc)
+        perm = SiteMapService.add_permission(node_sc, ss.org_secure_code, target_type, target_sc)
         db.session.commit()
         if not perm:
             return jsonify({'success': False, 'error': '此權限已存在'}), 400
@@ -249,21 +271,52 @@ def add_site_map_node_permission(ss_sc, node_sc):
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/permissions/<perm_sc>', methods=['DELETE'])
 @csrf.exempt
-@admin_required
+@login_required
 def remove_site_map_permission(ss_sc, perm_sc):
-    """刪除節點權限"""
+    """刪除節點權限（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
 
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+    ss, err = _check_developer(ss_sc)
+    if err:
+        return err
 
-    ok = SiteMapService.remove_permission(perm_sc, org.secure_code)
+    ok = SiteMapService.remove_permission(perm_sc, ss.org_secure_code)
     if not ok:
         return jsonify({'success': False, 'error': 'Permission not found'}), 404
 
     db.session.commit()
     return jsonify({'success': True, 'message': '權限已刪除'})
+
+
+@api_bp.route('/sub-systems/<ss_sc>/site-map/targets')
+@login_required
+def get_site_map_targets(ss_sc):
+    """
+    取得可選的權限目標清單（開發者+管理員）
+
+    Query params:
+        type: ROLE / DEPARTMENT / GROUP / ACCOUNT
+    """
+    from app.services.module_access_service import ModuleAccessService
+
+    ss, err = _check_developer(ss_sc)
+    if err:
+        return err
+
+    target_type = request.args.get('type', '').strip()
+    valid_types = ('ROLE', 'DEPARTMENT', 'GROUP', 'ACCOUNT')
+    if target_type not in valid_types:
+        return jsonify({
+            'success': False,
+            'error': f'Invalid type. Must be one of: {", ".join(valid_types)}'
+        }), 400
+
+    targets = ModuleAccessService.get_available_targets(
+        ss.org_secure_code,
+        target_type,
+    )
+
+    return jsonify({'success': True, 'data': targets})
 
 
 # =============================================================================

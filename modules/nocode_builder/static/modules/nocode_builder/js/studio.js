@@ -63,6 +63,11 @@ function studioManager() {
         showAddNodeModal: false,
         addNodeForm: { name: '', node_type: 'page', parent_sc: '' },
 
+        // 節點權限管理
+        nodePerms: [],
+        permForm: { target_type: '', target_sc: '' },
+        permTargets: [],
+
         // 頁面清單 (for node linking)
         pageList: [],
 
@@ -768,6 +773,103 @@ function studioManager() {
                 }
             } catch (e) {
                 this.showToast(label + '失敗', 'error');
+            }
+        },
+
+        // ===== 節點權限管理 =====
+
+        async openNodePerms() {
+            if (!this.selectedNode) return;
+            this.propsMode = 'perm';
+            this.showProps = true;
+            this.permForm = { target_type: '', target_sc: '' };
+            this.permTargets = [];
+            await this._loadNodePerms();
+        },
+
+        async _loadNodePerms() {
+            if (!this.selectedNode) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions'
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.nodePerms = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load node permissions failed:', e);
+            }
+        },
+
+        async loadPermTargets() {
+            var type = this.permForm.target_type;
+            this.permForm.target_sc = '';
+            this.permTargets = [];
+            if (!type) return;
+
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/targets?type=' + type
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.permTargets = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load targets failed:', e);
+            }
+        },
+
+        async addNodePerm() {
+            if (!this.selectedNode || !this.permForm.target_type || !this.permForm.target_sc) return;
+
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            target_type: this.permForm.target_type,
+                            target_secure_code: this.permForm.target_sc,
+                        }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.showToast('權限已新增', 'success');
+                    this.permForm.target_sc = '';
+                    await this._loadNodePerms();
+                } else {
+                    this.showToast(data.error || '新增失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('新增失敗: ' + e.message, 'error');
+            }
+        },
+
+        async removeNodePerm(permSc) {
+            if (!confirm('確定要移除此權限嗎?')) return;
+
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/permissions/' + permSc,
+                    { method: 'DELETE' }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.showToast('權限已移除', 'success');
+                    await this._loadNodePerms();
+                } else {
+                    this.showToast(data.error || '移除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('移除失敗: ' + e.message, 'error');
             }
         },
 
