@@ -119,8 +119,8 @@ def register_context_processors(app: Flask) -> None:
             """根據 bg_level + is_cross_level 產生 CSS class (依 CSV 權限顏色表)"""
             level = item.get('bg_level', '') if isinstance(item, dict) else ''
             cross = item.get('is_cross_level', False) if isinstance(item, dict) else False
-            if level == 'fixed':
-                return 'menu-fixed-black'
+            if level == 'common':
+                return 'menu-common'
             elif level == 'system':
                 return 'menu-sys-cross' if cross else 'menu-sys-only'
             elif level == 'admin':

@@ -308,8 +308,8 @@ class MenuService:
 
         return result
 
-    # 固定底色選單標題 (與 /menu/ 管理頁面的 fixed_titles 一致)
-    FIXED_BLACK_TITLES = {'模組區', '個人設定', '儀表板', '表單中心'}
+    # [已棄用] 固定底色選單標題 - 改為統一使用權限等級著色
+    FIXED_BLACK_TITLES = set()
 
     @classmethod
     def _item_to_dict(
@@ -349,15 +349,18 @@ class MenuService:
         bg_level = ''
         is_cross_level = False
 
-        if item.title in cls.FIXED_BLACK_TITLES:
-            bg_level = 'fixed'
-        elif allowed_types:
+        if allowed_types:
             has_system_admin = UserType.SYSTEM_ADMIN in allowed_types
             has_org_admin = UserType.ORG_ADMIN in allowed_types
             has_employee = UserType.EMPLOYEE in allowed_types
             has_external = UserType.EXTERNAL in allowed_types
 
-            if has_system_admin:
+            type_count = sum([has_system_admin, has_org_admin, has_employee, has_external])
+
+            # 3+ types = 跨階層基本選單
+            if type_count >= 3:
+                bg_level = 'common'
+            elif has_system_admin:
                 bg_level = 'system'
                 is_cross_level = has_org_admin or has_employee or has_external
             elif has_org_admin:
@@ -633,7 +636,7 @@ class MenuService:
 
             # 更新父節點
             new_parent = item_data.get('parent_secure_code')
-            if new_parent != menu_item.parent_secure_code:
+            if 'parent_secure_code' in item_data and new_parent != menu_item.parent_secure_code:
                 menu_item.parent_secure_code = new_parent
 
                 # 重新計算深度
@@ -644,6 +647,10 @@ class MenuService:
                     menu_item.depth = parent.depth + 1 if parent else 0
                 else:
                     menu_item.depth = 0
+
+                # 遞迴更新子孫深度
+                for descendant in menu_item.get_descendants():
+                    descendant.depth = descendant.calculate_depth()
 
     @classmethod
     def delete_menu_item(

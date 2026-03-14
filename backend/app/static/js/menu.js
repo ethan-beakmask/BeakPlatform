@@ -66,7 +66,7 @@ function menuComponent() {
             var level = item.bg_level || '';
             var cross = item.is_cross_level;
 
-            if (level === 'fixed') return 'menu-fixed-black';
+            if (level === 'common') return 'menu-common';
             if (level === 'system') return cross ? 'menu-sys-cross' : 'menu-sys-only';
             if (level === 'admin') return cross ? 'menu-org-cross' : 'menu-org-only';
             if (level === 'user') return cross ? 'menu-user-cross' : 'menu-user-only';

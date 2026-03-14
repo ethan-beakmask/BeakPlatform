@@ -3,146 +3,29 @@
 {% block title %}{{ _('選單管理') }} - BeakMask{% endblock %}
 
 {% block head %}
-<style>
-    .menu-table {
-        width: 100%;
-    }
-    .menu-table th, .menu-table td {
-        text-align: center;
-        padding: 6px 10px;
-        white-space: nowrap;
-    }
-    .menu-table th:first-child,
-    .menu-table td:first-child {
-        text-align: left;
-    }
-    .perm-yes { color: #2e7d32; font-weight: bold; }
-    .perm-no { color: #ccc; }
-
-    /* 動態著色：CSS 變數驅動 */
-    .menu-sys-only { background-color: var(--menu-sys-bg); color: var(--menu-sys-text); }
-    .menu-sys-cross { background-color: var(--menu-sys-bg); color: var(--menu-cross-text); }
-    .menu-org-only { background-color: var(--menu-org-bg); color: var(--menu-org-text); }
-    .menu-org-cross { background-color: var(--menu-org-bg); color: var(--menu-cross-text); }
-    .menu-user-only { background-color: var(--menu-user-bg); color: var(--menu-user-text); }
-    .menu-user-cross { background-color: var(--menu-user-bg); color: var(--menu-cross-text); }
-    .menu-ext-only { background-color: var(--menu-ext-bg); color: var(--menu-ext-text); }
-    .menu-fixed-black { background-color: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
-
-    /* 有底色時的勾選標記與連結調整 */
-    tr[class*="menu-"] .perm-yes { color: #4ade80; }
-    tr[class*="menu-"] .perm-no { color: rgba(255,255,255,0.3); }
-    tr[class*="menu-"] a { color: #93c5fd; }
-    tr[class*="menu-"] code { background: rgba(255,255,255,0.15); color: inherit; }
-    /* 黃底項目特殊處理: 深色文字 */
-    tr.menu-ext-only .perm-yes { color: #166534; }
-    tr.menu-ext-only .perm-no { color: rgba(0,0,0,0.25); }
-    tr.menu-ext-only a { color: #1d4ed8; }
-    tr.menu-ext-only code { background: rgba(0,0,0,0.1); color: inherit; }
-
-    .status-active { color: #16a34a; }
-    .status-inactive { color: #dc2626; }
-
-    /* 模組選單 */
-    .menu-module { background-color: var(--menu-module-bg); color: var(--menu-module-text); }
-    tr.menu-module .perm-yes { color: #4ade80; }
-    tr.menu-module .perm-no { color: rgba(255,255,255,0.3); }
-    tr.menu-module a { color: #93c5fd; }
-    tr.menu-module code { background: rgba(255,255,255,0.15); color: inherit; }
-
-    /* 標題欄固定（top 使用 topbar-offset.js 設定的 CSS 變數） */
-    .menu-table thead th {
-        position: sticky;
-        top: var(--topbar-height, 0px);
-        background: var(--menu-header-bg);
-        color: var(--menu-header-text);
-        z-index: 10;
-        border-bottom: 2px solid #0f2440;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/menu-tree.css') }}">
 {% endblock %}
 
 {% block content %}
 <h1>{{ _('選單管理') }}</h1>
 
-<p><a href="{{ url_for('menu.create_menu') }}">[+ {{ _('新增選單項目') }}]</a></p>
-
 {% if menu_items %}
-<table class="menu-table">
-    <thead>
-        <tr>
-            <th>{{ _('選單項目') }}</th>
-            {% for user_type in user_types %}
-            <th>{{ user_type_labels.get(user_type, user_type) }}</th>
-            {% endfor %}
-            <th></th>
-            <th>{{ _('代碼') }}</th>
-            <th>{{ _('連結類型') }}</th>
-            <th>{{ _('連結目標') }}</th>
-            <th>{{ _('排序') }}</th>
-            <th>{{ _('狀態') }}</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for entry in menu_items %}
-        {% set perms = permission_matrix.get(entry.item.secure_code, {}) %}
-        {% set has_sys = perms.get('SYSTEM_ADMIN', false) %}
-        {% set has_org = perms.get('ORG_ADMIN', false) %}
-        {% set has_emp = perms.get('EMPLOYEE', false) %}
-        {% set has_ext = perms.get('EXTERNAL', false) %}
-        {% set fixed_titles = ['模組區', '個人設定', '儀表板', '表單中心'] %}
-        {% set is_fixed = entry.item.title in fixed_titles %}
-        {% set is_module = entry.item.code in module_menu_codes %}
-        {# 依 CSV 權限顏色表: 底色=最高等級, cross=有更低等級也能存取 #}
-        {% if is_module %}
-            {% set row_class = 'menu-module' %}
-        {% elif is_fixed %}
-            {% set row_class = 'menu-fixed-black' %}
-        {% elif has_sys %}
-            {% set row_class = 'menu-sys-cross' if (has_org or has_emp or has_ext) else 'menu-sys-only' %}
-        {% elif has_org %}
-            {% set row_class = 'menu-org-cross' if (has_emp or has_ext) else 'menu-org-only' %}
-        {% elif has_emp %}
-            {% set row_class = 'menu-user-cross' if has_ext else 'menu-user-only' %}
-        {% elif has_ext %}
-            {% set row_class = 'menu-ext-only' %}
-        {% else %}
-            {% set row_class = '' %}
-        {% endif %}
-        <tr class="{{ row_class }}">
-            <td>{{ entry.indent }}{% if entry.item.icon %}<i class="{{ entry.item.icon }}"></i> {% endif %}{{ entry.item.title }}</td>
-            {% for user_type in user_types %}
-            <td>
-                {% if perms.get(user_type) %}
-                <span class="perm-yes">&#10003;</span>
-                {% else %}
-                <span class="perm-no">-</span>
-                {% endif %}
-            </td>
-            {% endfor %}
-            <td><a href="{{ url_for('menu.edit_menu', secure_code=entry.item.secure_code) }}">[{{ _('編輯') }}]</a></td>
-            <td><code>{{ entry.item.code }}</code></td>
-            <td>{{ entry.item.link_type }}</td>
-            <td><code>{{ entry.item.link_target or '-' }}</code></td>
-            <td>{{ entry.item.display_order }}</td>
-            <td>
-                {% if entry.item.is_active %}
-                <span class="status-active">{{ _('啟用') }}</span>
-                {% else %}
-                <span class="status-inactive">{{ _('停用') }}</span>
-                {% endif %}
-            </td>
-            <td>
-                <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=entry.item.secure_code) }}" style="display:inline" onsubmit="return confirm('{{ _('確定要刪除此選單項目嗎？子項目也會一併刪除。') }}');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit">[{{ _('刪除') }}]</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div id="menu-trellis-section" x-data="menuTreeManager()" x-init="init()">
+    <div class="trellis-toolbar">
+        <button type="button" @click="_grid && _grid.expandAll()">{{ _('全部展開') }}</button>
+        <button type="button" @click="_grid && _grid.collapseAll()">{{ _('全部收合') }}</button>
+        <a href="{{ url_for('menu.create_menu') }}"><button type="button">+ {{ _('新增選單項目') }}</button></a>
+        <span class="trellis-hint">{{ _('拖曳調整位置') }}</span>
+    </div>
+    <div id="menu-trellis"></div>
+    <div class="trellis-status">
+        <span x-show="saving">{{ _('儲存中...') }}</span>
+        <span x-show="message && !saving"
+              :class="messageType === 'success' ? 'msg-success' : 'msg-error'"
+              x-text="message"></span>
+    </div>
+</div>
 {% else %}
 <p>{{ _('尚無選單項目。') }}<a href="{{ url_for('menu.create_menu') }}">{{ _('建立第一個選單項目') }}</a></p>
 {% endif %}
@@ -196,4 +79,17 @@
     <tr><td style="background:#f59e0b;color:#111827">{{ _('黃底') }}</td><td>{{ _('外部廠商') }}</td></tr>
     <tr><td style="background:#7c3aed;color:white">{{ _('紫底') }}</td><td>{{ _('模組選單（權限由模組使用權控制）') }}</td></tr>
 </table>
+
+{# Window Bridge: 注入 BeakTrellis 樹狀資料 #}
+<script>
+window.__MENU_TRELLIS_DATA = {{ trellis_data_json }};
+</script>
+
+{# BeakTrellis 載入順序: model -> trellis -> renderer -> splitpane -> drag -> app #}
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/renderers/beak-tree-lines-dom.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis-splitpane.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis-drag.js') }}"></script>
+<script src="{{ url_for('static', filename='js/menu-tree.js') }}"></script>
 {% endblock %}

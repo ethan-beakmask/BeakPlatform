@@ -18,6 +18,8 @@
     --menu-ext-bg: #f59e0b;
     --menu-ext-text: #111827;
     --menu-cross-text: #fde047;
+    --menu-common-bg: #374151;
+    --menu-common-text: #e5e7eb;
     --menu-fixed-bg: #111827;
     --menu-fixed-text: #ffffff;
     --menu-module-bg: #7c3aed;
@@ -123,7 +125,10 @@ input::placeholder, textarea::placeholder {
 /* 外部廠商 */
 .bk-menubar a.menu-ext-only,
 .bk-menubar .bk-menu-trigger.menu-ext-only { background: var(--menu-ext-bg); color: var(--menu-ext-text); }
-/* 固定項目 */
+/* 跨階層基本選單 */
+.bk-menubar a.menu-common,
+.bk-menubar .bk-menu-trigger.menu-common { background: var(--menu-common-bg); color: var(--menu-common-text); }
+/* 固定項目（向下相容） */
 .bk-menubar a.menu-fixed-black,
 .bk-menubar .bk-menu-trigger.menu-fixed-black { background: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
 /* 下拉選單內項目著色 */
@@ -134,6 +139,7 @@ input::placeholder, textarea::placeholder {
 .bk-menu-dropdown-content a.menu-user-only { background: var(--menu-user-bg); color: var(--menu-user-text); }
 .bk-menu-dropdown-content a.menu-user-cross { background: var(--menu-user-bg); color: var(--menu-cross-text); }
 .bk-menu-dropdown-content a.menu-ext-only { background: var(--menu-ext-bg); color: var(--menu-ext-text); }
+.bk-menu-dropdown-content a.menu-common { background: var(--menu-common-bg); color: var(--menu-common-text); }
 .bk-menu-dropdown-content a.menu-fixed-black { background: var(--menu-fixed-bg); color: var(--menu-fixed-text); }
 
 /* ------------------------------------------

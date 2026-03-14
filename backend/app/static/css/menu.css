@@ -145,7 +145,11 @@
 .menu-ext-only { background-color: #f59e0b !important; }
 .menu-ext-only .menu-link, .menu-ext-only.sidebar-link, .menu-ext-only .sidebar-link { color: #111827 !important; }
 
-/* --- 固定項目: 黑底白字 --- */
+/* --- 跨階層基本選單 --- */
+.menu-common { background-color: var(--menu-common-bg, #374151) !important; }
+.menu-common .menu-link, .menu-common.sidebar-link, .menu-common .sidebar-link { color: var(--menu-common-text, #e5e7eb) !important; }
+
+/* --- 固定項目（向下相容） --- */
 .menu-fixed-black { background-color: #111827 !important; }
 .menu-fixed-black .menu-link, .menu-fixed-black.sidebar-link, .menu-fixed-black .sidebar-link { color: white !important; }
 
@@ -153,7 +157,8 @@
 .sidebar-header.menu-sys-only, .sidebar-header.menu-sys-cross,
 .sidebar-header.menu-org-only, .sidebar-header.menu-org-cross,
 .sidebar-header.menu-user-only, .sidebar-header.menu-user-cross,
-.sidebar-header.menu-ext-only, .sidebar-header.menu-fixed-black {
+.sidebar-header.menu-ext-only, .sidebar-header.menu-common,
+.sidebar-header.menu-fixed-black {
     padding: 8px 16px;
     margin: 0;
 }
@@ -164,4 +169,5 @@
 .sidebar-header.menu-user-only { color: white !important; }
 .sidebar-header.menu-user-cross { color: #fde047 !important; }
 .sidebar-header.menu-ext-only { color: #111827 !important; }
+.sidebar-header.menu-common { color: var(--menu-common-text, #e5e7eb) !important; }
 .sidebar-header.menu-fixed-black { color: white !important; }

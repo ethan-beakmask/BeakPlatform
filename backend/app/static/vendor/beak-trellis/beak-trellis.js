@@ -41,7 +41,8 @@ class BeakTrellis {
             onExpand: null,
             onCollapse: null,
             onRowClick: null,
-            onExpandLimited: null
+            onExpandLimited: null,
+            showExpandCollapseButtons: false
         }, options);
 
         // 建立 BeakTreeModel（純資料層）
@@ -122,6 +123,33 @@ class BeakTrellis {
                 console.warn('BeakTrellis: columns[' + i + '] (id="' + (col.id || '?') + '") 未設定 width，欄寬將由瀏覽器自動分配');
             }
         }
+    }
+
+    _appendExpandCollapseButtons(thEl) {
+        var self = this;
+        var wrap = document.createElement('span');
+        wrap.className = 'bt-ec-buttons';
+        var btnExpand = document.createElement('button');
+        btnExpand.className = 'bt-ec-btn';
+        btnExpand.type = 'button';
+        btnExpand.textContent = '+';
+        btnExpand.title = 'Expand All';
+        btnExpand.addEventListener('click', function(e) {
+            e.stopPropagation();
+            self.expandAll();
+        });
+        var btnCollapse = document.createElement('button');
+        btnCollapse.className = 'bt-ec-btn';
+        btnCollapse.type = 'button';
+        btnCollapse.textContent = '-';
+        btnCollapse.title = 'Collapse All';
+        btnCollapse.addEventListener('click', function(e) {
+            e.stopPropagation();
+            self.collapseAll();
+        });
+        wrap.appendChild(btnExpand);
+        wrap.appendChild(btnCollapse);
+        thEl.appendChild(wrap);
     }
 
     // ========== BeakTreeModel 代理方法 ==========
@@ -318,6 +346,9 @@ class BeakTrellis {
         var thTree = document.createElement('th');
         thTree.className = 'bt-th bt-th-tree';
         thTree.textContent = '';
+        if (this.options.showExpandCollapseButtons) {
+            this._appendExpandCollapseButtons(thTree);
+        }
         headerRow.appendChild(thTree);
 
         for (var i = 0; i < this.options.columns.length; i++) {
@@ -395,6 +426,11 @@ class BeakTrellis {
         var tr = document.createElement('tr');
         tr.className = 'bt-row bt-level-' + node.level;
         tr.dataset.id = node.id;
+
+        if (this.options.rowClassFn) {
+            var extraClass = this.options.rowClassFn(node);
+            if (extraClass) tr.className += ' ' + extraClass;
+        }
 
         if (this._model._checkedSet.has(node.id)) {
             tr.classList.add('bt-row-checked');

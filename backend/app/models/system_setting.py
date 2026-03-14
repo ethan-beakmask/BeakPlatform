@@ -138,12 +138,13 @@ class SystemSetting(BaseModel):
         else:
             setting = SystemSetting(
                 key=key,
-                value=str(value),
+                value='',
                 value_type=value_type,
                 description=description,
                 category=category,
                 updated_by=updated_by
             )
+            setting.set_value(value)
             db.session.add(setting)
         db.session.commit()
         return setting

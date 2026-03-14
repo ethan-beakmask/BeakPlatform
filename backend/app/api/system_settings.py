@@ -1864,6 +1864,8 @@ MENU_COLOR_DEFAULTS = {
     'menu-ext-bg': '#f59e0b',
     'menu-ext-text': '#111827',
     'menu-cross-text': '#fde047',
+    'menu-common-bg': '#374151',
+    'menu-common-text': '#e5e7eb',
     'menu-fixed-bg': '#111827',
     'menu-fixed-text': '#ffffff',
     'menu-module-bg': '#7c3aed',

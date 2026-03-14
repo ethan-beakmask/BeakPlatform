@@ -1,0 +1,139 @@
+/* menu-tree.css - 選單管理 BeakTrellis 拖曳排序 */
+
+#menu-trellis-section {
+    margin-bottom: 24px;
+}
+
+#menu-trellis-section h2 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+}
+
+#menu-trellis-section .trellis-toolbar {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#menu-trellis-section .trellis-toolbar button {
+    font-size: 12px;
+    padding: 3px 10px;
+    cursor: pointer;
+}
+
+#menu-trellis-section .trellis-hint {
+    font-size: 11px;
+    color: #888;
+}
+
+#menu-trellis {
+    height: 670px;
+    position: relative;
+    border: 1px solid #ccc;
+    background: #fff;
+    max-width: 1200px;
+}
+
+/* BeakTrellis 表頭套用 /hostconfig 的標題列配色 */
+#menu-trellis .bt-th {
+    background: var(--menu-header-bg, #f0f0f0);
+    color: var(--menu-header-text, #333);
+}
+
+/* Tree 欄寬度 */
+#menu-trellis .bt-th-tree,
+#menu-trellis .bt-td-tree {
+    width: 270px;
+    min-width: 270px;
+    max-width: 270px;
+}
+
+/* 展開/收合按鈕：預設黑字，著色行內繼承行色 */
+#menu-trellis .bt-toggle {
+    color: #111;
+}
+#menu-trellis tr[class*="menu-"] .bt-toggle {
+    color: inherit;
+}
+
+/* 權限四欄置中 */
+#menu-trellis td[data-column-id="perm_sys"],
+#menu-trellis td[data-column-id="perm_org"],
+#menu-trellis td[data-column-id="perm_emp"],
+#menu-trellis td[data-column-id="perm_ext"],
+#menu-trellis th[data-column-id="perm_sys"],
+#menu-trellis th[data-column-id="perm_org"],
+#menu-trellis th[data-column-id="perm_emp"],
+#menu-trellis th[data-column-id="perm_ext"] {
+    text-align: center;
+}
+
+/* 表格不撐滿容器 */
+#menu-trellis .bt-table {
+    width: auto;
+}
+
+/* 狀態訊息 */
+.trellis-status {
+    margin-top: 4px;
+    font-size: 12px;
+    min-height: 18px;
+}
+.trellis-status .msg-success { color: #16a34a; }
+.trellis-status .msg-error { color: #dc2626; }
+
+/* === 預設狀態（無底色行） === */
+.mt-perm-yes { color: #2e7d32; font-weight: bold; }
+.mt-perm-no { color: #ccc; }
+.mt-status-active { color: #16a34a; }
+.mt-status-inactive { color: #dc2626; }
+
+/* === 選單著色行：color 設在 tr，td 用 inherit === */
+#menu-trellis .menu-sys-only   { color: var(--menu-sys-text); }
+#menu-trellis .menu-sys-cross  { color: var(--menu-cross-text); }
+#menu-trellis .menu-org-only   { color: var(--menu-org-text); }
+#menu-trellis .menu-org-cross  { color: var(--menu-cross-text); }
+#menu-trellis .menu-user-only  { color: var(--menu-user-text); }
+#menu-trellis .menu-user-cross { color: var(--menu-cross-text); }
+#menu-trellis .menu-ext-only   { color: var(--menu-ext-text); }
+#menu-trellis .menu-common     { color: var(--menu-common-text); }
+#menu-trellis .menu-module     { color: var(--menu-module-text); }
+
+#menu-trellis .menu-sys-only td,
+#menu-trellis .menu-sys-cross td  { background: var(--menu-sys-bg); }
+#menu-trellis .menu-org-only td,
+#menu-trellis .menu-org-cross td  { background: var(--menu-org-bg); }
+#menu-trellis .menu-user-only td,
+#menu-trellis .menu-user-cross td { background: var(--menu-user-bg); }
+#menu-trellis .menu-ext-only td   { background: var(--menu-ext-bg); }
+#menu-trellis .menu-common td     { background: var(--menu-common-bg); }
+#menu-trellis .menu-module td     { background: var(--menu-module-bg); }
+
+/* 著色行內所有子元素繼承 tr 的文字色 */
+#menu-trellis tr[class*="menu-"] td,
+#menu-trellis tr[class*="menu-"] td span,
+#menu-trellis tr[class*="menu-"] td a,
+#menu-trellis tr[class*="menu-"] td code,
+#menu-trellis tr[class*="menu-"] td i {
+    color: inherit;
+}
+
+/* 著色行的權限勾選：用亮色標記 V */
+#menu-trellis tr[class*="menu-"] .mt-perm-yes { color: #4ade80; }
+#menu-trellis tr[class*="menu-"] .mt-perm-no  { color: rgba(255,255,255,0.3); }
+
+/* 著色行的連結 */
+#menu-trellis tr[class*="menu-"] td a { color: #93c5fd; }
+
+/* 著色行的 code 標籤 */
+#menu-trellis tr[class*="menu-"] td code { background: rgba(255,255,255,0.15); }
+
+/* 黃底行特殊處理：深色文字 */
+#menu-trellis .menu-ext-only .mt-perm-yes { color: #166534; }
+#menu-trellis .menu-ext-only .mt-perm-no  { color: rgba(0,0,0,0.25); }
+#menu-trellis .menu-ext-only td a         { color: #1d4ed8; }
+#menu-trellis .menu-ext-only td code      { background: rgba(0,0,0,0.1); }
+
+/* 著色行 hover */
+#menu-trellis tr[class*="menu-"]:hover td { filter: brightness(1.15); }

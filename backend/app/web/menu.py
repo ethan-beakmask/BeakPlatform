@@ -2,9 +2,11 @@
 BeakMask Menu Management Web Routes
 選單管理頁面路由
 """
+import json
 from datetime import datetime
 from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import current_user
+from markupsafe import Markup
 
 from sqlalchemy import func
 from ..security.decorators import admin_required
@@ -73,13 +75,17 @@ def list_menu():
     # 識別模組選單 (code 前綴匹配 INSTALLED_MODULES)
     module_menu_codes = _get_module_menu_code_set(flat_items)
 
+    # 建構 BeakTrellis 用的樹狀資料
+    trellis_data = _build_trellis_data(root_items, permission_matrix, module_menu_codes)
+
     return render_template(
         'pages/menu/list.html',
         menu_items=flat_items,
         permission_matrix=permission_matrix,
         module_menu_codes=module_menu_codes,
         user_types=MenuService.USER_TYPES,
-        user_type_labels=USER_TYPE_LABELS
+        user_type_labels=USER_TYPE_LABELS,
+        trellis_data_json=Markup(json.dumps(trellis_data, ensure_ascii=False))
     )
 
 
@@ -145,6 +151,74 @@ def _get_full_permission_matrix(menu_secure_codes):
         }
 
     return matrix
+
+
+def _compute_row_class(perms, title, is_module):
+    """計算選單列的 CSS class（依權限等級著色）
+
+    優先級：模組 > 跨階層基本選單(3+types) > 階層專屬
+    """
+    has_sys = perms.get('SYSTEM_ADMIN', False)
+    has_org = perms.get('ORG_ADMIN', False)
+    has_emp = perms.get('EMPLOYEE', False)
+    has_ext = perms.get('EXTERNAL', False)
+
+    if is_module:
+        return 'menu-module'
+
+    # 計算擁有幾種 user_type
+    type_count = sum([has_sys, has_org, has_emp, has_ext])
+
+    # 3+ types = 跨階層基本選單（所有人/幾乎所有人都能看的）
+    if type_count >= 3:
+        return 'menu-common'
+
+    # 1-2 types = 階層專屬
+    if has_sys:
+        return 'menu-sys-cross' if (has_org or has_emp or has_ext) else 'menu-sys-only'
+    if has_org:
+        return 'menu-org-cross' if (has_emp or has_ext) else 'menu-org-only'
+    if has_emp:
+        return 'menu-user-cross' if has_ext else 'menu-user-only'
+    if has_ext:
+        return 'menu-ext-only'
+    return ''
+
+
+def _build_trellis_data(root_items, permission_matrix, module_menu_codes):
+    """建構 BeakTrellis 用的巢狀樹狀資料"""
+    def build_node(item):
+        perms = permission_matrix.get(item.secure_code, {})
+        is_module = item.code in module_menu_codes
+        row_class = _compute_row_class(perms, item.title, is_module)
+
+        # 將 UserType enum key 轉為字串 key 供前端讀取
+        perms_str = {}
+        for ut, val in perms.items():
+            key = ut if isinstance(ut, str) else ut.name if hasattr(ut, 'name') else str(ut)
+            perms_str[key] = val
+
+        children = [c for c in item.children if not c.is_deleted]
+        children.sort(key=lambda x: x.display_order)
+
+        return {
+            'id': item.secure_code,
+            'label': item.title,
+            'expanded': True,
+            'data': {
+                'code': item.code,
+                'icon': item.icon or '',
+                'link_type': item.link_type or '',
+                'link_target': item.link_target or '',
+                'display_order': item.display_order,
+                'is_active': item.is_active,
+                'row_class': row_class,
+                'perms': perms_str,
+            },
+            'children': [build_node(c) for c in children]
+        }
+
+    return [build_node(item) for item in root_items]
 
 
 @menu_web_bp.route('/create', methods=['GET', 'POST'])
