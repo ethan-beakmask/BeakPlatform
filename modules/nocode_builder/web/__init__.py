@@ -7,7 +7,6 @@ import logging
 from flask import Blueprint, render_template, request, abort
 from flask_login import current_user
 
-from app.security.decorators import login_required as security_login_required
 from app.security.decorators import module_access_required
 
 logger = logging.getLogger(__name__)
@@ -21,28 +20,28 @@ web_bp = Blueprint(
 
 
 @web_bp.route('/')
-@security_login_required
+@module_access_required('nocode_builder')
 def index():
     """視圖管理首頁"""
     return render_template('modules/nocode_builder/view_list.html')
 
 
 @web_bp.route('/views/new')
-@security_login_required
+@module_access_required('nocode_builder')
 def view_new():
     """建立視圖"""
     return render_template('modules/nocode_builder/view_config.html', secure_code=None)
 
 
 @web_bp.route('/views/<secure_code>/config')
-@security_login_required
+@module_access_required('nocode_builder')
 def view_config(secure_code):
     """編輯視圖配置"""
     return render_template('modules/nocode_builder/view_config.html', secure_code=secure_code)
 
 
 @web_bp.route('/views/<secure_code>')
-@security_login_required
+@module_access_required('nocode_builder', False)
 def view_browse(secure_code):
     """資料瀏覽/操作"""
     return render_template('modules/nocode_builder/view_browse.html', secure_code=secure_code)
@@ -63,7 +62,7 @@ def lab_edit(secure_code):
 
 
 @web_bp.route('/pages/<secure_code>')
-@security_login_required
+@module_access_required('nocode_builder', False)
 def page_view(secure_code):
     """Web Builder - 頁面檢視（用戶模式）"""
     # 子系統 context: ?sub=<sub_sc>&ssp=<ssp_sc>
@@ -83,7 +82,7 @@ def page_view(secure_code):
 
 
 @web_bp.route('/sub-systems/<secure_code>/portal')
-@security_login_required
+@module_access_required('nocode_builder', False)
 def sub_system_portal(secure_code):
     """子系統入口導航頁"""
     from ..models import DcSubSystem
@@ -120,14 +119,14 @@ def sub_system_portal(secure_code):
 
 
 @web_bp.route('/views/<secure_code>/rows/new')
-@security_login_required
+@module_access_required('nocode_builder', False)
 def row_create(secure_code):
     """新增資料（全頁面）"""
     return render_template('modules/nocode_builder/row_form.html', secure_code=secure_code, row_id=None)
 
 
 @web_bp.route('/views/<secure_code>/rows/<row_id>/edit')
-@security_login_required
+@module_access_required('nocode_builder', False)
 def row_edit(secure_code, row_id):
     """編輯資料（全頁面）"""
     return render_template('modules/nocode_builder/row_form.html', secure_code=secure_code, row_id=row_id)
@@ -138,7 +137,7 @@ def row_edit(secure_code, row_id):
 # =============================================================================
 
 @web_bp.route('/lookup')
-@security_login_required
+@module_access_required('nocode_builder')
 def lookup_manager():
     """選項清單管理"""
     return render_template('modules/nocode_builder/lookup_manager.html')

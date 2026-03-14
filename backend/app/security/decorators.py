@@ -112,17 +112,24 @@ def system_admin_required(f):
     return decorated_function
 
 
-def module_access_required(module_code: str):
+def module_access_required(module_code: str, check_acl: bool = True):
     """
     模組使用權路由檢查裝飾器。
 
-    檢查當前用戶是否有權存取指定模組。
-    系統管理員/企業管理員自動放行。
+    檢查順序：
+    1. 登入 + 帳號啟用
+    2. 系統管理員 → 自動放行（不受合約限制）
+    3. 合約驗證 → 企業須有該模組的有效合約
+    4. 企業管理員 → 放行（通過合約驗證後）
+    5. 模組 ACL 檢查（check_acl=True 時）
+
+    Args:
+        module_code: 模組代碼 (如 'form_workflow', 'nocode_builder')
+        check_acl: 是否檢查模組 ACL（終端用戶頁面可設 False，僅驗合約）
 
     Usage:
-        @module_access_required('nocode_builder')
-        def my_route():
-            ...
+        @module_access_required('nocode_builder')           # 合約 + ACL
+        @module_access_required('form_workflow', False)      # 僅合約
     """
     def decorator(f):
         f._module_access_required = module_code
@@ -135,15 +142,25 @@ def module_access_required(module_code: str):
             if not current_user.is_active:
                 abort(403, description="Account is disabled")
 
-            # 系統管理員/企業管理員自動放行
-            if getattr(current_user, 'is_system_admin', False) or getattr(current_user, 'is_org_admin', False):
+            # 系統管理員自動放行（不受合約限制）
+            if getattr(current_user, 'is_system_admin', False):
                 g.current_org_secure_code = current_user.org_secure_code
                 return f(*args, **kwargs)
 
-            # 一般用戶: 檢查模組使用權
+            # 合約驗證（企業管理員與一般用戶皆須通過）
             from ..services.module_access_service import ModuleAccessService
-            if not ModuleAccessService.check_user_access(current_user, module_code):
-                abort(403, description=f"No access to module: {module_code}")
+            if not ModuleAccessService.check_module_contract(current_user, module_code):
+                abort(403, description=f"No contract for module: {module_code}")
+
+            # 企業管理員放行（已通過合約驗證）
+            if getattr(current_user, 'is_org_admin', False):
+                g.current_org_secure_code = current_user.org_secure_code
+                return f(*args, **kwargs)
+
+            # 一般用戶: 檢查模組 ACL（若啟用）
+            if check_acl:
+                if not ModuleAccessService.check_user_access(current_user, module_code):
+                    abort(403, description=f"No access to module: {module_code}")
 
             g.current_org_secure_code = current_user.org_secure_code
             return f(*args, **kwargs)

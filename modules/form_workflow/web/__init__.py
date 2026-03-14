@@ -6,7 +6,7 @@ FormWorkflow Module - Web Routes
 """
 from flask import Blueprint, render_template, redirect, url_for, request
 
-from app.security.decorators import login_required as security_login_required
+from app.security.decorators import module_access_required
 from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
@@ -24,7 +24,7 @@ web_bp = Blueprint(
 # =============================================================================
 
 @web_bp.route('/')
-@security_login_required
+@module_access_required('form_workflow', False)
 def index():
     """表單流程首頁 - 重導到表單中心"""
     return redirect(url_for('form_workflow_web.center'))
@@ -36,6 +36,7 @@ def index():
 
 @web_bp.route('/templates')
 @web_bp.route('/templates/')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.template.view')
 def templates():
     """表單模板列表"""
@@ -43,6 +44,7 @@ def templates():
 
 
 @web_bp.route('/templates/new')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.template.create')
 def template_new():
     """建立表單模板（跳轉到列表頁，使用 Modal）"""
@@ -50,6 +52,7 @@ def template_new():
 
 
 @web_bp.route('/templates/<secure_code>')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.template.view')
 def template_detail(secure_code):
     """表單設計器（重定向到查詢參數格式）"""
@@ -62,6 +65,7 @@ def template_detail(secure_code):
 # =============================================================================
 
 @web_bp.route('/templates/<secure_code>/spec')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.template.view')
 def template_spec(secure_code):
     """欄位規格編輯器（由 spec_formulate 模組提供）"""
@@ -77,6 +81,7 @@ def template_spec(secure_code):
 
 @web_bp.route('/workflows')
 @web_bp.route('/workflows/')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.view')
 def workflows():
     """工作流列表"""
@@ -84,6 +89,7 @@ def workflows():
 
 
 @web_bp.route('/workflows/new')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.create')
 def workflow_new():
     """建立工作流（跳轉到列表頁，使用 Modal）"""
@@ -91,6 +97,7 @@ def workflow_new():
 
 
 @web_bp.route('/workflows/<secure_code>')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.view')
 def workflow_detail(secure_code):
     """工作流設計器（重定向到查詢參數格式）"""
@@ -99,6 +106,7 @@ def workflow_detail(secure_code):
 
 
 @web_bp.route('/workflows/<secure_code>/tree')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.view')
 def workflow_tree(secure_code):
     """工作流樹系圖（獨立分頁）"""
@@ -112,14 +120,14 @@ def workflow_tree(secure_code):
 @web_bp.route('/instances')
 @web_bp.route('/my')
 @web_bp.route('/my/')
-@security_login_required
+@module_access_required('form_workflow', False)
 def instances():
     """我的表單列表"""
     return render_template('modules/form_workflow/instance_list.html')
 
 
 @web_bp.route('/instances/<secure_code>')
-@security_login_required
+@module_access_required('form_workflow', False)
 def instance_detail(secure_code):
     """表單實例詳情（跳轉到列表頁）"""
     return redirect(url_for('form_workflow_web.instances'))
@@ -130,6 +138,7 @@ def instance_detail(secure_code):
 # =============================================================================
 
 @web_bp.route('/mappings')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.manage')
 def mappings():
     """配對管理頁面"""
@@ -141,7 +150,7 @@ def mappings():
 # =============================================================================
 
 @web_bp.route('/center')
-@security_login_required
+@module_access_required('form_workflow', False)
 def center():
     """表單中心頁面"""
     # 取得用戶有效時區：個人設定 > 企業設定 > Asia/Taipei
@@ -170,7 +179,7 @@ def center():
 
 @web_bp.route('/pending')
 @web_bp.route('/pending/')
-@security_login_required
+@module_access_required('form_workflow', False)
 def pending():
     """待簽核任務列表"""
     return render_template('modules/form_workflow/pending_list.html')
@@ -181,6 +190,7 @@ def pending():
 # =============================================================================
 
 @web_bp.route('/form-themes')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.admin')
 def form_themes():
     """表單風格主題管理頁面"""
@@ -192,6 +202,7 @@ def form_themes():
 # =============================================================================
 
 @web_bp.route('/categories')
+@module_access_required('form_workflow', False)
 @require_permission('form_workflow.admin')
 def categories():
     """分類管理頁面"""

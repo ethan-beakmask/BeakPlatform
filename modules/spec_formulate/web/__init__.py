@@ -4,7 +4,7 @@ Spec Formulate Module - Web Routes
 """
 from flask import Blueprint, render_template
 
-from app.security.decorators import login_required as security_login_required
+from app.security.decorators import module_access_required
 
 web_bp = Blueprint(
     'spec_formulate_web',
@@ -15,14 +15,14 @@ web_bp = Blueprint(
 
 
 @web_bp.route('/')
-@security_login_required
+@module_access_required('spec_formulate')
 def data_specs():
     """資料表規格管理"""
     return render_template('modules/spec_formulate/data_spec_list.html')
 
 
 @web_bp.route('/new')
-@security_login_required
+@module_access_required('spec_formulate')
 def data_spec_new():
     """獨立規格編輯器（新建）"""
     return render_template(
@@ -33,7 +33,7 @@ def data_spec_new():
 
 
 @web_bp.route('/<spec_sc>/edit')
-@security_login_required
+@module_access_required('spec_formulate')
 def data_spec_edit(spec_sc):
     """獨立規格編輯器（編輯）"""
     return render_template(
@@ -45,7 +45,7 @@ def data_spec_edit(spec_sc):
 
 
 @web_bp.route('/<form_template_sc>/sync')
-@security_login_required
+@module_access_required('spec_formulate')
 def data_spec_sync(form_template_sc):
     """同步中控台"""
     return render_template(

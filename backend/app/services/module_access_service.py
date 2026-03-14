@@ -7,8 +7,9 @@ BeakMask Module Access Service
 
 向下相容: 某模組在某企業沒有任何 ACL 記錄 = 不限制（所有人可用）
 """
+import json
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Set, Dict, Any, List, Tuple, Optional
 
 from ..models.module_access_control import ModuleAccessControl, TargetType
@@ -201,6 +202,56 @@ class ModuleAccessService:
         record.is_deleted = True
         record.deleted_at = datetime.utcnow()
         return True
+
+    # ========================================
+    # 合約驗證
+    # ========================================
+
+    @classmethod
+    def check_module_contract(cls, user, module_code: str) -> bool:
+        """
+        檢查用戶企業是否擁有指定模組的有效合約
+
+        系統企業 (system.local) 不受合約限制。
+
+        Args:
+            user: 當前用戶
+            module_code: 模組代碼 (如 'form_workflow')
+
+        Returns:
+            True = 有合約授權, False = 無合約
+        """
+        from ..models.contract import Contract, ContractStatus
+        from ..constants import SYSTEM_ORG_CODE
+
+        org_sc = getattr(user, 'org_secure_code', None)
+        if not org_sc:
+            return False
+
+        # 系統企業不受合約限制
+        if org_sc == SYSTEM_ORG_CODE:
+            return True
+
+        today = date.today()
+
+        contracts = Contract.query.filter(
+            Contract.org_secure_code == org_sc,
+            Contract.status == ContractStatus.ACTIVE,
+            Contract.start_date <= today,
+            Contract.end_date >= today,
+            Contract.is_deleted == False
+        ).all()
+
+        for contract in contracts:
+            if contract.modules_config:
+                try:
+                    modules = json.loads(contract.modules_config)
+                    if isinstance(modules, list) and module_code in modules:
+                        return True
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        return False
 
     # ========================================
     # 內部方法
