@@ -16,7 +16,7 @@
 
 ### 合約授權 (Layer 0)
 
-系統管理員透過合約設定企業可使用的模組。`Contract.modules_config` 為 JSON 陣列，如 `["data_crud", "form_workflow"]`。
+系統管理員透過合約設定企業可使用的模組。`Contract.modules_config` 為 JSON 陣列，如 `["nocode_builder", "form_workflow"]`。
 
 選單過濾鏈中 `_filter_by_contract()` 負責此層。
 
@@ -28,7 +28,7 @@
 
 | 欄位 | 說明 |
 |------|------|
-| `module_code` | 模組代碼 (如 `data_crud`) |
+| `module_code` | 模組代碼 (如 `nocode_builder`) |
 | `target_type` | ROLE / DEPARTMENT / GROUP / ACCOUNT |
 | `target_secure_code` | 目標的 secure_code |
 | `org_secure_code` | 企業識別碼 (租戶隔離) |
@@ -79,18 +79,18 @@ _build_tree() (建構樹)
 
 | 用途 | URL | 權限 | status 限制 |
 |------|-----|------|-------------|
-| 設計器 (新) | `/data-crud/lab` | login_required | 無 |
-| 設計器 (編輯) | `/data-crud/lab/<sc>` | login_required | 無 |
-| 測試預覽 | `/data-crud/pages/<sc>` | login_required | 無 |
+| 設計器 (新) | `/nocode-builder/lab` | login_required | 無 |
+| 設計器 (編輯) | `/nocode-builder/lab/<sc>` | login_required | 無 |
+| 測試預覽 | `/nocode-builder/pages/<sc>` | login_required | 無 |
 | **上線版** | `/p/<sc>` | login_required | **published only** |
-| 子系統 Portal | `/data-crud/sub-systems/<sc>/portal` | login_required + 成員 | 無 |
-| 子系統管理 | `/data-crud/sub-systems/<sc>/config` | login_required | 無 |
+| 子系統 Portal | `/nocode-builder/sub-systems/<sc>/portal` | login_required + 成員 | 無 |
+| 子系統管理 | `/nocode-builder/sub-systems/<sc>/config` | login_required | 無 |
 
 ### 發布流程
 
 1. 在設計器中建立/編輯頁面
-2. 儲存 (POST/PUT `/api/data-crud/pages`)
-3. 點擊「發布」 (PATCH `/api/data-crud/pages/<sc>/publish`)
+2. 儲存 (POST/PUT `/api/nocode-builder/pages`)
+3. 點擊「發布」 (PATCH `/api/nocode-builder/pages/<sc>/publish`)
 4. 頁面 status 變為 `published`
 5. `/p/<sc>` 變為可存取
 6. 可透過「取消發布」 (PATCH `.../unpublish`) 回到 draft
@@ -135,7 +135,7 @@ Blueprint: `module_access_bp`, prefix `/api/module-access`
 
 ### Page Layout API
 
-Blueprint: `data_crud_api`, prefix `/api/data-crud`
+Blueprint: `nocode_builder_api`, prefix `/api/data-crud`
 
 | 端點 | 方法 | 權限 | 說明 |
 |------|------|------|------|
@@ -149,7 +149,7 @@ Blueprint: `data_crud_api`, prefix `/api/data-crud`
 
 ### Sub System API
 
-Blueprint: `sub_system_api`, prefix `/api/data-crud/sub-systems`
+Blueprint: `sub_system_api`, prefix `/api/nocode-builder/sub-systems`
 
 | 端點 | 方法 | 權限 | 說明 |
 |------|------|------|------|
@@ -173,20 +173,20 @@ Blueprint: `sub_system_api`, prefix `/api/data-crud/sub-systems`
 | `backend/app/templates/pages/admin/module_permissions.html` | 企業管理員模組權限頁 |
 | `backend/app/templates/pages/admin/module_list.html` | 系統管理員模組清單頁 |
 
-### 模組層 (data_crud)
+### 模組層 (nocode_builder)
 
 | 路徑 | 說明 |
 |------|------|
-| `modules/data_crud/static/.../js/lab-designer.js` | 佈局設計器 (含 publish/unpublish) |
-| `modules/data_crud/static/.../js/lab-viewer.js` | 頁面檢視器 (用戶模式) |
-| `modules/data_crud/static/.../js/page-context.js` | PageContext 共享狀態 |
-| `modules/data_crud/static/.../js/datalist-widget.js` | 資料清單元件 |
-| `modules/data_crud/static/.../js/sub-system-portal.js` | 子系統 Portal |
-| `modules/data_crud/static/.../js/sub-system-list.js` | 子系統列表管理 |
-| `modules/data_crud/static/.../js/sub-system-config.js` | 子系統配置 |
-| `modules/data_crud/static/.../css/datalist-widget.css` | 元件 + 設計器樣式 |
-| `modules/data_crud/templates/.../lab.html` | 設計器頁面 |
-| `modules/data_crud/templates/.../lab_view.html` | 預覽/上線版頁面 |
+| `modules/nocode_builder/static/.../js/lab-designer.js` | 佈局設計器 (含 publish/unpublish) |
+| `modules/nocode_builder/static/.../js/lab-viewer.js` | 頁面檢視器 (用戶模式) |
+| `modules/nocode_builder/static/.../js/page-context.js` | PageContext 共享狀態 |
+| `modules/nocode_builder/static/.../js/datalist-widget.js` | 資料清單元件 |
+| `modules/nocode_builder/static/.../js/sub-system-portal.js` | 子系統 Portal |
+| `modules/nocode_builder/static/.../js/sub-system-list.js` | 子系統列表管理 |
+| `modules/nocode_builder/static/.../js/sub-system-config.js` | 子系統配置 |
+| `modules/nocode_builder/static/.../css/datalist-widget.css` | 元件 + 設計器樣式 |
+| `modules/nocode_builder/templates/.../lab.html` | 設計器頁面 |
+| `modules/nocode_builder/templates/.../lab_view.html` | 預覽/上線版頁面 |
 
 ### Vendor
 
@@ -201,8 +201,8 @@ Blueprint: `sub_system_api`, prefix `/api/data-crud/sub-systems`
 | 檔案 | 說明 |
 |------|------|
 | `scripts/migrations/031_module_access_control.sql` | 模組使用權控制表 |
-| `modules/data_crud/migrations/004_page_layout_status.sql` | 頁面 status 欄位 |
+| `modules/nocode_builder/migrations/004_page_layout_status.sql` | 頁面 status 欄位 |
 
 ---
 
-*最後更新: 2026-03-01*
+*最後更新: 2026-03-14 (data_crud → nocode_builder 正名化)*

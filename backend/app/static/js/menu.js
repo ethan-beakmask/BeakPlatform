@@ -93,7 +93,7 @@ function menuComponent() {
                 var childrenHtml = item.children.map(function(child) { return this.renderNavbarItem(child); }.bind(this)).join('');
                 return '<li class="menu-item has-submenu ' + isActive + ' ' + colorClass + '">' +
                     '<span class="menu-link" @click="toggleExpand(\'' + item.id + '\')">' +
-                        (item.icon ? item.icon + ' ' : '') + this.escapeHtml(item.title) +
+                        (item.icon ? '<i class="' + this.escapeHtml(item.icon) + '"></i> ' : '') + this.escapeHtml(item.title) +
                         '<span class="submenu-arrow">&#9662;</span>' +
                     '</span>' +
                     '<ul class="submenu" x-show="isExpanded(\'' + item.id + '\')" x-cloak>' +
@@ -104,7 +104,7 @@ function menuComponent() {
                 var href = item.href || '#';
                 return '<li class="menu-item ' + isActive + ' ' + colorClass + '">' +
                     '<a href="' + href + '" class="menu-link"' + target + '>' +
-                        (item.icon ? item.icon + ' ' : '') + this.escapeHtml(item.title) +
+                        (item.icon ? '<i class="' + this.escapeHtml(item.icon) + '"></i> ' : '') + this.escapeHtml(item.title) +
                     '</a>' +
                 '</li>';
             }
@@ -120,7 +120,7 @@ function menuComponent() {
 
             if (item.link_type === 'header') {
                 return '<div class="sidebar-header ' + colorClass + '" style="margin-left: ' + indent + 'px;">' +
-                    (item.icon ? item.icon + ' ' : '') + this.escapeHtml(item.title) + '</div>';
+                    (item.icon ? '<i class="' + this.escapeHtml(item.icon) + '"></i> ' : '') + this.escapeHtml(item.title) + '</div>';
             }
 
             var hasChildren = item.children && item.children.length > 0;
@@ -131,13 +131,13 @@ function menuComponent() {
 
             if (hasChildren) {
                 html += '<div class="sidebar-link expandable" @click="toggleExpand(\'' + item.id + '\')">' +
-                    '<span>' + (item.icon ? item.icon + ' ' : '') + this.escapeHtml(item.title) + '</span>' +
+                    '<span>' + (item.icon ? '<i class="' + this.escapeHtml(item.icon) + '"></i> ' : '') + this.escapeHtml(item.title) + '</span>' +
                     '<span class="expand-icon">' + (this.isExpanded(item.id) ? '-' : '+') + '</span>' +
                 '</div>';
             } else {
                 var href = item.href || '#';
                 html += '<a href="' + href + '" class="sidebar-link"' + target + '>' +
-                    (item.icon ? item.icon + ' ' : '') + this.escapeHtml(item.title) + '</a>';
+                    (item.icon ? '<i class="' + this.escapeHtml(item.icon) + '"></i> ' : '') + this.escapeHtml(item.title) + '</a>';
             }
 
             html += '</div>';

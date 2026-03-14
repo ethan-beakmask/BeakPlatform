@@ -50,7 +50,7 @@
 
                 {% if item.children %}
                 <div class="bk-menu-dropdown">
-                    <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }} &#9662;</span>
+                    <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }} &#9662;</span>
                     <div class="bk-menu-dropdown-content">
                         {% for child in item.children %}
                         {% set child_class = _menu_color_class(child) %}
@@ -62,7 +62,7 @@
                 </div>
                 {% else %}
                 <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
-                    {% if item.icon %}{{ item.icon }} {% endif %}{{ item.title }}
+                    {% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }}
                 </a>
                 {% endif %}
             {% else %}

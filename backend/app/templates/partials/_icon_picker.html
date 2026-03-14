@@ -1,0 +1,38 @@
+{# Icon Picker 模態框 - 搭配 icon-picker.js 使用 #}
+<div x-show="_ip_show" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;" x-cloak>
+    <div style="background:#fff;border-radius:8px;width:640px;max-height:520px;display:flex;flex-direction:column;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:bold;font-size:15px;">{{ _('選擇圖示') }}</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" x-model="_ip_search" placeholder="{{ _('搜尋...') }}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;width:140px;">
+                <button type="button" @click="ipClear()" style="padding:4px 10px;font-size:13px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;">{{ _('清除') }}</button>
+                <button type="button" @click="ipClose()" style="padding:4px 10px;font-size:13px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;">X</button>
+            </div>
+        </div>
+        <div style="padding:8px 16px;border-bottom:1px solid #e5e7eb;display:flex;gap:4px;flex-wrap:wrap;">
+            <template x-for="cat in ipGetCategories()" :key="cat.name">
+                <button type="button"
+                    @click="ipSetCategory(cat.name)"
+                    :style="'padding:4px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;' + (_ip_activeCategory === cat.name ? 'background:#1d4ed8;color:#fff;border-color:#1d4ed8;' : 'background:#f9fafb;')"
+                    x-text="cat.label">
+                </button>
+            </template>
+        </div>
+        <div style="padding:12px 16px;overflow-y:auto;flex:1;">
+            <div style="display:grid;grid-template-columns:repeat(8, 1fr);gap:6px;">
+                <template x-for="ic in ipGetIcons()" :key="ic">
+                    <div @click="ipSelect(ic)"
+                        :style="'display:flex;flex-direction:column;align-items:center;padding:8px 2px;border-radius:6px;cursor:pointer;border:2px solid ' + (_ip_selectedIcon === ic ? '#1d4ed8' : 'transparent') + ';' + (_ip_selectedIcon === ic ? 'background:#eff6ff;' : '')"
+                        @mouseenter="$el.style.background = _ip_selectedIcon === ic ? '#eff6ff' : '#f3f4f6'"
+                        @mouseleave="$el.style.background = _ip_selectedIcon === ic ? '#eff6ff' : ''">
+                        <i :class="ic" style="font-size:22px;color:#374151;"></i>
+                        <span x-text="ic.replace('ri-','').replace('-line','')" style="font-size:9px;color:#9ca3af;margin-top:3px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;"></span>
+                    </div>
+                </template>
+            </div>
+            <div x-show="ipGetIcons().length === 0" style="text-align:center;padding:20px;color:#9ca3af;">
+                {{ _('無符合的圖示') }}
+            </div>
+        </div>
+    </div>
+</div>

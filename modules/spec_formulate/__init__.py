@@ -20,7 +20,7 @@ MODULE_INFO = {
         {
             'code': 'spec_formulate',
             'name': '規格制定模組',
-            'icon': 'S',
+            'icon': 'ri-file-list-line',
             'parent': None,
             'sort_order': 150,
             'user_types': ['ORG_ADMIN'],

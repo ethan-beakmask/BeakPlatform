@@ -17,7 +17,7 @@ MODULE_INFO = {
         {
             'code': 'nocode_builder',
             'name': '子系統開發模組',
-            'icon': 'database-2',
+            'icon': 'ri-database-2-line',
             'parent': None,
             'sort_order': 200,
             'user_types': ['ORG_ADMIN'],

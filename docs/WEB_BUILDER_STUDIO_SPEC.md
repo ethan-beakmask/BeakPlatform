@@ -73,7 +73,7 @@ layout_mode = Column(String(20), default='grid', nullable=False)
 ### 3.1 URL
 
 ```
-/data-crud/studio/<sub_system_sc>
+/nocode-builder/studio/<sub_system_sc>
 ```
 
 ### 3.2 佈局結構
@@ -180,7 +180,7 @@ layout_mode = Column(String(20), default='grid', nullable=False)
 
 ### 4.1 「我的開發案」列表頁
 
-**URL**: `/data-crud/my-projects`
+**URL**: `/nocode-builder/my-projects`
 
 顯示當前用戶的所有開發案（developers 名單包含自己的 + 系統管理員/企業管理員看全部）。
 
@@ -212,15 +212,15 @@ layout_mode = Column(String(20), default='grid', nullable=False)
 
 | 方法 | 路由 | 說明 |
 |------|------|------|
-| GET | `/api/data-crud/projects` | 我的開發案列表 |
-| POST | `/api/data-crud/projects` | 建立開發案 |
-| PUT | `/api/data-crud/projects/<sc>` | 更新開發案資訊 |
-| DELETE | `/api/data-crud/projects/<sc>` | 刪除開發案（軟刪除） |
-| POST | `/api/data-crud/projects/<sc>/publish` | 上線 |
-| POST | `/api/data-crud/projects/<sc>/unpublish` | 下線 |
-| GET | `/api/data-crud/projects/<sc>/developers` | 開發者名單 |
-| POST | `/api/data-crud/projects/<sc>/developers` | 新增開發者 |
-| DELETE | `/api/data-crud/projects/<sc>/developers/<user_sc>` | 移除開發者 |
+| GET | `/api/nocode-builder/projects` | 我的開發案列表 |
+| POST | `/api/nocode-builder/projects` | 建立開發案 |
+| PUT | `/api/nocode-builder/projects/<sc>` | 更新開發案資訊 |
+| DELETE | `/api/nocode-builder/projects/<sc>` | 刪除開發案（軟刪除） |
+| POST | `/api/nocode-builder/projects/<sc>/publish` | 上線 |
+| POST | `/api/nocode-builder/projects/<sc>/unpublish` | 下線 |
+| GET | `/api/nocode-builder/projects/<sc>/developers` | 開發者名單 |
+| POST | `/api/nocode-builder/projects/<sc>/developers` | 新增開發者 |
+| DELETE | `/api/nocode-builder/projects/<sc>/developers/<user_sc>` | 移除開發者 |
 
 ---
 
@@ -236,7 +236,7 @@ row-form.js 在 POST/PUT 資料時沒有傳遞 `X-SiteMap-Node` / `X-SubSystem-S
 **datalist-widget.js 開新分頁時，URL 帶上 context 參數：**
 ```javascript
 // datalist-widget.js 中
-btn.href = '/data-crud/views/' + viewCode + '/rows/' + rowId + '/edit'
+btn.href = '/nocode-builder/views/' + viewCode + '/rows/' + rowId + '/edit'
     + '?_ss=' + encodeURIComponent(this.config._subSystemSc || '')
     + '&_smn=' + encodeURIComponent(this.config._siteMapNodeSc || '');
 ```
@@ -255,7 +255,7 @@ headers['X-SiteMap-Node'] = siteMapNodeSc;
 
 **新增資料同理：**
 ```javascript
-btn.href = '/data-crud/views/' + viewCode + '/rows/new'
+btn.href = '/nocode-builder/views/' + viewCode + '/rows/new'
     + '?_ss=' + ... + '&_smn=' + ...;
 ```
 
@@ -290,7 +290,7 @@ Portal V2 需要支援兩種 layout_json 格式：
 
 **前端：**
 - 新增 `my_projects.html` + `my-projects.js`（我的開發案列表）
-- 新增 Web Route: `/data-crud/my-projects`
+- 新增 Web Route: `/nocode-builder/my-projects`
 
 **驗證：**
 - 建立開發案 → 只有開發者可見
@@ -303,7 +303,7 @@ Portal V2 需要支援兩種 layout_json 格式：
 - 新增 `studio.js`（整合邏輯）
 - 新增 `grid-layout-editor.js`（Grid 宮格編輯器）
 - 新增 `studio.css`（設計器樣式）
-- 新增 Web Route: `/data-crud/studio/<sub_system_sc>`
+- 新增 Web Route: `/nocode-builder/studio/<sub_system_sc>`
 
 **復用：**
 - Site Map 樹操作邏輯（從 site-map-editor.js 抽取）
@@ -358,26 +358,26 @@ Studio 設定頁面顯示子系統 secure_code、名稱、圖示等，方便複�
 
 | 檔案 | 用途 |
 |------|------|
-| `modules/data_crud/migrations/006_sub_system_status.sql` | DB 遷移 |
-| `modules/data_crud/services/project_service.py` | 開發案管理服務 |
-| `modules/data_crud/api/project_api.py` | 開發案 API |
-| `modules/data_crud/templates/modules/data_crud/my_projects.html` | 我的開發案列表 |
-| `modules/data_crud/static/modules/data_crud/js/my-projects.js` | 列表邏輯 |
-| `modules/data_crud/templates/modules/data_crud/studio.html` | 統一設計器頁面 |
-| `modules/data_crud/static/modules/data_crud/js/studio.js` | 設計器邏輯 |
-| `modules/data_crud/static/modules/data_crud/js/grid-layout-editor.js` | Grid 宮格編輯器 |
-| `modules/data_crud/static/modules/data_crud/css/studio.css` | 設計器樣式 |
+| `modules/nocode_builder/migrations/006_sub_system_status.sql` | DB 遷移 |
+| `modules/nocode_builder/services/project_service.py` | 開發案管理服務 |
+| `modules/nocode_builder/api/project_api.py` | 開發案 API |
+| `modules/nocode_builder/templates/modules/nocode_builder/my_projects.html` | 我的開發案列表 |
+| `modules/nocode_builder/static/modules/nocode_builder/js/my-projects.js` | 列表邏輯 |
+| `modules/nocode_builder/templates/modules/nocode_builder/studio.html` | 統一設計器頁面 |
+| `modules/nocode_builder/static/modules/nocode_builder/js/studio.js` | 設計器邏輯 |
+| `modules/nocode_builder/static/modules/nocode_builder/js/grid-layout-editor.js` | Grid 宮格編輯器 |
+| `modules/nocode_builder/static/modules/nocode_builder/css/studio.css` | 設計器樣式 |
 
 ### 修改檔案
 
 | 檔案 | 變更 |
 |------|------|
-| `modules/data_crud/models/sub_system.py` | 加 status/developers/layout_mode 欄位 |
-| `modules/data_crud/web/__init__.py` | 加 /my-projects, /studio 路由 |
-| `modules/data_crud/api/__init__.py` | 註冊 project_api blueprint |
-| `modules/data_crud/static/modules/data_crud/js/datalist-widget.js` | 開新分頁帶 context 參數 |
-| `modules/data_crud/static/modules/data_crud/js/row-form.js` | 讀取 context 參數附加 headers |
-| `modules/data_crud/static/modules/data_crud/js/site-map-portal.js` | 支援 v3 Grid 佈局渲染 |
+| `modules/nocode_builder/models/sub_system.py` | 加 status/developers/layout_mode 欄位 |
+| `modules/nocode_builder/web/__init__.py` | 加 /my-projects, /studio 路由 |
+| `modules/nocode_builder/api/__init__.py` | 註冊 project_api blueprint |
+| `modules/nocode_builder/static/modules/nocode_builder/js/datalist-widget.js` | 開新分頁帶 context 參數 |
+| `modules/nocode_builder/static/modules/nocode_builder/js/row-form.js` | 讀取 context 參數附加 headers |
+| `modules/nocode_builder/static/modules/nocode_builder/js/site-map-portal.js` | 支援 v3 Grid 佈局渲染 |
 
 ### 不動的檔案
 

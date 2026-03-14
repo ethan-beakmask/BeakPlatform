@@ -62,8 +62,8 @@ class MenuItem(TenantBaseModel):
     title_en = Column(String(100), nullable=True)
     title_zh_cn = Column(String(100), nullable=True)
 
-    # 選單圖標 (文字符號)
-    icon = Column(String(10), nullable=True)
+    # 選單圖示 (Remix Icon class name, 如 ri-database-2-line)
+    icon = Column(String(50), nullable=True)
 
     # 連結類型
     link_type = Column(String(20), default='route', nullable=False)

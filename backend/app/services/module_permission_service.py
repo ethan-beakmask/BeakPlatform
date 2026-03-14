@@ -31,8 +31,8 @@ class ModulePermissionService:
         Args:
             module_name: 模組名稱
             permissions: 權限定義列表，每個權限為 dict:
-                - code: 權限代碼（必填，如 'sample_module.view'）
-                - name: 權限名稱（必填，如 '檢視範例模組'）
+                - code: 權限代碼（必填，如 'form_workflow.form.create'）
+                - name: 權限名稱（必填，如 '建立表單'）
                 - description: 權限描述（選填）
                 - level: 權限層級（選填，預設 MODULE）
 
@@ -209,7 +209,7 @@ class ModulePermissionService:
 
         模組權限格式：{module_name}.{resource}.{action}
         例如：
-        - sample_module.view → resource: SAMPLE_MODULE, action: VIEW
+        - nocode_builder.view → resource: NOCODE_BUILDER, action: VIEW
         - form_workflow.form.create → resource: FORM_WORKFLOW_FORM, action: CREATE
 
         Args:

@@ -142,7 +142,7 @@ python3 << 'EOF'
 import sys
 sys.path.insert(0, '..')
 from modules.form_workflow.models import *
-from modules.data_crud.models import *
+from modules.nocode_builder.models import *
 from app import create_app, db
 app = create_app()
 with app.app_context():
@@ -381,7 +381,7 @@ set -a && source /opt/BeakPlatform/.env && set +a
 python3 -c "
 import sys; sys.path.insert(0, '..')
 from modules.form_workflow.models import *
-from modules.data_crud.models import *
+from modules.nocode_builder.models import *
 from app import create_app, db
 app = create_app()
 with app.app_context():

@@ -4,6 +4,7 @@
 
 {% block head %}
 <script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/icon-picker.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -20,7 +21,8 @@
 {% endwith %}
 
 <form method="POST"
-      x-data="{...codeInputMixin('menu_item'), codeval: ''}"
+      x-data="{...codeInputMixin('menu_item'), ...iconPickerMixin(), codeval: ''}"
+      x-init="ipInit('')"
       @submit="if (!codeval.trim() && _ci_generatedCode) { codeval = _ci_generatedCode; $refs.codeField.value = _ci_generatedCode; }">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
@@ -49,10 +51,16 @@
         </tr>
         {% endfor %}
         <tr>
-            <td><label for="icon">{{ _('圖標') }}</label></td>
+            <td><label for="icon">{{ _('圖示') }}</label></td>
             <td>
-                <input type="text" id="icon" name="icon" size="10">
-                <small>{{ _('文字符號或 emoji') }}</small>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span x-show="_ip_selectedIcon" style="font-size:20px;width:28px;text-align:center;"><i :class="_ip_selectedIcon"></i></span>
+                    <input type="hidden" id="icon" name="icon" x-ref="iconField" value="">
+                    <button type="button" @click="ipOpen()" style="padding:4px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;">{{ _('選擇圖示') }}</button>
+                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" style="font-size:12px;color:#6b7280;"></span>
+                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" style="padding:2px 8px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#dc2626;">X</button>
+                </div>
+                {% include "partials/_icon_picker.html" %}
             </td>
         </tr>
         <tr>

@@ -57,7 +57,7 @@
 
 **位置**: `menu_items` code=`org_hidden_functions`
 
-**問題**: 此 header (標題: 暫時隱藏功能) 有 EMPLOYEE 和 EXTERNAL 的 MenuPermission，但其子項幾乎全部已刪除 (test, form_workflow.my_forms, form_workflow.pending, time_config 皆 is_deleted=true)，僅剩 sample_module 一個 active 子項。EMPLOYEE/EXTERNAL 會看到一個標題不明的空分區。
+**問題**: 此 header (標題: 暫時隱藏功能) 有 EMPLOYEE 和 EXTERNAL 的 MenuPermission，但其子項幾乎全部已刪除 (test, form_workflow.my_forms, form_workflow.pending, time_config 皆 is_deleted=true)，僅剩 sample_module 一個 active 子項（sample_module 已於後續清理中移除）。EMPLOYEE/EXTERNAL 會看到一個標題不明的空分區。
 
 **修正**: soft-delete EMPLOYEE/EXTERNAL 的 MenuPermission。此 header 在管理員視角仍可見 (但 SYSTEM_ADMIN/ORG_ADMIN 也沒有 MenuPermission，所以實際上也看不到，除非未來補建)。
 
@@ -69,7 +69,7 @@
 
 **位置**: `backend/app/services/module_menu_service.py:deactivate_module_menus()`
 
-**問題**: 使用 `MenuItem.code.like(f"{module_name}%")` 可能誤匹配同前綴模組。例如停用 `data` 模組會連帶停用 `data_crud` 的選單。
+**問題**: 使用 `MenuItem.code.like(f"{module_name}%")` 可能誤匹配同前綴模組。例如停用 `nocode` 模組會連帶停用 `nocode_builder` 的選單。
 
 **同一問題**: `get_module_menus()` 方法也有相同的 like 匹配問題。
 

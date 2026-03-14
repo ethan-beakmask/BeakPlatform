@@ -80,7 +80,7 @@ flask module enable/disable <name>
 |------|------|------|------|------|
 | 模板引擎 | Jinja2 | Flask 內建 | 伺服器端 HTML 渲染 | |
 | 響應式框架 | Alpine.js | 3.x | 頁面互動、元件狀態管理 | 主力框架，所有頁面使用 |
-| 表單渲染 | form.io | 4.x | 動態表單 schema 渲染與驗證 | form_workflow / data_crud 模組 |
+| 表單渲染 | form.io | 4.x | 動態表單 schema 渲染與驗證 | form_workflow / nocode_builder 模組 |
 | 佈局拖拉 | GridStack.js | 10.x | Web Builder 頁面佈局設計器 | `vendor/gridstack/` |
 | 樹/Treegrid | Wunderbaum | 0.13.0 | 樹狀結構、多欄 treegrid、拖拉排序 | `vendor/wunderbaum/`，Fancytree 繼任者，零依賴 |
 | CSS | 自建 + Bootstrap (部分) | -- | 導覽列自建 `bk-*`，內容區可用 Bootstrap | 見 CLAUDE.md CSS 規範 |
@@ -105,4 +105,4 @@ flask module enable/disable <name>
 
 ---
 
-*最後更新: 2026-03-07*
+*最後更新: 2026-03-14*

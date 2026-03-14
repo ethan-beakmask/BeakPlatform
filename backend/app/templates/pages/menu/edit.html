@@ -2,6 +2,10 @@
 
 {% block title %}{{ _('編輯選單項目') }} - BeakMask{% endblock %}
 
+{% block head %}
+<script src="{{ url_for('static', filename='js/icon-picker.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <p><a href="{{ url_for('menu.list_menu') }}">&lt; {{ _('返回選單管理') }}</a></p>
 
@@ -15,7 +19,7 @@
 {% endif %}
 {% endwith %}
 
-<form method="POST">
+<form method="POST" x-data="{...iconPickerMixin()}" x-init="ipInit('{{ item.icon or '' }}')">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
@@ -33,8 +37,17 @@
         </tr>
         {% endfor %}
         <tr>
-            <td><label for="icon">{{ _('圖標') }}</label></td>
-            <td><input type="text" id="icon" name="icon" size="10" value="{{ item.icon or '' }}"></td>
+            <td><label for="icon">{{ _('圖示') }}</label></td>
+            <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span x-show="_ip_selectedIcon" style="font-size:20px;width:28px;text-align:center;"><i :class="_ip_selectedIcon"></i></span>
+                    <input type="hidden" id="icon" name="icon" x-ref="iconField" value="{{ item.icon or '' }}">
+                    <button type="button" @click="ipOpen()" style="padding:4px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;">{{ _('選擇圖示') }}</button>
+                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" style="font-size:12px;color:#6b7280;"></span>
+                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" style="padding:2px 8px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#dc2626;">X</button>
+                </div>
+                {% include "partials/_icon_picker.html" %}
+            </td>
         </tr>
         <tr>
             <td><label for="parent_secure_code">{{ _('父選單') }}</label></td>

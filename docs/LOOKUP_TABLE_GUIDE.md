@@ -89,7 +89,7 @@ INSERT INTO lookup_items (secure_code, category_code, code, label, value, sort_o
 VALUES (
     'sc_' || substr(md5(random()::text), 1, 28),
     'INSTALLED_MODULES',
-    'data_crud',
+    'nocode_builder',
     '資料表工具',
     '{"version": "1.0.0", "description": "...", "enabled": true}',
     0,
@@ -130,7 +130,7 @@ WHERE category_code = 'INSTALLED_MODULES'
 UPDATE lookup_items
 SET value = jsonb_set(COALESCE(value, '{}'), '{version}', '"2.0.0"'),
     updated_at = NOW()
-WHERE category_code = 'INSTALLED_MODULES' AND code = 'data_crud';
+WHERE category_code = 'INSTALLED_MODULES' AND code = 'nocode_builder';
 
 -- 新增 JSONB key
 UPDATE lookup_items

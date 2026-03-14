@@ -27,7 +27,7 @@ MODULE_INFO = {
         {
             'code': 'form_workflow',
             'name': '表單流程',
-            'icon': 'F',
+            'icon': 'ri-flow-chart',
             'parent': None,
             'sort_order': 100,
             'user_types': ['ORG_ADMIN'],

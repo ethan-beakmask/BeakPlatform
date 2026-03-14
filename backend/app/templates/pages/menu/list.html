@@ -111,7 +111,7 @@
             {% set row_class = '' %}
         {% endif %}
         <tr class="{{ row_class }}">
-            <td>{{ entry.indent }}{{ entry.item.icon or '' }} {{ entry.item.title }}</td>
+            <td>{{ entry.indent }}{% if entry.item.icon %}<i class="{{ entry.item.icon }}"></i> {% endif %}{{ entry.item.title }}</td>
             {% for user_type in user_types %}
             <td>
                 {% if perms.get(user_type) %}

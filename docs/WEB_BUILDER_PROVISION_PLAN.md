@@ -46,25 +46,25 @@ D. 一般用戶
 
 | 檔案 | 路由 | 說明 |
 |------|------|------|
-| `modules/data_crud/web/__init__.py` | `/data-crud/sub-systems` | 子系統管理列表 |
-| 同上 | `/data-crud/sub-systems/<sc>/config` | 子系統配置 |
-| 同上 | `/data-crud/my-projects` | 我的開發案 |
-| 同上 | `/data-crud/studio/<sc>` | 設計器 |
-| 同上 | `/data-crud/studio-test/<sc>` | Grid 測試頁 |
-| 同上 | `/data-crud/lab` | 佈局設計器 (新) |
-| 同上 | `/data-crud/lab/<sc>` | 佈局設計器 (編輯) |
-| `modules/data_crud/api/project_api.py` | `/api/data-crud/projects*` | 全部 10 條 API |
+| `modules/nocode_builder/web/__init__.py` | `/nocode-builder/sub-systems` | 子系統管理列表 |
+| 同上 | `/nocode-builder/sub-systems/<sc>/config` | 子系統配置 |
+| 同上 | `/nocode-builder/my-projects` | 我的開發案 |
+| 同上 | `/nocode-builder/studio/<sc>` | 設計器 |
+| 同上 | `/nocode-builder/studio-test/<sc>` | Grid 測試頁 |
+| 同上 | `/nocode-builder/lab` | 佈局設計器 (新) |
+| 同上 | `/nocode-builder/lab/<sc>` | 佈局設計器 (編輯) |
+| `modules/nocode_builder/api/project_api.py` | `/api/nocode-builder/projects*` | 全部 10 條 API |
 
 - **不受限路由** (登入+內部成員檢查):
 
 | 路由 | 說明 | 內部檢查 |
 |------|------|----------|
-| `/data-crud/sub-systems/<sc>/portal` | 團員 Portal 入口 | role_type 檢查 |
-| `/data-crud/pages/<sc>` | 頁面預覽 | 無額外限制 |
-| `/api/data-crud/views/<sc>/rows*` | 資料 API | _check_sub_system_crud |
+| `/nocode-builder/sub-systems/<sc>/portal` | 團員 Portal 入口 | role_type 檢查 |
+| `/nocode-builder/pages/<sc>` | 頁面預覽 | 無額外限制 |
+| `/api/nocode-builder/views/<sc>/rows*` | 資料 API | _check_sub_system_crud |
 
 ### 3. SubSystemProvisionService
-- **檔案**: `modules/data_crud/services/provision_service.py`
+- **檔案**: `modules/nocode_builder/services/provision_service.py`
 - **觸發條件**: form_name='子系統開發申請' OR form_code='FORM_WF8AEB7774_EA31'
 - **Hook 位置**: `modules/form_workflow/services/workflow_engine.py` complete_workflow() 尾部
 - **配置內容**:
@@ -78,7 +78,7 @@ D. 一般用戶
 - **Tenant context**: 用 form_instance.org_secure_code 設定 g.current_org_secure_code
 
 ### 4. UI 變更
-- 子系統列表加「設計器」按鈕 -> `/data-crud/studio/<sc>`
+- 子系統列表加「設計器」按鈕 -> `/nocode-builder/studio/<sc>`
 - 硬寫的「訂餐系統」選單 (SkAjp3WaR6WeLmlaMn8VfG) 已軟刪除
 
 ### 5. 測試驗證
@@ -93,12 +93,12 @@ D. 一般用戶
 ## 待做項目
 
 ### A. Provision 時 menu is_active=false [小改]
-- **檔案**: `modules/data_crud/services/provision_service.py`
+- **檔案**: `modules/nocode_builder/services/provision_service.py`
 - **改動**: `_create_menu_item()` 中 `is_active=True` -> `is_active=False`
 - **效果**: 申請通過後選單存在但不可見，只有管理員在選單管理看得到
 
 ### B. Publish/Unpublish 連動 menu is_active [小改]
-- **檔案**: `modules/data_crud/services/project_service.py`
+- **檔案**: `modules/nocode_builder/services/project_service.py`
 - **改動**:
   - `publish()`: 找到子系統關聯的 menu_item，設 is_active=True
   - `unpublish()`: 設 is_active=False
@@ -154,7 +154,7 @@ organizational_units (社群, type=GROUP)
   |
 menu_items (選單)
   |-- parent_secure_code -> menu_items.secure_code (子系統 header)
-  |-- link_target: /data-crud/sub-systems/{ss_sc}/portal
+  |-- link_target: /nocode-builder/sub-systems/{ss_sc}/portal
   |-- is_active: false(draft) / true(published)
   |
 module_access_control (模組使用權)
@@ -187,4 +187,4 @@ MenuService.get_user_menu_tree(user)
 
 ---
 
-*最後更新: 2026-03-06 (A-D 全部完成)*
+*最後更新: 2026-03-14 (data_crud → nocode_builder 正名化)*

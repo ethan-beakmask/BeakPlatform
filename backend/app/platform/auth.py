@@ -240,7 +240,7 @@ def get_module_permissions(module_name: str) -> List[Dict[str, Any]]:
     Returns:
         權限列表，每個權限為 dict:
         [
-            {'code': 'sample_module.view', 'name': '檢視範例模組', 'is_active': True},
+            {'code': 'form_workflow.form.create', 'name': '建立表單', 'is_active': True},
             ...
         ]
     """
