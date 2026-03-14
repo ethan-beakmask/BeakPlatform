@@ -57,6 +57,7 @@ from .user_unit_membership import (
 from .module import Module
 from .menu_item import MenuItem
 from .menu_permission import MenuPermission
+from .menu_role_requirement import MenuRoleRequirement
 from .page import Page
 
 # 通用選項清單
@@ -162,6 +163,7 @@ __all__ = [
     'Module',
     'MenuItem',
     'MenuPermission',
+    'MenuRoleRequirement',
     'Page',
     # 系統設定
     'SystemSetting',

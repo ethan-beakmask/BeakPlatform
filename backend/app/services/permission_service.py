@@ -115,21 +115,16 @@ class PermissionService:
         if user is None:
             return PermissionCheckResult(False, 'User is None')
 
-        # 1. 系統管理員直接通過
-        if user.is_system_admin:
-            return PermissionCheckResult(
-                True,
-                'System admin has all permissions',
-                matched_role='SYSTEM_ADMIN'
-            )
+        # [SEC-02] SYSTEM_ADMIN 不享有特權，走正常 RBAC 流程
+        # 已移除: 系統管理員直接通過
 
-        # 2. 取得權限定義
+        # 1. 取得權限定義
         permission = cls._get_permission(permission_code)
         if permission is None:
             logger.warning(f"Unknown permission code: {permission_code}")
             return PermissionCheckResult(False, f'Unknown permission: {permission_code}')
 
-        # 3. 企業管理員對企業級及以下權限直接通過
+        # 2. 企業管理員對企業級及以下權限直接通過
         if user.is_org_admin and permission.permission_level != 'SYSTEM':
             return PermissionCheckResult(
                 True,
@@ -138,7 +133,7 @@ class PermissionService:
                 matched_permission=permission_code
             )
 
-        # 4. 取得用戶所有角色
+        # 3. 取得用戶所有角色
         user_roles = cls._get_user_roles(user)
         if not user_roles:
             return PermissionCheckResult(False, 'User has no roles')
@@ -258,9 +253,8 @@ class PermissionService:
         Returns:
             權限代碼集合
         """
-        if user.is_system_admin:
-            # 系統管理員有所有權限
-            return {p.code for p in Permission.query.filter_by(is_active=True).all()}
+        # [SEC-02] SYSTEM_ADMIN 不享有特權，走正常 RBAC 流程
+        # 已移除: 系統管理員有所有權限
 
         permissions: Set[str] = set()
 

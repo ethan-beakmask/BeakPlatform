@@ -118,10 +118,11 @@ def module_access_required(module_code: str, check_acl: bool = True):
 
     檢查順序：
     1. 登入 + 帳號啟用
-    2. 系統管理員 → 自動放行（不受合約限制）
-    3. 合約驗證 → 企業須有該模組的有效合約
-    4. 企業管理員 → 放行（通過合約驗證後）
-    5. 模組 ACL 檢查（check_acl=True 時）
+    2. 合約驗證 → 企業須有該模組的有效合約
+    3. 企業管理員 → 放行（通過合約驗證後）
+    4. 模組 ACL 檢查（check_acl=True 時）
+
+    注意：SYSTEM_ADMIN 不享有特權，與其他用戶相同流程。
 
     Args:
         module_code: 模組代碼 (如 'form_workflow', 'nocode_builder')
@@ -142,12 +143,10 @@ def module_access_required(module_code: str, check_acl: bool = True):
             if not current_user.is_active:
                 abort(403, description="Account is disabled")
 
-            # 系統管理員自動放行（不受合約限制）
-            if getattr(current_user, 'is_system_admin', False):
-                g.current_org_secure_code = current_user.org_secure_code
-                return f(*args, **kwargs)
+            # [SEC-02] SYSTEM_ADMIN 不享有特權，與其他用戶相同流程
+            # 已移除: 系統管理員自動放行
 
-            # 合約驗證（企業管理員與一般用戶皆須通過）
+            # 合約驗證（所有用戶皆須通過）
             from ..services.module_access_service import ModuleAccessService
             if not ModuleAccessService.check_module_contract(current_user, module_code):
                 abort(403, description=f"No contract for module: {module_code}")

@@ -120,6 +120,132 @@
 </form>
 
 <hr>
+<h2>{{ _('存取角色需求') }}</h2>
+<p><small>{{ _('設定存取此選單頁面所需的角色。無設定時沿用上方的用戶類型檢查；有設定時，用戶必須持有至少一個指定角色才能存取，否則強制登出。') }}</small></p>
+
+<div x-data="menuRoleManager()" x-init="init()">
+    <div style="display:flex;gap:24px;align-items:flex-start;">
+        <div style="flex:1;">
+            <h3 style="margin-top:0;">{{ _('已設定的角色') }}</h3>
+            <table class="data-table bordered" x-show="assignedRoles.length > 0">
+                <thead>
+                    <tr>
+                        <th>{{ _('角色名稱') }}</th>
+                        <th>{{ _('代碼') }}</th>
+                        <th>{{ _('層級') }}</th>
+                        <th style="width:60px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="r in assignedRoles" :key="r.role_secure_code">
+                        <tr>
+                            <td x-text="r.role ? r.role.name : r.role_secure_code"></td>
+                            <td><code x-text="r.role ? r.role.code : '-'"></code></td>
+                            <td x-text="r.role ? r.role.role_level || '-' : '-'" style="font-size:12px;"></td>
+                            <td><button type="button" @click="removeRole(r.role_secure_code)" style="color:#dc2626;border:none;background:none;cursor:pointer;">X</button></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            <p x-show="assignedRoles.length === 0" style="color:#6b7280;">{{ _('尚未設定角色需求（任何已登入用戶可存取）') }}</p>
+        </div>
+
+        <div style="flex:1;">
+            <h3 style="margin-top:0;">{{ _('可選角色') }}</h3>
+            <div style="max-height:300px;overflow-y:auto;border:1px solid #d1d5db;padding:8px;">
+                <template x-for="r in availableRoles" :key="r.id">
+                    <label style="display:block;margin-bottom:4px;cursor:pointer;" :style="r.selected ? 'color:#6b7280;' : ''">
+                        <input type="checkbox" :checked="r.selected" @change="toggleRole(r)" :disabled="r.selected">
+                        <span x-text="r.name"></span>
+                        <small x-text="'(' + r.code + ')'" style="color:#9ca3af;"></small>
+                    </label>
+                </template>
+                <p x-show="availableRoles.length === 0" style="color:#6b7280;font-size:13px;">{{ _('企業尚未建立角色') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:8px;">
+        <span x-show="roleMessage" x-text="roleMessage" :style="roleMessageType === 'success' ? 'color:#16a34a;' : 'color:#dc2626;'" style="font-size:13px;"></span>
+    </div>
+</div>
+
+<script>
+function menuRoleManager() {
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.content : '';
+    var menuSc = '{{ item.secure_code }}';
+
+    return {
+        assignedRoles: [],
+        availableRoles: [],
+        roleMessage: '',
+        roleMessageType: '',
+
+        init: function() {
+            this.loadRoles();
+        },
+
+        loadRoles: async function() {
+            try {
+                var resp = await fetch('/api/menu/' + menuSc + '/roles', {
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                if (!resp.ok) return;
+                var data = await resp.json();
+                this.assignedRoles = data.roles || [];
+                this.availableRoles = data.available_roles || [];
+            } catch (e) {
+                console.error('Failed to load roles:', e);
+            }
+        },
+
+        toggleRole: async function(role) {
+            if (role.selected) return;
+            // 加入角色
+            var currentScs = this.assignedRoles.map(function(r) { return r.role_secure_code; });
+            currentScs.push(role.id);
+            await this._saveRoles(currentScs);
+        },
+
+        removeRole: async function(roleSc) {
+            var currentScs = this.assignedRoles
+                .map(function(r) { return r.role_secure_code; })
+                .filter(function(sc) { return sc !== roleSc; });
+            await this._saveRoles(currentScs);
+        },
+
+        _saveRoles: async function(roleScs) {
+            try {
+                var resp = await fetch('/api/menu/' + menuSc + '/roles', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ role_secure_codes: roleScs })
+                });
+                var data = await resp.json();
+                if (resp.ok && data.success) {
+                    this.roleMessage = '角色需求已更新';
+                    this.roleMessageType = 'success';
+                    await this.loadRoles();
+                } else {
+                    this.roleMessage = '更新失敗: ' + (data.error || resp.status);
+                    this.roleMessageType = 'error';
+                }
+            } catch (e) {
+                this.roleMessage = '更新失敗: ' + e.message;
+                this.roleMessageType = 'error';
+            }
+            var self = this;
+            setTimeout(function() { self.roleMessage = ''; }, 3000);
+        }
+    };
+}
+</script>
+
+<hr>
 <h2>{{ _('刪除選單項目') }}</h2>
 <p>{{ _('刪除此選單項目將連同子項目一起刪除。') }}</p>
 <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm('{{ _('確定要刪除此選單項目嗎？子項目也會一併刪除。') }}');">

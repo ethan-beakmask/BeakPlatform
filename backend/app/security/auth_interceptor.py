@@ -116,6 +116,15 @@ def register_auth_interceptor(app: Flask) -> None:
             (current_user.organization.get_setting('locale', 'zh-TW')
              if current_user.organization else 'zh-TW')
 
+        # [SEC-01] 網頁角色守衛 (Page Role Guard)
+        # 檢查用戶是否持有存取該頁面所需的角色
+        # 失敗時強制登出 + 寫稽核日誌
+        from ..services.page_role_guard import PageRoleGuard
+        denial = PageRoleGuard.enforce(current_user)
+        if denial is not None:
+            redirect_url, status_code = denial
+            return redirect(redirect_url)
+
         # [AUTH-03] 原始管理員強制初始設定
         # 原始管理員登入後，若企業尚未建立綁定管理員，強制導向初始設定頁面
         if current_user.is_original_admin and current_user.is_active:

@@ -72,6 +72,18 @@ def page_view(secure_code):
     sub_system_context = None
     if sub_sc and ssp_sc:
         sub_system_context = _build_sub_system_context(sub_sc, ssp_sc)
+        # [SEC-01] 子系統頁面強制權限檢查
+        # context 為 None 表示用戶無權存取此子系統或頁面
+        if sub_system_context is None:
+            _deny_and_logout('nocode_page_view', secure_code, sub_sc)
+            from flask import redirect
+            return redirect('/auth/login')
+
+        # SiteMap 節點權限檢查
+        if not _check_site_map_node_access(sub_sc, secure_code, current_user):
+            _deny_and_logout('nocode_sitemap_node', secure_code, sub_sc)
+            from flask import redirect
+            return redirect('/auth/login')
 
     return render_template(
         'modules/nocode_builder/lab_view.html',
@@ -100,7 +112,10 @@ def sub_system_portal(secure_code):
 
     role_type = SubSystemService.get_user_role_type(current_user, ss)
     if role_type is None:
-        abort(403)
+        # [SEC-01] 非成員存取子系統 → 強制登出 + 稽核日誌
+        _deny_and_logout('nocode_portal', secure_code)
+        from flask import redirect
+        return redirect('/auth/login')
 
     # 有 site map 時使用 V2 Portal (樹狀選單)
     if SiteMapService.has_site_map(ss.secure_code, ss.org_secure_code):
@@ -248,3 +263,78 @@ def _build_sub_system_context(sub_sc, ssp_sc):
     except Exception as e:
         logger.warning('Failed to build sub system context: %s', e)
         return None
+
+
+def _deny_and_logout(resource_type, resource_id, sub_sc=''):
+    """
+    [SEC-01] 無權存取時：寫稽核日誌 + 強制登出
+
+    Args:
+        resource_type: 資源類型標識
+        resource_id: 資源識別碼
+        sub_sc: 子系統 secure_code (日誌用)
+    """
+    from flask_login import logout_user
+    from app.services.audit_service import AuditService
+    from app import db
+
+    details = (
+        f"User {current_user.username} (sc={current_user.secure_code}) "
+        f"denied access to {resource_type}/{resource_id} "
+        f"sub_system={sub_sc} path={request.path}"
+    )
+    logger.warning('NoCode page role guard DENIED: %s', details)
+
+    try:
+        AuditService.log(
+            action='ACCESS_DENIED',
+            resource_type=resource_type.upper(),
+            org_secure_code=current_user.org_secure_code,
+            user_secure_code=current_user.secure_code,
+            details=details,
+            request_method=request.method,
+            request_path=request.path,
+            status_code=403,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')[:500],
+        )
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error('Failed to write NoCode access denied audit log: %s', e)
+
+    try:
+        logout_user()
+    except Exception as e:
+        logger.error('Failed to logout user: %s', e)
+
+
+def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
+    """
+    [SEC-01] 檢查用戶是否有權存取 SiteMap 中對應的節點
+
+    透過 page_layout_secure_code 找到對應的 SiteMapNode，
+    再用 SiteMapService.check_node_access 檢查權限。
+
+    無對應 node 或無權限設定時放行（向下相容）。
+    """
+    from ..models.site_map_node import DcSiteMapNode
+    from ..services.site_map_service import SiteMapService
+
+    try:
+        # 透過 page_layout_secure_code 找到對應節點
+        node = DcSiteMapNode.query.filter(
+            DcSiteMapNode.sub_system_secure_code == sub_system_sc,
+            DcSiteMapNode.page_layout_secure_code == page_layout_sc,
+            DcSiteMapNode.is_deleted == False,
+            DcSiteMapNode.is_active == True,
+        ).first()
+
+        if not node:
+            return True  # 無對應節點 → 放行
+
+        return SiteMapService.check_node_access(user, node)
+
+    except Exception as e:
+        logger.warning('SiteMap node access check failed: %s', e)
+        return True  # 異常時放行，避免鎖死

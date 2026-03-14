@@ -8,7 +8,9 @@ from flask_login import current_user
 from ..security.decorators import login_required, admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.menu_service import MenuService
+from ..services.page_role_guard import PageRoleGuard
 from ..models.menu_item import MenuItem
+from ..models.role import Role
 from .. import db
 
 menu_bp = Blueprint('api_menu', __name__)
@@ -270,3 +272,79 @@ def move_menu_item(secure_code: str):
     db.session.commit()
 
     return jsonify(menu_item.to_dict(include_children=True))
+
+
+# =============================================================================
+# 選單角色需求 API (Page Role Guard)
+# =============================================================================
+
+@menu_bp.route('/<secure_code>/roles', methods=['GET'])
+@admin_required
+def get_menu_roles(secure_code: str):
+    """
+    取得選單項目的角色需求
+
+    Returns:
+        {roles: [...], available_roles: [...]}
+    """
+    menu_item = ResourceGateway.get(MenuItem, secure_code)
+
+    # 已設定的角色需求
+    requirements = PageRoleGuard.get_menu_roles(
+        menu_item.secure_code,
+        current_user.org_secure_code,
+    )
+
+    # 企業內可選的角色列表
+    available_roles = Role.query.filter(
+        Role.org_secure_code == current_user.org_secure_code,
+        Role.is_deleted == False,
+        Role.is_active == True,
+    ).order_by(Role.role_level, Role.name).all()
+
+    # 已選角色的 secure_codes
+    selected_scs = {r.role_secure_code for r in requirements}
+
+    return jsonify({
+        'roles': [r.to_dict() for r in requirements],
+        'available_roles': [
+            {
+                'id': r.secure_code,
+                'code': r.code,
+                'name': r.name,
+                'role_type': r.role_type,
+                'role_level': r.role_level,
+                'scope_type': r.scope_type,
+                'selected': r.secure_code in selected_scs,
+            }
+            for r in available_roles
+        ],
+    })
+
+
+@menu_bp.route('/<secure_code>/roles', methods=['PUT'])
+@admin_required
+def set_menu_roles(secure_code: str):
+    """
+    設定選單項目的角色需求（全量替換）
+
+    Body:
+        role_secure_codes: [str, ...]  (空陣列 = 清除角色需求)
+
+    Returns:
+        {success: true, count: int}
+    """
+    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    data = request.get_json()
+
+    role_secure_codes = data.get('role_secure_codes', [])
+
+    count = PageRoleGuard.set_menu_roles(
+        menu_item.secure_code,
+        current_user.org_secure_code,
+        role_secure_codes,
+    )
+
+    db.session.commit()
+
+    return jsonify({'success': True, 'count': count})

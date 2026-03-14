@@ -74,9 +74,14 @@ class PagePermissionService:
         if not user or not user.is_authenticated:
             return cls.ACCESS_DENIED
 
-        # 4. 系統管理員特權
-        if user.is_system_admin:
-            return cls.ACCESS_FULL
+        # [SEC-02] SYSTEM_ADMIN 不享有特權，走正常存取等級檢查
+        # 已移除: 系統管理員特權
+
+        # 4. 系統管理員等級頁面
+        if page.required_access == 'system_admin':
+            if user.is_system_admin:
+                return cls.ACCESS_FULL
+            return cls.ACCESS_DENIED
 
         # 5. 企業管理員特權
         if user.is_org_admin:
@@ -165,10 +170,12 @@ class PagePermissionService:
                 Page.is_deleted == False
             )
 
-            # 根據權限過濾
+            # [SEC-02] 根據權限等級過濾（SYSTEM_ADMIN 不享有特權）
             if user.is_system_admin:
-                # 系統管理員可見所有
-                pass
+                # 系統管理員可見 system_admin + authenticated + public
+                query = query.filter(
+                    Page.required_access.in_(['system_admin', 'authenticated', 'public'])
+                )
             elif user.is_org_admin:
                 # 企業管理員可見 org_admin 和 authenticated
                 query = query.filter(
