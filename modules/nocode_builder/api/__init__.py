@@ -13,7 +13,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
 from app import csrf, db
-from app.security.decorators import public_route, login_required, admin_required
+from app.security.decorators import public_route, module_access_required, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -49,7 +49,7 @@ def module_info():
 
 
 @api_bp.route('/db-info')
-@login_required
+@module_access_required('nocode_builder')
 def db_info():
     """取得當前連線的資料庫資訊"""
     from ..services.db_connector import get_db_display_name
@@ -67,7 +67,7 @@ def db_info():
 # =============================================================================
 
 @api_bp.route('/schema/tables')
-@login_required
+@module_access_required('nocode_builder')
 def list_tables():
     """列出可用資料表"""
     from ..services.schema_service import SchemaService
@@ -83,7 +83,7 @@ def list_tables():
 
 
 @api_bp.route('/schema/tables/<table_name>/columns')
-@login_required
+@module_access_required('nocode_builder')
 def get_table_columns(table_name):
     """取得指定表的欄位"""
     from ..services.schema_service import SchemaService
@@ -109,7 +109,7 @@ def get_table_columns(table_name):
 # =============================================================================
 
 @api_bp.route('/views')
-@login_required
+@module_access_required('nocode_builder')
 def list_views():
     """列出視圖"""
     from ..models import DcCrudView
@@ -187,7 +187,7 @@ def create_view():
 
 
 @api_bp.route('/views/<secure_code>')
-@login_required
+@module_access_required('nocode_builder')
 def get_view(secure_code):
     """取得視圖配置"""
     from ..models import DcCrudView
@@ -270,7 +270,7 @@ def delete_view(secure_code):
 # =============================================================================
 
 @api_bp.route('/views/<secure_code>/formio-schema')
-@login_required
+@module_access_required('nocode_builder', False)
 def get_formio_schema(secure_code):
     """取得 form.io schema（若此表來自 SQL Sync）"""
     from ..models import DcCrudView
@@ -514,7 +514,7 @@ def _auto_ensure_registry(org_secure_code, table_name, columns_config):
 
 
 @api_bp.route('/views/<secure_code>/rows')
-@login_required
+@module_access_required('nocode_builder', False)
 def query_rows(secure_code):
     """查詢視圖資料（分頁）"""
     from ..models import DcCrudView
@@ -568,7 +568,7 @@ def query_rows(secure_code):
 
 
 @api_bp.route('/views/<secure_code>/rows/<row_id>')
-@login_required
+@module_access_required('nocode_builder', False)
 def get_row(secure_code, row_id):
     """取得單筆資料"""
     from ..models import DcCrudView
@@ -596,7 +596,7 @@ def get_row(secure_code, row_id):
 
 @api_bp.route('/views/<secure_code>/rows', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('nocode_builder', False)
 def create_row(secure_code):
     """新增一筆資料"""
     from ..models import DcCrudView
@@ -633,7 +633,7 @@ def create_row(secure_code):
 
 @api_bp.route('/views/<secure_code>/rows/<row_id>', methods=['PUT'])
 @csrf.exempt
-@login_required
+@module_access_required('nocode_builder', False)
 def update_row(secure_code, row_id):
     """更新一筆資料"""
     from ..models import DcCrudView
@@ -670,7 +670,7 @@ def update_row(secure_code, row_id):
 
 @api_bp.route('/views/<secure_code>/rows/<row_id>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('nocode_builder', False)
 def delete_row(secure_code, row_id):
     """刪除一筆資料"""
     from ..models import DcCrudView
@@ -709,7 +709,7 @@ def delete_row(secure_code, row_id):
 # =============================================================================
 
 @api_bp.route('/pages')
-@login_required
+@module_access_required('nocode_builder')
 def list_pages():
     """列出頁面佈局"""
     try:
@@ -766,7 +766,7 @@ def create_page():
 
 
 @api_bp.route('/pages/<secure_code>')
-@login_required
+@module_access_required('nocode_builder')
 def get_page(secure_code):
     """取得頁面佈局"""
     try:

@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import login_required
+from app.security.decorators import module_access_required
 from app.platform.auth import (
     has_permission,
     require_permission,
@@ -66,7 +66,7 @@ def _get_default_graph():
 # =============================================================================
 
 @workflows_bp.route('/list')
-@login_required
+@module_access_required('form_workflow')
 def list_page():
     """流程模板列表頁面"""
     return render_template(
@@ -77,7 +77,7 @@ def list_page():
 
 @workflows_bp.route('/designer')
 @workflows_bp.route('/designer/<secure_code>')
-@login_required
+@module_access_required('form_workflow')
 def designer(secure_code=None):
     """流程設計器頁面"""
     from ..models import FwWorkflowTemplate
@@ -108,7 +108,7 @@ def designer(secure_code=None):
 
 
 @workflows_bp.route('/designer/standalone')
-@login_required
+@module_access_required('form_workflow')
 def designer_standalone():
     """流程設計器獨立頁面（用於 iframe 嵌入）"""
     from ..models import FwWorkflowTemplate
@@ -140,7 +140,7 @@ def designer_standalone():
 # =============================================================================
 
 @workflows_bp.route('/data/templates')
-@login_required
+@module_access_required('form_workflow')
 def list_templates():
     """取得流程模板列表"""
     from ..models import FwWorkflowTemplate
@@ -183,7 +183,7 @@ def list_templates():
 
 
 @workflows_bp.route('/data/templates/<secure_code>')
-@login_required
+@module_access_required('form_workflow')
 def get_template(secure_code):
     """取得單一流程模板"""
     from ..models import FwWorkflowTemplate
@@ -215,7 +215,7 @@ def get_template(secure_code):
 
 @workflows_bp.route('/data/templates', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def create_template():
     """建立流程模板"""
     from ..models import FwWorkflowTemplate
@@ -270,7 +270,7 @@ def create_template():
 
 @workflows_bp.route('/data/templates/<secure_code>', methods=['PUT'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def update_template(secure_code):
     """更新流程模板"""
     from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
@@ -441,7 +441,7 @@ def update_template(secure_code):
 
 @workflows_bp.route('/data/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def delete_template(secure_code):
     """刪除流程模板（軟刪除）
 
@@ -541,7 +541,7 @@ def delete_template(secure_code):
 
 @workflows_bp.route('/data/templates/<secure_code>/save-new-version', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def save_new_version(secure_code):
     """另存新版：複製目前流程為新記錄，版本號遞增"""
     from ..models import FwWorkflowTemplate, FwFormTemplate, FwFormWorkflowMapping
@@ -636,7 +636,7 @@ def save_new_version(secure_code):
 # =============================================================================
 
 @workflows_bp.route('/data/node-definitions')
-@login_required
+@module_access_required('form_workflow')
 def get_node_definitions():
     """
     取得節點定義列表（按分類分組）- 從 DB 查詢
@@ -694,7 +694,7 @@ def get_node_definitions():
 
 
 @workflows_bp.route('/nodes/<node_type>/schema')
-@login_required
+@module_access_required('form_workflow')
 def get_node_schema(node_type):
     """取得節點的配置 schema - 從 DB 查詢"""
     from sqlalchemy import func
@@ -722,7 +722,7 @@ def get_node_schema(node_type):
 # =============================================================================
 
 @workflows_bp.route('/data/subflows/available')
-@login_required
+@module_access_required('form_workflow')
 def list_available_subflows():
     """取得可用的子流程列表（分區結構）
 
@@ -886,7 +886,7 @@ def list_available_subflows():
 
 @workflows_bp.route('/data/subflows/create', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def create_subflow():
     """建立子流程"""
     from ..models import FwWorkflowTemplate
@@ -947,7 +947,7 @@ def create_subflow():
 
 @workflows_bp.route('/data/subflows/<secure_code>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def delete_subflow(secure_code):
     """刪除專屬子流程
 
@@ -1065,7 +1065,7 @@ def delete_subflow(secure_code):
 
 @workflows_bp.route('/data/variable-mapping', methods=['GET', 'POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def variable_mapping():
     """
     取得或建立變數映射
@@ -1187,7 +1187,7 @@ def variable_mapping():
 # =============================================================================
 
 @workflows_bp.route('/data/org-tree')
-@login_required
+@module_access_required('form_workflow')
 def get_org_tree():
     """取得組織架構樹（用於選擇簽核人）"""
     from app.models.organizational_unit import OrganizationalUnit, UnitType
@@ -1262,7 +1262,7 @@ def get_org_tree():
 
 
 @workflows_bp.route('/data/roles')
-@login_required
+@module_access_required('form_workflow')
 def get_roles_list():
     """取得角色列表（用於簽核人角色選擇）"""
     from app.models.role import Role
@@ -1296,7 +1296,7 @@ def get_roles_list():
 # =============================================================================
 
 @workflows_bp.route('/data/templates/<template_id>/mapped-forms', methods=['GET'])
-@login_required
+@module_access_required('form_workflow')
 def get_workflow_mapped_forms(template_id):
     """
     取得指定流程的已配對表單清單
@@ -1425,7 +1425,7 @@ def get_workflow_mapped_forms(template_id):
 
 
 @workflows_bp.route('/data/forms/<form_id>/fields', methods=['GET'])
-@login_required
+@module_access_required('form_workflow')
 def get_form_fields(form_id):
     """
     分析並取得指定表單的欄位清單

@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import login_required
+from app.security.decorators import module_access_required
 from app.platform.auth import (
     has_permission,
     require_permission,
@@ -112,7 +112,7 @@ def extract_input_fields(components, fields=None):
 # =============================================================================
 
 @forms_bp.route('/list')
-@login_required
+@module_access_required('form_workflow')
 def list_page():
     """表單模板列表頁面"""
     return render_template(
@@ -123,7 +123,7 @@ def list_page():
 
 @forms_bp.route('/designer')
 @forms_bp.route('/designer/<secure_code>')
-@login_required
+@module_access_required('form_workflow')
 def designer(secure_code=None):
     """表單設計器頁面"""
     from ..models import FwFormTemplate
@@ -153,7 +153,7 @@ def designer(secure_code=None):
 
 
 @forms_bp.route('/designer/standalone')
-@login_required
+@module_access_required('form_workflow')
 def designer_standalone():
     """表單設計器獨立頁面（用於 iframe 嵌入或直接訪問）"""
     from ..models import FwFormTemplate
@@ -185,7 +185,7 @@ def designer_standalone():
 # =============================================================================
 
 @forms_bp.route('/data/categories')
-@login_required
+@module_access_required('form_workflow')
 def list_categories():
     """
     取得表單分類列表（供設計器 select/optgroup 使用）
@@ -276,7 +276,7 @@ def list_categories():
 # =============================================================================
 
 @forms_bp.route('/data/templates')
-@login_required
+@module_access_required('form_workflow')
 def list_templates():
     """取得表單模板列表"""
     from ..models import FwFormTemplate
@@ -307,7 +307,7 @@ def list_templates():
 
 
 @forms_bp.route('/data/templates/<secure_code>')
-@login_required
+@module_access_required('form_workflow')
 def get_template(secure_code):
     """取得單一表單模板"""
     from ..models import FwFormTemplate
@@ -339,7 +339,7 @@ def get_template(secure_code):
 
 @forms_bp.route('/data/templates', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def create_template():
     """建立表單模板"""
     from ..models import FwFormTemplate
@@ -395,7 +395,7 @@ def create_template():
 
 @forms_bp.route('/data/templates/<secure_code>', methods=['PUT'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def update_template(secure_code):
     """更新表單模板"""
     from ..models import FwFormTemplate
@@ -483,7 +483,7 @@ def update_template(secure_code):
 
 @forms_bp.route('/data/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def delete_template(secure_code):
     """刪除表單模板（軟刪除）"""
     from ..models import FwFormTemplate
@@ -513,7 +513,7 @@ def delete_template(secure_code):
 
 @forms_bp.route('/data/templates/<secure_code>/publish', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def publish_template(secure_code):
     """發布表單模板"""
     from ..models import FwFormTemplate
@@ -549,7 +549,7 @@ def publish_template(secure_code):
 
 @forms_bp.route('/data/templates/<secure_code>/unpublish', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def unpublish_template(secure_code):
     """取消發布表單模板"""
     from ..models import FwFormTemplate
@@ -583,7 +583,7 @@ def unpublish_template(secure_code):
 # =============================================================================
 
 @forms_bp.route('/data/templates/<secure_code>/fields')
-@login_required
+@module_access_required('form_workflow')
 def get_template_fields(secure_code):
     """取得表單模板的欄位列表"""
     from ..models import FwFormTemplate
@@ -833,7 +833,7 @@ _FORMIO_TEMPLATES = [
 
 
 @forms_bp.route('/data/formio-templates')
-@login_required
+@module_access_required('form_workflow')
 def list_formio_templates():
     """取得 Form.io 預設範本列表"""
     return jsonify({
@@ -852,7 +852,7 @@ def list_formio_templates():
 
 
 @forms_bp.route('/data/formio-templates/<template_id>')
-@login_required
+@module_access_required('form_workflow')
 def get_formio_template(template_id):
     """取得單一 Form.io 預設範本"""
     template = next((t for t in _FORMIO_TEMPLATES if t['id'] == template_id), None)
@@ -872,7 +872,7 @@ def get_formio_template(template_id):
 
 @forms_bp.route('/data/templates/<secure_code>/save-new-version', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def save_new_version(secure_code):
     """另存新版：複製目前表單為新記錄，版本號遞增"""
     from ..models import FwFormTemplate

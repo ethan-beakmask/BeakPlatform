@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 
 from app import csrf
-from app.security.decorators import public_route
+from app.security.decorators import public_route, module_access_required
 from app.platform.auth import (
     current_user,
     has_permission,
@@ -63,6 +63,7 @@ def module_permissions():
 # =============================================================================
 
 @api_bp.route('/templates')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.view')
 def list_templates():
     """取得表單模板列表"""
@@ -110,6 +111,7 @@ def list_templates():
 
 
 @api_bp.route('/templates/<secure_code>')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.view')
 def get_template(secure_code):
     """取得單一表單模板"""
@@ -136,6 +138,7 @@ def get_template(secure_code):
 
 @api_bp.route('/templates', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.create')
 def create_template():
     """建立表單模板"""
@@ -205,6 +208,7 @@ def create_template():
 
 @api_bp.route('/templates/<secure_code>', methods=['PUT'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.edit')
 def update_template(secure_code):
     """更新表單模板"""
@@ -254,6 +258,7 @@ def update_template(secure_code):
 
 @api_bp.route('/templates/batch/delete', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.delete')
 def batch_delete_templates():
     """批次刪除表單模板（軟刪除）"""
@@ -292,6 +297,7 @@ def batch_delete_templates():
 
 @api_bp.route('/templates/batch/export', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.view')
 def batch_export_templates():
     """批次匯出表單模板（JSON）"""
@@ -337,6 +343,7 @@ def batch_export_templates():
 
 @api_bp.route('/templates/batch/import', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.create')
 def batch_import_templates():
     """批次匯入表單模板（JSON）
@@ -437,6 +444,7 @@ def batch_import_templates():
 
 @api_bp.route('/templates/batch/save-new-version', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.edit')
 def batch_save_new_version_templates():
     """批次另存新版表單模板（複製出新記錄，版本號遞增）"""
@@ -497,6 +505,7 @@ def batch_save_new_version_templates():
 
 @api_bp.route('/templates/<secure_code>', methods=['DELETE'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.delete')
 def delete_template(secure_code):
     """
@@ -561,6 +570,7 @@ def delete_template(secure_code):
 # =============================================================================
 
 @api_bp.route('/workflows')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def list_workflows():
     """取得工作流模板列表"""
@@ -736,6 +746,7 @@ def list_workflows():
 
 
 @api_bp.route('/workflows/<secure_code>')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def get_workflow(secure_code):
     """取得單一工作流模板"""
@@ -762,6 +773,7 @@ def get_workflow(secure_code):
 
 @api_bp.route('/workflows', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.create')
 def create_workflow():
     """建立工作流模板"""
@@ -823,6 +835,7 @@ def create_workflow():
 
 @api_bp.route('/workflows/<secure_code>', methods=['PUT'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.edit')
 def update_workflow(secure_code):
     """更新工作流模板"""
@@ -871,6 +884,7 @@ def update_workflow(secure_code):
 
 
 @api_bp.route('/workflows/flow-trees')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def list_flow_trees():
     """取得流程樹系（主流程及其引用的子流程樹）"""
@@ -967,6 +981,7 @@ def list_flow_trees():
 
 
 @api_bp.route('/workflows/<secure_code>/unused-subflows')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def get_unused_subflows(secure_code):
     """取得指定主流程的未使用專屬子流程清單（含縮圖）"""
@@ -1044,6 +1059,7 @@ def get_unused_subflows(secure_code):
 
 
 @api_bp.route('/workflows/flow-trees/<secure_code>')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def get_flow_tree(secure_code):
     """取得單一主流程的樹系（主流程及其引用的子流程）"""
@@ -1157,6 +1173,7 @@ def get_flow_tree(secure_code):
 
 @api_bp.route('/workflows/batch/delete', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.delete')
 def batch_delete_workflows():
     """批次刪除工作流模板（軟刪除）"""
@@ -1195,6 +1212,7 @@ def batch_delete_workflows():
 
 @api_bp.route('/workflows/batch/export', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
 def batch_export_workflows():
     """批次匯出工作流模板（含子流程樹系收集）"""
@@ -1255,6 +1273,7 @@ def batch_export_workflows():
 
 @api_bp.route('/workflows/batch/import', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.create')
 def batch_import_workflows():
     """批次匯入工作流模板（JSON）
@@ -1383,6 +1402,7 @@ def batch_import_workflows():
 
 @api_bp.route('/workflows/batch/save-new-version', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.edit')
 def batch_save_new_version_workflows():
     """批次另存新版工作流模板（複製出新記錄，版本號遞增）"""
@@ -1444,6 +1464,7 @@ def batch_save_new_version_workflows():
 
 @api_bp.route('/workflows/<secure_code>', methods=['DELETE'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.delete')
 def delete_workflow(secure_code):
     """
@@ -1587,6 +1608,7 @@ def delete_workflow(secure_code):
 # =============================================================================
 
 @api_bp.route('/instances')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.form.view')
 def list_instances():
     """取得表單實例列表（自己的）"""
@@ -1621,6 +1643,7 @@ def list_instances():
 
 
 @api_bp.route('/instances/<secure_code>')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.form.view')
 def get_instance(secure_code):
     """取得單一表單實例"""
@@ -1655,6 +1678,7 @@ def get_instance(secure_code):
 # =============================================================================
 
 @api_bp.route('/pending-tasks')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.form.approve')
 def list_pending_tasks():
     """取得當前用戶的待簽核任務"""
@@ -1706,6 +1730,7 @@ def list_pending_tasks():
 
 
 @api_bp.route('/pending-tasks/<secure_code>')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.form.approve')
 def get_pending_task(secure_code):
     """取得待簽核任務詳情"""
@@ -1757,6 +1782,7 @@ def get_pending_task(secure_code):
 
 @api_bp.route('/pending-tasks/<secure_code>/approve', methods=['POST'])
 @csrf.exempt
+@module_access_required('form_workflow')
 @require_permission('form_workflow.form.approve')
 def approve_task(secure_code):
     """簽核任務"""
@@ -1841,6 +1867,7 @@ def approve_task(secure_code):
 # =============================================================================
 
 @api_bp.route('/stats')
+@module_access_required('form_workflow')
 @require_permission('form_workflow.template.view')
 def get_stats():
     """取得模組統計資訊"""

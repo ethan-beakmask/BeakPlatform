@@ -8,7 +8,7 @@ from flask import jsonify, request
 from flask_login import current_user
 
 from app import csrf, db
-from app.security.decorators import login_required, admin_required
+from app.security.decorators import module_access_required, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 @api_bp.route('/sub-systems')
-@login_required
+@module_access_required('nocode_builder')
 def list_sub_systems():
     """列出子系統"""
     from ..models import DcSubSystem
@@ -92,7 +92,7 @@ def create_sub_system():
 
 
 @api_bp.route('/sub-systems/<secure_code>')
-@login_required
+@module_access_required('nocode_builder')
 def get_sub_system(secure_code):
     """取得子系統詳情"""
     from ..models import DcSubSystem
@@ -174,7 +174,7 @@ def delete_sub_system(secure_code):
 # =============================================================================
 
 @api_bp.route('/sub-systems/<secure_code>/pages')
-@login_required
+@module_access_required('nocode_builder')
 def list_sub_system_pages(secure_code):
     """列出子系統的頁面配置"""
     from ..models import DcSubSystem, DcSubSystemPage, DcPageLayout
@@ -316,7 +316,7 @@ def remove_sub_system_page(ss_sc, page_sc):
 # =============================================================================
 
 @api_bp.route('/sub-systems/<secure_code>/portal')
-@login_required
+@module_access_required('nocode_builder', False)
 def sub_system_portal(secure_code):
     """取得用戶在子系統的 portal 資訊（角色 + 可見頁面）"""
     from ..models import DcSubSystem
@@ -352,7 +352,7 @@ def sub_system_portal(secure_code):
 # =============================================================================
 
 @api_bp.route('/sub-systems/<ss_sc>/pages/<ssp_sc>/context')
-@login_required
+@module_access_required('nocode_builder', False)
 def get_page_permission_context(ss_sc, ssp_sc):
     """取得用戶在指定子系統頁面的權限 context"""
     from ..models import DcSubSystem, DcSubSystemPage

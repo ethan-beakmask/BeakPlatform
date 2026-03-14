@@ -5,7 +5,7 @@ FormWorkflow Module - Categories API
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import login_required
+from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
 
@@ -33,7 +33,7 @@ def _build_tree(parents, children_map, context=None):
 # =============================================================================
 
 @categories_bp.route('', methods=['GET'])
-@login_required
+@module_access_required('form_workflow')
 def list_categories():
     """
     列出分類
@@ -109,7 +109,7 @@ def list_categories():
 
 
 @categories_bp.route('/<secure_code>', methods=['GET'])
-@login_required
+@module_access_required('form_workflow')
 def get_category(secure_code):
     """取得單一分類"""
     from ..models import FwCategory
@@ -148,7 +148,7 @@ def get_category(secure_code):
 
 @categories_bp.route('', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def create_category():
     """
     建立分類
@@ -238,7 +238,7 @@ def create_category():
 
 @categories_bp.route('/<secure_code>', methods=['PUT'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def update_category(secure_code):
     """更新分類"""
     from ..models import FwCategory
@@ -314,7 +314,7 @@ def update_category(secure_code):
 
 @categories_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def delete_category(secure_code):
     """刪除分類"""
     from ..models import FwCategory
@@ -358,7 +358,7 @@ def delete_category(secure_code):
 
 @categories_bp.route('/reorder', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def reorder_categories():
     """
     重新排序分類（同層內）

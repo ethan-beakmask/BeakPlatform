@@ -11,7 +11,7 @@ from flask import jsonify, request
 from flask_login import current_user
 
 from app import csrf, db
-from app.security.decorators import login_required, admin_required
+from app.security.decorators import module_access_required, admin_required
 from app.security.resource_gateway import ResourceGateway
 from app.platform.data import get_current_org
 
@@ -212,7 +212,7 @@ def _check_developer(ss_sc):
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/permissions')
-@login_required
+@module_access_required('nocode_builder')
 def get_site_map_node_permissions(ss_sc, node_sc):
     """取得節點權限列表（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
@@ -231,7 +231,7 @@ def get_site_map_node_permissions(ss_sc, node_sc):
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/permissions', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('nocode_builder')
 def add_site_map_node_permission(ss_sc, node_sc):
     """新增節點權限（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
@@ -271,7 +271,7 @@ def add_site_map_node_permission(ss_sc, node_sc):
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/permissions/<perm_sc>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('nocode_builder')
 def remove_site_map_permission(ss_sc, perm_sc):
     """刪除節點權限（開發者+管理員）"""
     from ..services.site_map_service import SiteMapService
@@ -289,7 +289,7 @@ def remove_site_map_permission(ss_sc, perm_sc):
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/targets')
-@login_required
+@module_access_required('nocode_builder')
 def get_site_map_targets(ss_sc):
     """
     取得可選的權限目標清單（開發者+管理員）
@@ -320,11 +320,11 @@ def get_site_map_targets(ss_sc):
 
 
 # =============================================================================
-# User API (@login_required + 成員檢查)
+# User API (module_access_required + 成員檢查)
 # =============================================================================
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/user-tree')
-@login_required
+@module_access_required('nocode_builder', False)
 def get_user_site_map_tree(ss_sc):
     """取得用戶可見的 site map 樹"""
     from ..models import DcSubSystem
@@ -346,7 +346,7 @@ def get_user_site_map_tree(ss_sc):
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/context')
-@login_required
+@module_access_required('nocode_builder', False)
 def get_site_map_node_context(ss_sc, node_sc):
     """取得節點權限 context (CRUD + data_filters)"""
     from ..models import DcSubSystem

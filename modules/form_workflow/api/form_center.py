@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from app.security.decorators import login_required
+from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
 
@@ -30,7 +30,7 @@ form_center_bp = Blueprint(
 # =============================================================================
 
 @form_center_bp.route('/available-forms')
-@login_required
+@module_access_required('form_workflow', False)
 def list_available_forms():
     """
     取得可填寫的表單列表
@@ -202,7 +202,7 @@ def list_available_forms():
 
 
 @form_center_bp.route('/forms/<secure_code>')
-@login_required
+@module_access_required('form_workflow', False)
 def get_form_for_filling(secure_code):
     """
     取得表單定義（用於填寫）
@@ -292,7 +292,7 @@ def get_form_for_filling(secure_code):
 
 @form_center_bp.route('/submit', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def submit_form():
     """
     提交表單並觸發流程
@@ -589,7 +589,7 @@ def submit_form():
 # =============================================================================
 
 @form_center_bp.route('/my-forms')
-@login_required
+@module_access_required('form_workflow', False)
 def list_my_forms():
     """
     取得我提交/簽核過的表單列表
@@ -744,7 +744,7 @@ def list_my_forms():
 
 
 @form_center_bp.route('/my-forms/<secure_code>')
-@login_required
+@module_access_required('form_workflow', False)
 def get_my_form(secure_code):
     """取得我的表單詳情"""
     from ..models import FwFormInstance
@@ -838,7 +838,7 @@ def _apply_field_permissions_to_schema(schema, role_permissions):
 # =============================================================================
 
 @form_center_bp.route('/pending-tasks')
-@login_required
+@module_access_required('form_workflow', False)
 def list_pending_tasks():
     """取得我的待簽核任務"""
     from ..models import FwNodeExecutionQueue, FwFormInstance, FwFormTemplate
@@ -949,7 +949,7 @@ def list_pending_tasks():
 
 
 @form_center_bp.route('/pending-tasks/<secure_code>')
-@login_required
+@module_access_required('form_workflow', False)
 def get_pending_task(secure_code):
     """取得待簽核任務詳情（含簽核歷程）"""
     from ..models import FwNodeExecutionQueue, FwFormInstance, FwApprovalRecord
@@ -1056,7 +1056,7 @@ def get_pending_task(secure_code):
 
 @form_center_bp.route('/pending-tasks/<secure_code>/lock', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def lock_task(secure_code):
     """
     取得簽核鎖定
@@ -1129,7 +1129,7 @@ def lock_task(secure_code):
 
 @form_center_bp.route('/pending-tasks/<secure_code>/lock', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def unlock_task(secure_code):
     """
     釋放簽核鎖定（best-effort，用於關閉分頁時呼叫）
@@ -1164,7 +1164,7 @@ def unlock_task(secure_code):
 
 @form_center_bp.route('/pending-tasks/<secure_code>/approve', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def approve_task(secure_code):
     """簽核任務（含鎖定驗證 + 重複簽核防護）"""
     from ..models import FwNodeExecutionQueue, FwApprovalRecord
@@ -1394,7 +1394,7 @@ def approve_task(secure_code):
 # =============================================================================
 
 @form_center_bp.route('/workflow-progress/<secure_code>')
-@login_required
+@module_access_required('form_workflow', False)
 def get_workflow_progress(secure_code):
     """取得流程進度"""
     from ..models import FwWorkflowInstance, FwNodeExecutionQueue, FwApprovalRecord
@@ -1458,7 +1458,7 @@ def get_workflow_progress(secure_code):
 
 
 @form_center_bp.route('/form-detail/<secure_code>')
-@login_required
+@module_access_required('form_workflow', False)
 def get_form_detail(secure_code):
     """
     取得表單詳情（用於歷史表單查看）
@@ -1525,7 +1525,7 @@ def get_form_detail(secure_code):
 
 @form_center_bp.route('/force-end/<secure_code>', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def force_end_workflow(secure_code):
     """
     強制結束流程
@@ -1617,7 +1617,7 @@ def force_end_workflow(secure_code):
 
 @form_center_bp.route('/my-test-forms', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow', False)
 def delete_my_test_forms():
     """
     批量 soft delete 當前用戶的測試表單（歷史終態）
@@ -1696,7 +1696,7 @@ def delete_my_test_forms():
 # =============================================================================
 
 @form_center_bp.route('/executions/<instance_id>/path')
-@login_required
+@module_access_required('form_workflow', False)
 def get_execution_path(instance_id):
     """
     取得流程執行路徑（用於監控與追蹤）
@@ -1855,7 +1855,7 @@ def get_execution_path(instance_id):
 
 
 @form_center_bp.route('/executions/<instance_id>/logs')
-@login_required
+@module_access_required('form_workflow', False)
 def get_execution_logs(instance_id):
     """
     取得流程執行日誌（用於 Debug 和追蹤）

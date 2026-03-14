@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 
 from app import csrf, db
+from app.security.decorators import module_access_required
 from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
@@ -137,6 +138,7 @@ def _validate_fields(fields):
 # =============================================================================
 
 @field_specs_bp.route('/<form_template_sc>')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def get_spec(form_template_sc):
     """取得表單的 active spec"""
@@ -168,6 +170,7 @@ def get_spec(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def save_spec(form_template_sc):
     """
@@ -327,6 +330,7 @@ def save_spec(form_template_sc):
 
 
 @field_specs_bp.route('/<form_template_sc>/history')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def get_history(form_template_sc):
     """取得版本歷史列表"""
@@ -356,6 +360,7 @@ def get_history(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/generate-formio', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def generate_formio(form_template_sc):
     """從 spec 生成 FormIO schema（預覽，不寫入）"""
@@ -390,6 +395,7 @@ def generate_formio(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/sync-from-formio', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def sync_from_formio(form_template_sc):
     """從現有 FormIO schema 反向建立/更新 spec"""
@@ -506,6 +512,7 @@ def sync_from_formio(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/apply-to-form', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def apply_to_form(form_template_sc):
     """
@@ -585,6 +592,7 @@ def apply_to_form(form_template_sc):
 # =============================================================================
 
 @field_specs_bp.route('/registry-overview')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def registry_overview():
     """
@@ -717,6 +725,7 @@ def registry_overview():
 
 
 @field_specs_bp.route('/available-templates')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def available_templates():
     """
@@ -767,6 +776,7 @@ def available_templates():
 # =============================================================================
 
 @field_specs_bp.route('/<form_template_sc>/compare')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def compare(form_template_sc):
     """三向比對：Spec vs FormIO vs SQL"""
@@ -966,6 +976,7 @@ def _ensure_models():
 # =============================================================================
 
 @field_specs_bp.route('/standalone')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def list_standalone():
     """列出所有獨立 spec（form_template_secure_code IS NULL）"""
@@ -991,6 +1002,7 @@ def list_standalone():
 
 @field_specs_bp.route('/standalone', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def create_standalone():
     """建立獨立 spec（name + fields）"""
@@ -1029,6 +1041,7 @@ def create_standalone():
 
 
 @field_specs_bp.route('/standalone/<spec_sc>')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def get_standalone(spec_sc):
     """取得獨立 spec"""
@@ -1056,6 +1069,7 @@ def get_standalone(spec_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def update_standalone(spec_sc):
     """更新獨立 spec（版本遞增）"""
@@ -1102,6 +1116,7 @@ def update_standalone(spec_sc):
 
 
 @field_specs_bp.route('/standalone/<spec_sc>/history')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def get_standalone_history(spec_sc):
     """取得獨立 spec 版本歷史"""
@@ -1124,6 +1139,7 @@ def get_standalone_history(spec_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>', methods=['DELETE'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def delete_standalone(spec_sc):
     """刪除獨立 spec（軟刪除）"""
@@ -1154,6 +1170,7 @@ def delete_standalone(spec_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>/link-form', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def link_form(spec_sc):
     """將獨立 spec 關聯到既有 form_template"""
@@ -1209,6 +1226,7 @@ def link_form(spec_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>/create-form', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def create_form_from_spec(spec_sc):
     """從獨立 spec 建立新 FwFormTemplate"""
@@ -1284,6 +1302,7 @@ def create_form_from_spec(spec_sc):
 # =============================================================================
 
 @field_specs_bp.route('/<form_template_sc>/sql-schema')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def get_sql_schema(form_template_sc):
     """讀取企業 DB 實際表結構（唯讀）"""
@@ -1321,6 +1340,7 @@ def get_sql_schema(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/sync-from-sql', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def sync_from_sql(form_template_sc):
     """SQL -> Spec（從企業 DB 反向建立/更新 spec）"""
@@ -1379,6 +1399,7 @@ def sync_from_sql(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/alter-plan', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def alter_plan(form_template_sc):
     """計算 ALTER 計劃（不執行）"""
@@ -1426,6 +1447,7 @@ def alter_plan(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/alter-execute', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def alter_execute(form_template_sc):
     """執行 ALTER（需帶 confirm_token）"""
@@ -1504,6 +1526,7 @@ def alter_execute(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/sync-spec-to-formio', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def sync_spec_to_formio(form_template_sc):
     """Spec -> FormIO（將 Spec 欄位套用到表單 schema）"""
@@ -1550,6 +1573,7 @@ def sync_spec_to_formio(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/sync-spec-to-sql', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def sync_spec_to_sql(form_template_sc):
     """Spec -> SQL（計算 ALTER 計劃並執行）"""
@@ -1622,6 +1646,7 @@ def sync_spec_to_sql(form_template_sc):
 
 
 @field_specs_bp.route('/<form_template_sc>/full-status')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def full_status(form_template_sc):
     """三面相完整狀態（含 metadata + 6 方向可用性）"""
@@ -1742,6 +1767,7 @@ def full_status(form_template_sc):
 
 @field_specs_bp.route('/<ft_sc>/sync-formio-to-sql', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def sync_formio_to_sql(ft_sc):
     """JSONB -> SQL（可勾選同時更新 Spec）"""
@@ -1836,6 +1862,7 @@ def sync_formio_to_sql(ft_sc):
 
 @field_specs_bp.route('/<ft_sc>/sync-sql-to-formio', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def sync_sql_to_formio(ft_sc):
     """SQL -> JSONB（可勾選同時更新 Spec）"""
@@ -1915,6 +1942,7 @@ def sync_sql_to_formio(ft_sc):
 # =============================================================================
 
 @field_specs_bp.route('/sql-tables')
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.view')
 def list_sql_tables():
     """列出企業 DB 中所有表"""
@@ -1934,6 +1962,7 @@ def list_sql_tables():
 
 @field_specs_bp.route('/<form_template_sc>/sync-from-sql-table', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def sync_from_sql_table(form_template_sc):
     """從指定 SQL 表讀取欄位定義（不依賴 registry）"""
@@ -1966,6 +1995,7 @@ def sync_from_sql_table(form_template_sc):
 
 @field_specs_bp.route('/<form_template_sc>/apply-to-sql-table', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def apply_to_sql_table(form_template_sc):
     """將 spec 欄位定義建立/更新到 SQL Table（template 模式）"""
@@ -2019,6 +2049,7 @@ def apply_to_sql_table(form_template_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>/sync-from-sql-table', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.edit')
 def standalone_sync_from_sql_table(spec_sc):
     """從指定 SQL 表讀取欄位定義（standalone 模式）"""
@@ -2051,6 +2082,7 @@ def standalone_sync_from_sql_table(spec_sc):
 
 @field_specs_bp.route('/standalone/<spec_sc>/apply-to-sql-table', methods=['POST'])
 @csrf.exempt
+@module_access_required('spec_formulate')
 @require_permission('form_workflow.template.manage')
 def standalone_apply_to_sql_table(spec_sc):
     """將 spec 欄位定義建立/更新到 SQL Table（standalone 模式）"""

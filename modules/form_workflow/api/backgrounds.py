@@ -7,7 +7,7 @@ import uuid
 from flask import Blueprint, jsonify, request, current_app
 from werkzeug.utils import secure_filename
 
-from app.security.decorators import login_required
+from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
 
@@ -37,7 +37,7 @@ def get_upload_dir():
 
 
 @backgrounds_bp.route('', methods=['GET'])
-@login_required
+@module_access_required('form_workflow')
 def list_backgrounds():
     """列出企業的所有底圖"""
     from ..models import FwWorkflowBackground
@@ -59,7 +59,7 @@ def list_backgrounds():
 
 @backgrounds_bp.route('/upload', methods=['POST'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def upload_background():
     """上傳底圖"""
     from ..models import FwWorkflowBackground
@@ -142,7 +142,7 @@ def upload_background():
 
 @backgrounds_bp.route('/<secure_code>', methods=['PUT'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def update_background(secure_code):
     """更新底圖描述"""
     from ..models import FwWorkflowBackground
@@ -180,7 +180,7 @@ def update_background(secure_code):
 
 @backgrounds_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
-@login_required
+@module_access_required('form_workflow')
 def delete_background(secure_code):
     """刪除底圖"""
     from ..models import FwWorkflowBackground
