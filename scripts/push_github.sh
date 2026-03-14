@@ -21,6 +21,8 @@ EXCLUDE_DIRS=(
     "tools"
     "devtools"
     ".forgejo"
+    "scripts/migrations"
+    "scripts/systemd"
 )
 
 # 個別檔案
@@ -28,6 +30,8 @@ EXCLUDE_FILES=(
     "CLAUDE.md"
     "temp_WEB_Builder全程序.txt"
     "workflow_node開發進度表.csv"
+    "beakplatform.service"
+    "restart_flask.sh"
     "docs/CICD_SETUP.md"
     "docs/emailrelay-setup.md"
     "docs/enterprise-defaults-checklist.md"
@@ -41,6 +45,18 @@ EXCLUDE_FILES=(
     "docs/WEB_BUILDER_PROVISION_PLAN.md"
     "docs/WEB_BUILDER_SPEC.md"
     "docs/WEB_BUILDER_STUDIO_SPEC.md"
+    "scripts/push_github.sh"
+    "scripts/seed_test_companies.py"
+    "scripts/analyze_project.py"
+    "scripts/install_emailrelay.sh"
+    "scripts/backfill_sync.py"
+    "scripts/sync_worker.py"
+    "scripts/beakplatform-sync-worker.service"
+    "scripts/migrate_variable_syntax.py"
+    "scripts/upgrade_approval_tables.py"
+    "scripts/rotate_credentials.py"
+    "scripts/sql_form_setup.sql"
+    "scripts/readme.txt"
 )
 
 echo "=== 過濾推送到 GitHub ==="
