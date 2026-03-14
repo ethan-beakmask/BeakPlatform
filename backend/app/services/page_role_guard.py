@@ -19,6 +19,8 @@ from typing import Optional, Set, Tuple
 from flask import request
 from flask_login import logout_user
 
+from sqlalchemy import text
+
 from ..models.menu_item import MenuItem
 from ..models.menu_role_requirement import MenuRoleRequirement
 from ..models.associations import UserRoleAssignment
@@ -59,6 +61,13 @@ class PageRoleGuard:
         # 跳過不需要檢查的路徑
         if path.startswith(cls.SKIP_PREFIXES):
             return None
+
+        # RLS context: 選單項目屬於 system.local，角色需求跨企業
+        # 需要 system_admin 權限才能查詢所有企業的資料
+        try:
+            db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+        except Exception:
+            pass
 
         # 查找匹配的選單項目
         menu_item = cls._find_matching_menu_item(path)

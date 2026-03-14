@@ -163,6 +163,55 @@ def view_user(secure_code: str):
     )
 
 
+def _assign_default_role(user, org):
+    """
+    自動指派預設角色（鑰匙2: 角色對齊用戶類型）
+
+    EMPLOYEE 帳號 → EMPLOYEE 角色
+    ORG_ADMIN 帳號 → ORG_ADMIN 角色
+    EXTERNAL 帳號 → EXTERNAL_USERS 角色
+    """
+    from ..models.role import Role
+    from ..models.associations import UserRoleAssignment
+
+    type_to_code = {
+        UserType.EMPLOYEE: 'EMPLOYEE',
+        UserType.ORG_ADMIN: 'ORG_ADMIN',
+        UserType.EXTERNAL: 'EXTERNAL_USERS',
+    }
+
+    role_code = type_to_code.get(str(user.user_type))
+    if not role_code:
+        return
+
+    role = Role.query.filter(
+        Role.org_secure_code == org.secure_code,
+        Role.code == role_code,
+        Role.is_deleted == False,
+        Role.is_active == True,
+    ).first()
+
+    if not role:
+        return
+
+    # 避免重複指派
+    existing = UserRoleAssignment.query.filter(
+        UserRoleAssignment.user_secure_code == user.secure_code,
+        UserRoleAssignment.role_secure_code == role.secure_code,
+        UserRoleAssignment.is_deleted == False,
+    ).first()
+    if existing:
+        return
+
+    assignment = UserRoleAssignment(
+        org_secure_code=org.secure_code,
+        user_secure_code=user.secure_code,
+        role_secure_code=role.secure_code,
+        assigned_by=current_user.secure_code if current_user and current_user.is_authenticated else None,
+    )
+    db.session.add(assignment)
+
+
 def _get_user_type_from_role(role: str, is_current_system_admin: bool) -> str:
     """根據角色字串返回 UserType"""
     if role == 'system_admin' and is_current_system_admin:
@@ -333,7 +382,10 @@ def create_user():
                         )
                         user.set_password(password)
                         db.session.add(user)
-                        db.session.commit()
+                        db.session.flush()
+
+                        # 自動指派對應角色 (鑰匙2: 角色)
+                        _assign_default_role(user, org)
 
                         # 記錄用戶編號到 used_user_numbers（防止重複使用）
                         if employee_id:
@@ -342,7 +394,8 @@ def create_user():
                                 number=employee_id,
                                 user_secure_code=user.secure_code
                             )
-                            db.session.commit()
+
+                        db.session.commit()
 
                         flash(f'已建立用戶 {native_name}', 'success')
                         return redirect(url_for('users.list_users'))

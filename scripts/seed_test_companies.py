@@ -33,8 +33,10 @@ from app.models import (
     OrganizationalUnit, UnitType,
     JobLevel, JobFamily, JobFamilyType, JobTitle,
     UserNumberingRule,
+    Role, UserRoleAssignment,
 )
 from app.models.employee_position import EmployeePosition, PositionType
+from app.models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from app.models.user_numbering_rule import (
     UserNumberingCounter, UsedUserNumber,
     NumberingUsageScope, NumberingDefaultFor, NumberingElementType,
@@ -150,6 +152,14 @@ COMPANIES = [
             ('gary.heng', '珩嘉瑞', 'Gary Heng', 'CS_DEPT', 'CSR', False),
             ('helen.che', '澈海倫', 'Helen Che', 'MKT_DEPT', 'MKT_SPEC', False),
         ],
+        # 群組 (供外部廠商歸屬)
+        'groups': [
+            ('EXT_PARTNER', '外部合作夥伴'),
+        ],
+        # 外部廠商: (email, display_name, group_code)
+        'external_users': [
+            ('vendor01@partnerexample.com.zz', '合作旅行社A', 'EXT_PARTNER'),
+        ],
     },
 
     # --- 2. 資訊公司 ---
@@ -238,6 +248,12 @@ COMPANIES = [
             ('bruce.che', '澈布魯', 'Bruce Che', 'IT_DEPT', 'DEVOPS_ENG', False),
             ('diana.hao', '晧黛安', 'Diana Hao', 'RD_DIV', 'ARCHITECT', False),
         ],
+        'groups': [
+            ('EXT_PARTNER', '外部合作夥伴'),
+        ],
+        'external_users': [
+            ('vendor01@clientexample.com.zz', '外包開發商A', 'EXT_PARTNER'),
+        ],
     },
 
     # --- 3. 資安公司 ---
@@ -324,6 +340,12 @@ COMPANIES = [
             ('wendy.che', '澈雯蒂', 'Wendy Che', 'CTI', 'CTI_ANALYST', False),
             ('yolanda.hao', '晧尤蘭', 'Yolanda Hao', 'TOOL_DEV', 'TOOL_DEV', False),
             ('zane.xiao', '霄乍恩', 'Zane Xiao', 'TOOL_DEV', 'MALWARE_ANALYST', False),
+        ],
+        'groups': [
+            ('EXT_PARTNER', '外部合作夥伴'),
+        ],
+        'external_users': [
+            ('auditor01@auditexample.com.zz', '外部稽核員A', 'EXT_PARTNER'),
         ],
     },
 
@@ -548,9 +570,16 @@ def generate_employee_id(rule, seq_num):
 
 
 def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules):
-    """建立員工帳號 + 職位指派 + 員工編號"""
+    """建立員工帳號 + 職位指派 + 員工編號 + EMPLOYEE 角色指派"""
     employee_rule = numbering_rules.get('employee')
     users = {}
+
+    # 取得 EMPLOYEE 角色
+    employee_role = Role.query.filter(
+        Role.org_secure_code == org_sc,
+        Role.code == 'EMPLOYEE',
+        Role.is_deleted == False,
+    ).first()
 
     for i, (username, native_name, english_name, dept_code, title_code, is_head) in enumerate(emp_list):
         seq = i + 1
@@ -582,6 +611,16 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
             rule_secure_code=employee_rule.secure_code if employee_rule else None,
         )
 
+        # 指派 EMPLOYEE 角色 (鑰匙2)
+        if employee_role:
+            ra = UserRoleAssignment(
+                org_secure_code=org_sc,
+                user_secure_code=user.secure_code,
+                role_secure_code=employee_role.secure_code,
+                assigned_by='seed_script',
+            )
+            db.session.add(ra)
+
         # 建立職位指派
         if dept_code in depts and title_code in titles:
             position = EmployeePosition(
@@ -612,6 +651,101 @@ def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rul
     return users
 
 
+def create_groups(org_sc, group_list):
+    """建立群組"""
+    groups = {}
+    for code, name in group_list:
+        group = OrganizationalUnit(
+            org_secure_code=org_sc,
+            name=name,
+            code=code,
+            unit_type=UnitType.GROUP,
+            is_active=True,
+        )
+        db.session.add(group)
+        db.session.flush()
+        groups[code] = group
+    return groups
+
+
+def create_external_users(org, org_sc, ext_list, groups, numbering_rules):
+    """建立外部廠商帳號 + EXTERNAL_USERS 角色指派 + 群組成員關係"""
+    external_rule = numbering_rules.get('external')
+    if not external_rule:
+        print("         (跳過：無外部廠商編號規則)")
+        return {}
+
+    # 取得 EXTERNAL_USERS 角色
+    external_role = Role.query.filter(
+        Role.org_secure_code == org_sc,
+        Role.code == 'EXTERNAL_USERS',
+        Role.is_deleted == False,
+    ).first()
+
+    users = {}
+    for i, (email, display_name, group_code) in enumerate(ext_list):
+        seq = i + 1
+        emp_id = generate_employee_id(external_rule, seq) if external_rule else f'X{seq:03d}'
+        username = email.split('@')[0]
+
+        user = User(
+            org_secure_code=org_sc,
+            username=username,
+            email=email,
+            display_name=display_name,
+            user_type=UserType.EXTERNAL,
+            is_active=True,
+            employee_id=emp_id,
+            backup_email_1=email,
+            must_change_password=False,
+        )
+        user.set_password(TEST_PASSWORD)
+        db.session.add(user)
+        db.session.flush()
+        users[username] = user
+
+        UsedUserNumber.record_number(
+            org_secure_code=org_sc,
+            number=emp_id,
+            user_secure_code=user.secure_code,
+            rule_secure_code=external_rule.secure_code if external_rule else None,
+        )
+
+        # 指派 EXTERNAL_USERS 角色 (鑰匙2)
+        if external_role:
+            ra = UserRoleAssignment(
+                org_secure_code=org_sc,
+                user_secure_code=user.secure_code,
+                role_secure_code=external_role.secure_code,
+                assigned_by='seed_script',
+            )
+            db.session.add(ra)
+
+        # 群組成員關係
+        if group_code in groups:
+            membership = UserUnitMembership(
+                org_secure_code=org_sc,
+                user_secure_code=user.secure_code,
+                unit_secure_code=groups[group_code].secure_code,
+                membership_type=MembershipType.MEMBER,
+                role_type=MembershipRole.MEMBER,
+                start_date=date.today(),
+            )
+            db.session.add(membership)
+
+    # 更新計數器
+    if external_rule and ext_list:
+        counter = UserNumberingCounter(
+            org_secure_code=org_sc,
+            rule_secure_code=external_rule.secure_code,
+            period_key='forever',
+            current_seq=len(ext_list),
+        )
+        db.session.add(counter)
+
+    return users
+
+
 # ============================================================================
 # 主流程
 # ============================================================================
@@ -623,7 +757,7 @@ def seed_one_company(company_def):
     domain = company_def['domain']
     admin_only = company_def.get('admin_only', False)
 
-    total_steps = 1 if admin_only else 8
+    total_steps = 1 if admin_only else 10
 
     print(f"\n{'='*60}")
     print(f"  建立企業: {name} ({code})")
@@ -688,16 +822,27 @@ def seed_one_company(company_def):
     print(f"  [7/{total_steps}] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
-    # 8. 員工帳號 + 職位
+    # 8. 員工帳號 + 職位 + EMPLOYEE 角色
     emp_list = company_def['employees']
-    print(f"  [8/{total_steps}] 員工帳號 ({len(emp_list)} 人) + 職位指派...")
+    print(f"  [8/{total_steps}] 員工帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
+
+    # 9. 群組
+    group_list = company_def.get('groups', [])
+    print(f"  [9/{total_steps}] 群組 ({len(group_list)} 個)...")
+    groups = create_groups(org_sc, group_list) if group_list else {}
+
+    # 10. 外部廠商帳號 + EXTERNAL_USERS 角色
+    ext_list = company_def.get('external_users', [])
+    print(f"  [10/{total_steps}] 外部廠商 ({len(ext_list)} 人) + 角色...")
+    ext_users = create_external_users(org, org_sc, ext_list, groups, numbering_rules) if ext_list else {}
 
     db.session.commit()
 
     print(f"\n  完成! 企業 {name}:")
     print(f"    管理員: admin@{domain}")
     print(f"    員工: {len(users)} 人")
+    print(f"    外部廠商: {len(ext_users)} 人")
     print(f"    密碼: {TEST_PASSWORD}")
 
     return org

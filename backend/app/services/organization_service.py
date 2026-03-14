@@ -10,7 +10,7 @@ from ..models import (
     Organization, CustomerType,
     Contract, ContractStatus,
     User, UserType,
-    Role, RoleType, ScopeType,
+    Role, RoleType, ScopeType, ExclusiveGroup,
     BlockedEmailDomain,
     UserNumberingRule,
 )
@@ -290,6 +290,23 @@ class OrganizationService:
         employee_role.update_full_path()
         db.session.add(employee_role)
         roles['employee'] = employee_role
+
+        # 外部廠商角色
+        external_users_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='EXTERNAL_USERS',
+            name='外部廠商',
+            description='外部廠商帳號權限',
+            exclusive_group=ExclusiveGroup.EXTERNAL,
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        external_users_role.update_full_path()
+        db.session.add(external_users_role)
+        roles['external_users'] = external_users_role
 
         logger.info(f"Default roles created for org {org.code}")
 

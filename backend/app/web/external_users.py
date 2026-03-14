@@ -53,6 +53,29 @@ def _get_groups(org_secure_code: str):
     ).order_by(OrganizationalUnit.name).all()
 
 
+def _assign_external_role(user, org):
+    """自動指派 EXTERNAL_USERS 角色（鑰匙2: 外部廠商角色對齊）"""
+    from ..models.role import Role
+    from ..models.associations import UserRoleAssignment
+
+    role = Role.query.filter(
+        Role.org_secure_code == org.secure_code,
+        Role.code == 'EXTERNAL_USERS',
+        Role.is_deleted == False,
+        Role.is_active == True,
+    ).first()
+    if not role:
+        return
+
+    assignment = UserRoleAssignment(
+        org_secure_code=org.secure_code,
+        user_secure_code=user.secure_code,
+        role_secure_code=role.secure_code,
+        assigned_by=current_user.secure_code if current_user and current_user.is_authenticated else None,
+    )
+    db.session.add(assignment)
+
+
 def _log_audit(action: str, target_user: User, details: str = None):
     """記錄稽核日誌"""
     try:
@@ -204,6 +227,9 @@ def create_external_user():
                     db.session.flush()
 
                     # 編號已在 NumberingService.get_next_number 中自動記錄
+
+                    # 自動指派 EXTERNAL_USERS 角色 (鑰匙2)
+                    _assign_external_role(user, org)
 
                     # 建立群組成員關係
                     membership = UserUnitMembership(
