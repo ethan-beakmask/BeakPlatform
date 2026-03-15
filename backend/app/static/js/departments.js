@@ -108,9 +108,6 @@ function departmentManager() {
         empTargetDept: null,
         empDomainName: window.__DEPT_CONFIG?.domainName || '',
 
-        // 跨部門手動新增
-        newCrossMember: { user_id: '', role_type: 'MEMBER' },
-
         // Tree 實例
         _tree: null,
 
@@ -121,6 +118,8 @@ function departmentManager() {
         draggedLeader: null,    // 中間面板拖出的管理層
         draggedLeaderType: null,
         draggedUser: null,      // 右側未分配拖出
+        shiftHeld: false,       // Shift 鍵狀態（跨部門模式）
+        _isDragging: false,     // 拖曳中旗標
 
         // ==================== 計算屬性 ====================
 
@@ -165,13 +164,8 @@ function departmentManager() {
             return this.allDepartmentsFlat.filter(d => !excludeIds.has(d.id));
         },
 
-        get availableCrossUsers() {
-            if (!this.selectedDept) return [];
-            var memberIds = new Set(this.members.map(m => m.id));
-            var crossIds = new Set(this.crossMembers.map(cm => cm.user_secure_code));
-            return this.allUsers.filter(u =>
-                !memberIds.has(u.id) && !crossIds.has(u.id)
-            );
+        get isShiftCrossMode() {
+            return this._isDragging && this.shiftHeld && !this.draggedUser && !this.draggedMember && !this.draggedLeader;
         },
 
         // ==================== 初始化 ====================
@@ -439,11 +433,16 @@ function departmentManager() {
             } else if (node.data.type === 'person') {
                 var targetNode = this._tree._model.getNode(newParentId);
                 if (targetNode && targetNode.data.type === 'dept') {
-                    await this._movePersonToDept({
-                        person: { id: node.data.userId },
-                        deptId: node.data.deptId,
-                        role: node.data.role
-                    }, newParentId);
+                    if (this.shiftHeld && node.data.deptId !== newParentId) {
+                        await this._addCrossViaApi(newParentId, node.data.userId, 'MEMBER');
+                        await this._refreshAll();
+                    } else {
+                        await this._movePersonToDept({
+                            person: { id: node.data.userId },
+                            deptId: node.data.deptId,
+                            role: node.data.role
+                        }, newParentId);
+                    }
                 } else {
                     await this._refreshAll();
                 }
@@ -469,7 +468,6 @@ function departmentManager() {
             this.isCreating = false;
             this.isCreatingEmployee = false;
             this.formData = { code: dept.code, name: dept.name, parent_id: dept.parent_id || '' };
-            this.newCrossMember = { user_id: '', role_type: 'MEMBER' };
             await Promise.all([
                 this.loadMembers(id),
                 this.loadLeadership(id),
@@ -591,29 +589,6 @@ function departmentManager() {
 
         // ==================== 跨部門人員 ====================
 
-        async addCrossMember() {
-            if (!this.selectedDept || !this.newCrossMember.user_id) return;
-            try {
-                var res = await fetch('/api/units/' + this.selectedDept.id + '/cross-members', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
-                    body: JSON.stringify({
-                        user_id: this.newCrossMember.user_id,
-                        role_type: this.newCrossMember.role_type
-                    })
-                });
-                if (res.ok) {
-                    var data = await res.json();
-                    this.showToast(data.message || '已新增跨部門人員', 'success');
-                    this.newCrossMember = { user_id: '', role_type: 'MEMBER' };
-                    await this.loadCrossMembers(this.selectedDept.id);
-                } else {
-                    var data2 = await res.json();
-                    this.showToast(data2.error || '新增失敗', 'error');
-                }
-            } catch (err) { this.showToast('新增失敗', 'error'); }
-        },
-
         async removeCrossMember(cm) {
             if (!this.selectedDept) return;
             var userName = cm.user?.native_name || cm.user?.display_name || '此人員';
@@ -649,6 +624,7 @@ function departmentManager() {
         dragStartMember(e, member) {
             this.draggedMember = member;
             this._dragData = { source: 'external', type: 'person', person: member, role: 'member', deptId: this.selectedDept?.id };
+            this._isDragging = true;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', member.id);
         },
@@ -657,6 +633,7 @@ function departmentManager() {
             this.draggedLeader = leader;
             this.draggedLeaderType = type;
             this._dragData = { source: 'external', type: 'person', person: leader, role: type, deptId: this.selectedDept?.id };
+            this._isDragging = true;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', leader.id);
         },
@@ -664,6 +641,7 @@ function departmentManager() {
         dragStartUnassigned(e, user) {
             this.draggedUser = user;
             this._dragData = { source: 'external', type: 'person', person: user, role: null, deptId: null };
+            this._isDragging = true;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', user.id);
         },
@@ -681,6 +659,8 @@ function departmentManager() {
             this.draggedLeaderType = null;
             this._dragData = null;
             this.dragOverZone = null;
+            this._isDragging = false;
+            this.shiftHeld = false;
         },
 
         async dropToLeadership(e, position) {
@@ -696,6 +676,15 @@ function departmentManager() {
                 fromTree = this._dragData.source === 'tree';
             }
             if (!person) return;
+
+            // Shift + 非未分配來源 = 跨部門
+            if (this._shouldCross(e)) {
+                var roleType = this._crossRoleType(position);
+                await this._addCrossViaApi(this.selectedDept.id, person.id, roleType);
+                await this._refreshAll();
+                this.clearDrag();
+                return;
+            }
 
             // 從樹拖入: 先處理原部門
             if (fromTree && this._dragData.deptId) {
@@ -738,6 +727,14 @@ function departmentManager() {
                 fromTree = this._dragData.source === 'tree';
             }
             if (!person) return;
+
+            // Shift + 非未分配來源 = 跨部門
+            if (this._shouldCross(e)) {
+                await this._addCrossViaApi(this.selectedDept.id, person.id, 'MEMBER');
+                await this._refreshAll();
+                this.clearDrag();
+                return;
+            }
 
             if (fromTree && this._dragData.deptId) {
                 var oldDeptId = this._dragData.deptId;
@@ -793,42 +790,32 @@ function departmentManager() {
             this.clearDrag();
         },
 
-        async dropToCross(e) {
-            e.preventDefault();
-            this.dragOverZone = null;
-            if (!this.selectedDept) return;
+        // ==================== Shift 跨部門輔助 ====================
 
-            var userId = null;
-            var fromDeptId = null;
+        _shouldCross(e) {
+            if (!e.shiftKey) return false;
+            if (this.draggedUser) return false;
+            if (this.draggedMember || this.draggedLeader) return false;
+            return true;
+        },
 
-            if (this._dragData?.type === 'person') {
-                userId = this._dragData.person?.id || this._dragData.person;
-                fromDeptId = this._dragData.deptId;
-            } else if (this.draggedUser) {
-                userId = this.draggedUser.id;
+        _crossRoleType(position) {
+            if (position === 'manager') return 'MANAGER';
+            if (position === 'deputy') return 'DEPUTY';
+            return 'MEMBER';
+        },
+
+        async _addCrossViaApi(deptId, userId, roleType) {
+            var res = await this._apiPost('/api/units/' + deptId + '/cross-members', {
+                user_id: userId, role_type: roleType
+            });
+            if (res.ok) {
+                var data = await res.json();
+                this.showToast(data.message || '已新增跨部門人員', 'success');
+            } else {
+                var errData = await res.json().catch(function() { return {}; });
+                this.showToast(errData.error || '新增跨部門失敗', 'error');
             }
-            if (!userId) return;
-
-            if (fromDeptId === this.selectedDept.id) {
-                this.showToast('此人已是本部門正式成員', 'error');
-                this.clearDrag();
-                return;
-            }
-
-            try {
-                var res = await this._apiPost('/api/units/' + this.selectedDept.id + '/cross-members', {
-                    user_id: userId, role_type: 'MEMBER'
-                });
-                if (res.ok) {
-                    var data = await res.json();
-                    this.showToast(data.message || '已新增跨部門人員', 'success');
-                    await this.loadCrossMembers(this.selectedDept.id);
-                } else {
-                    var errData = await res.json();
-                    this.showToast(errData.error || '新增失敗', 'error');
-                }
-            } catch (err) { this.showToast('新增失敗', 'error'); }
-            this.clearDrag();
         },
 
         // ==================== 外部面板 -> Tree drop ====================
@@ -837,6 +824,31 @@ function departmentManager() {
             var container = document.getElementById('dept-tree');
             if (!container) return;
             var self = this;
+
+            // 攔截 Tree 內部的 person 拖曳開始，讓外部面板 drop 能識別
+            container.addEventListener('dragstart', function(e) {
+                var tr = e.target.closest('tr.bt-row');
+                if (!tr) return;
+                var nodeId = tr.dataset.id;
+                var node = self._tree._model.getNode(nodeId);
+                if (node && node.data.type === 'person') {
+                    self._dragData = {
+                        source: 'tree', type: 'person',
+                        person: { id: node.data.userId },
+                        role: node.data.role, deptId: node.data.deptId
+                    };
+                    self._isDragging = true;
+                } else {
+                    self._dragData = null;
+                    self._isDragging = false;
+                }
+            });
+
+            container.addEventListener('dragend', function() {
+                if (self._dragData && self._dragData.source === 'tree') {
+                    self.clearDrag();
+                }
+            });
 
             container.addEventListener('dragover', function(e) {
                 if (!self._dragData) return;
@@ -863,6 +875,8 @@ function departmentManager() {
                 container.querySelectorAll('.bk-tree-drop-highlight').forEach(el => el.classList.remove('bk-tree-drop-highlight'));
                 var tr = e.target.closest('tr.bt-row');
                 if (!tr || !self._dragData) return;
+                // Tree 內部拖曳由 onNodeMoved 處理
+                if (self._dragData.source === 'tree') return;
                 var targetId = tr.dataset.id;
                 var targetNode = self._tree._model.getNode(targetId);
                 if (!targetNode || targetNode.data.type !== 'dept') return;
@@ -870,6 +884,20 @@ function departmentManager() {
                 var person = self.draggedMember || self.draggedLeader || self.draggedUser;
                 if (!person && self._dragData.person) person = self._dragData.person;
                 if (!person) return;
+
+                // Shift + 非未分配 = 跨部門
+                if (e.shiftKey && !self.draggedUser) {
+                    var sourceDeptId = self._dragData.deptId || self.selectedDept?.id;
+                    if (sourceDeptId === targetId) {
+                        self.showToast('無法對同部門設定跨部門', 'error');
+                        self.clearDrag();
+                        return;
+                    }
+                    await self._addCrossViaApi(targetId, person.id, 'MEMBER');
+                    await self._refreshAll();
+                    self.clearDrag();
+                    return;
+                }
 
                 // 管理層先移除職位
                 if (self.draggedLeader && self.selectedDept) {

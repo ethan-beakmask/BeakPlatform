@@ -4,8 +4,8 @@
 /* Outlook 風格左右佈局 */
 .outlook-layout {
     display: flex;
-    height: calc(100vh - 100px);
-    margin: -16px;
+    height: calc(100vh - var(--topbar-height, 80px) - 20px);
+    margin: 4px -16px -16px;
     background: var(--color-bg);
 }
 

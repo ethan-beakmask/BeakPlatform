@@ -167,6 +167,44 @@
     /* 外部面板拖入 Tree 時目標部門高亮 */
     .tree-drop-highlight { background: #e3f2fd !important; outline: 1px dashed #1976d2; }
 
+    /* Shift 跨部門模式 */
+    .shift-mode-banner {
+        position: fixed;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #c62828;
+        color: white;
+        padding: 6px 20px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: bold;
+        z-index: 9999;
+        pointer-events: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .cross-shift-hint {
+        margin-top: 8px;
+        padding: 8px;
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.6;
+    }
+    .cross-shift-hint .hint-title {
+        font-weight: bold;
+        color: #c62828;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+    .staff-column.shift-cross-mode,
+    .proxy-section.shift-cross-mode {
+        outline: 2px dashed #c62828 !important;
+        background: #ffebee !important;
+    }
+
     /* 新增員工表單 */
     .employee-create-form { padding: 4px 0; }
     .emp-form-info {
@@ -200,7 +238,14 @@ window.__DEPT_CONFIG = {
 };
 </script>
 
-<div class="dept-container" x-data="departmentManager()" x-init="init()">
+<div class="dept-container" x-data="departmentManager()" x-init="init()"
+     @keydown.window="if($event.key==='Shift' && _isDragging) shiftHeld=true"
+     @keyup.window="if($event.key==='Shift') shiftHeld=false">
+    <!-- Shift 跨部門模式浮動提示 -->
+    <div class="shift-mode-banner" x-show="isShiftCrossMode" x-cloak>
+        [跨] 跨部門模式 -- 放開後以跨部門身份加入，不離開原部門
+    </div>
+
     <!-- 左側：Tree -->
     <div class="dept-tree-panel">
         <div class="tree-header">
@@ -270,16 +315,11 @@ window.__DEPT_CONFIG = {
                                 </div>
                             </form>
                         </div>
-                        <div class="cross-section" x-show="selectedDept"
-                             :class="{'drag-over': dragOverZone==='cross'}"
-                             @dragover.prevent="onZoneDragOver($event,'cross')"
-                             @dragleave="dragOverZone=null"
-                             @drop="dropToCross($event)">
+                        <div class="cross-section" x-show="selectedDept">
                             <div class="section-title">
                                 跨部門人員
                                 <span style="font-weight:normal;color:#888;font-size:11px;" x-text="'('+crossMembers.length+')'"></span>
                             </div>
-                            <div class="cross-drop-hint" x-show="_dragData || draggedUser" x-cloak>放開以新增為跨部門人員</div>
                             <div class="cross-member-list" x-show="crossMembers.length > 0">
                                 <template x-for="cm in crossMembers" :key="cm.id">
                                     <div class="cross-member-item">
@@ -292,32 +332,14 @@ window.__DEPT_CONFIG = {
                                     </div>
                                 </template>
                             </div>
-                            <div class="empty-message" x-show="crossMembers.length===0 && !_dragData && !draggedUser" style="padding:8px;font-size:11px;">
-                                尚無跨部門支援人員
-                            </div>
-                            <!-- 手動新增 -->
-                            <div class="cross-add-section">
-                                <div class="cross-add-form">
-                                    <div class="form-row">
-                                        <label>選擇員工</label>
-                                        <select x-model="newCrossMember.user_id" style="font-size:11px;">
-                                            <option value="">-- 請選擇 --</option>
-                                            <template x-for="u in availableCrossUsers" :key="u.id">
-                                                <option :value="u.id" x-text="(u.employee_id ? u.employee_id + ' ' : '') + (u.native_name || u.display_name)"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                    <div class="form-row">
-                                        <label>角色</label>
-                                        <select x-model="newCrossMember.role_type" style="font-size:11px;">
-                                            <option value="MEMBER">一般成員</option>
-                                            <option value="MANAGER">跨部門主管</option>
-                                            <option value="DEPUTY">跨部門副主管</option>
-                                        </select>
-                                    </div>
-                                    <div class="btn-group" style="margin-top:0;">
-                                        <button class="btn btn-primary btn-sm" @click="addCrossMember()" :disabled="!newCrossMember.user_id">新增</button>
-                                    </div>
+                            <div class="cross-shift-hint">
+                                <div class="hint-title">Shift + 拖曳 = 跨部門</div>
+                                <div>
+                                    從左側組織樹按住 Shift 拖曳人員至下方區域：<br>
+                                    拖入主管欄 → 跨部門主管<br>
+                                    拖入副主管欄 → 跨部門副主管<br>
+                                    拖入員工欄 → 跨部門成員<br>
+                                    人員不會離開原部門。
                                 </div>
                             </div>
                         </div>
@@ -334,7 +356,7 @@ window.__DEPT_CONFIG = {
                             <div class="staff-left-col">
                                 <!-- 主管 -->
                                 <div class="staff-column manager-col leadership-cell"
-                                     :class="{'drag-over': dragOverZone==='manager'}"
+                                     :class="{'drag-over': dragOverZone==='manager', 'shift-cross-mode': isShiftCrossMode}"
                                      @dragover.prevent="onZoneDragOver($event,'manager')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToLeadership($event,'manager')">
@@ -347,11 +369,11 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="!leadership.manager">
-                                        <div class="staff-empty">拖入設為主管</div>
+                                        <div class="staff-empty" x-text="isShiftCrossMode ? '[跨] 跨部門主管' : '拖入設為主管'"></div>
                                     </template>
                                     <!-- 代理人(一) -->
                                     <div class="proxy-section leadership-cell"
-                                         :class="{'drag-over': dragOverZone==='proxy1'}"
+                                         :class="{'drag-over': dragOverZone==='proxy1', 'shift-cross-mode': isShiftCrossMode}"
                                          @dragover.prevent.stop="onZoneDragOver($event,'proxy1')"
                                          @dragleave="dragOverZone=null"
                                          @drop.stop="dropToLeadership($event,'proxy1')">
@@ -369,7 +391,7 @@ window.__DEPT_CONFIG = {
                                 </div>
                                 <!-- 副主管 -->
                                 <div class="staff-column deputy-col leadership-cell"
-                                     :class="{'drag-over': dragOverZone==='deputy'}"
+                                     :class="{'drag-over': dragOverZone==='deputy', 'shift-cross-mode': isShiftCrossMode}"
                                      @dragover.prevent="onZoneDragOver($event,'deputy')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToLeadership($event,'deputy')">
@@ -382,11 +404,11 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="!leadership.deputy">
-                                        <div class="staff-empty">拖入設為副主管</div>
+                                        <div class="staff-empty" x-text="isShiftCrossMode ? '[跨] 跨部門副主管' : '拖入設為副主管'"></div>
                                     </template>
                                     <!-- 代理人(二) -->
                                     <div class="proxy-section leadership-cell"
-                                         :class="{'drag-over': dragOverZone==='proxy2'}"
+                                         :class="{'drag-over': dragOverZone==='proxy2', 'shift-cross-mode': isShiftCrossMode}"
                                          @dragover.prevent.stop="onZoneDragOver($event,'proxy2')"
                                          @dragleave="dragOverZone=null"
                                          @drop.stop="dropToLeadership($event,'proxy2')">
@@ -406,7 +428,7 @@ window.__DEPT_CONFIG = {
                             <!-- 右: 員工 -->
                             <div class="staff-right-col">
                                 <div class="staff-column employee-col" style="height:100%;"
-                                     :class="{'drag-over': dragOverZone==='employee'}"
+                                     :class="{'drag-over': dragOverZone==='employee', 'shift-cross-mode': isShiftCrossMode}"
                                      @dragover.prevent="onZoneDragOver($event,'employee')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToEmployee($event)">
@@ -423,7 +445,7 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="regularMembers.length===0">
-                                        <div class="staff-empty">從右側拖入員工</div>
+                                        <div class="staff-empty" x-text="isShiftCrossMode ? '[跨] 跨部門成員' : '從右側拖入員工'"></div>
                                     </template>
                                 </div>
                             </div>

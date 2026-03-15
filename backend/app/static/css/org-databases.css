@@ -223,8 +223,8 @@
 
 .odb-layout {
     display: flex;
-    height: calc(100vh - 140px);
-    margin: -16px;
+    height: calc(100vh - var(--topbar-height, 80px) - 20px);
+    margin: 4px -16px -16px;
     background: #f5f5f5;
     overflow: hidden;
 }
