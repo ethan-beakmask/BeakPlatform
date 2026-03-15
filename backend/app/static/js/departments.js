@@ -118,7 +118,7 @@ function departmentManager() {
         draggedLeader: null,    // 中間面板拖出的管理層
         draggedLeaderType: null,
         draggedUser: null,      // 右側未分配拖出
-        shiftHeld: false,       // Shift 鍵狀態（跨部門模式）
+        ctrlHeld: false,       // Ctrl 鍵狀態（跨部門模式）
         _isDragging: false,     // 拖曳中旗標
 
         // ==================== 計算屬性 ====================
@@ -164,8 +164,8 @@ function departmentManager() {
             return this.allDepartmentsFlat.filter(d => !excludeIds.has(d.id));
         },
 
-        get isShiftCrossMode() {
-            return this._isDragging && this.shiftHeld && !this.draggedUser && !this.draggedMember && !this.draggedLeader;
+        get isCtrlCrossMode() {
+            return this._isDragging && this.ctrlHeld && !this.draggedUser && !this.draggedMember && !this.draggedLeader;
         },
 
         // ==================== 初始化 ====================
@@ -433,7 +433,7 @@ function departmentManager() {
             } else if (node.data.type === 'person') {
                 var targetNode = this._tree._model.getNode(newParentId);
                 if (targetNode && targetNode.data.type === 'dept') {
-                    if (this.shiftHeld && node.data.deptId !== newParentId) {
+                    if (this.ctrlHeld && node.data.deptId !== newParentId) {
                         await this._addCrossViaApi(newParentId, node.data.userId, 'MEMBER');
                         await this._refreshAll();
                     } else {
@@ -648,6 +648,7 @@ function departmentManager() {
 
         onZoneDragOver(e, zone) {
             if (this._dragData || this.draggedMember || this.draggedLeader || this.draggedUser) {
+                e.dataTransfer.dropEffect = 'move';
                 this.dragOverZone = zone;
             }
         },
@@ -660,7 +661,7 @@ function departmentManager() {
             this._dragData = null;
             this.dragOverZone = null;
             this._isDragging = false;
-            this.shiftHeld = false;
+            this.ctrlHeld = false;
         },
 
         async dropToLeadership(e, position) {
@@ -677,7 +678,7 @@ function departmentManager() {
             }
             if (!person) return;
 
-            // Shift + 非未分配來源 = 跨部門
+            // Ctrl + 非未分配來源 = 跨部門
             if (this._shouldCross(e)) {
                 var roleType = this._crossRoleType(position);
                 await this._addCrossViaApi(this.selectedDept.id, person.id, roleType);
@@ -694,7 +695,8 @@ function departmentManager() {
                     await this._apiDelete('/api/units/' + oldDeptId + '/leadership/' + oldRole);
                 }
                 if (oldDeptId !== this.selectedDept.id) {
-                    await this._apiDelete('/api/units/' + oldDeptId + '/members/' + person.id);
+                    // 404 表示非此部門主要成員，忽略即可
+                    await this._apiDelete('/api/units/' + oldDeptId + '/members/' + person.id).catch(function() {});
                 }
             }
             // 管理層職位互換
@@ -728,7 +730,7 @@ function departmentManager() {
             }
             if (!person) return;
 
-            // Shift + 非未分配來源 = 跨部門
+            // Ctrl + 非未分配來源 = 跨部門
             if (this._shouldCross(e)) {
                 await this._addCrossViaApi(this.selectedDept.id, person.id, 'MEMBER');
                 await this._refreshAll();
@@ -790,10 +792,10 @@ function departmentManager() {
             this.clearDrag();
         },
 
-        // ==================== Shift 跨部門輔助 ====================
+        // ==================== Ctrl 跨部門輔助 ====================
 
         _shouldCross(e) {
-            if (!e.shiftKey) return false;
+            if (!e.ctrlKey) return false;
             if (this.draggedUser) return false;
             if (this.draggedMember || this.draggedLeader) return false;
             return true;
@@ -885,8 +887,8 @@ function departmentManager() {
                 if (!person && self._dragData.person) person = self._dragData.person;
                 if (!person) return;
 
-                // Shift + 非未分配 = 跨部門
-                if (e.shiftKey && !self.draggedUser) {
+                // Ctrl + 非未分配 = 跨部門
+                if (e.ctrlKey && !self.draggedUser) {
                     var sourceDeptId = self._dragData.deptId || self.selectedDept?.id;
                     if (sourceDeptId === targetId) {
                         self.showToast('無法對同部門設定跨部門', 'error');
