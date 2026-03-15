@@ -182,6 +182,10 @@ def create_user():
         db.session.add(user)
         db.session.commit()
 
+        # 自動指派 user_type 對應的預設角色（雙鑰匙 Key2）
+        from ..web.users import _assign_default_role
+        _assign_default_role(user, org)
+
         # 記錄用戶編號並更新計數器
         if employee_id:
             numbering_rule_code = (data.get('numbering_rule') or '').strip()

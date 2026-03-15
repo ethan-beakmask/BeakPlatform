@@ -332,8 +332,8 @@ msgstr "链接目标"
 
 #: app/templates/pages/menu/create.html:76
 #: app/templates/pages/menu/edit.html:71
-msgid "可見用戶類型"
-msgstr "可见用户类型"
+msgid "授權用戶類型"
+msgstr "授权用户类型"
 
 #: app/templates/pages/menu/create.html:85
 #: app/templates/pages/menu/edit.html:80

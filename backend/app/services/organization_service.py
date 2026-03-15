@@ -336,14 +336,20 @@ class OrganizationService:
         org: Organization, default_roles: dict
     ):
         """
-        為 ORG_ADMIN 限定的共享選單建立角色需求。
+        為新企業建立預設選單角色需求（雙鑰匙 Key2）。
 
-        雙鑰匙機制：選單必須有角色需求設定，否則任何人都無法存取。
-        此方法在新企業建立時自動為 ORG_ADMIN only 的選單設定角色需求。
+        雙鑰匙機制：
+        - Key1 (MenuPermission): 哪些 user_type 可看到選單
+        - Key2 (MenuRoleRequirement): 哪些角色可存取選單（per-org）
+
+        此方法找出所有平台選單中，Key1 包含 ORG_ADMIN 的項目，
+        自動為新企業建立 Key2（指向該企業的 ORG_ADMIN 角色），
+        確保企業管理員能存取所有應有權限的頁面。
         """
         from ..models.menu_item import MenuItem
         from ..models.menu_permission import MenuPermission
         from ..models.menu_role_requirement import MenuRoleRequirement
+        from ..constants import SYSTEM_ORG_CODE
         from sqlalchemy import text
 
         org_admin_role = default_roles.get('org_admin')
@@ -352,10 +358,11 @@ class OrganizationService:
 
         db.session.flush()  # 確保 org_admin_role 有 secure_code
 
-        # 繞過 RLS：共享選單屬於 system.local，需要 system_admin 權限才能查到
+        # 繞過 RLS：平台選單屬於 system.local，需要 system_admin 權限才能查到
         db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
 
-        # 找出所有 ORG_ADMIN only 的共享選單（有 ORG_ADMIN 權限但沒有 EMPLOYEE）
+        # 找出所有平台選單中 Key1 包含 ORG_ADMIN 的項目
+        # 條件：system.local 的選單、有路由、Key1 勾了 ORG_ADMIN
         org_admin_menus = db.session.query(MenuItem.secure_code).join(
             MenuPermission,
             db.and_(
@@ -363,27 +370,17 @@ class OrganizationService:
                 MenuPermission.is_deleted == False,
             )
         ).filter(
-            MenuItem.is_shared == True,
+            MenuItem.org_secure_code == SYSTEM_ORG_CODE,
             MenuItem.is_deleted == False,
             MenuItem.is_active == True,
             MenuItem.link_target.like('/%'),
             MenuPermission.user_type == 'ORG_ADMIN',
         ).all()
 
-        org_admin_menu_scs = {row[0] for row in org_admin_menus}
-
-        # 排除也有 EMPLOYEE 權限的選單
-        employee_menus = db.session.query(MenuPermission.menu_secure_code).filter(
-            MenuPermission.menu_secure_code.in_(org_admin_menu_scs),
-            MenuPermission.user_type == 'EMPLOYEE',
-            MenuPermission.is_deleted == False,
-        ).all()
-        employee_menu_scs = {row[0] for row in employee_menus}
-
-        org_admin_only_scs = org_admin_menu_scs - employee_menu_scs
+        target_menu_scs = {row[0] for row in org_admin_menus}
 
         count = 0
-        for menu_sc in org_admin_only_scs:
+        for menu_sc in target_menu_scs:
             # 避免重複
             exists = MenuRoleRequirement.query.filter(
                 MenuRoleRequirement.menu_secure_code == menu_sc,
