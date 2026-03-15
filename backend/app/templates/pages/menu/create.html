@@ -75,22 +75,12 @@
             </td>
         </tr>
         <tr>
-            <td><label for="link_type">{{ _('連結類型') }}</label></td>
+            <td>{{ _('連結類型') }}</td>
             <td>
-                <select id="link_type" name="link_type">
-                    <option value="route">Flask Route</option>
-                    <option value="url">{{ _('外部 URL') }}</option>
-                    <option value="page">{{ _('動態頁面') }}</option>
-                    <option value="header">{{ _('區塊標題') }}</option>
-                    <option value="divider">{{ _('分隔線') }}</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td><label for="link_target">{{ _('連結目標') }}</label></td>
-            <td>
-                <input type="text" id="link_target" name="link_target" size="50">
-                <br><small>route: blueprint.function_name, url: https://..., page: page_secure_code</small>
+                <code>header</code>
+                <input type="hidden" name="link_type" value="header">
+                <input type="hidden" name="link_target" value="">
+                <small style="color:#6b7280;">{{ _('(手動建立的選單僅能作為區塊標題，路由型選單由系統自動建立)') }}</small>
             </td>
         </tr>
         <tr>

@@ -35,35 +35,35 @@ MODULE_INFO = {
                 {
                     'code': 'form_workflow.templates',
                     'name': '表單範本',
-                    'url': '/forms/templates/',
+                    'url': 'form_workflow_web.templates',
                     'sort_order': 10,
                     'required_permission': 'form_workflow.template.manage'
                 },
                 {
                     'code': 'form_workflow.workflows',
                     'name': '流程設計',
-                    'url': '/forms/workflows/',
+                    'url': 'form_workflow_web.workflows',
                     'sort_order': 11,
                     'required_permission': 'form_workflow.workflow.manage'
                 },
                 {
                     'code': 'form_workflow.mappings',
                     'name': '配對管理',
-                    'url': '/forms/mappings',
+                    'url': 'form_workflow_web.mappings',
                     'sort_order': 12,
                     'required_permission': 'form_workflow.workflow.manage'
                 },
                 {
                     'code': 'form_workflow.form_themes',
                     'name': '表單風格管理',
-                    'url': '/forms/form-themes',
+                    'url': 'form_workflow_web.form_themes',
                     'sort_order': 15,
                     'required_permission': 'form_workflow.admin'
                 },
                 {
                     'code': 'form_workflow.categories',
                     'name': '分類管理',
-                    'url': '/forms/categories',
+                    'url': 'form_workflow_web.categories',
                     'sort_order': 20,
                     'required_permission': 'form_workflow.admin'
                 },

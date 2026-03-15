@@ -65,20 +65,20 @@
             </td>
         </tr>
         <tr>
-            <td><label for="link_type">{{ _('連結類型') }}</label></td>
+            <td>{{ _('連結類型') }}</td>
             <td>
-                <select id="link_type" name="link_type">
-                    <option value="route" {% if item.link_type == 'route' %}selected{% endif %}>Flask Route</option>
-                    <option value="url" {% if item.link_type == 'url' %}selected{% endif %}>{{ _('外部 URL') }}</option>
-                    <option value="page" {% if item.link_type == 'page' %}selected{% endif %}>{{ _('動態頁面') }}</option>
-                    <option value="header" {% if item.link_type == 'header' %}selected{% endif %}>{{ _('區塊標題') }}</option>
-                    <option value="divider" {% if item.link_type == 'divider' %}selected{% endif %}>{{ _('分隔線') }}</option>
-                </select>
+                <code>{{ item.link_type }}</code>
+                <input type="hidden" name="link_type" value="{{ item.link_type }}">
+                <small style="color:#6b7280;">{{ _('(系統設定，不可變更)') }}</small>
             </td>
         </tr>
         <tr>
-            <td><label for="link_target">{{ _('連結目標') }}</label></td>
-            <td><input type="text" id="link_target" name="link_target" size="50" value="{{ item.link_target or '' }}"></td>
+            <td>{{ _('連結目標') }}</td>
+            <td>
+                <code>{{ item.link_target or '-' }}</code>
+                <input type="hidden" name="link_target" value="{{ item.link_target or '' }}">
+                <small style="color:#6b7280;">{{ _('(系統設定，不可變更)') }}</small>
+            </td>
         </tr>
         <tr>
             <td valign="top">{{ _('授權用戶類型') }}</td>

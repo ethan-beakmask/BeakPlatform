@@ -28,7 +28,7 @@ MODULE_INFO = {
                 {
                     'code': 'spec_formulate.data_specs',
                     'name': '資料表規格',
-                    'url': '/spec-formulate/',
+                    'url': 'spec_formulate_web.data_specs',
                     'sort_order': 1,
                 },
             ]

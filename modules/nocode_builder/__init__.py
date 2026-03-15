@@ -25,25 +25,25 @@ MODULE_INFO = {
                 {
                     'code': 'nocode_builder.sub_systems',
                     'name': '子系統開發',
-                    'url': '/nocode-builder/sub-systems',
+                    'url': 'nocode_builder_web.sub_system_list',
                     'sort_order': 1
                 },
                 {
                     'code': 'nocode_builder.views',
                     'name': '視圖管理',
-                    'url': '/nocode-builder/',
+                    'url': 'nocode_builder_web.index',
                     'sort_order': 2
                 },
                 {
                     'code': 'nocode_builder.lab',
                     'name': '頁面管理',
-                    'url': '/nocode-builder/lab',
+                    'url': 'nocode_builder_web.lab',
                     'sort_order': 3
                 },
                 {
                     'code': 'nocode_builder.lookup',
                     'name': '選項清單',
-                    'url': '/nocode-builder/lookup',
+                    'url': 'nocode_builder_web.lookup_manager',
                     'sort_order': 4
                 },
             ]
