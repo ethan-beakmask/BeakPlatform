@@ -45,6 +45,11 @@
                 icon.className = 'tg-node-icon root';
                 icon.textContent = '\u25A0';
                 cell.appendChild(icon);
+            } else if (nodeType === 'ext_root') {
+                var iconExt = document.createElement('span');
+                iconExt.className = 'tg-node-icon ext-root';
+                iconExt.textContent = '\u25A0';
+                cell.appendChild(iconExt);
             } else if (nodeType === 'group') {
                 var icon2 = document.createElement('span');
                 icon2.className = 'tg-node-icon grp';
@@ -340,7 +345,7 @@ function groupManager() {
                         label: item.name,
                         expanded: true,
                         children: [],
-                        data: { type: 'group', code: item.code, name: item.name, parent_id: item.parent_id || null, description: item.description || '' }
+                        data: { type: 'group', code: item.code, name: item.name, parent_id: item.parent_id || null, description: item.description || '', is_system_unit: item.is_system_unit || false }
                     };
                     // 成員模式：加入人員節點 (排序: 團長→副團長→外人→員工)
                     if (self.showPeopleInTree && item._members) {
@@ -357,13 +362,40 @@ function groupManager() {
                 });
             };
 
-            return [{
+            // 分離外部廠商群組與內部群組
+            var extGroups = [];
+            var intGroups = [];
+            for (var i = 0; i < this.groups.length; i++) {
+                var g = this.groups[i];
+                if (g.code === 'EXTERNAL_VENDORS' || g.code === 'external_vendors') {
+                    extGroups.push(g);
+                } else {
+                    intGroups.push(g);
+                }
+            }
+
+            var roots = [{
                 id: 'root',
                 label: rootLabel,
                 expanded: true,
-                children: build(this.groups),
+                children: build(intGroups),
                 data: { type: 'root' }
             }];
+
+            // 外部廠商樹：以 EXTERNAL_VENDORS 群組為根
+            if (extGroups.length > 0) {
+                var extBuilt = build(extGroups);
+                // 直接用第一個 EXTERNAL_VENDORS 群組節點作為第二根
+                roots.push({
+                    id: extBuilt[0].id,
+                    label: extBuilt[0].label,
+                    expanded: true,
+                    children: extBuilt[0].children,
+                    data: { type: 'ext_root', code: extBuilt[0].data.code, name: extBuilt[0].data.name, description: extBuilt[0].data.description, is_system_unit: true }
+                });
+            }
+
+            return roots;
         },
 
         _personNode: function(member, groupId) {
@@ -410,6 +442,10 @@ function groupManager() {
         _onNodeClick: function(id, node) {
             if (id === 'root') {
                 this.selectRoot();
+                return;
+            }
+            if (node.data.type === 'ext_root') {
+                this.selectGroup(id);
                 return;
             }
             if (node.data.type === 'group') {
@@ -541,6 +577,10 @@ function groupManager() {
 
         async deleteGroup() {
             if (!this.selectedGroup) return;
+            if (this.selectedGroup.is_system_unit) {
+                this.showToast('系統保留群組不可刪除', 'error');
+                return;
+            }
             try {
                 var checkRes = await fetch('/api/units/' + this.selectedGroup.id + '?check_only=true&cascade=true', {
                     method: 'DELETE',

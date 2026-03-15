@@ -60,8 +60,7 @@
             </td>
             <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
             <td style="text-align: center;">
-                <a href="{{ url_for('users.view_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('查看') }}</a>
-                <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb; margin-left: 8px;">{{ _('編輯') }}</a>
+                <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('編輯') }}</a>
                 {% if user.secure_code != current_user.secure_code %}
                 <a href="#" style="color: #2563eb; margin-left: 8px;"
                    onclick="event.preventDefault(); document.getElementById('toggle-{{ user.secure_code }}').submit();">

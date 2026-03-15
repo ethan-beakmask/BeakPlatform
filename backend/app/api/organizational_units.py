@@ -355,6 +355,10 @@ def delete_unit(secure_code: str):
     if not unit:
         return jsonify({'error': '組織單位不存在'}), 404
 
+    # 系統保留單位不可刪除
+    if unit.is_system_unit:
+        return jsonify({'error': '此為系統保留單位，不可刪除'}), 403
+
     cascade = request.args.get('cascade', 'false').lower() == 'true'
     confirm_members = request.args.get('confirm_members', 'false').lower() == 'true'
     check_only = request.args.get('check_only', 'false').lower() == 'true'
@@ -1194,11 +1198,15 @@ def get_cross_members(secure_code: str):
 
     membership_type = request.args.get('type')
 
-    # 查詢跨部門成員
-    query = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+    # 查詢跨部門成員（過濾已刪除/停用帳號 DATA-01）
+    query = UserUnitMembership.query.join(  # nosemgrep: beakplatform-direct-model-query-in-api
+        User, UserUnitMembership.user_secure_code == User.secure_code
+    ).filter(
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
         UserUnitMembership.unit_secure_code == secure_code,
-        UserUnitMembership.is_deleted == False
+        UserUnitMembership.is_deleted == False,
+        User.is_deleted == False,
+        User.is_active == True
     )
 
     # 只顯示 DOTTED（跨部門）和 MEMBER（社群）成員

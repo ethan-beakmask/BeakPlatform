@@ -82,7 +82,7 @@
                 <select name="group_code" required style="width: 100%;">
                     <option value="">-- 請選擇 --</option>
                     {% for group in groups %}
-                    <option value="{{ group.code }}" {% if form_data.get('group_code') == group.code %}selected{% endif %}>
+                    <option value="{{ group.code }}" {% if form_data.get('group_code') == group.code %}selected{% elif not form_data.get('group_code') and group.code == 'EXTERNAL_VENDORS' %}selected{% endif %}>
                         {{ group.name }}
                     </option>
                     {% endfor %}

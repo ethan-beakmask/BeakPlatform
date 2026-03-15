@@ -65,8 +65,7 @@
                 {% endif %}
             </td>
             <td style="text-align: center;">
-                <a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}" style="color: #2563eb;">查看</a>
-                <a href="{{ url_for('external_users.edit_external_user', secure_code=user.secure_code) }}" style="color: #2563eb; margin-left: 8px;">編輯</a>
+                <a href="{{ url_for('external_users.edit_external_user', secure_code=user.secure_code) }}" style="color: #2563eb;">編輯</a>
                 <a href="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}"
                    style="color: #2563eb; margin-left: 8px;"
                    onclick="event.preventDefault(); document.getElementById('toggle-{{ user.secure_code }}').submit();">

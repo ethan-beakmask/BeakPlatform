@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}">&lt; 返回詳情頁</a></p>
+<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部廠商列表</a></p>
 
 <h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">
     編輯外部廠商：{{ user.display_name }}
@@ -63,7 +63,7 @@
                 <button type="submit" class="btn btn-primary">
                     儲存變更
                 </button>
-                <a href="{{ url_for('external_users.view_external_user', secure_code=user.secure_code) }}"
+                <a href="{{ url_for('external_users.list_external_users') }}"
                    style="margin-left: 15px; color: #6b7280;">取消</a>
             </td>
         </tr>

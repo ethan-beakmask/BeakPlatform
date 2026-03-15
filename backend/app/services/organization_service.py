@@ -14,6 +14,7 @@ from ..models import (
     BlockedEmailDomain,
     UserNumberingRule,
 )
+from ..models.organizational_unit import OrganizationalUnit, UnitType
 from ..models.user_numbering_rule import NumberingUsageScope, NumberingDefaultFor
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
@@ -148,6 +149,9 @@ class OrganizationService:
 
             # 建立預設編號規則
             OrganizationService._create_default_numbering_rule(org)
+
+            # 建立預設外部廠商群組
+            OrganizationService._create_default_external_group(org)
 
         logger.info(f"Organization created: {org.code} ({org.domain_name}) by {created_by}")
 
@@ -427,9 +431,52 @@ class OrganizationService:
         )
         db.session.add(rule)
 
-        logger.info(f"Default numbering rule created for org {org.code}")
+        # 外部廠商預設編號規則
+        ext_rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='外部廠商編號',
+            description='前綴「外賓」+ 4 位數序號',
+            elements={
+                'components': [
+                    {'type': 'prefix', 'order': 1, 'values': ['外賓']},
+                    {'type': 'sequence', 'order': 5, 'start': 1,
+                     'digits': 4, 'reset_period': 'never'},
+                ],
+                'total_length': 0,
+            },
+            usage_scope=NumberingUsageScope.EXTERNAL_ONLY,
+            default_for=NumberingDefaultFor.EXTERNAL,
+            is_active=True,
+        )
+        db.session.add(ext_rule)
+
+        logger.info(f"Default numbering rules created for org {org.code}")
 
         return rule
+
+    @staticmethod
+    def _create_default_external_group(org: Organization) -> OrganizationalUnit:
+        """
+        建立預設外部廠商群組
+
+        系統級群組，is_system_unit=True，企業管理員不可刪除。
+        所有外部廠商帳號預設歸屬此群組或其子群組。
+        """
+        group = OrganizationalUnit(
+            org_secure_code=org.secure_code,
+            unit_type=UnitType.GROUP,
+            code='EXTERNAL_VENDORS',
+            name='外部廠商社群',
+            description='外部廠商帳號預設歸屬群組',
+            is_system_unit=True,
+            is_active=True,
+        )
+        group.update_full_path()
+        db.session.add(group)
+
+        logger.info(f"Default external vendors group created for org {org.code}")
+
+        return group
 
     @staticmethod
     def create_contract(

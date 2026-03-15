@@ -54,6 +54,7 @@
     .grp-tree-panel .bk-tree-container .bt-row.tg-selected .tg-node-icon { color: white; }
     .tg-node-icon { display: inline-block; width: 15px; text-align: center; margin-right: 3px; }
     .tg-node-icon.root { color: #2c3e50; }
+    .tg-node-icon.ext-root { color: #c0392b; }
     .tg-node-icon.grp { color: #27ae60; }
 
     /* 中間：詳情面板 */
@@ -240,7 +241,7 @@ window.__GROUPS_CONFIG = {
                                 <div class="btn-group">
                                     <button type="submit" class="btn btn-primary" x-text="isCreating ? '建立' : '儲存'"></button>
                                     <button type="button" class="btn btn-secondary" @click="cancelEdit()">取消</button>
-                                    <button type="button" class="btn btn-danger" x-show="!isCreating && selectedGroup" @click="deleteGroup()">刪除</button>
+                                    <button type="button" class="btn btn-danger" x-show="!isCreating && selectedGroup && !selectedGroup.is_system_unit" @click="deleteGroup()">刪除</button>
                                 </div>
                             </form>
                         </template>

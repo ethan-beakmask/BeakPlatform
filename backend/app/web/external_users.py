@@ -45,12 +45,19 @@ def _get_default_external_rule(org_secure_code: str):
 
 
 def _get_groups(org_secure_code: str):
-    """取得群組列表"""
-    return OrganizationalUnit.query.filter(
+    """取得外部廠商社群 Tree 底下的群組列表（含 EXTERNAL_VENDORS 本身）"""
+    ext_root = OrganizationalUnit.query.filter(
         OrganizationalUnit.org_secure_code == org_secure_code,
+        OrganizationalUnit.code == 'EXTERNAL_VENDORS',
         OrganizationalUnit.unit_type == 'GROUP',
         OrganizationalUnit.is_deleted == False
-    ).order_by(OrganizationalUnit.name).all()
+    ).first()
+    if not ext_root:
+        return []
+    return [ext_root] + [
+        u for u in ext_root.get_descendants()
+        if u.unit_type == 'GROUP'
+    ]
 
 
 def _assign_external_role(user, org):
@@ -74,6 +81,52 @@ def _assign_external_role(user, org):
         assigned_by=current_user.secure_code if current_user and current_user.is_authenticated else None,
     )
     db.session.add(assignment)
+
+
+def _revoke_memberships_and_roles(user):
+    """停用/刪除時，退出所有社群並解除非 EXTERNAL_USERS 角色"""
+    from ..models.role import Role
+    from ..models.associations import UserRoleAssignment
+
+    now = datetime.utcnow()
+
+    # 1. 軟刪除所有社群成員關係
+    memberships = UserUnitMembership.query.filter(
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.org_secure_code == user.org_secure_code,
+        UserUnitMembership.is_deleted == False
+    ).all()
+
+    revoked_groups = []
+    for m in memberships:
+        m.is_deleted = True
+        m.deleted_at = now
+        revoked_groups.append(m.unit_secure_code)
+
+    # 2. 找出 EXTERNAL_USERS 角色 secure_code
+    external_role = Role.query.filter(
+        Role.org_secure_code == user.org_secure_code,
+        Role.code == 'EXTERNAL_USERS',
+        Role.is_deleted == False,
+    ).first()
+    external_role_code = external_role.secure_code if external_role else None
+
+    # 3. 軟刪除非 EXTERNAL_USERS 的角色指派
+    role_query = UserRoleAssignment.query.filter(
+        UserRoleAssignment.user_secure_code == user.secure_code,
+        UserRoleAssignment.org_secure_code == user.org_secure_code,
+        UserRoleAssignment.is_deleted == False
+    )
+    if external_role_code:
+        role_query = role_query.filter(
+            UserRoleAssignment.role_secure_code != external_role_code
+        )
+    revoked_roles = role_query.all()
+    for ra in revoked_roles:
+        ra.is_deleted = True
+        ra.deleted_at = now
+
+    return len(revoked_groups), len(revoked_roles)
 
 
 def _log_audit(action: str, target_user: User, details: str = None):
@@ -370,7 +423,7 @@ def edit_external_user(secure_code: str):
 
                     db.session.commit()
                     flash(f'已更新外部廠商 {user.display_name}', 'success')
-                    return redirect(url_for('external_users.view_external_user', secure_code=secure_code))
+                    return redirect(url_for('external_users.list_external_users'))
                 except Exception as e:
                     db.session.rollback()
                     flash(f'更新失敗: {str(e)}', 'error')
@@ -530,11 +583,19 @@ def toggle_status(secure_code: str):
         user.is_active = not user.is_active
         status = '啟用' if user.is_active else '停用'
 
+        # 停用時：退出所有社群 + 解除非 EXTERNAL_USERS 角色
+        revoke_detail = ''
+        if not user.is_active:
+            g_count, r_count = _revoke_memberships_and_roles(user)
+            if g_count or r_count:
+                revoke_detail = f'（自動退出 {g_count} 個社群、解除 {r_count} 個角色）'
+
         # 稽核記錄
-        _log_audit('TOGGLE_STATUS', user, f'狀態變更: {"啟用" if old_status else "停用"} → {status}')
+        _log_audit('TOGGLE_STATUS', user,
+                   f'狀態變更: {"啟用" if old_status else "停用"} → {status}{revoke_detail}')
 
         db.session.commit()
-        flash(f'已{status}外部廠商 {user.display_name}', 'success')
+        flash(f'已{status}外部廠商 {user.display_name}{revoke_detail}', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'操作失敗: {str(e)}', 'error')
@@ -559,11 +620,18 @@ def delete_external_user(secure_code: str):
         display_name = user.display_name
         email = user.email
 
+        # 退出所有社群 + 解除非 EXTERNAL_USERS 角色
+        g_count, r_count = _revoke_memberships_and_roles(user)
+
         user.is_deleted = True
         user.deleted_at = datetime.utcnow()
 
         # 稽核記錄
-        _log_audit('DELETE', user, f'刪除外部廠商: {display_name} ({email})')
+        revoke_detail = ''
+        if g_count or r_count:
+            revoke_detail = f'（自動退出 {g_count} 個社群、解除 {r_count} 個角色）'
+        _log_audit('DELETE', user,
+                   f'刪除外部廠商: {display_name} ({email}){revoke_detail}')
 
         db.session.commit()
         flash(f'已刪除外部廠商 {display_name}', 'success')
