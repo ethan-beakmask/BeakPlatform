@@ -1,0 +1,94 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ _('帳號角色權限表') }} - BeakPlatform{% endblock %}
+
+{% block content %}
+<h1>{{ _('帳號角色權限表') }}</h1>
+
+{# 篩選列 #}
+<form method="get" style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+    <select name="user_type" onchange="this.form.submit()"
+            style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; min-width: 140px;">
+        <option value="">{{ _('全部類型') }}</option>
+        <option value="ORG_ADMIN" {% if filter_user_type == 'ORG_ADMIN' %}selected{% endif %}>{{ _('企業管理員') }}</option>
+        <option value="EMPLOYEE" {% if filter_user_type == 'EMPLOYEE' %}selected{% endif %}>{{ _('員工') }}</option>
+        <option value="EXTERNAL" {% if filter_user_type == 'EXTERNAL' %}selected{% endif %}>{{ _('外部廠商') }}</option>
+    </select>
+    <input type="text" name="q" value="{{ filter_q }}" placeholder="{{ _('搜尋姓名/帳號/編號') }}"
+           style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; min-width: 200px;">
+    <button type="submit" class="btn btn-sm btn-primary">{{ _('搜尋') }}</button>
+    {% if filter_user_type or filter_q %}
+    <a href="{{ url_for('account_roles.index') }}" style="color: #6b7280; font-size: 0.9em;">{{ _('清除篩選') }}</a>
+    {% endif %}
+    <span style="margin-left: auto; color: #6b7280; font-size: 0.9em;">{{ _('共 %(count)d 筆', count=users|length) }}</span>
+</form>
+
+{% if users %}
+<table class="data-table bordered" x-data="sortableTable()">
+    <thead>
+        <tr>
+            <th data-sort="text" style="width: 12%;">{{ _('姓名') }}</th>
+            <th data-sort="text" style="width: 10%;">{{ _('帳號類型') }}</th>
+            <th data-sort="text" style="width: 10%;">{{ _('用戶編號') }}</th>
+            <th style="width: 34%;">{{ _('社群參與') }}</th>
+            <th style="width: 34%;">{{ _('角色指派') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>
+                <strong>{{ user.display_name }}</strong>
+                <div style="font-size: 0.85em; color: #6b7280;">{{ user.email }}</div>
+            </td>
+            <td>
+                {% set ut = user.user_type %}
+                {% if ut == 'EXTERNAL' %}
+                <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ user_type_labels.get(ut, ut) }}</span>
+                {% elif ut == 'ORG_ADMIN' %}
+                <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ user_type_labels.get(ut, ut) }}</span>
+                {% else %}
+                <span style="font-size: 0.85em; color: #475569;">{{ user_type_labels.get(ut, ut) }}</span>
+                {% endif %}
+            </td>
+            <td style="font-size: 0.9em;">{{ user.employee_id or '-' }}</td>
+            <td>
+                {% set groups = user_groups.get(user.secure_code, []) %}
+                {% if groups %}
+                    {% for g in groups %}
+                    <div style="margin-bottom: 2px;">
+                        <span>{{ g.name }}</span>
+                        {% if g.is_leader %}
+                        <span style="color: #2563eb; font-weight: 600; font-size: 0.85em; margin-left: 4px;">[{{ g.role }}]</span>
+                        {% else %}
+                        <span style="color: #6b7280; font-size: 0.85em; margin-left: 4px;">[{{ g.role }}]</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <span style="color: #9ca3af; font-size: 0.9em;">-</span>
+                {% endif %}
+            </td>
+            <td>
+                {% set roles = user_roles.get(user.secure_code, []) %}
+                {% if roles %}
+                    {% for r in roles %}
+                    <div style="margin-bottom: 2px;">
+                        <span>{{ r.name }}</span>
+                        {% if r.is_system_role %}
+                        <span style="color: #9ca3af; font-size: 0.8em; margin-left: 4px;">({{ _('預設') }})</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <span style="color: #9ca3af; font-size: 0.9em;">-</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color: #6b7280; padding: 40px 0; text-align: center;">{{ _('無符合條件的帳號') }}</p>
+{% endif %}
+{% endblock %}

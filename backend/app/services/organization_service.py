@@ -125,7 +125,26 @@ class OrganizationService:
             )
 
             # 建立預設角色
-            OrganizationService._create_default_roles(org)
+            default_roles = OrganizationService._create_default_roles(org)
+
+            # 指派 ORG_ADMIN 角色給管理員（雙鑰匙需要）
+            from ..models.associations import UserRoleAssignment
+            from sqlalchemy import text
+            db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+            db.session.flush()  # 確保 admin_user 和角色都有 secure_code
+            org_admin_role = default_roles.get('org_admin')
+            if org_admin_role:
+                assignment = UserRoleAssignment(
+                    user_secure_code=admin_user.secure_code,
+                    role_secure_code=org_admin_role.secure_code,
+                    org_secure_code=org.secure_code,
+                )
+                db.session.add(assignment)
+
+            # 為 ORG_ADMIN 限定的選單建立角色需求（雙鑰匙第二層）
+            OrganizationService._create_default_menu_role_requirements(
+                org, default_roles
+            )
 
             # 建立預設編號規則
             OrganizationService._create_default_numbering_rule(org)
@@ -259,14 +278,14 @@ class OrganizationService:
         db.session.add(dept_proxy2_role)
         roles['dept_proxy2'] = dept_proxy2_role
 
-        # 群組召集人角色
+        # 社群召集人角色
         group_convener_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.ROLE,
             scope_type=ScopeType.GROUP,
-            code='GROUP_CONVENER',
-            name='群組召集人',
-            description='群組管理者',
+            code='COMMUNITY',
+            name='社群召集人',
+            description='社群管理者',
             is_manager=True,
             is_system_role=True,
             is_active=True
@@ -311,6 +330,81 @@ class OrganizationService:
         logger.info(f"Default roles created for org {org.code}")
 
         return roles
+
+    @staticmethod
+    def _create_default_menu_role_requirements(
+        org: Organization, default_roles: dict
+    ):
+        """
+        為 ORG_ADMIN 限定的共享選單建立角色需求。
+
+        雙鑰匙機制：選單必須有角色需求設定，否則任何人都無法存取。
+        此方法在新企業建立時自動為 ORG_ADMIN only 的選單設定角色需求。
+        """
+        from ..models.menu_item import MenuItem
+        from ..models.menu_permission import MenuPermission
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        from sqlalchemy import text
+
+        org_admin_role = default_roles.get('org_admin')
+        if not org_admin_role:
+            return
+
+        db.session.flush()  # 確保 org_admin_role 有 secure_code
+
+        # 繞過 RLS：共享選單屬於 system.local，需要 system_admin 權限才能查到
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        # 找出所有 ORG_ADMIN only 的共享選單（有 ORG_ADMIN 權限但沒有 EMPLOYEE）
+        org_admin_menus = db.session.query(MenuItem.secure_code).join(
+            MenuPermission,
+            db.and_(
+                MenuPermission.menu_secure_code == MenuItem.secure_code,
+                MenuPermission.is_deleted == False,
+            )
+        ).filter(
+            MenuItem.is_shared == True,
+            MenuItem.is_deleted == False,
+            MenuItem.is_active == True,
+            MenuItem.link_target.like('/%'),
+            MenuPermission.user_type == 'ORG_ADMIN',
+        ).all()
+
+        org_admin_menu_scs = {row[0] for row in org_admin_menus}
+
+        # 排除也有 EMPLOYEE 權限的選單
+        employee_menus = db.session.query(MenuPermission.menu_secure_code).filter(
+            MenuPermission.menu_secure_code.in_(org_admin_menu_scs),
+            MenuPermission.user_type == 'EMPLOYEE',
+            MenuPermission.is_deleted == False,
+        ).all()
+        employee_menu_scs = {row[0] for row in employee_menus}
+
+        org_admin_only_scs = org_admin_menu_scs - employee_menu_scs
+
+        count = 0
+        for menu_sc in org_admin_only_scs:
+            # 避免重複
+            exists = MenuRoleRequirement.query.filter(
+                MenuRoleRequirement.menu_secure_code == menu_sc,
+                MenuRoleRequirement.org_secure_code == org.secure_code,
+                MenuRoleRequirement.is_deleted == False,
+            ).first()
+            if exists:
+                continue
+
+            req = MenuRoleRequirement(
+                menu_secure_code=menu_sc,
+                role_secure_code=org_admin_role.secure_code,
+                org_secure_code=org.secure_code,
+            )
+            db.session.add(req)
+            count += 1
+
+        if count:
+            logger.info(
+                f"Created {count} menu role requirements for org {org.code}"
+            )
 
     @staticmethod
     def _create_default_numbering_rule(org: Organization) -> UserNumberingRule:

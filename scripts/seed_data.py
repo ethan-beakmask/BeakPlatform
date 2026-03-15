@@ -649,9 +649,9 @@ def seed_default_roles(org):
             'is_system_role': True,
         },
         {
-            'code': 'GROUP_LEADER',
-            'name': '群組召集人',
-            'description': '群組管理者',
+            'code': 'COMMUNITY',
+            'name': '社群召集人',
+            'description': '社群管理者',
             'role_type': RoleType.ROLE,
             'scope_type': ScopeType.GROUP,
             'role_level': RoleLevel.MEMBER,

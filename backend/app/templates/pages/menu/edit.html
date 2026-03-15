@@ -138,12 +138,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="r in assignedRoles" :key="r.role_secure_code">
+                            <template x-for="r in assignedRoles" :key="r.role_code || r.role_secure_code">
                                 <tr>
-                                    <td x-text="r.role ? r.role.name : r.role_secure_code"></td>
-                                    <td><code x-text="r.role ? r.role.code : '-'"></code></td>
-                                    <td x-text="r.role ? r.role.role_level || '-' : '-'" style="font-size:12px;"></td>
-                                    <td><button type="button" @click="removeRole(r.role_secure_code)" style="color:#dc2626;border:none;background:none;cursor:pointer;">X</button></td>
+                                    <td x-text="r.role_name || (r.role ? r.role.name : r.role_secure_code)"></td>
+                                    <td><code x-text="r.role_code || (r.role ? r.role.code : '-')"></code></td>
+                                    <td x-text="r.role_type || (r.role ? r.role.role_level || '-' : '-')" style="font-size:12px;"></td>
+                                    <td><button type="button" @click="removeRole(r.role_code || r.role_secure_code)" style="color:#dc2626;border:none;background:none;cursor:pointer;">X</button></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -193,7 +193,7 @@
 function menuRoleManager() {
     var csrfMeta = document.querySelector('meta[name="csrf-token"]');
     var csrfToken = csrfMeta ? csrfMeta.content : '';
-    var menuSc = '{{ item.secure_code }}';
+    var menuSc = encodeURIComponent('{{ item.secure_code }}');
 
     return {
         assignedRoles: [],
@@ -221,17 +221,21 @@ function menuRoleManager() {
 
         toggleRole: async function(role) {
             if (role.selected) return;
-            // 加入角色
-            var currentScs = this.assignedRoles.map(function(r) { return r.role_secure_code; });
-            currentScs.push(role.id);
-            await this._saveRoles(currentScs);
+            // 加入角色：用 available_roles 的 id（SYSTEM_ADMIN=code, ORG_ADMIN=secure_code）
+            var currentIds = this.availableRoles
+                .filter(function(r) { return r.selected; })
+                .map(function(r) { return r.id; });
+            currentIds.push(role.id);
+            await this._saveRoles(currentIds);
         },
 
-        removeRole: async function(roleSc) {
-            var currentScs = this.assignedRoles
-                .map(function(r) { return r.role_secure_code; })
-                .filter(function(sc) { return sc !== roleSc; });
-            await this._saveRoles(currentScs);
+        removeRole: async function(roleId) {
+            // 移除角色：從可選列表中取已選的，排除目標
+            var currentIds = this.availableRoles
+                .filter(function(r) { return r.selected; })
+                .map(function(r) { return r.id; })
+                .filter(function(id) { return id !== roleId; });
+            await this._saveRoles(currentIds);
         },
 
         _saveRoles: async function(roleScs) {

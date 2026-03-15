@@ -290,6 +290,9 @@ def get_menu_roles(secure_code: str):
     """
     取得選單項目的角色需求
 
+    SYSTEM_ADMIN: 查所有企業的系統預設角色（去重 by code），已設定狀態取任一企業
+    ORG_ADMIN: 查自己企業的角色
+
     Returns:
         {roles: [...], available_roles: [...]}
     """
@@ -298,37 +301,99 @@ def get_menu_roles(secure_code: str):
     # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
     db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
 
-    # 已設定的角色需求
-    requirements = PageRoleGuard.get_menu_roles(
-        menu_item.secure_code,
-        current_user.org_secure_code,
-    )
+    if current_user.is_system_admin:
+        # SYSTEM_ADMIN: 查系統預設角色（去重 by code）
+        all_system_roles = Role.query.filter(
+            Role.is_system_role == True,
+            Role.is_deleted == False,
+            Role.is_active == True,
+            Role.org_secure_code != 'system.local',
+        ).order_by(Role.role_level, Role.name).all()
 
-    # 企業內可選的角色列表
-    available_roles = Role.query.filter(
-        Role.org_secure_code == current_user.org_secure_code,
-        Role.is_deleted == False,
-        Role.is_active == True,
-    ).order_by(Role.role_level, Role.name).all()
+        # 去重 by code，取第一筆
+        seen_codes = set()
+        available_roles = []
+        for r in all_system_roles:
+            if r.code not in seen_codes:
+                seen_codes.add(r.code)
+                available_roles.append(r)
 
-    # 已選角色的 secure_codes
-    selected_scs = {r.role_secure_code for r in requirements}
+        # 已設定的角色需求：查所有企業，去重 by role code
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        all_reqs = MenuRoleRequirement.query.filter(
+            MenuRoleRequirement.menu_secure_code == menu_item.secure_code,
+            MenuRoleRequirement.is_deleted == False,
+        ).all()
 
-    return jsonify({
-        'roles': [r.to_dict() for r in requirements],
-        'available_roles': [
-            {
-                'id': r.secure_code,
-                'code': r.code,
-                'name': r.name,
-                'role_type': r.role_type,
-                'role_level': r.role_level,
-                'scope_type': r.scope_type,
-                'selected': r.secure_code in selected_scs,
-            }
-            for r in available_roles
-        ],
-    })
+        # 反查角色 code，去重
+        req_role_scs = {r.role_secure_code for r in all_reqs}
+        req_role_codes = set()
+        deduped_roles = []  # 去重後的角色（用於「已設定」顯示）
+        if req_role_scs:
+            req_roles = Role.query.filter(
+                Role.secure_code.in_(req_role_scs),
+                Role.is_deleted == False,
+            ).all()
+            seen = set()
+            for r in req_roles:
+                if r.code not in seen:
+                    seen.add(r.code)
+                    deduped_roles.append(r)
+            req_role_codes = seen
+
+        return jsonify({
+            'roles': [
+                {
+                    'role_secure_code': r.secure_code,
+                    'role_code': r.code,
+                    'role_name': r.name,
+                    'role_type': r.role_type,
+                }
+                for r in deduped_roles
+            ],
+            'available_roles': [
+                {
+                    'id': r.code,  # SYSTEM_ADMIN 用 code 作為 ID
+                    'code': r.code,
+                    'name': r.name,
+                    'role_type': r.role_type,
+                    'role_level': r.role_level,
+                    'scope_type': r.scope_type,
+                    'selected': r.code in req_role_codes,
+                }
+                for r in available_roles
+            ],
+        })
+    else:
+        # ORG_ADMIN: 查自己企業的角色
+        requirements = PageRoleGuard.get_menu_roles(
+            menu_item.secure_code,
+            current_user.org_secure_code,
+        )
+
+        available_roles = Role.query.filter(
+            Role.org_secure_code == current_user.org_secure_code,
+            Role.is_deleted == False,
+            Role.is_active == True,
+        ).order_by(Role.role_level, Role.name).all()
+
+        selected_scs = {r.role_secure_code for r in requirements}
+
+        return jsonify({
+            'roles': [r.to_dict() for r in requirements],
+            'available_roles': [
+                {
+                    'id': r.secure_code,
+                    'code': r.code,
+                    'name': r.name,
+                    'role_type': r.role_type,
+                    'role_level': r.role_level,
+                    'scope_type': r.scope_type,
+                    'selected': r.secure_code in selected_scs,
+                }
+                for r in available_roles
+            ],
+        })
 
 
 @menu_bp.route('/<secure_code>/roles', methods=['PUT'])
@@ -338,7 +403,9 @@ def set_menu_roles(secure_code: str):
     設定選單項目的角色需求（全量替換）
 
     Body:
-        role_secure_codes: [str, ...]  (空陣列 = 清除角色需求)
+        role_secure_codes: [str, ...]
+            - ORG_ADMIN: role secure_codes（自己企業）
+            - SYSTEM_ADMIN: role codes（批量套用到所有企業）
 
     Returns:
         {success: true, count: int}
@@ -346,21 +413,58 @@ def set_menu_roles(secure_code: str):
     menu_item = ResourceGateway.get(MenuItem, secure_code)
     data = request.get_json()
 
-    role_secure_codes = data.get('role_secure_codes', [])
+    role_identifiers = data.get('role_secure_codes', [])
 
     try:
         # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
         db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
 
-        count = PageRoleGuard.set_menu_roles(
-            menu_item.secure_code,
-            current_user.org_secure_code,
-            role_secure_codes,
-        )
+        if current_user.is_system_admin:
+            # SYSTEM_ADMIN: role_identifiers 是 role codes，批量為所有企業設定
+            from ..models.organization import Organization
 
-        db.session.commit()
+            orgs = Organization.query.filter(
+                Organization.is_deleted == False,
+                Organization.is_active == True,
+                Organization.secure_code != 'system.local',
+            ).all()
 
-        return jsonify({'success': True, 'count': count})
+            total_count = 0
+            for org in orgs:
+                # 找到該企業中 code 匹配的角色 secure_codes
+                if role_identifiers:
+                    org_roles = Role.query.filter(
+                        Role.org_secure_code == org.secure_code,
+                        Role.code.in_(role_identifiers),
+                        Role.is_deleted == False,
+                    ).all()
+                    org_role_scs = [r.secure_code for r in org_roles]
+                else:
+                    org_role_scs = []
+
+                count = PageRoleGuard.set_menu_roles(
+                    menu_item.secure_code,
+                    org.secure_code,
+                    org_role_scs,
+                )
+                total_count += count
+
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'count': total_count,
+                'org_count': len(orgs),
+            })
+        else:
+            # ORG_ADMIN: role_identifiers 是 role secure_codes
+            count = PageRoleGuard.set_menu_roles(
+                menu_item.secure_code,
+                current_user.org_secure_code,
+                role_identifiers,
+            )
+
+            db.session.commit()
+            return jsonify({'success': True, 'count': count})
 
     except Exception as e:
         db.session.rollback()

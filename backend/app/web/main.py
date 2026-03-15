@@ -76,11 +76,52 @@ def dashboard():
     except Exception as e:
         logger.warning('Dashboard pending count query failed: %s', e)
 
+    # 我的社群
+    my_groups = []
+    try:
+        from ..models.user_unit_membership import UserUnitMembership, MembershipType
+        from ..models.organizational_unit import OrganizationalUnit
+
+        memberships = UserUnitMembership.query.filter(
+            UserUnitMembership.user_secure_code == current_user.secure_code,
+            UserUnitMembership.membership_type == MembershipType.MEMBER,
+            UserUnitMembership.is_deleted == False
+        ).all()
+
+        unit_codes = [m.unit_secure_code for m in memberships]
+        if unit_codes:
+            units = {
+                u.secure_code: u.name
+                for u in OrganizationalUnit.query.filter(
+                    OrganizationalUnit.secure_code.in_(unit_codes),
+                    OrganizationalUnit.is_deleted == False
+                ).all()
+            }
+            role_labels = {
+                'MANAGER': '召集人',
+                'DEPUTY': '副召集人',
+                'PROXY1': '代理人(一)',
+                'PROXY2': '代理人(二)',
+                'MEMBER': '成員',
+                None: '成員',
+            }
+            for m in memberships:
+                if m.is_active and m.unit_secure_code in units:
+                    my_groups.append({
+                        'name': units[m.unit_secure_code],
+                        'role': role_labels.get(m.role_type, '成員'),
+                        'is_leader': m.is_leader,
+                    })
+            my_groups.sort(key=lambda g: (not g['is_leader'], g['name']))
+    except Exception as e:
+        logger.warning('Dashboard my_groups query failed: %s', e)
+
     return render_template(
         'pages/dashboard.html',
         show_default_admin_warning=show_default_admin_warning,
         show_disable_default_admin_hint=show_disable_default_admin_hint,
-        pending_count=pending_count
+        pending_count=pending_count,
+        my_groups=my_groups
     )
 
 

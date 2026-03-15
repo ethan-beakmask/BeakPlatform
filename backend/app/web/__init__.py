@@ -43,6 +43,7 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_admins import org_admins_bp
     from .org_admin_rescue import org_admin_rescue_bp
     from .external_users import external_users_bp
+    from .account_roles import account_roles_bp
     from .dev import dev_bp
 
     # Main routes (dashboard, etc.)
@@ -68,6 +69,9 @@ def register_web_blueprints(app: Flask) -> None:
 
     # External Users - 外部廠商帳號管理
     app.register_blueprint(external_users_bp)
+
+    # Account Roles Overview - 帳號角色權限表 (企業管理員)
+    app.register_blueprint(account_roles_bp, url_prefix='/admin/account-roles')
 
     # Department settings - 部門設定 (企業管理員)
     app.register_blueprint(departments_bp, url_prefix='/admin/departments')
