@@ -31,6 +31,12 @@ MODULE_INFO = {
                     'url': 'spec_formulate_web.data_specs',
                     'sort_order': 1,
                 },
+                {
+                    'code': 'spec_formulate.spec_multifaceted',
+                    'name': '多面向規格',
+                    'url': 'spec_formulate_web.spec_multifaceted',
+                    'sort_order': 2,
+                },
             ]
         }
     ],

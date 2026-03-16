@@ -44,6 +44,23 @@ def data_spec_edit(spec_sc):
     )
 
 
+@web_bp.route('/multifaceted')
+@module_access_required('spec_formulate')
+def spec_multifaceted():
+    """多面向規格管理"""
+    return render_template('modules/spec_formulate/spec_multifaceted.html')
+
+
+@web_bp.route('/multifaceted/<spec_sc>/edit')
+@module_access_required('spec_formulate')
+def spec_multifaceted_edit(spec_sc):
+    """多面向規格編輯器"""
+    return render_template(
+        'modules/spec_formulate/spec_multifaceted_editor.html',
+        spec_sc=spec_sc,
+    )
+
+
 @web_bp.route('/<form_template_sc>/sync')
 @module_access_required('spec_formulate')
 def data_spec_sync(form_template_sc):

@@ -1,0 +1,232 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}多面向規格編輯器 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/spec_formulate/vendor/tabulator_bootstrap5.min.css">
+<link rel="stylesheet" href="/static/modules/spec_formulate/css/spec-multifaceted-editor.css">
+<script src="/static/modules/spec_formulate/vendor/tabulator.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<script>
+window.__MF_SPEC_CONFIG = {
+    specSc: '{{ spec_sc or "" }}'
+};
+</script>
+
+<div class="mfe-container" x-data="specMultifacetedEditor()">
+
+    <!-- Header -->
+    <div class="mfe-header">
+        <h1>多面向規格編輯器</h1>
+        <div class="mfe-meta">
+            <input type="text" x-model="specName" placeholder="規格名稱">
+            <template x-if="specVersion">
+                <span> | v<span x-text="specVersion"></span></span>
+            </template>
+            <template x-if="activeFacets.length > 0">
+                <span> | 已啟用:
+                    <template x-for="af in activeFacets" :key="af">
+                        <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
+                    </template>
+                </span>
+            </template>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="mfe-toolbar">
+        <div class="toolbar-group">
+            <button class="mfe-btn" @click="addColumn()">+ 欄位</button>
+            <button class="mfe-btn danger" @click="deleteSelectedRows()">刪除選取</button>
+        </div>
+        <div class="toolbar-group">
+            <button class="mfe-btn primary" @click="saveSpec()" :disabled="saving">
+                <span x-show="!saving">儲存</span>
+                <span x-show="saving">儲存中...</span>
+            </button>
+            <button class="mfe-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">版本</button>
+        </div>
+        <div class="toolbar-group">
+            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">啟用格式:</span>
+            <button class="mfe-btn facet-postgresql"
+                    :class="{'facet-active': activeFacets.indexOf('postgresql') >= 0}"
+                    @click="populateFacet('postgresql')"
+                    :disabled="saving">PostgreSQL</button>
+            <button class="mfe-btn facet-formio"
+                    :class="{'facet-active': activeFacets.indexOf('formio') >= 0}"
+                    @click="populateFacet('formio')"
+                    :disabled="saving">FormIO</button>
+            <button class="mfe-btn facet-excel"
+                    :class="{'facet-active': activeFacets.indexOf('excel') >= 0}"
+                    @click="populateFacet('excel')"
+                    :disabled="saving">Excel</button>
+            <button class="mfe-btn facet-csv"
+                    :class="{'facet-active': activeFacets.indexOf('csv') >= 0}"
+                    @click="populateFacet('csv')"
+                    :disabled="saving">CSV</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">載入中...</div>
+
+    <!-- Field Grid -->
+    <div x-show="!loading" class="mfe-card">
+        <div class="mfe-summary">
+            <span>共 <strong x-text="gridTable ? gridTable.getData().filter(function(f){return f.field_key && f.field_key.trim();}).length : 0"></strong> 個欄位</span>
+            <span x-show="gridTable && gridTable.getData().filter(function(f){return f.core && f.core.is_pii;}).length > 0">
+                PII: <strong x-text="gridTable ? gridTable.getData().filter(function(f){return f.core && f.core.is_pii;}).length : 0"></strong>
+            </span>
+        </div>
+        <div id="mf-field-grid"></div>
+        <div class="mfe-add-row-bar">
+            <button class="mfe-btn" @click="addEmptyRows(10)" style="font-size: 12px; padding: 3px 12px;">
+                [+] 新增 10 列空白欄位
+            </button>
+        </div>
+    </div>
+
+    <!-- Facet Projection Panel -->
+    <template x-if="activeFacets.length > 0 && !loading">
+        <div class="mfe-facet-panel">
+            <div class="mfe-facet-tabs">
+                <template x-for="af in activeFacets" :key="af">
+                    <div class="mfe-facet-tab" :class="[af, activeFacetTab === af ? 'active' : '']"
+                         @click="activeFacetTab = af" x-text="af"></div>
+                </template>
+            </div>
+            <div class="mfe-facet-body" x-show="activeFacetTab">
+                <table class="mfe-facet-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Field Key</th>
+                            <th style="width: 120px;">Label</th>
+                            <th style="width: 100px;">Data Class</th>
+                            <th>格式映射</th>
+                            <th style="width: 80px;">狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="f in (gridTable ? gridTable.getData().filter(function(r){return r.field_key && r.field_key.trim();}) : [])" :key="f.field_key">
+                            <tr>
+                                <td class="mono" x-text="f.field_key"></td>
+                                <td x-text="f.label"></td>
+                                <td x-text="_dcValues[(f.core||{}).data_class] || (f.core||{}).data_class || '-'"></td>
+                                <td>
+                                    <template x-if="getFacetProjection(f, activeFacetTab)">
+                                        <span class="mono" x-text="JSON.stringify(getFacetProjection(f, activeFacetTab))"></span>
+                                    </template>
+                                    <template x-if="!getFacetProjection(f, activeFacetTab)">
+                                        <span class="unsupported"
+                                              x-text="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported ? '(未填充)' : '不支援'"></span>
+                                    </template>
+                                </td>
+                                <td>
+                                    <template x-if="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                        <span style="color: #059669; font-size: 11px;">支援</span>
+                                    </template>
+                                    <template x-if="!getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                        <span style="color: #dc2626; font-size: 11px;">不支援</span>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <!-- History Panel -->
+    <template x-if="showHistory">
+        <div class="mfe-history-panel">
+            <div class="mfe-history-header">
+                <span>版本歷史</span>
+                <button class="mfe-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false">關閉</button>
+            </div>
+            <div class="mfe-history-list">
+                <template x-if="histories.length === 0">
+                    <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
+                </template>
+                <template x-for="h in histories" :key="h.secure_code">
+                    <div class="mfe-history-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span class="mfe-history-version">v<span x-text="h.version"></span></span>
+                                <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                            </div>
+                        </div>
+                        <div class="mfe-history-meta">
+                            <span x-text="h.changed_by_name || '系統'"></span> |
+                            <span x-text="formatDate(h.created_at)"></span> |
+                            <span x-text="(h.fields_snapshot || []).length + ' 個欄位'"></span>
+                            <template x-if="h.active_facets_snapshot && h.active_facets_snapshot.length > 0">
+                                <span> | 格式:
+                                    <template x-for="af in h.active_facets_snapshot" :key="af">
+                                        <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
+                                    </template>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- Detail Modal -->
+    <div x-show="showDetailModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content">
+            <div class="mfe-modal-header">
+                <h3>進階設定</h3>
+                <button @click="closeDetail()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <!-- 基本資訊 -->
+                <div class="mfe-detail-info">
+                    <div><span class="info-label">Field Key:</span><span x-text="detailForm.field_key || '-'"></span></div>
+                    <div><span class="info-label">Label:</span><span x-text="detailForm.label || '-'"></span></div>
+                    <div><span class="info-label">Data Class:</span><span x-text="_dcValues[(detailForm.core||{}).data_class] || '-'"></span></div>
+                </div>
+
+                <!-- Core 設定 -->
+                <div class="mfe-form-group">
+                    <label>預設值</label>
+                    <input type="text" x-model="detailForm.core.default_value" placeholder="(無)">
+                </div>
+
+                <!-- Facet 區塊 -->
+                <template x-for="af in activeFacets" :key="af">
+                    <div class="mfe-facet-section">
+                        <div class="mfe-facet-section-title">
+                            <span class="badge" :class="af" x-text="af"></span>
+                            <span>格式設定</span>
+                            <template x-if="!getFacetSupportInfo((detailForm.core||{}).data_class, af).supported">
+                                <span style="color: #dc2626; font-size: 11px; margin-left: 8px;">(此 data_class 不支援)</span>
+                            </template>
+                        </div>
+                        <template x-if="detailForm.facets && detailForm.facets[af]">
+                            <div style="font-size: 12px;">
+                                <pre style="margin: 0; padding: 8px; background: #f3f4f6; border-radius: 3px; font-size: 11px; overflow-x: auto;"
+                                     x-text="JSON.stringify(detailForm.facets[af], null, 2)"></pre>
+                            </div>
+                        </template>
+                        <template x-if="!detailForm.facets || !detailForm.facets[af]">
+                            <div style="font-size: 12px; color: #9ca3af;">尚未填充</div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="closeDetail()">取消</button>
+                <button class="mfe-btn primary" @click="saveDetail()">確認</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/static/modules/spec_formulate/js/spec-multifaceted-editor.js"></script>
+{% endblock %}
