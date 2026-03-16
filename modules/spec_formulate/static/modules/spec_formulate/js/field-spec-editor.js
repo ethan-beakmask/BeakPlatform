@@ -1,6 +1,11 @@
 /**
- * field-spec-editor.js -- 欄位規格編輯器 (Excel-like Grid)
- * Alpine.js component
+ * field-spec-editor.js -- 欄位規格編輯器
+ * Alpine.js + Tabulator 6.x 整合
+ *
+ * 架構:
+ * - Tabulator 管理欄位 Grid (inline editing, drag reorder)
+ * - Alpine.js 管理 UI 狀態 (toolbar, modals, panels)
+ * - 資料流: API -> Alpine -> Tabulator (載入) / Tabulator -> Alpine -> API (儲存)
  */
 
 const FORMIO_TYPES = [
@@ -25,6 +30,10 @@ const FORMIO_TYPES = [
     { value: 'editgrid', label: '編輯表格', pgDefault: 'JSONB' },
 ];
 
+// Type value -> label map for Tabulator list editor
+const _TYPE_VALUES = {};
+FORMIO_TYPES.forEach(function(t) { _TYPE_VALUES[t.value] = t.label; });
+
 function getPgDefault(formioType) {
     var t = FORMIO_TYPES.find(function(x) { return x.value === formioType; });
     return t ? t.pgDefault : 'TEXT';
@@ -37,7 +46,6 @@ function fieldSpecEditor() {
         specVersion: null,
         specStatus: null,
 
-        // standalone 模式
         mode: window.__SPEC_CONFIG.mode || 'template',
         specSc: window.__SPEC_CONFIG.specSc || '',
         specName: '',
@@ -46,7 +54,8 @@ function fieldSpecEditor() {
         loading: true,
         saving: false,
 
-        // (已移除 newRow 單列機制，改用 addEmptyRows 批次新增)
+        // Tabulator instance
+        gridTable: null,
 
         // 進階設定 Modal
         showDetailModal: false,
@@ -64,16 +73,13 @@ function fieldSpecEditor() {
         showHistory: false,
         histories: [],
         historyLoading: false,
-        historyPreview: null,  // 正在檢視的歷史版本
+        historyPreview: null,
         historyRestoring: false,
 
         // 預覽
         showPreview: false,
         previewSchema: null,
         previewing: false,
-
-        // 拖曳
-        dragIndex: -1,
 
         // 關聯表單 Modal
         showLinkModal: false,
@@ -101,7 +107,9 @@ function fieldSpecEditor() {
         lookupPreviewItems: [],
         lookupPreviewLoading: false,
 
-        // 給 template 使用
+        // 匯出下拉
+        showExportMenu: false,
+
         FORMIO_TYPES: FORMIO_TYPES,
 
         get isStandalone() {
@@ -115,6 +123,11 @@ function fieldSpecEditor() {
             return '/api/spec-formulate/specs/' + this.formTemplateSc;
         },
 
+        get exportIdentifier() {
+            if (this.isStandalone && this.specSc) return this.specSc;
+            return this.formTemplateSc;
+        },
+
         async init() {
             await this.loadLookupCategories();
             if (this.isStandalone) {
@@ -123,35 +136,244 @@ function fieldSpecEditor() {
                 await this.loadTemplateName();
                 await this.loadSpec();
             }
+            // Grid 在載入資料後初始化
+            this.$nextTick(() => { this.initGrid(); });
         },
+
+        // ===== Tabulator Grid =====
+
+        initGrid() {
+            var self = this;
+            var gridEl = document.getElementById('field-grid');
+            if (!gridEl) return;
+
+            this.gridTable = new Tabulator(gridEl, {
+                data: this._fieldsToGridData(this.fields),
+                layout: 'fitColumns',
+                movableRows: true,
+                headerSort: false,
+                placeholder: '點擊下方 [+] 按鈕新增空白欄位列',
+                rowHeight: 34,
+                columns: [
+                    {
+                        title: '#', formatter: 'rownum', width: 50,
+                        hozAlign: 'center', resizable: false,
+                        rowHandle: true,
+                    },
+                    {
+                        title: 'Label', field: 'label', editor: 'input',
+                        minWidth: 120,
+                    },
+                    {
+                        title: 'Field Key', field: 'field_key', editor: 'input',
+                        minWidth: 120, cssClass: 'mono-cell',
+                        validator: function(cell, value) {
+                            if (!value) return true;
+                            return /^[a-zA-Z0-9_]*$/.test(value);
+                        },
+                    },
+                    {
+                        title: 'Type', field: 'formio_type',
+                        minWidth: 130,
+                        editor: 'list',
+                        editorParams: {
+                            values: _TYPE_VALUES,
+                            listOnEmpty: true,
+                            autocomplete: true,
+                        },
+                        formatter: function(cell) {
+                            return _TYPE_VALUES[cell.getValue()] || cell.getValue();
+                        },
+                    },
+                    {
+                        title: 'PG Type', field: 'pg_type', editor: 'input',
+                        width: 130, cssClass: 'mono-cell',
+                    },
+                    {
+                        title: 'PII', field: 'is_pii',
+                        formatter: 'tickCross', hozAlign: 'center',
+                        width: 50, editor: true,
+                        cellEdited: function(cell) {
+                            // 更新列底色
+                            var row = cell.getRow();
+                            var el = row.getElement();
+                            if (cell.getValue()) {
+                                el.classList.add('pii-row');
+                            } else {
+                                el.classList.remove('pii-row');
+                            }
+                        },
+                    },
+                    {
+                        title: '必填', field: 'required',
+                        formatter: 'tickCross', hozAlign: 'center',
+                        width: 50, editor: true,
+                    },
+                    {
+                        title: '說明', field: 'description', editor: 'input',
+                        minWidth: 150,
+                    },
+                    {
+                        title: '操作', width: 90, hozAlign: 'center',
+                        resizable: false,
+                        formatter: function(cell) {
+                            var div = document.createElement('div');
+                            div.className = 'fs-row-actions';
+
+                            var btnDetail = document.createElement('button');
+                            btnDetail.textContent = '詳細';
+                            btnDetail.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                var idx = cell.getRow().getPosition();
+                                self.openDetail(idx);
+                            });
+
+                            var btnDel = document.createElement('button');
+                            btnDel.textContent = 'X';
+                            btnDel.className = 'danger';
+                            btnDel.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                cell.getRow().delete();
+                                self._syncFieldCount();
+                            });
+
+                            div.appendChild(btnDetail);
+                            div.appendChild(btnDel);
+                            return div;
+                        },
+                    },
+                ],
+                cellEdited: function(cell) {
+                    var field_name = cell.getField();
+                    if (field_name === 'formio_type') {
+                        // Auto-set pg_type
+                        var row = cell.getRow();
+                        var data = row.getData();
+                        if (!data._pgTypeOverridden) {
+                            row.update({ pg_type: getPgDefault(data.formio_type) });
+                        }
+                    }
+                    if (field_name === 'pg_type') {
+                        cell.getRow().update({ _pgTypeOverridden: true });
+                    }
+                    self._syncFieldCount();
+                },
+                rowMoved: function() {
+                    self._syncFieldCount();
+                },
+                dataLoaded: function() {
+                    self._applyPiiRowClass();
+                },
+            });
+        },
+
+        _fieldsToGridData(fields) {
+            return (fields || []).map(function(f, i) {
+                return {
+                    _uid: f._uid || '__uid_' + (++_uidCounter) + '_' + Date.now(),
+                    label: f.label || '',
+                    field_key: f.field_key || '',
+                    formio_type: f.formio_type || 'textfield',
+                    pg_type: f.pg_type || 'VARCHAR(500)',
+                    is_pii: !!f.is_pii,
+                    required: !!(f.constraints && f.constraints.required),
+                    description: f.description || '',
+                    // 保留完整的 constraints 和其他進階欄位
+                    constraints: f.constraints || {},
+                    default_value: f.default_value || null,
+                    options: f.options || null,
+                    grid_children: f.grid_children || null,
+                    lookup_category_code: f.lookup_category_code || null,
+                    _pgTypeOverridden: !!f._pgTypeOverridden,
+                    sort_order: i,
+                };
+            });
+        },
+
+        _gridDataToFields() {
+            if (!this.gridTable) return this.fields;
+            var rows = this.gridTable.getData();
+            return rows
+                .filter(function(r) { return r.field_key && r.field_key.trim(); })
+                .map(function(r, i) {
+                    var constraints = Object.assign({}, r.constraints || {});
+                    constraints.required = !!r.required;
+                    return {
+                        field_key: (r.field_key || '').trim(),
+                        label: (r.label || '').trim(),
+                        formio_type: r.formio_type || 'textfield',
+                        pg_type: r.pg_type || 'TEXT',
+                        constraints: constraints,
+                        is_pii: !!r.is_pii,
+                        description: r.description || '',
+                        default_value: r.default_value || null,
+                        options: r.options || null,
+                        grid_children: r.grid_children || null,
+                        lookup_category_code: r.lookup_category_code || null,
+                        sort_order: i,
+                    };
+                });
+        },
+
+        _syncFieldCount() {
+            if (this.gridTable) {
+                this.fields = this.gridTable.getData();
+            }
+        },
+
+        _applyPiiRowClass() {
+            if (!this.gridTable) return;
+            this.gridTable.getRows().forEach(function(row) {
+                var el = row.getElement();
+                if (row.getData().is_pii) {
+                    el.classList.add('pii-row');
+                } else {
+                    el.classList.remove('pii-row');
+                }
+            });
+        },
+
+        _setGridData(fields) {
+            this.fields = fields;
+            if (this.gridTable) {
+                this.gridTable.setData(this._fieldsToGridData(fields));
+                this.$nextTick(() => { this._applyPiiRowClass(); });
+            }
+        },
+
+        addEmptyRows(count) {
+            if (!this.gridTable) return;
+            for (var i = 0; i < count; i++) {
+                this.gridTable.addRow({
+                    _uid: '__uid_' + (++_uidCounter) + '_' + Date.now(),
+                    label: '', field_key: '', formio_type: 'textfield',
+                    pg_type: 'VARCHAR(500)', is_pii: false, required: false,
+                    description: '', constraints: {}, default_value: null,
+                    options: null, grid_children: null, lookup_category_code: null,
+                    _pgTypeOverridden: false, sort_order: 0,
+                });
+            }
+            this._syncFieldCount();
+        },
+
+        // ===== Lookup =====
 
         async loadLookupCategories() {
             try {
                 var res = await fetch('/api/lookup/categories');
                 var data = await res.json();
-                if (data.success) {
-                    this.lookupCategories = data.data || [];
-                }
-            } catch (e) {
-                // silent: lookup 不影響核心功能
-            }
+                if (data.success) { this.lookupCategories = data.data || []; }
+            } catch (e) { /* silent */ }
         },
 
         async loadLookupPreview(code) {
-            if (!code) {
-                this.lookupPreviewItems = [];
-                return;
-            }
+            if (!code) { this.lookupPreviewItems = []; return; }
             this.lookupPreviewLoading = true;
             try {
                 var res = await fetch('/api/lookup/by-code/' + encodeURIComponent(code));
                 var data = await res.json();
-                if (data.success) {
-                    this.lookupPreviewItems = (data.data || []).slice(0, 10);
-                }
-            } catch (e) {
-                this.lookupPreviewItems = [];
-            }
+                if (data.success) { this.lookupPreviewItems = (data.data || []).slice(0, 10); }
+            } catch (e) { this.lookupPreviewItems = []; }
             this.lookupPreviewLoading = false;
         },
 
@@ -161,20 +383,14 @@ function fieldSpecEditor() {
             try {
                 var res = await fetch('/api/form-workflow/templates/' + this.formTemplateSc);
                 var data = await res.json();
-                if (data.success && data.data) {
-                    this.formTemplateName = data.data.name || '';
-                }
-            } catch (e) {
-                console.error('loadTemplateName:', e);
-            }
+                if (data.success && data.data) { this.formTemplateName = data.data.name || ''; }
+            } catch (e) { console.error('loadTemplateName:', e); }
         },
 
         async loadStandaloneSpec() {
             this.loading = true;
             if (!this.specSc) {
-                // 新建模式，預設 10 列空白欄位
-                this.fields = [];
-                this.addEmptyRows(10);
+                this.fields = _emptyFields(10);
                 this.specVersion = null;
                 this.loading = false;
                 return;
@@ -192,9 +408,7 @@ function fieldSpecEditor() {
                         this.formTemplateSc = data.data.form_template_secure_code;
                     }
                 }
-            } catch (e) {
-                console.error('loadStandaloneSpec:', e);
-            }
+            } catch (e) { console.error('loadStandaloneSpec:', e); }
             this.loading = false;
         },
 
@@ -212,70 +426,52 @@ function fieldSpecEditor() {
                     this.specVersion = null;
                     this.specStatus = null;
                 }
-            } catch (e) {
-                console.error('loadSpec:', e);
-            }
+            } catch (e) { console.error('loadSpec:', e); }
             this.loading = false;
         },
 
         async saveSpec() {
             this.saving = true;
             try {
-                // 驗證已填寫的欄位（有 field_key 的列）
-                var filledFields = this.fields.filter(function(f) {
-                    return f.field_key && f.field_key.trim();
-                });
-                if (filledFields.length === 0) {
+                var cleanFields = this._gridDataToFields();
+                if (cleanFields.length === 0) {
                     _toast('error', '至少需要一個已設定 Field Key 的欄位');
                     this.saving = false;
                     return;
                 }
-                // 檢查必填欄位完整性
+                // 驗證
                 var errors = [];
                 var keySet = {};
                 var keyPattern = /^[a-zA-Z0-9_]+$/;
-                for (var i = 0; i < filledFields.length; i++) {
-                    var f = filledFields[i];
-                    var rowNum = this.fields.indexOf(f) + 1;
+                for (var i = 0; i < cleanFields.length; i++) {
+                    var f = cleanFields[i];
+                    var rowNum = i + 1;
                     if (!f.label || !f.label.trim()) {
                         errors.push('第 ' + rowNum + ' 列缺少 Label');
                     }
-                    var key = f.field_key.trim();
-                    if (!keyPattern.test(key)) {
-                        errors.push('第 ' + rowNum + ' 列 Field Key "' + key + '" 只能使用英文字母、數字與底線');
+                    if (!keyPattern.test(f.field_key)) {
+                        errors.push('第 ' + rowNum + ' 列 Field Key "' + f.field_key + '" 只能使用英文字母、數字與底線');
                     }
-                    if (keySet[key]) {
-                        errors.push('第 ' + rowNum + ' 列 Field Key "' + key + '" 重複');
+                    if (keySet[f.field_key]) {
+                        errors.push('第 ' + rowNum + ' 列 Field Key "' + f.field_key + '" 重複');
                     }
-                    keySet[key] = true;
-                    // 子欄位驗證
+                    keySet[f.field_key] = true;
                     var children = f.grid_children || [];
                     for (var ci = 0; ci < children.length; ci++) {
                         var ck = (children[ci].field_key || '').trim();
                         if (ck && !keyPattern.test(ck)) {
-                            errors.push('第 ' + rowNum + ' 列子欄位 "' + ck + '" 只能使用英文字母、數字與底線');
+                            errors.push('第 ' + rowNum + ' 列子欄位 "' + ck + '" 格式錯誤');
                         }
                     }
                 }
                 if (errors.length > 0) {
-                    _toast('error', errors.join('；'));
+                    _toast('error', errors.join('; '));
                     this.saving = false;
                     return;
                 }
-                // 過濾空白列，清除內部 flag
-                var cleanFields = filledFields
-                    .map(function(f) {
-                        var copy = JSON.parse(JSON.stringify(f));
-                        delete copy._pgTypeOverridden;
-                        delete copy._uid;
-                        copy.field_key = copy.field_key.trim();
-                        copy.label = copy.label.trim();
-                        return copy;
-                    });
 
                 var url, body;
                 if (this.isStandalone && !this.specSc) {
-                    // 新建獨立 spec
                     if (!this.specName || !this.specName.trim()) {
                         _toast('error', '請輸入規格名稱');
                         this.saving = false;
@@ -300,10 +496,10 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
-                    this.fields = _normalizeFields(data.data.fields || cleanFields, this.fields);
+                    var newFields = _normalizeFields(data.data.fields || cleanFields);
+                    this._setGridData(newFields);
                     if (this.isStandalone && !this.specSc && data.data.secure_code) {
                         this.specSc = data.data.secure_code;
-                        // 更新 URL 不重載頁面
                         history.replaceState(null, '', '/spec-formulate/' + this.specSc + '/edit');
                     }
                     _toast('success', data.message || '已儲存');
@@ -327,15 +523,14 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.fields = _normalizeFields(data.data.fields || [], this.fields);
+                    var newFields = _normalizeFields(data.data.fields || []);
+                    this._setGridData(newFields);
                     this.specVersion = data.data.version;
                     _toast('success', data.message || '已同步');
                 } else {
                     _toast('error', data.error || '同步失敗');
                 }
-            } catch (e) {
-                _toast('error', '同步失敗: ' + e.message);
-            }
+            } catch (e) { _toast('error', '同步失敗: ' + e.message); }
             this.saving = false;
         },
 
@@ -356,12 +551,8 @@ function fieldSpecEditor() {
                     } else {
                         _toast('success', data.message || '已套用');
                     }
-                } else {
-                    _toast('error', data.error || '操作失敗');
-                }
-            } catch (e) {
-                _toast('error', '操作失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '操作失敗'); }
+            } catch (e) { _toast('error', '操作失敗: ' + e.message); }
             this.saving = false;
         },
 
@@ -377,12 +568,8 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.previewSchema = data.data.schema;
                     this.showPreview = true;
-                } else {
-                    _toast('error', data.error || '預覽失敗');
-                }
-            } catch (e) {
-                _toast('error', '預覽失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '預覽失敗'); }
+            } catch (e) { _toast('error', '預覽失敗: ' + e.message); }
             this.previewing = false;
         },
 
@@ -394,105 +581,67 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.compareResult = data.data;
                     this.showCompare = true;
-                } else {
-                    _toast('error', data.error || '比對失敗');
-                }
-            } catch (e) {
-                _toast('error', '比對失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '比對失敗'); }
+            } catch (e) { _toast('error', '比對失敗: ' + e.message); }
             this.comparing = false;
         },
 
         async loadHistory() {
             this.historyLoading = true;
             try {
-                var url;
-                if (this.isStandalone && this.specSc) {
-                    url = '/api/spec-formulate/specs/standalone/' + this.specSc + '/history';
-                } else {
-                    url = '/api/spec-formulate/specs/' + this.formTemplateSc + '/history';
-                }
+                var url = (this.isStandalone && this.specSc)
+                    ? '/api/spec-formulate/specs/standalone/' + this.specSc + '/history'
+                    : '/api/spec-formulate/specs/' + this.formTemplateSc + '/history';
                 var res = await fetch(url);
                 var data = await res.json();
                 if (data.success) {
                     this.histories = data.data.histories || [];
                     this.showHistory = true;
                 }
-            } catch (e) {
-                _toast('error', '載入歷史失敗');
-            }
+            } catch (e) { _toast('error', '載入歷史失敗'); }
             this.historyLoading = false;
         },
 
-        previewHistoryVersion(h) {
-            this.historyPreview = h;
-        },
-
-        closeHistoryPreview() {
-            this.historyPreview = null;
-        },
+        previewHistoryVersion(h) { this.historyPreview = h; },
+        closeHistoryPreview() { this.historyPreview = null; },
 
         async restoreAsNewVersion(h) {
             if (!confirm('確定要以 v' + h.version + ' 的欄位建立新版本？')) return;
             this.historyRestoring = true;
             try {
-                var fields = h.fields_snapshot || [];
-                var url, body;
-                if (this.isStandalone && this.specSc) {
-                    url = '/api/spec-formulate/specs/standalone/' + this.specSc;
-                    body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
-                } else {
-                    url = '/api/spec-formulate/specs/' + this.formTemplateSc;
-                    body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
-                }
+                var url = (this.isStandalone && this.specSc)
+                    ? '/api/spec-formulate/specs/standalone/' + this.specSc
+                    : '/api/spec-formulate/specs/' + this.formTemplateSc;
                 var res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
+                    body: JSON.stringify({ fields: h.fields_snapshot || [], description: '從 v' + h.version + ' 取回建立' }),
                 });
                 var data = await res.json();
                 if (data.success) {
                     _toast('success', data.message || '已從 v' + h.version + ' 建立新版');
                     this.historyPreview = null;
                     this.showHistory = false;
-                    // 重新載入
-                    this.fields = _normalizeFields(data.data.fields || [], this.fields);
+                    this._setGridData(_normalizeFields(data.data.fields || []));
                     this.specVersion = data.data.version;
-                    this.dirty = false;
-                } else {
-                    _toast('error', data.error || '取回失敗');
-                }
-            } catch (e) {
-                _toast('error', '取回失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '取回失敗'); }
+            } catch (e) { _toast('error', '取回失敗: ' + e.message); }
             this.historyRestoring = false;
         },
 
         async applyHistoryToForm(h) {
-            if (this.isStandalone) {
-                _toast('error', '獨立規格無綁定表單，無法套用');
-                return;
-            }
-            if (!confirm('確定要將 v' + h.version + ' 的欄位套用到表單設計？\n（發行機制確保既有 SQL 表不受影響）')) return;
+            if (this.isStandalone) { _toast('error', '獨立規格無綁定表單'); return; }
+            if (!confirm('確定要將 v' + h.version + ' 套用到表單設計？')) return;
             this.historyRestoring = true;
             try {
-                // 先取回為新版
                 var saveRes = await fetch('/api/spec-formulate/specs/' + this.formTemplateSc, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fields: h.fields_snapshot || [],
-                        description: '從 v' + h.version + ' 取回並套用到表單',
-                    }),
+                    body: JSON.stringify({ fields: h.fields_snapshot || [], description: '從 v' + h.version + ' 取回並套用' }),
                 });
                 var saveData = await saveRes.json();
-                if (!saveData.success) {
-                    _toast('error', saveData.error || '儲存新版失敗');
-                    this.historyRestoring = false;
-                    return;
-                }
+                if (!saveData.success) { _toast('error', saveData.error || '儲存新版失敗'); this.historyRestoring = false; return; }
 
-                // 套用到表單
                 var applyRes = await fetch('/api/spec-formulate/specs/' + this.formTemplateSc + '/sync-spec-to-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -503,19 +652,14 @@ function fieldSpecEditor() {
                     _toast('success', '已從 v' + h.version + ' 取回並套用到表單設計');
                     this.historyPreview = null;
                     this.showHistory = false;
-                    this.fields = _normalizeFields(saveData.data.fields || [], this.fields);
+                    this._setGridData(_normalizeFields(saveData.data.fields || []));
                     this.specVersion = saveData.data.version;
-                    this.dirty = false;
-                } else {
-                    _toast('error', applyData.error || '套用到表單失敗');
-                }
-            } catch (e) {
-                _toast('error', '操作失敗: ' + e.message);
-            }
+                } else { _toast('error', applyData.error || '套用失敗'); }
+            } catch (e) { _toast('error', '操作失敗: ' + e.message); }
             this.historyRestoring = false;
         },
 
-        // ===== Standalone: 關聯表單 =====
+        // ===== Standalone: 關聯/建立表單 =====
 
         async openLinkForm() {
             this.showLinkModal = true;
@@ -524,12 +668,8 @@ function fieldSpecEditor() {
             try {
                 var res = await fetch('/api/spec-formulate/specs/available-templates');
                 var data = await res.json();
-                if (data.success) {
-                    this.linkTemplates = data.data || [];
-                }
-            } catch (e) {
-                _toast('error', '載入範本失敗');
-            }
+                if (data.success) { this.linkTemplates = data.data || []; }
+            } catch (e) { _toast('error', '載入範本失敗'); }
             this.linkLoading = false;
         },
 
@@ -546,12 +686,8 @@ function fieldSpecEditor() {
                     _toast('success', data.message || '已關聯');
                     this.formTemplateSc = this.linkTemplateSc;
                     this.showLinkModal = false;
-                } else {
-                    _toast('error', data.error || '關聯失敗');
-                }
-            } catch (e) {
-                _toast('error', '關聯失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '關聯失敗'); }
+            } catch (e) { _toast('error', '關聯失敗: ' + e.message); }
         },
 
         async openCreateFormModal() {
@@ -579,9 +715,7 @@ function fieldSpecEditor() {
             this.saving = true;
             try {
                 var body = { name: this.createFormName.trim() };
-                if (this.createFormCategorySc) {
-                    body.category_secure_code = this.createFormCategorySc;
-                }
+                if (this.createFormCategorySc) { body.category_secure_code = this.createFormCategorySc; }
                 var res = await fetch('/api/spec-formulate/specs/standalone/' + this.specSc + '/create-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -594,12 +728,8 @@ function fieldSpecEditor() {
                     if (data.data && data.data.form_template) {
                         this.formTemplateSc = data.data.form_template.secure_code;
                     }
-                } else {
-                    _toast('error', data.error || '建立失敗');
-                }
-            } catch (e) {
-                _toast('error', '建立失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '建立失敗'); }
+            } catch (e) { _toast('error', '建立失敗: ' + e.message); }
             this.saving = false;
         },
 
@@ -613,14 +743,9 @@ function fieldSpecEditor() {
             try {
                 var res = await fetch('/api/spec-formulate/specs/sql-tables');
                 var data = await res.json();
-                if (data.success) {
-                    this.sqlTables = data.data || [];
-                } else {
-                    _toast('error', data.error || '載入失敗');
-                }
-            } catch (e) {
-                _toast('error', '載入失敗: ' + e.message);
-            }
+                if (data.success) { this.sqlTables = data.data || []; }
+                else { _toast('error', data.error || '載入失敗'); }
+            } catch (e) { _toast('error', '載入失敗: ' + e.message); }
             this.sqlLoading = false;
         },
 
@@ -628,36 +753,27 @@ function fieldSpecEditor() {
             if (!this.selectedSqlTable) return;
             this.sqlLoading = true;
             try {
-                var url = this.apiBase + '/sync-from-sql-table';
-                var res = await fetch(url, {
+                var res = await fetch(this.apiBase + '/sync-from-sql-table', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ table_name: this.selectedSqlTable }),
                 });
                 var data = await res.json();
                 if (data.success && data.data && data.data.fields) {
-                    this.fields = _normalizeFields(data.data.fields, this.fields);
+                    this._setGridData(_normalizeFields(data.data.fields));
                     this.showSqlTableModal = false;
                     _toast('success', data.message || '欄位已匯入');
-                } else {
-                    _toast('error', data.error || '匯入失敗');
-                }
-            } catch (e) {
-                _toast('error', '匯入失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '匯入失敗'); }
+            } catch (e) { _toast('error', '匯入失敗: ' + e.message); }
             this.sqlLoading = false;
         },
 
         async applyToSqlTable() {
-            if (!this.specVersion) {
-                _toast('error', '請先儲存規格');
-                return;
-            }
+            if (!this.specVersion) { _toast('error', '請先儲存規格'); return; }
             this.sqlLoading = true;
             this.sqlApplyPreview = null;
             try {
-                var url = this.apiBase + '/apply-to-sql-table';
-                var res = await fetch(url, {
+                var res = await fetch(this.apiBase + '/apply-to-sql-table', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ confirm: false }),
@@ -666,20 +782,15 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.sqlApplyPreview = data.data;
                     this.showSqlApplyModal = true;
-                } else {
-                    _toast('error', data.error || '預覽失敗');
-                }
-            } catch (e) {
-                _toast('error', '預覽失敗: ' + e.message);
-            }
+                } else { _toast('error', data.error || '預覽失敗'); }
+            } catch (e) { _toast('error', '預覽失敗: ' + e.message); }
             this.sqlLoading = false;
         },
 
         async confirmApplyToSql() {
             this.sqlLoading = true;
             try {
-                var url = this.apiBase + '/apply-to-sql-table';
-                var res = await fetch(url, {
+                var res = await fetch(this.apiBase + '/apply-to-sql-table', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ confirm: true }),
@@ -688,70 +799,71 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.showSqlApplyModal = false;
                     var action = data.data.action;
-                    if (action === 'create') {
-                        _toast('success', '已建立 SQL Table: ' + data.data.table_name);
-                    } else if (action === 'alter') {
-                        _toast('success', '已更新 SQL Table: ' + data.data.table_name);
-                    } else {
-                        _toast('info', '表結構無需變更');
-                    }
-                } else {
-                    _toast('error', data.error || '執行失敗');
-                }
-            } catch (e) {
-                _toast('error', '執行失敗: ' + e.message);
-            }
+                    if (action === 'create') _toast('success', '已建立 SQL Table: ' + data.data.table_name);
+                    else if (action === 'alter') _toast('success', '已更新 SQL Table: ' + data.data.table_name);
+                    else _toast('info', '表結構無需變更');
+                } else { _toast('error', data.error || '執行失敗'); }
+            } catch (e) { _toast('error', '執行失敗: ' + e.message); }
             this.sqlLoading = false;
         },
 
-        // ===== Inline Grid 操作 =====
+        // ===== 匯出 =====
 
-        addEmptyRows(count) {
-            for (var i = 0; i < count; i++) {
-                var row = _emptyField();
-                row.sort_order = this.fields.length;
-                this.fields.push(row);
+        toggleExportMenu() {
+            this.showExportMenu = !this.showExportMenu;
+        },
+
+        closeExportMenu() {
+            this.showExportMenu = false;
+        },
+
+        async exportFile(format) {
+            this.showExportMenu = false;
+            if (!this.specVersion && !this.isStandalone) {
+                _toast('error', '請先儲存規格');
+                return;
             }
-        },
+            var id = this.exportIdentifier;
+            if (!id) { _toast('error', '無法識別規格'); return; }
 
-        removeField(idx) {
-            this.fields.splice(idx, 1);
-            this.fields.forEach(function(f, i) { f.sort_order = i; });
-        },
+            try {
+                var res = await fetch('/api/spec-formulate/export/' + id + '/' + format, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}',
+                });
+                if (!res.ok) {
+                    var err = await res.json();
+                    _toast('error', err.error || '匯出失敗');
+                    return;
+                }
+                var blob = await res.blob();
+                var disposition = res.headers.get('Content-Disposition') || '';
+                var filename = 'spec.' + format;
+                var match = disposition.match(/filename[^;=\n]*=(['\"]?)([^'\";\n]*)\1/);
+                if (match && match[2]) filename = decodeURIComponent(match[2]);
 
-        onTypeChange(idx) {
-            var f = this.fields[idx];
-            if (!f._pgTypeOverridden) {
-                f.pg_type = getPgDefault(f.formio_type);
-            }
-        },
-
-        onPgTypeInput(idx) {
-            this.fields[idx]._pgTypeOverridden = true;
-        },
-
-        validateFieldKey(idx) {
-            var f = this.fields[idx];
-            var val = f.field_key || '';
-            if (val && !/^[a-zA-Z0-9_]+$/.test(val)) {
-                f._keyError = true;
-                _toast('error', 'Field Key 只能使用英文字母、數字與底線');
-            } else {
-                f._keyError = false;
-            }
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href);
+            } catch (e) { _toast('error', '匯出失敗: ' + e.message); }
         },
 
         // ===== 進階設定 Modal =====
 
         openDetail(idx) {
+            if (!this.gridTable) return;
+            var rows = this.gridTable.getData();
+            if (idx < 0 || idx >= rows.length) return;
             this.detailIndex = idx;
-            var f = JSON.parse(JSON.stringify(this.fields[idx]));
-            // 確保 constraints 物件存在
-            if (!f.constraints || typeof f.constraints !== 'object') {
-                f.constraints = {};
-            }
+            var f = JSON.parse(JSON.stringify(rows[idx]));
+            if (!f.constraints || typeof f.constraints !== 'object') f.constraints = {};
             var dc = f.constraints;
-            if (dc.required === undefined) dc.required = false;
+            if (dc.required === undefined) dc.required = !!f.required;
             if (dc.maxLength === undefined) dc.maxLength = null;
             if (dc.minLength === undefined) dc.minLength = null;
             if (dc.min === undefined) dc.min = null;
@@ -760,13 +872,10 @@ function fieldSpecEditor() {
             if (dc.customValidation === undefined) dc.customValidation = null;
             if (f.lookup_category_code === undefined) f.lookup_category_code = null;
             this.detailForm = f;
-            this.detailOptionRows = (f.options || []).map(function(o) { return {label: o.label || '', value: o.value || ''}; });
+            this.detailOptionRows = (f.options || []).map(function(o) { return { label: o.label || '', value: o.value || '' }; });
             this.detailGridChildRows = (f.grid_children || []).map(function(c) { return JSON.parse(JSON.stringify(c)); });
-            // 預載 lookup 預覽
             this.lookupPreviewItems = [];
-            if (f.lookup_category_code) {
-                this.loadLookupPreview(f.lookup_category_code);
-            }
+            if (f.lookup_category_code) { this.loadLookupPreview(f.lookup_category_code); }
             this.showDetailModal = true;
         },
 
@@ -775,64 +884,36 @@ function fieldSpecEditor() {
             var filteredOptions = this.detailOptionRows.filter(function(o) { return o.value || o.label; });
             f.options = filteredOptions.length > 0 ? filteredOptions : null;
             f.grid_children = this.detailGridChildRows.length > 0 ? this.detailGridChildRows : null;
+            if (f.lookup_category_code) { f.options = null; }
 
-            // lookup 與手動 options 互斥
-            if (f.lookup_category_code) {
-                f.options = null;
+            // 更新 Tabulator row
+            if (this.gridTable) {
+                var rows = this.gridTable.getRows();
+                if (this.detailIndex >= 0 && this.detailIndex < rows.length) {
+                    rows[this.detailIndex].update({
+                        constraints: JSON.parse(JSON.stringify(f.constraints)),
+                        required: !!f.constraints.required,
+                        default_value: f.default_value,
+                        options: f.options ? JSON.parse(JSON.stringify(f.options)) : null,
+                        grid_children: f.grid_children ? JSON.parse(JSON.stringify(f.grid_children)) : null,
+                        lookup_category_code: f.lookup_category_code || null,
+                    });
+                }
             }
-
-            // 回寫進階欄位到 fields 陣列
-            var target = this.fields[this.detailIndex];
-            target.constraints = JSON.parse(JSON.stringify(f.constraints));
-            target.default_value = f.default_value;
-            target.options = f.options ? JSON.parse(JSON.stringify(f.options)) : null;
-            target.grid_children = f.grid_children ? JSON.parse(JSON.stringify(f.grid_children)) : null;
-            target.lookup_category_code = f.lookup_category_code || null;
             this.showDetailModal = false;
             _toast('success', '進階設定已更新');
         },
 
-        closeDetail() {
-            this.showDetailModal = false;
-        },
+        closeDetail() { this.showDetailModal = false; },
 
-        addDetailOption() {
-            this.detailOptionRows.push({ label: '', value: '' });
-        },
-
-        removeDetailOption(idx) {
-            this.detailOptionRows.splice(idx, 1);
-        },
-
+        addDetailOption() { this.detailOptionRows.push({ label: '', value: '' }); },
+        removeDetailOption(idx) { this.detailOptionRows.splice(idx, 1); },
         addDetailGridChild() {
-            this.detailGridChildRows.push(_emptyField());
+            this.detailGridChildRows.push({
+                field_key: '', label: '', formio_type: 'textfield',
+            });
         },
-
-        removeDetailGridChild(idx) {
-            this.detailGridChildRows.splice(idx, 1);
-        },
-
-        // ===== 拖曳排序 =====
-
-        dragStart(idx) {
-            this.dragIndex = idx;
-        },
-
-        dragOver(idx, event) {
-            event.preventDefault();
-        },
-
-        drop(idx) {
-            if (this.dragIndex < 0 || this.dragIndex === idx) return;
-            var item = this.fields.splice(this.dragIndex, 1)[0];
-            this.fields.splice(idx, 0, item);
-            this.fields.forEach(function(f, i) { f.sort_order = i; });
-            this.dragIndex = -1;
-        },
-
-        dragEnd() {
-            this.dragIndex = -1;
-        },
+        removeDetailGridChild(idx) { this.detailGridChildRows.splice(idx, 1); },
 
         // ===== 工具 =====
 
@@ -846,90 +927,49 @@ function fieldSpecEditor() {
             var d = new Date(iso);
             return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         },
-
-        getDiffSummary(diff) {
-            if (!diff) return '';
-            var parts = [];
-            if (diff.added && diff.added.length) parts.push('+' + diff.added.length);
-            if (diff.modified && diff.modified.length) parts.push('~' + diff.modified.length);
-            if (diff.removed && diff.removed.length) parts.push('-' + diff.removed.length);
-            return parts.join(' / ');
-        },
     };
 }
 
-/**
- * 確保每個 field 的 constraints 物件完整
- *
- * @param {Array} fields - 新的 fields 陣列
- * @param {Array} [oldFields] - 可選，舊 fields 陣列。傳入時會按索引保留舊 _uid，
- *   避免 Alpine.js 銷毀重建 <select>（重建時 x-model 在 x-for options
- *   建立前觸發，導致 formio_type 被重設為第一個選項 textfield）
- */
-function _normalizeFields(fields, oldFields) {
-    return fields.map(function(f, i) {
-        if (!f._uid) {
-            f._uid = (oldFields && i < oldFields.length && oldFields[i]._uid)
-                ? oldFields[i]._uid
-                : _nextUid();
-        }
+// ===== 全域工具函數 =====
+
+var _uidCounter = 0;
+
+function _normalizeFields(fields) {
+    return (fields || []).map(function(f, i) {
+        f._uid = f._uid || '__uid_' + (++_uidCounter) + '_' + Date.now();
         f.constraints = Object.assign({
-            required: false,
-            maxLength: null,
-            minLength: null,
-            min: null,
-            max: null,
-            pattern: null,
-            customValidation: null,
+            required: false, maxLength: null, minLength: null,
+            min: null, max: null, pattern: null, customValidation: null,
         }, f.constraints || {});
         return f;
     });
 }
 
-var _uidCounter = 0;
-function _nextUid() { return '__uid_' + (++_uidCounter) + '_' + Date.now(); }
-
-function _emptyField() {
-    return {
-        _uid: _nextUid(),
-        field_key: '',
-        label: '',
-        formio_type: 'textfield',
-        pg_type: 'VARCHAR(500)',
-        constraints: {
-            required: false,
-            maxLength: null,
-            minLength: null,
-            min: null,
-            max: null,
-            pattern: null,
-            customValidation: null,
-        },
-        is_pii: false,
-        description: '',
-        default_value: null,
-        options: null,
-        grid_children: null,
-        lookup_category_code: null,
-        sort_order: 0,
-    };
+function _emptyFields(count) {
+    var arr = [];
+    for (var i = 0; i < count; i++) {
+        arr.push({
+            _uid: '__uid_' + (++_uidCounter) + '_' + Date.now(),
+            field_key: '', label: '', formio_type: 'textfield',
+            pg_type: 'VARCHAR(500)',
+            constraints: { required: false, maxLength: null, minLength: null, min: null, max: null, pattern: null, customValidation: null },
+            is_pii: false, description: '', default_value: null,
+            options: null, grid_children: null, lookup_category_code: null,
+            sort_order: i,
+        });
+    }
+    return arr;
 }
 
 function _toast(type, msg) {
     var el = document.createElement('div');
     el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;padding:10px 18px;border-radius:4px;font-size:13px;max-width:400px;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
     if (type === 'success') {
-        el.style.background = '#d1fae5';
-        el.style.color = '#065f46';
-        el.style.border = '1px solid #6ee7b7';
+        el.style.background = '#d1fae5'; el.style.color = '#065f46'; el.style.border = '1px solid #6ee7b7';
     } else if (type === 'error') {
-        el.style.background = '#fee2e2';
-        el.style.color = '#991b1b';
-        el.style.border = '1px solid #fca5a5';
+        el.style.background = '#fee2e2'; el.style.color = '#991b1b'; el.style.border = '1px solid #fca5a5';
     } else {
-        el.style.background = '#e0e7ff';
-        el.style.color = '#3730a3';
-        el.style.border = '1px solid #a5b4fc';
+        el.style.background = '#e0e7ff'; el.style.color = '#3730a3'; el.style.border = '1px solid #a5b4fc';
     }
     el.textContent = msg;
     document.body.appendChild(el);

@@ -10,7 +10,8 @@ api_bp = Blueprint(
     url_prefix='/api/spec-formulate'
 )
 
-# 導入 field_specs API Blueprint
+# 導入 API Blueprints
 from .field_specs import field_specs_bp
+from .export import export_bp
 
-additional_blueprints = [field_specs_bp]
+additional_blueprints = [field_specs_bp, export_bp]

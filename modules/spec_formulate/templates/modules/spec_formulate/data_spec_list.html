@@ -66,6 +66,14 @@
                                     <template x-if="spec.form_template_secure_code">
                                         <button @click="goSyncControl(spec.form_template_secure_code)">同步中控</button>
                                     </template>
+                                    <div class="ds-export-dropdown" :class="exportOpenSc === spec.secure_code ? 'open' : ''" @click.away="exportOpenSc = null" style="display: inline-block;">
+                                        <button class="sm" @click.stop="exportOpenSc = exportOpenSc === spec.secure_code ? null : spec.secure_code">匯出</button>
+                                        <div class="ds-export-dropdown-content">
+                                            <a @click.stop="doExport(spec.secure_code, 'excel')">Excel</a>
+                                            <a @click.stop="doExport(spec.secure_code, 'csv')">CSV</a>
+                                            <a @click.stop="doExport(spec.secure_code, 'docx')">Word</a>
+                                        </div>
+                                    </div>
                                     <button class="sm" style="color: #dc2626; border-color: #fca5a5;" @click="deleteStandalone(spec.secure_code)" :disabled="deletingSpec">刪除</button>
                                 </td>
                             </tr>

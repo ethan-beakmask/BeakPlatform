@@ -3,7 +3,9 @@
 {% block title %}欄位規格 - BeakPlatform{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/modules/spec_formulate/vendor/tabulator_bootstrap5.min.css">
 <link rel="stylesheet" href="/static/modules/spec_formulate/css/field-spec-editor.css">
+<script src="/static/modules/spec_formulate/vendor/tabulator.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -24,15 +26,13 @@ window.__SPEC_CONFIG = {
             <div class="fs-meta">
                 <template x-if="isStandalone && !specSc">
                     <span>
-                        <input type="text" x-model="specName" placeholder="輸入規格名稱"
-                               style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
+                        <input type="text" x-model="specName" placeholder="輸入規格名稱">
                         <span> | 新建獨立規格</span>
                     </span>
                 </template>
                 <template x-if="isStandalone && specSc">
                     <span>
-                        <input type="text" x-model="specName" placeholder="規格名稱"
-                               style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
+                        <input type="text" x-model="specName" placeholder="規格名稱">
                         <template x-if="specVersion">
                             <span> | v<span x-text="specVersion"></span></span>
                         </template>
@@ -53,46 +53,43 @@ window.__SPEC_CONFIG = {
         </div>
         <div class="fs-toolbar">
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="從現有 FormIO schema 反向建立規格">
-                    從 FormIO 同步
-                </button>
+                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving">從 FormIO 同步</button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="生成 FormIO schema 預覽">
-                    FormIO 預覽
-                </button>
+                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing">FormIO 預覽</button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="將規格套用到表單 schema">
-                    套用到表單
-                </button>
+                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving">套用到表單</button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="三向比對: Spec vs FormIO vs SQL">
-                    比對
-                </button>
+                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing">比對</button>
             </template>
             <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openLinkForm()" title="關聯到既有表單">
-                    關聯表單
-                </button>
+                <button class="fs-btn" @click="openLinkForm()">關聯表單</button>
             </template>
             <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openCreateFormModal()" title="從此規格建立新表單">
-                    建立表單
-                </button>
+                <button class="fs-btn" @click="openCreateFormModal()">建立表單</button>
             </template>
-            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading" title="從 org DB 既有表匯入欄位定義">
+            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading">
                 <span x-show="!sqlLoading">從 SQL Table 同步</span>
                 <span x-show="sqlLoading">載入中...</span>
             </button>
-            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading" title="將 spec 欄位定義建立/更新到 SQL Table">
+            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading">
                 <span x-show="!sqlLoading">套用到 SQL Table</span>
                 <span x-show="sqlLoading">處理中...</span>
             </button>
-            <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
-                歷史
-            </button>
+            <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">歷史</button>
+
+            <!-- 匯出下拉 -->
+            <div class="fs-export-dropdown" :class="showExportMenu ? 'open' : ''" @click.away="closeExportMenu()">
+                <button class="fs-btn" @click="toggleExportMenu()" :disabled="!specVersion && !specSc">匯出</button>
+                <div class="fs-export-dropdown-content">
+                    <a @click="exportFile('excel')">Excel (.xlsx)</a>
+                    <a @click="exportFile('csv')">CSV (.csv)</a>
+                    <a @click="exportFile('docx')">Word (.docx)</a>
+                </div>
+            </div>
+
             <button class="fs-btn success" @click="saveSpec()" :disabled="saving">
                 <span x-show="!saving">儲存規格</span>
                 <span x-show="saving">儲存中...</span>
@@ -103,106 +100,25 @@ window.__SPEC_CONFIG = {
     <!-- 載入中 -->
     <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">載入中...</div>
 
-    <!-- 欄位 Grid -->
+    <!-- 欄位 Grid (Tabulator) -->
     <div x-show="!loading" class="fs-card">
         <div x-show="fields.length > 0" class="fs-summary">
-            <span>共 <strong x-text="fields.length"></strong> 個欄位</span>
-            <span x-show="fields.filter(f => f.is_pii).length > 0">
-                PII: <strong x-text="fields.filter(f => f.is_pii).length"></strong>
+            <span>共 <strong x-text="gridTable ? gridTable.getData().filter(f => f.field_key && f.field_key.trim()).length : 0"></strong> 個欄位</span>
+            <span x-show="gridTable && gridTable.getData().filter(f => f.is_pii).length > 0">
+                PII: <strong x-text="gridTable ? gridTable.getData().filter(f => f.is_pii).length : 0"></strong>
             </span>
-            <span x-show="fields.filter(f => f.constraints && f.constraints.required).length > 0">
-                必填: <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
+            <span x-show="gridTable && gridTable.getData().filter(f => f.required).length > 0">
+                必填: <strong x-text="gridTable ? gridTable.getData().filter(f => f.required).length : 0"></strong>
             </span>
         </div>
 
-        <div x-show="fields.length === 0" class="fs-empty-hint">
-            點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入
+        <div id="field-grid"></div>
+
+        <div class="fs-add-row-bar">
+            <button class="fs-btn" @click="addEmptyRows(10)" style="font-size: 12px; padding: 3px 12px;">
+                [+] 新增 10 列空白欄位
+            </button>
         </div>
-
-        <table class="fs-grid-table">
-            <colgroup>
-                <col style="width: 50px;">
-                <col style="width: 14%;">
-                <col style="width: 14%;">
-                <col style="width: 130px;">
-                <col style="width: 120px;">
-                <col style="width: 42px;">
-                <col style="width: 42px;">
-                <col>
-                <col style="width: 90px;">
-            </colgroup>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Label</th>
-                    <th>Field Key</th>
-                    <th>Type</th>
-                    <th>PG Type</th>
-                    <th>PII</th>
-                    <th>必填</th>
-                    <th>說明</th>
-                    <th class="col-actions">操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- 既有欄位 -->
-                <template x-for="(f, idx) in fields" :key="f._uid">
-                    <tr class="fs-grid-row"
-                        draggable="true"
-                        @dragstart="dragStart(idx)"
-                        @dragover="dragOver(idx, $event)"
-                        @drop="drop(idx)"
-                        @dragend="dragEnd()"
-                        :class="dragIndex === idx ? 'dragging' : ''">
-                        <td>
-                            <span class="fs-drag-handle">::</span>
-                            <span class="fs-row-num" x-text="idx + 1"></span>
-                        </td>
-                        <td>
-                            <input type="text" x-model="f.label" placeholder="-">
-                        </td>
-                        <td>
-                            <input type="text" class="mono" x-model="f.field_key"
-                                   @input="validateFieldKey(idx)"
-                                   :style="f._keyError ? 'border-color:#dc2626;background:#fef2f2' : ''">
-                        </td>
-                        <td>
-                            <select x-model="f.formio_type" @change="onTypeChange(idx)">
-                                <template x-for="t in FORMIO_TYPES" :key="t.value">
-                                    <option :value="t.value" x-text="t.label"></option>
-                                </template>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="mono" x-model="f.pg_type" @input="onPgTypeInput(idx)">
-                        </td>
-                        <td class="cb-cell">
-                            <input type="checkbox" x-model="f.is_pii">
-                        </td>
-                        <td class="cb-cell">
-                            <input type="checkbox" x-model="f.constraints.required">
-                        </td>
-                        <td>
-                            <input type="text" x-model="f.description" placeholder="-">
-                        </td>
-                        <td class="col-actions">
-                            <button @click="openDetail(idx)">詳細</button>
-                            <button class="danger" @click="removeField(idx)">X</button>
-                        </td>
-                    </tr>
-                </template>
-
-                <!-- 批次新增按鈕 -->
-                <tr>
-                    <td colspan="9" style="padding: 6px 8px; border: none;">
-                        <button class="fs-btn" @click="addEmptyRows(10)"
-                                style="font-size: 12px; padding: 3px 12px;">
-                            [+] 新增 10 列空白欄位
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
     <!-- 比對結果面板 -->
@@ -232,31 +148,19 @@ window.__SPEC_CONFIG = {
                 <div style="margin-bottom: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 3px; font-size: 12px; line-height: 1.8;">
                     <div>
                         <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs 表單:</span>
-                        <template x-if="compareResult.summary.spec_formio_status === 'match'">
-                            <span style="color: #059669;">一致</span>
-                        </template>
-                        <template x-if="compareResult.summary.spec_formio_status === 'mismatch'">
-                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_formio.length"></span> 項)</span>
-                        </template>
+                        <template x-if="compareResult.summary.spec_formio_status === 'match'"><span style="color: #059669;">一致</span></template>
+                        <template x-if="compareResult.summary.spec_formio_status === 'mismatch'"><span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_formio.length"></span> 項)</span></template>
                     </div>
                     <div>
                         <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs SQL:</span>
-                        <template x-if="compareResult.summary.spec_sql_status === 'match'">
-                            <span style="color: #059669;">一致</span>
-                        </template>
-                        <template x-if="compareResult.summary.spec_sql_status === 'mismatch'">
-                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_sql.length"></span> 項)</span>
-                        </template>
-                        <template x-if="compareResult.summary.spec_sql_status === 'unavailable'">
-                            <span style="color: #9ca3af;">SQL 同步表尚未建立</span>
-                        </template>
+                        <template x-if="compareResult.summary.spec_sql_status === 'match'"><span style="color: #059669;">一致</span></template>
+                        <template x-if="compareResult.summary.spec_sql_status === 'mismatch'"><span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_sql.length"></span> 項)</span></template>
+                        <template x-if="compareResult.summary.spec_sql_status === 'unavailable'"><span style="color: #9ca3af;">SQL 同步表尚未建立</span></template>
                     </div>
                 </div>
-
                 <template x-if="compareResult.summary.overall === 'all_match'">
                     <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">規格、表單、SQL 三向完全一致</p>
                 </template>
-
                 <template x-if="compareResult.spec_vs_formio.length > 0">
                     <div style="margin-bottom: 12px;">
                         <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs 表單 偏移細節</p>
@@ -268,7 +172,6 @@ window.__SPEC_CONFIG = {
                         </template>
                     </div>
                 </template>
-
                 <template x-if="compareResult.spec_vs_sql.length > 0">
                     <div>
                         <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs SQL 偏移細節</p>
@@ -328,15 +231,9 @@ window.__SPEC_CONFIG = {
                         </div>
                         <template x-if="h.change_diff">
                             <div class="fs-history-diff">
-                                <span class="added" x-show="h.change_diff.added && h.change_diff.added.length">
-                                    +<span x-text="h.change_diff.added.length"></span> 新增
-                                </span>
-                                <span class="modified" x-show="h.change_diff.modified && h.change_diff.modified.length">
-                                    ~<span x-text="h.change_diff.modified.length"></span> 修改
-                                </span>
-                                <span class="removed" x-show="h.change_diff.removed && h.change_diff.removed.length">
-                                    -<span x-text="h.change_diff.removed.length"></span> 移除
-                                </span>
+                                <span class="added" x-show="h.change_diff.added && h.change_diff.added.length">+<span x-text="h.change_diff.added.length"></span> 新增</span>
+                                <span class="modified" x-show="h.change_diff.modified && h.change_diff.modified.length">~<span x-text="h.change_diff.modified.length"></span> 修改</span>
+                                <span class="removed" x-show="h.change_diff.removed && h.change_diff.removed.length">-<span x-text="h.change_diff.removed.length"></span> 移除</span>
                             </div>
                         </template>
                     </div>
@@ -352,15 +249,11 @@ window.__SPEC_CONFIG = {
                             (<span x-text="(historyPreview.fields_snapshot || []).length"></span> 個欄位)
                         </span>
                         <div style="display: flex; gap: 6px;">
-                            <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #3b82f6; color: #fff; border-color: #3b82f6;"
-                                    @click="restoreAsNewVersion(historyPreview)" :disabled="historyRestoring">
-                                取回為新版
-                            </button>
+                            <button class="fs-btn primary" style="padding: 3px 10px; font-size: 12px;"
+                                    @click="restoreAsNewVersion(historyPreview)" :disabled="historyRestoring">取回為新版</button>
                             <template x-if="!isStandalone">
-                                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #f59e0b; color: #fff; border-color: #f59e0b;"
-                                        @click="applyHistoryToForm(historyPreview)" :disabled="historyRestoring">
-                                    取回並套用到表單
-                                </button>
+                                <button class="fs-btn warning" style="padding: 3px 10px; font-size: 12px;"
+                                        @click="applyHistoryToForm(historyPreview)" :disabled="historyRestoring">取回並套用到表單</button>
                             </template>
                             <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="closeHistoryPreview()">關閉預覽</button>
                         </div>
@@ -404,73 +297,32 @@ window.__SPEC_CONFIG = {
                 <button @click="closeDetail()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
-                <!-- 欄位資訊（唯讀） -->
                 <div class="fs-detail-info">
-                    <div>
-                        <span class="info-label">Field Key:</span>
-                        <span class="info-value" x-text="detailForm.field_key || '-'"></span>
-                    </div>
-                    <div>
-                        <span class="info-label">Label:</span>
-                        <span class="info-value" x-text="detailForm.label || '-'"></span>
-                    </div>
-                    <div>
-                        <span class="info-label">Type:</span>
-                        <span class="info-value" x-text="getFormioLabel(detailForm.formio_type)"></span>
-                    </div>
+                    <div><span class="info-label">Field Key:</span><span class="info-value" x-text="detailForm.field_key || '-'"></span></div>
+                    <div><span class="info-label">Label:</span><span class="info-value" x-text="detailForm.label || '-'"></span></div>
+                    <div><span class="info-label">Type:</span><span class="info-value" x-text="getFormioLabel(detailForm.formio_type)"></span></div>
                 </div>
-
-                <!-- Constraints -->
                 <div class="fs-form-row">
-                    <div class="fs-form-group">
-                        <label>MaxLength</label>
-                        <input type="number" x-model.number="detailForm.constraints.maxLength" placeholder="(無限制)">
-                    </div>
-                    <div class="fs-form-group">
-                        <label>MinLength</label>
-                        <input type="number" x-model.number="detailForm.constraints.minLength" placeholder="(無限制)">
-                    </div>
+                    <div class="fs-form-group"><label>MaxLength</label><input type="number" x-model.number="detailForm.constraints.maxLength" placeholder="(無限制)"></div>
+                    <div class="fs-form-group"><label>MinLength</label><input type="number" x-model.number="detailForm.constraints.minLength" placeholder="(無限制)"></div>
                 </div>
-
                 <div class="fs-form-row">
-                    <div class="fs-form-group">
-                        <label>Min</label>
-                        <input type="number" x-model.number="detailForm.constraints.min" placeholder="(無限制)">
-                    </div>
-                    <div class="fs-form-group">
-                        <label>Max</label>
-                        <input type="number" x-model.number="detailForm.constraints.max" placeholder="(無限制)">
-                    </div>
+                    <div class="fs-form-group"><label>Min</label><input type="number" x-model.number="detailForm.constraints.min" placeholder="(無限制)"></div>
+                    <div class="fs-form-group"><label>Max</label><input type="number" x-model.number="detailForm.constraints.max" placeholder="(無限制)"></div>
                 </div>
+                <div class="fs-form-group"><label>Pattern (正規表達式)</label><input type="text" x-model="detailForm.constraints.pattern" placeholder="^[A-Z0-9]+$"></div>
+                <div class="fs-form-group"><label>Custom Validation</label><textarea x-model="detailForm.constraints.customValidation" placeholder="自訂驗證邏輯"></textarea></div>
+                <div class="fs-form-group"><label>預設值</label><input type="text" x-model="detailForm.default_value" placeholder="(無)"></div>
 
-                <div class="fs-form-group">
-                    <label>Pattern (正規表達式)</label>
-                    <input type="text" x-model="detailForm.constraints.pattern" placeholder="^[A-Z0-9]+$">
-                </div>
-
-                <div class="fs-form-group">
-                    <label>Custom Validation</label>
-                    <textarea x-model="detailForm.constraints.customValidation" placeholder="自訂驗證邏輯"></textarea>
-                </div>
-
-                <div class="fs-form-group">
-                    <label>預設值</label>
-                    <input type="text" x-model="detailForm.default_value" placeholder="(無)">
-                </div>
-
-                <!-- Lookup Source (select/radio/selectboxes) -->
                 <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type)">
                     <div class="fs-form-group">
                         <label>選項來源</label>
-                        <select x-model="detailForm.lookup_category_code"
-                                @change="loadLookupPreview(detailForm.lookup_category_code)"
-                                style="margin-bottom: 6px;">
+                        <select x-model="detailForm.lookup_category_code" @change="loadLookupPreview(detailForm.lookup_category_code)" style="margin-bottom: 6px;">
                             <option value="">手動定義</option>
                             <template x-for="lk in lookupCategories" :key="lk.code">
                                 <option :value="lk.code" x-text="lk.name + ' (' + lk.code + ')'"></option>
                             </template>
                         </select>
-                        <!-- Lookup 預覽 -->
                         <div x-show="detailForm.lookup_category_code" style="margin-bottom: 8px; padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 3px; font-size: 12px;">
                             <div style="font-weight: 500; margin-bottom: 4px; color: #374151;">選項預覽 (前 10 項)</div>
                             <div x-show="lookupPreviewLoading" style="color: #9ca3af;">載入中...</div>
@@ -485,7 +337,6 @@ window.__SPEC_CONFIG = {
                     </div>
                 </template>
 
-                <!-- Options (select/radio/selectboxes) - 僅手動定義時顯示 -->
                 <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type) && !detailForm.lookup_category_code">
                     <div class="fs-form-group">
                         <label>手動選項</label>
@@ -493,38 +344,29 @@ window.__SPEC_CONFIG = {
                             <div style="display: flex; gap: 6px; margin-bottom: 4px;">
                                 <input type="text" x-model="opt.label" placeholder="顯示文字" style="flex: 1;">
                                 <input type="text" x-model="opt.value" placeholder="值" style="flex: 1;">
-                                <button type="button" @click="removeDetailOption(oi)"
-                                        style="padding: 4px 8px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 12px; border-radius: 2px;">X</button>
+                                <button type="button" @click="removeDetailOption(oi)" style="padding: 4px 8px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 12px; border-radius: 2px;">X</button>
                             </div>
                         </template>
-                        <button type="button" @click="addDetailOption()"
-                                style="padding: 4px 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; border-radius: 2px;">+ 新增選項</button>
+                        <button type="button" @click="addDetailOption()" style="padding: 4px 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; border-radius: 2px;">+ 新增選項</button>
                     </div>
                 </template>
 
-                <!-- Grid Children (datagrid/editgrid) -->
                 <template x-if="['datagrid', 'editgrid'].includes(detailForm.formio_type)">
                     <div class="fs-form-group">
                         <label>子欄位</label>
-                        <div class="fs-grid-children">
-                            <template x-for="(child, ci) in detailGridChildRows" :key="ci">
-                                <div style="display: flex; gap: 6px; margin-bottom: 4px; align-items: center;">
-                                    <input type="text" x-model="child.field_key" placeholder="key"
-                                           @input="child._keyError = (child.field_key && !/^[a-zA-Z0-9_]*$/.test(child.field_key))"
-                                           :style="(child._keyError ? 'border-color:#dc2626;background:#fef2f2;' : '') + 'flex: 1; font-size: 12px; padding: 4px 6px;'">
-                                    <input type="text" x-model="child.label" placeholder="label" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                                    <select x-model="child.formio_type" style="flex: 1; font-size: 12px; padding: 4px 6px;">
-                                        <template x-for="t in FORMIO_TYPES.filter(x => !['datagrid','editgrid'].includes(x.value))" :key="t.value">
-                                            <option :value="t.value" x-text="t.label"></option>
-                                        </template>
-                                    </select>
-                                    <button type="button" @click="removeDetailGridChild(ci)"
-                                            style="padding: 3px 6px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 11px; border-radius: 2px;">X</button>
-                                </div>
-                            </template>
-                            <button type="button" @click="addDetailGridChild()"
-                                    style="padding: 3px 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 11px; border-radius: 2px;">+ 子欄位</button>
-                        </div>
+                        <template x-for="(child, ci) in detailGridChildRows" :key="ci">
+                            <div style="display: flex; gap: 6px; margin-bottom: 4px; align-items: center;">
+                                <input type="text" x-model="child.field_key" placeholder="key" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                <input type="text" x-model="child.label" placeholder="label" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                <select x-model="child.formio_type" style="flex: 1; font-size: 12px; padding: 4px 6px;">
+                                    <template x-for="t in FORMIO_TYPES.filter(x => !['datagrid','editgrid'].includes(x.value))" :key="t.value">
+                                        <option :value="t.value" x-text="t.label"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="removeDetailGridChild(ci)" style="padding: 3px 6px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 11px; border-radius: 2px;">X</button>
+                            </div>
+                        </template>
+                        <button type="button" @click="addDetailGridChild()" style="padding: 3px 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 11px; border-radius: 2px;">+ 子欄位</button>
                     </div>
                 </template>
             </div>
@@ -535,7 +377,7 @@ window.__SPEC_CONFIG = {
         </div>
     </div>
 
-    <!-- 關聯表單 Modal (standalone) -->
+    <!-- 關聯表單 Modal -->
     <div x-show="showLinkModal" x-cloak class="fs-modal">
         <div class="fs-modal-content">
             <div class="fs-modal-header">
@@ -544,9 +386,7 @@ window.__SPEC_CONFIG = {
             </div>
             <div class="fs-modal-body">
                 <div x-show="linkLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
-                <div x-show="!linkLoading && linkTemplates.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
-                    所有表單範本都已建立規格
-                </div>
+                <div x-show="!linkLoading && linkTemplates.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">所有表單範本都已建立規格</div>
                 <div x-show="!linkLoading && linkTemplates.length > 0" style="max-height: 360px; overflow-y: auto;">
                     <template x-for="tpl in linkTemplates" :key="tpl.secure_code">
                         <div style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 3px; margin-bottom: 4px; cursor: pointer; display: flex; justify-content: space-between;"
@@ -573,10 +413,7 @@ window.__SPEC_CONFIG = {
                 <button @click="showCreateFormModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
-                <div class="fs-form-group">
-                    <label>表單名稱</label>
-                    <input type="text" x-model="createFormName" placeholder="請輸入表單名稱">
-                </div>
+                <div class="fs-form-group"><label>表單名稱</label><input type="text" x-model="createFormName" placeholder="請輸入表單名稱"></div>
                 <div class="fs-form-group" x-show="!createFormLoading && createFormCategories.length > 0">
                     <label>分類</label>
                     <select x-model="createFormCategorySc">
@@ -607,9 +444,7 @@ window.__SPEC_CONFIG = {
             </div>
             <div class="fs-modal-body">
                 <div x-show="sqlLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
-                <div x-show="!sqlLoading && sqlTables.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
-                    企業資料庫中沒有任何表
-                </div>
+                <div x-show="!sqlLoading && sqlTables.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">企業資料庫中沒有任何表</div>
                 <div x-show="!sqlLoading && sqlTables.length > 0">
                     <div style="margin-bottom: 8px; font-size: 12px; color: #6b7280;">
                         選擇要匯入欄位定義的表（共 <span x-text="sqlTables.length"></span> 個表）

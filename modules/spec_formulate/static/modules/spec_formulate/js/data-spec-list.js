@@ -34,6 +34,9 @@ function dataSpecManager() {
         // 建立中
         creating: false,
 
+        // 匯出
+        exportOpenSc: null,
+
         // --- computed-like getters ---
         get selectedCount() {
             return this.selectedRegistries.length;
@@ -348,6 +351,38 @@ function dataSpecManager() {
                 _dsToast('error', '刪除失敗: ' + e.message);
             }
             this.deletingSpec = false;
+        },
+
+        // --- 匯出 ---
+        async doExport(identifier, format) {
+            this.exportOpenSc = null;
+            try {
+                const res = await fetch('/api/spec-formulate/export/' + identifier + '/' + format, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}',
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    _dsToast('error', err.error || '匯出失敗');
+                    return;
+                }
+                const blob = await res.blob();
+                const disposition = res.headers.get('Content-Disposition') || '';
+                let filename = 'spec.' + format;
+                const match = disposition.match(/filename[^;=\n]*=(['\"]?)([^'\";\n]*)\1/);
+                if (match && match[2]) filename = decodeURIComponent(match[2]);
+
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
+                _dsToast('error', '匯出失敗: ' + e.message);
+            }
         },
 
         // --- 工具 ---
