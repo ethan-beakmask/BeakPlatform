@@ -107,8 +107,9 @@ function fieldSpecEditor() {
         lookupPreviewItems: [],
         lookupPreviewLoading: false,
 
-        // 匯出下拉
-        showExportMenu: false,
+        // 檔案讀取
+        fileReading: false,
+
 
         FORMIO_TYPES: FORMIO_TYPES,
 
@@ -151,8 +152,9 @@ function fieldSpecEditor() {
                 data: this._fieldsToGridData(this.fields),
                 layout: 'fitColumns',
                 movableRows: true,
+                selectable: true,
                 headerSort: false,
-                placeholder: '點擊下方 [+] 按鈕新增空白欄位列',
+                placeholder: '點擊工具列 [+ 欄位] 或下方按鈕新增欄位',
                 rowHeight: 34,
                 columns: [
                     {
@@ -183,6 +185,12 @@ function fieldSpecEditor() {
                         },
                         formatter: function(cell) {
                             return _TYPE_VALUES[cell.getValue()] || cell.getValue();
+                        },
+                        cellEdited: function(cell) {
+                            // Type 改變 → 自動連動 PG Type
+                            var row = cell.getRow();
+                            var newPg = getPgDefault(cell.getValue());
+                            row.update({ pg_type: newPg, _pgTypeOverridden: false });
                         },
                     },
                     {
@@ -219,13 +227,20 @@ function fieldSpecEditor() {
                         formatter: function(cell) {
                             var div = document.createElement('div');
                             div.className = 'fs-row-actions';
+                            var thisRow = cell.getRow();
 
                             var btnDetail = document.createElement('button');
                             btnDetail.textContent = '詳細';
                             btnDetail.addEventListener('click', function(e) {
                                 e.stopPropagation();
-                                var idx = cell.getRow().getPosition();
-                                self.openDetail(idx);
+                                // 用 getRows() 比對取得正確的 0-based index
+                                var allRows = self.gridTable.getRows();
+                                for (var ri = 0; ri < allRows.length; ri++) {
+                                    if (allRows[ri] === thisRow) {
+                                        self.openDetail(ri);
+                                        return;
+                                    }
+                                }
                             });
 
                             var btnDel = document.createElement('button');
@@ -233,7 +248,7 @@ function fieldSpecEditor() {
                             btnDel.className = 'danger';
                             btnDel.addEventListener('click', function(e) {
                                 e.stopPropagation();
-                                cell.getRow().delete();
+                                thisRow.delete();
                                 self._syncFieldCount();
                             });
 
@@ -244,18 +259,6 @@ function fieldSpecEditor() {
                     },
                 ],
                 cellEdited: function(cell) {
-                    var field_name = cell.getField();
-                    if (field_name === 'formio_type') {
-                        // Auto-set pg_type
-                        var row = cell.getRow();
-                        var data = row.getData();
-                        if (!data._pgTypeOverridden) {
-                            row.update({ pg_type: getPgDefault(data.formio_type) });
-                        }
-                    }
-                    if (field_name === 'pg_type') {
-                        cell.getRow().update({ _pgTypeOverridden: true });
-                    }
                     self._syncFieldCount();
                 },
                 rowMoved: function() {
@@ -354,6 +357,70 @@ function fieldSpecEditor() {
                 });
             }
             this._syncFieldCount();
+        },
+
+        // ===== 欄位操作 =====
+
+        addColumn() {
+            if (!this.gridTable) return;
+            this.gridTable.addRow({
+                _uid: '__uid_' + (++_uidCounter) + '_' + Date.now(),
+                label: '', field_key: '', formio_type: 'textfield',
+                pg_type: 'VARCHAR(500)', is_pii: false, required: false,
+                description: '', constraints: {}, default_value: null,
+                options: null, grid_children: null, lookup_category_code: null,
+                _pgTypeOverridden: false, sort_order: 0,
+            });
+            this._syncFieldCount();
+        },
+
+        deleteSelectedRows() {
+            if (!this.gridTable) return;
+            var selected = this.gridTable.getSelectedRows();
+            if (selected.length === 0) {
+                _toast('info', '請先點選要刪除的列（可按住 Ctrl 多選）');
+                return;
+            }
+            if (!confirm('確定刪除選取的 ' + selected.length + ' 列?')) return;
+            selected.forEach(function(row) { row.delete(); });
+            this._syncFieldCount();
+        },
+
+        // ===== 檔案讀取 =====
+
+        readFile(format) {
+            if (format === 'excel') {
+                document.getElementById('excel-file-input').click();
+            } else if (format === 'csv') {
+                document.getElementById('csv-file-input').click();
+            }
+        },
+
+        async handleFileRead(event, format) {
+            var file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+
+            if (!confirm('讀取檔案將覆蓋目前的欄位資料，確認?')) return;
+
+            this.fileReading = true;
+            var url = '/api/spec-formulate/readers/' + format;
+            var formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                var res = await fetch(url, { method: 'POST', body: formData });
+                var data = await res.json();
+                if (data.success) {
+                    this._setGridData(_normalizeFields(data.data.fields));
+                    _toast('success', data.message);
+                } else {
+                    _toast('error', data.error || '讀取失敗');
+                }
+            } catch (e) {
+                _toast('error', '讀取失敗: ' + e.message);
+            }
+            this.fileReading = false;
         },
 
         // ===== Lookup =====
@@ -809,16 +876,7 @@ function fieldSpecEditor() {
 
         // ===== 匯出 =====
 
-        toggleExportMenu() {
-            this.showExportMenu = !this.showExportMenu;
-        },
-
-        closeExportMenu() {
-            this.showExportMenu = false;
-        },
-
         async exportFile(format) {
-            this.showExportMenu = false;
             if (!this.specVersion && !this.isStandalone) {
                 _toast('error', '請先儲存規格');
                 return;

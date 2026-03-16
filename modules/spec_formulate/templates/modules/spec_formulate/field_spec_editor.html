@@ -19,82 +19,88 @@ window.__SPEC_CONFIG = {
 
 <div class="fs-container" x-data="fieldSpecEditor()">
 
+    <!-- 隱藏檔案輸入 -->
+    <input type="file" id="excel-file-input" accept=".xlsx" style="display:none" @change="handleFileRead($event, 'excel')">
+    <input type="file" id="csv-file-input" accept=".csv" style="display:none" @change="handleFileRead($event, 'csv')">
+
     <!-- 頁首 -->
     <div class="fs-header">
-        <div>
-            <h1>欄位規格編輯器</h1>
-            <div class="fs-meta">
-                <template x-if="isStandalone && !specSc">
-                    <span>
-                        <input type="text" x-model="specName" placeholder="輸入規格名稱">
-                        <span> | 新建獨立規格</span>
-                    </span>
-                </template>
-                <template x-if="isStandalone && specSc">
-                    <span>
-                        <input type="text" x-model="specName" placeholder="規格名稱">
-                        <template x-if="specVersion">
-                            <span> | v<span x-text="specVersion"></span></span>
-                        </template>
-                    </span>
-                </template>
-                <template x-if="!isStandalone">
-                    <span>
-                        <span x-text="formTemplateName"></span>
-                        <template x-if="specVersion">
-                            <span> | v<span x-text="specVersion"></span></span>
-                        </template>
-                        <template x-if="!specVersion && !loading">
-                            <span> | 尚未建立規格</span>
-                        </template>
-                    </span>
-                </template>
-            </div>
+        <h1>欄位規格編輯器</h1>
+        <div class="fs-meta">
+            <template x-if="isStandalone && !specSc">
+                <span>
+                    <input type="text" x-model="specName" placeholder="輸入規格名稱">
+                    <span> | 新建獨立規格</span>
+                </span>
+            </template>
+            <template x-if="isStandalone && specSc">
+                <span>
+                    <input type="text" x-model="specName" placeholder="規格名稱">
+                    <template x-if="specVersion">
+                        <span> | v<span x-text="specVersion"></span></span>
+                    </template>
+                </span>
+            </template>
+            <template x-if="!isStandalone">
+                <span>
+                    <span x-text="formTemplateName"></span>
+                    <template x-if="specVersion">
+                        <span> | v<span x-text="specVersion"></span></span>
+                    </template>
+                    <template x-if="!specVersion && !loading">
+                        <span> | 尚未建立規格</span>
+                    </template>
+                </span>
+            </template>
         </div>
-        <div class="fs-toolbar">
-            <template x-if="!isStandalone">
-                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving">從 FormIO 同步</button>
-            </template>
-            <template x-if="!isStandalone">
-                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing">FormIO 預覽</button>
-            </template>
-            <template x-if="!isStandalone">
-                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving">套用到表單</button>
-            </template>
-            <template x-if="!isStandalone">
-                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing">比對</button>
-            </template>
-            <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openLinkForm()">關聯表單</button>
-            </template>
-            <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openCreateFormModal()">建立表單</button>
-            </template>
-            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading">
-                <span x-show="!sqlLoading">從 SQL Table 同步</span>
-                <span x-show="sqlLoading">載入中...</span>
-            </button>
-            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading">
-                <span x-show="!sqlLoading">套用到 SQL Table</span>
-                <span x-show="sqlLoading">處理中...</span>
-            </button>
-            <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">歷史</button>
+    </div>
 
-            <!-- 匯出下拉 -->
-            <div class="fs-export-dropdown" :class="showExportMenu ? 'open' : ''" @click.away="closeExportMenu()">
-                <button class="fs-btn" @click="toggleExportMenu()" :disabled="!specVersion && !specSc">匯出</button>
-                <div class="fs-export-dropdown-content">
-                    <a @click="exportFile('excel')">Excel (.xlsx)</a>
-                    <a @click="exportFile('csv')">CSV (.csv)</a>
-                    <a @click="exportFile('docx')">Word (.docx)</a>
-                </div>
-            </div>
-
-            <button class="fs-btn success" @click="saveSpec()" :disabled="saving">
-                <span x-show="!saving">儲存規格</span>
+    <!-- 工具列 -->
+    <div class="fs-toolbar">
+        <div class="toolbar-group">
+            <button class="fs-btn" @click="addColumn()">+ 欄位</button>
+            <button class="fs-btn danger" @click="deleteSelectedRows()">刪除選取</button>
+        </div>
+        <div class="toolbar-group">
+            <button class="fs-btn primary" @click="saveSpec()" :disabled="saving">
+                <span x-show="!saving">儲存</span>
                 <span x-show="saving">儲存中...</span>
             </button>
+            <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">版本</button>
         </div>
+        <div class="toolbar-group">
+            <button class="fs-btn" @click="exportFile('excel')" :disabled="!specVersion && !specSc">Excel</button>
+            <button class="fs-btn" @click="exportFile('csv')" :disabled="!specVersion && !specSc">CSV</button>
+            <button class="fs-btn" @click="exportFile('docx')" :disabled="!specVersion && !specSc">Word</button>
+        </div>
+        <div class="toolbar-group">
+            <button class="fs-btn" @click="readFile('excel')">讀取 Excel</button>
+            <button class="fs-btn" @click="readFile('csv')">讀取 CSV</button>
+        </div>
+        <template x-if="!isStandalone">
+            <div class="toolbar-group">
+                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving">FormIO 同步</button>
+                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing">FormIO 預覽</button>
+                <button class="fs-btn danger" @click="applyToForm('replace')" :disabled="!specVersion || saving">套用表單</button>
+                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing">比對</button>
+            </div>
+        </template>
+        <div class="toolbar-group">
+            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading">
+                <span x-show="!sqlLoading">SQL 讀取</span>
+                <span x-show="sqlLoading">載入中...</span>
+            </button>
+            <button class="fs-btn danger" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading">
+                <span x-show="!sqlLoading">SQL 套用</span>
+                <span x-show="sqlLoading">處理中...</span>
+            </button>
+        </div>
+        <template x-if="isStandalone && specSc">
+            <div class="toolbar-group">
+                <button class="fs-btn" @click="openLinkForm()">關聯表單</button>
+                <button class="fs-btn" @click="openCreateFormModal()">建立表單</button>
+            </div>
+        </template>
     </div>
 
     <!-- 載入中 -->
