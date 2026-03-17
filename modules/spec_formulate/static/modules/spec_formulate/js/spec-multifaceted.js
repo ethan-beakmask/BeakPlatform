@@ -11,8 +11,9 @@ function specMultifacetedManager() {
 
         // 新增 modal
         showCreateModal: false,
-        createForm: { name: '', description: '' },
+        createForm: { name: '', table_name: '', description: '' },
         creating: false,
+        tableSuggestion: '',
 
         // 刪除確認
         deleteTarget: null,
@@ -63,8 +64,32 @@ function specMultifacetedManager() {
         },
 
         openCreate() {
-            this.createForm = { name: '', description: '' };
+            this.createForm = { name: '', table_name: '', description: '' };
+            this.tableSuggestion = '';
             this.showCreateModal = true;
+        },
+
+        async translateTableName(name) {
+            if (!name || !name.trim()) {
+                this.tableSuggestion = '';
+                return;
+            }
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({ name: name, prefix: 'spec_' }),
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    this.tableSuggestion = data.code;
+                }
+            } catch (e) {
+                // 靜默失敗
+            }
         },
 
         async confirmCreate() {
@@ -83,6 +108,7 @@ function specMultifacetedManager() {
                     },
                     body: JSON.stringify({
                         name: name,
+                        table_name: (this.createForm.table_name || '').trim() || this.tableSuggestion || '',
                         description: (this.createForm.description || '').trim(),
                         fields: [],
                     }),

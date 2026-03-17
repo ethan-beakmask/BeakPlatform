@@ -21,7 +21,10 @@ window.__MF_SPEC_CONFIG = {
     <div class="mfe-header">
         <h1>多面向規格編輯器</h1>
         <div class="mfe-meta">
-            <input type="text" x-model="specName" placeholder="規格名稱">
+            <input type="text" x-model="specName" placeholder="規格名稱"
+                   @input.debounce.500ms="autoTranslateTableName()">
+            <input type="text" x-model="specTableName" placeholder="資料表名稱"
+                   style="font-family: Consolas, monospace; font-size: 12px; max-width: 200px; margin-left: 6px;">
             <template x-if="specVersion">
                 <span> | v<span x-text="specVersion"></span></span>
             </template>
@@ -66,6 +69,23 @@ window.__MF_SPEC_CONFIG = {
                     :class="{'facet-active': activeFacets.indexOf('csv') >= 0}"
                     @click="populateFacet('csv')"
                     :disabled="saving">CSV</button>
+        </div>
+        <div class="toolbar-group" x-show="specSc">
+            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">FormIO:</span>
+            <template x-if="!linkedFormTemplateSc">
+                <span style="display: inline-flex; gap: 4px;">
+                    <button class="mfe-btn" @click="openLinkFormModal()">關聯表單</button>
+                    <button class="mfe-btn" @click="openCreateFormModal()"
+                            :disabled="activeFacets.indexOf('formio') < 0">建立表單</button>
+                </span>
+            </template>
+            <template x-if="linkedFormTemplateSc">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 12px;" x-text="'已關聯: ' + (linkedFormTemplateName || linkedFormTemplateSc)"></span>
+                    <button class="mfe-btn danger" style="padding: 2px 6px; font-size: 11px;"
+                            @click="unlinkForm()">解除</button>
+                </span>
+            </template>
         </div>
     </div>
 
@@ -222,6 +242,70 @@ window.__MF_SPEC_CONFIG = {
             <div class="mfe-modal-footer">
                 <button class="mfe-btn" @click="closeDetail()">取消</button>
                 <button class="mfe-btn primary" @click="saveDetail()">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Form Modal -->
+    <div x-show="showLinkFormModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 480px;">
+            <div class="mfe-modal-header">
+                <h3>關聯表單模板</h3>
+                <button @click="showLinkFormModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div x-show="linkTemplatesLoading" style="padding: 16px; text-align: center; color: #9ca3af;">載入中...</div>
+                <div x-show="!linkTemplatesLoading && linkTemplates.length === 0"
+                     style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">
+                    目前沒有可關聯的表單模板
+                </div>
+                <div x-show="!linkTemplatesLoading && linkTemplates.length > 0" class="mfe-form-group">
+                    <label>選擇表單模板</label>
+                    <select x-model="linkSelectedSc">
+                        <option value="">-- 選擇 --</option>
+                        <template x-for="t in linkTemplates" :key="t.secure_code">
+                            <option :value="t.secure_code" x-text="t.name + ' (' + t.code + ')'"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showLinkFormModal = false">取消</button>
+                <button class="mfe-btn primary" @click="confirmLinkForm()"
+                        :disabled="!linkSelectedSc || linkSubmitting">
+                    <span x-show="!linkSubmitting">確認關聯</span>
+                    <span x-show="linkSubmitting">關聯中...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Form Modal -->
+    <div x-show="showCreateFormModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 480px;">
+            <div class="mfe-modal-header">
+                <h3>建立 FormIO 表單</h3>
+                <button @click="showCreateFormModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div class="mfe-form-group">
+                    <label>表單名稱</label>
+                    <input type="text" x-model="createFormName" :placeholder="specName">
+                </div>
+                <div class="mfe-form-group">
+                    <label>表單代碼（選填，留空自動產生）</label>
+                    <input type="text" x-model="createFormCode" placeholder="FT_XXXXXXXX">
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showCreateFormModal = false">取消</button>
+                <button class="mfe-btn primary" @click="confirmCreateForm()"
+                        :disabled="createFormSubmitting">
+                    <span x-show="!createFormSubmitting">建立並關聯</span>
+                    <span x-show="createFormSubmitting">建立中...</span>
+                </button>
             </div>
         </div>
     </div>

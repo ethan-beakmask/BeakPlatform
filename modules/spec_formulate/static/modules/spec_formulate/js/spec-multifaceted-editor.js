@@ -17,6 +17,7 @@ function specMultifacetedEditor() {
 
         // Spec 資料
         specName: '',
+        specTableName: '',
         specDescription: '',
         specVersion: 0,
         activeFacets: [],
@@ -48,6 +49,23 @@ function specMultifacetedEditor() {
             core: { data_class: 'text', required: false, is_pii: false, default_value: null },
             facets: {},
         },
+
+        // 表單關聯
+        linkedFormTemplateSc: '',
+        linkedFormTemplateName: '',
+
+        // 關聯表單 modal
+        showLinkFormModal: false,
+        linkTemplates: [],
+        linkTemplatesLoading: false,
+        linkSelectedSc: '',
+        linkSubmitting: false,
+
+        // 建立表單 modal
+        showCreateFormModal: false,
+        createFormName: '',
+        createFormCode: '',
+        createFormSubmitting: false,
 
         // CSRF
         csrfToken: '',
@@ -97,12 +115,18 @@ function specMultifacetedEditor() {
                 if (data.success) {
                     var s = data.data;
                     this.specName = s.name || '';
+                    this.specTableName = s.table_name || '';
                     this.specDescription = s.description || '';
                     this.specVersion = s.version || 0;
                     this.activeFacets = s.active_facets || [];
                     this.fields = s.fields || [];
-                    if (this.activeFacets.length > 0) {
+                    this.linkedFormTemplateSc = s.linked_form_template_sc || '';
+                    if (this.activeFacets.length > 0 && !this.activeFacetTab) {
                         this.activeFacetTab = this.activeFacets[0];
+                    }
+                    // 載入關聯表單名稱
+                    if (this.linkedFormTemplateSc) {
+                        this._loadLinkedTemplateName();
                     }
                 }
             } catch (e) {
@@ -131,6 +155,17 @@ function specMultifacetedEditor() {
                     {
                         title: 'Label', field: 'label', editor: 'input',
                         minWidth: 120,
+                        cellEdited: function(cell) {
+                            var row = cell.getRow();
+                            var existingKey = row.getData().field_key;
+                            // 只在 field_key 為空時自動翻譯
+                            if (!existingKey || !existingKey.trim()) {
+                                var label = cell.getValue();
+                                if (label && label.trim()) {
+                                    self._translateFieldKey(label, row);
+                                }
+                            }
+                        },
                     },
                     {
                         title: 'Field Key', field: 'field_key', editor: 'input',
@@ -325,6 +360,7 @@ function specMultifacetedEditor() {
 
                 var body = {
                     name: this.specName,
+                    table_name: this.specTableName,
                     description: this.specDescription,
                     fields: fields,
                 };
@@ -490,6 +526,174 @@ function specMultifacetedEditor() {
                 console.error('載入歷史失敗:', e);
             }
             this.historyLoading = false;
+        },
+
+        // ── 資料表名稱翻譯 ──
+
+        async autoTranslateTableName() {
+            // 只在 table_name 為空時自動翻譯
+            if (this.specTableName) return;
+            if (!this.specName || !this.specName.trim()) return;
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({ name: this.specName, prefix: 'spec_' }),
+                });
+                var data = await resp.json();
+                if (data.success && !this.specTableName) {
+                    this.specTableName = data.code;
+                }
+            } catch (e) {
+                // 靜默
+            }
+        },
+
+        async _translateFieldKey(label, row) {
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({ name: label, prefix: '' }),
+                });
+                var data = await resp.json();
+                if (data.success && data.code) {
+                    // 再次確認 field_key 仍為空（避免競爭）
+                    var current = row.getData().field_key;
+                    if (!current || !current.trim()) {
+                        row.update({ field_key: data.code });
+                        this._syncProjectionFields();
+                    }
+                }
+            } catch (e) {
+                // 靜默
+            }
+        },
+
+        // ── 表單關聯 ──
+
+        async _loadLinkedTemplateName() {
+            // 透過 available-templates 無法取到已佔用的，直接顯示 sc 即可
+            // 但可用 link-form 回傳的 name。先從已有資訊取
+            // 若 loadSpec 回傳沒帶 name，就保留 sc
+            this.linkedFormTemplateName = '';
+        },
+
+        async openLinkFormModal() {
+            this.showLinkFormModal = true;
+            this.linkSelectedSc = '';
+            this.linkTemplates = [];
+            this.linkTemplatesLoading = true;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/available-templates'
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkTemplates = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入可用表單失敗:', e);
+            }
+            this.linkTemplatesLoading = false;
+        },
+
+        async confirmLinkForm() {
+            if (!this.linkSelectedSc) return;
+            this.linkSubmitting = true;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/link-form',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken,
+                        },
+                        body: JSON.stringify({
+                            form_template_secure_code: this.linkSelectedSc,
+                        }),
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedFormTemplateSc = data.data.linked_form_template_sc;
+                    this.linkedFormTemplateName = data.data.template_name || '';
+                    this.showLinkFormModal = false;
+                    alert(data.message);
+                } else {
+                    alert(data.error || '關聯失敗');
+                }
+            } catch (e) {
+                alert('關聯失敗: ' + e.message);
+            }
+            this.linkSubmitting = false;
+        },
+
+        async unlinkForm() {
+            if (!confirm('確定要解除表單關聯？')) return;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/unlink-form',
+                    {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.csrfToken },
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedFormTemplateSc = '';
+                    this.linkedFormTemplateName = '';
+                } else {
+                    alert(data.error || '解除失敗');
+                }
+            } catch (e) {
+                alert('解除失敗: ' + e.message);
+            }
+        },
+
+        openCreateFormModal() {
+            this.createFormName = this.specName;
+            this.createFormCode = '';
+            this.showCreateFormModal = true;
+        },
+
+        async confirmCreateForm() {
+            this.createFormSubmitting = true;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/create-form',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken,
+                        },
+                        body: JSON.stringify({
+                            name: this.createFormName || this.specName,
+                            code: this.createFormCode,
+                        }),
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedFormTemplateSc = data.data.form_template.secure_code;
+                    this.linkedFormTemplateName = data.data.form_template.name;
+                    this.showCreateFormModal = false;
+                    alert(data.message);
+                } else {
+                    alert(data.error || '建立失敗');
+                }
+            } catch (e) {
+                alert('建立失敗: ' + e.message);
+            }
+            this.createFormSubmitting = false;
         },
 
         formatDate(ts) {

@@ -45,6 +45,44 @@ def _fields_identical(old_fields, new_fields):
     )
 
 
+# ── 翻譯輔助 API ──
+
+@multifaceted_bp.route('/translate', methods=['POST'])
+@module_access_required('spec_formulate')
+def translate_name():
+    """
+    將中文名稱翻譯為英文識別碼（小寫 snake_case）
+
+    POST body:
+    {
+        "name": "文具庫存表",
+        "prefix": "spec_",      // 選填，預設空
+        "mode": "table_name"    // table_name 或 field_key
+    }
+
+    Response: { "success": true, "code": "spec_stationery_inventory" }
+    """
+    from app.services.code_generator import get_code_generator
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+
+    prefix = (data.get('prefix') or '').strip()
+
+    generator = get_code_generator()
+    try:
+        raw = generator.generate(name, exists_checker=None)
+        # 轉小寫 snake_case
+        code = raw.lower()
+        if prefix:
+            code = prefix + code
+        return jsonify({'success': True, 'code': code})
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+
 # ── Data Class Registry API ──
 
 @multifaceted_bp.route('/data-classes', methods=['GET'])
@@ -135,6 +173,7 @@ def create_spec():
     if not name:
         return jsonify({'success': False, 'error': '規格名稱必填'}), 400
 
+    table_name = (data.get('table_name') or '').strip()
     description = (data.get('description') or '').strip()
     raw_fields = data.get('fields', [])
 
@@ -152,6 +191,7 @@ def create_spec():
     spec = FwSpecMultifaceted(
         org_secure_code=org.secure_code,
         name=name,
+        table_name=table_name or None,
         description=description,
         version=1,
         fields=fields,
@@ -240,6 +280,7 @@ def update_spec(spec_sc):
     # 檢查是否有實際變更
     old_fields = spec.fields or []
     name = (data.get('name') or '').strip() or spec.name
+    table_name = (data.get('table_name') or '').strip()
     description = data.get('description', spec.description)
 
     if _fields_identical(old_fields, fields) and name == spec.name:
@@ -269,6 +310,8 @@ def update_spec(spec_sc):
 
     # 更新 spec
     spec.name = name
+    if table_name:
+        spec.table_name = table_name
     spec.description = description
     spec.version += 1
     spec.fields = fields
@@ -611,3 +654,227 @@ def list_versions(spec_sc):
         })
 
     return jsonify({'success': True, 'data': versions})
+
+
+# ── 表單關聯 / 建立 ──
+
+@multifaceted_bp.route('/available-templates', methods=['GET'])
+@module_access_required('spec_formulate')
+def available_templates():
+    """列出可關聯的表單模板（未被任何 multifaceted spec 佔用的）"""
+    from modules.spec_formulate.models import FwSpecMultifaceted
+    from modules.form_workflow.models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+
+    # 已被佔用的 form_template secure_codes
+    occupied = set()
+    specs = FwSpecMultifaceted.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+        status='active',
+    ).all()
+    for s in specs:
+        if s.linked_form_template_sc:
+            occupied.add(s.linked_form_template_sc)
+
+    # 查可用的 form_template
+    templates = FwFormTemplate.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_active=True,
+        is_deleted=False,
+    ).order_by(FwFormTemplate.name).all()
+
+    result = []
+    for t in templates:
+        if t.secure_code not in occupied:
+            result.append({
+                'secure_code': t.secure_code,
+                'name': t.name,
+                'code': t.code,
+            })
+
+    return jsonify({'success': True, 'data': result})
+
+
+@multifaceted_bp.route('/specs/<spec_sc>/link-form', methods=['POST'])
+@module_access_required('spec_formulate')
+def link_form(spec_sc):
+    """
+    關聯現有表單模板到 multifaceted spec
+
+    Body: { "form_template_secure_code": "xxx" }
+    """
+    from modules.spec_formulate.models import FwSpecMultifaceted
+    from modules.form_workflow.models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+
+    spec = FwSpecMultifaceted.query.filter_by(
+        secure_code=spec_sc,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '規格不存在'}), 404
+
+    data = request.get_json(silent=True) or {}
+    ft_sc = (data.get('form_template_secure_code') or '').strip()
+    if not ft_sc:
+        return jsonify({'success': False, 'error': '缺少 form_template_secure_code'}), 400
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=ft_sc,
+        org_secure_code=org.secure_code,
+        is_active=True,
+        is_deleted=False,
+    ).first()
+    if not template:
+        return jsonify({'success': False, 'error': '表單模板不存在'}), 404
+
+    # 檢查是否已被其他 spec 佔用
+    existing = FwSpecMultifaceted.query.filter_by(
+        org_secure_code=org.secure_code,
+        linked_form_template_sc=ft_sc,
+        is_deleted=False,
+        status='active',
+    ).first()
+    if existing and existing.secure_code != spec_sc:
+        return jsonify({
+            'success': False,
+            'error': f'此表單模板已被「{existing.name}」關聯',
+        }), 409
+
+    spec.linked_form_template_sc = ft_sc
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'linked_form_template_sc': ft_sc,
+            'template_name': template.name,
+            'template_code': template.code,
+        },
+        'message': f'已關聯表單模板「{template.name}」',
+    })
+
+
+@multifaceted_bp.route('/specs/<spec_sc>/unlink-form', methods=['POST'])
+@module_access_required('spec_formulate')
+def unlink_form(spec_sc):
+    """解除表單關聯"""
+    from modules.spec_formulate.models import FwSpecMultifaceted
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+
+    spec = FwSpecMultifaceted.query.filter_by(
+        secure_code=spec_sc,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '規格不存在'}), 404
+
+    spec.linked_form_template_sc = None
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': '已解除表單關聯'})
+
+
+@multifaceted_bp.route('/specs/<spec_sc>/create-form', methods=['POST'])
+@module_access_required('spec_formulate')
+def create_form(spec_sc):
+    """
+    從 multifaceted spec 建立新的 FormIO 表單模板
+
+    Body: {
+        "name": "表單名稱",
+        "code": "FT_CODE",          // 選填，自動產生
+        "category_secure_code": ""   // 選填
+    }
+    """
+    from modules.spec_formulate.models import FwSpecMultifaceted
+    from modules.form_workflow.models import FwFormTemplate
+    from modules.spec_formulate.services.multifaceted.formio_generator import (
+        multifaceted_to_formio_schema,
+    )
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+
+    spec = FwSpecMultifaceted.query.filter_by(
+        secure_code=spec_sc,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '規格不存在'}), 404
+
+    data = request.get_json(silent=True) or {}
+    form_name = (data.get('name') or '').strip() or spec.name
+    form_code = (data.get('code') or '').strip()
+    category_sc = (data.get('category_secure_code') or '').strip() or None
+
+    # 自動產生 code
+    if not form_code:
+        form_code = f'FT{secrets.token_hex(4).upper()}'
+
+    # 檢查 code 唯一性
+    dup = FwFormTemplate.query.filter_by(
+        org_secure_code=org.secure_code,
+        code=form_code,
+        is_deleted=False,
+    ).first()
+    if dup:
+        return jsonify({
+            'success': False,
+            'error': f'表單代碼 {form_code} 已存在',
+        }), 409
+
+    # 確認有 formio facet
+    if 'formio' not in (spec.active_facets or []):
+        return jsonify({
+            'success': False,
+            'error': '此規格尚未啟用 FormIO 格式，請先填充 FormIO facet',
+        }), 400
+
+    # 產生 FormIO schema
+    schema = multifaceted_to_formio_schema(
+        spec.fields or [], form_title=form_name
+    )
+
+    # 建立 FwFormTemplate
+    template = FwFormTemplate(
+        org_secure_code=org.secure_code,
+        name=form_name,
+        code=form_code,
+        schema=schema,
+        category_secure_code=category_sc,
+        is_active=True,
+    )
+    db.session.add(template)
+    db.session.flush()
+
+    # 關聯到 spec
+    spec.linked_form_template_sc = template.secure_code
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'spec': spec.to_dict(),
+            'form_template': {
+                'secure_code': template.secure_code,
+                'name': template.name,
+                'code': template.code,
+            },
+        },
+        'message': f'已建立並關聯表單「{form_name}」({form_code})',
+    })

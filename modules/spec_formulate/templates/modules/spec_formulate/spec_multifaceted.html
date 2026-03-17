@@ -35,7 +35,8 @@
         <table class="mf-table">
             <thead>
                 <tr>
-                    <th style="width: 200px;">規格名稱</th>
+                    <th style="width: 180px;">規格名稱</th>
+                    <th style="width: 160px;">資料表</th>
                     <th style="width: 60px;">版本</th>
                     <th style="width: 70px;">欄位數</th>
                     <th style="width: 180px;">已啟用格式</th>
@@ -53,6 +54,7 @@
                                style="font-weight: 500; text-decoration: none;"
                                x-text="s.name"></a>
                         </td>
+                        <td class="mf-mono" style="font-size: 12px; color: #6b7280;" x-text="s.table_name || '-'"></td>
                         <td x-text="'v' + s.version"></td>
                         <td x-text="s.field_count"></td>
                         <td>
@@ -88,7 +90,24 @@
             <div class="mf-modal-body">
                 <div class="mf-form-group">
                     <label>規格名稱</label>
-                    <input type="text" x-model="createForm.name" placeholder="例如：訂單資料表" autofocus>
+                    <input type="text" x-model="createForm.name" placeholder="例如：訂單資料表" autofocus
+                           @input.debounce.500ms="translateTableName(createForm.name)">
+                </div>
+                <div class="mf-form-group">
+                    <label>資料表名稱</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="text" x-model="createForm.table_name"
+                               :placeholder="tableSuggestion || 'spec_xxx'"
+                               style="font-family: Consolas, monospace; font-size: 12px;">
+                        <button class="mf-btn" type="button" x-show="tableSuggestion && !createForm.table_name"
+                                @click="createForm.table_name = tableSuggestion"
+                                style="padding: 4px 8px; font-size: 11px; white-space: nowrap;">
+                            採用建議
+                        </button>
+                    </div>
+                    <div x-show="tableSuggestion" style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                        建議: <span class="mf-mono" x-text="tableSuggestion"></span>
+                    </div>
                 </div>
                 <div class="mf-form-group">
                     <label>描述（選填）</label>

@@ -47,6 +47,9 @@ class FwSpecMultifaceted(ModuleBaseModel):
     # 規格名稱（必填）
     name = Column(String(200), nullable=False)
 
+    # 資料表名稱（英文 snake_case，加 spec_ 前綴，用於 PostgreSQL 建表）
+    table_name = Column(String(100), nullable=True)
+
     # 描述
     description = Column(Text)
 
@@ -82,6 +85,7 @@ class FwSpecMultifaceted(ModuleBaseModel):
         base = super().to_dict()
         base.update({
             'name': self.name,
+            'table_name': self.table_name,
             'description': self.description,
             'version': self.version,
             'fields': self.fields or [],
