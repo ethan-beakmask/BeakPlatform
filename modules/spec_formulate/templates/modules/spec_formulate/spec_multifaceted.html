@@ -16,6 +16,7 @@
         </div>
         <div class="mf-toolbar">
             <button class="mf-btn" @click="loadSpecs()" :disabled="loading">重新載入</button>
+            <button class="mf-btn" @click="openDocxModal()" :disabled="loading || specs.length === 0">製作規格書</button>
             <button class="mf-btn primary" @click="openCreate()">新增規格</button>
         </div>
     </div>
@@ -121,6 +122,99 @@
                 <button class="mf-btn danger" @click="doDelete()" :disabled="deleting">
                     <span x-show="!deleting">確認刪除</span>
                     <span x-show="deleting">刪除中...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCX Export Modal -->
+    <div x-show="showDocxModal" x-cloak class="mf-modal">
+        <div class="mf-modal-content" style="width: 680px;">
+            <div class="mf-modal-header">
+                <h3>製作規格書</h3>
+                <button @click="showDocxModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mf-modal-body">
+                <!-- 文件標題 -->
+                <div class="mf-form-group">
+                    <label>文件標題</label>
+                    <input type="text" x-model="docxTitle" placeholder="資料結構規格書">
+                </div>
+
+                <!-- 加入規格 -->
+                <div class="mf-form-group">
+                    <label>加入規格</label>
+                    <select @change="if($event.target.value){
+                        var sc=$event.target.value;
+                        for(var i=0;i<specs.length;i++){
+                            if(specs[i].secure_code===sc){docxAddSpec(specs[i]);break;}
+                        }
+                        $event.target.value='';
+                    }">
+                        <option value="">-- 選擇規格 --</option>
+                        <template x-for="s in docxAvailableSpecs()" :key="s.secure_code">
+                            <option :value="s.secure_code" x-text="s.name + ' (v' + s.version + ', ' + s.field_count + ' fields)'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- 已選規格列表 -->
+                <template x-if="docxItems.length === 0">
+                    <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px; border: 1px dashed #d1d5db; border-radius: 4px;">
+                        請從上方下拉選單加入規格
+                    </div>
+                </template>
+
+                <template x-for="(item, idx) in docxItems" :key="item.spec_sc">
+                    <div class="mf-docx-item">
+                        <div class="mf-docx-item-header">
+                            <span style="font-weight: 600;" x-text="item.name"></span>
+                            <button class="mf-btn danger" style="padding: 2px 6px; font-size: 11px;"
+                                    @click="docxRemoveSpec(idx)">移除</button>
+                        </div>
+                        <div class="mf-docx-item-body">
+                            <!-- 版本選擇 -->
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">版本:</label>
+                                <select x-model="item.version" @change="docxOnVersionChange(item)"
+                                        style="font-size: 12px; padding: 3px 6px; width: auto;">
+                                    <template x-if="item.versions.length === 0">
+                                        <option :value="item.currentVersion"
+                                                x-text="'v' + item.currentVersion + ' (最新)'"></option>
+                                    </template>
+                                    <template x-for="v in item.versions" :key="v.version">
+                                        <option :value="v.version"
+                                                x-text="'v' + v.version + (v.is_current ? ' (最新)' : '') + ' - ' + v.field_count + ' fields'"></option>
+                                    </template>
+                                </select>
+                                <span x-show="item.loadingVersions" style="font-size: 11px; color: #9ca3af;">載入中...</span>
+                            </div>
+                            <!-- Facet 勾選 -->
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="font-size: 12px; margin: 0; min-width: 40px;">格式:</label>
+                                <template x-for="af in item.activeFacets" :key="af">
+                                    <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer;">
+                                        <input type="checkbox" :checked="item.selectedFacets[af]"
+                                               @change="item.selectedFacets[af] = $event.target.checked">
+                                        <span class="mf-facet-badge" :class="af" x-text="af"></span>
+                                    </label>
+                                </template>
+                                <span x-show="item.activeFacets.length === 0"
+                                      style="font-size: 11px; color: #9ca3af;">此版本無已啟用格式</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="mf-modal-footer">
+                <span style="font-size: 12px; color: #6b7280; margin-right: auto;"
+                      x-text="docxItems.length + ' 個規格, ' + docxGetSelectedCount() + ' 個格式表'"></span>
+                <button class="mf-btn" @click="showDocxModal = false">取消</button>
+                <button class="mf-btn primary" @click="doExportDocx()"
+                        :disabled="docxExporting || docxItems.length === 0">
+                    <span x-show="!docxExporting">匯出 DOCX</span>
+                    <span x-show="docxExporting">匯出中...</span>
                 </button>
             </div>
         </div>
