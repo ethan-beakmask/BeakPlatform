@@ -75,9 +75,9 @@ window.__MF_SPEC_CONFIG = {
     <!-- Field Grid -->
     <div x-show="!loading" class="mfe-card">
         <div class="mfe-summary">
-            <span>共 <strong x-text="gridTable ? gridTable.getData().filter(function(f){return f.field_key && f.field_key.trim();}).length : 0"></strong> 個欄位</span>
-            <span x-show="gridTable && gridTable.getData().filter(function(f){return f.core && f.core.is_pii;}).length > 0">
-                PII: <strong x-text="gridTable ? gridTable.getData().filter(function(f){return f.core && f.core.is_pii;}).length : 0"></strong>
+            <span>共 <strong x-text="projectionFields.length"></strong> 個欄位</span>
+            <span x-show="projectionFields.filter(function(f){return f.core && f.core.is_pii;}).length > 0">
+                PII: <strong x-text="projectionFields.filter(function(f){return f.core && f.core.is_pii;}).length"></strong>
             </span>
         </div>
         <div id="mf-field-grid"></div>
@@ -109,7 +109,7 @@ window.__MF_SPEC_CONFIG = {
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="f in (gridTable ? gridTable.getData().filter(function(r){return r.field_key && r.field_key.trim();}) : [])" :key="f.field_key">
+                        <template x-for="f in projectionFields" :key="f.field_key">
                             <tr>
                                 <td class="mono" x-text="f.field_key"></td>
                                 <td x-text="f.label"></td>

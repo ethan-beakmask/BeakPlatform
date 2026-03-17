@@ -29,7 +29,8 @@ function specMultifacetedEditor() {
         // Tabulator
         gridTable: null,
 
-        // 投影面板
+        // 投影面板 -- 使用 reactive 陣列驅動，避免依賴 Tabulator 內部狀態
+        projectionFields: [],
         activeFacetTab: '',
 
         // 歷史
@@ -61,7 +62,13 @@ function specMultifacetedEditor() {
             }
             this.loading = false;
             var self = this;
-            this.$nextTick(function() { self.initGrid(); });
+            // 等 Alpine 完成 x-show 切換後，再用 requestAnimationFrame
+            // 確保瀏覽器已完成 layout，Tabulator 才能正確計算欄寬
+            this.$nextTick(function() {
+                requestAnimationFrame(function() {
+                    self.initGrid();
+                });
+            });
         },
 
         async loadDataClasses() {
@@ -202,6 +209,29 @@ function specMultifacetedEditor() {
                         row.getElement().classList.add('pii-row');
                     }
                 },
+            });
+
+            // Tabulator 建表完成後，同步 reactive 投影資料
+            this.gridTable.on('tableBuilt', function() {
+                self._syncProjectionFields();
+            });
+            // 行異動時同步（新增、刪除、編輯、排序）
+            this.gridTable.on('dataChanged', function() {
+                self._syncProjectionFields();
+            });
+            this.gridTable.on('rowMoved', function() {
+                self._syncProjectionFields();
+            });
+        },
+
+        /** 將 Tabulator 資料同步到 Alpine reactive projectionFields */
+        _syncProjectionFields() {
+            if (!this.gridTable) {
+                this.projectionFields = [];
+                return;
+            }
+            this.projectionFields = this.gridTable.getData().filter(function(f) {
+                return f.field_key && f.field_key.trim();
             });
         },
 
@@ -368,6 +398,7 @@ function specMultifacetedEditor() {
                     await this.loadSpec();
                     if (this.gridTable) {
                         this.gridTable.setData(this.fields);
+                        this._syncProjectionFields();
                     }
                     var msg = data.message || '完成';
                     if (data.data.skipped_count > 0) {
@@ -430,6 +461,7 @@ function specMultifacetedEditor() {
             var allRows = this.gridTable.getRows();
             if (this.detailIndex < allRows.length) {
                 allRows[this.detailIndex].update(this.detailForm);
+                this._syncProjectionFields();
             }
             this.showDetailModal = false;
         },
