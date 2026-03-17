@@ -87,6 +87,23 @@ window.__MF_SPEC_CONFIG = {
                 </span>
             </template>
         </div>
+        <div class="toolbar-group" x-show="specSc">
+            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">PG:</span>
+            <template x-if="!linkedSqlTable">
+                <span style="display: inline-flex; gap: 4px;">
+                    <button class="mfe-btn" @click="openReadTableModal()">讀入資料表</button>
+                    <button class="mfe-btn" @click="pgCreateTable()"
+                            :disabled="activeFacets.indexOf('postgresql') < 0 || !specTableName">新建資料表</button>
+                </span>
+            </template>
+            <template x-if="linkedSqlTable">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 12px; font-family: Consolas, monospace;" x-text="'已關聯: ' + linkedSqlTable"></span>
+                    <button class="mfe-btn danger" style="padding: 2px 6px; font-size: 11px;"
+                            @click="pgUnlinkTable()">解除</button>
+                </span>
+            </template>
+        </div>
     </div>
 
     <!-- Loading -->
@@ -306,6 +323,88 @@ window.__MF_SPEC_CONFIG = {
                     <span x-show="!createFormSubmitting">建立並關聯</span>
                     <span x-show="createFormSubmitting">建立中...</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Read Table Modal -->
+    <div x-show="showReadTableModal" x-cloak class="mfe-modal">
+        <div class="mfe-modal-content" style="width: 600px;">
+            <div class="mfe-modal-header">
+                <h3>讀入資料表</h3>
+                <button @click="showReadTableModal = false"
+                        style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="mfe-modal-body">
+                <div x-show="pgTablesLoading" style="padding: 16px; text-align: center; color: #9ca3af;">載入中...</div>
+
+                <!-- 選擇表 -->
+                <div x-show="!pgTablesLoading" class="mfe-form-group">
+                    <label>選擇資料表</label>
+                    <select x-model="pgSelectedTable" @change="pgCompareTable()">
+                        <option value="">-- 選擇 --</option>
+                        <template x-for="t in pgTables" :key="t">
+                            <option :value="t" x-text="t"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- 比對結果 -->
+                <div x-show="pgCompareResult" style="margin-top: 8px;">
+                    <template x-if="pgCompareResult && pgCompareResult.match">
+                        <div style="padding: 12px; background: #d1fae5; border-radius: 4px; font-size: 13px; color: #065f46;">
+                            結構完全一致
+                        </div>
+                    </template>
+                    <template x-if="pgCompareResult && !pgCompareResult.match">
+                        <div>
+                            <div x-show="pgCompareResult.spec_only.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #b45309;">SPEC 有但資料表無:</div>
+                                <template x-for="c in pgCompareResult.spec_only" :key="c.field_key">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.field_key + ' (' + c.pg_type + ')'"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.db_only.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #6b7280;">資料表有但 SPEC 無:</div>
+                                <template x-for="c in pgCompareResult.db_only" :key="c.column_name">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.column_name + ' (' + c.display_type + ')'"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.type_mismatch.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #dc2626;">型別不符:</div>
+                                <template x-for="c in pgCompareResult.type_mismatch" :key="c.field_key">
+                                    <div style="font-size: 12px; padding-left: 12px; font-family: Consolas, monospace;"
+                                         x-text="c.field_key + ': SPEC=' + c.spec_type + ' / DB=' + c.db_type"></div>
+                                </template>
+                            </div>
+                            <div x-show="pgCompareResult.matched.length > 0" style="margin-bottom: 6px;">
+                                <div style="font-size: 12px; font-weight: 600; color: #059669;">
+                                    相符: <span x-text="pgCompareResult.matched.length"></span> 個欄位
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="mfe-modal-footer">
+                <button class="mfe-btn" @click="showReadTableModal = false">取消</button>
+                <template x-if="pgCompareResult && pgCompareResult.match">
+                    <button class="mfe-btn primary" @click="pgLinkTable(pgSelectedTable)">直接關聯</button>
+                </template>
+                <template x-if="pgCompareResult && !pgCompareResult.match">
+                    <span style="display: inline-flex; gap: 4px;">
+                        <button class="mfe-btn" @click="pgApplySpecToTable()"
+                                :disabled="pgApplying"
+                                title="SPEC 的欄位定義覆蓋到資料表">
+                            <span x-show="!pgApplying">SPEC 覆蓋資料表</span>
+                            <span x-show="pgApplying">執行中...</span>
+                        </button>
+                        <button class="mfe-btn primary" @click="pgLinkTable(pgSelectedTable)"
+                                title="直接關聯，不修改資料表">僅關聯</button>
+                    </span>
+                </template>
             </div>
         </div>
     </div>

@@ -26,6 +26,16 @@ function specMultifacetedEditor() {
         // data_class 清單
         dataClasses: [],
         _dcValues: {},
+        _dcToPgType: {
+            'text': 'VARCHAR(500)', 'text_long': 'TEXT',
+            'integer': 'INTEGER', 'decimal': 'NUMERIC',
+            'currency': 'NUMERIC(15,2)', 'serial': 'SERIAL',
+            'boolean': 'BOOLEAN', 'date': 'DATE', 'datetime': 'TIMESTAMP',
+            'email': 'VARCHAR(200)', 'phone': 'VARCHAR(50)',
+            'url': 'VARCHAR(1000)', 'enum_single': 'VARCHAR(500)',
+            'enum_multi': 'JSONB', 'json': 'JSONB', 'tags': 'JSONB',
+            'binary': 'BYTEA', 'signature': 'TEXT',
+        },
 
         // Tabulator
         gridTable: null,
@@ -66,6 +76,15 @@ function specMultifacetedEditor() {
         createFormName: '',
         createFormCode: '',
         createFormSubmitting: false,
+
+        // PostgreSQL 資料表
+        linkedSqlTable: '',
+        showReadTableModal: false,
+        pgTables: [],
+        pgTablesLoading: false,
+        pgSelectedTable: '',
+        pgCompareResult: null,
+        pgApplying: false,
 
         // CSRF
         csrfToken: '',
@@ -119,8 +138,22 @@ function specMultifacetedEditor() {
                     this.specDescription = s.description || '';
                     this.specVersion = s.version || 0;
                     this.activeFacets = s.active_facets || [];
-                    this.fields = s.fields || [];
+                    // 將 facets.postgresql.pg_type 提取到 _pg_type 虛擬欄位
+                    var fields = s.fields || [];
+                    var dcPg = this._dcToPgType;
+                    fields.forEach(function(f) {
+                        var pgFacet = (f.facets || {}).postgresql || {};
+                        if (pgFacet.pg_type) {
+                            f._pg_type = pgFacet.pg_type;
+                        } else {
+                            // 從 data_class 推導預設值
+                            var dc = (f.core || {}).data_class || 'text';
+                            f._pg_type = dcPg[dc] || 'TEXT';
+                        }
+                    });
+                    this.fields = fields;
                     this.linkedFormTemplateSc = s.linked_form_template_sc || '';
+                    this.linkedSqlTable = s.linked_sql_table || '';
                     if (this.activeFacets.length > 0 && !this.activeFacetTab) {
                         this.activeFacetTab = this.activeFacets[0];
                     }
@@ -177,7 +210,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Data Class', field: 'core.data_class',
-                        minWidth: 130,
+                        width: 80,
                         editor: 'list',
                         editorParams: {
                             values: self._dcValues,
@@ -191,11 +224,27 @@ function specMultifacetedEditor() {
                         accessorDownload: function(value) {
                             return self._dcValues[value] || value;
                         },
+                        cellEdited: function(cell) {
+                            // Data Class 變更時自動更新 PG Type
+                            var dc = cell.getValue();
+                            var row = cell.getRow();
+                            var currentPg = row.getData()._pg_type || '';
+                            // 只在 PG Type 為空或等於舊的預設值時自動更新
+                            var newPg = self._dcToPgType[dc] || 'TEXT';
+                            if (!currentPg || self._pgTypeIsDefault(currentPg)) {
+                                row.update({ _pg_type: newPg });
+                            }
+                        },
                     },
                     {
-                        title: 'PII', field: 'core.is_pii',
+                        title: 'PG Type', field: '_pg_type',
+                        width: 120, cssClass: 'mono-cell',
+                        editor: 'input',
+                    },
+                    {
+                        title: '加密', field: 'core.is_pii',
                         formatter: 'tickCross', hozAlign: 'center',
-                        width: 50, editor: true,
+                        width: 100, editor: true,
                         cellEdited: function(cell) {
                             var row = cell.getRow();
                             var el = row.getElement();
@@ -209,7 +258,7 @@ function specMultifacetedEditor() {
                     {
                         title: '必填', field: 'core.required',
                         formatter: 'tickCross', hozAlign: 'center',
-                        width: 50, editor: true,
+                        width: 100, editor: true,
                     },
                     {
                         title: '說明', field: 'description', editor: 'input',
@@ -270,6 +319,12 @@ function specMultifacetedEditor() {
             });
         },
 
+        /** 檢查 pg_type 是否為某個 data_class 的預設值 */
+        _pgTypeIsDefault(pgType) {
+            var vals = Object.values(this._dcToPgType);
+            return vals.indexOf(pgType) >= 0;
+        },
+
         // ── 欄位操作 ──
 
         addColumn() {
@@ -279,6 +334,7 @@ function specMultifacetedEditor() {
                 label: '',
                 description: '',
                 sort_order: 0,
+                _pg_type: 'VARCHAR(500)',
                 core: {
                     data_class: 'text',
                     required: false,
@@ -297,6 +353,7 @@ function specMultifacetedEditor() {
                     label: '',
                     description: '',
                     sort_order: 0,
+                    _pg_type: 'VARCHAR(500)',
                     core: {
                         data_class: 'text',
                         required: false,
@@ -327,6 +384,15 @@ function specMultifacetedEditor() {
             for (var i = 0; i < rows.length; i++) {
                 var r = rows[i];
                 if (!r.field_key || !(r.field_key || '').trim()) continue;
+
+                var facets = r.facets || {};
+                // 將 _pg_type 虛擬欄位寫回 facets.postgresql.pg_type
+                var pgType = (r._pg_type || '').trim();
+                if (pgType) {
+                    if (!facets.postgresql) facets.postgresql = {};
+                    facets.postgresql.pg_type = pgType;
+                }
+
                 fields.push({
                     field_key: (r.field_key || '').trim(),
                     label: (r.label || '').trim(),
@@ -338,7 +404,7 @@ function specMultifacetedEditor() {
                         is_pii: false,
                         default_value: null,
                     },
-                    facets: r.facets || {},
+                    facets: facets,
                 });
             }
             return fields;
@@ -694,6 +760,209 @@ function specMultifacetedEditor() {
                 alert('建立失敗: ' + e.message);
             }
             this.createFormSubmitting = false;
+        },
+
+        // ── PostgreSQL 資料表 ──
+
+        async openReadTableModal() {
+            this.showReadTableModal = true;
+            this.pgSelectedTable = '';
+            this.pgCompareResult = null;
+            this.pgTables = [];
+            this.pgTablesLoading = true;
+            try {
+                // 確保企業 DB 存在
+                await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.csrfToken },
+                });
+                var resp = await fetch('/api/spec-formulate/multifaceted/pg/tables');
+                var data = await resp.json();
+                if (data.success) {
+                    this.pgTables = data.data || [];
+                } else {
+                    alert(data.error || '載入資料表失敗');
+                }
+            } catch (e) {
+                alert('載入失敗: ' + e.message);
+            }
+            this.pgTablesLoading = false;
+        },
+
+        async pgCompareTable() {
+            if (!this.pgSelectedTable) {
+                this.pgCompareResult = null;
+                return;
+            }
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/pg/compare/' + encodeURIComponent(this.pgSelectedTable)
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.pgCompareResult = data.data;
+                } else {
+                    alert(data.error || '比對失敗');
+                }
+            } catch (e) {
+                alert('比對失敗: ' + e.message);
+            }
+        },
+
+        async pgLinkTable(tableName) {
+            // 僅關聯，不修改資料表
+            try {
+                // 用 saveSpec 儲存 linked_sql_table（透過後端更新）
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/pg/apply-to-table',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken,
+                        },
+                        body: JSON.stringify({ table_name: tableName }),
+                    }
+                );
+                var data = await resp.json();
+                this.linkedSqlTable = tableName;
+                this.showReadTableModal = false;
+            } catch (e) {
+                alert('關聯失敗: ' + e.message);
+            }
+        },
+
+        async pgApplySpecToTable() {
+            if (!this.pgSelectedTable) return;
+            if (!confirm('確定要將 SPEC 的欄位定義覆蓋到資料表？\\n這可能導致資料庫錯誤（如型別不相容）。')) return;
+
+            this.pgApplying = true;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/pg/apply-to-table',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken,
+                        },
+                        body: JSON.stringify({ table_name: this.pgSelectedTable }),
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedSqlTable = this.pgSelectedTable;
+                    var msg = data.message;
+                    if (data.data && data.data.errors && data.data.errors.length > 0) {
+                        msg += '\n\n失敗項目:\n' + data.data.errors.join('\n');
+                    }
+                    if (data.data && data.data.executed_sql && data.data.executed_sql.length > 0) {
+                        msg += '\n\n已執行:\n' + data.data.executed_sql.join('\n');
+                    }
+                    alert(msg);
+                    this.showReadTableModal = false;
+                } else {
+                    alert(data.error || '覆蓋失敗');
+                }
+            } catch (e) {
+                alert('操作失敗: ' + e.message);
+            }
+            this.pgApplying = false;
+        },
+
+        async pgCreateTable() {
+            if (!this.specTableName) {
+                alert('請先設定資料表名稱');
+                return;
+            }
+
+            // 檢查 PG Type 缺漏
+            if (this.gridTable) {
+                var rows = this.gridTable.getData();
+                var missing = [];
+                for (var i = 0; i < rows.length; i++) {
+                    var r = rows[i];
+                    if (!r.field_key || !r.field_key.trim()) continue;
+                    if (!r._pg_type || !r._pg_type.trim()) {
+                        missing.push(r.field_key);
+                    }
+                }
+                if (missing.length > 0) {
+                    alert('以下欄位缺少 PG Type:\n' + missing.join(', ') + '\n\n請填寫後再試。');
+                    return;
+                }
+            }
+
+            if (!confirm('將在企業資料庫建立資料表: ' + this.specTableName + '\n確定繼續？')) return;
+
+            try {
+                // 先儲存最新欄位（含 PG Type）
+                await this.saveSpec();
+
+                // 確保企業 DB 存在
+                await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.csrfToken },
+                });
+
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/pg/create-table',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken,
+                        },
+                        body: JSON.stringify({ table_name: this.specTableName }),
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedSqlTable = this.specTableName;
+                    var msg = data.message;
+                    if (data.data && data.data.warnings && data.data.warnings.length > 0) {
+                        msg += '\n\n警告:\n' + data.data.warnings.join('\n');
+                    }
+                    if (data.data && data.data.ddl) {
+                        msg += '\n\nDDL:\n' + data.data.ddl;
+                    }
+                    alert(msg);
+                } else {
+                    var errMsg = data.error || data.message || '建立失敗';
+                    if (data.data && data.data.ddl) {
+                        errMsg += '\n\nDDL:\n' + data.data.ddl;
+                    }
+                    alert(errMsg);
+                }
+            } catch (e) {
+                alert('建立失敗: ' + e.message);
+            }
+        },
+
+        async pgUnlinkTable() {
+            if (!confirm('確定要解除資料表關聯？（不會刪除實際資料表）')) return;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/pg/unlink-table',
+                    {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.csrfToken },
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.linkedSqlTable = '';
+                } else {
+                    alert(data.error || '解除失敗');
+                }
+            } catch (e) {
+                alert('解除失敗: ' + e.message);
+            }
         },
 
         formatDate(ts) {
