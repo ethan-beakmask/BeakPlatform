@@ -40,7 +40,7 @@ function specMultifacetedManager() {
         async loadSpecs() {
             this.loading = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs');
+                var resp = await fetch('/api/spec-formulate/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specs = data.data || [];
@@ -53,7 +53,7 @@ function specMultifacetedManager() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/data-classes');
+                var resp = await fetch('/api/spec-formulate/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -75,7 +75,7 @@ function specMultifacetedManager() {
                 return;
             }
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                var resp = await fetch('/api/spec-formulate/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ function specMultifacetedManager() {
             }
             this.creating = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs', {
+                var resp = await fetch('/api/spec-formulate/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ function specMultifacetedManager() {
                 if (data.success) {
                     this.showCreateModal = false;
                     // 導向編輯頁
-                    window.location.href = '/spec-formulate/multifaceted/' +
+                    window.location.href = '/spec-formulate/' +
                         data.data.secure_code + '/edit';
                 } else {
                     alert(data.error || '建立失敗');
@@ -129,7 +129,7 @@ function specMultifacetedManager() {
         },
 
         openEdit(spec) {
-            window.location.href = '/spec-formulate/multifaceted/' +
+            window.location.href = '/spec-formulate/' +
                 spec.secure_code + '/edit';
         },
 
@@ -143,7 +143,7 @@ function specMultifacetedManager() {
             this.deleting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' +
+                    '/api/spec-formulate/specs/' +
                     this.deleteTarget.secure_code,
                     {
                         method: 'DELETE',
@@ -222,7 +222,7 @@ function specMultifacetedManager() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' +
+                    '/api/spec-formulate/specs/' +
                     item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
@@ -309,7 +309,7 @@ function specMultifacetedManager() {
 
             this.docxExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/export/docx', {
+                var resp = await fetch('/api/spec-formulate/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

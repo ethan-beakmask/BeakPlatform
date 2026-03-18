@@ -45,6 +45,216 @@ def _fields_identical(old_fields, new_fields):
     )
 
 
+def _merge_formio_into_fields(old_fields, formio_fields):
+    """
+    將 FormIO 反向轉出的欄位合併到現有 spec fields
+
+    策略：
+    - 以 formio_fields 的順序和欄位清單為準（新增、刪除、排序）
+    - 已存在的欄位保留 core 和其他 facets（postgresql、excel、csv）
+    - formio facet 以最新值覆蓋
+    - 新欄位直接採用 formio 反向轉出的結果
+    """
+    old_map = {}
+    for f in (old_fields or []):
+        key = f.get('field_key')
+        if key:
+            old_map[key] = f
+
+    merged = []
+    for i, nf in enumerate(formio_fields or []):
+        key = nf.get('field_key')
+        if not key:
+            continue
+
+        old = old_map.get(key)
+        if old:
+            # 已存在：保留 old 的 core 和其他 facets，更新 formio facet + 排序
+            field = json.loads(json.dumps(old))
+            field['sort_order'] = i
+            field['label'] = nf.get('label') or field.get('label', '')
+            field['description'] = nf.get('description') or field.get('description', '')
+            # 更新 core.required（FormIO 可能改了）
+            if 'core' not in field:
+                field['core'] = {}
+            field['core']['required'] = nf.get('core', {}).get('required', False)
+            # 更新 formio facet
+            if 'facets' not in field:
+                field['facets'] = {}
+            field['facets']['formio'] = nf.get('facets', {}).get('formio', {})
+        else:
+            # 新欄位：直接用 formio 反向轉出的結果
+            field = nf
+            field['sort_order'] = i
+
+        merged.append(field)
+
+    return merged
+
+
+def _sync_form_to_spec(spec, ft_sc, org_sc):
+    """從表單模板同步最新 schema 到 spec（合併式，保留其他 facets）"""
+    from modules.form_workflow.models import FwFormTemplate
+    from modules.spec_formulate.models import FwSpecMultifacetedHistory
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=ft_sc,
+        org_secure_code=org_sc,
+    ).first()
+    if not template or not template.schema:
+        return
+
+    formio_fields = _formio_schema_to_multifaceted_fields(template.schema)
+    merged = _merge_formio_into_fields(spec.fields, formio_fields)
+
+    # 比較合併結果與現有欄位
+    if _fields_identical(spec.fields, merged):
+        return
+
+    # 寫入歷史
+    history = FwSpecMultifacetedHistory(
+        org_secure_code=org_sc,
+        spec_secure_code=spec.secure_code,
+        version=spec.version,
+        fields_snapshot=spec.fields or [],
+        active_facets_snapshot=spec.active_facets or [],
+        change_description='從表單設計器同步',
+        changed_by=current_user.secure_code,
+        changed_by_name=(
+            getattr(current_user, 'display_name', None)
+            or current_user.username
+        ),
+    )
+    db.session.add(history)
+
+    spec.fields = merged
+    spec.version = (spec.version or 0) + 1
+    if 'formio' not in (spec.active_facets or []):
+        spec.active_facets = list(spec.active_facets or []) + ['formio']
+    db.session.commit()
+
+    logger.info(
+        'Synced form %s -> spec %s (v%d, %d fields)',
+        ft_sc, spec.secure_code, spec.version, len(merged),
+    )
+
+
+# FormIO component_type -> data_class 反向映射
+_FORMIO_TO_DC = {
+    'textfield': 'text',
+    'textarea': 'text_long',
+    'number': 'integer',
+    'currency': 'currency',
+    'checkbox': 'boolean',
+    'radio': 'enum_single',
+    'select': 'enum_single',
+    'selectboxes': 'enum_multi',
+    'day': 'date',
+    'datetime': 'datetime',
+    'email': 'email',
+    'phoneNumber': 'phone',
+    'phone': 'phone',
+    'url': 'url',
+    'tags': 'tags',
+    'signature': 'signature',
+    'file': 'binary',
+    'password': 'text',
+    'hidden': 'text',
+}
+
+# 不轉為 spec 欄位的 component types（佈局/裝飾用）
+_FORMIO_SKIP_TYPES = {
+    'htmlelement', 'content', 'button', 'panel', 'columns',
+    'fieldset', 'tabs', 'well', 'table',
+}
+
+
+def _formio_schema_to_multifaceted_fields(schema):
+    """
+    從 FormIO schema 反向轉為 multifaceted spec fields
+
+    遞迴處理巢狀 components（panel/columns 等容器內的欄位也提取）。
+    """
+    if not schema:
+        return []
+
+    components = schema.get('components', [])
+    fields = []
+    _extract_components(components, fields, 0)
+    return fields
+
+
+def _extract_components(components, fields, sort_start):
+    """遞迴提取 FormIO components 為 multifaceted fields"""
+    for comp in (components or []):
+        ctype = comp.get('type', '')
+
+        # 容器型：遞迴進入子 components
+        if ctype in ('panel', 'fieldset', 'well', 'tabs'):
+            _extract_components(
+                comp.get('components', []), fields, len(fields)
+            )
+            continue
+        if ctype == 'columns':
+            for col in (comp.get('columns') or []):
+                _extract_components(
+                    col.get('components', []), fields, len(fields)
+                )
+            continue
+        if ctype == 'table':
+            for row_list in (comp.get('rows') or []):
+                for cell in (row_list or []):
+                    _extract_components(
+                        cell.get('components', []), fields, len(fields)
+                    )
+            continue
+
+        # 跳過裝飾/佈局元件
+        if ctype in _FORMIO_SKIP_TYPES:
+            continue
+
+        key = comp.get('key', '')
+        if not key:
+            continue
+
+        label = comp.get('label', '') or key
+        validate = comp.get('validate') or {}
+        properties = comp.get('properties') or {}
+        dc = _FORMIO_TO_DC.get(ctype, 'text')
+
+        # 帶小數驗證的 number -> decimal
+        if ctype == 'number' and validate.get('step') and '.' in str(validate['step']):
+            dc = 'decimal'
+
+        field = {
+            'field_key': key,
+            'label': label,
+            'description': comp.get('description', '') or '',
+            'sort_order': len(fields),
+            'core': {
+                'data_class': dc,
+                'required': bool(validate.get('required')),
+                'is_pii': properties.get('pii') == 'true',
+                'default_value': comp.get('defaultValue'),
+            },
+            'facets': {
+                'formio': {
+                    'component_type': ctype,
+                },
+            },
+        }
+
+        # 保留 formio 驗證設定
+        formio_validate = {}
+        for vk in ('maxLength', 'minLength', 'min', 'max', 'pattern', 'custom'):
+            if validate.get(vk) is not None:
+                formio_validate[vk] = validate[vk]
+        if formio_validate:
+            field['facets']['formio']['validate'] = formio_validate
+
+        fields.append(field)
+
+
 # ── 翻譯輔助 API ──
 
 @multifaceted_bp.route('/translate', methods=['POST'])
@@ -658,6 +868,83 @@ def list_versions(spec_sc):
 
 # ── 表單關聯 / 建立 ──
 
+@multifaceted_bp.route('/by-form-template/<ft_sc>', methods=['GET', 'POST'])
+@module_access_required('spec_formulate')
+def get_or_create_spec_by_form_template(ft_sc):
+    """
+    依表單模板查找或自動建立關聯的 multifaceted spec
+
+    GET  -- 查找，找不到回 404
+    POST -- 查找，找不到則自動建立空 spec 並關聯，回 201
+    """
+    from modules.spec_formulate.models import FwSpecMultifaceted
+    from modules.form_workflow.models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'no org'}), 403
+
+    spec = FwSpecMultifaceted.query.filter_by(
+        org_secure_code=org.secure_code,
+        linked_form_template_sc=ft_sc,
+        is_deleted=False,
+        status='active',
+    ).first()
+
+    if spec:
+        if request.method == 'POST':
+            try:
+                _sync_form_to_spec(spec, ft_sc, org.secure_code)
+            except Exception as e:
+                logger.error('表單同步到 spec 失敗: %s', e, exc_info=True)
+                # 同步失敗不阻斷跳轉，仍讓使用者進入 spec 編輯器
+
+        return jsonify({
+            'success': True,
+            'data': {'secure_code': spec.secure_code, 'name': spec.name},
+        })
+
+    # 找不到
+    if request.method == 'GET':
+        return jsonify({'success': False, 'error': '此表單尚未關聯規格'}), 404
+
+    # POST: 自動建立 spec 並關聯，從 FormIO schema 匯入欄位
+    template = FwFormTemplate.query.filter_by(
+        secure_code=ft_sc,
+        org_secure_code=org.secure_code,
+    ).first()
+    if not template:
+        return jsonify({'success': False, 'error': '表單模板不存在'}), 404
+
+    user_sc, user_name = _get_user_info()
+
+    # 從 FormIO schema 反向轉為 multifaceted fields
+    fields = _formio_schema_to_multifaceted_fields(template.schema)
+    active_facets = ['formio'] if fields else []
+
+    spec = FwSpecMultifaceted(
+        org_secure_code=org.secure_code,
+        name=template.name or ft_sc,
+        table_name=None,
+        description=f'由表單「{template.name}」自動建立',
+        version=1,
+        fields=fields,
+        active_facets=active_facets,
+        status='active',
+        linked_form_template_sc=ft_sc,
+        last_modified_by=user_sc,
+        last_modified_by_name=user_name,
+    )
+    db.session.add(spec)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'data': {'secure_code': spec.secure_code, 'name': spec.name},
+        'message': f'已自動建立規格「{spec.name}」',
+    }), 201
+
+
 @multifaceted_bp.route('/available-templates', methods=['GET'])
 @module_access_required('spec_formulate')
 def available_templates():
@@ -785,6 +1072,66 @@ def unlink_form(spec_sc):
     db.session.commit()
 
     return jsonify({'success': True, 'message': '已解除表單關聯'})
+
+
+@multifaceted_bp.route('/specs/<spec_sc>/sync-to-form', methods=['POST'])
+@module_access_required('spec_formulate')
+def sync_to_form(spec_sc):
+    """
+    將 spec 的 formio facet 同步回關聯的表單模板
+
+    以 spec fields 產生新的 FormIO schema，覆蓋表單模板的 schema。
+    保留表單模板原有的非欄位設定（如 display、settings 等）。
+    """
+    from modules.spec_formulate.models import FwSpecMultifaceted
+    from modules.form_workflow.models import FwFormTemplate
+    from modules.spec_formulate.services.multifaceted.formio_generator import (
+        multifaceted_to_formio_schema,
+    )
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
+
+    spec = FwSpecMultifaceted.query.filter_by(
+        secure_code=spec_sc,
+        org_secure_code=org.secure_code,
+        is_deleted=False,
+    ).first()
+    if not spec:
+        return jsonify({'success': False, 'error': '規格不存在'}), 404
+
+    if not spec.linked_form_template_sc:
+        return jsonify({'success': False, 'error': '此規格尚未關聯表單'}), 400
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=spec.linked_form_template_sc,
+        org_secure_code=org.secure_code,
+    ).first()
+    if not template:
+        return jsonify({'success': False, 'error': '關聯的表單模板不存在'}), 404
+
+    # 產生新的 FormIO schema
+    new_schema = multifaceted_to_formio_schema(spec.fields or [], form_title=None)
+
+    # 保留原 schema 的非 components 設定
+    old_schema = template.schema or {}
+    for k, v in old_schema.items():
+        if k != 'components':
+            new_schema[k] = v
+
+    template.schema = new_schema
+    db.session.commit()
+
+    field_count = len(new_schema.get('components', []))
+    return jsonify({
+        'success': True,
+        'message': f'已同步 {field_count} 個欄位回表單「{template.name}」',
+        'data': {
+            'template_name': template.name,
+            'field_count': field_count,
+        },
+    })
 
 
 @multifaceted_bp.route('/specs/<spec_sc>/create-form', methods=['POST'])

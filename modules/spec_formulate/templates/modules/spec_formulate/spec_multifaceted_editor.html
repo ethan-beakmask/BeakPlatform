@@ -85,6 +85,7 @@ window.__MF_SPEC_CONFIG = {
                     <template x-if="linkedFormTemplateSc">
                         <div class="facet-linked-info">
                             <span class="linked-name" x-text="linkedFormTemplateName || linkedFormTemplateSc"></span>
+                            <button class="mfe-btn" @click="syncToForm()">同步回表單</button>
                             <button class="mfe-btn danger" @click="unlinkForm()">解除</button>
                         </div>
                     </template>

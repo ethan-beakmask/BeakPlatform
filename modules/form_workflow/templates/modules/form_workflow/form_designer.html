@@ -135,14 +135,29 @@
     <!-- Form.io JS (本地) -->
     <script src="/static/vendor/formio.full.min.js"></script>
 
-    <!-- 欄位規格跳轉（從 URL query 取 id） -->
+    <!-- 欄位規格跳轉（查找或自動建立關聯的 spec） -->
     <script>
     function openFieldSpecEditor() {
-        const params = new URLSearchParams(window.location.search);
-        const sc = params.get('id');
-        if (sc) {
-            window.location.href = '/forms/templates/' + sc + '/spec';
-        }
+        var params = new URLSearchParams(window.location.search);
+        var ftSc = params.get('id');
+        if (!ftSc) return;
+        var csrfInput = document.querySelector('input[name="csrf_token"]');
+        var csrfToken = csrfInput ? csrfInput.value : '';
+        fetch('/api/spec-formulate/multifaceted/by-form-template/' + ftSc, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    window.location.href = '/spec-formulate/' + data.data.secure_code + '/edit';
+                } else {
+                    alert(data.error || '開啟規格失敗');
+                }
+            })
+            .catch(function() {
+                alert('開啟規格失敗');
+            });
     }
     </script>
 

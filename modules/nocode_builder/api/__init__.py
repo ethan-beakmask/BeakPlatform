@@ -420,6 +420,47 @@ def _try_find_published_schema(org_secure_code, table_name):
         return None
 
 
+def _spec_to_formio_schema(spec_fields):
+    """將 spec fields 轉為 FormIO schema（內聯版）"""
+    components = []
+    for f in (spec_fields or []):
+        ftype = f.get('formio_type', 'textfield')
+        key = f.get('field_key', '')
+        label = f.get('label', key)
+        constraints = f.get('constraints') or {}
+        comp = {
+            'type': ftype,
+            'key': key,
+            'label': label,
+            'input': True,
+            'tableView': True,
+        }
+        if f.get('is_pii'):
+            comp['properties'] = {'pii': 'true'}
+        validate = {}
+        if constraints.get('required'):
+            validate['required'] = True
+        if constraints.get('maxLength') is not None:
+            validate['maxLength'] = constraints['maxLength']
+        if validate:
+            comp['validate'] = validate
+        components.append(comp)
+    return {'components': components}
+
+
+def _spec_fields_to_columns(spec_fields):
+    """將 spec fields 轉為 (field_key, pg_type, nullable, is_pii) tuples（內聯版）"""
+    columns = []
+    for sf in (spec_fields or []):
+        key = sf.get('field_key')
+        if not key:
+            continue
+        pg_type = sf.get('pg_type', 'TEXT')
+        is_pii = bool(sf.get('is_pii', False))
+        columns.append((key, pg_type, True, is_pii))
+    return columns
+
+
 def _auto_ensure_registry(org_secure_code, table_name, columns_config):
     """
     視圖建立時自動補建 FwSqlFormRegistry
@@ -431,12 +472,6 @@ def _auto_ensure_registry(org_secure_code, table_name, columns_config):
     """
     from app import db
     from modules.form_workflow.models.sql_form_registry import FwSqlFormRegistry
-    from modules.spec_formulate.services.field_spec.spec_generator import (
-        spec_to_formio_schema,
-    )
-    from modules.spec_formulate.services.field_spec.spec_sql_table import (
-        spec_fields_to_columns,
-    )
     from modules.form_workflow.services.sql_sync.converter import build_column_mapping
 
     # 已存在 → 不覆蓋
@@ -479,7 +514,7 @@ def _auto_ensure_registry(org_secure_code, table_name, columns_config):
                 field['constraints'] = constraints
             spec_fields.append(field)
 
-        form_schema = spec_to_formio_schema(spec_fields)
+        form_schema = _spec_to_formio_schema(spec_fields)
 
     # 生成 column_mapping（始終從 columns_config 建，不依賴 form_schema）
     spec_for_mapping = []
@@ -489,7 +524,7 @@ def _auto_ensure_registry(org_secure_code, table_name, columns_config):
             'pg_type': col.get('db_type', 'TEXT'),
             'is_pii': False,
         })
-    columns = spec_fields_to_columns(spec_for_mapping)
+    columns = _spec_fields_to_columns(spec_for_mapping)
     column_mapping = build_column_mapping(columns)
 
     # 建立 Registry（來源追蹤欄位全部 NULL 標記為自動生成）

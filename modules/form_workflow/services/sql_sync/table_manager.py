@@ -449,26 +449,10 @@ def create_sync_table_for_published(published, form_schema, org_secure_code, map
         logger.info(f'SQL Sync: 表 {table_name} 的 registry 已存在，跳過')
         return existing
 
-    # 查詢 FwFormFieldSpec（有 spec 時優先用 spec 的 pg_type 和 is_pii）
-    spec_fields = None
-    try:
-        from ...models.form_field_spec import FwFormFieldSpec
-        spec = FwFormFieldSpec.query.filter_by(
-            org_secure_code=org_secure_code,
-            form_template_secure_code=published.source_form_template_secure_code,
-            status='active',
-            is_deleted=False,
-        ).first()
-        if spec:
-            spec_fields = spec.fields
-            logger.info(f'SQL Sync: 使用 spec v{spec.version} 的型別定義建表')
-    except Exception as e:
-        logger.warning(f'SQL Sync: 查詢 spec 失敗（不影響建表）: {e}')
-
     try:
         with get_org_conn(org_secure_code, role='admin') as conn:
             columns, ddl_text = create_sync_table(
-                table_name, form_schema, conn, spec_fields=spec_fields
+                table_name, form_schema, conn, spec_fields=None
             )
 
             # 建立 datagrid/editgrid 子表

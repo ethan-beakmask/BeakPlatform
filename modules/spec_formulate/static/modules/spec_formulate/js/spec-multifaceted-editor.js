@@ -145,7 +145,7 @@ function specMultifacetedEditor() {
 
         switchSpec(sc) {
             if (sc === this.specSc) return;
-            window.location.href = '/spec-formulate/multifaceted/' + sc + '/edit';
+            window.location.href = '/spec-formulate/' + sc + '/edit';
         },
 
         async loadSpec() {
@@ -476,7 +476,7 @@ function specMultifacetedEditor() {
                     if (!this.specSc && s.secure_code) {
                         this.specSc = s.secure_code;
                         history.replaceState(null, '',
-                            '/spec-formulate/multifaceted/' + s.secure_code + '/edit');
+                            '/spec-formulate/' + s.secure_code + '/edit');
                     }
                     if (s.warnings && s.warnings.length > 0) {
                         this.showToast('已儲存（有 ' + s.warnings.length + ' 個警告）', 'warning');
@@ -770,6 +770,35 @@ function specMultifacetedEditor() {
                 }
             } catch (e) {
                 this.showToast('解除失敗: ' + e.message, 'error');
+            }
+        },
+
+        async syncToForm() {
+            if (!this.linkedFormTemplateSc) {
+                this.showToast('尚未關聯表單', 'warning');
+                return;
+            }
+            if (!confirm('確定要將目前的欄位同步回關聯的表單嗎？\n這會覆蓋表單現有的欄位結構。')) {
+                return;
+            }
+            // 先儲存最新欄位
+            await this.saveSpec();
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/sync-to-form',
+                    {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.csrfToken },
+                    }
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    this.showToast(data.message, 'success');
+                } else {
+                    this.showToast(data.error || '同步失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('同步失敗: ' + e.message, 'error');
             }
         },
 

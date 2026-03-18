@@ -16,56 +16,16 @@ web_bp = Blueprint(
 
 @web_bp.route('/')
 @module_access_required('spec_formulate')
-def data_specs():
-    """資料表規格管理"""
-    return render_template('modules/spec_formulate/data_spec_list.html')
-
-
-@web_bp.route('/new')
-@module_access_required('spec_formulate')
-def data_spec_new():
-    """獨立規格編輯器（新建）"""
-    return render_template(
-        'modules/spec_formulate/field_spec_editor.html',
-        mode='standalone',
-        form_template_secure_code='',
-    )
-
-
-@web_bp.route('/<spec_sc>/edit')
-@module_access_required('spec_formulate')
-def data_spec_edit(spec_sc):
-    """獨立規格編輯器（編輯）"""
-    return render_template(
-        'modules/spec_formulate/field_spec_editor.html',
-        mode='standalone',
-        spec_sc=spec_sc,
-        form_template_secure_code='',
-    )
-
-
-@web_bp.route('/multifaceted')
-@module_access_required('spec_formulate')
 def spec_multifaceted():
     """多面向規格管理"""
     return render_template('modules/spec_formulate/spec_multifaceted.html')
 
 
-@web_bp.route('/multifaceted/<spec_sc>/edit')
+@web_bp.route('/<spec_sc>/edit')
 @module_access_required('spec_formulate')
 def spec_multifaceted_edit(spec_sc):
     """多面向規格編輯器"""
     return render_template(
         'modules/spec_formulate/spec_multifaceted_editor.html',
         spec_sc=spec_sc,
-    )
-
-
-@web_bp.route('/<form_template_sc>/sync')
-@module_access_required('spec_formulate')
-def data_spec_sync(form_template_sc):
-    """同步中控台"""
-    return render_template(
-        'modules/spec_formulate/sync_control.html',
-        form_template_secure_code=form_template_sc,
     )

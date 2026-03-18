@@ -11,9 +11,6 @@ api_bp = Blueprint(
 )
 
 # 導入 API Blueprints
-from .field_specs import field_specs_bp
-from .export import export_bp
-from .readers import readers_bp
 from .multifaceted import multifaceted_bp
 
-additional_blueprints = [field_specs_bp, export_bp, readers_bp, multifaceted_bp]
+additional_blueprints = [multifaceted_bp]
