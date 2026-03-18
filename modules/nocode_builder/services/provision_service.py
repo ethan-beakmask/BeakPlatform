@@ -93,7 +93,8 @@ class SubSystemProvisionService:
                     is_active=True,
                 )
 
-                # Step 2: 建立選單項
+                # Step 2: 嘗試建立選單項（父選單不存在時跳過）
+                menu_item_sc = None
                 menu_result = cls._create_menu_item(
                     org_sc=org_sc,
                     code=menu_code,
@@ -101,20 +102,18 @@ class SubSystemProvisionService:
                     icon=icon,
                     sub_system_sc=ss.secure_code,
                 )
-                if not menu_result.get('success'):
-                    db.session.rollback()
-                    return {
-                        'success': False,
-                        'error': f'建立選單失敗: {menu_result.get("error")}',
-                    }
+                if menu_result.get('success'):
+                    menu_item = menu_result['menu_item']
+                    ss.menu_item_secure_code = menu_item.secure_code
+                    menu_item_sc = menu_item.secure_code
+                    db.session.flush()
+                else:
+                    logger.warning(
+                        'SubSystem menu skipped: %s (sub_system=%s)',
+                        menu_result.get('error'), ss_code,
+                    )
 
-                menu_item = menu_result['menu_item']
-
-                # Step 3: 關聯子系統 -> 選單項
-                ss.menu_item_secure_code = menu_item.secure_code
-                db.session.flush()
-
-                # Step 4: 授予開發者 nocode_builder 模組使用權
+                # Step 3: 授予開發者 nocode_builder 模組使用權
                 cls._grant_module_access(org_sc, developer_sc)
 
                 db.session.commit()
@@ -130,7 +129,7 @@ class SubSystemProvisionService:
                     'sub_system_secure_code': ss.secure_code,
                     'sub_system_code': ss_code,
                     'menu_code': menu_code,
-                    'menu_item_secure_code': menu_item.secure_code,
+                    'menu_item_secure_code': menu_item_sc,
                 },
             }
 
