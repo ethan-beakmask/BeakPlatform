@@ -1995,3 +1995,134 @@ def get_execution_logs(instance_id):
             'variables': variables
         }
     })
+
+
+# =============================================================================
+# UserPicker 支援 API
+# =============================================================================
+
+@form_center_bp.route('/current-user')
+@module_access_required('form_workflow', False)
+def get_current_user_info():
+    """
+    取得當前登入者基本資訊（供 UserPicker 預設值）
+
+    GET /api/form-center/current-user
+    Returns: { secure_code, display_name, dept_name }
+    """
+    dept_name = ''
+    if current_user.primary_unit:
+        dept_name = current_user.primary_unit.name or ''
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'secure_code': current_user.secure_code,
+            'display_name': current_user.display_name or current_user.native_name or current_user.username,
+            'dept_name': dept_name,
+        }
+    })
+
+
+@form_center_bp.route('/org-tree')
+@module_access_required('form_workflow', False)
+def get_org_tree():
+    """
+    取得簡化版部門+人員樹（供 UserPicker 選人用）
+
+    GET /api/form-center/org-tree
+    Returns: BaekTree 格式的部門人員樹
+    """
+    from app.models import OrganizationalUnit, UnitType
+    from app.models.user import User, UserType
+    from app.security.resource_gateway import ResourceGateway
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    org_sc = current_user.org_secure_code
+
+    # 取得所有啟用部門
+    departments = ResourceGateway.filter(
+        OrganizationalUnit,
+        is_deleted=False,
+        unit_type=UnitType.DEPARTMENT,
+        order_by='sort_order',
+    )
+
+    # 取得所有啟用的員工帳號
+    users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
+        User.org_secure_code == org_sc,
+        User.is_deleted == False,
+        User.is_active == True,
+        User.user_type.in_([UserType.EMPLOYEE, UserType.ORG_ADMIN]),
+    ).order_by(User.display_name).all()
+
+    # 建立 dept_sc -> users 映射
+    dept_users = {}
+    unassigned_users = []
+    for u in users:
+        if u.primary_unit_secure_code:
+            dept_users.setdefault(u.primary_unit_secure_code, []).append(u)
+        else:
+            unassigned_users.append(u)
+
+    def _user_node(u):
+        return {
+            'id': u.secure_code,
+            'label': u.display_name or u.native_name or u.username,
+            'data': {
+                'type': 'person',
+                'secure_code': u.secure_code,
+                'display_name': u.display_name or u.native_name or u.username,
+                'dept_name': u.primary_unit.name if u.primary_unit else '',
+            },
+        }
+
+    # 建立 dept_sc -> dept 映射
+    dept_map = {d.secure_code: d for d in departments}
+
+    def _build_dept_node(dept):
+        children = []
+        # 加入人員
+        for u in dept_users.get(dept.secure_code, []):
+            children.append(_user_node(u))
+        # 加入子部門
+        for d in departments:
+            if d.parent_secure_code == dept.secure_code:
+                children.append(_build_dept_node(d))
+        return {
+            'id': f'dept_{dept.secure_code}',
+            'label': dept.name,
+            'expanded': True,
+            'data': {'type': 'dept'},
+            'children': children,
+        }
+
+    # 根節點
+    root_children = []
+    root_depts = [d for d in departments if d.parent_secure_code is None]
+    for d in root_depts:
+        root_children.append(_build_dept_node(d))
+
+    # 未分配人員
+    if unassigned_users:
+        unassigned_children = [_user_node(u) for u in unassigned_users]
+        root_children.append({
+            'id': 'dept_unassigned',
+            'label': '未分配部門',
+            'expanded': True,
+            'data': {'type': 'dept'},
+            'children': unassigned_children,
+        })
+
+    tree = [{
+        'id': 'root',
+        'label': org.display_name or org.name,
+        'expanded': True,
+        'data': {'type': 'root'},
+        'children': root_children,
+    }]
+
+    return jsonify({'success': True, 'data': tree})

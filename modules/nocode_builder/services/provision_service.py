@@ -10,7 +10,6 @@ Data CRUD Module - SubSystem Provision Service
 import logging
 from typing import Dict, Any
 
-from flask import g
 from sqlalchemy import func
 
 from app import db
@@ -20,6 +19,7 @@ from app.models.module_access_control import ModuleAccessControl
 from app.services.module_access_service import ModuleAccessService
 from app.services.code_generator import get_code_generator
 from app.security.resource_gateway import ResourceGateway
+from app.security.tenant_isolation import TenantContext
 
 from ..models.sub_system import DcSubSystem
 
@@ -59,67 +59,65 @@ class SubSystemProvisionService:
             {'success': bool, 'error'?: str, 'data'?: dict}
         """
         try:
-            # 設定 tenant context
-            g.current_org_secure_code = org_sc
-
             if not name:
                 return {'success': False, 'error': '子系統名稱為空'}
             if not developer_sc:
                 return {'success': False, 'error': '開發者未指定'}
 
-            # 驗證開發者帳號
-            developer = User.query.filter_by(
-                secure_code=developer_sc,
-                is_deleted=False,
-                is_active=True,
-            ).first()
-            if not developer:
-                return {'success': False, 'error': '開發者帳號不存在或已停用'}
+            with TenantContext(org_sc):
+                # 驗證開發者帳號
+                developer = User.query.filter_by(
+                    secure_code=developer_sc,
+                    is_deleted=False,
+                    is_active=True,
+                ).first()
+                if not developer:
+                    return {'success': False, 'error': '開發者帳號不存在或已停用'}
 
-            # 產生 code（冪等：同名不同 code）
-            ss_code = cls._generate_code(org_sc, name)
+                # 產生 code（冪等：同名不同 code）
+                ss_code = cls._generate_code(org_sc, name)
 
-            # 產生選單 code
-            menu_code = f'{_WEB_BUILDER_MODULE}.{ss_code}'
+                # 產生選單 code
+                menu_code = f'{_WEB_BUILDER_MODULE}.{ss_code}'
 
-            # Step 1: 建立子系統
-            ss = ResourceGateway.create(
-                DcSubSystem,
-                check_permission=False,
-                code=ss_code,
-                name=name,
-                icon=icon,
-                status='draft',
-                developers=[developer_sc],
-                layout_mode='grid',
-                is_active=True,
-            )
+                # Step 1: 建立子系統
+                ss = ResourceGateway.create(
+                    DcSubSystem,
+                    check_permission=False,
+                    code=ss_code,
+                    name=name,
+                    icon=icon,
+                    status='draft',
+                    developers=[developer_sc],
+                    layout_mode='grid',
+                    is_active=True,
+                )
 
-            # Step 2: 建立選單項
-            menu_result = cls._create_menu_item(
-                org_sc=org_sc,
-                code=menu_code,
-                title=name,
-                icon=icon,
-                sub_system_sc=ss.secure_code,
-            )
-            if not menu_result.get('success'):
-                db.session.rollback()
-                return {
-                    'success': False,
-                    'error': f'建立選單失敗: {menu_result.get("error")}',
-                }
+                # Step 2: 建立選單項
+                menu_result = cls._create_menu_item(
+                    org_sc=org_sc,
+                    code=menu_code,
+                    title=name,
+                    icon=icon,
+                    sub_system_sc=ss.secure_code,
+                )
+                if not menu_result.get('success'):
+                    db.session.rollback()
+                    return {
+                        'success': False,
+                        'error': f'建立選單失敗: {menu_result.get("error")}',
+                    }
 
-            menu_item = menu_result['menu_item']
+                menu_item = menu_result['menu_item']
 
-            # Step 3: 關聯子系統 -> 選單項
-            ss.menu_item_secure_code = menu_item.secure_code
-            db.session.flush()
+                # Step 3: 關聯子系統 -> 選單項
+                ss.menu_item_secure_code = menu_item.secure_code
+                db.session.flush()
 
-            # Step 4: 授予開發者 nocode_builder 模組使用權
-            cls._grant_module_access(org_sc, developer_sc)
+                # Step 4: 授予開發者 nocode_builder 模組使用權
+                cls._grant_module_access(org_sc, developer_sc)
 
-            db.session.commit()
+                db.session.commit()
 
             logger.info(
                 'SubSystem created: code=%s, name=%s, developer=%s',
@@ -158,19 +156,19 @@ class SubSystemProvisionService:
             sub_system_code: 子系統 code
         """
         try:
-            g.current_org_secure_code = org_sc
+            with TenantContext(org_sc):
+                ss = cls._find_by_code(org_sc, sub_system_code)
+                if not ss:
+                    return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
 
-            ss = cls._find_by_code(org_sc, sub_system_code)
-            if not ss:
-                return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
+                ss.is_active = False
+                ss.status = 'draft'
 
-            ss.is_active = False
-            ss.status = 'draft'
+                # 停用選單
+                cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)
 
-            # 停用選單
-            cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)
+                db.session.commit()
 
-            db.session.commit()
             logger.info('SubSystem suspended: code=%s', sub_system_code)
             return {'success': True}
 
@@ -196,23 +194,23 @@ class SubSystemProvisionService:
             sub_system_code: 子系統 code
         """
         try:
-            g.current_org_secure_code = org_sc
+            with TenantContext(org_sc):
+                ss = cls._find_by_code(org_sc, sub_system_code)
+                if not ss:
+                    return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
 
-            ss = cls._find_by_code(org_sc, sub_system_code)
-            if not ss:
-                return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
+                # 停用選單
+                cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)
 
-            # 停用選單
-            cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)
+                # 撤銷全部開發者 nocode_builder 權限
+                for dev_sc in (ss.developers or []):
+                    cls._revoke_module_access_if_no_other_projects(org_sc, dev_sc, ss.secure_code)
 
-            # 撤銷全部開發者 nocode_builder 權限
-            for dev_sc in (ss.developers or []):
-                cls._revoke_module_access_if_no_other_projects(org_sc, dev_sc, ss.secure_code)
+                # 軟刪除子系統
+                ResourceGateway.delete(ss, check_permission=False, soft=True)
 
-            # 軟刪除子系統
-            ResourceGateway.delete(ss, check_permission=False, soft=True)
+                db.session.commit()
 
-            db.session.commit()
             logger.info('SubSystem deleted: code=%s', sub_system_code)
             return {'success': True}
 

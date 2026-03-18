@@ -417,6 +417,16 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 <script src="/static/vendor/formio.full.min.js"></script>
 <script>Formio.icons = 'fontawesome';</script>
 <script src="/static/vendor/cytoscape.min.js"></script>
+
+<!-- BaekTree (UserPicker 依賴) -->
+<script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="/static/vendor/beak-trellis/beak-tree.js"></script>
+<script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<link rel="stylesheet" href="/static/vendor/beak-trellis/beak-tree.css">
+
+<!-- Form.io UserPicker 自訂元件 -->
+<script src="/static/js/formio-user-picker.js"></script>
+
 <!-- Form Center JS -->
 <script src="/static/modules/form_workflow/js/form-center.js"></script>
 {% endblock %}
