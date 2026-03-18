@@ -45,9 +45,7 @@ function specMultifacetedEditor() {
         activeFacetTab: '',
 
         // 歷史
-        showHistory: false,
         histories: [],
-        historyLoading: false,
 
         // 進階編輯 modal
         showDetailModal: false,
@@ -86,6 +84,10 @@ function specMultifacetedEditor() {
         pgCompareResult: null,
         pgApplying: false,
 
+        // SPEC 清單側邊欄
+        specList: [],
+        specListLoading: false,
+
         // CSRF
         csrfToken: '',
 
@@ -94,8 +96,10 @@ function specMultifacetedEditor() {
             this.csrfToken = meta ? meta.getAttribute('content') : '';
 
             await this.loadDataClasses();
+            this.loadSpecList();
             if (this.specSc) {
                 await this.loadSpec();
+                this.loadHistory();
             }
             this.loading = false;
             var self = this;
@@ -123,6 +127,25 @@ function specMultifacetedEditor() {
             } catch (e) {
                 console.error('載入 data classes 失敗:', e);
             }
+        },
+
+        async loadSpecList() {
+            this.specListLoading = true;
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/specs');
+                var data = await resp.json();
+                if (data.success) {
+                    this.specList = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入 SPEC 清單失敗:', e);
+            }
+            this.specListLoading = false;
+        },
+
+        switchSpec(sc) {
+            if (sc === this.specSc) return;
+            window.location.href = '/spec-formulate/multifaceted/' + sc + '/edit';
         },
 
         async loadSpec() {
@@ -374,7 +397,7 @@ function specMultifacetedEditor() {
             if (!this.gridTable) return;
             var selected = this.gridTable.getSelectedRows();
             if (selected.length === 0) {
-                alert('請先勾選要刪除的欄位');
+                this.showToast('請先勾選要刪除的欄位', 'warning');
                 return;
             }
             selected.forEach(function(row) { row.delete(); });
@@ -456,21 +479,20 @@ function specMultifacetedEditor() {
                             '/spec-formulate/multifaceted/' + s.secure_code + '/edit');
                     }
                     if (s.warnings && s.warnings.length > 0) {
-                        alert('已儲存（有警告）:\n' + s.warnings.join('\n'));
+                        this.showToast('已儲存（有 ' + s.warnings.length + ' 個警告）', 'warning');
                     }
-                    // 歷史面板開啟中則自動刷新
-                    if (this.showHistory) {
-                        this.loadHistory();
-                    }
+                    // 刷新側邊欄與歷史
+                    this.loadSpecList();
+                    this.loadHistory();
                 } else {
                     var msg = data.error || '儲存失敗';
                     if (data.details) {
-                        msg += '\n' + data.details.join('\n');
+                        msg += ' (' + data.details.length + ' 個問題)';
                     }
-                    alert(msg);
+                    this.showToast(msg, 'error');
                 }
             } catch (e) {
-                alert('儲存失敗: ' + e.message);
+                this.showToast('儲存失敗: ' + e.message, 'error');
             }
             this.saving = false;
         },
@@ -479,7 +501,7 @@ function specMultifacetedEditor() {
 
         async populateFacet(facetName) {
             if (!this.specSc) {
-                alert('請先儲存規格');
+                this.showToast('請先儲存規格', 'warning');
                 return;
             }
 
@@ -513,17 +535,14 @@ function specMultifacetedEditor() {
                     }
                     var msg = data.message || '完成';
                     if (data.data.skipped_count > 0) {
-                        msg += '\n不支援的欄位: ' +
-                            data.data.skipped_fields
-                                .map(function(s) { return s.field_key + ' (' + s.reason + ')'; })
-                                .join(', ');
+                        msg += ' (跳過 ' + data.data.skipped_count + ' 個不支援欄位)';
                     }
-                    alert(msg);
+                    this.showToast(msg, 'success');
                 } else {
-                    alert(data.error || '填充失敗');
+                    this.showToast(data.error || '填充失敗', 'error');
                 }
             } catch (e) {
-                alert('填充失敗: ' + e.message);
+                this.showToast('填充失敗: ' + e.message, 'error');
             }
         },
 
@@ -586,8 +605,6 @@ function specMultifacetedEditor() {
 
         async loadHistory() {
             if (!this.specSc) return;
-            this.historyLoading = true;
-            this.showHistory = true;
             try {
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' +
@@ -600,11 +617,9 @@ function specMultifacetedEditor() {
             } catch (e) {
                 console.error('載入歷史失敗:', e);
             }
-            this.historyLoading = false;
         },
 
         restoreVersion(h) {
-            if (!confirm('將 v' + h.version + ' 的欄位載入編輯器（尚未儲存）。\n確定繼續？')) return;
             var snapshot = h.fields_snapshot || [];
             var dcPg = this._dcToPgType;
             // 補上 _pg_type 虛擬欄位
@@ -726,18 +741,17 @@ function specMultifacetedEditor() {
                     this.linkedFormTemplateSc = data.data.linked_form_template_sc;
                     this.linkedFormTemplateName = data.data.template_name || '';
                     this.showLinkFormModal = false;
-                    alert(data.message);
+                    this.showToast(data.message, 'success');
                 } else {
-                    alert(data.error || '關聯失敗');
+                    this.showToast(data.error || '關聯失敗', 'error');
                 }
             } catch (e) {
-                alert('關聯失敗: ' + e.message);
+                this.showToast('關聯失敗: ' + e.message, 'error');
             }
             this.linkSubmitting = false;
         },
 
         async unlinkForm() {
-            if (!confirm('確定要解除表單關聯？')) return;
             try {
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/unlink-form',
@@ -750,11 +764,12 @@ function specMultifacetedEditor() {
                 if (data.success) {
                     this.linkedFormTemplateSc = '';
                     this.linkedFormTemplateName = '';
+                    this.showToast('已解除表單關聯', 'success');
                 } else {
-                    alert(data.error || '解除失敗');
+                    this.showToast(data.error || '解除失敗', 'error');
                 }
             } catch (e) {
-                alert('解除失敗: ' + e.message);
+                this.showToast('解除失敗: ' + e.message, 'error');
             }
         },
 
@@ -786,12 +801,12 @@ function specMultifacetedEditor() {
                     this.linkedFormTemplateSc = data.data.form_template.secure_code;
                     this.linkedFormTemplateName = data.data.form_template.name;
                     this.showCreateFormModal = false;
-                    alert(data.message);
+                    this.showToast(data.message, 'success');
                 } else {
-                    alert(data.error || '建立失敗');
+                    this.showToast(data.error || '建立失敗', 'error');
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                this.showToast('建立失敗: ' + e.message, 'error');
             }
             this.createFormSubmitting = false;
         },
@@ -815,10 +830,10 @@ function specMultifacetedEditor() {
                 if (data.success) {
                     this.pgTables = data.data || [];
                 } else {
-                    alert(data.error || '載入資料表失敗');
+                    this.showToast(data.error || '載入資料表失敗', 'error');
                 }
             } catch (e) {
-                alert('載入失敗: ' + e.message);
+                this.showToast('載入失敗: ' + e.message, 'error');
             }
             this.pgTablesLoading = false;
         },
@@ -837,10 +852,10 @@ function specMultifacetedEditor() {
                 if (data.success) {
                     this.pgCompareResult = data.data;
                 } else {
-                    alert(data.error || '比對失敗');
+                    this.showToast(data.error || '比對失敗', 'error');
                 }
             } catch (e) {
-                alert('比對失敗: ' + e.message);
+                this.showToast('比對失敗: ' + e.message, 'error');
             }
         },
 
@@ -863,15 +878,14 @@ function specMultifacetedEditor() {
                 var data = await resp.json();
                 this.linkedSqlTable = tableName;
                 this.showReadTableModal = false;
+                this.showToast('已關聯資料表: ' + tableName, 'success');
             } catch (e) {
-                alert('關聯失敗: ' + e.message);
+                this.showToast('關聯失敗: ' + e.message, 'error');
             }
         },
 
         async pgApplySpecToTable() {
             if (!this.pgSelectedTable) return;
-            if (!confirm('確定要將 SPEC 的欄位定義覆蓋到資料表？\\n這可能導致資料庫錯誤（如型別不相容）。')) return;
-
             this.pgApplying = true;
             try {
                 var resp = await fetch(
@@ -889,27 +903,26 @@ function specMultifacetedEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = this.pgSelectedTable;
-                    var msg = data.message;
+                    var toastMsg = data.message;
                     if (data.data && data.data.errors && data.data.errors.length > 0) {
-                        msg += '\n\n失敗項目:\n' + data.data.errors.join('\n');
+                        toastMsg += ' (' + data.data.errors.length + ' 個失敗)';
+                        this.showToast(toastMsg, 'warning');
+                    } else {
+                        this.showToast(toastMsg, 'success');
                     }
-                    if (data.data && data.data.executed_sql && data.data.executed_sql.length > 0) {
-                        msg += '\n\n已執行:\n' + data.data.executed_sql.join('\n');
-                    }
-                    alert(msg);
                     this.showReadTableModal = false;
                 } else {
-                    alert(data.error || '覆蓋失敗');
+                    this.showToast(data.error || '覆蓋失敗', 'error');
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                this.showToast('操作失敗: ' + e.message, 'error');
             }
             this.pgApplying = false;
         },
 
         async pgCreateTable() {
             if (!this.specTableName) {
-                alert('請先設定資料表名稱');
+                this.showToast('請先設定資料表名稱', 'warning');
                 return;
             }
 
@@ -925,12 +938,10 @@ function specMultifacetedEditor() {
                     }
                 }
                 if (missing.length > 0) {
-                    alert('以下欄位缺少 PG Type:\n' + missing.join(', ') + '\n\n請填寫後再試。');
+                    this.showToast('有 ' + missing.length + ' 個欄位缺少 PG Type', 'warning');
                     return;
                 }
             }
-
-            if (!confirm('將在企業資料庫建立資料表: ' + this.specTableName + '\n確定繼續？')) return;
 
             try {
                 // 先儲存最新欄位（含 PG Type）
@@ -959,26 +970,20 @@ function specMultifacetedEditor() {
                     this.linkedSqlTable = this.specTableName;
                     var msg = data.message;
                     if (data.data && data.data.warnings && data.data.warnings.length > 0) {
-                        msg += '\n\n警告:\n' + data.data.warnings.join('\n');
+                        msg += ' (' + data.data.warnings.length + ' 個警告)';
+                        this.showToast(msg, 'warning');
+                    } else {
+                        this.showToast(msg, 'success');
                     }
-                    if (data.data && data.data.ddl) {
-                        msg += '\n\nDDL:\n' + data.data.ddl;
-                    }
-                    alert(msg);
                 } else {
-                    var errMsg = data.error || data.message || '建立失敗';
-                    if (data.data && data.data.ddl) {
-                        errMsg += '\n\nDDL:\n' + data.data.ddl;
-                    }
-                    alert(errMsg);
+                    this.showToast(data.error || data.message || '建立失敗', 'error');
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                this.showToast('建立失敗: ' + e.message, 'error');
             }
         },
 
         async pgUnlinkTable() {
-            if (!confirm('確定要解除資料表關聯？（不會刪除實際資料表）')) return;
             try {
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc +
@@ -991,12 +996,27 @@ function specMultifacetedEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = '';
+                    this.showToast('已解除資料表關聯', 'success');
                 } else {
-                    alert(data.error || '解除失敗');
+                    this.showToast(data.error || '解除失敗', 'error');
                 }
             } catch (e) {
-                alert('解除失敗: ' + e.message);
+                this.showToast('解除失敗: ' + e.message, 'error');
             }
+        },
+
+        showToast(message, type) {
+            type = type || 'info';
+            var container = document.getElementById('mfe-toast-container');
+            if (!container) { console.log('[Toast]', type, message); return; }
+            var toast = document.createElement('div');
+            toast.className = 'mfe-toast ' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.add('fade-out');
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 3000);
         },
 
         formatDate(ts) {

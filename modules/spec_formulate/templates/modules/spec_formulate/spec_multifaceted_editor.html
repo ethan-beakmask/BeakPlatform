@@ -28,15 +28,11 @@ window.__MF_SPEC_CONFIG = {
             <template x-if="specVersion">
                 <span> | v<span x-text="specVersion"></span></span>
             </template>
-            <template x-if="activeFacets.length > 0">
-                <span> | 已啟用:
-                    <template x-for="af in activeFacets" :key="af">
-                        <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
-                    </template>
-                </span>
-            </template>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div class="mfe-toast-container" id="mfe-toast-container"></div>
 
     <!-- Toolbar -->
     <div class="mfe-toolbar">
@@ -49,68 +45,100 @@ window.__MF_SPEC_CONFIG = {
                 <span x-show="!saving">儲存</span>
                 <span x-show="saving">儲存中...</span>
             </button>
-            <button class="mfe-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">版本</button>
         </div>
-        <div class="toolbar-group">
-            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">啟用格式:</span>
-            <button class="mfe-btn facet-postgresql"
-                    :class="{'facet-active': activeFacets.indexOf('postgresql') >= 0}"
-                    @click="populateFacet('postgresql')"
-                    :disabled="saving">PostgreSQL</button>
-            <button class="mfe-btn facet-formio"
-                    :class="{'facet-active': activeFacets.indexOf('formio') >= 0}"
-                    @click="populateFacet('formio')"
-                    :disabled="saving">FormIO</button>
-            <button class="mfe-btn facet-excel"
-                    :class="{'facet-active': activeFacets.indexOf('excel') >= 0}"
-                    @click="populateFacet('excel')"
-                    :disabled="saving">Excel</button>
-            <button class="mfe-btn facet-csv"
-                    :class="{'facet-active': activeFacets.indexOf('csv') >= 0}"
-                    @click="populateFacet('csv')"
-                    :disabled="saving">CSV</button>
-        </div>
-        <div class="toolbar-group" x-show="specSc">
-            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">FormIO:</span>
-            <template x-if="!linkedFormTemplateSc">
-                <span style="display: inline-flex; gap: 4px;">
-                    <button class="mfe-btn" @click="openLinkFormModal()">關聯表單</button>
-                    <button class="mfe-btn" @click="openCreateFormModal()"
-                            :disabled="activeFacets.indexOf('formio') < 0">建立表單</button>
-                </span>
-            </template>
-            <template x-if="linkedFormTemplateSc">
-                <span style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 12px;" x-text="'已關聯: ' + (linkedFormTemplateName || linkedFormTemplateSc)"></span>
-                    <button class="mfe-btn danger" style="padding: 2px 6px; font-size: 11px;"
-                            @click="unlinkForm()">解除</button>
-                </span>
-            </template>
-        </div>
-        <div class="toolbar-group" x-show="specSc">
-            <span style="font-size: 11px; color: #6b7280; padding-right: 4px;">PG:</span>
-            <template x-if="!linkedSqlTable">
-                <span style="display: inline-flex; gap: 4px;">
-                    <button class="mfe-btn" @click="openReadTableModal()">讀入資料表</button>
-                    <button class="mfe-btn" @click="pgCreateTable()"
-                            :disabled="activeFacets.indexOf('postgresql') < 0 || !specTableName">新建資料表</button>
-                </span>
-            </template>
-            <template x-if="linkedSqlTable">
-                <span style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 12px; font-family: Consolas, monospace;" x-text="'已關聯: ' + linkedSqlTable"></span>
-                    <button class="mfe-btn danger" style="padding: 2px 6px; font-size: 11px;"
-                            @click="pgUnlinkTable()">解除</button>
-                </span>
-            </template>
+        <div class="toolbar-group toolbar-facets">
+            <span class="facet-label">啟用格式:</span>
+            <div class="facet-column">
+                <button class="mfe-btn facet-postgresql"
+                        :class="{'facet-active': activeFacets.indexOf('postgresql') >= 0}"
+                        @click="populateFacet('postgresql')"
+                        :disabled="saving">PostgreSQL</button>
+                <div class="facet-actions" x-show="specSc">
+                    <template x-if="!linkedSqlTable">
+                        <div class="facet-action-btns">
+                            <button class="mfe-btn" @click="openReadTableModal()">讀入資料表</button>
+                            <button class="mfe-btn" @click="pgCreateTable()"
+                                    :disabled="activeFacets.indexOf('postgresql') < 0 || !specTableName">新建資料表</button>
+                        </div>
+                    </template>
+                    <template x-if="linkedSqlTable">
+                        <div class="facet-linked-info">
+                            <span class="linked-name" x-text="linkedSqlTable"></span>
+                            <button class="mfe-btn danger" @click="pgUnlinkTable()">解除</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-formio"
+                        :class="{'facet-active': activeFacets.indexOf('formio') >= 0}"
+                        @click="populateFacet('formio')"
+                        :disabled="saving">FormIO</button>
+                <div class="facet-actions" x-show="specSc">
+                    <template x-if="!linkedFormTemplateSc">
+                        <div class="facet-action-btns">
+                            <button class="mfe-btn" @click="openLinkFormModal()">關聯表單</button>
+                            <button class="mfe-btn" @click="openCreateFormModal()"
+                                    :disabled="activeFacets.indexOf('formio') < 0">建立表單</button>
+                        </div>
+                    </template>
+                    <template x-if="linkedFormTemplateSc">
+                        <div class="facet-linked-info">
+                            <span class="linked-name" x-text="linkedFormTemplateName || linkedFormTemplateSc"></span>
+                            <button class="mfe-btn danger" @click="unlinkForm()">解除</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-excel"
+                        :class="{'facet-active': activeFacets.indexOf('excel') >= 0}"
+                        @click="populateFacet('excel')"
+                        :disabled="saving">Excel</button>
+            </div>
+            <div class="facet-column">
+                <button class="mfe-btn facet-csv"
+                        :class="{'facet-active': activeFacets.indexOf('csv') >= 0}"
+                        @click="populateFacet('csv')"
+                        :disabled="saving">CSV</button>
+            </div>
         </div>
     </div>
+
+    <!-- Body: Sidebar + Main -->
+    <div class="mfe-body">
+
+    <!-- SPEC 清單側邊欄 -->
+    <div class="mfe-sidebar">
+        <div class="mfe-sidebar-title">SPEC 清單</div>
+        <div x-show="specListLoading" style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">載入中...</div>
+        <div class="mfe-sidebar-list">
+            <template x-for="item in specList" :key="item.secure_code">
+                <div class="mfe-sidebar-item" :class="{'active': item.secure_code === specSc}"
+                     @click="switchSpec(item.secure_code)">
+                    <div class="mfe-sidebar-item-name" x-text="item.name || '(未命名)'"></div>
+                    <div class="mfe-sidebar-item-meta">
+                        <span x-text="'v' + (item.version || 0)"></span>
+                        <span x-text="(item.field_count || 0) + ' 欄位'"></span>
+                    </div>
+                </div>
+            </template>
+            <div x-show="!specListLoading && specList.length === 0"
+                 style="padding: 12px; text-align: center; color: #9ca3af; font-size: 12px;">
+                尚無規格
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="mfe-main">
 
     <!-- Loading -->
     <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">載入中...</div>
 
-    <!-- Field Grid -->
+    <!-- Field Grid: 欄位定義表 -->
     <div x-show="!loading" class="mfe-card">
+        <div class="mfe-card-title">欄位定義表</div>
         <div class="mfe-summary">
             <span>共 <strong x-text="projectionFields.length"></strong> 個欄位</span>
             <span x-show="projectionFields.filter(function(f){return f.core && f.core.is_pii;}).length > 0">
@@ -125,124 +153,129 @@ window.__MF_SPEC_CONFIG = {
         </div>
     </div>
 
-    <!-- Facet Projection Panel -->
-    <template x-if="activeFacets.length > 0 && !loading">
-        <div class="mfe-facet-panel">
-            <div class="mfe-facet-tabs">
-                <template x-for="af in activeFacets" :key="af">
-                    <div class="mfe-facet-tab" :class="[af, activeFacetTab === af ? 'active' : '']"
-                         @click="activeFacetTab = af" x-text="af"></div>
-                </template>
-            </div>
-            <div class="mfe-facet-body" x-show="activeFacetTab">
-                <table class="mfe-facet-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 140px;">Field Key</th>
-                            <th style="width: 120px;">Label</th>
-                            <th style="width: 100px;">Data Class</th>
-                            <th>格式映射</th>
-                            <th style="width: 80px;">狀態</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="f in projectionFields" :key="f.field_key">
-                            <tr>
-                                <td class="mono" x-text="f.field_key"></td>
-                                <td x-text="f.label"></td>
-                                <td x-text="_dcValues[(f.core||{}).data_class] || (f.core||{}).data_class || '-'"></td>
-                                <td>
-                                    <template x-if="getFacetProjection(f, activeFacetTab)">
-                                        <span class="mono" x-text="JSON.stringify(getFacetProjection(f, activeFacetTab))"></span>
-                                    </template>
-                                    <template x-if="!getFacetProjection(f, activeFacetTab)">
-                                        <span class="unsupported"
-                                              x-text="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported ? '(未填充)' : '不支援'"></span>
-                                    </template>
-                                </td>
-                                <td>
-                                    <template x-if="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
-                                        <span style="color: #059669; font-size: 11px;">支援</span>
-                                    </template>
-                                    <template x-if="!getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
-                                        <span style="color: #dc2626; font-size: 11px;">不支援</span>
-                                    </template>
-                                </td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </template>
+    <!-- 下方雙欄: 投影表(左) + 歷史表(右) -->
+    <div class="mfe-bottom-row">
 
-    <!-- History Panel -->
-    <template x-if="showHistory">
-        <div class="mfe-history-panel">
-            <div class="mfe-history-header">
-                <span>版本歷史</span>
-                <button class="mfe-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false">關閉</button>
+        <!-- Facet Projection Panel: 格式投影表 -->
+        <template x-if="activeFacets.length > 0 && !loading">
+            <div class="mfe-facet-panel">
+                <div class="mfe-card-title">格式投影表</div>
+                <div class="mfe-facet-tabs">
+                    <template x-for="af in activeFacets" :key="af">
+                        <div class="mfe-facet-tab" :class="[af, activeFacetTab === af ? 'active' : '']"
+                             @click="activeFacetTab = af" x-text="af"></div>
+                    </template>
+                </div>
+                <div class="mfe-facet-body" x-show="activeFacetTab">
+                    <table class="mfe-facet-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">Field Key</th>
+                                <th style="width: 120px;">Label</th>
+                                <th style="width: 100px;">Data Class</th>
+                                <th>格式映射</th>
+                                <th style="width: 80px;">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="f in projectionFields" :key="f.field_key">
+                                <tr>
+                                    <td class="mono" x-text="f.field_key"></td>
+                                    <td x-text="f.label"></td>
+                                    <td x-text="_dcValues[(f.core||{}).data_class] || (f.core||{}).data_class || '-'"></td>
+                                    <td>
+                                        <template x-if="getFacetProjection(f, activeFacetTab)">
+                                            <span class="mono" x-text="JSON.stringify(getFacetProjection(f, activeFacetTab))"></span>
+                                        </template>
+                                        <template x-if="!getFacetProjection(f, activeFacetTab)">
+                                            <span class="unsupported"
+                                                  x-text="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported ? '(未填充)' : '不支援'"></span>
+                                        </template>
+                                    </td>
+                                    <td>
+                                        <template x-if="getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                            <span style="color: #059669; font-size: 11px;">支援</span>
+                                        </template>
+                                        <template x-if="!getFacetSupportInfo((f.core||{}).data_class, activeFacetTab).supported">
+                                            <span style="color: #dc2626; font-size: 11px;">不支援</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="mfe-history-list">
-                <template x-if="histories.length === 0">
-                    <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
-                </template>
-                <template x-for="h in histories" :key="h.secure_code">
-                    <div class="mfe-history-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <span class="mfe-history-version">v<span x-text="h.version"></span></span>
-                                <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+        </template>
+
+        <!-- History Panel: 版本歷史表 (常駐) -->
+        <div class="mfe-history-panel" x-show="!loading">
+            <div class="mfe-history-header">
+                <span>版本歷史表</span>
+            </div>
+                <div class="mfe-history-list">
+                    <template x-if="histories.length === 0">
+                        <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
+                    </template>
+                    <template x-for="h in histories" :key="h.secure_code">
+                        <div class="mfe-history-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span class="mfe-history-version">v<span x-text="h.version"></span></span>
+                                    <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
+                                </div>
+                                <button class="mfe-btn" style="padding: 2px 10px; font-size: 11px;"
+                                        @click="restoreVersion(h)">還原</button>
                             </div>
-                            <button class="mfe-btn" style="padding: 2px 10px; font-size: 11px;"
-                                    @click="restoreVersion(h)">還原</button>
-                        </div>
-                        <div class="mfe-history-meta">
-                            <span x-text="h.changed_by_name || '系統'"></span> |
-                            <span x-text="formatDate(h.created_at)"></span> |
-                            <span x-text="(h.fields_snapshot || []).length + ' 個欄位'"></span>
-                            <template x-if="h.active_facets_snapshot && h.active_facets_snapshot.length > 0">
-                                <span> | 格式:
-                                    <template x-for="af in h.active_facets_snapshot" :key="af">
-                                        <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
+                            <div class="mfe-history-meta">
+                                <span x-text="h.changed_by_name || '系統'"></span> |
+                                <span x-text="formatDate(h.created_at)"></span> |
+                                <span x-text="(h.fields_snapshot || []).length + ' 個欄位'"></span>
+                                <template x-if="h.active_facets_snapshot && h.active_facets_snapshot.length > 0">
+                                    <span> | 格式:
+                                        <template x-for="af in h.active_facets_snapshot" :key="af">
+                                            <span class="mf-facet-badge" :class="af" x-text="af" style="margin-left: 2px;"></span>
+                                        </template>
+                                    </span>
+                                </template>
+                            </div>
+                            <!-- 差異摘要 -->
+                            <template x-if="h.change_diff && ((h.change_diff.added || []).length > 0 || (h.change_diff.removed || []).length > 0 || (h.change_diff.modified || []).length > 0)">
+                                <div class="mfe-history-diff">
+                                    <template x-if="(h.change_diff.added || []).length > 0">
+                                        <div class="diff-section diff-added">
+                                            <span class="diff-label">+ 新增:</span>
+                                            <template x-for="a in h.change_diff.added" :key="a.field_key">
+                                                <span class="diff-tag" x-text="a.label || a.field_key"></span>
+                                            </template>
+                                        </div>
                                     </template>
-                                </span>
+                                    <template x-if="(h.change_diff.removed || []).length > 0">
+                                        <div class="diff-section diff-removed">
+                                            <span class="diff-label">- 移除:</span>
+                                            <template x-for="r in h.change_diff.removed" :key="r.field_key">
+                                                <span class="diff-tag" x-text="r.label || r.field_key"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="(h.change_diff.modified || []).length > 0">
+                                        <div class="diff-section diff-modified">
+                                            <span class="diff-label">~ 修改:</span>
+                                            <template x-for="m in h.change_diff.modified" :key="m.field_key">
+                                                <span class="diff-tag" x-text="m.field_key + ' (' + m.changes.length + ')'"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
                             </template>
                         </div>
-                        <!-- 差異摘要 -->
-                        <template x-if="h.change_diff && ((h.change_diff.added || []).length > 0 || (h.change_diff.removed || []).length > 0 || (h.change_diff.modified || []).length > 0)">
-                            <div class="mfe-history-diff">
-                                <template x-if="(h.change_diff.added || []).length > 0">
-                                    <div class="diff-section diff-added">
-                                        <span class="diff-label">+ 新增:</span>
-                                        <template x-for="a in h.change_diff.added" :key="a.field_key">
-                                            <span class="diff-tag" x-text="a.label || a.field_key"></span>
-                                        </template>
-                                    </div>
-                                </template>
-                                <template x-if="(h.change_diff.removed || []).length > 0">
-                                    <div class="diff-section diff-removed">
-                                        <span class="diff-label">- 移除:</span>
-                                        <template x-for="r in h.change_diff.removed" :key="r.field_key">
-                                            <span class="diff-tag" x-text="r.label || r.field_key"></span>
-                                        </template>
-                                    </div>
-                                </template>
-                                <template x-if="(h.change_diff.modified || []).length > 0">
-                                    <div class="diff-section diff-modified">
-                                        <span class="diff-label">~ 修改:</span>
-                                        <template x-for="m in h.change_diff.modified" :key="m.field_key">
-                                            <span class="diff-tag" x-text="m.field_key + ' (' + m.changes.length + ')'"></span>
-                                        </template>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
-                </template>
+                    </template>
+                </div>
             </div>
-        </div>
-    </template>
+    </div><!-- /mfe-bottom-row -->
+
+    </div><!-- /mfe-main -->
+    </div><!-- /mfe-body -->
 
     <!-- Detail Modal -->
     <div x-show="showDetailModal" x-cloak class="mfe-modal">
