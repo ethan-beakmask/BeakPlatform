@@ -194,6 +194,8 @@ window.__MF_SPEC_CONFIG = {
                                 <span class="mfe-history-version">v<span x-text="h.version"></span></span>
                                 <span style="margin-left: 8px; color: #6b7280;" x-text="h.change_description || ''"></span>
                             </div>
+                            <button class="mfe-btn" style="padding: 2px 10px; font-size: 11px;"
+                                    @click="restoreVersion(h)">還原</button>
                         </div>
                         <div class="mfe-history-meta">
                             <span x-text="h.changed_by_name || '系統'"></span> |
@@ -207,6 +209,35 @@ window.__MF_SPEC_CONFIG = {
                                 </span>
                             </template>
                         </div>
+                        <!-- 差異摘要 -->
+                        <template x-if="h.change_diff && ((h.change_diff.added || []).length > 0 || (h.change_diff.removed || []).length > 0 || (h.change_diff.modified || []).length > 0)">
+                            <div class="mfe-history-diff">
+                                <template x-if="(h.change_diff.added || []).length > 0">
+                                    <div class="diff-section diff-added">
+                                        <span class="diff-label">+ 新增:</span>
+                                        <template x-for="a in h.change_diff.added" :key="a.field_key">
+                                            <span class="diff-tag" x-text="a.label || a.field_key"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="(h.change_diff.removed || []).length > 0">
+                                    <div class="diff-section diff-removed">
+                                        <span class="diff-label">- 移除:</span>
+                                        <template x-for="r in h.change_diff.removed" :key="r.field_key">
+                                            <span class="diff-tag" x-text="r.label || r.field_key"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="(h.change_diff.modified || []).length > 0">
+                                    <div class="diff-section diff-modified">
+                                        <span class="diff-label">~ 修改:</span>
+                                        <template x-for="m in h.change_diff.modified" :key="m.field_key">
+                                            <span class="diff-tag" x-text="m.field_key + ' (' + m.changes.length + ')'"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>

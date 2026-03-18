@@ -167,27 +167,37 @@ function specMultifacetedEditor() {
             }
         },
 
+        /** 將 Alpine proxy 轉為純 JS 物件，供 Tabulator 使用 */
+        _plainFields() {
+            return JSON.parse(JSON.stringify(this.fields));
+        },
+
         initGrid() {
             var self = this;
             var el = document.getElementById('mf-field-grid');
             if (!el) return;
 
             this.gridTable = new Tabulator(el, {
-                data: this.fields,
+                data: this._plainFields(),
                 layout: 'fitColumns',
                 movableRows: true,
                 selectable: true,
                 placeholder: '尚未定義欄位，點擊「+ 欄位」新增',
-                rowHeight: 34,
+                rowHeight: 24,
+                columnDefaults: { headerSort: false },
                 columns: [
                     {
-                        title: '#', formatter: 'rownum', width: 50,
+                        title: '#', width: 50,
                         hozAlign: 'center', resizable: false,
                         rowHandle: true,
+                        formatter: function(cell) {
+                            var pos = cell.getRow().getPosition(true);
+                            return '<span class="drag-handle">&#x2630;</span>' + pos;
+                        },
                     },
                     {
                         title: 'Label', field: 'label', editor: 'input',
-                        minWidth: 120,
+                        width: 200,
                         cellEdited: function(cell) {
                             var row = cell.getRow();
                             var existingKey = row.getData().field_key;
@@ -202,7 +212,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Field Key', field: 'field_key', editor: 'input',
-                        minWidth: 120, cssClass: 'mono-cell',
+                        width: 200, cssClass: 'mono-cell',
                         validator: function(cell, value) {
                             if (!value) return true;
                             return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(value);
@@ -210,7 +220,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Data Class', field: 'core.data_class',
-                        width: 80,
+                        width: 140,
                         editor: 'list',
                         editorParams: {
                             values: self._dcValues,
@@ -238,7 +248,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'PG Type', field: '_pg_type',
-                        width: 120, cssClass: 'mono-cell',
+                        width: 140, cssClass: 'mono-cell',
                         editor: 'input',
                     },
                     {
@@ -262,25 +272,20 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: '說明', field: 'description', editor: 'input',
-                        minWidth: 150,
+                        minWidth: 200,
                     },
                     {
-                        title: '操作', width: 70, hozAlign: 'center',
+                        title: '操作', width: 100, hozAlign: 'center',
                         resizable: false,
                         formatter: function(cell) {
                             var btn = document.createElement('button');
                             btn.textContent = '詳細';
                             btn.style.cssText = 'padding:2px 8px;font-size:11px;border:1px solid #d1d5db;background:#fff;cursor:pointer;border-radius:2px;';
-                            var thisRow = cell.getRow();
                             btn.addEventListener('click', function(e) {
                                 e.stopPropagation();
-                                var allRows = self.gridTable.getRows();
-                                for (var ri = 0; ri < allRows.length; ri++) {
-                                    if (allRows[ri] === thisRow) {
-                                        self.openDetail(ri);
-                                        break;
-                                    }
-                                }
+                                var row = cell.getRow();
+                                var pos = row.getPosition(true);
+                                self.openDetail(pos - 1);
                             });
                             return btn;
                         },
@@ -453,6 +458,10 @@ function specMultifacetedEditor() {
                     if (s.warnings && s.warnings.length > 0) {
                         alert('已儲存（有警告）:\n' + s.warnings.join('\n'));
                     }
+                    // 歷史面板開啟中則自動刷新
+                    if (this.showHistory) {
+                        this.loadHistory();
+                    }
                 } else {
                     var msg = data.error || '儲存失敗';
                     if (data.details) {
@@ -499,7 +508,7 @@ function specMultifacetedEditor() {
                     // 重新載入以取得更新後的 fields
                     await this.loadSpec();
                     if (this.gridTable) {
-                        this.gridTable.setData(this.fields);
+                        this.gridTable.setData(this._plainFields());
                         this._syncProjectionFields();
                     }
                     var msg = data.message || '完成';
@@ -592,6 +601,31 @@ function specMultifacetedEditor() {
                 console.error('載入歷史失敗:', e);
             }
             this.historyLoading = false;
+        },
+
+        restoreVersion(h) {
+            if (!confirm('將 v' + h.version + ' 的欄位載入編輯器（尚未儲存）。\n確定繼續？')) return;
+            var snapshot = h.fields_snapshot || [];
+            var dcPg = this._dcToPgType;
+            // 補上 _pg_type 虛擬欄位
+            snapshot.forEach(function(f) {
+                var pgFacet = (f.facets || {}).postgresql || {};
+                if (pgFacet.pg_type) {
+                    f._pg_type = pgFacet.pg_type;
+                } else {
+                    var dc = (f.core || {}).data_class || 'text';
+                    f._pg_type = dcPg[dc] || 'TEXT';
+                }
+            });
+            this.fields = snapshot;
+            this.activeFacets = h.active_facets_snapshot || [];
+            if (this.activeFacets.length > 0 && !this.activeFacetTab) {
+                this.activeFacetTab = this.activeFacets[0];
+            }
+            if (this.gridTable) {
+                this.gridTable.setData(this._plainFields());
+                this._syncProjectionFields();
+            }
         },
 
         // ── 資料表名稱翻譯 ──

@@ -116,12 +116,33 @@
 }
 
 /* --- Tabulator overrides --- */
+.mfe-card .tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+    font-size: 12px;
+    font-weight: 600;
+}
+.mfe-card .tabulator .tabulator-row {
+    min-height: 24px !important;
+}
+.mfe-card .tabulator .tabulator-row .tabulator-cell {
+    padding: 2px 8px !important;
+    font-size: 12px;
+    line-height: 1.3;
+}
+.mfe-card .tabulator .tabulator-header .tabulator-col {
+    padding: 3px 8px;
+}
 .mfe-card .tabulator .tabulator-row.pii-row {
     background-color: #fef2f2;
 }
 .mfe-card .tabulator .mono-cell {
     font-family: Consolas, 'Courier New', monospace;
     font-size: 12px;
+}
+.mfe-card .drag-handle {
+    cursor: grab;
+    color: #9ca3af;
+    margin-right: 4px;
+    font-size: 11px;
 }
 
 /* --- Facet projection panel --- */
@@ -218,6 +239,34 @@
     color: var(--color-text-muted, #999);
     margin-top: 2px;
 }
+
+/* --- History diff --- */
+.mfe-history-diff {
+    margin-top: 4px;
+    padding: 4px 0;
+    font-size: 11px;
+}
+.mfe-history-diff .diff-section {
+    margin-bottom: 2px;
+}
+.mfe-history-diff .diff-label {
+    font-weight: 600;
+    margin-right: 4px;
+}
+.mfe-history-diff .diff-tag {
+    display: inline-block;
+    padding: 0 4px;
+    margin: 0 2px;
+    border-radius: 2px;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 11px;
+}
+.diff-added .diff-label { color: #059669; }
+.diff-added .diff-tag { background: #d1fae5; color: #065f46; }
+.diff-removed .diff-label { color: #dc2626; }
+.diff-removed .diff-tag { background: #fee2e2; color: #991b1b; }
+.diff-modified .diff-label { color: #d97706; }
+.diff-modified .diff-tag { background: #fef3c7; color: #92400e; }
 
 /* --- Detail modal --- */
 .mfe-modal {
