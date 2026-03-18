@@ -40,7 +40,7 @@ function specMultifacetedManager() {
         async loadSpecs() {
             this.loading = true;
             try {
-                var resp = await fetch('/api/spec-formulate/specs');
+                var resp = await fetch('/api/spec-formulate/multifaceted/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specs = data.data || [];
@@ -53,7 +53,7 @@ function specMultifacetedManager() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/api/spec-formulate/data-classes');
+                var resp = await fetch('/api/spec-formulate/multifaceted/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -75,7 +75,7 @@ function specMultifacetedManager() {
                 return;
             }
             try {
-                var resp = await fetch('/api/spec-formulate/translate', {
+                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ function specMultifacetedManager() {
             }
             this.creating = true;
             try {
-                var resp = await fetch('/api/spec-formulate/specs', {
+                var resp = await fetch('/api/spec-formulate/multifaceted/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ function specMultifacetedManager() {
             this.deleting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/specs/' +
+                    '/api/spec-formulate/multifaceted/specs/' +
                     this.deleteTarget.secure_code,
                     {
                         method: 'DELETE',
@@ -222,7 +222,7 @@ function specMultifacetedManager() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/specs/' +
+                    '/api/spec-formulate/multifaceted/specs/' +
                     item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
@@ -309,7 +309,7 @@ function specMultifacetedManager() {
 
             this.docxExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/export/docx', {
+                var resp = await fetch('/api/spec-formulate/multifaceted/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
