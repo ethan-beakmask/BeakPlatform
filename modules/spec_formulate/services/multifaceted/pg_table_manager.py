@@ -209,12 +209,14 @@ def compare_spec_with_table(spec_fields, table_columns):
             pg_type = _DC_TO_PG_FALLBACK.get(dc, 'TEXT')
         spec_map[fk] = pg_type.upper()
 
-    # DB 欄位（排除系統欄位 id）
+    # DB 欄位（排除自動附加的系統/稽核欄位）
+    _SYSTEM_COLS = {'id', 'created_at', 'updated_at', 'created_by',
+                    'updated_by', 'is_deleted'}
     db_map = {}
     for col in (table_columns or []):
         cn = col['column_name']
-        if cn == 'id' and col.get('is_primary_key'):
-            continue  # 跳過 auto-increment PK
+        if cn in _SYSTEM_COLS:
+            continue
         db_map[cn] = col['display_type'].upper()
 
     spec_keys = set(spec_map.keys())
@@ -293,9 +295,11 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
             pg_type = _DC_TO_PG_FALLBACK.get(dc, 'TEXT')
             warnings.append(f'{fk}: 無 PostgreSQL facet，使用預設型別 {pg_type}')
 
+        core = f.get('core', {})
         nullable = pg_facet.get('nullable', True)
         is_pk = pg_facet.get('primary_key', False)
         default = pg_facet.get('default')
+        required = core.get('required', False)
 
         if is_pk:
             has_pk = True
@@ -306,6 +310,10 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
             'nullable': nullable,
             'primary_key': is_pk,
             'default': default,
+            'required': required,
+            'index': pg_facet.get('index', False),
+            'unique': pg_facet.get('unique', False),
+            'foreign_key': pg_facet.get('foreign_key') or None,
         })
 
     if not columns:
@@ -319,22 +327,64 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
     # 組合 DDL
     col_defs = []
     pk_cols = []
+    index_cols = []
+    unique_cols = []
+    fk_clauses = []
+
+    # 自動附加: id 主鍵
+    col_defs.append('id SERIAL PRIMARY KEY')
+
     for col in columns:
         parts = [col['name'], col['type']]
         if col['primary_key']:
             pk_cols.append(col['name'])
-        if not col['nullable'] and not col['primary_key']:
+        # NOT NULL: 明確設定或 core.required 為 True
+        if (not col['nullable'] or col.get('required')) \
+                and not col['primary_key']:
             parts.append('NOT NULL')
         if col['default'] is not None:
             parts.append(f"DEFAULT {col['default']}")
         col_defs.append(' '.join(parts))
 
+        # 收集 INDEX / UNIQUE / FK
+        if col.get('index'):
+            index_cols.append(col['name'])
+        if col.get('unique'):
+            unique_cols.append(col['name'])
+        if col.get('foreign_key'):
+            fk_clauses.append(
+                f"FOREIGN KEY ({col['name']}) REFERENCES {col['foreign_key']}"
+            )
+
+    # 使用者自訂複合主鍵（排除 id 以外的 PK 欄位）
     if pk_cols:
-        col_defs.append(f"PRIMARY KEY ({', '.join(pk_cols)})")
+        col_defs.append(f"CONSTRAINT pk_{table_name}_custom "
+                        f"UNIQUE ({', '.join(pk_cols)})")
+
+    # UNIQUE 約束
+    for uc in unique_cols:
+        col_defs.append(f"CONSTRAINT uq_{table_name}_{uc} UNIQUE ({uc})")
+
+    # FK 約束
+    col_defs.extend(fk_clauses)
+
+    # 自動附加: 稽核欄位
+    col_defs.append('created_at TIMESTAMP NOT NULL DEFAULT NOW()')
+    col_defs.append('updated_at TIMESTAMP NOT NULL DEFAULT NOW()')
+    col_defs.append('created_by VARCHAR(100)')
+    col_defs.append('updated_by VARCHAR(100)')
+    col_defs.append('is_deleted BOOLEAN NOT NULL DEFAULT FALSE')
 
     ddl = f"CREATE TABLE {table_name} (\n  " + \
           ',\n  '.join(col_defs) + \
           '\n)'
+
+    # INDEX 語句（CREATE TABLE 之後執行）
+    index_sqls = []
+    for ic in index_cols:
+        index_sqls.append(
+            f"CREATE INDEX idx_{table_name}_{ic} ON {table_name} ({ic})"
+        )
 
     # 執行
     try:
@@ -342,6 +392,8 @@ def create_table_from_spec(org_secure_code, table_name, spec_fields):
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             with conn.cursor() as cur:
                 cur.execute(ddl)
+                for idx_sql in index_sqls:
+                    cur.execute(idx_sql)
 
         return {
             'success': True,

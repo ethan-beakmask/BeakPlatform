@@ -601,6 +601,18 @@ def populate_facet_defaults(field, facet_name):
             continue
         merged[k] = existing.get(k, v)
 
+    # PostgreSQL: 補上通用結構屬性預設值
+    if facet_name == 'postgresql':
+        pg_extras = {
+            'primary_key': False,
+            'index': False,
+            'unique': False,
+            'foreign_key': None,
+        }
+        for k, v in pg_extras.items():
+            if k not in merged:
+                merged[k] = v
+
     facets[facet_name] = merged
     field['facets'] = facets
     return field

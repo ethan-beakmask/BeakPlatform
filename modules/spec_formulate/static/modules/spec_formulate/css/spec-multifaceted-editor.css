@@ -26,12 +26,12 @@
     top: 60px;
 }
 .mfe-sidebar-title {
-    padding: 6px 10px;
+    padding: 12px 10px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-text, #333);
-    background: var(--color-bg-light, #f9fafb);
-    border-bottom: 1px solid var(--color-border-light, #eee);
+    color: #1e2a5a;
+    background: #b3bfff;
+    border-bottom: 1px solid #9aa8e6;
 }
 .mfe-sidebar-list {
     max-height: 60vh;
@@ -72,7 +72,7 @@
 
 /* --- Header --- */
 .mfe-header {
-    padding: 16px 0 12px;
+    padding: 10px 0 8px;
     border-bottom: 1px solid var(--color-border, #ddd);
     margin-bottom: 12px;
 }
@@ -81,18 +81,6 @@
     font-weight: 600;
     margin: 0;
     color: var(--color-text, #333);
-}
-.mfe-meta {
-    font-size: 13px;
-    color: var(--color-text-secondary, #666);
-    margin-top: 4px;
-}
-.mfe-meta input[type="text"] {
-    border: 1px solid var(--color-border, #d1d5db);
-    padding: 3px 8px;
-    font-size: 13px;
-    border-radius: 3px;
-    width: 240px;
 }
 
 /* --- Toolbar --- */
@@ -296,9 +284,11 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 14px;
-    border-bottom: 1px solid var(--color-border-light, #eee);
+    border-bottom: 1px solid #9aa8e6;
     font-size: 13px;
     font-weight: 600;
+    color: #1e2a5a;
+    background: #b3bfff;
 }
 .mfe-history-list {
     max-height: 300px;
@@ -461,9 +451,9 @@
     padding: 4px 12px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-text, #333);
-    border-bottom: 1px solid var(--color-border-light, #eee);
-    background: var(--color-bg-light, #f9fafb);
+    color: #1e2a5a;
+    border-bottom: 1px solid #9aa8e6;
+    background: #b3bfff;
 }
 
 /* --- Facet columns in toolbar --- */
@@ -473,6 +463,7 @@
     align-items: flex-start !important;
     flex-wrap: nowrap;
     border-right: none !important;
+    margin-left: auto;
 }
 .toolbar-facets .facet-label {
     font-size: 11px;

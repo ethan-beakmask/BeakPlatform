@@ -446,6 +446,15 @@ def get_spec(spec_sc):
     result = spec.to_dict()
     result['field_count'] = len(spec.fields or [])
 
+    # 補上關聯表單名稱
+    if spec.linked_form_template_sc:
+        from modules.form_workflow.models.form_template import FwFormTemplate
+        ft = FwFormTemplate.query.filter_by(
+            secure_code=spec.linked_form_template_sc,
+            is_deleted=False,
+        ).first()
+        result['linked_form_template_name'] = ft.name if ft else ''
+
     return jsonify({'success': True, 'data': result})
 
 

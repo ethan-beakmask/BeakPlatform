@@ -88,6 +88,18 @@ function specMultifacetedEditor() {
         specList: [],
         specListLoading: false,
 
+        // 新增規格 modal
+        showNewSpecModal: false,
+        newSpecForm: { name: '', table_name: '', description: '' },
+        newSpecTableSuggestion: '',
+        newSpecCreating: false,
+
+        // 製作規格書 modal
+        showDocxModal: false,
+        docxExporting: false,
+        docxTitle: '',
+        docxItems: [],
+
         // CSRF
         csrfToken: '',
 
@@ -176,13 +188,10 @@ function specMultifacetedEditor() {
                     });
                     this.fields = fields;
                     this.linkedFormTemplateSc = s.linked_form_template_sc || '';
+                    this.linkedFormTemplateName = s.linked_form_template_name || '';
                     this.linkedSqlTable = s.linked_sql_table || '';
                     if (this.activeFacets.length > 0 && !this.activeFacetTab) {
                         this.activeFacetTab = this.activeFacets[0];
-                    }
-                    // 載入關聯表單名稱
-                    if (this.linkedFormTemplateSc) {
-                        this._loadLinkedTemplateName();
                     }
                 }
             } catch (e) {
@@ -220,7 +229,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Label', field: 'label', editor: 'input',
-                        width: 200,
+                        width: 160,
                         cellEdited: function(cell) {
                             var row = cell.getRow();
                             var existingKey = row.getData().field_key;
@@ -235,7 +244,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Field Key', field: 'field_key', editor: 'input',
-                        width: 200, cssClass: 'mono-cell',
+                        width: 160, cssClass: 'mono-cell',
                         validator: function(cell, value) {
                             if (!value) return true;
                             return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(value);
@@ -243,7 +252,7 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'Data Class', field: 'core.data_class',
-                        width: 140,
+                        width: 100,
                         editor: 'list',
                         editorParams: {
                             values: self._dcValues,
@@ -271,13 +280,13 @@ function specMultifacetedEditor() {
                     },
                     {
                         title: 'PG Type', field: '_pg_type',
-                        width: 140, cssClass: 'mono-cell',
+                        width: 100, cssClass: 'mono-cell',
                         editor: 'input',
                     },
                     {
                         title: '加密', field: 'core.is_pii',
                         formatter: 'tickCross', hozAlign: 'center',
-                        width: 100, editor: true,
+                        width: 70, editor: true,
                         cellEdited: function(cell) {
                             var row = cell.getRow();
                             var el = row.getElement();
@@ -291,7 +300,7 @@ function specMultifacetedEditor() {
                     {
                         title: '必填', field: 'core.required',
                         formatter: 'tickCross', hozAlign: 'center',
-                        width: 100, editor: true,
+                        width: 70, editor: true,
                     },
                     {
                         title: '說明', field: 'description', editor: 'input',
@@ -693,12 +702,7 @@ function specMultifacetedEditor() {
 
         // ── 表單關聯 ──
 
-        async _loadLinkedTemplateName() {
-            // 透過 available-templates 無法取到已佔用的，直接顯示 sc 即可
-            // 但可用 link-form 回傳的 name。先從已有資訊取
-            // 若 loadSpec 回傳沒帶 name，就保留 sc
-            this.linkedFormTemplateName = '';
-        },
+        // _loadLinkedTemplateName 已由 get_spec API 回傳，不再需要
 
         async openLinkFormModal() {
             this.showLinkFormModal = true;
@@ -1032,6 +1036,228 @@ function specMultifacetedEditor() {
             } catch (e) {
                 this.showToast('解除失敗: ' + e.message, 'error');
             }
+        },
+
+        // ── 新增規格 ──
+
+        openNewSpecModal() {
+            this.newSpecForm = { name: '', table_name: '', description: '' };
+            this.newSpecTableSuggestion = '';
+            this.showNewSpecModal = true;
+        },
+
+        async translateNewSpecTableName() {
+            var name = (this.newSpecForm.name || '').trim();
+            if (!name) { this.newSpecTableSuggestion = ''; return; }
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({ name: name, prefix: 'spec_' }),
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    this.newSpecTableSuggestion = data.code;
+                }
+            } catch (e) {
+                // 靜默
+            }
+        },
+
+        async confirmNewSpec() {
+            var name = (this.newSpecForm.name || '').trim();
+            if (!name) { alert('規格名稱必填'); return; }
+            this.newSpecCreating = true;
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/specs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        table_name: (this.newSpecForm.table_name || '').trim() || this.newSpecTableSuggestion || '',
+                        description: (this.newSpecForm.description || '').trim(),
+                        fields: [],
+                    }),
+                });
+                var data = await resp.json();
+                if (data.success) {
+                    this.showNewSpecModal = false;
+                    window.location.href = '/spec-formulate/' + data.data.secure_code + '/edit';
+                } else {
+                    alert(data.error || '建立失敗');
+                }
+            } catch (e) {
+                alert('建立失敗: ' + e.message);
+            }
+            this.newSpecCreating = false;
+        },
+
+        // ── 製作規格書 ──
+
+        openDocxModal() {
+            var available = this.specList.filter(function(s) {
+                return s.active_facets && s.active_facets.length > 0;
+            });
+            if (available.length === 0) {
+                this.showToast('目前沒有任何已啟用格式的規格可匯出', 'warning');
+                return;
+            }
+            this.docxTitle = '';
+            this.docxItems = [];
+            this.showDocxModal = true;
+        },
+
+        docxAddSpec(spec) {
+            for (var i = 0; i < this.docxItems.length; i++) {
+                if (this.docxItems[i].spec_sc === spec.secure_code) return;
+            }
+            var facetSelections = {};
+            (spec.active_facets || []).forEach(function(f) {
+                facetSelections[f] = true;
+            });
+            var item = {
+                spec_sc: spec.secure_code,
+                name: spec.name,
+                version: spec.version,
+                currentVersion: spec.version,
+                versions: [],
+                loadingVersions: false,
+                activeFacets: spec.active_facets || [],
+                selectedFacets: facetSelections,
+            };
+            this.docxItems.push(item);
+            var proxyItem = this.docxItems[this.docxItems.length - 1];
+            this._loadDocxVersions(proxyItem);
+        },
+
+        docxRemoveSpec(index) {
+            this.docxItems.splice(index, 1);
+        },
+
+        async _loadDocxVersions(item) {
+            item.loadingVersions = true;
+            try {
+                var resp = await fetch(
+                    '/api/spec-formulate/multifaceted/specs/' + item.spec_sc + '/versions'
+                );
+                var data = await resp.json();
+                if (data.success) {
+                    item.versions = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入版本失敗:', e);
+            }
+            item.loadingVersions = false;
+        },
+
+        docxOnVersionChange(item) {
+            var ver = parseInt(item.version);
+            var found = null;
+            for (var i = 0; i < item.versions.length; i++) {
+                if (item.versions[i].version === ver) { found = item.versions[i]; break; }
+            }
+            if (found) {
+                item.activeFacets = found.active_facets || [];
+                var newSel = {};
+                item.activeFacets.forEach(function(f) {
+                    newSel[f] = item.selectedFacets[f] !== false;
+                });
+                item.selectedFacets = newSel;
+            }
+        },
+
+        docxGetSelectedCount() {
+            var count = 0;
+            for (var i = 0; i < this.docxItems.length; i++) {
+                var item = this.docxItems[i];
+                var facets = item.activeFacets || [];
+                for (var j = 0; j < facets.length; j++) {
+                    if (item.selectedFacets[facets[j]]) count++;
+                }
+            }
+            return count;
+        },
+
+        docxAvailableSpecs() {
+            var selected = {};
+            for (var i = 0; i < this.docxItems.length; i++) {
+                selected[this.docxItems[i].spec_sc] = true;
+            }
+            return this.specList.filter(function(s) {
+                return (s.active_facets && s.active_facets.length > 0) && !selected[s.secure_code];
+            });
+        },
+
+        async doExportDocx() {
+            if (this.docxItems.length === 0) {
+                alert('請至少加入一個規格');
+                return;
+            }
+            var specs = [];
+            for (var i = 0; i < this.docxItems.length; i++) {
+                var item = this.docxItems[i];
+                var facets = [];
+                var af = item.activeFacets || [];
+                for (var j = 0; j < af.length; j++) {
+                    if (item.selectedFacets[af[j]]) facets.push(af[j]);
+                }
+                if (facets.length === 0) {
+                    alert(item.name + ': 請至少選擇一種格式');
+                    return;
+                }
+                specs.push({
+                    spec_sc: item.spec_sc,
+                    version: parseInt(item.version),
+                    facets: facets,
+                });
+            }
+            this.docxExporting = true;
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/export/docx', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({
+                        doc_title: this.docxTitle || '',
+                        specs: specs,
+                    }),
+                });
+                if (resp.ok) {
+                    var blob = await resp.blob();
+                    var cd = resp.headers.get('content-disposition') || '';
+                    var filename = '規格書.docx';
+                    var starMatch = cd.match(/filename\*=UTF-8''([^;\s]+)/i);
+                    if (starMatch) {
+                        filename = decodeURIComponent(starMatch[1]);
+                    } else {
+                        var plainMatch = cd.match(/filename="?([^";]+)"?/i);
+                        if (plainMatch) filename = plainMatch[1];
+                    }
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    this.showDocxModal = false;
+                } else {
+                    var errData = await resp.json();
+                    alert(errData.error || '匯出失敗');
+                }
+            } catch (e) {
+                alert('匯出失敗: ' + e.message);
+            }
+            this.docxExporting = false;
         },
 
         showToast(message, type) {
