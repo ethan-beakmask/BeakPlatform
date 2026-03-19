@@ -134,3 +134,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Org Database Monitor (企業獨立資料庫監視)
     from .org_databases import org_databases_bp
     app.register_blueprint(org_databases_bp)
+
+    # Permission Central Management (權限中央管理)
+    from .permission_central import permission_central_bp
+    app.register_blueprint(permission_central_bp, url_prefix='/permissions')

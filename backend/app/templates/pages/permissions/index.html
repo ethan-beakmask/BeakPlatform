@@ -1,0 +1,484 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}權限中央管理 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/permissions-central.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data="permissionCentral()">
+    <div class="page-header">
+        <h1 class="page-title">權限中央管理</h1>
+    </div>
+
+    <!-- Tab 切換 -->
+    <div class="perm-tabs mb-16">
+        <button type="button" class="perm-tab" :class="{ active: activeTab === 'role' }"
+                @click="activeTab = 'role'">角色視角</button>
+        <button type="button" class="perm-tab" :class="{ active: activeTab === 'menu' }"
+                @click="activeTab = 'menu'">功能視角</button>
+        <button type="button" class="perm-tab" :class="{ active: activeTab === 'conflicts' }"
+                @click="activeTab = 'conflicts'; loadConflicts()">
+            衝突偵測
+            <template x-if="conflictCount > 0">
+                <span class="perm-badge-warn" x-text="conflictCount"></span>
+            </template>
+        </button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Tab 1: 角色視角 -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'role'" x-cloak>
+        <div class="perm-layout">
+            <!-- 左側: 角色選擇 -->
+            <div class="perm-sidebar">
+                <label class="form-label">選擇角色</label>
+                <select class="form-control" x-model="selectedRoleCode"
+                        @change="loadRoleView()">
+                    <option value="">-- 請選擇 --</option>
+                    <template x-for="role in roles" :key="role.secure_code">
+                        <option :value="role.secure_code"
+                                x-text="'[' + role.org_label + '] ' + role.name + ' (' + role.code + ')'"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- 右側: 角色資訊 -->
+            <div class="perm-main">
+                <template x-if="!selectedRoleCode">
+                    <p class="text-muted">請從左側選擇一個角色</p>
+                </template>
+
+                <template x-if="roleLoading">
+                    <p>載入中...</p>
+                </template>
+
+                <template x-if="selectedRoleCode && !roleLoading && roleData">
+                    <div>
+                        <!-- 角色基本資訊 -->
+                        <div class="perm-section">
+                            <h3 class="perm-section-title">
+                                <span class="perm-badge-org" x-text="roleData.role.org_label"></span>
+                                <span x-text="roleData.role.name"></span>
+                                <span class="text-muted" x-text="'(' + roleData.role.code + ')'"></span>
+                                <span class="perm-badge-info" x-text="'持有者: ' + roleData.user_count + ' 人'"></span>
+                            </h3>
+                        </div>
+
+                        <!-- 頁面存取 (MenuRoleRequirement) -->
+                        <div class="perm-section">
+                            <h4 class="perm-section-title">頁面存取需求 (MenuRoleRequirement)</h4>
+                            <p class="text-muted-sm">此角色被設為存取條件的選單頁面</p>
+                            <template x-if="roleData.guarded_menus.length === 0">
+                                <p class="text-muted">無 -- 此角色未被任何選單設為存取條件</p>
+                            </template>
+                            <template x-if="roleData.guarded_menus.length > 0">
+                                <table class="data-table bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>選單名稱</th>
+                                            <th>代碼</th>
+                                            <th>路徑</th>
+                                            <th>required_permission</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="m in roleData.guarded_menus" :key="m.secure_code">
+                                            <tr>
+                                                <td x-text="m.title"></td>
+                                                <td><code x-text="m.code"></code></td>
+                                                <td x-text="m.link_target || '-'"></td>
+                                                <td>
+                                                    <template x-if="m.required_permission">
+                                                        <code x-text="m.required_permission"></code>
+                                                    </template>
+                                                    <template x-if="!m.required_permission">
+                                                        <span class="text-muted">-</span>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                        </div>
+
+                        <!-- RBAC 權限 (RolePermission) -->
+                        <div class="perm-section">
+                            <h4 class="perm-section-title">
+                                RBAC 權限 (RolePermission)
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        @click="enterPermEditor()"
+                                        x-text="showPermEditor ? '取消編輯' : '編輯權限'"></button>
+                            </h4>
+
+                            <!-- 權限編輯器 -->
+                            <template x-if="showPermEditor">
+                                <div class="perm-editor">
+                                    <div class="perm-editor-header">
+                                        <label class="form-label">勾選要授予的權限</label>
+                                        <div>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    @click="filterPermLevel = ''">全部</button>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    @click="filterPermLevel = 'ORG'">企業級</button>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    @click="filterPermLevel = 'MODULE'">模組級</button>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    @click="filterPermLevel = 'SYSTEM'">系統級</button>
+                                        </div>
+                                    </div>
+                                    <table class="data-table bordered">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:40px;"></th>
+                                                <th>權限代碼</th>
+                                                <th>名稱</th>
+                                                <th>層級</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="p in filteredPermissions" :key="p.secure_code">
+                                                <tr>
+                                                    <td>
+                                                        <input type="checkbox"
+                                                               :value="p.secure_code"
+                                                               :checked="editingPerms.includes(p.secure_code)"
+                                                               @change="togglePerm(p.secure_code)">
+                                                    </td>
+                                                    <td><code x-text="p.code"></code></td>
+                                                    <td x-text="p.name"></td>
+                                                    <td>
+                                                        <span class="perm-level-badge"
+                                                              :class="'perm-level-' + p.permission_level.toLowerCase()"
+                                                              x-text="p.permission_level"></span>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                    <div class="perm-editor-footer">
+                                        <button type="button" class="btn btn-primary"
+                                                @click="saveRolePermissions()"
+                                                :disabled="saving">
+                                            <span x-text="saving ? '儲存中...' : '儲存變更'"></span>
+                                        </button>
+                                        <span class="text-muted" x-text="'已選 ' + editingPerms.length + ' 個權限'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 權限列表（唯讀） -->
+                            <template x-if="!showPermEditor">
+                                <div>
+                                    <template x-if="roleData.rbac_permissions.length === 0 && roleData.inherited_permissions.length === 0">
+                                        <p class="text-muted">無 -- 此角色未持有任何 RBAC 權限</p>
+                                    </template>
+                                    <template x-if="roleData.rbac_permissions.length > 0 || roleData.inherited_permissions.length > 0">
+                                        <table class="data-table bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>權限代碼</th>
+                                                    <th>名稱</th>
+                                                    <th>層級</th>
+                                                    <th>來源</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="p in roleData.rbac_permissions" :key="p.secure_code">
+                                                    <tr>
+                                                        <td><code x-text="p.permission_code"></code></td>
+                                                        <td x-text="p.permission_name"></td>
+                                                        <td>
+                                                            <span class="perm-level-badge"
+                                                                  :class="'perm-level-' + p.permission_level.toLowerCase()"
+                                                                  x-text="p.permission_level"></span>
+                                                        </td>
+                                                        <td>直接授予</td>
+                                                    </tr>
+                                                </template>
+                                                <template x-for="p in roleData.inherited_permissions" :key="p.permission_code">
+                                                    <tr class="inherited-row">
+                                                        <td><code x-text="p.permission_code"></code></td>
+                                                        <td x-text="p.permission_name"></td>
+                                                        <td>
+                                                            <span class="perm-level-badge"
+                                                                  :class="'perm-level-' + p.permission_level.toLowerCase()"
+                                                                  x-text="p.permission_level"></span>
+                                                        </td>
+                                                        <td class="text-muted">繼承</td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Tab 2: 功能視角 -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'menu'" x-cloak>
+        <div class="perm-layout">
+            <!-- 左側: 選單樹 -->
+            <div class="perm-sidebar perm-sidebar-wide">
+                <label class="form-label">選單結構</label>
+                <p class="text-muted-sm"><span class="perm-badge-rbac">R</span> = 該選單設有 required_permission (RBAC 權限門檻)</p>
+                <div class="perm-menu-tree">
+                    <template x-for="item in menuTreeRoots" :key="item.secure_code">
+                        <div>
+                            <div class="perm-tree-node"
+                                 :class="{ 'perm-tree-selected': selectedMenuCode === item.secure_code }"
+                                 :style="'padding-left: ' + (item.depth * 16 + 8) + 'px'"
+                                 @click="selectMenu(item.secure_code)">
+                                <template x-if="item.children && item.children.length > 0">
+                                    <span class="perm-tree-toggle" @click.stop="item._expanded = !item._expanded"
+                                          x-text="item._expanded ? '[-]' : '[+]'"></span>
+                                </template>
+                                <span :class="{ 'text-muted': !item.is_active }" x-text="item.title"></span>
+                                <template x-if="item.required_permission">
+                                    <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                </template>
+                            </div>
+                            <!-- 子選單 -->
+                            <template x-if="item._expanded && item.children">
+                                <template x-for="child in item.children" :key="child.secure_code">
+                                    <div>
+                                        <div class="perm-tree-node"
+                                             :class="{ 'perm-tree-selected': selectedMenuCode === child.secure_code }"
+                                             :style="'padding-left: ' + (child.depth * 16 + 8) + 'px'"
+                                             @click="selectMenu(child.secure_code)">
+                                            <template x-if="child.children && child.children.length > 0">
+                                                <span class="perm-tree-toggle" @click.stop="child._expanded = !child._expanded"
+                                                      x-text="child._expanded ? '[-]' : '[+]'"></span>
+                                            </template>
+                                            <span :class="{ 'text-muted': !child.is_active }" x-text="child.title"></span>
+                                            <template x-if="child.required_permission">
+                                                <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                            </template>
+                                        </div>
+                                        <!-- 第三層 -->
+                                        <template x-if="child._expanded && child.children">
+                                            <template x-for="grandchild in child.children" :key="grandchild.secure_code">
+                                                <div class="perm-tree-node"
+                                                     :class="{ 'perm-tree-selected': selectedMenuCode === grandchild.secure_code }"
+                                                     :style="'padding-left: ' + (grandchild.depth * 16 + 8) + 'px'"
+                                                     @click="selectMenu(grandchild.secure_code)">
+                                                    <span :class="{ 'text-muted': !grandchild.is_active }" x-text="grandchild.title"></span>
+                                                    <template x-if="grandchild.required_permission">
+                                                        <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </template>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 右側: 選單權限資訊 -->
+            <div class="perm-main">
+                <template x-if="!selectedMenuCode">
+                    <p class="text-muted">請從左側選擇一個選單項目</p>
+                </template>
+
+                <template x-if="menuLoading">
+                    <p>載入中...</p>
+                </template>
+
+                <template x-if="selectedMenuCode && !menuLoading && menuData">
+                    <div>
+                        <!-- 選單基本資訊 -->
+                        <div class="perm-section">
+                            <h3 class="perm-section-title">
+                                <span x-text="menuData.menu.title"></span>
+                                <span class="text-muted" x-text="'(' + menuData.menu.code + ')'"></span>
+                                <span class="perm-badge-org" x-text="menuData.menu.org_label"></span>
+                            </h3>
+                            <template x-if="menuData.menu.link_target">
+                                <p>路徑: <code x-text="menuData.menu.link_target"></code></p>
+                            </template>
+                        </div>
+
+                        <!-- user_type 矩陣 (MenuPermission) -->
+                        <div class="perm-section">
+                            <h4 class="perm-section-title">用戶類型可見性 (MenuPermission)</h4>
+                            <table class="data-table bordered" style="max-width: 500px;">
+                                <thead>
+                                    <tr>
+                                        <th>用戶類型</th>
+                                        <th style="width: 80px;">可見</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="ut in ['SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL']" :key="ut">
+                                        <tr>
+                                            <td x-text="userTypeLabels[ut]"></td>
+                                            <td>
+                                                <template x-if="menuData.user_types[ut]">
+                                                    <span class="perm-check-yes">[v]</span>
+                                                </template>
+                                                <template x-if="!menuData.user_types[ut]">
+                                                    <span class="perm-check-no">-</span>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 角色需求 (MenuRoleRequirement) -->
+                        <div class="perm-section">
+                            <h4 class="perm-section-title">角色存取需求 (MenuRoleRequirement)</h4>
+                            <template x-if="menuData.required_roles.length === 0">
+                                <p class="text-muted">無角色需求 -- 不受角色守衛控制</p>
+                            </template>
+                            <template x-if="menuData.required_roles.length > 0">
+                                <table class="data-table bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>角色名稱</th>
+                                            <th>代碼</th>
+                                            <th>持有者</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="r in menuData.required_roles" :key="r.secure_code">
+                                            <tr>
+                                                <td x-text="r.name"></td>
+                                                <td><code x-text="r.code"></code></td>
+                                                <td>
+                                                    <span x-text="r.holder_count + ' 人'"
+                                                          :class="{ 'text-warn': r.holder_count === 0 }"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                        </div>
+
+                        <!-- required_permission (RBAC) -->
+                        <div class="perm-section">
+                            <h4 class="perm-section-title">RBAC 權限門檻 (required_permission)</h4>
+                            <template x-if="!menuData.rbac_info">
+                                <p class="text-muted">無 -- 此選單未設定 RBAC 權限門檻</p>
+                            </template>
+                            <template x-if="menuData.rbac_info">
+                                <div>
+                                    <p>
+                                        需要權限: <code x-text="menuData.rbac_info.permission_code"></code>
+                                        (<span x-text="menuData.rbac_info.permission_name"></span>)
+                                        <span class="perm-level-badge"
+                                              :class="'perm-level-' + menuData.rbac_info.permission_level.toLowerCase()"
+                                              x-text="menuData.rbac_info.permission_level"></span>
+                                    </p>
+                                    <template x-if="menuData.rbac_info.holding_roles.length === 0">
+                                        <p class="text-warn">!! 沒有任何角色持有此權限 -- 此選單實際上無法被存取</p>
+                                    </template>
+                                    <template x-if="menuData.rbac_info.holding_roles.length > 0">
+                                        <div>
+                                            <p>持有此權限的角色:</p>
+                                            <ul>
+                                                <template x-for="r in menuData.rbac_info.holding_roles" :key="r.secure_code">
+                                                    <li>
+                                                        <span x-text="r.name"></span>
+                                                        (<code x-text="r.code"></code>)
+                                                        <span class="perm-badge-org" x-text="r.org_label"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Tab 3: 衝突偵測 -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'conflicts'" x-cloak>
+        <template x-if="conflictsLoading">
+            <p>分析中...</p>
+        </template>
+
+        <template x-if="!conflictsLoading && conflictsData">
+            <div>
+                <div class="perm-section">
+                    <h3 class="perm-section-title">
+                        偵測結果
+                        <span class="perm-badge-info" x-text="'共 ' + conflictsData.summary.total + ' 項'"></span>
+                        <template x-if="conflictsData.summary.errors > 0">
+                            <span class="perm-badge-error" x-text="conflictsData.summary.errors + ' 錯誤'"></span>
+                        </template>
+                        <template x-if="conflictsData.summary.warnings > 0">
+                            <span class="perm-badge-warn" x-text="conflictsData.summary.warnings + ' 警告'"></span>
+                        </template>
+                    </h3>
+                </div>
+
+                <template x-if="conflictsData.conflicts.length === 0">
+                    <div class="perm-section">
+                        <p class="text-success">未偵測到權限衝突或缺失</p>
+                    </div>
+                </template>
+
+                <template x-if="conflictsData.conflicts.length > 0">
+                    <table class="data-table bordered">
+                        <thead>
+                            <tr>
+                                <th style="width:80px;">嚴重度</th>
+                                <th style="width:180px;">類型</th>
+                                <th>選單</th>
+                                <th>說明</th>
+                                <th style="width:100px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(c, idx) in conflictsData.conflicts" :key="idx">
+                                <tr>
+                                    <td>
+                                        <span :class="c.severity === 'error' ? 'perm-badge-error' : 'perm-badge-warn'"
+                                              x-text="c.severity === 'error' ? '錯誤' : '警告'"></span>
+                                    </td>
+                                    <td><code x-text="c.type"></code></td>
+                                    <td x-text="c.menu_title"></td>
+                                    <td x-text="c.message"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                @click="jumpToMenu(c.menu_secure_code)">查看</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
+        </template>
+    </div>
+
+    <!-- 訊息提示 -->
+    <div x-show="toast.show" x-transition class="perm-toast" :class="toast.type">
+        <span x-text="toast.message"></span>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/permissions-central.js') }}"></script>
+{% endblock %}

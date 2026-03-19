@@ -89,3 +89,7 @@ def register_blueprints(app: Flask) -> None:
     # Lookup table management (通用選項清單)
     from .lookup import lookup_bp
     app.register_blueprint(lookup_bp)
+
+    # Permission central management (權限中央管理)
+    from .permission_central import permission_central_bp
+    app.register_blueprint(permission_central_bp)

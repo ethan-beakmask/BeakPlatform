@@ -1,0 +1,672 @@
+"""
+BeakPlatform Permission Central Service
+權限中央管理服務
+
+整合查詢五層權限設定，提供角色視角、功能視角、衝突偵測。
+
+安全設計：
+- SYSTEM_ADMIN: 可看全部角色/選單/權限，可操作全部
+- ORG_ADMIN: 只能看到自己企業 + system.local 共用角色，
+  只能看到授權給 ORG_ADMIN/EMPLOYEE/EXTERNAL 的選單，
+  不能操作 SYSTEM 級權限
+"""
+import logging
+from typing import Any, Dict, List, Optional, Set
+
+from flask import g
+from flask_login import current_user
+from sqlalchemy import func, or_
+
+from ..models import (
+    MenuItem, MenuPermission, MenuRoleRequirement,
+    Role, RolePermission, Permission, UserRoleAssignment,
+    User, UserType
+)
+from ..constants import SYSTEM_ORG_CODE
+from .. import db
+
+logger = logging.getLogger(__name__)
+
+# ORG_ADMIN 可見的 user_types（排除 SYSTEM_ADMIN 專屬）
+_ORG_VISIBLE_USER_TYPES = {'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'}
+
+
+class PermissionCentralService:
+    """
+    權限中央管理服務
+
+    整合五層權限：
+    1. MenuPermission -- user_type 選單可見性
+    2. MenuRoleRequirement -- 角色存取需求
+    3. RolePermission -- 角色 RBAC 權限
+    4. required_permission -- 選單最低權限門檻
+    5. UserRoleAssignment -- 用戶角色指派
+    """
+
+    # ==================================================================
+    # 角色視角
+    # ==================================================================
+
+    @classmethod
+    def get_role_view(
+        cls, role_secure_code: str, org_secure_code: str,
+        is_system_admin: bool = False
+    ) -> Dict[str, Any]:
+        """
+        角色視角：選定角色，看到它在各層的完整授權
+
+        Args:
+            role_secure_code: 角色 secure_code
+            org_secure_code: 企業 secure_code
+            is_system_admin: 是否為系統管理員
+
+        Returns:
+            角色在各層的完整授權資訊
+        """
+        # 查詢角色並驗證存取權
+        role_query = Role.query.filter_by(
+            secure_code=role_secure_code,
+            is_deleted=False
+        )
+        if not is_system_admin:
+            role_query = role_query.filter(Role.org_secure_code == org_secure_code)
+        role = role_query.first()
+        if not role:
+            return {'error': '角色不存在或無權限存取'}
+
+        # 角色所屬企業名稱
+        role_org_label = cls._get_org_label(role.org_secure_code)
+
+        # 哪些選單指定了此角色為存取需求 (MenuRoleRequirement)
+        menu_role_reqs = MenuRoleRequirement.query.filter_by(
+            role_secure_code=role_secure_code,
+            org_secure_code=org_secure_code,
+            is_deleted=False
+        ).all()
+
+        guarded_menus = []
+        for mrr in menu_role_reqs:
+            menu = MenuItem.query.filter_by(
+                secure_code=mrr.menu_secure_code,
+                is_deleted=False
+            ).first()
+            if menu:
+                guarded_menus.append({
+                    'secure_code': menu.secure_code,
+                    'code': menu.code,
+                    'title': menu.title,
+                    'link_target': menu.link_target,
+                    'required_permission': menu.required_permission,
+                })
+
+        # 此角色持有的 RBAC 權限 (RolePermission)
+        role_perms = RolePermission.query.filter_by(
+            role_secure_code=role_secure_code,
+            is_deleted=False,
+            is_active=True
+        ).all()
+
+        rbac_permissions = []
+        for rp in role_perms:
+            perm = rp.permission
+            if perm:
+                rbac_permissions.append({
+                    'secure_code': rp.secure_code,
+                    'permission_secure_code': perm.secure_code,
+                    'permission_code': perm.code,
+                    'permission_name': perm.name,
+                    'permission_level': perm.permission_level,
+                    'has_conditions': rp.has_conditions,
+                    'is_active': rp.is_active,
+                })
+
+        # 持有此角色的用戶數（限定企業）
+        user_count_query = db.session.query(
+            func.count(UserRoleAssignment.id)
+        ).join(
+            User, User.secure_code == UserRoleAssignment.user_secure_code
+        ).filter(
+            UserRoleAssignment.role_secure_code == role_secure_code,
+            UserRoleAssignment.is_deleted == False,
+            User.is_deleted == False,
+            User.is_active == True
+        )
+        if not is_system_admin:
+            user_count_query = user_count_query.filter(
+                User.org_secure_code == org_secure_code
+            )
+        user_count = user_count_query.scalar() or 0
+
+        # 角色繼承的權限
+        inherited_permissions = []
+        if role.inherits_from_secure_code:
+            parent_perms = RolePermission.query.filter_by(
+                role_secure_code=role.inherits_from_secure_code,
+                is_deleted=False,
+                is_active=True
+            ).all()
+            for rp in parent_perms:
+                perm = rp.permission
+                if perm:
+                    inherited_permissions.append({
+                        'permission_code': perm.code,
+                        'permission_name': perm.name,
+                        'permission_level': perm.permission_level,
+                        'from_role': role.inherits_from_secure_code,
+                    })
+
+        return {
+            'role': {
+                'secure_code': role.secure_code,
+                'code': role.code,
+                'name': role.name,
+                'role_level': role.role_level,
+                'is_system_role': role.is_system_role,
+                'inherits_from': role.inherits_from_secure_code,
+                'org_secure_code': role.org_secure_code,
+                'org_label': role_org_label,
+            },
+            'guarded_menus': guarded_menus,
+            'rbac_permissions': rbac_permissions,
+            'inherited_permissions': inherited_permissions,
+            'user_count': user_count,
+        }
+
+    # ==================================================================
+    # 功能視角
+    # ==================================================================
+
+    @classmethod
+    def get_menu_view(
+        cls, menu_secure_code: str, org_secure_code: str,
+        is_system_admin: bool = False
+    ) -> Dict[str, Any]:
+        """
+        功能視角：選定選單，看到完整的權限授權狀態
+
+        ORG_ADMIN 只能查看授權給 ORG_ADMIN/EMPLOYEE/EXTERNAL 的選單
+        """
+        menu = MenuItem.query.filter_by(
+            secure_code=menu_secure_code,
+            is_deleted=False
+        ).first()
+        if not menu:
+            return {'error': '選單不存在'}
+
+        # ORG_ADMIN 存取控制: 檢查此選單是否對 ORG_ADMIN 可見
+        if not is_system_admin:
+            visible_perms = MenuPermission.query.filter(
+                MenuPermission.menu_secure_code == menu_secure_code,
+                MenuPermission.user_type.in_(_ORG_VISIBLE_USER_TYPES),
+                MenuPermission.is_deleted == False
+            ).first()
+            if not visible_perms:
+                return {'error': '無權限存取此選單'}
+
+        # user_type 矩陣 (MenuPermission)
+        menu_perms = MenuPermission.query.filter_by(
+            menu_secure_code=menu_secure_code,
+            is_deleted=False
+        ).all()
+        user_types = {mp.user_type: True for mp in menu_perms}
+
+        # 角色需求 (MenuRoleRequirement)
+        role_reqs = MenuRoleRequirement.query.filter_by(
+            menu_secure_code=menu_secure_code,
+            org_secure_code=org_secure_code,
+            is_deleted=False
+        ).all()
+        required_roles = []
+        for rr in role_reqs:
+            if rr.role and not rr.role.is_deleted:
+                holder_count = db.session.query(
+                    func.count(UserRoleAssignment.id)
+                ).join(
+                    User, User.secure_code == UserRoleAssignment.user_secure_code
+                ).filter(
+                    UserRoleAssignment.role_secure_code == rr.role_secure_code,
+                    UserRoleAssignment.is_deleted == False,
+                    User.is_deleted == False,
+                    User.is_active == True,
+                    User.org_secure_code == org_secure_code
+                ).scalar() or 0
+
+                required_roles.append({
+                    'secure_code': rr.role.secure_code,
+                    'code': rr.role.code,
+                    'name': rr.role.name,
+                    'holder_count': holder_count,
+                })
+
+        # required_permission
+        rbac_info = None
+        if menu.required_permission:
+            perm = Permission.query.filter_by(
+                code=menu.required_permission,
+                is_deleted=False
+            ).first()
+
+            if perm:
+                rps = RolePermission.query.filter_by(
+                    permission_secure_code=perm.secure_code,
+                    is_deleted=False,
+                    is_active=True
+                ).all()
+                holding_roles = []
+                for rp in rps:
+                    if rp.role and not rp.role.is_deleted:
+                        holding_roles.append({
+                            'secure_code': rp.role.secure_code,
+                            'code': rp.role.code,
+                            'name': rp.role.name,
+                            'org_secure_code': rp.role.org_secure_code,
+                            'org_label': cls._get_org_label(rp.role.org_secure_code),
+                        })
+
+                rbac_info = {
+                    'permission_code': perm.code,
+                    'permission_name': perm.name,
+                    'permission_level': perm.permission_level,
+                    'holding_roles': holding_roles,
+                }
+
+        # 選單所屬企業
+        menu_org_label = cls._get_org_label(menu.org_secure_code)
+
+        return {
+            'menu': {
+                'secure_code': menu.secure_code,
+                'code': menu.code,
+                'title': menu.title,
+                'link_target': menu.link_target,
+                'required_permission': menu.required_permission,
+                'is_active': menu.is_active,
+                'parent_secure_code': menu.parent_secure_code,
+                'org_secure_code': menu.org_secure_code,
+                'org_label': menu_org_label,
+            },
+            'user_types': {
+                'SYSTEM_ADMIN': user_types.get('SYSTEM_ADMIN', False),
+                'ORG_ADMIN': user_types.get('ORG_ADMIN', False),
+                'EMPLOYEE': user_types.get('EMPLOYEE', False),
+                'EXTERNAL': user_types.get('EXTERNAL', False),
+            },
+            'required_roles': required_roles,
+            'rbac_info': rbac_info,
+        }
+
+    # ==================================================================
+    # 衝突偵測
+    # ==================================================================
+
+    @classmethod
+    def detect_conflicts(
+        cls, org_secure_code: str,
+        is_system_admin: bool = False
+    ) -> Dict[str, Any]:
+        """
+        偵測權限配置中的衝突與缺失
+
+        ORG_ADMIN 只偵測與自己企業相關的衝突
+        """
+        conflicts = []
+
+        # --- 類型 1: 有 MenuPermission 但缺 RBAC 權限 ---
+        menus_with_rbac = MenuItem.query.filter(
+            MenuItem.required_permission.isnot(None),
+            MenuItem.required_permission != '',
+            MenuItem.is_deleted == False,
+            MenuItem.is_active == True
+        ).all()
+
+        for menu in menus_with_rbac:
+            menu_perms = MenuPermission.query.filter_by(
+                menu_secure_code=menu.secure_code,
+                is_deleted=False
+            ).all()
+
+            if not menu_perms:
+                continue
+
+            user_types_granted = [mp.user_type for mp in menu_perms]
+
+            # ORG_ADMIN: 只關心與自己相關的 user_types
+            if not is_system_admin:
+                relevant = [ut for ut in user_types_granted if ut in _ORG_VISIBLE_USER_TYPES]
+                if not relevant:
+                    continue
+                user_types_granted = relevant
+
+            perm = Permission.query.filter_by(
+                code=menu.required_permission,
+                is_deleted=False,
+                is_active=True
+            ).first()
+
+            if not perm:
+                conflicts.append({
+                    'type': 'MISSING_PERMISSION_DEF',
+                    'severity': 'error',
+                    'menu_code': menu.code,
+                    'menu_title': menu.title,
+                    'menu_secure_code': menu.secure_code,
+                    'message': f'選單 "{menu.title}" 要求權限 {menu.required_permission}，但該權限代碼不存在',
+                })
+                continue
+
+            holding_role_codes = db.session.query(
+                RolePermission.role_secure_code
+            ).filter_by(
+                permission_secure_code=perm.secure_code,
+                is_deleted=False,
+                is_active=True
+            ).all()
+            holding_role_codes = {r[0] for r in holding_role_codes}
+
+            if not holding_role_codes:
+                conflicts.append({
+                    'type': 'MENU_PERM_NO_RBAC',
+                    'severity': 'warning',
+                    'menu_code': menu.code,
+                    'menu_title': menu.title,
+                    'menu_secure_code': menu.secure_code,
+                    'required_permission': menu.required_permission,
+                    'user_types': user_types_granted,
+                    'message': f'選單 "{menu.title}" 授權給 {", ".join(user_types_granted)}，'
+                               f'但沒有任何角色持有權限 {menu.required_permission}',
+                })
+
+        # --- 類型 2: 有 MenuRoleRequirement 但該角色無人持有 ---
+        role_reqs = MenuRoleRequirement.query.filter_by(
+            org_secure_code=org_secure_code,
+            is_deleted=False
+        ).all()
+
+        for rr in role_reqs:
+            menu = MenuItem.query.filter_by(
+                secure_code=rr.menu_secure_code,
+                is_deleted=False
+            ).first()
+            if not menu:
+                continue
+
+            role = Role.query.filter_by(
+                secure_code=rr.role_secure_code,
+                is_deleted=False
+            ).first()
+            if not role:
+                continue
+
+            holder_count = db.session.query(
+                func.count(UserRoleAssignment.id)
+            ).join(
+                User, User.secure_code == UserRoleAssignment.user_secure_code
+            ).filter(
+                UserRoleAssignment.role_secure_code == rr.role_secure_code,
+                UserRoleAssignment.is_deleted == False,
+                User.is_deleted == False,
+                User.is_active == True,
+                User.org_secure_code == org_secure_code
+            ).scalar() or 0
+
+            if holder_count == 0:
+                conflicts.append({
+                    'type': 'ROLE_REQ_NO_HOLDER',
+                    'severity': 'warning',
+                    'menu_code': menu.code,
+                    'menu_title': menu.title,
+                    'menu_secure_code': menu.secure_code,
+                    'role_code': role.code,
+                    'role_name': role.name,
+                    'role_secure_code': role.secure_code,
+                    'message': f'選單 "{menu.title}" 要求角色 "{role.name}"，'
+                               f'但該企業無人持有此角色',
+                })
+
+        return {
+            'conflicts': conflicts,
+            'summary': {
+                'total': len(conflicts),
+                'errors': len([c for c in conflicts if c['severity'] == 'error']),
+                'warnings': len([c for c in conflicts if c['severity'] == 'warning']),
+            },
+        }
+
+    # ==================================================================
+    # 角色 RBAC 權限管理
+    # ==================================================================
+
+    @classmethod
+    def set_role_permissions(
+        cls,
+        role_secure_code: str,
+        permission_secure_codes: List[str],
+        org_secure_code: str,
+        is_system_admin: bool = False,
+        operator_user: Any = None
+    ) -> Dict[str, Any]:
+        """
+        批量設定角色的 RBAC 權限（全量替換）
+
+        安全限制：
+        - ORG_ADMIN 只能操作自己企業的角色
+        - ORG_ADMIN 不能授予 SYSTEM 級權限
+        """
+        # 驗證角色存取權
+        role_query = Role.query.filter_by(
+            secure_code=role_secure_code,
+            is_deleted=False
+        )
+        if not is_system_admin:
+            role_query = role_query.filter(Role.org_secure_code == org_secure_code)
+        role = role_query.first()
+        if not role:
+            return {'error': '角色不存在或無權限操作'}
+
+        # 驗證所有權限存在
+        valid_perms = Permission.query.filter(
+            Permission.secure_code.in_(permission_secure_codes),
+            Permission.is_deleted == False,
+            Permission.is_active == True
+        ).all()
+        valid_codes = {p.secure_code for p in valid_perms}
+        invalid_codes = set(permission_secure_codes) - valid_codes
+        if invalid_codes:
+            return {'error': f'無效的權限代碼: {invalid_codes}'}
+
+        # ORG_ADMIN 不能授予 SYSTEM 級權限
+        if not is_system_admin:
+            system_perms = [p for p in valid_perms if p.permission_level == 'SYSTEM']
+            if system_perms:
+                codes = [p.code for p in system_perms]
+                return {'error': f'企業管理員不能授予系統級權限: {", ".join(codes)}'}
+
+        try:
+            existing = RolePermission.query.filter_by(
+                role_secure_code=role_secure_code,
+                is_deleted=False
+            ).all()
+            existing_perm_codes = {rp.permission_secure_code for rp in existing}
+
+            to_add = valid_codes - existing_perm_codes
+            to_remove = existing_perm_codes - valid_codes
+
+            removed_count = 0
+            for rp in existing:
+                if rp.permission_secure_code in to_remove:
+                    rp.is_deleted = True
+                    removed_count += 1
+
+            added_count = 0
+            for perm_code in to_add:
+                deleted_rp = RolePermission.query.filter_by(
+                    role_secure_code=role_secure_code,
+                    permission_secure_code=perm_code,
+                    is_deleted=True
+                ).first()
+
+                if deleted_rp:
+                    deleted_rp.is_deleted = False
+                    deleted_rp.is_active = True
+                else:
+                    new_rp = RolePermission(
+                        role_secure_code=role_secure_code,
+                        permission_secure_code=perm_code,
+                        is_active=True
+                    )
+                    db.session.add(new_rp)
+                added_count += 1
+
+            db.session.commit()
+
+            logger.info(
+                f"Role {role.code} permissions updated: "
+                f"+{added_count} -{removed_count} by {getattr(operator_user, 'username', 'unknown')}"
+            )
+
+            return {
+                'message': '權限更新成功',
+                'added': added_count,
+                'removed': removed_count,
+                'total': len(valid_codes),
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to update role permissions: {e}")
+            return {'error': f'更新失敗: {str(e)}'}
+
+    # ==================================================================
+    # 輔助查詢
+    # ==================================================================
+
+    @classmethod
+    def get_all_roles(
+        cls, org_secure_code: str,
+        is_system_admin: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        取得角色列表
+
+        SYSTEM_ADMIN: 全部角色
+        ORG_ADMIN: 只有自己企業的角色
+        """
+        query = Role.query.filter_by(
+            is_deleted=False,
+            is_active=True
+        )
+        if not is_system_admin:
+            query = query.filter(Role.org_secure_code == org_secure_code)
+
+        roles = query.order_by(Role.sort_order).all()
+
+        return [
+            {
+                'secure_code': r.secure_code,
+                'code': r.code,
+                'name': r.name,
+                'role_level': r.role_level,
+                'is_system_role': r.is_system_role,
+                'org_secure_code': r.org_secure_code,
+                'org_label': cls._get_org_label(r.org_secure_code),
+            }
+            for r in roles
+        ]
+
+    @classmethod
+    def get_all_permissions(
+        cls, is_system_admin: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        取得權限定義
+
+        SYSTEM_ADMIN: 全部
+        ORG_ADMIN: 非 SYSTEM 級
+        """
+        query = Permission.query.filter_by(
+            is_deleted=False,
+            is_active=True
+        )
+        if not is_system_admin:
+            query = query.filter(Permission.permission_level != 'SYSTEM')
+
+        perms = query.order_by(Permission.resource_type, Permission.action).all()
+
+        return [
+            {
+                'secure_code': p.secure_code,
+                'code': p.code,
+                'name': p.name,
+                'resource_type': p.resource_type,
+                'action': p.action,
+                'permission_level': p.permission_level,
+            }
+            for p in perms
+        ]
+
+    @classmethod
+    def get_menu_tree_flat(
+        cls, org_secure_code: str,
+        is_system_admin: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        取得選單列表
+
+        SYSTEM_ADMIN: 全部選單
+        ORG_ADMIN: 只有授權給 ORG_ADMIN/EMPLOYEE/EXTERNAL 的選單
+        """
+        if is_system_admin:
+            items = MenuItem.query.filter_by(
+                is_deleted=False
+            ).order_by(MenuItem.display_order).all()
+        else:
+            # 找出 ORG_ADMIN 可見的選單 secure_codes
+            visible_codes = db.session.query(
+                MenuPermission.menu_secure_code
+            ).filter(
+                MenuPermission.user_type.in_(_ORG_VISIBLE_USER_TYPES),
+                MenuPermission.is_deleted == False
+            ).distinct().all()
+            visible_code_set = {r[0] for r in visible_codes}
+
+            items = MenuItem.query.filter(
+                MenuItem.is_deleted == False,
+                MenuItem.secure_code.in_(visible_code_set)
+            ).order_by(MenuItem.display_order).all()
+
+        return [
+            {
+                'secure_code': m.secure_code,
+                'code': m.code,
+                'title': m.title,
+                'parent_secure_code': m.parent_secure_code,
+                'link_target': m.link_target,
+                'icon': m.icon,
+                'depth': m.depth,
+                'is_active': m.is_active,
+                'required_permission': m.required_permission,
+                'org_secure_code': m.org_secure_code,
+                'org_label': cls._get_org_label(m.org_secure_code),
+            }
+            for m in items
+        ]
+
+    # ==================================================================
+    # 內部工具
+    # ==================================================================
+
+    @classmethod
+    def _get_org_label(cls, org_secure_code: str) -> str:
+        """取得企業顯示標籤"""
+        if not org_secure_code:
+            return '-'
+        if org_secure_code == SYSTEM_ORG_CODE:
+            return '系統 (system.local)'
+        from ..models import Organization
+        org = Organization.query.filter_by(
+            secure_code=org_secure_code,
+            is_deleted=False
+        ).first()
+        if org:
+            return org.display_name or org.name
+        return org_secure_code
