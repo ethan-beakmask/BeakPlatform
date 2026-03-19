@@ -3,42 +3,49 @@
  *
  * 佈局: 左側(元件庫+Site Map樹) + 中央(設計區) + 右側(屬性面板)
  *
- * 支援兩種佈局模式:
- *   - grid: Grid 宮格 (GridLayoutEditor)
- *   - free: GridStack 自由 (lab-designer.js 邏輯)
+ * 支援兩種佈局模式 (可在同頁面切換):
+ *   - grid: 框架模式 (GridLayoutEditor, 16宮格矩陣)
+ *   - free: 自由模式 (GridStack, 12欄拖放)
  */
 function studioManager() {
-    const config = window.__STUDIO_CONFIG || {};
+    var config = window.__STUDIO_CONFIG || {};
 
     return {
-        // 子系統資料
+        // Core
         subSystemSc: config.subSystemSc || '',
         subSystem: null,
-        layoutMode: 'grid',   // grid | free
         loading: true,
 
-        // Site Map 樹
+        // Edit mode: 'grid' (框架) | 'free' (自由)
+        editMode: 'grid',
+
+        // Component library (易擴充，新增元件只需加入此陣列)
+        componentTypes: [
+            { type: 'DATALIST', label: '資料清單', icon: 'fa-table', desc: '展示與操作資料表' },
+        ],
+
+        // Site Map
         tree: [],
         _wbTree: null,
-        selectedNode: null,    // 當前選中的節點
+        selectedNode: null,
 
-        // 頁面佈局
-        currentPageSc: null,   // 當前載入的 page layout secure_code
-        dirty: false,          // 有未儲存變更
+        // Page layout
+        currentPageSc: null,
+        dirty: false,
 
-        // Grid 宮格編輯器
+        // Grid editor (框架模式)
         _gridEditor: null,
 
-        // GridStack 自由模式
+        // GridStack editor (自由模式)
         _gsGrid: null,
-        _gsWidgets: {},        // id -> DataListWidget
-        _gsWidgetConfigs: {},  // id -> config
+        _gsWidgetConfigs: {},  // id -> widget config
 
-        // 屬性面板
+        // Property panel
         showProps: false,
-        propsMode: 'node',     // node | widget
-        // widget 設定
+        propsMode: 'widget',    // 'widget' | 'perm'
         selectedZoneId: null,
+
+        // Widget settings
         settingViewCode: '',
         settingTitle: '',
         settingPageSize: 10,
@@ -50,30 +57,27 @@ function studioManager() {
         settingContextOutputs: [],
         settingContextInputs: [],
 
-        // Views (可用的資料表)
+        // Available views
         availableViews: [],
 
-        // Node 表單
-        nodeForm: {
-            name: '',
-            icon: '',
-            node_type: 'page',
-            page_layout_secure_code: '',
-        },
+        // Node form
         showAddNodeModal: false,
         addNodeForm: { name: '', node_type: 'page', parent_sc: '' },
 
-        // 節點權限管理
+        // Permissions
         nodePerms: [],
         permForm: { target_type: '', target_sc: '' },
         permTargets: [],
 
-        // 頁面清單 (for node linking)
+        // Pages list
         pageList: [],
 
+        // Toast
         toast: { show: false, message: '', type: 'success' },
 
-        // ===== 初始化 =====
+        // ================================================================
+        // Initialization
+        // ================================================================
 
         async init() {
             await this._loadSubSystem();
@@ -81,7 +85,6 @@ function studioManager() {
                 this.loading = false;
                 return;
             }
-            this.layoutMode = this.subSystem.layout_mode || 'grid';
 
             await Promise.all([
                 this._loadTree(),
@@ -91,31 +94,29 @@ function studioManager() {
 
             this.loading = false;
 
-            // 等 DOM 完成渲染後初始化樹
-            this.$nextTick(() => {
+            this.$nextTick(function () {
                 this._initSiteMapTree();
             });
         },
 
-        /** 輪詢等待 DOM 元素出現 */
-        _waitForEl(id, cb) {
-            const check = () => {
-                const el = document.getElementById(id);
-                if (el) { cb(el); }
-                else { requestAnimationFrame(check); }
+        _waitForEl: function (id, cb) {
+            var check = function () {
+                var el = document.getElementById(id);
+                if (el) cb(el);
+                else requestAnimationFrame(check);
             };
             requestAnimationFrame(check);
         },
 
-        // ===== 資料載入 =====
+        // ================================================================
+        // Data Loading
+        // ================================================================
 
         async _loadSubSystem() {
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc);
-                const data = await res.json();
-                if (data.success) {
-                    this.subSystem = data.data;
-                }
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc);
+                var data = await res.json();
+                if (data.success) this.subSystem = data.data;
             } catch (e) {
                 console.error('Load sub system failed:', e);
             }
@@ -123,11 +124,9 @@ function studioManager() {
 
         async _loadTree() {
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
-                const data = await res.json();
-                if (data.success) {
-                    this.tree = data.data || [];
-                }
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
+                var data = await res.json();
+                if (data.success) this.tree = data.data || [];
             } catch (e) {
                 console.error('Load tree failed:', e);
             }
@@ -135,11 +134,9 @@ function studioManager() {
 
         async _loadViews() {
             try {
-                const res = await fetch('/api/nocode-builder/views');
-                const data = await res.json();
-                if (data.success) {
-                    this.availableViews = data.data || [];
-                }
+                var res = await fetch('/api/nocode-builder/views');
+                var data = await res.json();
+                if (data.success) this.availableViews = data.data || [];
             } catch (e) {
                 console.error('Load views failed:', e);
             }
@@ -147,108 +144,141 @@ function studioManager() {
 
         async _loadPages() {
             try {
-                const res = await fetch('/api/nocode-builder/pages');
-                const data = await res.json();
-                if (data.success) {
-                    this.pageList = data.data || [];
-                }
+                var res = await fetch('/api/nocode-builder/pages');
+                var data = await res.json();
+                if (data.success) this.pageList = data.data || [];
             } catch (e) {
                 console.error('Load pages failed:', e);
             }
         },
 
-        // ===== Site Map 樹 =====
+        // ================================================================
+        // Mode Switching
+        // ================================================================
 
-        _initSiteMapTree() {
-            const wrap = document.querySelector('.stu-tree-wrap');
+        switchMode: function (mode) {
+            if (mode === this.editMode) return;
+            if (!this.selectedNode || this.selectedNode.node_type !== 'page') return;
+
+            // 有佈局內容時確認
+            var hasContent = false;
+            if (this.editMode === 'grid' && this._gridEditor) {
+                var regions = this._gridEditor._getRegions();
+                hasContent = Object.keys(this._gridEditor.widgetMap).length > 0;
+            } else if (this.editMode === 'free' && this._gsGrid) {
+                hasContent = Object.keys(this._gsWidgetConfigs).length > 0;
+            }
+
+            if (hasContent) {
+                if (!confirm('切換模式將清空目前的佈局，確定嗎?')) return;
+            }
+
+            this.editMode = mode;
+            this._clearCanvas();
+            this.showProps = false;
+            this.selectedZoneId = null;
+
+            var self = this;
+            this.$nextTick(function () {
+                if (mode === 'grid') {
+                    self._waitForEl('stu-grid-canvas', function () {
+                        self._initGridEditor();
+                    });
+                } else {
+                    self._waitForEl('stu-gridstack', function () {
+                        self._initGridStackEditor();
+                    });
+                }
+                self.dirty = true;
+            });
+        },
+
+        _detectMode: function (layoutJson) {
+            if (!layoutJson) return 'grid';
+            if (layoutJson.version === 3 && layoutJson.mode === 'grid') return 'grid';
+            if (layoutJson.version === 2) return 'free';
+            return 'grid';
+        },
+
+        // ================================================================
+        // Site Map Tree
+        // ================================================================
+
+        _initSiteMapTree: function () {
+            var wrap = document.querySelector('.stu-tree-wrap');
             if (!wrap) return;
 
-            const source = this._treeToSource(this.tree);
+            var source = this._treeToSource(this.tree);
 
-            // 銷毀舊樹
             if (this._wbTree) {
                 try { this._wbTree.destroy(); } catch (e) { /* ignore */ }
                 this._wbTree = null;
             }
 
-            // 移除舊的 #stu-tree，建立全新 div 避免 Wunderbaum destroy 殘留問題
-            let el = document.getElementById('stu-tree');
+            var el = document.getElementById('stu-tree');
             if (el) el.remove();
             el = document.createElement('div');
             el.id = 'stu-tree';
             wrap.prepend(el);
 
+            var self = this;
             this._wbTree = new mar10.Wunderbaum({
                 element: el,
                 source: source,
                 selectMode: 'single',
-                activate: (e) => {
-                    if (e.node) {
-                        this._onTreeNodeActivate(e.node);
-                    }
+                activate: function (e) {
+                    if (e.node) self._onTreeNodeActivate(e.node);
                 },
                 dnd: {
                     effectAllowed: 'move',
-                    dragStart: (e) => {
+                    dragStart: function (e) {
                         e.event.dataTransfer.effectAllowed = 'move';
                         return true;
                     },
-                    dragEnter: (e) => { return true; },
-                    drop: (e) => {
-                        const src = e.sourceNode;
-                        const tgt = e.node;
+                    dragEnter: function () { return true; },
+                    drop: function (e) {
+                        var src = e.sourceNode;
+                        var tgt = e.node;
                         if (!src || !tgt) return;
                         e.sourceNode.moveTo(tgt, e.suggestedDropMode);
-                        this._saveReorder();
+                        self._saveReorder();
                     },
                 },
             });
         },
 
-        _treeToSource(nodes) {
+        _treeToSource: function (nodes) {
             if (!nodes || nodes.length === 0) return [];
-            return nodes.map(n => ({
-                title: (n.icon ? n.icon + ' ' : '') + n.name,
-                key: n.secure_code,
-                expanded: true,
-                // Wunderbaum 會合併 source 屬性到 node，不能用 data: n
-                // 用 refRaw 保存原始資料，避免被 Wunderbaum 覆蓋
-                refRaw: JSON.parse(JSON.stringify(n)),
-                children: this._treeToSource(n.children || []),
-                icon: false,
-            }));
+            var self = this;
+            return nodes.map(function (n) {
+                return {
+                    title: (n.icon ? n.icon + ' ' : '') + n.name,
+                    key: n.secure_code,
+                    expanded: true,
+                    refRaw: JSON.parse(JSON.stringify(n)),
+                    children: self._treeToSource(n.children || []),
+                    icon: false,
+                };
+            });
         },
 
-        _onTreeNodeActivate(wbNode) {
-            // Wunderbaum 把 source 屬性存入 node.data
-            const nodeData = (wbNode.data && wbNode.data.refRaw) || wbNode.data || {};
+        _onTreeNodeActivate: function (wbNode) {
+            var nodeData = (wbNode.data && wbNode.data.refRaw) || wbNode.data || {};
             this._onTreeNodeSelect(nodeData);
         },
 
-        _onTreeNodeSelect(nodeData) {
+        _onTreeNodeSelect: function (nodeData) {
             this.selectedNode = nodeData;
-            this.nodeForm.name = nodeData.name || '';
-            this.nodeForm.icon = nodeData.icon || '';
-            this.nodeForm.node_type = nodeData.node_type || 'page';
 
-            // 如果是 page 類型且有 page_layout，載入佈局
             if (nodeData.node_type === 'page') {
-                const pageSc = nodeData.page_layout_secure_code;
+                var pageSc = nodeData.page_layout_secure_code;
                 if (pageSc) {
-                    this._waitForEl('stu-grid-canvas', () => {
-                        this._ensureEditor();
-                        this._loadPageLayout(pageSc);
-                    });
+                    this._loadPageLayout(pageSc);
                 } else {
-                    // 無頁面佈局，清空設計區
                     this.currentPageSc = null;
-                    this._waitForEl('stu-grid-canvas', () => {
-                        this._ensureEditor();
-                        this._clearCanvas();
-                    });
+                    this._setupEmptyCanvas();
                 }
             } else {
-                // folder 類型不顯示佈局
                 this.currentPageSc = null;
                 this._clearCanvas();
             }
@@ -259,45 +289,374 @@ function studioManager() {
 
         async _loadPageLayout(pageSc) {
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + pageSc);
-                const data = await res.json();
-                if (data.success) {
-                    this.currentPageSc = pageSc;
-                    const layout = data.data.layout_json || {};
+                var res = await fetch('/api/nocode-builder/pages/' + pageSc);
+                var data = await res.json();
+                if (!data.success) return;
 
-                    if (this.layoutMode === 'grid') {
-                        if (this._gridEditor) {
-                            this._gridEditor.loadLayout(
-                                layout.version === 3 ? layout : this._emptyGridLayout()
-                            );
-                        }
+                this.currentPageSc = pageSc;
+                var layout = data.data.layout_json || {};
+                var detectedMode = this._detectMode(layout);
+
+                // 切換到頁面所儲存的模式
+                this.editMode = detectedMode;
+                this.dirty = false;
+
+                var self = this;
+                this.$nextTick(function () {
+                    if (detectedMode === 'grid') {
+                        self._waitForEl('stu-grid-canvas', function () {
+                            self._ensureEditor();
+                            if (self._gridEditor) {
+                                self._gridEditor.loadLayout(
+                                    layout.version === 3 ? layout : self._emptyGridLayout()
+                                );
+                            }
+                        });
                     } else {
-                        this._loadGridStackLayout(layout);
+                        self._waitForEl('stu-gridstack', function () {
+                            self._ensureEditor();
+                            self._loadGridStackLayout(layout);
+                        });
                     }
-                    this.dirty = false;
-                }
+                });
             } catch (e) {
                 console.error('Load page layout failed:', e);
             }
         },
 
-        _emptyGridLayout() {
-            return { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] };
+        _setupEmptyCanvas: function () {
+            var self = this;
+            this.$nextTick(function () {
+                if (self.editMode === 'grid') {
+                    self._waitForEl('stu-grid-canvas', function () {
+                        self._ensureEditor();
+                        self._clearCanvas();
+                    });
+                } else {
+                    self._waitForEl('stu-gridstack', function () {
+                        self._ensureEditor();
+                        self._clearCanvas();
+                    });
+                }
+            });
         },
 
-        _clearCanvas() {
-            if (this.layoutMode === 'grid' && this._gridEditor) {
+        _clearCanvas: function () {
+            if (this.editMode === 'grid' && this._gridEditor) {
                 this._gridEditor.loadLayout(this._emptyGridLayout());
             } else if (this._gsGrid) {
                 this._gsGrid.removeAll();
-                this._gsWidgets = {};
                 this._gsWidgetConfigs = {};
             }
         },
 
-        // ===== 樹操作 =====
+        // ================================================================
+        // Editor Setup
+        // ================================================================
 
-        openAddNode() {
+        _ensureEditor: function () {
+            if (this.editMode === 'grid') {
+                this._initGridEditor();
+            } else {
+                this._initGridStackEditor();
+            }
+        },
+
+        // ================================================================
+        // Grid Mode (框架模式)
+        // ================================================================
+
+        _initGridEditor: function () {
+            var el = document.getElementById('stu-grid-canvas');
+            if (!el) return;
+
+            if (this._gridEditor) {
+                this._gridEditor = null;
+            }
+            el.innerHTML = '';
+
+            this._gridEditor = new GridLayoutEditor(el, { rows: 4, cols: 4 });
+
+            var self = this;
+            this._gridEditor.onZoneSelect = function (zoneId) {
+                self.selectedZoneId = zoneId;
+                self.showProps = false;
+                self.propsMode = 'widget';
+            };
+
+            this._gridEditor.onWidgetSelect = function (zoneId, widgetConfig) {
+                self.selectedZoneId = zoneId;
+                self._populateWidgetSettings(widgetConfig);
+                self.showProps = true;
+                self.propsMode = 'widget';
+            };
+
+            this._gridEditor.onChanged = function () {
+                self.dirty = true;
+            };
+        },
+
+        _emptyGridLayout: function () {
+            return { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] };
+        },
+
+        // ================================================================
+        // Free Mode (自由模式)
+        // ================================================================
+
+        _initGridStackEditor: function () {
+            var el = document.getElementById('stu-gridstack');
+            if (!el) return;
+
+            // 銷毀既有 GridStack
+            if (this._gsGrid) {
+                try { this._gsGrid.destroy(false); } catch (e) { /* ignore */ }
+                this._gsGrid = null;
+            }
+            el.innerHTML = '';
+            el.className = 'grid-stack';
+
+            this._gsGrid = GridStack.init({
+                column: 12,
+                cellHeight: 60,
+                margin: 8,
+                float: true,
+                removable: false,
+                acceptWidgets: true,
+            }, el);
+
+            var self = this;
+            this._gsGrid.on('change', function () { self.dirty = true; });
+        },
+
+        _gsAddWidget: function (type) {
+            if (!this._gsGrid) return;
+            var wid = 'w_' + Math.random().toString(36).slice(2, 8);
+            var widgetConfig = {
+                id: wid,
+                type: type,
+                viewCode: '',
+                title: '',
+                pageSize: 10,
+                showSearch: true,
+                showPagination: true,
+                allowCreate: false,
+                allowEdit: false,
+                allowDelete: false,
+                contextOutputs: [],
+                contextInputs: [],
+            };
+            this._gsWidgetConfigs[wid] = widgetConfig;
+
+            var label = '<div class="stu-gs-widget-label"><b>' + type
+                + '</b><span>(未設定)</span></div>';
+
+            this._gsGrid.addWidget({
+                x: 0, y: 0, w: 6, h: 4,
+                id: wid,
+                content: label,
+            });
+
+            this._gsSelectItem(wid);
+            this.dirty = true;
+        },
+
+        _loadGridStackLayout: function (layout) {
+            if (!this._gsGrid) {
+                var self = this;
+                setTimeout(function () {
+                    self._initGridStackEditor();
+                    self._loadGridStackLayout(layout);
+                }, 50);
+                return;
+            }
+
+            this._gsGrid.removeAll();
+            this._gsWidgetConfigs = {};
+
+            var items = (layout && layout.widgets) || [];
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var wConf = item.widget || {};
+                var wid = wConf.id || item.id || ('w_' + Math.random().toString(36).slice(2, 8));
+                this._gsWidgetConfigs[wid] = Object.assign({}, wConf, { id: wid });
+
+                var dispLabel = wConf.title || wConf.viewCode || '(未設定)';
+                var html = '<div class="stu-gs-widget-label"><b>'
+                    + (wConf.type || 'DATALIST') + '</b><span>' + dispLabel + '</span></div>';
+
+                this._gsGrid.addWidget({
+                    x: item.x || 0,
+                    y: item.y || 0,
+                    w: item.w || 6,
+                    h: item.h || 4,
+                    id: wid,
+                    content: html,
+                });
+            }
+        },
+
+        _buildGridStackLayoutJson: function () {
+            if (!this._gsGrid) return { version: 2, widgets: [] };
+            var gridItems = this._gsGrid.getGridItems();
+            var widgets = [];
+            for (var i = 0; i < gridItems.length; i++) {
+                var el = gridItems[i];
+                var node = el.gridstackNode;
+                if (!node) continue;
+                var wid = node.id || el.getAttribute('gs-id');
+                var conf = this._gsWidgetConfigs[wid] || {};
+                widgets.push({
+                    x: node.x, y: node.y, w: node.w, h: node.h,
+                    id: wid,
+                    widget: Object.assign({}, conf),
+                });
+            }
+            return { version: 2, widgets: widgets };
+        },
+
+        _gsSelectItem: function (wid) {
+            // 清除所有選取
+            document.querySelectorAll('.grid-stack-item.stu-gs-selected').forEach(function (el) {
+                el.classList.remove('stu-gs-selected');
+            });
+            // 選取指定
+            var el = document.querySelector('.grid-stack-item[gs-id="' + wid + '"]');
+            if (el) el.classList.add('stu-gs-selected');
+            this.selectedZoneId = wid;
+            if (this._gsWidgetConfigs[wid]) {
+                this._populateWidgetSettings(this._gsWidgetConfigs[wid]);
+                this.showProps = true;
+                this.propsMode = 'widget';
+            }
+        },
+
+        // ================================================================
+        // Component Library
+        // ================================================================
+
+        onComponentDragStart: function (e, type) {
+            e.dataTransfer.setData('text/plain', type);
+            e.dataTransfer.effectAllowed = 'copy';
+        },
+
+        onComponentClick: function (type) {
+            if (this.editMode === 'grid' && this._gridEditor) {
+                this._gridEditor.addWidgetToSelected(type);
+            } else if (this.editMode === 'free') {
+                this._gsAddWidget(type);
+            }
+        },
+
+        // ================================================================
+        // Property Panel
+        // ================================================================
+
+        _populateWidgetSettings: function (widgetConfig) {
+            this.settingViewCode = widgetConfig.viewCode || '';
+            this.settingTitle = widgetConfig.title || '';
+            this.settingPageSize = widgetConfig.pageSize || 10;
+            this.settingShowSearch = widgetConfig.showSearch !== false;
+            this.settingShowPagination = widgetConfig.showPagination !== false;
+            this.settingAllowCreate = widgetConfig.allowCreate || false;
+            this.settingAllowEdit = widgetConfig.allowEdit || false;
+            this.settingAllowDelete = widgetConfig.allowDelete || false;
+            this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
+            this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
+        },
+
+        getViewColumns: function () {
+            var vc = this.settingViewCode;
+            var v = this.availableViews.find(function (v) { return v.secure_code === vc; });
+            if (!v || !v.columns_config) return [];
+            return v.columns_config.filter(function (c) { return c.visible; }).map(function (c) { return c.column; });
+        },
+
+        applyWidgetSettings: function () {
+            var widgetConfig = {
+                viewCode: this.settingViewCode,
+                title: this.settingTitle,
+                pageSize: parseInt(this.settingPageSize, 10) || 10,
+                showSearch: this.settingShowSearch,
+                showPagination: this.settingShowPagination,
+                allowCreate: this.settingAllowCreate,
+                allowEdit: this.settingAllowEdit,
+                allowDelete: this.settingAllowDelete,
+                contextOutputs: this.settingContextOutputs,
+                contextInputs: this.settingContextInputs,
+            };
+
+            if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
+                this._gridEditor.updateWidget(this.selectedZoneId, widgetConfig);
+            } else if (this.editMode === 'free' && this.selectedZoneId) {
+                var wid = this.selectedZoneId;
+                if (this._gsWidgetConfigs[wid]) {
+                    Object.assign(this._gsWidgetConfigs[wid], widgetConfig);
+                    this._gsUpdateItemLabel(wid, widgetConfig);
+                }
+                this.dirty = true;
+            }
+
+            this.showToast('已套用', 'success');
+        },
+
+        _gsUpdateItemLabel: function (wid, cfg) {
+            var items = this._gsGrid ? this._gsGrid.getGridItems() : [];
+            for (var i = 0; i < items.length; i++) {
+                var el = items[i];
+                if (el.getAttribute('gs-id') === wid) {
+                    var content = el.querySelector('.grid-stack-item-content');
+                    if (content) {
+                        var label = cfg.title || cfg.viewCode || '(未設定)';
+                        content.innerHTML = '<div class="stu-gs-widget-label"><b>'
+                            + (cfg.type || 'DATALIST') + '</b><span>' + label + '</span></div>';
+                    }
+                    break;
+                }
+            }
+        },
+
+        removeSelectedWidget: function () {
+            if (!this.selectedZoneId) return;
+
+            if (this.editMode === 'grid' && this._gridEditor) {
+                delete this._gridEditor.widgetMap[this.selectedZoneId];
+                this._gridEditor.render();
+            } else if (this.editMode === 'free' && this._gsGrid) {
+                var items = this._gsGrid.getGridItems();
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].getAttribute('gs-id') === this.selectedZoneId) {
+                        this._gsGrid.removeWidget(items[i]);
+                        break;
+                    }
+                }
+                delete this._gsWidgetConfigs[this.selectedZoneId];
+            }
+
+            this.selectedZoneId = null;
+            this.showProps = false;
+            this.dirty = true;
+        },
+
+        // Context Output/Input
+        addContextOutput: function () {
+            this.settingContextOutputs.push({ event: 'row-select', contextKey: '', sourceColumn: '' });
+        },
+        removeContextOutput: function (idx) {
+            this.settingContextOutputs.splice(idx, 1);
+        },
+        addContextInput: function () {
+            this.settingContextInputs.push({ contextKey: '', filterColumn: '' });
+        },
+        removeContextInput: function (idx) {
+            this.settingContextInputs.splice(idx, 1);
+        },
+
+        // ================================================================
+        // Node Management
+        // ================================================================
+
+        openAddNode: function () {
             this.addNodeForm = {
                 name: '',
                 node_type: 'page',
@@ -307,43 +666,38 @@ function studioManager() {
         },
 
         async doAddNode() {
-            const name = this.addNodeForm.name.trim();
+            var name = this.addNodeForm.name.trim();
             if (!name) { this.showToast('名稱為必填', 'error'); return; }
 
             try {
-                const body = {
+                var body = {
                     name: name,
                     node_type: this.addNodeForm.node_type,
                     parent_secure_code: this.addNodeForm.parent_sc || null,
                 };
 
-                // 如果是 page 類型，自動建立 page layout
+                // page 類型自動建立 page layout
                 if (this.addNodeForm.node_type === 'page') {
-                    const pageRes = await fetch('/api/nocode-builder/pages', {
+                    var emptyLayout = this.editMode === 'grid'
+                        ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
+                        : { version: 2, widgets: [] };
+
+                    var pageRes = await fetch('/api/nocode-builder/pages', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: name,
-                            layout_json: this.layoutMode === 'grid'
-                                ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
-                                : { version: 2, widgets: [] },
-                        }),
+                        body: JSON.stringify({ name: name, layout_json: emptyLayout }),
                     });
-                    const pageData = await pageRes.json();
+                    var pageData = await pageRes.json();
                     if (pageData.success) {
                         body.page_layout_secure_code = pageData.data.secure_code;
                     }
                 }
 
-                const res = await fetch(
+                var res = await fetch(
                     '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes',
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body),
-                    }
+                    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
                 );
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.showAddNodeModal = false;
                     this.showToast('節點已建立', 'success');
@@ -363,12 +717,12 @@ function studioManager() {
             if (!confirm('確定要刪除節點「' + this.selectedNode.name + '」嗎?')) return;
 
             try {
-                const res = await fetch(
+                var res = await fetch(
                     '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code,
                     { method: 'DELETE' }
                 );
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.selectedNode = null;
                     this.currentPageSc = null;
@@ -384,41 +738,10 @@ function studioManager() {
             }
         },
 
-        async saveNodeName() {
-            if (!this.selectedNode) return;
-            const name = this.nodeForm.name.trim();
-            if (!name) return;
-
-            try {
-                const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
-                    + '/site-map/nodes/' + this.selectedNode.secure_code,
-                    {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: name,
-                            icon: this.nodeForm.icon,
-                        }),
-                    }
-                );
-                const data = await res.json();
-                if (data.success) {
-                    this.selectedNode.name = name;
-                    this.selectedNode.icon = this.nodeForm.icon;
-                    this.showToast('已儲存', 'success');
-                    await this._loadTree();
-                    this._initSiteMapTree();
-                }
-            } catch (e) {
-                this.showToast('儲存失敗', 'error');
-            }
-        },
-
         async _saveReorder() {
             if (!this._wbTree) return;
-            const ordered = [];
-            this._wbTree.visit((node) => {
+            var ordered = [];
+            this._wbTree.visit(function (node) {
                 ordered.push({
                     secure_code: node.key,
                     parent_secure_code: node.parent && !node.parent.isRootNode()
@@ -441,277 +764,9 @@ function studioManager() {
             }
         },
 
-        // ===== 編輯器延遲初始化 =====
-
-        _ensureEditor() {
-            if (this.layoutMode === 'grid') {
-                this._initGridEditor();
-            } else {
-                this._initGridStackEditor();
-            }
-        },
-
-        // ===== Grid 宮格編輯器 =====
-
-        _initGridEditor() {
-            const el = document.getElementById('stu-grid-canvas');
-            if (!el) return;
-
-            // Destroy old editor if re-initializing
-            if (this._gridEditor) {
-                this._gridEditor = null;
-            }
-            el.innerHTML = '';
-
-            this._gridEditor = new GridLayoutEditor(el, {
-                rows: 4, cols: 4,
-            });
-
-            this._gridEditor.onZoneSelect = (zoneId) => {
-                this.selectedZoneId = zoneId;
-                this.showProps = false;
-                this.propsMode = 'node';
-            };
-
-            this._gridEditor.onWidgetSelect = (zoneId, widgetConfig) => {
-                this.selectedZoneId = zoneId;
-                this._populateWidgetSettings(widgetConfig);
-                this.showProps = true;
-                this.propsMode = 'widget';
-            };
-
-            this._gridEditor.onChanged = () => {
-                this.dirty = true;
-            };
-        },
-
-        onComponentDragStart(e, type) {
-            e.dataTransfer.setData('text/plain', type);
-            e.dataTransfer.effectAllowed = 'copy';
-        },
-
-        onComponentClick(type) {
-            // 點擊元件庫：如果有選中空 zone，直接放入
-            if (this.layoutMode === 'grid' && this._gridEditor) {
-                this._gridEditor.addWidgetToSelected(type);
-            } else if (this.layoutMode === 'free') {
-                this._gsAddWidget(type);
-            }
-        },
-
-        // ===== GridStack 自由模式 =====
-
-        _initGridStackEditor() {
-            const el = document.querySelector('.stu-canvas .grid-stack');
-            if (!el) return;
-
-            this._gsGrid = GridStack.init({
-                column: 12,
-                cellHeight: 60,
-                margin: 8,
-                float: true,
-                removable: false,
-                acceptWidgets: true,
-            }, el);
-
-            this._gsGrid.on('change', () => { this.dirty = true; });
-            this._gsGrid.on('click', (e) => {
-                const itemEl = e.target.closest('.grid-stack-item');
-                if (itemEl) {
-                    const wid = itemEl.getAttribute('gs-id');
-                    if (wid && this._gsWidgetConfigs[wid]) {
-                        this._populateWidgetSettings(this._gsWidgetConfigs[wid]);
-                        this.selectedZoneId = wid;
-                        this.showProps = true;
-                        this.propsMode = 'widget';
-                    }
-                }
-            });
-        },
-
-        _gsAddWidget(type) {
-            if (!this._gsGrid) return;
-            const wid = 'w_' + Math.random().toString(36).slice(2, 8);
-            const config = {
-                id: wid,
-                type: type,
-                viewCode: '',
-                title: '',
-                pageSize: 10,
-                showSearch: true,
-                showPagination: true,
-                allowCreate: false,
-                allowEdit: false,
-                allowDelete: false,
-                contextOutputs: [],
-                contextInputs: [],
-            };
-            this._gsWidgetConfigs[wid] = config;
-
-            const contentEl = document.createElement('div');
-            contentEl.innerHTML = '<div class="dlw-root" style="padding:8px;"><b>' + type + '</b><br><span style="color:#999;">(未設定)</span></div>';
-
-            this._gsGrid.addWidget({
-                x: 0, y: 0, w: 6, h: 4,
-                id: wid,
-                content: contentEl.innerHTML,
-            });
-
-            this.dirty = true;
-        },
-
-        _loadGridStackLayout(layout) {
-            if (!this._gsGrid) {
-                setTimeout(() => {
-                    this._initGridStackEditor();
-                    this._loadGridStackLayout(layout);
-                }, 50);
-                return;
-            }
-
-            this._gsGrid.removeAll();
-            this._gsWidgets = {};
-            this._gsWidgetConfigs = {};
-
-            const items = (layout && layout.widgets) || [];
-            for (const item of items) {
-                const wConf = item.widget || {};
-                const wid = wConf.id || item.id || ('w_' + Math.random().toString(36).slice(2, 8));
-                this._gsWidgetConfigs[wid] = Object.assign({}, wConf, { id: wid });
-
-                const label = wConf.title || wConf.viewCode || '(未設定)';
-                this._gsGrid.addWidget({
-                    x: item.x || 0,
-                    y: item.y || 0,
-                    w: item.w || 6,
-                    h: item.h || 4,
-                    id: wid,
-                    content: '<div style="padding:8px;font-size:12px;"><b>'
-                        + (wConf.type || 'DATALIST') + '</b><br>'
-                        + label + '</div>',
-                });
-            }
-        },
-
-        _buildGridStackLayoutJson() {
-            if (!this._gsGrid) return { version: 2, widgets: [] };
-            const items = this._gsGrid.getGridItems();
-            const widgets = [];
-            for (const el of items) {
-                const node = el.gridstackNode;
-                if (!node) continue;
-                const wid = node.id || el.getAttribute('gs-id');
-                const conf = this._gsWidgetConfigs[wid] || {};
-                widgets.push({
-                    x: node.x, y: node.y, w: node.w, h: node.h,
-                    id: wid,
-                    widget: Object.assign({}, conf),
-                });
-            }
-            return { version: 2, widgets };
-        },
-
-        // ===== 屬性面板 =====
-
-        _populateWidgetSettings(config) {
-            this.settingViewCode = config.viewCode || '';
-            this.settingTitle = config.title || '';
-            this.settingPageSize = config.pageSize || 10;
-            this.settingShowSearch = config.showSearch !== false;
-            this.settingShowPagination = config.showPagination !== false;
-            this.settingAllowCreate = config.allowCreate || false;
-            this.settingAllowEdit = config.allowEdit || false;
-            this.settingAllowDelete = config.allowDelete || false;
-            this.settingContextOutputs = JSON.parse(JSON.stringify(config.contextOutputs || []));
-            this.settingContextInputs = JSON.parse(JSON.stringify(config.contextInputs || []));
-        },
-
-        getViewColumns() {
-            const v = this.availableViews.find(v => v.secure_code === this.settingViewCode);
-            if (!v || !v.columns_config) return [];
-            return v.columns_config.filter(c => c.visible).map(c => c.column);
-        },
-
-        applyWidgetSettings() {
-            const config = {
-                viewCode: this.settingViewCode,
-                title: this.settingTitle,
-                pageSize: parseInt(this.settingPageSize, 10) || 10,
-                showSearch: this.settingShowSearch,
-                showPagination: this.settingShowPagination,
-                allowCreate: this.settingAllowCreate,
-                allowEdit: this.settingAllowEdit,
-                allowDelete: this.settingAllowDelete,
-                contextOutputs: this.settingContextOutputs,
-                contextInputs: this.settingContextInputs,
-            };
-
-            if (this.layoutMode === 'grid' && this._gridEditor && this.selectedZoneId) {
-                this._gridEditor.updateWidget(this.selectedZoneId, config);
-            } else if (this.layoutMode === 'free' && this.selectedZoneId) {
-                const wid = this.selectedZoneId;
-                if (this._gsWidgetConfigs[wid]) {
-                    Object.assign(this._gsWidgetConfigs[wid], config);
-                    // 更新 GridStack 項目的顯示
-                    const items = this._gsGrid.getGridItems();
-                    for (const el of items) {
-                        if (el.getAttribute('gs-id') === wid) {
-                            const content = el.querySelector('.grid-stack-item-content');
-                            if (content) {
-                                content.innerHTML = '<div style="padding:8px;font-size:12px;"><b>'
-                                    + (config.type || 'DATALIST') + '</b><br>'
-                                    + (config.title || config.viewCode || '(未設定)')
-                                    + '</div>';
-                            }
-                        }
-                    }
-                }
-                this.dirty = true;
-            }
-
-            this.showToast('已套用', 'success');
-        },
-
-        removeSelectedWidget() {
-            if (!this.selectedZoneId) return;
-
-            if (this.layoutMode === 'grid' && this._gridEditor) {
-                delete this._gridEditor.widgetMap[this.selectedZoneId];
-                this._gridEditor.render();
-            } else if (this.layoutMode === 'free' && this._gsGrid) {
-                const items = this._gsGrid.getGridItems();
-                for (const el of items) {
-                    if (el.getAttribute('gs-id') === this.selectedZoneId) {
-                        this._gsGrid.removeWidget(el);
-                        break;
-                    }
-                }
-                delete this._gsWidgetConfigs[this.selectedZoneId];
-            }
-
-            this.selectedZoneId = null;
-            this.showProps = false;
-            this.dirty = true;
-        },
-
-        // Context output/input 管理
-        addContextOutput() {
-            this.settingContextOutputs.push({ event: 'row-select', contextKey: '', sourceColumn: '' });
-        },
-
-        removeContextOutput(idx) {
-            this.settingContextOutputs.splice(idx, 1);
-        },
-
-        addContextInput() {
-            this.settingContextInputs.push({ contextKey: '', filterColumn: '' });
-        },
-
-        removeContextInput(idx) {
-            this.settingContextInputs.splice(idx, 1);
-        },
-
-        // ===== 儲存 =====
+        // ================================================================
+        // Save / Preview / Publish
+        // ================================================================
 
         async savePage() {
             if (!this.currentPageSc) {
@@ -719,20 +774,20 @@ function studioManager() {
                 return;
             }
 
-            let layoutJson;
-            if (this.layoutMode === 'grid') {
+            var layoutJson;
+            if (this.editMode === 'grid') {
                 layoutJson = this._gridEditor ? this._gridEditor.toLayoutJson() : this._emptyGridLayout();
             } else {
                 layoutJson = this._buildGridStackLayoutJson();
             }
 
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + this.currentPageSc, {
+                var res = await fetch('/api/nocode-builder/pages/' + this.currentPageSc, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ layout_json: layoutJson }),
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.dirty = false;
                     this.showToast('已儲存', 'success');
@@ -744,27 +799,23 @@ function studioManager() {
             }
         },
 
-        // ===== 預覽 =====
-
-        previewPage() {
+        previewPage: function () {
             if (!this.subSystemSc) return;
             window.open('/nocode-builder/sub-systems/' + this.subSystemSc + '/portal', '_blank');
         },
 
-        // ===== 發布/下線 =====
-
         async togglePublish() {
             if (!this.subSystem) return;
-            const action = this.subSystem.status === 'draft' ? 'publish' : 'unpublish';
-            const label = action === 'publish' ? '上線' : '下線';
+            var action = this.subSystem.status === 'draft' ? 'publish' : 'unpublish';
+            var label = action === 'publish' ? '上線' : '下線';
 
             if (!confirm('確定要' + label + '「' + this.subSystem.name + '」嗎?')) return;
 
             try {
-                const res = await fetch('/api/nocode-builder/projects/' + this.subSystemSc + '/' + action, {
+                var res = await fetch('/api/nocode-builder/projects/' + this.subSystemSc + '/' + action, {
                     method: 'POST',
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     this.subSystem.status = data.data.status;
                     this.showToast('已' + label, 'success');
@@ -776,7 +827,9 @@ function studioManager() {
             }
         },
 
-        // ===== 節點權限管理 =====
+        // ================================================================
+        // Node Permissions
+        // ================================================================
 
         async openNodePerms() {
             if (!this.selectedNode) return;
@@ -795,9 +848,7 @@ function studioManager() {
                     + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions'
                 );
                 var data = await res.json();
-                if (data.success) {
-                    this.nodePerms = data.data || [];
-                }
+                if (data.success) this.nodePerms = data.data || [];
             } catch (e) {
                 console.error('Load node permissions failed:', e);
             }
@@ -815,9 +866,7 @@ function studioManager() {
                     + '/site-map/targets?type=' + type
                 );
                 var data = await res.json();
-                if (data.success) {
-                    this.permTargets = data.data || [];
-                }
+                if (data.success) this.permTargets = data.data || [];
             } catch (e) {
                 console.error('Load targets failed:', e);
             }
@@ -873,11 +922,14 @@ function studioManager() {
             }
         },
 
-        // ===== Toast =====
+        // ================================================================
+        // Toast
+        // ================================================================
 
-        showToast(message, type) {
-            this.toast = { show: true, message, type };
-            setTimeout(() => { this.toast.show = false; }, 3000);
+        showToast: function (message, type) {
+            this.toast = { show: true, message: message, type: type };
+            var self = this;
+            setTimeout(function () { self.toast.show = false; }, 3000);
         },
     };
 }
