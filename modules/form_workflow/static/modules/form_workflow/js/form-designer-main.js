@@ -622,58 +622,78 @@ async function loadFormioTranslations() {
     }
 }
 
+// 取得元件預設 builderInfo 的工具函式
+const _bi = (type) => Formio.Components.components[type]?.builderInfo || {};
+
+// 設計器權限配置
+const _designerConfig = window.__DESIGNER_CONFIG || {};
+const _isOrgAdminOrAbove = ['ORG_ADMIN', 'SYSTEM_ADMIN'].indexOf(_designerConfig.userType) >= 0;
+
 // 初始化 Form.io Builder
+const builderGroups = {
+    basic: {
+        title: '基本元件',
+        weight: 0,
+        default: true,
+        components: {
+            textfield: true,
+            textarea: true,
+            number: true,
+            email: true,
+            phoneNumber: true,
+            checkbox: true,
+            selectboxes: true,
+            select: true,
+            radio: { ..._bi('radio'), icon: 'far fa-circle-dot' },
+            button: true
+        }
+    },
+    advanced: {
+        title: '進階元件',
+        weight: 10,
+        components: {
+            file: true,
+            datetime: true,
+            day: true,
+            time: { ..._bi('time'), icon: 'far fa-clock' },
+            currency: true,
+            survey: true
+        }
+    },
+    layout: {
+        title: '版面配置',
+        weight: 20,
+        components: {
+            htmlelement: true,
+            content: true,
+            columns: true,
+            fieldset: true,
+            panel: true,
+            table: true,
+            tabs: { ..._bi('tabs'), icon: 'fas fa-folder' },
+            well: { ..._bi('well'), icon: 'far fa-square' }
+        }
+    }
+};
+
+// 自行開發元件：僅企業管理員以上可見
+if (_isOrgAdminOrAbove) {
+    builderGroups.custom = {
+        title: '平台元件',
+        weight: 5,
+        components: {
+            userPicker: true
+        }
+    };
+}
+
 const options = {
     language: 'zh-TW',
     noDefaultSubmitButton: true,  // 禁用自動產生的 Submit 按鈕
     i18n: {
         'zh-TW': formioI18n
     },
-    builder: {
-        basic: {
-            title: '基本元件',
-            weight: 0,
-            default: true,
-            components: {
-                textfield: true,
-                textarea: true,
-                number: true,
-                email: true,
-                phoneNumber: true,
-                checkbox: true,
-                selectboxes: true,
-                select: true,
-                radio: true,
-                button: true
-            }
-        },
-        advanced: {
-            title: '進階元件',
-            weight: 10,
-            components: {
-                file: true,
-                datetime: true,
-                day: true,
-                time: true,
-                currency: true,
-                survey: true
-            }
-        },
-        layout: {
-            title: '版面配置',
-            weight: 20,
-            components: {
-                htmlelement: true,
-                content: true,
-                columns: true,
-                fieldset: true,
-                panel: true,
-                table: true,
-                tabs: true,
-                well: true
-            }
-        }
-    }
+    builder: builderGroups
 };
 
 // 載入表單資料

@@ -916,6 +916,9 @@ def _import_single_user(row: dict, org, row_num: int):
     db.session.add(user)
     db.session.flush()  # 確保 user.secure_code 已產生
 
+    # 自動指派對應角色 (鑰匙2: 角色)
+    _assign_default_role(user, org)
+
     # 記錄用戶編號到 used_user_numbers（防止重複使用）
     if employee_id:
         UsedUserNumber.record_number(

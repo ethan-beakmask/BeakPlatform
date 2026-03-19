@@ -199,6 +199,18 @@ body {
     min-height: 600px;
 }
 
+/* 平台元件分類 — 深綠色區別於 Form.io 原廠藍色 */
+#group-container-custom .btn.formcomponent {
+    background-color: #1a7a3a !important;
+    border-color: #166c33 !important;
+    color: #fff !important;
+}
+
+#group-container-custom .btn.formcomponent:hover {
+    background-color: #145f2e !important;
+    border-color: #0f4d25 !important;
+}
+
 /* Form.io Builder 元件面板浮動 */
 .formbuilder {
     display: flex;

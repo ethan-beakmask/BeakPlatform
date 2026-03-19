@@ -217,6 +217,7 @@
                     if (_onSelect) {
                         _onSelect({
                             secure_code: node.data.secure_code,
+                            username: node.data.username || '',
                             display_name: node.data.display_name,
                             dept_name: node.data.dept_name || '',
                         });
@@ -289,6 +290,7 @@
                             if (_onSelect) {
                                 _onSelect({
                                     secure_code: nodeData.secure_code,
+                                    username: nodeData.username || '',
                                     display_name: nodeData.display_name,
                                     dept_name: nodeData.dept_name || '',
                                 });
@@ -335,9 +337,9 @@
         static get builderInfo() {
             return {
                 title: '人員選擇',
-                group: 'basic',
+                group: 'custom',
                 icon: 'fa fa-user',
-                weight: 55,
+                weight: 10,
                 schema: UserPickerComponent.schema(),
             };
         }
@@ -376,6 +378,7 @@
             super.init();
             if (this._pickerDisplayName === undefined) {
                 this._pickerDisplayName = '';
+                this._pickerUsername = '';
                 this._pickerDeptName = '';
                 this._defaultLoaded = false;
                 this._resolving = false;
@@ -386,6 +389,9 @@
             var value = this.dataValue || '';
             var displayText = this._pickerDisplayName
                 || (value ? '載入中...' : '(未選擇)');
+            if (this._pickerUsername && this._pickerDisplayName !== this._pickerUsername) {
+                displayText += ' (' + this._pickerUsername + ')';
+            }
             var deptText = this._pickerDeptName ? ' / ' + this._pickerDeptName : '';
 
             var tpl = '<div ref="userPickerWrapper" style="display:flex;align-items:center;gap:8px;">'
@@ -440,6 +446,7 @@
                         if (!self.dataValue) {
                             self._setSelectedUser({
                                 secure_code: user.secure_code,
+                                username: user.username || '',
                                 display_name: user.display_name,
                                 dept_name: user.dept_name,
                             });
@@ -462,6 +469,9 @@
         getValueAsString(value) {
             if (this._pickerDisplayName) {
                 var text = this._pickerDisplayName;
+                if (this._pickerUsername && this._pickerDisplayName !== this._pickerUsername) {
+                    text += ' (' + this._pickerUsername + ')';
+                }
                 if (this._pickerDeptName) text += ' / ' + this._pickerDeptName;
                 return text;
             }
@@ -470,6 +480,7 @@
 
         _setSelectedUser(person) {
             this._pickerDisplayName = person.display_name;
+            this._pickerUsername = person.username || '';
             this._pickerDeptName = person.dept_name || '';
             this.setValue(person.secure_code);
             this._updateDisplay();
@@ -477,7 +488,11 @@
 
         _updateDisplay() {
             if (this.refs.userPickerName) {
-                this.refs.userPickerName.textContent = this._pickerDisplayName || this.dataValue || '(未選擇)';
+                var nameText = this._pickerDisplayName || this.dataValue || '(未選擇)';
+                if (this._pickerUsername && this._pickerDisplayName && this._pickerDisplayName !== this._pickerUsername) {
+                    nameText += ' (' + this._pickerUsername + ')';
+                }
+                this.refs.userPickerName.textContent = nameText;
             }
             if (this.refs.userPickerDept) {
                 this.refs.userPickerDept.textContent = this._pickerDeptName ? ' / ' + this._pickerDeptName : '';
@@ -491,6 +506,7 @@
                 self._resolving = false;
                 if (person) {
                     self._pickerDisplayName = person.display_name;
+                    self._pickerUsername = person.username || '';
                     self._pickerDeptName = person.dept_name || '';
                     self._updateDisplay();
                     if (self.options.readOnly) {

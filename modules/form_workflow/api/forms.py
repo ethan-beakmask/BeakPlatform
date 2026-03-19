@@ -148,7 +148,8 @@ def designer(secure_code=None):
         'modules/form_workflow/form_designer.html',
         org_secure_code=org.secure_code,
         form_secure_code=secure_code,
-        form=template.to_dict(include_schema=True) if template else None
+        form=template.to_dict(include_schema=True) if template else None,
+        user_type=current_user.user_type
     )
 
 
@@ -176,7 +177,8 @@ def designer_standalone():
         'modules/form_workflow/form_designer.html',
         org_secure_code=org.secure_code,
         form_secure_code=secure_code,
-        form=template.to_dict(include_schema=True) if template else None
+        form=template.to_dict(include_schema=True) if template else None,
+        user_type=current_user.user_type
     )
 
 

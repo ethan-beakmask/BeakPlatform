@@ -2018,6 +2018,7 @@ def get_current_user_info():
         'success': True,
         'data': {
             'secure_code': current_user.secure_code,
+            'username': current_user.username,
             'display_name': current_user.display_name or current_user.native_name or current_user.username,
             'dept_name': dept_name,
         }
@@ -2069,13 +2070,15 @@ def get_org_tree():
             unassigned_users.append(u)
 
     def _user_node(u):
+        dn = u.display_name or u.native_name or u.username
         return {
             'id': u.secure_code,
-            'label': u.display_name or u.native_name or u.username,
+            'label': dn + ' (' + u.username + ')' if u.username != dn else dn,
             'data': {
                 'type': 'person',
                 'secure_code': u.secure_code,
-                'display_name': u.display_name or u.native_name or u.username,
+                'username': u.username,
+                'display_name': dn,
                 'dept_name': u.primary_unit.name if u.primary_unit else '',
             },
         }

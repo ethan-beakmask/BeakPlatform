@@ -180,7 +180,7 @@ def create_user():
         )
         user.set_password(password)
         db.session.add(user)
-        db.session.commit()
+        db.session.flush()
 
         # 自動指派 user_type 對應的預設角色（雙鑰匙 Key2）
         from ..web.users import _assign_default_role
@@ -205,7 +205,8 @@ def create_user():
                 ).first()
                 if rule_obj:
                     NumberingService.sync_counter_to_used(rule_obj)
-            db.session.commit()
+
+        db.session.commit()
 
         return jsonify({
             'message': f'已建立用戶 {native_name}',
