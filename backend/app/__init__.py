@@ -66,6 +66,10 @@ def create_app(config_name: str = None) -> Flask:
     # Register URL access logger (for audit)
     register_url_access_logger(app)
 
+    # Register access logger (HTTP request log to file)
+    from .security.access_logger import register_access_logger
+    register_access_logger(app)
+
     # Register audit logger (after_request hook for DB audit logs)
     from .security.audit_logger import register_audit_logger
     register_audit_logger(app)

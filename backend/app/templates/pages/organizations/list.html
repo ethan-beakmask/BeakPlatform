@@ -150,6 +150,22 @@
                 <table class="info-table">
                     <tr><td>企業代碼</td><td>{{ selected_org.code }}</td></tr>
                     <tr><td>網域名稱</td><td><code>{{ selected_org.domain_name }}</code></td></tr>
+                    {% if not selected_org.is_system_org %}
+                    <tr>
+                        <td>員工登入 URL</td>
+                        <td>
+                            {% set emp_url = url_for('auth.org_login', domain_name=selected_org.domain_name, _external=True) %}
+                            <a href="{{ emp_url }}" target="_blank"><code>{{ emp_url }}</code></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>外部廠商登入 URL</td>
+                        <td>
+                            {% set ext_url = url_for('auth.org_public_login', domain_name=selected_org.domain_name, _external=True) %}
+                            <a href="{{ ext_url }}" target="_blank"><code>{{ ext_url }}</code></a>
+                        </td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <td>狀態</td>
                         <td>
