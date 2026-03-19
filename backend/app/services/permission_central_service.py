@@ -354,6 +354,15 @@ class PermissionCentralService:
                 })
                 continue
 
+            # ORG_ADMIN 天生持有所有非 SYSTEM 級權限，不需角色分配
+            need_role_check = [
+                ut for ut in user_types_granted
+                if ut != 'ORG_ADMIN' or perm.permission_level == 'SYSTEM'
+            ]
+
+            if not need_role_check:
+                continue
+
             holding_role_codes = db.session.query(
                 RolePermission.role_secure_code
             ).filter_by(
@@ -371,8 +380,8 @@ class PermissionCentralService:
                     'menu_title': menu.title,
                     'menu_secure_code': menu.secure_code,
                     'required_permission': menu.required_permission,
-                    'user_types': user_types_granted,
-                    'message': f'選單 "{menu.title}" 授權給 {", ".join(user_types_granted)}，'
+                    'user_types': need_role_check,
+                    'message': f'選單 "{menu.title}" 授權給 {", ".join(need_role_check)}，'
                                f'但沒有任何角色持有權限 {menu.required_permission}',
                 })
 

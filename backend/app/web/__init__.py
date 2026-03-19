@@ -138,3 +138,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Permission Central Management (權限中央管理)
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp, url_prefix='/permissions')
+
+    # Platform Help (平台說明)
+    from .platform_help import platform_help_bp
+    app.register_blueprint(platform_help_bp, url_prefix='/help')

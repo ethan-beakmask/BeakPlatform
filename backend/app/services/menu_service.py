@@ -112,10 +112,8 @@ class MenuService:
         ).all()
 
         # 5. 過濾需要 RBAC 權限的選單
-        #    MenuPermission 治理的選單（管理員明確授權）跳過 required_permission 檢查
-        #    僅對純模組注入的選單檢查 required_permission
         filtered_items = cls._filter_by_rbac_permission(
-            items, user_permissions, bypass_codes=perm_governed_codes
+            items, user_permissions
         )
 
         # 6~6.7 模組治理過濾
@@ -196,8 +194,7 @@ class MenuService:
     def _filter_by_rbac_permission(
         cls,
         items: List[MenuItem],
-        user_permissions: Set[str],
-        bypass_codes: Set[str] = None
+        user_permissions: Set[str]
     ) -> List[MenuItem]:
         """
         過濾需要 RBAC 權限的選單
@@ -205,26 +202,16 @@ class MenuService:
         Args:
             items: 選單項目列表
             user_permissions: 用戶擁有的權限代碼集合
-            bypass_codes: 管理員明確授權的選單 secure_code 集合，
-                          這些選單跳過 required_permission 檢查
 
         Returns:
             過濾後的選單項目列表
         """
-        bypass = bypass_codes or set()
         filtered = []
         for item in items:
-            # 管理員透過 MenuPermission 明確授權的選單，跳過 required_permission 檢查
-            if item.secure_code in bypass:
-                filtered.append(item)
-                continue
-
-            # 沒有設定 required_permission 的選單，直接通過
             if not item.required_permission:
                 filtered.append(item)
                 continue
 
-            # 檢查用戶是否有所需權限
             if item.required_permission in user_permissions:
                 filtered.append(item)
 

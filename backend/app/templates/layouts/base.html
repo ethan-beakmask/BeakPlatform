@@ -55,7 +55,7 @@
                         {% for child in item.children %}
                         {% set child_class = _menu_color_class(child) %}
                         <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
-                            {% if child.icon %}{{ child.icon }} {% endif %}{{ child.title }}
+                            {% if child.icon %}<i class="{{ child.icon }}"></i> {% endif %}{{ child.title }}
                         </a>
                         {% endfor %}
                     </div>

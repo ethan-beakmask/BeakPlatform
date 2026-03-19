@@ -1,0 +1,464 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}平台說明 - 企業管理員 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-help.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data="{ activeTab: 'overview' }">
+
+<h2>平台說明 - 企業管理員</h2>
+<p class="ph-subtitle">本文件說明 BeakPlatform 的帳號等級、角色、權限架構與安全機制，供企業管理員參考。</p>
+
+<!-- Tab Navigation -->
+<div class="ph-tabs">
+    <button class="ph-tab" :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">帳號等級與角色</button>
+    <button class="ph-tab" :class="{ active: activeTab === 'permissions' }" @click="activeTab = 'permissions'">權限管理</button>
+    <button class="ph-tab" :class="{ active: activeTab === 'security' }" @click="activeTab = 'security'">安全機制</button>
+    <button class="ph-tab" :class="{ active: activeTab === 'glossary' }" @click="activeTab = 'glossary'">名詞對照</button>
+</div>
+
+<!-- ======================================================== -->
+<!-- Tab 1: 帳號等級與角色 -->
+<!-- ======================================================== -->
+<div x-show="activeTab === 'overview'" x-cloak>
+
+<section class="ph-section">
+    <h3>帳號等級 (User Type)</h3>
+    <p>每個帳號有且只有一個等級，決定此人在系統中的基本身分與可見範圍。</p>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:160px">等級</th>
+                <th style="width:100px">代碼</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>系統管理員</strong></td>
+                <td>SYSTEM_ADMIN</td>
+                <td>平台維運人員，隸屬特殊企業 system.local。管理所有企業、主機設定、模組商店。不參與各企業內的業務操作。</td>
+            </tr>
+            <tr>
+                <td><strong>企業管理員</strong></td>
+                <td>ORG_ADMIN</td>
+                <td>企業內最高管理者。管理本企業的組織架構、帳號、角色、選單、模組設定。天生持有本企業內所有非系統級權限。</td>
+            </tr>
+            <tr>
+                <td><strong>員工</strong></td>
+                <td>EMPLOYEE</td>
+                <td>企業內一般使用者。可見範圍由管理員透過選單授權和角色指派決定。</td>
+            </tr>
+            <tr>
+                <td><strong>外部廠商</strong></td>
+                <td>EXTERNAL</td>
+                <td>非本企業人員（供應商、顧問等）。可見範圍最小，由管理員明確開放。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="ph-note">
+        <strong>注意：</strong>等級之間互相獨立，不是「企業管理員 = 員工 + 更多權限」的關係。各等級看到的選單和功能由管理員分別配置。
+    </div>
+</section>
+
+<section class="ph-section">
+    <h3>預設角色</h3>
+    <p>系統內建以下角色，企業管理員可在 /roles/ 自行增減角色。</p>
+
+    <h4>企業級角色</h4>
+    <p>管理本企業的組織與模組。</p>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">角色</th>
+                <th>職責</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>企業管理員</strong></td>
+                <td>管理企業設定、組織架構、帳號、角色、模組配置</td>
+            </tr>
+            <tr>
+                <td><strong>表單流程管理者</strong></td>
+                <td>設計表單範本、設計流程、指定開發者</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>模組級角色</h4>
+    <p>控制模組（如子系統開發模組）的存取層級，具有繼承關係。</p>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">角色</th>
+                <th>職責</th>
+                <th style="width:160px">繼承</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>模組管理員</strong></td>
+                <td>管理模組成員、角色、刪除文章</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td><strong>模組作者</strong></td>
+                <td>建立新文件、隱藏自己的文章</td>
+                <td>模組讀者</td>
+            </tr>
+            <tr>
+                <td><strong>模組讀者</strong></td>
+                <td>閱讀已開放的項目</td>
+                <td>-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>成員級角色</h4>
+    <p>組織架構中的職務角色，用於流程簽核與組織管理。</p>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">角色</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>部門主管</strong></td><td>部門的負責人</td></tr>
+            <tr><td><strong>部門成員</strong></td><td>隸屬於特定部門的員工</td></tr>
+            <tr><td><strong>社群召集人</strong></td><td>社群（跨部門群組）的負責人</td></tr>
+            <tr><td><strong>群組成員</strong></td><td>隸屬於特定群組的成員</td></tr>
+            <tr><td><strong>一般員工</strong></td><td>標準員工角色</td></tr>
+            <tr><td><strong>受限制員工</strong></td><td>臨時雇員或受限帳號</td></tr>
+            <tr><td><strong>外部顧問</strong></td><td>外部廠商的顧問人員</td></tr>
+            <tr><td><strong>廠商代表</strong></td><td>外部廠商的代表</td></tr>
+        </tbody>
+    </table>
+
+    <div class="ph-note">
+        <strong>角色繼承：</strong>部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /roles/ 頁面可查看。
+    </div>
+</section>
+
+</div>
+
+<!-- ======================================================== -->
+<!-- Tab 2: 權限管理 -->
+<!-- ======================================================== -->
+<div x-show="activeTab === 'permissions'" x-cloak>
+
+<section class="ph-section">
+    <h3>權限管理概觀</h3>
+    <p>平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理」(/permissions/) 進行統一檢視與管理。</p>
+
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">權限層</th>
+                <th style="width:160px">管理位置</th>
+                <th>控制什麼</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>選單可見性</strong></td>
+                <td>/menu/</td>
+                <td>哪個帳號等級能看到哪些選單項目（如：員工能看到「表單中心」）</td>
+            </tr>
+            <tr>
+                <td><strong>選單角色需求</strong></td>
+                <td>/menu/ (角色欄)</td>
+                <td>選單項目需要持有哪些角色才能存取（如：需要「表單流程管理者」角色）</td>
+            </tr>
+            <tr>
+                <td><strong>角色權限 (RBAC)</strong></td>
+                <td>/permissions/</td>
+                <td>角色持有哪些具體操作權限（如：角色「表單流程管理者」持有 form_workflow.template.view）</td>
+            </tr>
+            <tr>
+                <td><strong>選單最低門檻</strong></td>
+                <td>程式定義</td>
+                <td>選單的最低權限要求（如：選單「表單範本」要求使用者持有 form_workflow.template.view）</td>
+            </tr>
+            <tr>
+                <td><strong>帳號角色指派</strong></td>
+                <td>/roles/</td>
+                <td>哪些帳號持有哪些角色（如：張三擁有「表單流程管理者」角色）</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="ph-section">
+    <h3>選單可見性 vs. 存取權限</h3>
+    <p>「看得到選單」和「能進入該頁面」是兩件不同的事。</p>
+
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:80px">步驟</th>
+                <th style="width:200px">檢查項目</th>
+                <th>通過條件</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>選單可見性</td>
+                <td>帳號等級在該選單的授權清單中</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>選單最低門檻</td>
+                <td>使用者持有選單要求的權限代碼（若有設定）</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>頁面存取</td>
+                <td>使用者持有該頁面所需的角色（由選單角色需求決定）</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>操作權限</td>
+                <td>使用者的角色擁有該操作所需的 RBAC 權限（如：建立、編輯、刪除）</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="ph-note">
+        <strong>常見問題：</strong>如果員工反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /permissions/ 檢查衝突偵測結果。
+    </div>
+</section>
+
+<section class="ph-section">
+    <h3>企業管理員的天生權限</h3>
+    <p>企業管理員（ORG_ADMIN）天生持有本企業內所有「企業級」和「模組級」權限，無需透過角色指派。</p>
+    <p>這代表：</p>
+    <ul class="ph-list">
+        <li>企業管理員不需要被加入任何角色就能操作所有企業內功能</li>
+        <li>在 /permissions/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限</li>
+        <li>但「系統級」權限仍保留給系統管理員，企業管理員無法取得</li>
+    </ul>
+</section>
+
+<section class="ph-section">
+    <h3>權限管理建議流程</h3>
+    <p>新增一個需要權限控制的功能時，建議依以下順序操作：</p>
+    <ol class="ph-list">
+        <li><strong>/menu/</strong> -- 設定選單可見性（勾選哪些帳號等級能看到）</li>
+        <li><strong>/roles/</strong> -- 建立或選擇角色，指派角色給帳號</li>
+        <li><strong>/permissions/</strong> -- 為角色配置所需的 RBAC 權限</li>
+        <li><strong>/permissions/</strong> -- 使用衝突偵測功能確認配置完整</li>
+    </ol>
+</section>
+
+</div>
+
+<!-- ======================================================== -->
+<!-- Tab 3: 安全機制 -->
+<!-- ======================================================== -->
+<div x-show="activeTab === 'security'" x-cloak>
+
+<section class="ph-section">
+    <h3>安全防護架構</h3>
+    <p>平台採用多層防護設計，每一層獨立運作，即使某一層被繞過，後續層仍然保護系統。</p>
+
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:60px">層</th>
+                <th style="width:180px">名稱</th>
+                <th>作用</th>
+                <th style="width:200px">未通過的結果</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td><strong>全域認證攔截</strong></td>
+                <td>所有請求必須先通過身分驗證，未登入者一律阻擋</td>
+                <td>導向登入頁面</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><strong>路由層級檢查</strong></td>
+                <td>各頁面依功能要求不同的帳號等級（如管理員專用頁面）</td>
+                <td>403 拒絕存取</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><strong>網頁角色守衛</strong></td>
+                <td>驗證使用者是否持有進入該頁面所需的角色</td>
+                <td>強制登出並記錄稽核日誌</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><strong>資源權限檢查</strong></td>
+                <td>驗證使用者是否有權執行特定操作（讀取、建立、編輯、刪除）</td>
+                <td>403 拒絕操作</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><strong>企業資料隔離</strong></td>
+                <td>每筆資料查詢都強制加入企業識別碼過濾，A 企業看不到 B 企業的資料</td>
+                <td>資料不可見</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="ph-section">
+    <h3>帳號安全</h3>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">機制</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>預設管理員帳號</strong></td>
+                <td>企業建立時自動產生 admin 帳號。建議盡快建立個人管理員帳號後停用此預設帳號，儀表板會持續提醒。</td>
+            </tr>
+            <tr>
+                <td><strong>帳號停用 vs 刪除</strong></td>
+                <td>停用（is_active=false）：帳號無法登入但資料保留，可隨時恢復。刪除（is_deleted=true）：軟刪除，資料保留但完全不可見。</td>
+            </tr>
+            <tr>
+                <td><strong>URL 安全識別碼</strong></td>
+                <td>所有資源在 URL 中使用隨機產生的安全識別碼（secure_code），而非可猜測的流水號，防止未授權的資料存取。</td>
+            </tr>
+            <tr>
+                <td><strong>稽核日誌</strong></td>
+                <td>重要操作（登入、權限變更、資料異動）自動記錄稽核日誌，供事後追溯。</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="ph-section">
+    <h3>模組存取控制</h3>
+    <p>模組（如表單流程、子系統開發）的存取受額外控制：</p>
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">控制層</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>合約驗證</strong></td>
+                <td>企業必須持有該模組的有效合約才能使用。合約過期後模組不可見。</td>
+            </tr>
+            <tr>
+                <td><strong>模組 ACL</strong></td>
+                <td>企業管理員在 /admin/module-users/ 設定哪些員工可存取哪些模組。企業管理員本身自動擁有所有模組的存取權。</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+</div>
+
+<!-- ======================================================== -->
+<!-- Tab 4: 名詞對照 -->
+<!-- ======================================================== -->
+<div x-show="activeTab === 'glossary'" x-cloak>
+
+<section class="ph-section">
+    <h3>名詞對照表</h3>
+
+    <table class="ph-table">
+        <thead>
+            <tr>
+                <th style="width:200px">名詞</th>
+                <th style="width:160px">英文</th>
+                <th>說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>帳號等級</strong></td>
+                <td>User Type</td>
+                <td>帳號的基本身分分類：系統管理員、企業管理員、員工、外部廠商</td>
+            </tr>
+            <tr>
+                <td><strong>角色</strong></td>
+                <td>Role</td>
+                <td>可被指派給帳號的職務或功能身分，一個帳號可持有多個角色</td>
+            </tr>
+            <tr>
+                <td><strong>角色繼承</strong></td>
+                <td>Role Inheritance</td>
+                <td>子角色自動擁有父角色的所有權限</td>
+            </tr>
+            <tr>
+                <td><strong>權限</strong></td>
+                <td>Permission</td>
+                <td>可被授予角色的具體操作能力（如：檢視表單範本、編輯流程）</td>
+            </tr>
+            <tr>
+                <td><strong>RBAC</strong></td>
+                <td>Role-Based Access Control</td>
+                <td>基於角色的存取控制。權限不直接授予帳號，而是授予角色，帳號透過持有角色間接獲得權限</td>
+            </tr>
+            <tr>
+                <td><strong>選單可見性</strong></td>
+                <td>Menu Permission</td>
+                <td>控制哪些帳號等級能看到哪些選單項目</td>
+            </tr>
+            <tr>
+                <td><strong>選單角色需求</strong></td>
+                <td>Menu Role Requirement</td>
+                <td>控制存取特定選單頁面需要持有哪些角色</td>
+            </tr>
+            <tr>
+                <td><strong>選單最低門檻</strong></td>
+                <td>Required Permission</td>
+                <td>選單項目設定的最低權限代碼，使用者必須持有該權限才能看到選單</td>
+            </tr>
+            <tr>
+                <td><strong>企業隔離</strong></td>
+                <td>Tenant Isolation</td>
+                <td>不同企業的資料完全隔離，互不可見</td>
+            </tr>
+            <tr>
+                <td><strong>安全識別碼</strong></td>
+                <td>Secure Code</td>
+                <td>系統內部用於識別資源的隨機字串，取代可猜測的流水號</td>
+            </tr>
+            <tr>
+                <td><strong>模組</strong></td>
+                <td>Module</td>
+                <td>掛載在平台上的獨立功能單元（如表單流程、子系統開發），透過合約授權使用</td>
+            </tr>
+            <tr>
+                <td><strong>合約</strong></td>
+                <td>Contract</td>
+                <td>企業與模組之間的授權關係，包含有效期限</td>
+            </tr>
+            <tr>
+                <td><strong>稽核日誌</strong></td>
+                <td>Audit Log</td>
+                <td>系統自動記錄的操作歷史，用於事後追溯與合規</td>
+            </tr>
+            <tr>
+                <td><strong>衝突偵測</strong></td>
+                <td>Conflict Detection</td>
+                <td>/permissions/ 中的功能，自動檢查權限配置是否有遺漏或矛盾</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+</div>
+
+</div>
+{% endblock %}
