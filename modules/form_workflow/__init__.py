@@ -141,6 +141,14 @@ MODULE_INFO = {
             'level': 'ORG',
         },
 
+        # 設計試行權限
+        {
+            'code': 'form_workflow.design.tryout',
+            'name': '試行設計稿',
+            'description': '允許使用未發行的配對送出測試表單，供設計階段驗證流程',
+            'level': 'ORG',
+        },
+
         # 系統管理權限
         {
             'code': 'form_workflow.admin',

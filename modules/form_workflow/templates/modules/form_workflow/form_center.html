@@ -24,7 +24,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
     <!-- 左側邊欄：表單分類導航 -->
     <div class="fc-sidebar" x-show="viewMode === 'dashboard'">
         <div class="fc-sidebar-box">
-            <div style="padding: 8px 12px; font-weight: 600; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
+            <div style="padding: 8px 12px; font-weight: 400; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
             <template x-for="cat in parentCategories" :key="cat.secure_code">
                 <div class="fc-category-item" :class="{ active: selectedParent === cat.secure_code }"
                      @click="selectParent(cat.secure_code)" style="cursor: pointer;">
@@ -90,9 +90,9 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                     <thead>
                         <tr>
                             <th class="fc-sortable" style="width: 140px;" @click="toggleSort('pending', 'serial_number')">單號<span x-text="sortIcon('pending', 'serial_number')"></span></th>
-                            <th style="width: 100px;">表單</th>
+                            <th style="width: 150px;">表單</th>
                             <th>主旨</th>
-                            <th style="width: 90px;">發起人</th>
+                            <th style="width: 150px;">發起人</th>
                             <th style="width: 80px;">類別</th>
                             <th style="width: 150px;">目前關卡</th>
                             <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">等待時間<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
@@ -158,13 +158,13 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                     <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
-                                <th style="width: 90px;">表單</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
+                                <th style="width: 150px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 70px;">類別</th>
-                                <th style="width: 120px;">待簽關卡</th>
-                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
-                                <th style="width: 110px;"></th>
+                                <th style="width: 80px;">類別</th>
+                                <th style="width: 150px;">待簽關卡</th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -203,14 +203,14 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                     <table x-show="!loadingSigned && signedList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
-                                <th style="width: 90px;">表單</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
+                                <th style="width: 150px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 70px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 80px;">發起人</th>
                                 <th style="width: 120px;">待簽關卡</th>
                                 <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'submitted_at')">簽核後歷時<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
-                                <th style="width: 110px;"></th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -273,14 +273,14 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                     <table x-show="!loadingHistory && historyList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
-                                <th style="width: 90px;">表單</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
+                                <th style="width: 150px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 70px;">類別</th>
-                                <th style="width: 60px;">狀態</th>
-                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
+                                <th style="width: 80px;">類別</th>
+                                <th style="width: 80px;">狀態</th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
                                 <th style="width: 100px;">流程耗時</th>
-                                <th style="width: 110px;"></th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -320,15 +320,15 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                     <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
-                                <th style="width: 90px;">表單</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
+                                <th style="width: 150px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 70px;">類別</th>
+                                <th style="width: 80px;">類別</th>
                                 <th style="width: 80px;">發起人</th>
                                 <th style="width: 60px;">狀態</th>
-                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
                                 <th style="width: 100px;">流程耗時</th>
-                                <th style="width: 110px;"></th>
+                                <th style="width: 120px;">操作</th>
                             </tr>
                         </thead>
                         <tbody>

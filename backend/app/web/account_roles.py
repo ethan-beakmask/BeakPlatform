@@ -2,18 +2,24 @@
 BeakPlatform Account Roles Overview
 帳號角色權限表
 
-提供企業管理員查看所有帳號的社群歸屬與角色指派總覽。
+提供企業管理員查看所有帳號的社群歸屬與角色指派總覽，
+並支援角色指派與移除操作。
 """
+import logging
+from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import current_user
 
 from ..security.decorators import admin_required
+from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.associations import UserRoleAssignment
 from ..models.role import Role
-from .. import db
+from .. import db, csrf
+
+logger = logging.getLogger(__name__)
 
 account_roles_bp = Blueprint('account_roles', __name__)
 
@@ -136,6 +142,14 @@ def index():
         UserType.SYSTEM_ADMIN: '系統管理員',
     }
 
+    # 查詢可指派角色（非部門/社群專屬的 GLOBAL scope 角色）
+    assignable_roles = Role.query.filter(
+        Role.org_secure_code == org_sc,
+        Role.is_deleted == False,
+        Role.is_active == True,
+        Role.scope_type == 'GLOBAL',
+    ).order_by(Role.is_system_role.desc(), Role.name).all()
+
     return render_template(
         'pages/account_roles.html',
         users=users,
@@ -144,4 +158,114 @@ def index():
         user_type_labels=user_type_labels,
         filter_user_type=filter_user_type,
         filter_q=filter_q,
+        assignable_roles=assignable_roles,
     )
+
+
+# =============================================================================
+# 角色指派 API
+# =============================================================================
+
+@account_roles_bp.route('/api/assign', methods=['POST'])
+@admin_required
+@csrf.exempt
+def assign_role():
+    """指派角色給用戶"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少請求資料'}), 400
+
+    user_sc = data.get('user_secure_code')
+    role_sc = data.get('role_secure_code')
+
+    if not user_sc or not role_sc:
+        return jsonify({'success': False, 'error': '缺少必要參數'}), 400
+
+    org_sc = current_user.org_secure_code
+
+    # 驗證用戶
+    user = User.query.filter_by(
+        secure_code=user_sc,
+        org_secure_code=org_sc,
+        is_deleted=False,
+    ).first()
+    if not user:
+        return jsonify({'success': False, 'error': '用戶不存在'}), 404
+
+    # 驗證角色
+    role = Role.query.filter_by(
+        secure_code=role_sc,
+        org_secure_code=org_sc,
+        is_deleted=False,
+    ).first()
+    if not role:
+        return jsonify({'success': False, 'error': '角色不存在'}), 404
+
+    # 檢查重複
+    existing = UserRoleAssignment.query.filter(
+        UserRoleAssignment.user_secure_code == user_sc,
+        UserRoleAssignment.role_secure_code == role_sc,
+        UserRoleAssignment.is_deleted == False,
+    ).first()
+    if existing:
+        return jsonify({'success': False, 'error': f'用戶已擁有「{role.name}」角色'}), 409
+
+    assignment = UserRoleAssignment(
+        org_secure_code=org_sc,
+        user_secure_code=user_sc,
+        role_secure_code=role_sc,
+        assigned_by=current_user.secure_code,
+    )
+    db.session.add(assignment)
+    db.session.commit()
+
+    logger.info(f"Role assigned: {user.display_name} <- {role.name} by {current_user.display_name}")
+
+    return jsonify({
+        'success': True,
+        'message': f'已將「{role.name}」指派給 {user.display_name}',
+    })
+
+
+@account_roles_bp.route('/api/revoke', methods=['POST'])
+@admin_required
+@csrf.exempt
+def revoke_role():
+    """移除用戶的角色"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少請求資料'}), 400
+
+    user_sc = data.get('user_secure_code')
+    role_sc = data.get('role_secure_code')
+
+    if not user_sc or not role_sc:
+        return jsonify({'success': False, 'error': '缺少必要參數'}), 400
+
+    org_sc = current_user.org_secure_code
+
+    assignment = UserRoleAssignment.query.filter(
+        UserRoleAssignment.user_secure_code == user_sc,
+        UserRoleAssignment.role_secure_code == role_sc,
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.is_deleted == False,
+    ).first()
+
+    if not assignment:
+        return jsonify({'success': False, 'error': '找不到此角色指派'}), 404
+
+    role = Role.query.filter_by(secure_code=role_sc).first()
+    user = User.query.filter_by(secure_code=user_sc).first()
+
+    assignment.is_deleted = True
+    assignment.deleted_at = datetime.utcnow()
+    db.session.commit()
+
+    role_name = role.name if role else role_sc
+    user_name = user.display_name if user else user_sc
+    logger.info(f"Role revoked: {user_name} -x- {role_name} by {current_user.display_name}")
+
+    return jsonify({
+        'success': True,
+        'message': f'已移除 {user_name} 的「{role_name}」角色',
+    })

@@ -128,6 +128,10 @@ class OrganizationService:
             # 建立預設角色
             default_roles = OrganizationService._create_default_roles(org)
 
+            # 為預設角色配置權限
+            db.session.flush()  # 確保角色有 secure_code
+            OrganizationService._assign_default_role_permissions(org, default_roles)
+
             # 指派 ORG_ADMIN 角色給管理員（雙鑰匙需要）
             from ..models.associations import UserRoleAssignment
             from sqlalchemy import text
@@ -298,6 +302,22 @@ class OrganizationService:
         db.session.add(group_convener_role)
         roles['group_convener'] = group_convener_role
 
+        # 表單編輯員角色
+        form_editor_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='FORM_EDITOR',
+            name='表單編輯員',
+            description='管理表單範本、流程設計，並可試行未發行的設計稿',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        form_editor_role.update_full_path()
+        db.session.add(form_editor_role)
+        roles['form_editor'] = form_editor_role
+
         # 一般員工角色
         employee_role = Role(
             org_secure_code=org.secure_code,
@@ -334,6 +354,69 @@ class OrganizationService:
         logger.info(f"Default roles created for org {org.code}")
 
         return roles
+
+    @staticmethod
+    def _assign_default_role_permissions(org: Organization, roles: dict) -> None:
+        """
+        為新企業的預設角色配置權限。
+
+        權限分配原則：
+        - EMPLOYEE: 基本表單使用權限（填寫、檢視、簽核）
+        - FORM_EDITOR: 表單/流程管理 + 試行設計稿
+        - ORG_ADMIN: 透過 module_access_required 直接放行，不需配 role_permissions
+        """
+        from ..models.permission import Permission
+        from ..models.role_permission import RolePermission
+
+        # 角色 → 權限對照表
+        role_perm_map = {
+            'employee': [
+                'form_workflow.form.create',
+                'form_workflow.form.view',
+                'form_workflow.approval.approve',
+                'form_workflow.approval.transfer',
+            ],
+            'form_editor': [
+                'form_workflow.template.view',
+                'form_workflow.template.manage',
+                'form_workflow.template.publish',
+                'form_workflow.workflow.view',
+                'form_workflow.workflow.manage',
+                'form_workflow.design.tryout',
+            ],
+        }
+
+        # 收集所有需要的權限代碼
+        all_perm_codes = set()
+        for codes in role_perm_map.values():
+            all_perm_codes.update(codes)
+
+        # 批次查詢權限
+        perms = Permission.query.filter(
+            Permission.code.in_(list(all_perm_codes)),
+            Permission.is_deleted == False,
+            Permission.is_active == True
+        ).all()
+        perm_by_code = {p.code: p for p in perms}
+
+        assigned = 0
+        for role_key, perm_codes in role_perm_map.items():
+            role = roles.get(role_key)
+            if not role:
+                continue
+            for code in perm_codes:
+                perm = perm_by_code.get(code)
+                if not perm:
+                    continue
+                rp = RolePermission(
+                    role_secure_code=role.secure_code,
+                    permission_secure_code=perm.secure_code,
+                    is_active=True,
+                )
+                db.session.add(rp)
+                assigned += 1
+
+        logger.info(f"Default role permissions assigned for org {org.code}: {assigned} permissions")
 
     @staticmethod
     def _create_default_menu_role_requirements(

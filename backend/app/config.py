@@ -56,14 +56,18 @@ class BaseConfig:
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'translations'
     )
 
-    # Rate Limiting
-    # key_func=get_remote_address: 以來源 IP 為限制單位
-    # 企業環境常見全公司共用同一公網 IP (NAT)，預設值須考量多人共用情境
+    # Rate Limiting — 分層速率限制
+    # key_func: 已認證用 user secure_code，未認證用來源 IP
+    # 解決企業 NAT 共用 IP 導致多人互相消耗額度的問題
     RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'true').lower() == 'true'
     RATELIMIT_STORAGE_URI = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_HEADERS_ENABLED = True
-    RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '10000 per day;2000 per hour;100 per minute')
+
+    # L3 預設 (已認證用戶 per-user / 未認證 per-IP 共用此上限)
+    RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '20000 per day;600 per minute')
+
+    # L1 嚴格 — 敏感端點 (per-IP，防暴力破解)
     RATELIMIT_LOGIN = os.getenv('RATELIMIT_LOGIN', '5 per minute')
     RATELIMIT_FORGOT_PASSWORD = os.getenv('RATELIMIT_FORGOT_PASSWORD', '3 per hour')
     RATELIMIT_RESET_PASSWORD = os.getenv('RATELIMIT_RESET_PASSWORD', '5 per hour')

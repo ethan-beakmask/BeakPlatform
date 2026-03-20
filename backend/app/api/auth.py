@@ -21,6 +21,7 @@ from ..services.auth_service import AuthService
 from ..services.password_policy_service import PasswordPolicyService
 from ..models import Organization, User
 from .. import limiter, csrf, db
+from flask_limiter.util import get_remote_address
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +222,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt  # 登入不需要 CSRF（沒有已登入 session 可被攻擊）
-@limiter.limit(_get_login_limit)
+@limiter.limit(_get_login_limit, key_func=get_remote_address)
 def login():
     """
     共用登入端點。
@@ -281,7 +282,7 @@ def login():
 @auth_bp.route('/org/<domain_name>/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_login_limit)
+@limiter.limit(_get_login_limit, key_func=get_remote_address)
 def org_login(domain_name: str):
     """
     企業專屬登入端點。
@@ -427,7 +428,7 @@ def org_public(domain_name: str):
 @auth_bp.route('/org/<domain_name>/public/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt  # 登入端點不需要 CSRF
-@limiter.limit(_get_login_limit)
+@limiter.limit(_get_login_limit, key_func=get_remote_address)
 def org_public_login(domain_name: str):
     """
     非員工（外部廠商）專屬登入端點。
@@ -825,7 +826,7 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
 @auth_bp.route('/org/<domain_name>/forgot-password', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_forgot_password_limit)
+@limiter.limit(_get_forgot_password_limit, key_func=get_remote_address)
 def org_forgot_password(domain_name: str):
     """
     企業專屬忘記密碼頁面
@@ -873,7 +874,7 @@ def org_forgot_password(domain_name: str):
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_forgot_password_limit)
+@limiter.limit(_get_forgot_password_limit, key_func=get_remote_address)
 def forgot_password():
     """
     共用忘記密碼頁面
@@ -911,7 +912,7 @@ def forgot_password():
 @auth_bp.route('/verify-reset/<token>', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_reset_password_limit)
+@limiter.limit(_get_reset_password_limit, key_func=get_remote_address)
 def verify_reset(token: str):
     """
     驗證密碼重設 - 輸入 6 碼驗證碼

@@ -3,6 +3,8 @@
 {% block title %}{{ _('帳號角色權限表') }} - BeakPlatform{% endblock %}
 
 {% block content %}
+<div x-data="accountRoles()">
+
 <h1>{{ _('帳號角色權限表') }}</h1>
 
 {# 篩選列 #}
@@ -30,8 +32,8 @@
             <th data-sort="text" style="width: 12%;">{{ _('姓名') }}</th>
             <th data-sort="text" style="width: 10%;">{{ _('帳號類型') }}</th>
             <th data-sort="text" style="width: 10%;">{{ _('用戶編號') }}</th>
-            <th style="width: 34%;">{{ _('社群參與') }}</th>
-            <th style="width: 34%;">{{ _('角色指派') }}</th>
+            <th style="width: 30%;">{{ _('社群參與') }}</th>
+            <th style="width: 38%;">{{ _('角色指派') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -71,18 +73,24 @@
             </td>
             <td>
                 {% set roles = user_roles.get(user.secure_code, []) %}
-                {% if roles %}
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
                     {% for r in roles %}
-                    <div style="margin-bottom: 2px;">
-                        <span>{{ r.name }}</span>
+                    <span style="display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">
+                        {{ r.name }}
                         {% if r.is_system_role %}
-                        <span style="color: #9ca3af; font-size: 0.8em; margin-left: 4px;">({{ _('預設') }})</span>
+                        <span style="color: #9ca3af; font-size: 0.85em;">({{ _('預設') }})</span>
                         {% endif %}
-                    </div>
+                        <button type="button"
+                                @click="revokeRole('{{ user.secure_code }}', '{{ r.secure_code }}', '{{ user.display_name }}', '{{ r.name }}')"
+                                style="background: none; border: none; color: #dc2626; cursor: pointer; padding: 0 2px; font-size: 1em; line-height: 1;"
+                                title="{{ _('移除角色') }}">x</button>
+                    </span>
                     {% endfor %}
-                {% else %}
-                <span style="color: #9ca3af; font-size: 0.9em;">-</span>
-                {% endif %}
+                    <button type="button"
+                            @click="openAssign('{{ user.secure_code }}', '{{ user.display_name }}')"
+                            class="btn btn-sm btn-outline-secondary"
+                            style="padding: 1px 8px; font-size: 0.8em;">+ {{ _('指派') }}</button>
+                </div>
             </td>
         </tr>
         {% endfor %}
@@ -91,4 +99,106 @@
 {% else %}
 <p style="color: #6b7280; padding: 40px 0; text-align: center;">{{ _('無符合條件的帳號') }}</p>
 {% endif %}
+
+{# 角色指派 Modal #}
+<div x-show="showAssignModal" x-cloak
+     style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1050; display: flex; align-items: center; justify-content: center;">
+    <div style="background: #fff; border-radius: 8px; padding: 24px; min-width: 360px; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h5 style="margin: 0 0 16px;">{{ _('指派角色給') }} <span x-text="assignUserName" style="color: #2563eb;"></span></h5>
+        <select x-model="selectedRoleSc"
+                style="width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 16px;">
+            <option value="">-- {{ _('選擇角色') }} --</option>
+            {% for role in assignable_roles %}
+            <option value="{{ role.secure_code }}">{{ role.name }} ({{ role.code }})</option>
+            {% endfor %}
+        </select>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-sm btn-secondary" @click="showAssignModal = false">{{ _('取消') }}</button>
+            <button type="button" class="btn btn-sm btn-primary"
+                    :disabled="!selectedRoleSc || assigning"
+                    @click="doAssign()">
+                <span x-show="!assigning">{{ _('確認指派') }}</span>
+                <span x-show="assigning">{{ _('處理中...') }}</span>
+            </button>
+        </div>
+        <div x-show="assignMsg" x-text="assignMsg"
+             style="margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 0.9em;"
+             :style="assignOk ? 'background:#dcfce7;color:#166534' : 'background:#fef2f2;color:#991b1b'"></div>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function accountRoles() {
+    return {
+        showAssignModal: false,
+        assignUserSc: '',
+        assignUserName: '',
+        selectedRoleSc: '',
+        assigning: false,
+        assignMsg: '',
+        assignOk: false,
+
+        openAssign(userSc, userName) {
+            this.assignUserSc = userSc;
+            this.assignUserName = userName;
+            this.selectedRoleSc = '';
+            this.assignMsg = '';
+            this.showAssignModal = true;
+        },
+
+        async doAssign() {
+            if (!this.selectedRoleSc) return;
+            this.assigning = true;
+            this.assignMsg = '';
+            try {
+                const res = await fetch('/admin/account-roles/api/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_secure_code: this.assignUserSc,
+                        role_secure_code: this.selectedRoleSc,
+                    })
+                });
+                const data = await res.json();
+                this.assignOk = data.success;
+                this.assignMsg = data.message || data.error || '';
+                if (data.success) {
+                    setTimeout(() => location.reload(), 800);
+                }
+            } catch (e) {
+                this.assignOk = false;
+                this.assignMsg = e.message;
+            } finally {
+                this.assigning = false;
+            }
+        },
+
+        async revokeRole(userSc, roleSc, userName, roleName) {
+            if (!confirm('確定移除 ' + userName + ' 的「' + roleName + '」角色？')) return;
+            try {
+                const res = await fetch('/admin/account-roles/api/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_secure_code: userSc,
+                        role_secure_code: roleSc,
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || '操作失敗');
+                }
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+    };
+}
+</script>
 {% endblock %}

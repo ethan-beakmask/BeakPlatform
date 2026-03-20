@@ -15,12 +15,28 @@ from .security.auth_interceptor import register_auth_interceptor
 from .security.security_headers import register_security_headers
 from .security.url_access_control import register_page_access_interceptor, register_url_access_logger
 
+
+def _rate_limit_key():
+    """分層速率限制 key function。
+
+    已認證用戶: 以 user secure_code 為限制單位 (解決 NAT 共用 IP 問題)
+    未認證請求: 以來源 IP 為限制單位
+    """
+    from flask_login import current_user
+    try:
+        if current_user and current_user.is_authenticated:
+            return f"user:{current_user.secure_code}"
+    except Exception:
+        pass
+    return get_remote_address()
+
+
 # Extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 csrf = CSRFProtect()
 session = Session()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=_rate_limit_key)
 babel = Babel()
 
 
@@ -201,6 +217,15 @@ def register_error_handlers(app: Flask) -> None:
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Not found'}), 404
         return render_template('errors/404.html'), 404
+
+    @app.errorhandler(429)
+    def ratelimit_handler(error):
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({
+                'success': False,
+                'error': '請求頻率過高，請稍後再試',
+            }), 429
+        return render_template('errors/429.html'), 429
 
     @app.errorhandler(500)
     def internal_error(error):

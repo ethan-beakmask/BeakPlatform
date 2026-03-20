@@ -52,10 +52,11 @@ def list_available_forms():
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    # 判斷是否為管理員
+    # 判斷是否可見測試表單（管理員 or 有 design.tryout 權限）
+    from app.platform.auth import has_permission
     is_admin = (
-        getattr(current_user, 'is_system_admin', False) or
-        getattr(current_user, 'level', 0) >= 90  # ORG_ADMIN level
+        getattr(current_user, 'is_org_admin', False) or
+        has_permission('form_workflow.design.tryout')
     )
 
     # 預先載入分類映射（category_secure_code → parent info）
@@ -351,14 +352,15 @@ def submit_form():
 
         if is_test_mode:
             # ============================================
-            # 測試模式：使用設計稿（需管理員權限）
+            # 測試模式：使用設計稿（需管理員或 design.tryout 權限）
             # ============================================
-            is_admin = (
-                getattr(current_user, 'is_system_admin', False) or
-                getattr(current_user, 'level', 0) >= 90
+            from app.platform.auth import has_permission
+            can_tryout = (
+                getattr(current_user, 'is_org_admin', False) or
+                has_permission('form_workflow.design.tryout')
             )
-            if not is_admin:
-                return jsonify({'success': False, 'error': '測試模式需要管理員權限'}), 403
+            if not can_tryout:
+                return jsonify({'success': False, 'error': '需要試行設計稿權限'}), 403
 
             # 查找配對
             mapping = FwFormWorkflowMapping.query.filter_by(
