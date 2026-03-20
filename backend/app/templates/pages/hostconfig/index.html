@@ -20,15 +20,6 @@
     </div>
 </div>
 
-<h2 class="section-title">服務控制</h2>
-<div class="tool-grid">
-    <div class="tool-card">
-        <h3>Flask 服務</h3>
-        <button class="restart-btn" id="restartBtn" onclick="restartFlask()">重新啟動 Flask</button>
-        <div class="status-msg" id="statusMsg"></div>
-    </div>
-</div>
-
 <h2 class="section-title">資料維護</h2>
 <div class="tool-grid">
     <div class="tool-card" style="min-width: 400px;" x-data="hardDeleteManager()" x-init="loadPreview()">
@@ -147,22 +138,11 @@
     </div>
 </div>
 
-<h2 class="section-title">開發工具</h2>
-<div class="tool-grid">
-    <div class="tool-card">
-        <h3>
-            <a href="http://192.168.0.16:7001" target="_blank">DevTools</a>
-            <span class="external-link">(Port 7001)</span>
-        </h3>
-        <p>DB Viewer 等開發工具（獨立服務）</p>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 window.__HOSTCONFIG = {
-    restartUrl: '{{ url_for("hostconfig.restart_flask") }}',
     previewUrl: '{{ url_for("hostconfig.hard_delete_preview") }}',
     executeUrl: '{{ url_for("hostconfig.hard_delete_execute") }}',
     purgePreviewUrl: '{{ url_for("hostconfig.purge_deleted_preview") }}',

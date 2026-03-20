@@ -2,45 +2,6 @@
 
 var __HOSTCONFIG = window.__HOSTCONFIG || {};
 
-function restartFlask() {
-    var btn = document.getElementById('restartBtn');
-    var msg = document.getElementById('statusMsg');
-
-    if (!confirm('確定要重新啟動 Flask 服務嗎？')) {
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '重啟中...';
-    msg.textContent = '';
-
-    fetch(__HOSTCONFIG.restartUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        if (data.success) {
-            msg.style.color = '#2f855a';
-            msg.textContent = data.message;
-            setTimeout(function() { location.reload(); }, 15000);
-        } else {
-            msg.style.color = '#c53030';
-            msg.textContent = '錯誤: ' + data.message;
-            btn.disabled = false;
-            btn.textContent = '重新啟動 Flask';
-        }
-    })
-    .catch(function() {
-        msg.style.color = '#2f855a';
-        msg.textContent = '服務重啟中，15 秒後重新整理...';
-        setTimeout(function() { location.reload(); }, 15000);
-    });
-}
-
 function purgeDeletedManager() {
     return {
         scope: 'all',

@@ -2,62 +2,171 @@
 
 {% block title %}編輯企業 - {{ organization.name }} - BeakMask{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/css/organizations.css">
+{% endblock %}
+
 {% block content %}
-<p><a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a></p>
+<div style="max-width: 800px; margin: 0 auto;">
 
-<h1>編輯企業 {{ organization.name }}</h1>
+<!-- 頁面標題列 -->
+<div class="page-header">
+    <h1 class="page-title">編輯企業 - {{ organization.name }}</h1>
+    <div class="page-actions">
+        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">返回企業管理</a>
+    </div>
+</div>
 
+<!-- Flash 訊息 -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p><strong>{{ message }}</strong></p>
+<div class="alert {% if category == 'success' %}alert-success{% elif category == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
 <form method="POST" x-data="orgEditForm()" @submit="handleSubmit($event)">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <table class="info-table">
-        <tr>
-            <td>網域名稱</td>
-            <td><code>{{ organization.domain_name }}</code> (不可變更)</td>
-        </tr>
-        <tr>
-            <td><label for="name">企業名稱 *</label></td>
-            <td><input type="text" id="name" name="name" size="40" value="{{ organization.name }}" required></td>
-        </tr>
-        <tr>
-            <td><label for="display_name">顯示名稱</label></td>
-            <td>
-                <input type="text" id="display_name" name="display_name" size="40" value="{{ organization.display_name or '' }}">
-                <br><small>多語言顯示用，如不填則使用企業名稱</small>
-            </td>
-        </tr>
-        <tr>
-            <td><label for="description">描述</label></td>
-            <td><textarea id="description" name="description" rows="3" cols="40">{{ organization.description or '' }}</textarea></td>
-        </tr>
-        <tr>
-            <td><label for="is_active">狀態</label></td>
-            <td>
-                <select id="is_active" name="is_active" x-model="isActive">
-                    <option value="true">啟用</option>
-                    <option value="false">停用</option>
-                </select>
-                {% if active_contracts %}
-                <br><small class="text-muted">* 此企業有 {{ active_contracts|length }} 份未到期合約</small>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <br>
-                <button type="submit">儲存變更</button>
-                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">[取消]</a>
-            </td>
-        </tr>
-    </table>
+
+    <!-- 基本資訊 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>基本資訊</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">企業代碼</label>
+                    <input type="text" class="form-control" value="{{ organization.code }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">網域名稱</label>
+                    <input type="text" class="form-control" value="{{ organization.domain_name }}" disabled>
+                    <div class="form-hint">企業代碼與網域名稱建立後不可變更</div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="name">企業名稱 <span class="required">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control"
+                           value="{{ organization.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="display_name">顯示名稱</label>
+                    <input type="text" id="display_name" name="display_name" class="form-control"
+                           value="{{ organization.display_name or '' }}">
+                    <div class="form-hint">多語言顯示用，不填則使用企業名稱</div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="customer_type">客戶類型</label>
+                    <select id="customer_type" name="customer_type" class="form-control">
+                        <option value="TRIAL" {% if organization.customer_type == 'TRIAL' %}selected{% endif %}>試用</option>
+                        <option value="FORMAL" {% if organization.customer_type == 'FORMAL' %}selected{% endif %}>正式客戶</option>
+                        <option value="BLACKLIST" {% if organization.customer_type == 'BLACKLIST' %}selected{% endif %}>黑名單</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="user_limit">帳號上限</label>
+                    <input type="number" id="user_limit" name="user_limit" class="form-control"
+                           value="{{ organization.user_limit }}" min="1">
+                    <div class="form-hint">目前已使用 {{ active_user_count }} 個帳號</div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="is_active">狀態</label>
+                    <select id="is_active" name="is_active" class="form-control" x-model="isActive">
+                        <option value="true">啟用</option>
+                        <option value="false">停用</option>
+                    </select>
+                    {% if active_contracts %}
+                    <div class="form-hint text-warning">此企業有 {{ active_contracts|length }} 份未到期合約</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">所屬集團</label>
+                    <input type="text" class="form-control"
+                           value="{% if organization.conglomerate %}{{ organization.conglomerate.name }}{% else %}無{% endif %}" disabled>
+                    <div class="form-hint">集團設定請至企業管理列表頁操作</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="description">描述</label>
+                <textarea id="description" name="description" class="form-control" rows="3">{{ organization.description or '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 聯絡資訊 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>聯絡資訊</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="contact_person">聯絡人</label>
+                    <input type="text" id="contact_person" name="contact_person" class="form-control"
+                           value="{{ organization.contact_person or '' }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="contact_email">聯絡信箱</label>
+                    <input type="email" id="contact_email" name="contact_email" class="form-control"
+                           value="{{ organization.contact_email or '' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="contact_phone">聯絡電話</label>
+                    <input type="text" id="contact_phone" name="contact_phone" class="form-control"
+                           value="{{ organization.contact_phone or '' }}">
+                </div>
+                <div class="form-group">
+                    <!-- 空白佔位 -->
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="address">地址</label>
+                <textarea id="address" name="address" class="form-control" rows="2">{{ organization.address or '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 儲存按鈕 -->
+    <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+        <button type="submit" class="btn btn-primary">儲存變更</button>
+        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">取消</a>
+    </div>
 </form>
+
+<!-- 危險操作區 -->
+{% if not organization.is_system_org %}
+<div class="detail-card" style="border-color: var(--color-danger);">
+    <div class="detail-card-header" style="background: var(--color-danger-light);">
+        <h3 style="color: var(--color-danger);">危險操作</h3>
+    </div>
+    <div class="detail-card-body">
+        <p style="margin: 0 0 12px 0; font-size: var(--font-size-sm); color: var(--color-text-secondary);">
+            刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。
+        </p>
+        <form method="POST"
+              action="{{ url_for('organizations.delete_org', secure_code=organization.secure_code) }}"
+              onsubmit="return confirm('確定要刪除企業「{{ organization.name }}」嗎？此操作無法復原。');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">刪除企業</button>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 <script>
 function orgEditForm() {
@@ -73,7 +182,6 @@ function orgEditForm() {
         {% endif %}
 
         handleSubmit(event) {
-            // 檢查：從啟用改為停用，且有未到期合約
             if (this.originalActive && this.isActive === 'false' && this.hasActiveContracts) {
                 let msg = `此企業尚有 ${this.activeContractCount} 份未到期合約`;
                 if (this.latestContractEnd) {
@@ -91,14 +199,5 @@ function orgEditForm() {
     };
 }
 </script>
-
-{% if not organization.is_system_org %}
-<hr>
-<h2>刪除企業</h2>
-<p>刪除此企業將無法復原，所有相關資料都會被標記為刪除。請謹慎操作。</p>
-<form method="POST" action="{{ url_for('organizations.delete_org', secure_code=organization.secure_code) }}" onsubmit="return confirm('確定要刪除此企業嗎？此操作無法復原。');">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit">刪除企業</button>
-</form>
-{% endif %}
+</div>
 {% endblock %}

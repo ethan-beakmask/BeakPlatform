@@ -2,197 +2,154 @@
 
 {% block title %}{{ _('個人設定') }} - BeakMask{% endblock %}
 
-{% block head %}
-<style>
-    .ps-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0 24px;
-        max-width: 960px;
-    }
-    .ps-grid .ps-col { min-width: 0; }
-    .ps-grid .ps-full { grid-column: 1 / -1; }
-    .ps-section {
-        background: #f0f0f0;
-        padding: 5px 10px;
-        margin: 0 0 6px 0;
-        font-weight: bold;
-        font-size: 13px;
-        border-left: 3px solid #0066cc;
-    }
-    .ps-section:not(:first-child) { margin-top: 12px; }
-    .ps-grid table { width: 100%; border-collapse: collapse; }
-    .ps-grid td {
-        padding: 3px 4px;
-        vertical-align: middle;
-        font-size: 13px;
-    }
-    .ps-grid td:first-child {
-        width: 100px;
-        text-align: right;
-        padding-right: 8px;
-        color: #666;
-        white-space: nowrap;
-    }
-    .ps-grid input[type="text"],
-    .ps-grid input[type="email"],
-    .ps-grid input[type="tel"],
-    .ps-grid select {
-        width: 100%;
-        padding: 4px 6px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        font-size: 13px;
-        box-sizing: border-box;
-    }
-    .ps-grid input:focus,
-    .ps-grid select:focus {
-        border-color: #0066cc;
-        outline: none;
-    }
-    .ps-readonly {
-        color: #555;
-        background: #f9f9f9;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 13px;
-        display: inline-block;
-    }
-    .ps-help {
-        font-size: 11px;
-        color: #999;
-        margin-top: 1px;
-        line-height: 1.3;
-    }
-    .ps-btn-row {
-        margin-top: 14px;
-        padding-top: 10px;
-        border-top: 1px solid #e0e0e0;
-    }
-    .ps-btn-row button {
-        padding: 6px 20px;
-        background: #0066cc;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 13px;
-    }
-    .ps-btn-row button:hover { background: #0052a3; }
-    @media (max-width: 768px) {
-        .ps-grid { grid-template-columns: 1fr; }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<h2 style="margin: 20px 0 10px 0;">{{ _('個人設定') }}</h2>
+<div style="max-width: 800px; margin: 0 auto;">
 
+<!-- 頁面標題列 -->
+<div class="page-header">
+    <h1 class="page-title">{{ _('個人設定') }}</h1>
+</div>
+
+<!-- Flash 訊息 -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 6px 10px; margin: 0 0 8px 0; max-width: 960px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 3px; font-size: 13px;">
+<div class="alert {% if category == 'success' %}alert-success{% elif category == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
 <form method="POST">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<div class="ps-grid">
-    {# === 左欄 === #}
-    <div class="ps-col">
-        <div class="ps-section">{{ _('帳號資訊') }}</div>
-        <table>
-            <tr>
-                <td>{{ _('帳號') }}</td>
-                <td><span class="ps-readonly">{{ current_user.username }}@{{ current_user.organization.domain_name }}</span></td>
-            </tr>
-            <tr>
-                <td>{{ _('主要 Email') }}</td>
-                <td><span class="ps-readonly">{{ current_user.email }}</span></td>
-            </tr>
-            <tr>
-                <td>{{ _('顯示名稱') }}</td>
-                <td><span class="ps-readonly">{{ current_user.display_name }}</span></td>
-            </tr>
-            <tr>
-                <td>{{ _('密碼') }}</td>
-                <td><a href="{{ url_for('main.change_password') }}" style="font-size:13px;">[{{ _('變更密碼') }}]</a></td>
-            </tr>
-        </table>
 
-        <div class="ps-section">{{ _('個人資料') }}</div>
-        <table>
-            <tr>
-                <td><label for="english_name">{{ _('英文姓名') }}</label></td>
-                <td><input type="text" id="english_name" name="english_name" value="{{ current_user.english_name or '' }}" placeholder="English Name"></td>
-            </tr>
-            <tr>
-                <td><label for="native_name">{{ _('本國姓名') }}</label></td>
-                <td><input type="text" id="native_name" name="native_name" value="{{ current_user.native_name or '' }}" placeholder="{{ _('本國語言姓名') }}"></td>
-            </tr>
-            <tr>
-                <td><label for="nickname">{{ _('暱稱') }}</label></td>
-                <td><input type="text" id="nickname" name="nickname" value="{{ current_user.nickname or '' }}" placeholder="Nickname"></td>
-            </tr>
-        </table>
+    <!-- 帳號資訊 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('帳號資訊') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">{{ _('帳號') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.username }}@{{ current_user.organization.domain_name }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('主要 Email') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.email }}" disabled>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">{{ _('顯示名稱') }}</label>
+                    <input type="text" class="form-control" value="{{ current_user.display_name }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ _('密碼') }}</label>
+                    <div style="padding-top: 8px;">
+                        <a href="{{ url_for('main.change_password') }}" class="btn btn-secondary btn-sm">{{ _('變更密碼') }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {# === 右欄 === #}
-    <div class="ps-col">
-        <div class="ps-section">{{ _('聯絡方式') }}</div>
-        <table>
-            <tr>
-                <td><label for="backup_email_1">{{ _('備用 Email') }} 1</label></td>
-                <td>
-                    <input type="email" id="backup_email_1" name="backup_email_1" value="{{ current_user.backup_email_1 or '' }}" placeholder="backup@example.com">
-                    <div class="ps-help">{{ _('系統通知專用（空白時自動使用主要 Email）') }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="backup_email_2">{{ _('備用 Email') }} 2</label></td>
-                <td><input type="email" id="backup_email_2" name="backup_email_2" value="{{ current_user.backup_email_2 or '' }}" placeholder="backup2@example.com"></td>
-            </tr>
-            <tr>
-                <td><label for="mobile_phone_1">{{ _('手機') }} 1</label></td>
-                <td><input type="tel" id="mobile_phone_1" name="mobile_phone_1" value="{{ current_user.mobile_phone_1 or '' }}" placeholder="+886-912-345-678"></td>
-            </tr>
-            <tr>
-                <td><label for="mobile_phone_2">{{ _('手機') }} 2</label></td>
-                <td><input type="tel" id="mobile_phone_2" name="mobile_phone_2" value="{{ current_user.mobile_phone_2 or '' }}" placeholder="+886-912-345-678"></td>
-            </tr>
-        </table>
+    <!-- 個人資料 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('個人資料') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="english_name">{{ _('英文姓名') }}</label>
+                    <input type="text" id="english_name" name="english_name" class="form-control"
+                           value="{{ current_user.english_name or '' }}" placeholder="English Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="native_name">{{ _('本國姓名') }}</label>
+                    <input type="text" id="native_name" name="native_name" class="form-control"
+                           value="{{ current_user.native_name or '' }}" placeholder="{{ _('本國語言姓名') }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="nickname">{{ _('暱稱') }}</label>
+                    <input type="text" id="nickname" name="nickname" class="form-control"
+                           value="{{ current_user.nickname or '' }}" placeholder="Nickname">
+                </div>
+                <div class="form-group">
+                    <!-- 空白佔位 -->
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="ps-section">{{ _('介面設定') }}</div>
-        <table>
-            <tr>
-                <td><label for="navbar_display">{{ _('Navbar') }}</label></td>
-                <td>
-                    <select id="navbar_display" name="navbar_display">
+    <!-- 聯絡方式 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('聯絡方式') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="backup_email_1">{{ _('備用 Email') }} 1</label>
+                    <input type="email" id="backup_email_1" name="backup_email_1" class="form-control"
+                           value="{{ current_user.backup_email_1 or '' }}" placeholder="backup@example.com">
+                    <div class="form-hint">{{ _('系統通知專用（空白時自動使用主要 Email）') }}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="backup_email_2">{{ _('備用 Email') }} 2</label>
+                    <input type="email" id="backup_email_2" name="backup_email_2" class="form-control"
+                           value="{{ current_user.backup_email_2 or '' }}" placeholder="backup2@example.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="mobile_phone_1">{{ _('手機') }} 1</label>
+                    <input type="tel" id="mobile_phone_1" name="mobile_phone_1" class="form-control"
+                           value="{{ current_user.mobile_phone_1 or '' }}" placeholder="+886-912-345-678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="mobile_phone_2">{{ _('手機') }} 2</label>
+                    <input type="tel" id="mobile_phone_2" name="mobile_phone_2" class="form-control"
+                           value="{{ current_user.mobile_phone_2 or '' }}" placeholder="+886-912-345-678">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 介面設定 -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h3>{{ _('介面設定') }}</h3>
+        </div>
+        <div class="detail-card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="navbar_display">{{ _('Navbar 顯示') }}</label>
+                    <select id="navbar_display" name="navbar_display" class="form-control">
                         <option value="">{{ _('跟隨企業設定') }}</option>
                         <option value="nickname" {% if current_user.navbar_display == 'nickname' %}selected{% endif %}>{{ _('暱稱') }}</option>
                         <option value="employee_id" {% if current_user.navbar_display == 'employee_id' %}selected{% endif %}>{{ _('用戶編號') }}</option>
                         <option value="employee_id_dept" {% if current_user.navbar_display == 'employee_id_dept' %}selected{% endif %}>{{ _('用戶編號 + 部門') }}</option>
                     </select>
-                    <div class="ps-help">{{ _('在公開場所使用時，可改為不含真名的顯示方式') }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="interface_language">{{ _('語言') }}</label></td>
-                <td>
-                    <select id="interface_language" name="interface_language">
+                    <div class="form-hint">{{ _('在公開場所使用時，可改為不含真名的顯示方式') }}</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="interface_language">{{ _('語言') }}</label>
+                    <select id="interface_language" name="interface_language" class="form-control">
                         {% for code, label in languages %}
                         <option value="{{ code }}" {% if current_user.interface_language == code %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="timezone">{{ _('時區') }}</label></td>
-                <td>
-                    <select id="timezone" name="timezone">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="timezone">{{ _('時區') }}</label>
+                    <select id="timezone" name="timezone" class="form-control">
                         <option value="">{{ _('使用企業預設') }}</option>
                         {% for group_label, timezones in timezone_choices %}
                         <optgroup label="{{ group_label }}">
@@ -202,15 +159,19 @@
                         </optgroup>
                         {% endfor %}
                     </select>
-                </td>
-            </tr>
-        </table>
+                </div>
+                <div class="form-group">
+                    <!-- 空白佔位 -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    {# === 按鈕列 (跨欄) === #}
-    <div class="ps-full ps-btn-row">
-        <button type="submit">{{ _('儲存設定') }}</button>
+    <!-- 儲存按鈕 -->
+    <div style="margin-bottom: 24px;">
+        <button type="submit" class="btn btn-primary">{{ _('儲存設定') }}</button>
     </div>
-</div>
+
 </form>
+</div>
 {% endblock %}

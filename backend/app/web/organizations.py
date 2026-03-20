@@ -280,6 +280,12 @@ def edit_org(secure_code: str):
         display_name = request.form.get('display_name', '').strip() or None
         description = request.form.get('description', '').strip() or None
         is_active = request.form.get('is_active') == 'true'
+        customer_type = request.form.get('customer_type', '').strip()
+        user_limit_str = request.form.get('user_limit', '').strip()
+        contact_person = request.form.get('contact_person', '').strip() or None
+        contact_email = request.form.get('contact_email', '').strip() or None
+        contact_phone = request.form.get('contact_phone', '').strip() or None
+        address = request.form.get('address', '').strip() or None
 
         if not name:
             flash('企業名稱為必填', 'error')
@@ -289,9 +295,22 @@ def edit_org(secure_code: str):
                 org.display_name = display_name
                 org.description = description
                 org.is_active = is_active
+                if customer_type in ('TRIAL', 'FORMAL', 'BLACKLIST'):
+                    org.customer_type = customer_type
+                if user_limit_str:
+                    user_limit = int(user_limit_str)
+                    if user_limit >= 1:
+                        org.user_limit = user_limit
+                org.contact_person = contact_person
+                org.contact_email = contact_email
+                org.contact_phone = contact_phone
+                org.address = address
                 db.session.commit()
                 flash('已更新企業資料', 'success')
                 return redirect(url_for('organizations.list_orgs'))
+            except ValueError:
+                db.session.rollback()
+                flash('帳號上限必須為正整數', 'error')
             except Exception as e:
                 db.session.rollback()
                 flash(f'更新失敗: {str(e)}', 'error')
@@ -305,10 +324,14 @@ def edit_org(secure_code: str):
         Contract.end_date >= today
     ).order_by(Contract.end_date.desc()).all()
 
+    # 目前啟用帳號數
+    active_user_count = org.get_active_user_count()
+
     return render_template(
         'pages/organizations/edit.html',
         organization=org,
-        active_contracts=active_contracts
+        active_contracts=active_contracts,
+        active_user_count=active_user_count
     )
 
 

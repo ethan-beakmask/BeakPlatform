@@ -23,6 +23,7 @@ EXCLUDE_DIRS=(
     ".forgejo"
     "scripts/migrations"
     "scripts/systemd"
+    "backend/app/templates/pages/dev"
 )
 
 # 個別檔案
@@ -57,6 +58,8 @@ EXCLUDE_FILES=(
     "scripts/rotate_credentials.py"
     "scripts/sql_form_setup.sql"
     "scripts/readme.txt"
+    "backend/app/web/dev.py"
+    "backend/app/static/js/quick-login.js"
 )
 
 echo "=== 過濾推送到 GitHub ==="

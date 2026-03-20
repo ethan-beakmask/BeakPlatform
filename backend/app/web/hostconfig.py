@@ -4,11 +4,9 @@ BeakMask Host Config
 
 用途：
 - 伺服器設定 (E-MailRelay 等)
-- Flask 重啟
 - 資料維護 (硬刪除、清除標記刪除資料)
 - 其他主機級操作
 """
-import subprocess
 from flask import Blueprint, render_template, jsonify, request
 
 from app.security.decorators import system_admin_required
@@ -99,32 +97,6 @@ def server_settings():
     - E-MailRelay：系統郵件服務設定
     """
     return render_template('pages/hostconfig/system_settings.html')
-
-
-@hostconfig_bp.route('/restart-flask', methods=['POST'])
-@system_admin_required
-def restart_flask():
-    """執行 Flask 重啟腳本"""
-    try:
-        # 用 systemd-run (transient service) 讓 PID 1 直接啟動腳本，
-        # 完全脫離 beakplatform.service 的 cgroup，
-        # 避免 systemctl stop 連帶殺掉腳本自身。
-        # --collect: 執行完畢自動清除 transient unit
-        subprocess.Popen(
-            [
-                'sudo', 'systemd-run',
-                '--collect',
-                '--unit=beakplatform-restart',
-                '--property=Type=oneshot',
-                '/opt/BeakPlatform/restart_flask.sh',
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True
-        )
-        return jsonify({'success': True, 'message': '重啟指令已發送，頁面將在 15 秒後重新整理'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 def _get_delete_sql(table_name, key_column, org_placeholders, parent_table=None):
