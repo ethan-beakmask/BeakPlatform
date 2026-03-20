@@ -16,10 +16,16 @@ function orgManager() {
         newConglomerateName: '',
         editingConglomerate: null,
 
+        // 合約列表（排序/篩選）
+        contracts: config.contracts || [],
+        contractSort: { field: 'start_date', dir: 'desc' },
+        contractStatusFilter: 'all',
+
         // 合約 Modal
         contractModal: {
             show: false,
             editing: null,
+            originalStatus: null,
             message: '',
             error: false,
             availableModules: config.availableModules || [],
@@ -30,8 +36,7 @@ function orgManager() {
                 amount: '',
                 description: '',
                 notes: '',
-                modules: [],
-                disabled: false
+                modules: []
             }
         },
 
@@ -188,13 +193,58 @@ function orgManager() {
             this.selectedOrgs = [];
         },
 
-        // === 合約功能 ===
+        // === 合約列表排序/篩選 ===
+        sortContracts(field) {
+            if (this.contractSort.field === field) {
+                this.contractSort.dir = this.contractSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.contractSort.field = field;
+                this.contractSort.dir = (field === 'amount') ? 'desc' : 'asc';
+            }
+        },
+
+        contractSortIcon(field) {
+            if (this.contractSort.field !== field) return '\u2195';
+            return this.contractSort.dir === 'asc' ? '\u25B2' : '\u25BC';
+        },
+
+        filteredContracts() {
+            let list = this.contracts;
+
+            // 狀態篩選
+            if (this.contractStatusFilter === 'active') {
+                list = list.filter(c => c.status === 'ACTIVE' && c.is_active);
+            } else if (this.contractStatusFilter === 'inactive') {
+                list = list.filter(c => c.status === 'DISABLED' || c.is_expired || !c.is_active);
+            }
+
+            // 排序
+            const field = this.contractSort.field;
+            const dir = this.contractSort.dir === 'asc' ? 1 : -1;
+            list = [...list].sort((a, b) => {
+                let va = a[field];
+                let vb = b[field];
+                if (va == null) va = '';
+                if (vb == null) vb = '';
+                if (field === 'amount') {
+                    return (Number(va) - Number(vb)) * dir;
+                }
+                if (va < vb) return -1 * dir;
+                if (va > vb) return 1 * dir;
+                return 0;
+            });
+
+            return list;
+        },
+
+        // === 合約 Modal ===
         openContractModal() {
             const today = new Date();
             const nextMonth = new Date(today);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
 
             this.contractModal.editing = null;
+            this.contractModal.originalStatus = null;
             this.contractModal.message = '';
             this.contractModal.form = {
                 name: '',
@@ -203,8 +253,7 @@ function orgManager() {
                 amount: '',
                 description: '',
                 notes: '',
-                modules: [],
-                disabled: false
+                modules: []
             };
             this.contractModal.show = true;
         },
@@ -218,6 +267,7 @@ function orgManager() {
                 if (resp.ok && data.contract) {
                     const c = data.contract;
                     this.contractModal.editing = secureCode;
+                    this.contractModal.originalStatus = c.status;
                     this.contractModal.message = '';
                     this.contractModal.form = {
                         name: c.name || '',
@@ -226,8 +276,7 @@ function orgManager() {
                         amount: c.amount || '',
                         description: c.description || '',
                         notes: c.notes || '',
-                        modules: c.modules_config || [],
-                        disabled: c.status === 'DISABLED'
+                        modules: c.modules_config || []
                     };
                     this.contractModal.show = true;
                 } else {
@@ -248,40 +297,21 @@ function orgManager() {
             const orgSecureCode = config.selectedOrgCode || '';
 
             try {
-                let resp;
-                if (this.contractModal.editing) {
-                    const payload = {
-                        name: form.name || null,
-                        start_date: form.start_date,
-                        end_date: form.end_date,
-                        amount: form.amount ? parseFloat(form.amount) : null,
-                        description: form.description || null,
-                        notes: form.notes || null,
-                        modules_config: form.modules,
-                        status: form.disabled ? 'DISABLED' : 'ACTIVE'
-                    };
-                    resp = await fetch('/api/contracts/' + this.contractModal.editing, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                        body: JSON.stringify(payload)
-                    });
-                } else {
-                    const payload = {
-                        org_id: orgSecureCode,
-                        name: form.name || null,
-                        start_date: form.start_date,
-                        end_date: form.end_date,
-                        amount: form.amount ? parseFloat(form.amount) : null,
-                        description: form.description || null,
-                        notes: form.notes || null,
-                        modules_config: form.modules
-                    };
-                    resp = await fetch('/api/contracts/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                        body: JSON.stringify(payload)
-                    });
-                }
+                const payload = {
+                    org_id: orgSecureCode,
+                    name: form.name || null,
+                    start_date: form.start_date,
+                    end_date: form.end_date,
+                    amount: form.amount ? parseFloat(form.amount) : null,
+                    description: form.description || null,
+                    notes: form.notes || null,
+                    modules_config: form.modules
+                };
+                const resp = await fetch('/api/contracts/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify(payload)
+                });
 
                 const data = await resp.json();
                 if (resp.ok) {
@@ -294,23 +324,23 @@ function orgManager() {
             }
         },
 
-        async deleteContract() {
+        async disableContract() {
             if (!this.contractModal.editing) return;
-            if (!confirm('確定要刪除此合約嗎？')) return;
+            if (!confirm('確定要停用此合約嗎？停用後不可再啟用，如需恢復服務請建立新合約。')) return;
 
             try {
-                const resp = await fetch('/api/contracts/' + this.contractModal.editing, {
-                    method: 'DELETE',
+                const resp = await fetch('/api/contracts/' + this.contractModal.editing + '/disable', {
+                    method: 'PATCH',
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 const data = await resp.json();
-                if (data.success) {
+                if (resp.ok) {
                     location.reload();
                 } else {
-                    this.showContractMessage(data.message || '刪除失敗', true);
+                    this.showContractMessage(data.error || '停用失敗', true);
                 }
             } catch (e) {
-                this.showContractMessage('刪除失敗: ' + e.message, true);
+                this.showContractMessage('停用失敗: ' + e.message, true);
             }
         },
 

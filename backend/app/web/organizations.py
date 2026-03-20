@@ -156,6 +156,9 @@ def list_orgs():
     page_range_end = min(pages, page + 2)
     page_range = list(range(page_range_start, page_range_end + 1))
 
+    # 序列化合約資料供前端 Alpine.js 使用
+    contracts_json = json.dumps([c.to_dict() for c in contracts]) if contracts else '[]'
+
     return render_template(
         'pages/organizations/list.html',
         organizations=organizations,
@@ -165,6 +168,7 @@ def list_orgs():
         org_total_counts=org_total_counts,
         selected_org=selected_org,
         contracts=contracts,
+        contracts_json=contracts_json,
         contract_period=contract_period,
         pagination={
             'page': page,

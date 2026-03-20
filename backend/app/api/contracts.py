@@ -156,68 +156,13 @@ def create_contract():
 def update_contract(secure_code: str):
     """
     更新合約 (系統管理員)
+    合約建立後不可修改內容（稽核要求），僅可透過 PATCH /disable 停用。
 
     PUT /api/contracts/<secure_code>
     """
-    from flask_login import current_user
-
-    contract = ResourceGateway.get_by(
-        Contract,
-        secure_code=secure_code,
-        is_deleted=False,
-        skip_tenant_filter=True
-    )
-
-    if not contract:
-        return jsonify({'error': '合約不存在'}), 404
-
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
-
-    try:
-        # 更新欄位
-        if 'name' in data:
-            contract.name = data['name']
-        if 'description' in data:
-            contract.description = data['description']
-        if 'start_date' in data:
-            contract.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
-        if 'end_date' in data:
-            contract.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
-        if 'amount' in data:
-            contract.amount = data['amount']
-        if 'status' in data:
-            if data['status'] not in [ContractStatus.ACTIVE, ContractStatus.DISABLED]:
-                return jsonify({'error': '無效的狀態'}), 400
-            contract.status = data['status']
-        if 'notes' in data:
-            contract.notes = data['notes']
-        if 'modules_config' in data:
-            mc = data['modules_config']
-            contract.modules_config = json.dumps(mc) if mc else None
-
-        # 檢查日期
-        if contract.end_date < contract.start_date:
-            return jsonify({'error': '結束日期不可早於開始日期'}), 400
-
-        # 稽核欄位
-        contract.modified_by_secure_code = current_user.secure_code
-        contract.modified_at = datetime.utcnow()
-
-        db.session.commit()
-
-        return jsonify({
-            'message': '合約更新成功',
-            'contract': contract.to_dict()
-        }), 200
-
-    except ValueError:
-        return jsonify({'error': '日期格式錯誤'}), 400
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to update contract: {e}")
-        return jsonify({'error': '更新合約失敗'}), 500
+    return jsonify({
+        'error': '合約建立後不可修改內容（稽核要求）。如需停用請使用停用功能，如需變更請建立新合約。'
+    }), 403
 
 
 @contracts_bp.route('/<secure_code>', methods=['DELETE'])
@@ -305,42 +250,12 @@ def disable_contract(secure_code: str):
 @system_admin_required
 def enable_contract(secure_code: str):
     """
-    啟用合約 (系統管理員)
-
-    PATCH /api/contracts/<secure_code>/enable
+    啟用合約 — 已停用，合約停用為單向操作，不可逆。
+    保留端點回傳明確錯誤訊息，避免前端或 API 呼叫端困惑。
     """
-    from flask_login import current_user
-
-    contract = ResourceGateway.get_by(
-        Contract,
-        secure_code=secure_code,
-        is_deleted=False,
-        skip_tenant_filter=True
-    )
-
-    if not contract:
-        return jsonify({'error': '合約不存在'}), 404
-
-    if contract.status == ContractStatus.ACTIVE:
-        return jsonify({'error': '合約已是啟用狀態'}), 400
-
-    try:
-        contract.status = ContractStatus.ACTIVE
-        contract.modified_by_secure_code = current_user.secure_code
-        contract.modified_at = datetime.utcnow()
-        db.session.commit()
-
-        logger.info(f"Contract enabled: {contract.contract_number} by {current_user.email}")
-
-        return jsonify({
-            'message': '合約已啟用',
-            'contract': contract.to_dict()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to enable contract: {e}")
-        return jsonify({'error': '啟用合約失敗'}), 500
+    return jsonify({
+        'error': '合約停用後不可再啟用（單向操作）。如需恢復服務，請建立新合約。'
+    }), 403
 
 
 # =====================================================

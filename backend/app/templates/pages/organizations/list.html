@@ -222,48 +222,74 @@
                 </div>
                 {% endif %}
 
-                {% if contracts %}
-                <table class="contract-table">
-                    <thead>
-                        <tr>
-                            <th>合約編號</th>
-                            <th>合約名稱</th>
-                            <th>期間</th>
-                            <th>金額</th>
-                            <th>狀態</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for contract in contracts %}
-                        <tr>
-                            <td><code>{{ contract.contract_number }}</code></td>
-                            <td>{{ contract.name or '-' }}</td>
-                            <td>{{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}</td>
-                            <td>{% if contract.amount %}{{ "{:,.0f}".format(contract.amount) }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if contract.status == 'DISABLED' %}<span class="status-disabled">停用</span>
-                                {% elif contract.is_expired %}<span class="status-expired">已過期</span>
-                                {% elif contract.is_active %}<span class="status-valid">有效</span>
-                                {% else %}尚未生效{% endif %}
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                        @click="editContract('{{ contract.secure_code }}')">編輯</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-muted" style="text-align: center; padding: 20px;">
-                    {% if selected_org.is_system_org %}
-                    系統企業無需建立合約
-                    {% else %}
-                    尚無合約，點擊上方「+ 新增合約」建立
-                    {% endif %}
-                </p>
-                {% endif %}
+                <div x-show="contracts.length > 0">
+                    <div style="margin-bottom: 8px; display: flex; gap: 4px;">
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'all'"
+                                x-text="'全部 (' + contracts.length + ')'"></button>
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'active' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'active'"
+                                x-text="'有效 (' + contracts.filter(c => c.status === 'ACTIVE' && c.is_active).length + ')'"></button>
+                        <button type="button" class="btn btn-sm"
+                                :class="contractStatusFilter === 'inactive' ? 'btn-primary' : 'btn-secondary'"
+                                @click="contractStatusFilter = 'inactive'"
+                                x-text="'無效 (' + contracts.filter(c => c.status === 'DISABLED' || c.is_expired || !c.is_active).length + ')'"></button>
+                    </div>
+                    <table class="contract-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-th" @click="sortContracts('contract_number')"
+                                    >合約編號 <span x-text="contractSortIcon('contract_number')"></span></th>
+                                <th>合約名稱</th>
+                                <th class="sortable-th" @click="sortContracts('start_date')"
+                                    >開始日期 <span x-text="contractSortIcon('start_date')"></span></th>
+                                <th class="sortable-th" @click="sortContracts('end_date')"
+                                    >結束日期 <span x-text="contractSortIcon('end_date')"></span></th>
+                                <th class="sortable-th" @click="sortContracts('amount')"
+                                    >金額 <span x-text="contractSortIcon('amount')"></span></th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="c in filteredContracts()" :key="c.secure_code">
+                                <tr>
+                                    <td><code x-text="c.contract_number"></code></td>
+                                    <td x-text="c.name || '-'"></td>
+                                    <td x-text="c.start_date"></td>
+                                    <td x-text="c.end_date"></td>
+                                    <td x-text="c.amount ? Number(c.amount).toLocaleString() : '-'"></td>
+                                    <td>
+                                        <span x-show="c.status === 'DISABLED'" class="status-disabled">停用</span>
+                                        <span x-show="c.status !== 'DISABLED' && c.is_expired" class="status-expired">已過期</span>
+                                        <span x-show="c.status !== 'DISABLED' && c.is_active" class="status-valid">有效</span>
+                                        <span x-show="c.status !== 'DISABLED' && !c.is_expired && !c.is_active">尚未生效</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                @click="editContract(c.secure_code)">檢視</button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="filteredContracts().length === 0">
+                                <td colspan="7" style="text-align: center; color: #6c757d; padding: 16px;">
+                                    此篩選條件下無合約
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div x-show="contracts.length === 0">
+                    <p class="text-muted" style="text-align: center; padding: 20px;">
+                        {% if selected_org and selected_org.is_system_org %}
+                        系統企業無需建立合約
+                        {% else %}
+                        尚無合約，點擊上方「+ 新增合約」建立
+                        {% endif %}
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -281,7 +307,7 @@
     <div x-show="contractModal.show" x-cloak class="modal-overlay">
         <div class="modal-content modal-md">
             <div class="modal-header">
-                <h3 x-text="contractModal.editing ? '編輯合約' : '新增合約'"></h3>
+                <h3 x-text="contractModal.editing ? '檢視合約' : '新增合約'"></h3>
                 <button class="modal-close" @click="contractModal.show = false">&times;</button>
             </div>
 
@@ -289,72 +315,102 @@
                  :class="'message ' + (contractModal.error ? 'message-error' : 'message-success')"
                  x-text="contractModal.message"></div>
 
-            <form @submit.prevent="saveContract()">
-                <div class="form-group">
-                    <label>合約名稱</label>
-                    <input type="text" x-model="contractModal.form.name" placeholder="選填">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>開始日期 *</label>
-                        <input type="date" x-model="contractModal.form.start_date" required>
+            <!-- 編輯模式：唯讀檢視 -->
+            <template x-if="contractModal.editing">
+                <div>
+                    <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                        <small style="color: #6c757d;">合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。</small>
                     </div>
-                    <div class="form-group">
-                        <label>結束日期 *</label>
-                        <input type="date" x-model="contractModal.form.end_date" required>
+                    <table class="info-table">
+                        <tr><td style="width: 100px;">合約名稱</td><td x-text="contractModal.form.name || '-'"></td></tr>
+                        <tr><td>開始日期</td><td x-text="contractModal.form.start_date"></td></tr>
+                        <tr><td>結束日期</td><td x-text="contractModal.form.end_date"></td></tr>
+                        <tr><td>金額</td><td x-text="contractModal.form.amount ? Number(contractModal.form.amount).toLocaleString() : '-'"></td></tr>
+                        <tr><td>描述</td><td x-text="contractModal.form.description || '-'"></td></tr>
+                        <tr><td>備註</td><td x-text="contractModal.form.notes || '-'"></td></tr>
+                    </table>
+                    <div x-show="contractModal.form.modules.length > 0" style="margin-top: 12px; text-align: left;">
+                        <strong>授權模組</strong>
+                        <template x-for="mod in contractModal.availableModules" :key="mod.code">
+                            <div x-show="contractModal.form.modules.includes(mod.code)" style="margin: 4px 0 4px 8px;">
+                                <span x-text="mod.label"></span>
+                                <small x-show="mod.value && mod.value.version" style="color: #888;"
+                                       x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="contractModal.show = false">關閉</button>
+                        <template x-if="contractModal.originalStatus === 'ACTIVE'">
+                            <button type="button" class="btn btn-danger" @click="disableContract()">停用此合約</button>
+                        </template>
+                        <template x-if="contractModal.originalStatus === 'DISABLED'">
+                            <span style="color: #6c757d; font-size: 0.9em; align-self: center;">此合約已停用，不可再啟用</span>
+                        </template>
                     </div>
                 </div>
+            </template>
 
-                <div class="form-group">
-                    <label>金額</label>
-                    <input type="number" x-model="contractModal.form.amount" placeholder="選填">
-                </div>
+            <!-- 新增模式：可輸入表單 -->
+            <template x-if="!contractModal.editing">
+                <form @submit.prevent="saveContract()">
+                    <div class="form-group">
+                        <label>合約名稱</label>
+                        <input type="text" x-model="contractModal.form.name" placeholder="選填">
+                    </div>
 
-                <div class="form-group">
-                    <label>描述</label>
-                    <textarea x-model="contractModal.form.description" rows="2" placeholder="選填"></textarea>
-                </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>開始日期 *</label>
+                            <input type="date" x-model="contractModal.form.start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>結束日期 *</label>
+                            <input type="date" x-model="contractModal.form.end_date" required>
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <label>備註</label>
-                    <textarea x-model="contractModal.form.notes" rows="2" placeholder="選填"></textarea>
-                </div>
+                    <div class="form-group">
+                        <label>金額</label>
+                        <input type="number" x-model="contractModal.form.amount" placeholder="選填">
+                    </div>
 
-                <div class="form-group" x-show="contractModal.availableModules.length > 0" style="text-align: left;">
-                    <label>授權模組</label>
-                    <template x-for="mod in contractModal.availableModules" :key="mod.code">
-                        <label style="display: block; margin-bottom: 4px; font-weight: normal; cursor: pointer;">
-                            <input type="checkbox" :value="mod.code"
-                                   :checked="contractModal.form.modules.includes(mod.code)"
-                                   @change="toggleModule(mod.code)"
-                                   style="width: auto; margin: 0 6px 0 0;">
-                            <span x-text="mod.label"></span>
-                            <small x-show="mod.value && mod.value.version" style="color: #888;"
-                                   x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
-                            <br x-show="mod.value && mod.value.description">
-                            <small x-show="mod.value && mod.value.description" style="color: #666; margin-left: 22px;"
-                                   x-text="mod.value && mod.value.description || ''"></small>
-                        </label>
-                    </template>
-                    <small style="color: #888;">選擇此合約授權使用的功能模組</small>
-                </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea x-model="contractModal.form.description" rows="2" placeholder="選填"></textarea>
+                    </div>
 
-                <div class="form-group" x-show="contractModal.editing" style="text-align: left;">
-                    <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
-                        <input type="checkbox" x-model="contractModal.form.disabled" style="width: auto; margin: 0;">
-                        <span>停用此合約</span>
-                    </label>
-                </div>
+                    <div class="form-group">
+                        <label>備註</label>
+                        <textarea x-model="contractModal.form.notes" rows="2" placeholder="選填"></textarea>
+                    </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="contractModal.show = false">取消</button>
-                    <template x-if="contractModal.editing">
-                        <button type="button" class="btn btn-danger" @click="deleteContract()">刪除</button>
-                    </template>
-                    <button type="submit" class="btn btn-primary" x-text="contractModal.editing ? '儲存' : '新增'"></button>
-                </div>
-            </form>
+                    <div class="form-group" x-show="contractModal.availableModules.length > 0" style="text-align: left;">
+                        <label>授權模組</label>
+                        <template x-for="mod in contractModal.availableModules" :key="mod.code">
+                            <label style="display: block; margin-bottom: 4px; font-weight: normal; cursor: pointer;">
+                                <input type="checkbox" :value="mod.code"
+                                       :checked="contractModal.form.modules.includes(mod.code)"
+                                       @change="toggleModule(mod.code)"
+                                       style="width: auto; margin: 0 6px 0 0;">
+                                <span x-text="mod.label"></span>
+                                <small x-show="mod.value && mod.value.version" style="color: #888;"
+                                       x-text="'(v' + (mod.value && mod.value.version || '') + ')'"></small>
+                                <br x-show="mod.value && mod.value.description">
+                                <small x-show="mod.value && mod.value.description" style="color: #666; margin-left: 22px;"
+                                       x-text="mod.value && mod.value.description || ''"></small>
+                            </label>
+                        </template>
+                        <small style="color: #888;">選擇此合約授權使用的功能模組</small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="contractModal.show = false">取消</button>
+                        <button type="submit" class="btn btn-primary">新增</button>
+                    </div>
+                </form>
+            </template>
         </div>
     </div>
 </div>
@@ -364,7 +420,8 @@ window.__ORG_PAGE_CONFIG = {
     search: '{{ search }}',
     conglomerateFilter: '{{ conglomerate_filter }}',
     selectedOrgCode: '{{ selected_org.secure_code if selected_org else '' }}',
-    availableModules: {{ available_modules | default([]) | tojson }}
+    availableModules: {{ available_modules | default([]) | tojson }},
+    contracts: {{ contracts_json | default('[]') | safe }}
 };
 </script>
 <script src="/static/js/organizations.js"></script>

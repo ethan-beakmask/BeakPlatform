@@ -298,6 +298,16 @@
 .contract-table tr:hover {
     background: var(--color-bg-light);
 }
+/* 可排序表頭 */
+.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.sortable-th:hover {
+    color: var(--color-primary);
+}
+
 .status-valid { color: var(--color-success); }
 .status-expired { color: var(--color-danger); }
 .status-disabled { color: #9ca3af; }
