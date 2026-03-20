@@ -133,9 +133,13 @@
             <div x-show="confirmPassword && password !== confirmPassword" class="text-danger" style="font-size: 12px; margin-top: 4px; margin-bottom: 8px;">
                 密碼不一致
             </div>
+            <div x-show="confirmPassword && password === confirmPassword && passwordChecked && passwordErrors.length === 0" class="text-success" style="font-size: 12px; margin-bottom: 8px;">
+                確認密碼一致
+            </div>
             <div class="modal-buttons">
                 <button type="button" class="btn btn-cancel" @click="closeModal()">取消</button>
-                <button type="submit" class="btn-submit">確認重設</button>
+                <button type="submit" class="btn-submit" :disabled="!canSubmit"
+                        :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">確認重設</button>
             </div>
         </form>
     </div>

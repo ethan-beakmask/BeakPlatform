@@ -15,6 +15,14 @@ function rescueResetPasswordForm() {
         validateTimer: null,
         formAction: '',
 
+        get canSubmit() {
+            return this.password.length > 0
+                && this.confirmPassword.length > 0
+                && this.password === this.confirmPassword
+                && this.passwordChecked
+                && this.passwordErrors.length === 0;
+        },
+
         async init() {
             await this.loadPasswordRequirements();
         },
