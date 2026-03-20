@@ -3,7 +3,7 @@ FormWorkflow Module - Form Instance Model
 表單實例（用戶填寫的表單）
 """
 from datetime import datetime
-from sqlalchemy import Column, BigInteger, String, Text, Boolean, DateTime, Index
+from sqlalchemy import Column, BigInteger, Integer, String, Text, Boolean, DateTime, Index
 from sqlalchemy.dialects.postgresql import JSON
 
 from .base import ModuleBaseModel
@@ -61,7 +61,8 @@ class FwFormInstance(ModuleBaseModel):
     status = Column(String(50), default='DRAFT', nullable=False, index=True)
     current_node_id = Column(String(100), nullable=True)
 
-    # 編號
+    # 編號（三層架構：L1=secure_code, L2=org_form_seq, L3=serial_number）
+    org_form_seq = Column(Integer, nullable=True, comment='企業內表單流水號（L2）')
     serial_number = Column(String(100), unique=True, nullable=False, index=True)
 
     # 時間
@@ -86,6 +87,7 @@ class FwFormInstance(ModuleBaseModel):
         data = super().to_dict()
         data.update({
             'serial_number': self.serial_number,
+            'org_form_seq': self.org_form_seq,
             'subject': self.subject,
             'status': self.status,
             'status_name': self.STATUS_NAMES.get(self.status, self.status),

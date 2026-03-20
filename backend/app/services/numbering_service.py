@@ -96,6 +96,66 @@ class NumberingService:
         raise ValueError(f'編號規則「{rule.name}」的所有編號都已用完')
 
     @classmethod
+    def get_next_number_with_detail(
+        cls,
+        rule: UserNumberingRule,
+        consume: bool = False
+    ) -> dict:
+        """
+        取得下一個可用編號，同時回傳裸序號
+
+        Returns:
+            dict: {
+                'number': str,       # 格式化後的完整編號
+                'current_seq': int,  # 裸序號（序號元素的值）
+            }
+
+        Raises:
+            ValueError: 當所有編號都已用完時
+        """
+        components = rule.get_components()
+        period_key = cls._get_period_key(components)
+
+        counter = cls._get_or_create_counter(rule, period_key, lock=consume)
+        max_attempts = cls._calculate_max_numbers(components)
+
+        current_state = {
+            'prefix_index': counter.prefix_index,
+            'suffix_index': counter.suffix_index,
+            'current_seq': counter.current_seq
+        }
+        attempts = 0
+
+        while attempts < max_attempts:
+            next_state = cls._calculate_next_state_from_dict(current_state, components)
+            number = cls._compose_number(components, next_state)
+
+            if cls.is_number_available(rule.org_secure_code, number):
+                if consume:
+                    counter.prefix_index = next_state['prefix_index']
+                    counter.suffix_index = next_state['suffix_index']
+                    counter.current_seq = next_state['current_seq']
+                    counter.updated_at = datetime.utcnow()
+
+                    UsedUserNumber.record_number(
+                        org_secure_code=rule.org_secure_code,
+                        number=number,
+                        rule_secure_code=rule.secure_code
+                    )
+
+                    db.session.flush()
+
+                return {
+                    'number': number,
+                    'current_seq': next_state['current_seq'],
+                }
+
+            current_state = next_state
+            attempts += 1
+
+        raise ValueError(f'編號規則「{rule.name}」的所有編號都已用完')
+
+    @classmethod
     def _calculate_max_numbers(cls, components: List[dict]) -> int:
         """計算規則可產生的最大編號數量"""
         seq_config = None

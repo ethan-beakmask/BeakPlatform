@@ -511,12 +511,12 @@ def create_numbering_rules(org_sc, numbering_config):
     return rules
 
 
-def create_default_numbering_rule(org_sc):
-    """建立預設 4 位數員工編號規則 (0001, 0002, ...)
+def create_default_numbering_rule(org_sc, org_code=''):
+    """建立預設員工編號規則 + 表單編號規則
 
     此規則模擬新企業建立時自動產生的預設編號規則。
-    後續會移植到 OrganizationService.create_organization() 內。
     """
+    # 員工編號：4 位數序號 (0001, 0002, ...)
     rule = UserNumberingRule(
         org_secure_code=org_sc,
         name='預設員工編號',
@@ -532,6 +532,28 @@ def create_default_numbering_rule(org_sc):
         is_active=True,
     )
     db.session.add(rule)
+
+    # 表單編號：前綴 + 年月 + 5 位序號（每月重置）
+    prefix = (org_code[:3].upper() + '-') if org_code else 'FRM-'
+    form_rule = UserNumberingRule(
+        org_secure_code=org_sc,
+        name='預設表單編號',
+        description='前綴 + 年月 + 5 位序號（每月重置）',
+        elements={
+            'components': [
+                {'type': 'prefix', 'order': 1, 'values': [prefix]},
+                {'type': 'year', 'order': 2, 'format': 'yy'},
+                {'type': 'month', 'order': 3, 'format': 'mm'},
+                {'type': 'prefix', 'order': 4, 'values': ['-']},
+                {'type': 'sequence', 'order': 5, 'start': 1, 'digits': 5, 'reset_period': 'monthly'},
+            ],
+            'total_length': 0,
+        },
+        usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+        default_for=NumberingDefaultFor.FORM,
+        is_active=True,
+    )
+    db.session.add(form_rule)
     db.session.flush()
     return rule
 
@@ -795,7 +817,7 @@ def seed_one_company(company_def):
 
     # 2. 編號規則
     print(f"  [2/{total_steps}] 預設編號規則...")
-    default_rule = create_default_numbering_rule(org_sc)
+    default_rule = create_default_numbering_rule(org_sc, org_code=code)
     print(f"         default: {default_rule.name} (0001, 0002, ...)")
 
     print(f"  [3/{total_steps}] 公司編號規則...")

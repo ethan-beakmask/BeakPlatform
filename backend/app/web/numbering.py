@@ -192,7 +192,12 @@ def delete_rule(secure_code):
         return redirect(url_for('numbering.list_rules'))
 
     if rule.default_for:
-        default_label = '員工預設' if rule.default_for == 'EMPLOYEE' else '外部預設'
+        default_labels = {
+            'EMPLOYEE': '員工預設',
+            'EXTERNAL': '外部預設',
+            'FORM': '表單預設',
+        }
+        default_label = default_labels.get(rule.default_for, '預設')
         flash(f'無法刪除{default_label}規則，請先在編輯頁面取消預設設定', 'error')
         return redirect(url_for('numbering.list_rules'))
 

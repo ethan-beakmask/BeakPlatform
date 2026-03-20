@@ -15,7 +15,9 @@ from ..models import (
     UserNumberingRule,
 )
 from ..models.organizational_unit import OrganizationalUnit, UnitType
-from ..models.user_numbering_rule import NumberingUsageScope, NumberingDefaultFor
+from ..models.user_numbering_rule import (
+    NumberingUsageScope, NumberingDefaultFor, NumberingElementType
+)
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
@@ -532,6 +534,33 @@ class OrganizationService:
             is_active=True,
         )
         db.session.add(ext_rule)
+
+        # 表單編號預設規則（前綴 + 年碼2位 + 月碼 + 5位序號，每月重置）
+        # 新企業可自行到 /admin/numbering 修改格式
+        form_rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='預設表單編號',
+            description='前綴 + 年月 + 5 位序號（每月重置）',
+            elements={
+                'components': [
+                    {'type': NumberingElementType.PREFIX, 'order': 1,
+                     'values': [org.code[:3].upper() + '-']},
+                    {'type': NumberingElementType.YEAR, 'order': 2,
+                     'format': 'yy'},
+                    {'type': NumberingElementType.MONTH, 'order': 3,
+                     'format': 'mm'},
+                    {'type': NumberingElementType.PREFIX, 'order': 4,
+                     'values': ['-']},
+                    {'type': NumberingElementType.SEQUENCE, 'order': 5,
+                     'start': 1, 'digits': 5, 'reset_period': 'monthly'},
+                ],
+                'total_length': 0,
+            },
+            usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+            default_for=NumberingDefaultFor.FORM,
+            is_active=True,
+        )
+        db.session.add(form_rule)
 
         logger.info(f"Default numbering rules created for org {org.code}")
 

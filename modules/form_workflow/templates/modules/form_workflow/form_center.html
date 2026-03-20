@@ -105,7 +105,6 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                                 <td>
                                     <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                     <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                    <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
                                 </td>
                                 <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
                                 <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
@@ -173,8 +172,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
-                                    </td>
+                                        </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
@@ -219,8 +217,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
-                                    </td>
+                                        </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
@@ -289,8 +286,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
-                                    </td>
+                                        </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
@@ -337,8 +333,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
                                     <td>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-left: 4px;">TEST</span>
-                                        <span x-show="!item.is_test" class="fc-badge fc-badge-proc" style="margin-left: 4px;">PROC</span>
-                                    </td>
+                                        </td>
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>

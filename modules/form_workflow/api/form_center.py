@@ -12,6 +12,7 @@ from flask_login import current_user
 
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
+from app.services.numbering_service import NumberingService
 from app import db, csrf
 
 logger = logging.getLogger(__name__)
@@ -406,8 +407,6 @@ def submit_form():
             source_workflow_template_secure_code = workflow_template.secure_code
             published_sc = None  # 測試模式沒有 published
 
-            # 生成測試序號 (TEST-YYYYMMDD-NNNN)
-            form_prefix = 'TEST-'
             proc_prefix = 'TEST-'
 
         else:
@@ -448,21 +447,46 @@ def submit_form():
             source_workflow_template_secure_code = published.source_workflow_template_secure_code
             published_sc = published.secure_code
 
-            # 生成正式序號 (FORM-YYYYMMDD-NNNN / PROC-YYYYMMDD-NNNN)
-            form_prefix = 'FORM-'
             proc_prefix = 'PROC-'
 
-        # 生成表單序號
-        result = db.session.execute(
-            text("""
-                SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d{4}$') AS INTEGER)), 0) + 1
-                FROM fw_form_instances
-                WHERE serial_number LIKE :pattern
-            """),
-            {'pattern': f'{form_prefix}{date_str}-%'}
-        )
-        form_seq = result.scalar() or 1
-        serial_number = f"{form_prefix}{date_str}-{str(form_seq).zfill(4)}"
+        # 生成表單序號（三層架構）
+        org_form_seq = None
+
+        if is_test_mode:
+            # 測試模式：固定 TEST-YYYYMMDD-NNNN 格式
+            result = db.session.execute(
+                text("""
+                    SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d{4}$') AS INTEGER)), 0) + 1
+                    FROM fw_form_instances
+                    WHERE serial_number LIKE :pattern
+                """),
+                {'pattern': f'TEST-{date_str}-%'}
+            )
+            form_seq = result.scalar() or 1
+            serial_number = f"TEST-{date_str}-{str(form_seq).zfill(4)}"
+        else:
+            # 正式模式：透過萬用編號系統取得企業專屬格式
+            form_rule = NumberingService.get_default_rule(
+                org.secure_code, default_for='FORM'
+            )
+            if form_rule:
+                detail = NumberingService.get_next_number_with_detail(
+                    form_rule, consume=True
+                )
+                serial_number = detail['number']
+                org_form_seq = detail['current_seq']
+            else:
+                # 無規則 fallback：FORM-YYYYMMDD-NNNNN
+                result = db.session.execute(
+                    text("""
+                        SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d+$') AS INTEGER)), 0) + 1
+                        FROM fw_form_instances
+                        WHERE serial_number LIKE :pattern
+                    """),
+                    {'pattern': f'FORM-{date_str}-%'}
+                )
+                form_seq = result.scalar() or 1
+                serial_number = f"FORM-{date_str}-{str(form_seq).zfill(5)}"
 
         # 建立表單實例
         form_instance = FwFormInstance(
@@ -472,6 +496,7 @@ def submit_form():
             form_template_secure_code=source_form_template_secure_code,
             published_secure_code=published_sc,
             serial_number=serial_number,
+            org_form_seq=org_form_seq,
             form_name=form_name,
             form_code=form_code,
             form_version=form_version,
@@ -710,7 +735,7 @@ def list_my_forms():
     result = []
     for form_instance, workflow_instance, ft_category, ft_category_sc, pub_version in rows:
         data = form_instance.to_dict(include_form_data=False)
-        data['is_test'] = data.get('serial_number', '').startswith('TEST-')
+        data['is_test'] = form_instance.is_test
         # 附加流程資訊
         data['workflow_status'] = workflow_instance.status
         data['execution_code'] = workflow_instance.execution_code
@@ -927,7 +952,7 @@ def list_pending_tasks():
             'applicant_name': fi.applicant_name if fi else None,
             'submitted_at': task.scheduled_at.isoformat() if task.scheduled_at else None,
             'scheduled_at': task.scheduled_at.isoformat() if task.scheduled_at else None,
-            'is_test': serial_number.startswith('TEST-') if serial_number else False,
+            'is_test': fi.is_test if fi else False,
             'form_subject': form_subject,
             'category': category,
             'category_secure_code': category_sc,

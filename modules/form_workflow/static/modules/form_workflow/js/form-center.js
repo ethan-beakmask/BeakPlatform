@@ -1055,13 +1055,16 @@ function formCenterManager() {
 
         getShortSerial(serial) {
             if (!serial) return '-';
-            // TEST-20260127-0001 -> 0127-0001
-            const parts = serial.split('-');
-            if (parts.length >= 3) {
-                const date = parts[1];
-                const seq = parts[2];
-                return date.slice(4) + '-' + seq;
+            // 舊格式 TEST-20260127-0001 / FORM-20260127-0001 -> 0127-0001
+            if (serial.startsWith('TEST-') || serial.startsWith('FORM-')) {
+                const parts = serial.split('-');
+                if (parts.length >= 3) {
+                    const date = parts[1];
+                    const seq = parts[2];
+                    return date.slice(4) + '-' + seq;
+                }
             }
+            // 新格式（企業自訂，如 DEF-2603-00001）直接顯示
             return serial;
         },
 
