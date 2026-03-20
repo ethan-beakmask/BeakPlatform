@@ -71,7 +71,7 @@
                                 <th class="fc-sortable" style="width: 140px;" @click="toggleSort('pending', 'serial_number')">單號<span x-text="sortIcon('pending', 'serial_number')"></span></th>
                                 <th style="width: 100px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 90px;">發起人</th>
+                                <th style="width: 290px;">發起人</th>
                                 <th style="width: 80px;">類別</th>
                                 <th style="width: 150px;">目前關卡</th>
                                 <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">等待時間<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
@@ -94,7 +94,7 @@
                                     <td style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
                                     <td style="display: flex; gap: 4px; align-items: center;">
                                         <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="閱讀表單">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                         <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)"
                                                 :disabled="item.is_locked && !item.locked_by_self">
@@ -117,13 +117,13 @@
                     <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
-                                <th style="width: 100px;">表單</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
+                                <th style="width: 90px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 150px;">待簽關卡</th>
-                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
-                                <th style="width: 80px;"></th>
+                                <th style="width: 70px;">類別</th>
+                                <th style="width: 120px;">待簽關卡</th>
+                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
+                                <th style="width: 110px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -142,6 +142,9 @@
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -162,14 +165,14 @@
                     <table x-show="!loadingSigned && signedList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
-                                <th style="width: 100px;">表單</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
+                                <th style="width: 90px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 90px;">發起人</th>
-                                <th style="width: 150px;">待簽關卡</th>
-                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('trackingSigned', 'submitted_at')">簽核後歷時<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
-                                <th style="width: 80px;"></th>
+                                <th style="width: 70px;">類別</th>
+                                <th style="width: 80px;">發起人</th>
+                                <th style="width: 120px;">待簽關卡</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'submitted_at')">簽核後歷時<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
+                                <th style="width: 110px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,6 +193,9 @@
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
+                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                                        </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
@@ -209,14 +215,14 @@
                     <table x-show="!loadingHistory && historyList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
-                                <th style="width: 100px;">表單</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
+                                <th style="width: 90px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 70px;">狀態</th>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
-                                <th style="width: 120px;">流程耗時</th>
-                                <th style="width: 80px;"></th>
+                                <th style="width: 70px;">類別</th>
+                                <th style="width: 60px;">狀態</th>
+                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
+                                <th style="width: 100px;">流程耗時</th>
+                                <th style="width: 110px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -236,6 +242,9 @@
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -256,15 +265,15 @@
                     <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table fc-table-dense">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
-                                <th style="width: 100px;">表單</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
+                                <th style="width: 90px;">表單</th>
                                 <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 90px;">發起人</th>
-                                <th style="width: 70px;">狀態</th>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
-                                <th style="width: 120px;">流程耗時</th>
-                                <th style="width: 80px;"></th>
+                                <th style="width: 70px;">類別</th>
+                                <th style="width: 80px;">發起人</th>
+                                <th style="width: 60px;">狀態</th>
+                                <th class="fc-sortable" style="width: 130px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
+                                <th style="width: 100px;">流程耗時</th>
+                                <th style="width: 110px;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -285,6 +294,9 @@
                                     <td style="display: flex; gap: 4px;">
                                         <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>

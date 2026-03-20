@@ -1734,6 +1734,11 @@ function formCenterManager() {
         // 閱讀表單
         // =============================================================
 
+        openFlowOverview(item) {
+            const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
+            window.open(`/forms/flow-overview/${instanceId}`, '_blank');
+        },
+
         async openReadForm(item) {
             this.readFormData = null;
             this.showReadFormModal = true;

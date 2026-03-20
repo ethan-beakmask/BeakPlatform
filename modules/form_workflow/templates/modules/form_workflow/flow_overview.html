@@ -1,0 +1,324 @@
+{% extends "layouts/base.html" %}
+{% block title %}流程大圖 - BeakPlatform{% endblock %}
+
+{% block head %}
+<script>
+window.__INSTANCE_ID = '{{ instance_id }}';
+</script>
+<script src="/static/vendor/cytoscape.min.js"></script>
+<style>
+.fo-toolbar { padding: 8px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.fo-toolbar h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.fo-toolbar .sep { color: #d1d5db; }
+.fo-toolbar .meta { font-size: 12px; color: #6b7280; }
+.fo-toolbar .badge { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+.fo-toolbar .badge-running { background: #fef3c7; color: #92400e; }
+.fo-toolbar .badge-completed { background: #d1fae5; color: #065f46; }
+.fo-toolbar .badge-error { background: #fee2e2; color: #991b1b; }
+.fo-toolbar .stats { font-size: 11px; color: #9ca3af; margin-left: auto; }
+#cy-overview { width: 100%; height: calc(100vh - 110px); background: #fafafa; }
+.fo-legend { position: fixed; bottom: 12px; left: 12px; background: rgba(255,255,255,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; display: flex; gap: 10px; flex-wrap: wrap; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.fo-legend-item { display: flex; align-items: center; gap: 4px; }
+.fo-legend-dot { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #999; }
+.fo-loading { text-align: center; padding: 60px; color: #6b7280; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="flowOverview()" x-init="init()">
+
+<div class="fo-toolbar">
+    <h2>流程大圖</h2>
+    <span class="sep">|</span>
+    <span class="meta" x-text="executionCode || '-'"></span>
+    <span class="meta" x-text="workflowName || ''"></span>
+    <span class="badge" :class="{
+        'badge-running': flowStatus === 'RUNNING',
+        'badge-completed': ['COMPLETED','SUCCESS'].includes(flowStatus),
+        'badge-error': ['ERROR','FAILED','CANCELLED'].includes(flowStatus)
+    }" x-text="flowStatus || '-'"></span>
+    <span class="stats" x-text="statsText"></span>
+</div>
+
+<div x-show="loading" class="fo-loading">載入流程圖中...</div>
+<div x-show="error" class="fo-loading" style="color: #ef4444;" x-text="error"></div>
+<div id="cy-overview" x-show="!loading && !error"></div>
+
+<div class="fo-legend">
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #22c55e;"></div> Start</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #ef4444;"></div> End</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
+</div>
+
+</div>
+
+<script>
+const VISIBLE_TYPES = new Set(['Start', 'FormAdapter', 'End', 'EmailAdapter']);
+const REPLACE_LABEL = '系統node';
+const SYS_COLOR = '#d1d5db';
+const SYS_BORDER = '#9ca3af';
+const NODE_COLORS = {
+    'Start': '#22c55e', 'End': '#ef4444', 'FormAdapter': '#3b82f6',
+    'EmailAdapter': '#f59e0b', 'default': '#E0E0E0'
+};
+const GROUP_COLORS = [
+    { bg: 'rgba(59,130,246,0.08)', border: '#3b82f6' },
+    { bg: 'rgba(139,92,246,0.10)', border: '#8b5cf6' },
+    { bg: 'rgba(236,72,153,0.10)', border: '#ec4899' },
+];
+
+function getColor(type) { return NODE_COLORS[type] || NODE_COLORS['default']; }
+
+function flowOverview() {
+    return {
+        loading: true,
+        error: null,
+        cy: null,
+        executionCode: '',
+        workflowName: '',
+        flowStatus: '',
+        statsText: '',
+
+        async init() {
+            try {
+                const res = await fetch(`/api/form-center/executions/${window.__INSTANCE_ID}/path`);
+                const result = await res.json();
+                if (!result.success) { this.error = result.error || '載入失敗'; this.loading = false; return; }
+
+                const data = result.data;
+                this.flowStatus = data.instance_status;
+
+                // 取主流程 tab
+                const tabs = data.workflow_tabs || [];
+                const mainTab = tabs.find(t => t.is_main) || tabs[0];
+                if (!mainTab) { this.error = '找不到流程圖資料'; this.loading = false; return; }
+
+                this.executionCode = mainTab.execution_code || '';
+                this.workflowName = mainTab.name || '';
+
+                // 建立 workflow_code -> tab 映射 (用於展開子流程)
+                const codeToTab = {};
+                tabs.forEach(t => { if (t.workflow_code) codeToTab[t.workflow_code] = t; });
+
+                // 展開子流程
+                const flatResult = this.flattenGraph(mainTab.graph, codeToTab, 0, '', null);
+
+                // 套用 Mode B 替換
+                const finalResult = this.applyReplace(flatResult);
+
+                // 套用執行狀態
+                this.applyStatus(finalResult, data);
+
+                // 渲染
+                this.loading = false;
+                await this.$nextTick();
+                this.render(finalResult);
+
+            } catch (e) {
+                this.error = '載入錯誤: ' + e.message;
+                this.loading = false;
+            }
+        },
+
+        flattenGraph(graph, codeToTab, depth, prefix, parentGroupId) {
+            if (!graph) return { nodes: [], edges: [], groups: [] };
+
+            let nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+            let edges = [...(graph.edges || [])];
+            const groups = [];
+
+            if (prefix) {
+                nodes = nodes.map(n => ({
+                    ...n, id: prefix + n.id,
+                    position: { ...(n.position || { x: 0, y: 0 }) },
+                    config: n.config
+                }));
+                edges = edges.map((e, i) => ({
+                    ...e, id: prefix + (e.id || `e${i}`),
+                    source: prefix + e.source, target: prefix + e.target
+                }));
+            }
+            if (parentGroupId) nodes.forEach(n => { n.parent = parentGroupId; });
+
+            const sfNodes = nodes.filter(n => n.type === 'Subflow' || n.type === 'SubFlow');
+            for (const sfNode of sfNodes) {
+                const origNode = prefix
+                    ? (graph.nodes || []).find(n => (prefix + n.id) === sfNode.id)
+                    : sfNode;
+                const childFlowId = origNode?.config?.childFlowId;
+                if (!childFlowId) continue;
+
+                const childTab = codeToTab[childFlowId];
+                if (!childTab || !childTab.graph) continue;
+
+                const subGraph = childTab.graph;
+                const subRealNodes = (subGraph.nodes || []).filter(n => n.type !== 'group');
+                if (subRealNodes.length === 0) continue;
+
+                // 偏移
+                let cx = 0, cy = 0;
+                subRealNodes.forEach(n => { cx += (n.position?.x || 0); cy += (n.position?.y || 0); });
+                cx /= subRealNodes.length; cy /= subRealNodes.length;
+                const offsetX = sfNode.position.x - cx;
+                const offsetY = sfNode.position.y - cy + 180 + depth * 40;
+
+                const groupId = `group_${sfNode.id}`;
+                groups.push({ id: groupId, label: childTab.name || '子流程', parent: parentGroupId || null, level: Math.min(depth, GROUP_COLORS.length - 1) });
+
+                const subPrefix = `sf${depth}_${sfNode.id}_`;
+                const subResult = this.flattenGraph(subGraph, codeToTab, depth + 1, subPrefix, groupId);
+
+                subResult.nodes.forEach(n => { n.position.x += offsetX; n.position.y += offsetY; });
+
+                const subStartId = subResult.nodes.find(n => n.type === 'Start')?.id;
+                const subEndIds = subResult.nodes.filter(n => n.type === 'End').map(n => n.id);
+
+                if (subStartId) edges.forEach(e => { if (e.target === sfNode.id) e.target = subStartId; });
+                const outEdges = edges.filter(e => e.source === sfNode.id);
+                edges = edges.filter(e => e.source !== sfNode.id);
+                for (const endId of subEndIds) {
+                    for (const out of outEdges) {
+                        edges.push({ id: `f_${endId}_${out.target}_${Math.random().toString(36).substr(2,5)}`, source: endId, target: out.target, label: '' });
+                    }
+                }
+
+                nodes = nodes.filter(n => n.id !== sfNode.id);
+                nodes.push(...subResult.nodes);
+                edges.push(...subResult.edges);
+                groups.push(...subResult.groups);
+            }
+            return { nodes, edges, groups };
+        },
+
+        applyReplace(flatResult) {
+            const nodeMap = {};
+            flatResult.nodes.forEach(n => { nodeMap[n.id] = n; });
+
+            const resultNodes = flatResult.nodes.map(node => {
+                if (VISIBLE_TYPES.has(node.type)) {
+                    return { ...node, isSystem: false };
+                }
+                return { ...node, originalType: node.type, type: 'system', label: REPLACE_LABEL, isSystem: true };
+            });
+
+            const resultEdges = flatResult.edges.map((e, i) => ({
+                id: e.id || `e-${i}`, source: e.source, target: e.target, label: e.label || '',
+                isSystem: (nodeMap[e.source] && !VISIBLE_TYPES.has(nodeMap[e.source].type)) ||
+                          (nodeMap[e.target] && !VISIBLE_TYPES.has(nodeMap[e.target].type))
+            }));
+
+            return { nodes: resultNodes, edges: resultEdges, groups: flatResult.groups };
+        },
+
+        applyStatus(result, data) {
+            // 標記節點狀態 (從 execution_history)
+            const history = data.execution_history || [];
+            const statusMap = {};
+            history.forEach(h => { statusMap[h.node_id] = h.status; });
+
+            result.nodes.forEach(n => {
+                // 去掉前綴嘗試匹配
+                const bareId = n.id.replace(/^sf\d+_[^_]+_/, '');
+                n.execStatus = statusMap[n.id] || statusMap[bareId] || null;
+            });
+
+            const vis = result.nodes.filter(n => !n.isSystem).length;
+            const sys = result.nodes.filter(n => n.isSystem).length;
+            this.statsText = `${vis} 可見 + ${sys} 系統node | ${result.edges.length} 邊 | ${result.groups.length} 群組`;
+        },
+
+        render(result) {
+            const elements = [];
+
+            // 群組
+            [...result.groups].sort((a, b) => (a.level || 0) - (b.level || 0)).forEach(g => {
+                const gc = GROUP_COLORS[g.level || 0];
+                const data = { id: g.id, label: g.label, color: gc.bg, borderColor: gc.border };
+                if (g.parent) data.parent = g.parent;
+                elements.push({ data });
+            });
+
+            // 節點
+            result.nodes.forEach(node => {
+                const isSys = node.isSystem;
+                const data = {
+                    id: node.id, label: node.label || node.id, type: node.type,
+                    color: isSys ? SYS_COLOR : getColor(node.type),
+                    borderColor: isSys ? SYS_BORDER : '#333'
+                };
+                if (node.parent) data.parent = node.parent;
+
+                let classes = isSys ? 'system-node' : '';
+                if (node.execStatus === 'RUNNING') classes += ' node-running';
+                else if (node.execStatus === 'SUCCESS') classes += ' node-completed';
+                else if (['FAILED','ERROR','TIMEOUT'].includes(node.execStatus)) classes += ' node-failed';
+
+                elements.push({ data, position: { ...node.position }, classes: classes.trim() });
+            });
+
+            // 邊
+            result.edges.forEach(edge => {
+                elements.push({
+                    data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label || '' },
+                    classes: edge.isSystem ? 'system-edge' : ''
+                });
+            });
+
+            this.cy = cytoscape({
+                container: document.getElementById('cy-overview'),
+                elements,
+                style: [
+                    { selector: 'node', style: {
+                        'background-color': 'data(color)', 'label': 'data(label)',
+                        'text-valign': 'center', 'text-halign': 'center', 'font-size': '10px',
+                        'width': 90, 'height': 36, 'border-width': 2, 'border-color': 'data(borderColor)',
+                        'text-wrap': 'wrap', 'text-max-width': '80px', 'shape': 'roundrectangle'
+                    }},
+                    { selector: 'node[type="Start"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+                    { selector: 'node[type="End"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+                    { selector: 'edge', style: {
+                        'width': 2, 'line-color': '#bbb', 'target-arrow-color': '#bbb',
+                        'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+                        'font-size': '9px'
+                    }},
+                    { selector: '.system-node', style: {
+                        'background-color': SYS_COLOR, 'border-color': SYS_BORDER,
+                        'border-style': 'dashed', 'border-width': 2, 'font-size': '9px',
+                        'color': '#6b7280', 'width': 80, 'height': 28
+                    }},
+                    { selector: '.system-edge', style: {
+                        'line-color': '#d1d5db', 'target-arrow-color': '#d1d5db',
+                        'line-style': 'dashed', 'width': 1.5
+                    }},
+                    { selector: '.node-running', style: {
+                        'background-color': '#FFC107', 'border-color': '#FF9800', 'border-width': 3
+                    }},
+                    { selector: '.node-completed', style: {
+                        'background-color': '#4CAF50', 'border-color': '#388E3C', 'border-width': 2
+                    }},
+                    { selector: '.node-failed', style: {
+                        'background-color': '#F44336', 'border-color': '#D32F2F', 'border-width': 3
+                    }},
+                    { selector: ':parent', style: {
+                        'background-color': 'data(color)', 'background-opacity': 1,
+                        'border-color': 'data(borderColor)', 'border-width': 2, 'border-style': 'dashed',
+                        'label': 'data(label)', 'text-valign': 'top', 'text-halign': 'center',
+                        'font-size': '11px', 'font-weight': 'bold', 'color': 'data(borderColor)',
+                        'padding': '25px', 'shape': 'roundrectangle', 'text-margin-y': '-8px'
+                    }}
+                ],
+                layout: { name: 'preset' },
+                userZoomingEnabled: true, userPanningEnabled: true, boxSelectionEnabled: false
+            });
+            this.cy.fit(null, 50);
+        }
+    };
+}
+</script>
+{% endblock %}

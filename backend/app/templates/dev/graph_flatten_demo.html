@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>子流程展開模擬</title>
+<script src="/static/vendor/cytoscape.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; }
+.toolbar { padding: 8px 20px; background: #16213e; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid #0f3460; }
+.toolbar h1 { font-size: 15px; font-weight: 600; color: #e0e0e0; margin-right: 8px; }
+.toolbar label { font-size: 12px; font-weight: 500; color: #94a3b8; }
+.toolbar .sep { color: #334155; }
+.toolbar .visible-types { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.toolbar .visible-types label { font-weight: 400; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 2px; color: #cbd5e1; }
+.toolbar .visible-types input[type="checkbox"] { width: 13px; height: 13px; }
+.toolbar input[type="text"] { padding: 3px 6px; font-size: 12px; border: 1px solid #334155; border-radius: 3px; background: #1e293b; color: #e0e0e0; width: 80px; }
+.toolbar .btn { padding: 3px 10px; font-size: 11px; border: 1px solid #334155; border-radius: 3px; cursor: pointer; background: #1e293b; color: #94a3b8; }
+.toolbar .btn:hover { background: #334155; color: #e0e0e0; }
+.toolbar .stats { font-size: 11px; color: #64748b; margin-left: auto; }
+.info-bar { padding: 6px 20px; background: #0f3460; font-size: 12px; border-bottom: 1px solid #1a4080; color: #93c5fd; display: flex; gap: 24px; flex-wrap: wrap; }
+.info-bar .chain { color: #cbd5e1; }
+.info-bar .arrow { color: #475569; }
+.algo-log { padding: 8px 20px; background: #1e1e30; font-size: 11px; max-height: 180px; overflow-y: auto; display: none; border-bottom: 1px solid #334155; }
+.algo-log.show { display: block; }
+.algo-log pre { color: #94a3b8; white-space: pre-wrap; font-family: 'Cascadia Code', 'Consolas', monospace; }
+#cy { width: 100%; height: calc(100vh - 80px); }
+.legend { position: fixed; bottom: 12px; left: 12px; background: rgba(30,41,59,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; font-size: 11px; display: flex; gap: 10px; flex-wrap: wrap; z-index: 10; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #666; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+    <h1>子流程展開模擬</h1>
+    <span class="sep">|</span>
+    <label>可見類型：</label>
+    <div class="visible-types" id="visibleTypesContainer"></div>
+    <span class="sep">|</span>
+    <label>替換名稱：</label>
+    <input type="text" id="replaceLabel" value="系統node" oninput="rebuild()">
+    <span class="sep">|</span>
+    <button class="btn" onclick="document.getElementById('logPanel').classList.toggle('show')">Log</button>
+    <button class="btn" onclick="rebuild()">重建</button>
+    <span class="stats" id="stats"></span>
+</div>
+
+<div class="info-bar" id="infoBar"></div>
+
+<div class="algo-log" id="logPanel">
+    <pre id="algoLog"></pre>
+</div>
+
+<div id="cy"></div>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: #22c55e;"></div> Start</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #ef4444;"></div> End</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
+    <div class="legend-item"><div class="legend-dot" style="background: rgba(59,130,246,0.15); border: 1px dashed #3b82f6;"></div> L1 群組</div>
+    <div class="legend-item"><div class="legend-dot" style="background: rgba(139,92,246,0.15); border: 1px dashed #8b5cf6;"></div> L2 群組</div>
+</div>
+
+<script>
+// ========== 資料 ==========
+const WORKFLOWS = {};       // secure_code -> { name, graph, code }
+const CODE_TO_SC = {};      // code -> secure_code (childFlowId 查找用)
+
+const WORKFLOW_DATA = {{ workflow_data | tojson }};
+WORKFLOW_DATA.forEach(w => {
+    WORKFLOWS[w.secure_code] = { name: w.name, graph: w.graph, code: w.code };
+    if (w.code) CODE_TO_SC[w.code] = w.secure_code;
+});
+
+const MAIN_WF_KEY = '1OZHXsVuGqtVn_EvWOGVKw'; // mail_TG_通知
+
+const ALL_NODE_TYPES = new Set();
+Object.values(WORKFLOWS).forEach(w => {
+    (w.graph.nodes || []).forEach(n => {
+        if (n.type && n.type !== 'group') ALL_NODE_TYPES.add(n.type);
+    });
+});
+
+const DEFAULT_VISIBLE = new Set(['Start', 'FormAdapter', 'End', 'EmailAdapter']);
+
+const NODE_COLORS = {
+    'Start': '#22c55e', 'End': '#ef4444', 'FormAdapter': '#3b82f6',
+    'EmailAdapter': '#f59e0b', 'SubFlow': '#8b5cf6', 'Subflow': '#8b5cf6',
+    'Notification': '#06b6d4', 'Telegram': '#0ea5e9',
+    'Branch': '#a855f7', 'Condition': '#a855f7', 'Switch': '#a855f7',
+    'Converge': '#a855f7', 'ParallelFork': '#a855f7', 'ParallelJoin': '#a855f7',
+    'Delay': '#94a3b8', 'EmailRelay': '#fb923c',
+    'SubSystemProvision': '#14b8a6', 'OpFieldRead': '#64748b', 'OpFieldWrite': '#64748b',
+    'OpSet': '#64748b', 'default': '#555'
+};
+const SYS_COLOR = '#d1d5db';
+const SYS_BORDER = '#9ca3af';
+function getColor(type) { return NODE_COLORS[type] || NODE_COLORS['default']; }
+
+const GROUP_COLORS = [
+    { bg: 'rgba(59,130,246,0.08)', border: '#3b82f6' },
+    { bg: 'rgba(139,92,246,0.10)', border: '#8b5cf6' },
+    { bg: 'rgba(236,72,153,0.10)', border: '#ec4899' },
+];
+
+// ========== 從 config.childFlowId 解析子流程 ==========
+function resolveChildFlow(node) {
+    const childFlowCode = node.config?.childFlowId;
+    if (!childFlowCode) return null;
+    const sc = CODE_TO_SC[childFlowCode];
+    if (!sc || !WORKFLOWS[sc]) return null;
+    return sc;
+}
+
+// ========== 遞迴展開子流程 ==========
+function flattenGraph(graph, log, depth, prefix, parentGroupId) {
+    let nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+    let edges = [...(graph.edges || [])];
+    const groups = [];
+    const indent = '  '.repeat(depth);
+
+    // 加前綴 (非頂層)
+    if (prefix) {
+        nodes = nodes.map(n => ({
+            ...n, id: prefix + n.id,
+            position: { ...(n.position || { x: 0, y: 0 }) },
+            config: n.config  // 保留 config 以便查 childFlowId
+        }));
+        edges = edges.map((e, i) => ({
+            ...e, id: prefix + (e.id || `e${i}`),
+            source: prefix + e.source, target: prefix + e.target
+        }));
+    }
+
+    if (parentGroupId) {
+        nodes.forEach(n => { n.parent = parentGroupId; });
+    }
+
+    // 找 Subflow 節點
+    const sfNodes = nodes.filter(n => n.type === 'Subflow' || n.type === 'SubFlow');
+
+    for (const sfNode of sfNodes) {
+        // 從 config.childFlowId 自動解析
+        const originalNode = prefix
+            ? (graph.nodes || []).find(n => (prefix + n.id) === sfNode.id)
+            : sfNode;
+        const childSc = resolveChildFlow(originalNode || sfNode);
+
+        if (!childSc) {
+            log.push(`${indent}[跳過] ${sfNode.id}: childFlowId 未配置或找不到對應流程`);
+            continue;
+        }
+
+        const subWf = WORKFLOWS[childSc];
+        const subGraph = subWf.graph;
+        const subRealNodes = (subGraph.nodes || []).filter(n => n.type !== 'group');
+
+        log.push(`${indent}[展開 L${depth}] ${sfNode.id}`);
+        log.push(`${indent}  childFlowId=${originalNode?.config?.childFlowId} -> "${subWf.name}" (${subRealNodes.length} 節點)`);
+
+        // 計算偏移：子流程質心 -> Subflow 節點下方
+        let cx = 0, cy = 0;
+        subRealNodes.forEach(n => { cx += (n.position?.x || 0); cy += (n.position?.y || 0); });
+        cx /= subRealNodes.length; cy /= subRealNodes.length;
+        const offsetX = sfNode.position.x - cx;
+        const offsetY = sfNode.position.y - cy + 180 + depth * 40;
+
+        // 建群組
+        const groupId = `group_${sfNode.id}`;
+        const groupLevel = Math.min(depth, GROUP_COLORS.length - 1);
+        groups.push({ id: groupId, label: subWf.name, parent: parentGroupId || null, level: groupLevel });
+
+        // 遞迴展開
+        const subPrefix = `sf${depth}_${sfNode.id}_`;
+        const subResult = flattenGraph(subGraph, log, depth + 1, subPrefix, groupId);
+
+        // 偏移位置
+        subResult.nodes.forEach(n => {
+            n.position.x += offsetX;
+            n.position.y += offsetY;
+        });
+
+        // 找子流程 Start / End
+        const subStartId = subResult.nodes.find(n => n.type === 'Start')?.id;
+        const subEndIds = subResult.nodes.filter(n => n.type === 'End').map(n => n.id);
+
+        log.push(`${indent}  Start: ${subStartId || '(無)'}, End: [${subEndIds.join(', ')}]`);
+
+        // 改接入邊
+        if (subStartId) {
+            edges.forEach(e => {
+                if (e.target === sfNode.id) {
+                    log.push(`${indent}  入邊: ${e.source} -> ${subStartId}`);
+                    e.target = subStartId;
+                }
+            });
+        }
+
+        // 改接出邊
+        const outEdges = edges.filter(e => e.source === sfNode.id);
+        edges = edges.filter(e => e.source !== sfNode.id);
+        for (const endId of subEndIds) {
+            for (const out of outEdges) {
+                edges.push({
+                    id: `flat_${endId}_${out.target}_${Math.random().toString(36).substr(2, 5)}`,
+                    source: endId, target: out.target, label: ''
+                });
+                log.push(`${indent}  出邊: ${endId} -> ${out.target}`);
+            }
+        }
+
+        // 移除 Subflow 節點，加入展開結果
+        nodes = nodes.filter(n => n.id !== sfNode.id);
+        nodes.push(...subResult.nodes);
+        edges.push(...subResult.edges);
+        groups.push(...subResult.groups);
+        log.push(`${indent}  展開後累計: ${nodes.length} 節點, ${edges.length} 邊`);
+        log.push('');
+    }
+
+    return { nodes, edges, groups };
+}
+
+// ========== 套用隱藏節點替換 ==========
+function applyReplace(flatResult, visibleTypes, replaceLabel, log) {
+    const nodeMap = {};
+    flatResult.nodes.forEach(n => { nodeMap[n.id] = n; });
+
+    let replaced = 0;
+    const resultNodes = flatResult.nodes.map(node => {
+        if (visibleTypes.has(node.type)) {
+            return { ...node, isSystem: false };
+        } else {
+            replaced++;
+            return { ...node, type: 'system', label: replaceLabel, isSystem: true };
+        }
+    });
+
+    const resultEdges = flatResult.edges.map((e, i) => ({
+        id: e.id || `e-${i}`, source: e.source, target: e.target, label: e.label || '',
+        isSystem: (nodeMap[e.source] && !visibleTypes.has(nodeMap[e.source].type)) ||
+                  (nodeMap[e.target] && !visibleTypes.has(nodeMap[e.target].type))
+    }));
+
+    const visible = resultNodes.length - replaced;
+    log.push(`=== 結果: ${resultNodes.length} 節點 (${visible} 可見 + ${replaced} 替換), ${resultEdges.length} 邊, ${flatResult.groups.length} 群組 ===`);
+
+    return { nodes: resultNodes, edges: resultEdges, groups: flatResult.groups };
+}
+
+// ========== Cytoscape 渲染 ==========
+let cy = null;
+
+function render(result) {
+    if (cy) cy.destroy();
+    const elements = [];
+
+    // 群組
+    [...result.groups].sort((a, b) => (a.level || 0) - (b.level || 0)).forEach(g => {
+        const gc = GROUP_COLORS[g.level || 0] || GROUP_COLORS[0];
+        const data = { id: g.id, label: g.label, color: gc.bg, borderColor: gc.border };
+        if (g.parent) data.parent = g.parent;
+        elements.push({ data });
+    });
+
+    // 節點
+    result.nodes.forEach(node => {
+        const isSys = node.isSystem;
+        const data = {
+            id: node.id, label: node.label || node.id, type: node.type,
+            color: isSys ? SYS_COLOR : getColor(node.type),
+            borderColor: isSys ? SYS_BORDER : '#333'
+        };
+        if (node.parent) data.parent = node.parent;
+        elements.push({ data, position: { ...node.position }, classes: isSys ? 'system-node' : '' });
+    });
+
+    // 邊
+    result.edges.forEach(edge => {
+        elements.push({
+            data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label || '' },
+            classes: edge.isSystem ? 'system-edge' : ''
+        });
+    });
+
+    cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements,
+        style: [
+            { selector: 'node', style: {
+                'background-color': 'data(color)', 'label': 'data(label)',
+                'text-valign': 'center', 'text-halign': 'center', 'font-size': '10px',
+                'width': 90, 'height': 36, 'border-width': 2, 'border-color': 'data(borderColor)',
+                'text-wrap': 'wrap', 'text-max-width': '80px', 'shape': 'roundrectangle',
+                'color': '#e0e0e0'
+            }},
+            { selector: 'node[type="Start"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+            { selector: 'node[type="End"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+            { selector: 'edge', style: {
+                'width': 2, 'line-color': '#555', 'target-arrow-color': '#555',
+                'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+                'label': 'data(label)', 'font-size': '9px', 'text-rotation': 'autorotate', 'color': '#999'
+            }},
+            { selector: '.system-node', style: {
+                'background-color': SYS_COLOR, 'border-color': SYS_BORDER,
+                'border-style': 'dashed', 'border-width': 2, 'font-size': '9px',
+                'color': '#6b7280', 'width': 80, 'height': 28
+            }},
+            { selector: '.system-edge', style: {
+                'line-color': '#555', 'target-arrow-color': '#555',
+                'line-style': 'dashed', 'width': 1.5
+            }},
+            { selector: ':parent', style: {
+                'background-color': 'data(color)', 'background-opacity': 1,
+                'border-color': 'data(borderColor)', 'border-width': 2, 'border-style': 'dashed',
+                'label': 'data(label)', 'text-valign': 'top', 'text-halign': 'center',
+                'font-size': '11px', 'font-weight': 'bold', 'color': 'data(borderColor)',
+                'padding': '25px', 'shape': 'roundrectangle', 'text-margin-y': '-8px'
+            }}
+        ],
+        layout: { name: 'preset' },
+        userZoomingEnabled: true, userPanningEnabled: true, boxSelectionEnabled: false
+    });
+    cy.fit(null, 50);
+
+    const vis = result.nodes.filter(n => !n.isSystem).length;
+    const sys = result.nodes.filter(n => n.isSystem).length;
+    document.getElementById('stats').textContent =
+        `${vis} 可見 + ${sys} 系統node | ${result.edges.length} 邊 | ${result.groups.length} 群組`;
+}
+
+// ========== UI ==========
+function initUI() {
+    const container = document.getElementById('visibleTypesContainer');
+    [...ALL_NODE_TYPES].sort().forEach(type => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = type;
+        cb.checked = DEFAULT_VISIBLE.has(type);
+        cb.onchange = rebuild;
+        const span = document.createElement('span');
+        span.textContent = type;
+        span.style.color = getColor(type);
+        span.style.fontWeight = '500';
+        label.appendChild(cb); label.appendChild(span);
+        container.appendChild(label);
+    });
+
+    buildInfoBar();
+    rebuild();
+}
+
+function buildInfoBar() {
+    // 遞迴掃描展開鏈
+    const bar = document.getElementById('infoBar');
+    const mainWf = WORKFLOWS[MAIN_WF_KEY];
+    if (!mainWf) { bar.textContent = '找不到 mail_TG_通知'; return; }
+
+    const chains = [];
+    function scan(graph, path) {
+        const nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+        const sfNodes = nodes.filter(n => n.type === 'Subflow' || n.type === 'SubFlow');
+        for (const sf of sfNodes) {
+            const childSc = resolveChildFlow(sf);
+            if (childSc && WORKFLOWS[childSc]) {
+                const childWf = WORKFLOWS[childSc];
+                const newPath = [...path, childWf.name];
+                chains.push(newPath);
+                scan(childWf.graph, newPath);
+            }
+        }
+    }
+    scan(mainWf.graph, [mainWf.name]);
+
+    let html = `<span>主流程: <strong>${mainWf.name}</strong></span>`;
+    if (chains.length > 0) {
+        html += '<span class="arrow">|</span>';
+        html += '<span>展開鏈: ';
+        html += chains.map(c => `<span class="chain">${c.join(' <span class="arrow">-></span> ')}</span>`).join(' ; ');
+        html += '</span>';
+    }
+    bar.innerHTML = html;
+}
+
+function rebuild() {
+    const mainWf = WORKFLOWS[MAIN_WF_KEY];
+    if (!mainWf) return;
+
+    const visibleTypes = new Set();
+    document.querySelectorAll('#visibleTypesContainer input:checked').forEach(cb => visibleTypes.add(cb.value));
+    const replaceLabel = document.getElementById('replaceLabel').value || '系統node';
+
+    const log = [];
+    log.push(`主流程: ${mainWf.name}`);
+    log.push(`childFlowId 對應表: ${JSON.stringify(CODE_TO_SC, null, 2)}`);
+    log.push('');
+
+    const flatResult = flattenGraph(mainWf.graph, log, 0, '', null);
+    log.push('');
+    const finalResult = applyReplace(flatResult, visibleTypes, replaceLabel, log);
+
+    render(finalResult);
+    document.getElementById('algoLog').textContent = log.join('\n');
+}
+
+document.addEventListener('DOMContentLoaded', initUI);
+</script>
+</body>
+</html>

@@ -1780,6 +1780,19 @@ def get_execution_path(instance_id):
     # 建立映射表
     workflow_map = {wi.secure_code: wi for wi in workflow_instances}
 
+    # 查詢對應的 workflow_template code（供流程大圖匹配 childFlowId 用）
+    from ..models import FwWorkflowTemplate
+    template_codes = {}
+    template_scs = list(set(
+        wi.workflow_template_secure_code for wi in workflow_instances
+        if wi.workflow_template_secure_code
+    ))
+    if template_scs:
+        templates = FwWorkflowTemplate.query.filter(
+            FwWorkflowTemplate.secure_code.in_(template_scs)
+        ).all()
+        template_codes = {t.secure_code: t.code for t in templates}
+
     # 準備 workflow_tabs（流程分頁）
     workflow_tabs = []
     for wi in workflow_instances:
@@ -1808,7 +1821,8 @@ def get_execution_path(instance_id):
             'name': wi.workflow_name or '未命名流程',
             'is_main': wi.secure_code == instance.secure_code,
             'status': tab_status,
-            'graph': wi.graph_snapshot
+            'graph': wi.graph_snapshot,
+            'workflow_code': template_codes.get(wi.workflow_template_secure_code, '')
         })
 
     # 確保主流程排在最前面

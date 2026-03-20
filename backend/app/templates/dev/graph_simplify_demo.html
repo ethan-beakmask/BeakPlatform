@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>流程圖簡化模擬</title>
+<script src="/static/vendor/cytoscape.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+.header { background: #1e293b; color: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 16px; font-weight: 600; }
+.header .info { font-size: 12px; color: #94a3b8; }
+.controls { padding: 10px 24px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.controls label { font-size: 13px; font-weight: 500; }
+.controls select, .controls input[type="text"] { padding: 4px 8px; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px; }
+.controls .visible-types { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.controls .visible-types label { font-weight: 400; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 3px; }
+.controls .visible-types input[type="checkbox"] { width: 14px; height: 14px; }
+.main { display: flex; height: calc(100vh - 170px); }
+.panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #e2e8f0; }
+.panel:last-child { border-right: none; }
+.panel-header { padding: 6px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+.panel-header .stats { font-weight: 400; color: #6b7280; font-size: 12px; }
+.cy-container { flex: 1; }
+.algo-info { padding: 10px 24px; background: #fffbeb; border-bottom: 1px solid #fde68a; font-size: 12px; line-height: 1.6; display: none; }
+.algo-info.show { display: block; }
+.algo-info h3 { font-size: 13px; margin-bottom: 4px; }
+.algo-info pre { background: #fef3c7; padding: 8px; border-radius: 4px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; margin-top: 6px; max-height: 200px; overflow-y: auto; }
+.btn { padding: 4px 12px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; background: #fff; }
+.btn:hover { background: #f3f4f6; }
+.btn-primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.btn-primary:hover { background: #2563eb; }
+.legend { display: flex; gap: 10px; align-items: center; padding: 0 24px 6px; font-size: 11px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 2px; border: 1px solid #999; }
+.mode-tabs { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; padding: 0 24px; background: #fff; }
+.mode-tab { padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: none; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.mode-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.mode-tab:hover:not(.active) { color: #374151; }
+.mode-desc { padding: 5px 24px; font-size: 12px; color: #6b7280; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+/* Mode C: 子流程指定面板 */
+.subflow-assign { padding: 8px 24px; background: #f0f9ff; border-bottom: 1px solid #bae6fd; font-size: 12px; display: none; }
+.subflow-assign.show { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.subflow-assign label { font-weight: 500; }
+.subflow-assign select { padding: 3px 6px; font-size: 12px; border: 1px solid #7dd3fc; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>流程圖簡化模擬 -- EMPLOYEE / EXTERNAL 視角</h1>
+    <div class="info">獨立模擬頁面，不影響正式系統</div>
+</div>
+
+<!-- 模式切換 -->
+<div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('A')">Mode A: BFS 重組</button>
+    <button class="mode-tab" onclick="switchMode('B')">Mode B: 原位替換</button>
+    <button class="mode-tab" onclick="switchMode('C')">Mode C: 展開子流程 + 替換</button>
+</div>
+<div class="mode-desc" id="modeDesc">移除隱藏節點，BFS 穿越找到可見節點間的直連邊，重新定位。</div>
+
+<!-- Mode C: 子流程指定 -->
+<div class="subflow-assign" id="subflowAssignPanel"></div>
+
+<div class="controls">
+    <label>選擇流程：</label>
+    <select id="workflowSelect" onchange="loadWorkflow()"></select>
+    <span style="color: #d1d5db;">|</span>
+    <label>可見節點類型：</label>
+    <div class="visible-types" id="visibleTypesContainer"></div>
+    <span style="color: #d1d5db;">|</span>
+    <span id="replaceLabelGroup" style="display: none;">
+        <label>替換名稱：</label>
+        <input type="text" id="replaceLabel" value="系統node" style="width: 100px;" oninput="runSimplify()">
+        <span style="color: #d1d5db;">|</span>
+    </span>
+    <button class="btn" onclick="toggleAlgoInfo()">演算法說明</button>
+    <button class="btn btn-primary" onclick="runSimplify()">執行簡化</button>
+</div>
+
+<div class="legend">
+    <span style="font-weight: 500;">色碼：</span>
+    <div class="legend-item"><div class="legend-dot" style="background: #22c55e;"></div> Start</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #ef4444;"></div> End</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #8b5cf6;"></div> SubFlow</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #E0E0E0;"></div> 其他</div>
+    <div class="legend-item" id="legendSystemNode" style="display: none;">
+        <div class="legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node
+    </div>
+    <div class="legend-item" id="legendGroup" style="display: none;">
+        <div class="legend-dot" style="background: #eff6ff; border: 1px dashed #93c5fd;"></div> 子流程群組
+    </div>
+</div>
+
+<div class="algo-info" id="algoInfo">
+    <h3 id="algoTitle">演算法</h3>
+    <pre id="algoLog"></pre>
+</div>
+
+<div class="main">
+    <div class="panel">
+        <div class="panel-header">
+            <span>原始流程圖 (管理員視角)</span>
+            <span class="stats" id="originalStats"></span>
+        </div>
+        <div class="cy-container" id="cy-original"></div>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <span id="simplifiedTitle">簡化流程圖 (員工/外部廠商視角)</span>
+            <span class="stats" id="simplifiedStats"></span>
+        </div>
+        <div class="cy-container" id="cy-simplified"></div>
+    </div>
+</div>
+
+<script>
+// ========== 資料 ==========
+const WORKFLOWS = {};
+const WORKFLOW_DATA = {{ workflow_data | tojson }};
+WORKFLOW_DATA.forEach(w => { WORKFLOWS[w.secure_code] = { name: w.name, graph: w.graph }; });
+
+const ALL_NODE_TYPES = new Set();
+Object.values(WORKFLOWS).forEach(w => {
+    (w.graph.nodes || []).forEach(n => {
+        if (n.type && n.type !== 'group') ALL_NODE_TYPES.add(n.type);
+    });
+});
+
+const DEFAULT_VISIBLE = new Set(['Start', 'FormAdapter', 'End', 'EmailAdapter']);
+let currentMode = 'A';
+
+const NODE_COLORS = {
+    'Start': '#22c55e', 'End': '#ef4444', 'FormAdapter': '#3b82f6',
+    'EmailAdapter': '#f59e0b', 'SubFlow': '#8b5cf6', 'Subflow': '#8b5cf6',
+    'Notification': '#06b6d4', 'Telegram': '#0ea5e9',
+    'Branch': '#a855f7', 'Condition': '#a855f7', 'Switch': '#a855f7',
+    'Converge': '#a855f7', 'ParallelFork': '#a855f7', 'ParallelJoin': '#a855f7',
+    'Delay': '#94a3b8', 'EmailRelay': '#fb923c',
+    'SubSystemProvision': '#14b8a6', 'OpFieldRead': '#64748b', 'OpFieldWrite': '#64748b',
+    'OpSet': '#64748b', 'default': '#E0E0E0'
+};
+const SYSTEM_NODE_COLOR = '#d1d5db';
+const SYSTEM_NODE_BORDER = '#9ca3af';
+
+function getNodeColor(type) { return NODE_COLORS[type] || NODE_COLORS['default']; }
+
+// ========== Cytoscape 樣式 ==========
+function getCyStyle() {
+    return [
+        { selector: 'node', style: {
+            'background-color': 'data(color)', 'label': 'data(label)',
+            'text-valign': 'center', 'text-halign': 'center', 'font-size': '10px',
+            'width': 90, 'height': 36, 'border-width': 2, 'border-color': 'data(borderColor)',
+            'text-wrap': 'wrap', 'text-max-width': '80px', 'shape': 'roundrectangle'
+        }},
+        { selector: 'node[type="Start"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+        { selector: 'node[type="End"]', style: { 'shape': 'ellipse', 'width': 50, 'height': 50 } },
+        { selector: 'edge', style: {
+            'width': 2, 'line-color': '#999', 'target-arrow-color': '#999',
+            'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
+            'label': 'data(label)', 'font-size': '9px', 'text-rotation': 'autorotate'
+        }},
+        { selector: '.hidden-node', style: { 'opacity': 0.3, 'border-style': 'dashed' } },
+        { selector: '.system-node', style: {
+            'background-color': SYSTEM_NODE_COLOR, 'border-color': SYSTEM_NODE_BORDER,
+            'border-style': 'dashed', 'border-width': 2, 'font-size': '9px',
+            'color': '#6b7280', 'shape': 'roundrectangle', 'width': 80, 'height': 30
+        }},
+        { selector: '.system-edge', style: {
+            'line-color': '#d1d5db', 'target-arrow-color': '#d1d5db',
+            'line-style': 'dashed', 'width': 1.5
+        }},
+        // compound node (group) 樣式
+        { selector: ':parent', style: {
+            'background-color': '#eff6ff', 'background-opacity': 0.6,
+            'border-color': '#93c5fd', 'border-width': 2, 'border-style': 'dashed',
+            'label': 'data(label)', 'text-valign': 'top', 'text-halign': 'center',
+            'font-size': '11px', 'font-weight': 'bold', 'color': '#1d4ed8',
+            'padding': '20px', 'shape': 'roundrectangle',
+            'text-margin-y': '-5px'
+        }}
+    ];
+}
+
+// ========== Mode A: BFS 重組 ==========
+function simplifyModeA(graph, visibleTypes) {
+    const nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+    const edges = graph.edges || [];
+    const log = [];
+    log.push(`[Mode A] BFS 重組`);
+    log.push(`原始: ${nodes.length} 節點, ${edges.length} 邊 | 可見: ${[...visibleTypes].join(', ')}`);
+    log.push('');
+
+    const adjacency = {};
+    nodes.forEach(n => { adjacency[n.id] = []; });
+    edges.forEach(e => { if (adjacency[e.source]) adjacency[e.source].push(e.target); });
+
+    const nodeMap = {};
+    nodes.forEach(n => { nodeMap[n.id] = n; });
+    const visibleIds = new Set(nodes.filter(n => visibleTypes.has(n.type)).map(n => n.id));
+
+    const simplifiedEdges = [];
+    const edgeSet = new Set();
+    for (const vId of visibleIds) {
+        const visited = new Set();
+        const queue = [...(adjacency[vId] || [])];
+        while (queue.length > 0) {
+            const cur = queue.shift();
+            if (visited.has(cur)) continue;
+            visited.add(cur);
+            if (visibleIds.has(cur)) {
+                const key = `${vId}->${cur}`;
+                if (!edgeSet.has(key)) { edgeSet.add(key); simplifiedEdges.push({ source: vId, target: cur }); }
+            } else {
+                (adjacency[cur] || []).forEach(t => { if (!visited.has(t)) queue.push(t); });
+            }
+        }
+    }
+
+    const positions = layoutNodes([...visibleIds], simplifiedEdges);
+    const resultNodes = [...visibleIds].map(id => {
+        const o = nodeMap[id];
+        return { id, type: o.type, label: o.label, position: positions[id] || o.position, isSystem: false };
+    });
+    const resultEdges = simplifiedEdges.map((e, i) => ({
+        id: `se-${i}`, source: e.source, target: e.target, label: '', isSystem: false
+    }));
+    log.push(`結果: ${resultNodes.length} 節點, ${resultEdges.length} 邊`);
+    return { nodes: resultNodes, edges: resultEdges, log, groups: [] };
+}
+
+// ========== Mode B: 原位替換 ==========
+function simplifyModeB(graph, visibleTypes, replaceLabel) {
+    const nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+    const edges = graph.edges || [];
+    const log = [];
+    log.push(`[Mode B] 原位替換`);
+    log.push(`原始: ${nodes.length} 節點, ${edges.length} 邊 | 可見: ${[...visibleTypes].join(', ')} | 替換: "${replaceLabel}"`);
+    log.push('');
+
+    const nodeMap = {};
+    nodes.forEach(n => { nodeMap[n.id] = n; });
+
+    let replaced = 0;
+    const resultNodes = nodes.map(node => {
+        if (visibleTypes.has(node.type)) {
+            log.push(`[保留] ${node.label} (${node.type})`);
+            return { id: node.id, type: node.type, label: node.label, position: { ...node.position }, isSystem: false };
+        } else {
+            replaced++;
+            log.push(`[替換] ${node.label} (${node.type}) -> "${replaceLabel}"`);
+            return { id: node.id, type: 'system', label: replaceLabel, position: { ...node.position }, isSystem: true };
+        }
+    });
+
+    const resultEdges = edges.map((e, i) => ({
+        id: e.id || `edge-${i}`, source: e.source, target: e.target, label: e.label || '',
+        isSystem: (nodeMap[e.source] && !visibleTypes.has(nodeMap[e.source].type)) ||
+                  (nodeMap[e.target] && !visibleTypes.has(nodeMap[e.target].type))
+    }));
+
+    log.push('');
+    log.push(`結果: ${resultNodes.length} 節點 (${resultNodes.length - replaced} 可見 + ${replaced} 替換), ${resultEdges.length} 邊`);
+    return { nodes: resultNodes, edges: resultEdges, log, groups: [] };
+}
+
+// ========== Mode C: 展開子流程 + 原位替換 ==========
+function simplifyModeC(graph, visibleTypes, replaceLabel, subflowMap) {
+    const log = [];
+    log.push(`[Mode C] 展開子流程 + 原位替換`);
+    log.push('');
+
+    // Step 1: 過濾 group，取得主流程的實際節點和邊
+    let allNodes = (graph.nodes || []).filter(n => n.type !== 'group');
+    let allEdges = [...(graph.edges || [])];
+    const groups = []; // 新建的子流程群組
+
+    log.push(`--- Step 1: 主流程 (過濾 group 後) ---`);
+    log.push(`節點: ${allNodes.length}, 邊: ${allEdges.length}`);
+
+    // 找出 Subflow 節點
+    const subflowNodes = allNodes.filter(n => n.type === 'Subflow' || n.type === 'SubFlow');
+    log.push(`Subflow 節點: ${subflowNodes.length}`);
+    log.push('');
+
+    // Step 2: 逐一展開子流程
+    log.push(`--- Step 2: 展開子流程 ---`);
+    for (const sfNode of subflowNodes) {
+        const assignedWfKey = subflowMap[sfNode.id];
+        if (!assignedWfKey || !WORKFLOWS[assignedWfKey]) {
+            log.push(`[跳過] ${sfNode.id}: 未指定子流程`);
+            continue;
+        }
+
+        const subWf = WORKFLOWS[assignedWfKey];
+        const subGraph = subWf.graph;
+        const subNodes = (subGraph.nodes || []).filter(n => n.type !== 'group');
+        const subEdges = subGraph.edges || [];
+        const prefix = `sf_${sfNode.id}_`;
+
+        log.push(`[展開] ${sfNode.label} -> "${subWf.name}" (${subNodes.length} 節點, ${subEdges.length} 邊)`);
+
+        // 2a. 計算位置偏移：子流程質心 -> SubFlow 節點位置下方
+        let cx = 0, cy = 0;
+        subNodes.forEach(n => { cx += (n.position?.x || 0); cy += (n.position?.y || 0); });
+        cx /= subNodes.length;
+        cy /= subNodes.length;
+        const offsetX = sfNode.position.x - cx;
+        const offsetY = sfNode.position.y - cy + 200; // 下移 200px
+
+        // 2b. 建立群組節點
+        const groupId = `group_${sfNode.id}`;
+        groups.push({
+            id: groupId,
+            label: subWf.name
+        });
+
+        // 2c. 加入子流程節點 (prefixed ID, offset position, parent = group)
+        const prefixedSubNodes = subNodes.map(n => ({
+            id: prefix + n.id,
+            type: n.type,
+            label: n.label,
+            originalType: n.type,
+            position: {
+                x: (n.position?.x || 0) + offsetX,
+                y: (n.position?.y || 0) + offsetY
+            },
+            parent: groupId
+        }));
+        log.push(`  節點 ID 前綴: "${prefix}", 偏移: (${offsetX.toFixed(0)}, ${offsetY.toFixed(0)})`);
+
+        // 2d. 加入子流程邊 (prefixed)
+        const prefixedSubEdges = subEdges.map((e, i) => ({
+            id: prefix + (e.id || `e${i}`),
+            source: prefix + e.source,
+            target: prefix + e.target,
+            label: e.label || ''
+        }));
+
+        // 2e. 找子流程的 Start 和 End 節點
+        const subStartId = prefixedSubNodes.find(n => n.type === 'Start')?.id;
+        const subEndIds = prefixedSubNodes.filter(n => n.type === 'End').map(n => n.id);
+        log.push(`  子流程 Start: ${subStartId || '(無)'}`);
+        log.push(`  子流程 End: ${subEndIds.join(', ') || '(無)'}`);
+
+        // 2f. 改接邊：原本指向 sfNode 的邊 -> 指向子流程 Start
+        if (subStartId) {
+            allEdges.forEach(e => {
+                if (e.target === sfNode.id) {
+                    log.push(`  改接入邊: ${e.source} -> ${subStartId}`);
+                    e.target = subStartId;
+                }
+            });
+        }
+
+        // 2g. 改接邊：原本從 sfNode 出發的邊 -> 從子流程 End 出發
+        const outgoingEdges = allEdges.filter(e => e.source === sfNode.id);
+        allEdges = allEdges.filter(e => e.source !== sfNode.id);
+        for (const endId of subEndIds) {
+            for (const out of outgoingEdges) {
+                const newEdge = {
+                    id: `flat_${endId}_${out.target}_${Math.random().toString(36).substr(2, 6)}`,
+                    source: endId,
+                    target: out.target,
+                    label: ''
+                };
+                allEdges.push(newEdge);
+                log.push(`  改接出邊: ${endId} -> ${out.target}`);
+            }
+        }
+
+        // 2h. 移除原始 Subflow 節點
+        allNodes = allNodes.filter(n => n.id !== sfNode.id);
+
+        // 2i. 加入展開的子流程節點和邊
+        allNodes.push(...prefixedSubNodes);
+        allEdges.push(...prefixedSubEdges);
+
+        log.push(`  展開後: 總計 ${allNodes.length} 節點, ${allEdges.length} 邊`);
+        log.push('');
+    }
+
+    // Step 3: 原位替換（Mode B 邏輯）
+    log.push(`--- Step 3: 原位替換隱藏節點 ---`);
+
+    const nodeMap = {};
+    allNodes.forEach(n => { nodeMap[n.id] = n; });
+
+    let replaced = 0;
+    const resultNodes = allNodes.map(node => {
+        if (visibleTypes.has(node.type)) {
+            return {
+                id: node.id, type: node.type, label: node.label,
+                position: { ...node.position }, isSystem: false, parent: node.parent || null
+            };
+        } else {
+            replaced++;
+            log.push(`[替換] ${node.label} (${node.type}) -> "${replaceLabel}"`);
+            return {
+                id: node.id, type: 'system', label: replaceLabel,
+                position: { ...node.position }, isSystem: true, parent: node.parent || null
+            };
+        }
+    });
+
+    const resultEdges = allEdges.map((e, i) => ({
+        id: e.id || `edge-${i}`, source: e.source, target: e.target, label: e.label || '',
+        isSystem: (nodeMap[e.source] && !visibleTypes.has(nodeMap[e.source].type)) ||
+                  (nodeMap[e.target] && !visibleTypes.has(nodeMap[e.target].type))
+    }));
+
+    const visibleCount = resultNodes.filter(n => !n.isSystem).length;
+    log.push('');
+    log.push(`最終結果: ${resultNodes.length} 節點 (${visibleCount} 可見 + ${replaced} 替換), ${resultEdges.length} 邊, ${groups.length} 群組`);
+
+    return { nodes: resultNodes, edges: resultEdges, log, groups };
+}
+
+// ========== 拓撲排序分層定位 (Mode A) ==========
+function layoutNodes(nodeIds, edges) {
+    const inDeg = {}, adj = {};
+    nodeIds.forEach(id => { inDeg[id] = 0; adj[id] = []; });
+    edges.forEach(e => {
+        if (inDeg[e.target] !== undefined) inDeg[e.target]++;
+        if (adj[e.source]) adj[e.source].push(e.target);
+    });
+    const queue = [];
+    nodeIds.forEach(id => { if (inDeg[id] === 0) queue.push(id); });
+    const levels = {};
+    let maxLvl = 0;
+    while (queue.length > 0) {
+        const cur = queue.shift();
+        const lvl = levels[cur] || 0;
+        if (lvl > maxLvl) maxLvl = lvl;
+        (adj[cur] || []).forEach(next => {
+            levels[next] = Math.max(levels[next] || 0, lvl + 1);
+            inDeg[next]--;
+            if (inDeg[next] === 0) queue.push(next);
+        });
+    }
+    nodeIds.forEach(id => { if (levels[id] === undefined) levels[id] = maxLvl + 1; });
+    const layers = {};
+    nodeIds.forEach(id => {
+        const l = levels[id] || 0;
+        if (!layers[l]) layers[l] = [];
+        layers[l].push(id);
+    });
+    const positions = {};
+    Object.keys(layers).sort((a, b) => a - b).forEach(l => {
+        const ns = layers[l];
+        const h = (ns.length - 1) * 100;
+        ns.forEach((id, i) => { positions[id] = { x: parseInt(l) * 200, y: -h / 2 + i * 100 }; });
+    });
+    return positions;
+}
+
+// ========== Cytoscape 渲染 ==========
+let cyOriginal = null;
+let cySimplified = null;
+
+function renderOriginal(graph, visibleTypes) {
+    if (cyOriginal) cyOriginal.destroy();
+    const nodes = (graph.nodes || []).filter(n => n.type !== 'group');
+    const edges = graph.edges || [];
+    const elements = [];
+    nodes.forEach(node => {
+        const isVis = visibleTypes.has(node.type);
+        elements.push({
+            data: { id: node.id, label: node.label || node.id, type: node.type,
+                    color: getNodeColor(node.type), borderColor: isVis ? '#333' : '#bbb' },
+            position: node.position || { x: 0, y: 0 },
+            classes: isVis ? '' : 'hidden-node'
+        });
+    });
+    edges.forEach(edge => {
+        elements.push({ data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label || '' } });
+    });
+    cyOriginal = cytoscape({
+        container: document.getElementById('cy-original'), elements, style: getCyStyle(),
+        layout: { name: 'preset' }, userZoomingEnabled: true, userPanningEnabled: true, boxSelectionEnabled: false
+    });
+    cyOriginal.fit(null, 40);
+    document.getElementById('originalStats').textContent = `${nodes.length} 節點, ${edges.length} 邊`;
+}
+
+function renderSimplified(result) {
+    if (cySimplified) cySimplified.destroy();
+    const elements = [];
+
+    // 群組 (compound parent nodes)
+    (result.groups || []).forEach(g => {
+        elements.push({
+            data: { id: g.id, label: g.label, color: '#eff6ff', borderColor: '#93c5fd' }
+        });
+    });
+
+    // 節點
+    result.nodes.forEach(node => {
+        const isSys = node.isSystem || node.type === 'system';
+        const data = {
+            id: node.id, label: node.label || node.id, type: node.type,
+            color: isSys ? SYSTEM_NODE_COLOR : getNodeColor(node.type),
+            borderColor: isSys ? SYSTEM_NODE_BORDER : '#333'
+        };
+        if (node.parent) data.parent = node.parent;
+        elements.push({ data, position: node.position, classes: isSys ? 'system-node' : '' });
+    });
+
+    // 邊
+    result.edges.forEach(edge => {
+        elements.push({
+            data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label || '' },
+            classes: edge.isSystem ? 'system-edge' : ''
+        });
+    });
+
+    cySimplified = cytoscape({
+        container: document.getElementById('cy-simplified'), elements, style: getCyStyle(),
+        layout: { name: 'preset' }, userZoomingEnabled: true, userPanningEnabled: true, boxSelectionEnabled: false
+    });
+    cySimplified.fit(null, 40);
+
+    const visCount = result.nodes.filter(n => !n.isSystem && n.type !== 'system').length;
+    const sysCount = result.nodes.filter(n => n.isSystem || n.type === 'system').length;
+    const grpCount = (result.groups || []).length;
+    let stats = `${result.nodes.length} 節點, ${result.edges.length} 邊`;
+    if (sysCount > 0) stats = `${visCount} 可見 + ${sysCount} 系統node, ${result.edges.length} 邊`;
+    if (grpCount > 0) stats += `, ${grpCount} 群組`;
+    document.getElementById('simplifiedStats').textContent = stats;
+}
+
+// ========== UI ==========
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', (i === 0 && mode === 'A') || (i === 1 && mode === 'B') || (i === 2 && mode === 'C'));
+    });
+    const desc = document.getElementById('modeDesc');
+    const title = document.getElementById('simplifiedTitle');
+    if (mode === 'A') {
+        desc.textContent = '移除隱藏節點，BFS 穿越找到可見節點間的直連邊，重新定位。';
+        title.textContent = 'Mode A: BFS 重組';
+        document.getElementById('algoTitle').textContent = 'BFS 圖簡化';
+    } else if (mode === 'B') {
+        desc.textContent = '保持原始位置不變，隱藏節點統一替換為「系統node」，邊全部保留。';
+        title.textContent = 'Mode B: 原位替換';
+        document.getElementById('algoTitle').textContent = '原位替換';
+    } else {
+        desc.textContent = '展開所有子流程到主圖（用群組框包裹），改接邊線，再套用原位替換。';
+        title.textContent = 'Mode C: 展開子流程 + 替換';
+        document.getElementById('algoTitle').textContent = '子流程展開 + 原位替換';
+    }
+    document.getElementById('replaceLabelGroup').style.display = (mode === 'B' || mode === 'C') ? 'inline' : 'none';
+    document.getElementById('legendSystemNode').style.display = (mode === 'B' || mode === 'C') ? 'flex' : 'none';
+    document.getElementById('legendGroup').style.display = mode === 'C' ? 'flex' : 'none';
+    updateSubflowPanel();
+    runSimplify();
+}
+
+function updateSubflowPanel() {
+    const panel = document.getElementById('subflowAssignPanel');
+    if (currentMode !== 'C') { panel.classList.remove('show'); return; }
+
+    const key = document.getElementById('workflowSelect').value;
+    if (!key || !WORKFLOWS[key]) { panel.classList.remove('show'); return; }
+
+    const graph = WORKFLOWS[key].graph;
+    const subflowNodes = (graph.nodes || []).filter(n => n.type === 'Subflow' || n.type === 'SubFlow');
+    if (subflowNodes.length === 0) {
+        panel.innerHTML = '<span style="color: #6b7280;">此流程無 Subflow 節點</span>';
+        panel.classList.add('show');
+        return;
+    }
+
+    // 建立子流程指定 UI
+    let html = '<label>子流程指定：</label>';
+    subflowNodes.forEach(sf => {
+        html += `<span>${sf.label || sf.id}: </span>`;
+        html += `<select id="sf_assign_${sf.id}" onchange="runSimplify()" style="max-width: 200px;">`;
+        html += `<option value="">(未指定)</option>`;
+        // 列出除了自己以外的所有流程
+        Object.keys(WORKFLOWS).forEach(wfKey => {
+            if (wfKey === key) return; // 排除自己避免循環
+            const wf = WORKFLOWS[wfKey];
+            const cnt = (wf.graph.nodes || []).filter(n => n.type !== 'group').length;
+            const sel = getDefaultSubflowAssign(sf.id) === wfKey ? ' selected' : '';
+            html += `<option value="${wfKey}"${sel}>${wf.name} (${cnt})</option>`;
+        });
+        html += `</select>`;
+    });
+    panel.innerHTML = html;
+    panel.classList.add('show');
+}
+
+// 預設子流程對應 (demo 用)
+function getDefaultSubflowAssign(sfNodeId) {
+    const defaults = {
+        'node-Subflow-1770560164576': 'Qjke5EAaUnYLRslP_4OATg',  // 輸入檢查
+        'node-Subflow-1770560164577': 'Ki9TkbjgL2KqyXxt93XIow'   // 讀寫變數欄位
+    };
+    return defaults[sfNodeId] || '';
+}
+
+function getSubflowAssignments() {
+    const map = {};
+    document.querySelectorAll('[id^="sf_assign_"]').forEach(sel => {
+        const nodeId = sel.id.replace('sf_assign_', '');
+        if (sel.value) map[nodeId] = sel.value;
+    });
+    return map;
+}
+
+function initUI() {
+    const select = document.getElementById('workflowSelect');
+    Object.keys(WORKFLOWS).forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        const w = WORKFLOWS[key];
+        const cnt = (w.graph.nodes || []).filter(n => n.type !== 'group').length;
+        opt.textContent = `${w.name} (${cnt} 節點)`;
+        select.appendChild(opt);
+    });
+    buildVisibleTypeCheckboxes();
+    loadWorkflow();
+}
+
+function buildVisibleTypeCheckboxes() {
+    const container = document.getElementById('visibleTypesContainer');
+    container.innerHTML = '';
+    [...ALL_NODE_TYPES].sort().forEach(type => {
+        const label = document.createElement('label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = type;
+        cb.checked = DEFAULT_VISIBLE.has(type);
+        cb.onchange = runSimplify;
+        const span = document.createElement('span');
+        span.textContent = type;
+        span.style.color = getNodeColor(type);
+        span.style.fontWeight = '500';
+        label.appendChild(cb);
+        label.appendChild(span);
+        container.appendChild(label);
+    });
+}
+
+function getSelectedVisibleTypes() {
+    const types = new Set();
+    document.querySelectorAll('#visibleTypesContainer input:checked').forEach(cb => types.add(cb.value));
+    return types;
+}
+
+function loadWorkflow() {
+    updateSubflowPanel();
+    runSimplify();
+}
+
+function runSimplify() {
+    const key = document.getElementById('workflowSelect').value;
+    if (!key || !WORKFLOWS[key]) return;
+
+    const graph = WORKFLOWS[key].graph;
+    const visibleTypes = getSelectedVisibleTypes();
+    const replaceLabel = document.getElementById('replaceLabel').value || '系統node';
+
+    renderOriginal(graph, visibleTypes);
+
+    let result;
+    if (currentMode === 'A') {
+        result = simplifyModeA(graph, visibleTypes);
+    } else if (currentMode === 'B') {
+        result = simplifyModeB(graph, visibleTypes, replaceLabel);
+    } else {
+        const sfMap = getSubflowAssignments();
+        result = simplifyModeC(graph, visibleTypes, replaceLabel, sfMap);
+    }
+
+    renderSimplified(result);
+    document.getElementById('algoLog').textContent = result.log.join('\n');
+}
+
+function toggleAlgoInfo() { document.getElementById('algoInfo').classList.toggle('show'); }
+
+document.addEventListener('DOMContentLoaded', initUI);
+</script>
+</body>
+</html>

@@ -221,3 +221,66 @@ def get_user_type_display(user_type):
 def test_grid():
     """測試 Grid 佈局"""
     return render_template('pages/test_grid.html')
+
+
+@dev_bp.route('/graph-simplify')
+@public_route
+@internal_network_only
+def graph_simplify_demo():
+    """流程圖簡化演算法模擬"""
+    import json
+    workflow_data = []
+
+    try:
+        rows = db.session.execute(text(
+            "SELECT secure_code, name, graph "
+            "FROM fw_workflow_templates "
+            "WHERE graph IS NOT NULL "
+            "AND jsonb_array_length(graph->'nodes') >= 3 "
+            "ORDER BY jsonb_array_length(graph->'nodes') DESC"
+        )).fetchall()
+
+        for row in rows:
+            graph = row[2] if isinstance(row[2], dict) else json.loads(row[2])
+            workflow_data.append({
+                'secure_code': row[0],
+                'name': row[1],
+                'graph': graph
+            })
+    except Exception as e:
+        print(f'[graph-simplify] DB error: {e}')
+
+    return render_template('dev/graph_simplify_demo.html',
+                           workflow_data=workflow_data)
+
+
+@dev_bp.route('/graph-flatten')
+@public_route
+@internal_network_only
+def graph_flatten_demo():
+    """子流程展開模擬（全圖）"""
+    import json
+    workflow_data = []
+
+    try:
+        rows = db.session.execute(text(
+            "SELECT secure_code, name, graph, code "
+            "FROM fw_workflow_templates "
+            "WHERE graph IS NOT NULL "
+            "AND jsonb_array_length(graph->'nodes') >= 2 "
+            "ORDER BY jsonb_array_length(graph->'nodes') DESC"
+        )).fetchall()
+
+        for row in rows:
+            graph = row[2] if isinstance(row[2], dict) else json.loads(row[2])
+            workflow_data.append({
+                'secure_code': row[0],
+                'name': row[1],
+                'graph': graph,
+                'code': row[3] or ''
+            })
+    except Exception as e:
+        print(f'[graph-flatten] DB error: {e}')
+
+    return render_template('dev/graph_flatten_demo.html',
+                           workflow_data=workflow_data)
