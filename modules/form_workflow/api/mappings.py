@@ -146,6 +146,17 @@ def list_mappings():
                     'all_versions_archived': all_archived,
                 }
 
+    # 批次查詢編號規則名稱
+    from app.models import UserNumberingRule
+    rule_codes = [m.numbering_rule_secure_code for m in mappings if m.numbering_rule_secure_code]
+    rule_name_map = {}
+    if rule_codes:
+        rules = UserNumberingRule.query.filter(
+            UserNumberingRule.secure_code.in_(rule_codes),
+            UserNumberingRule.is_deleted == False
+        ).all()
+        rule_name_map = {r.secure_code: r.name for r in rules}
+
     # 組合結果
     result = []
     for m in mappings:
@@ -158,6 +169,9 @@ def list_mappings():
         data['workflow_template_name'] = wi.get('name', m.workflow_template_code)
         data['workflow_current_version'] = wi.get('version', 'AA')
         data['workflow_current_revision'] = wi.get('revision', 0)
+
+        # 編號規則名稱
+        data['numbering_rule_name'] = rule_name_map.get(m.numbering_rule_secure_code)
 
         # 發行版本資訊
         pi = publish_map.get(m.secure_code, {})
@@ -312,6 +326,20 @@ def update_mapping(secure_code):
         mapping.trigger_condition = data['trigger_condition']
     if 'description' in data:
         mapping.description = data['description']
+    if 'numbering_rule_secure_code' in data:
+        rule_sc = data['numbering_rule_secure_code'] or None
+        if rule_sc:
+            # 驗證規則存在且屬於同企業
+            from app.models import UserNumberingRule
+            rule = UserNumberingRule.query.filter_by(
+                secure_code=rule_sc,
+                org_secure_code=org.secure_code,
+                is_active=True,
+                is_deleted=False
+            ).first()
+            if not rule:
+                return jsonify({'success': False, 'error': '找不到指定的編號規則'}), 404
+        mapping.numbering_rule_secure_code = rule_sc
     mapping.updated_at = datetime.utcnow()
     db.session.commit()
 
@@ -957,6 +985,51 @@ def delete_published(secure_code):
     return jsonify({
         'success': True,
         'message': f'發行版本 v{published.publish_version} 已刪除'
+    })
+
+
+# =============================================================================
+# 編號規則端點
+# =============================================================================
+
+@mappings_bp.route('/numbering-rules')
+@module_access_required('form_workflow')
+def list_numbering_rules():
+    """取得可用於表單的編號規則列表（FORM 預設 + 無預設用途的規則）"""
+    from app.models import UserNumberingRule
+    from app.services.numbering_service import NumberingService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    rules = UserNumberingRule.query.filter(
+        UserNumberingRule.org_secure_code == org.secure_code,
+        UserNumberingRule.is_active == True,
+        UserNumberingRule.is_deleted == False,
+        db.or_(
+            UserNumberingRule.default_for == 'FORM',
+            UserNumberingRule.default_for == None
+        )
+    ).order_by(
+        UserNumberingRule.default_for.desc().nullslast(),
+        UserNumberingRule.name
+    ).all()
+
+    result = []
+    for r in rules:
+        preview = NumberingService.preview_numbers(r, count=1)
+        result.append({
+            'secure_code': r.secure_code,
+            'name': r.name,
+            'default_for': r.default_for,
+            'is_form_default': r.default_for == 'FORM',
+            'preview': preview[0] if preview else '',
+        })
+
+    return jsonify({
+        'success': True,
+        'data': result
     })
 
 

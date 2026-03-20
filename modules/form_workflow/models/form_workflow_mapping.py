@@ -58,6 +58,9 @@ class FwFormWorkflowMapping(ModuleBaseModel):
     is_archived = Column(Boolean, default=False, nullable=False)
     archived_at = Column(DateTime)
 
+    # 表單編號規則（NULL = 使用企業表單預設）
+    numbering_rule_secure_code = Column(String(32), nullable=True)
+
     # 備註
     description = Column(String(500))
 
@@ -99,6 +102,9 @@ class FwFormWorkflowMapping(ModuleBaseModel):
             # 封存
             'is_archived': self.is_archived,
             'archived_at': self.archived_at.isoformat() if self.archived_at else None,
+
+            # 編號規則
+            'numbering_rule_secure_code': self.numbering_rule_secure_code,
 
             # 條件
             'trigger_condition': self.trigger_condition,

@@ -6,6 +6,7 @@ function mappingsManager() {
         archivedMappings: [],
         unmappedForms: [],
         workflows: [],
+        numberingRules: [],
         loading: true,
 
         showCreateModal: false,
@@ -23,7 +24,14 @@ function mappingsManager() {
 
         toast: { show: false, message: '', type: 'success' },
 
+        get defaultRuleName() {
+            const def = this.numberingRules.find(r => r.is_form_default);
+            return def ? def.name : '';
+        },
+
         async init() {
+            // numberingRules 必須先載入，否則 select 的 option 不存在導致綁定失敗
+            await this.loadNumberingRules();
             await this.loadMappings();
             await Promise.all([
                 this.loadArchivedMappings(),
@@ -38,7 +46,10 @@ function mappingsManager() {
                 const res = await fetch('/api/mappings/');
                 const data = await res.json();
                 if (data.success) {
-                    this.mappings = data.data || [];
+                    this.mappings = (data.data || []).map(m => ({
+                        ...m,
+                        numbering_rule_secure_code: m.numbering_rule_secure_code || ''
+                    }));
                 }
             } catch (e) {
                 console.error('載入配對失敗:', e);
@@ -350,6 +361,49 @@ function mappingsManager() {
                 }
             } catch (e) {
                 // silent
+            }
+        },
+
+        async loadNumberingRules() {
+            try {
+                const res = await fetch('/api/mappings/numbering-rules');
+                const data = await res.json();
+                if (data.success) {
+                    this.numberingRules = data.data || [];
+                }
+            } catch (e) {
+                console.error('載入編號規則失敗:', e);
+            }
+        },
+
+        getNumberingPreview(m) {
+            const sc = m.numbering_rule_secure_code;
+            if (!sc) {
+                // 企業預設
+                const def = this.numberingRules.find(r => r.is_form_default);
+                return def ? def.preview : '';
+            }
+            const rule = this.numberingRules.find(r => r.secure_code === sc);
+            return rule ? rule.preview : '';
+        },
+
+        async updateNumberingRule(m, ruleSecureCode) {
+            try {
+                const res = await fetch(`/api/mappings/${m.secure_code}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numbering_rule_secure_code: ruleSecureCode || null })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    m.numbering_rule_secure_code = ruleSecureCode || null;
+                    this.showToast('編號規則已更新');
+                } else {
+                    this.showToast(data.error || '更新失敗', 'error');
+                    await this.loadMappings();
+                }
+            } catch (e) {
+                this.showToast('更新失敗: ' + e.message, 'error');
             }
         },
 

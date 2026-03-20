@@ -49,6 +49,11 @@
 .fw-toast.success { background: #16a34a; }
 .fw-toast.error { background: #dc2626; }
 
+/* 編號規則下拉選單 */
+.fw-numbering-select { width: 100%; padding: 4px 6px; border: 1px solid #ddd; font-size: 12px; background: #fff; cursor: pointer; }
+.fw-numbering-select:hover { border-color: #999; }
+.fw-numbering-select:focus { outline: none; border-color: #0066cc; }
+
 /* SQL Sync Toggle */
 .fw-toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
 .fw-toggle input { opacity: 0; width: 0; height: 0; }

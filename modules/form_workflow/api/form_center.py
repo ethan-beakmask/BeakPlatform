@@ -12,6 +12,7 @@ from flask_login import current_user
 
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
+from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
 from app import db, csrf
 
@@ -466,15 +467,40 @@ def submit_form():
             serial_number = f"TEST-{date_str}-{str(form_seq).zfill(4)}"
         else:
             # 正式模式：透過萬用編號系統取得企業專屬格式
-            form_rule = NumberingService.get_default_rule(
-                org.secure_code, default_for='FORM'
-            )
+            # 從 mapping 讀取編號規則（即時生效，不需重新發行）
+            form_rule = None
+            if published:
+                from modules.form_workflow.models import FwFormWorkflowMapping
+                mapping_obj = FwFormWorkflowMapping.query.filter_by(
+                    secure_code=published.source_mapping_secure_code,
+                    is_deleted=False
+                ).first()
+                if mapping_obj and mapping_obj.numbering_rule_secure_code:
+                    form_rule = UserNumberingRule.query.filter_by(
+                        secure_code=mapping_obj.numbering_rule_secure_code,
+                        org_secure_code=org.secure_code,
+                        is_active=True,
+                        is_deleted=False
+                    ).first()
+            if not form_rule:
+                form_rule = NumberingService.get_default_rule(
+                    org.secure_code, default_for='FORM'
+                )
             if form_rule:
                 detail = NumberingService.get_next_number_with_detail(
                     form_rule, consume=True
                 )
                 serial_number = detail['number']
-                org_form_seq = detail['current_seq']
+                # org_form_seq 獨立於編號規則，取企業層級最大值 +1
+                result = db.session.execute(
+                    text("""
+                        SELECT COALESCE(MAX(org_form_seq), 0) + 1
+                        FROM fw_form_instances
+                        WHERE org_secure_code = :osc
+                    """),
+                    {'osc': org.secure_code}
+                )
+                org_form_seq = result.scalar() or 1
             else:
                 # 無規則 fallback：FORM-YYYYMMDD-NNNNN
                 result = db.session.execute(

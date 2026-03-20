@@ -38,6 +38,7 @@
                     <th>表單</th>
                     <th style="width: 40px;"></th>
                     <th>流程</th>
+                    <th style="width: 180px;">表單編號</th>
                     <th style="width: 80px; text-align: center;">運作版本</th>
                     <th style="width: 140px;">更新時間</th>
                     <th style="width: 260px;" class="actions">操作</th>
@@ -58,6 +59,19 @@
                         <td>
                             <div style="font-weight: 500;" x-text="m.workflow_template_name || m.workflow_template_code"></div>
                             <span class="fw-version" x-text="(m.workflow_current_version || m.workflow_template_version || 'AA') + (m.workflow_current_revision || '')"></span>
+                        </td>
+                        <td>
+                            <select class="fw-numbering-select"
+                                    x-init="$nextTick(() => { $el.value = m.numbering_rule_secure_code || ''; })"
+                                    @change="updateNumberingRule(m, $event.target.value)">
+                                <option value="" x-text="'企業預設' + (defaultRuleName ? ' (' + defaultRuleName + ')' : '')"></option>
+                                <template x-for="nr in numberingRules" :key="nr.secure_code">
+                                    <option :value="nr.secure_code"
+                                            x-text="nr.name + (nr.is_form_default ? ' (預設)' : '')"></option>
+                                </template>
+                            </select>
+                            <div style="font-size: 11px; color: #999; margin-top: 2px;"
+                                 x-text="getNumberingPreview(m)"></div>
                         </td>
                         <td style="text-align: center;">
                             <template x-if="m.version_error">
