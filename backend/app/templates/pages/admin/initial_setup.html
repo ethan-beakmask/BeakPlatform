@@ -229,6 +229,21 @@
                     </div>
                 </td>
             </tr>
+            <tr>
+                <td style="vertical-align: top;"><label for="confirm_password" class="required">確認密碼</label></td>
+                <td>
+                    <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
+                           required x-model="confirmPassword" placeholder="請再次輸入密碼">
+                    <div x-show="confirmPassword && password !== confirmPassword"
+                         class="text-danger" style="font-size: 12px; margin-top: 4px;">
+                        密碼不一致
+                    </div>
+                    <div x-show="confirmPassword && password === confirmPassword && passwordChecked && passwordErrors.length === 0"
+                         style="color: #16a34a; font-size: 12px; margin-top: 4px;">
+                        確認密碼一致
+                    </div>
+                </td>
+            </tr>
         </table>
 
         <div class="section-title">選填欄位</div>
@@ -269,7 +284,8 @@
         </div>
 
         <div style="margin-top: 20px;">
-            <button type="submit">建立帳號並完成設定</button>
+            <button type="submit" :disabled="!canSubmit"
+                    :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">建立帳號並完成設定</button>
         </div>
     </form>
 
@@ -298,12 +314,24 @@
             nameConnector: '{{ org.get_setting("name_connector", ".")|e }}',
 
             password: '',
+            confirmPassword: '',
             suggestedPassword: '',
             showPassword: false,
             passwordErrors: [],
             passwordChecked: false,
             passwordRequirements: '',
             validateTimer: null,
+
+            get canSubmit() {
+                return this.nativeName.trim().length > 0
+                    && this.englishName.trim().length > 0
+                    && this.normalizedUsername.length > 0
+                    && this.password.length > 0
+                    && this.confirmPassword.length > 0
+                    && this.password === this.confirmPassword
+                    && this.passwordChecked
+                    && this.passwordErrors.length === 0;
+            },
 
             usernameCheckTimer: null,
             usernameAvailable: null,
@@ -403,6 +431,7 @@
             useSuggestedPassword() {
                 if (this.suggestedPassword) {
                     this.password = this.suggestedPassword;
+                    this.confirmPassword = '';
                     this.showPassword = true;
                     this.validatePassword();
                 }

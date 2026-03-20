@@ -3,7 +3,15 @@
  * 權限中央管理前端邏輯
  */
 function permissionCentral() {
+    const config = window.__PERM_CENTRAL_CONFIG || {};
+
     return {
+        // 企業過濾
+        isSystemAdmin: config.isSystemAdmin || false,
+        organizations: config.organizations || [],
+        selectedOrgCode: config.isSystemAdmin ? '' : config.userOrgSecureCode,
+        orgLabel: '',
+
         // Tab 狀態
         activeTab: 'role',
 
@@ -46,13 +54,63 @@ function permissionCentral() {
         },
 
         async init() {
+            // ORG_ADMIN: 顯示企業名稱
+            if (!this.isSystemAdmin) {
+                this.orgLabel = config.userOrgLabel || this.selectedOrgCode;
+            }
+
+            // 權限定義不依賴企業，先載入
+            await this.loadPermissions();
+
+            // ORG_ADMIN 預設有企業，直接載入資料
+            if (!this.isSystemAdmin) {
+                await this._loadOrgData();
+            }
+            // SYSTEM_ADMIN 等選擇企業後才載入
+        },
+
+        // ============================================================
+        // 企業過濾
+        // ============================================================
+
+        _orgQueryParam() {
+            if (this.isSystemAdmin && this.selectedOrgCode) {
+                return '?org_code=' + encodeURIComponent(this.selectedOrgCode);
+            }
+            return '';
+        },
+
+        _findOrgName(code) {
+            const org = this.organizations.find(o => o.secure_code === code);
+            return org ? org.name : '';
+        },
+
+        async onOrgChange() {
+            // 清除舊的選擇狀態
+            this.selectedRoleCode = '';
+            this.roleData = null;
+            this.showPermEditor = false;
+            this.selectedMenuCode = '';
+            this.menuData = null;
+            this.conflictsData = null;
+            this.conflictCount = 0;
+
+            if (!this.selectedOrgCode) {
+                this.roles = [];
+                this.allMenus = [];
+                this.menuTreeRoots = [];
+                return;
+            }
+
+            await this._loadOrgData();
+        },
+
+        async _loadOrgData() {
             await Promise.all([
                 this.loadRoles(),
-                this.loadPermissions(),
                 this.loadMenus(),
             ]);
             this.buildMenuTree();
-            // 背景載入衝突數
             this.loadConflictCount();
         },
 
@@ -62,7 +120,7 @@ function permissionCentral() {
 
         async loadRoles() {
             try {
-                const res = await fetch('/api/permissions/roles');
+                const res = await fetch('/api/permissions/roles' + this._orgQueryParam());
                 const data = await res.json();
                 this.roles = data.roles || [];
             } catch (e) {
@@ -82,7 +140,7 @@ function permissionCentral() {
 
         async loadMenus() {
             try {
-                const res = await fetch('/api/permissions/menus');
+                const res = await fetch('/api/permissions/menus' + this._orgQueryParam());
                 const data = await res.json();
                 this.allMenus = data.menus || [];
             } catch (e) {
@@ -102,7 +160,7 @@ function permissionCentral() {
             this.roleLoading = true;
             this.showPermEditor = false;
             try {
-                const res = await fetch('/api/permissions/role-view/' + this.selectedRoleCode);
+                const res = await fetch('/api/permissions/role-view/' + this.selectedRoleCode + this._orgQueryParam());
                 this.roleData = await res.json();
             } catch (e) {
                 console.error('Failed to load role view:', e);
@@ -146,7 +204,8 @@ function permissionCentral() {
             if (!this.selectedRoleCode) return;
             this.saving = true;
             try {
-                const res = await fetch('/api/permissions/role-permissions', {
+                const url = '/api/permissions/role-permissions' + this._orgQueryParam();
+                const res = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -208,7 +267,7 @@ function permissionCentral() {
             }
             this.menuLoading = true;
             try {
-                const res = await fetch('/api/permissions/menu-view/' + this.selectedMenuCode);
+                const res = await fetch('/api/permissions/menu-view/' + this.selectedMenuCode + this._orgQueryParam());
                 this.menuData = await res.json();
             } catch (e) {
                 console.error('Failed to load menu view:', e);
@@ -225,7 +284,7 @@ function permissionCentral() {
         async loadConflicts() {
             this.conflictsLoading = true;
             try {
-                const res = await fetch('/api/permissions/conflicts');
+                const res = await fetch('/api/permissions/conflicts' + this._orgQueryParam());
                 this.conflictsData = await res.json();
                 this.conflictCount = this.conflictsData.summary.total;
             } catch (e) {
@@ -238,7 +297,7 @@ function permissionCentral() {
 
         async loadConflictCount() {
             try {
-                const res = await fetch('/api/permissions/conflicts');
+                const res = await fetch('/api/permissions/conflicts' + this._orgQueryParam());
                 const data = await res.json();
                 this.conflictCount = data.summary.total;
             } catch (e) {

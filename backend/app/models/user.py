@@ -247,12 +247,11 @@ class User(TenantBaseModel, UserMixin):
 
         # 其他帳號檢查合約有效期
         if not self.organization.is_contract_valid():
-            # 靜默拒絕，僅記錄日誌
             logger.warning(
                 f"用戶 {self.username}@{self.org_secure_code} 嘗試登入，"
                 f"但企業無有效合約"
             )
-            return False, None  # 不顯示錯誤訊息給用戶
+            return False, "帳號或密碼錯誤"  # 不洩露合約狀態，統一錯誤訊息
 
         return True, None
 

@@ -12,8 +12,34 @@
         <h1 class="page-title">權限中央管理</h1>
     </div>
 
+    <!-- 企業過濾 -->
+    <div class="perm-section" style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <label class="form-label" style="margin-bottom: 0; white-space: nowrap;">指定企業</label>
+            <template x-if="isSystemAdmin">
+                <select class="form-control" style="max-width: 360px;"
+                        x-model="selectedOrgCode" @change="onOrgChange()">
+                    <option value="">-- 請選擇企業 --</option>
+                    <template x-for="org in organizations" :key="org.secure_code">
+                        <option :value="org.secure_code" x-text="org.name"></option>
+                    </template>
+                </select>
+            </template>
+            <template x-if="!isSystemAdmin">
+                <span class="text-muted" x-text="orgLabel" style="font-size: 14px;"></span>
+            </template>
+        </div>
+    </div>
+
+    <!-- 未選企業提示 (系統管理員) -->
+    <template x-if="isSystemAdmin && !selectedOrgCode">
+        <div class="alert alert-info">
+            請先選擇企業，才能查看該企業的角色與權限配置。
+        </div>
+    </template>
+
     <!-- Tab 切換 -->
-    <div class="perm-tabs mb-16">
+    <div class="perm-tabs mb-16" x-show="!isSystemAdmin || selectedOrgCode">
         <button type="button" class="perm-tab" :class="{ active: activeTab === 'role' }"
                 @click="activeTab = 'role'">角色視角</button>
         <button type="button" class="perm-tab" :class="{ active: activeTab === 'menu' }"
@@ -30,7 +56,7 @@
     <!-- ============================================================ -->
     <!-- Tab 1: 角色視角 -->
     <!-- ============================================================ -->
-    <div x-show="activeTab === 'role'" x-cloak>
+    <div x-show="activeTab === 'role' && (!isSystemAdmin || selectedOrgCode)" x-cloak>
         <div class="perm-layout">
             <!-- 左側: 角色選擇 -->
             <div class="perm-sidebar">
@@ -226,7 +252,7 @@
     <!-- ============================================================ -->
     <!-- Tab 2: 功能視角 -->
     <!-- ============================================================ -->
-    <div x-show="activeTab === 'menu'" x-cloak>
+    <div x-show="activeTab === 'menu' && (!isSystemAdmin || selectedOrgCode)" x-cloak>
         <div class="perm-layout">
             <!-- 左側: 選單樹 -->
             <div class="perm-sidebar perm-sidebar-wide">
@@ -414,7 +440,7 @@
     <!-- ============================================================ -->
     <!-- Tab 3: 衝突偵測 -->
     <!-- ============================================================ -->
-    <div x-show="activeTab === 'conflicts'" x-cloak>
+    <div x-show="activeTab === 'conflicts' && (!isSystemAdmin || selectedOrgCode)" x-cloak>
         <template x-if="conflictsLoading">
             <p>分析中...</p>
         </template>
@@ -480,5 +506,13 @@
     </div>
 </div>
 
+<script>
+window.__PERM_CENTRAL_CONFIG = {
+    isSystemAdmin: {{ 'true' if is_system_admin else 'false' }},
+    userOrgSecureCode: '{{ user_org_secure_code }}',
+    userOrgLabel: '{{ user_org_label }}',
+    organizations: {{ organizations | tojson }}
+};
+</script>
 <script src="{{ url_for('static', filename='js/permissions-central.js') }}"></script>
 {% endblock %}

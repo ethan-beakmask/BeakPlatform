@@ -552,12 +552,14 @@ class PermissionCentralService:
     @classmethod
     def get_all_roles(
         cls, org_secure_code: str,
-        is_system_admin: bool = False
+        is_system_admin: bool = False,
+        filter_org_code: str = ''
     ) -> List[Dict[str, Any]]:
         """
         取得角色列表
 
-        SYSTEM_ADMIN: 全部角色
+        SYSTEM_ADMIN + filter_org_code: 只看指定企業的角色
+        SYSTEM_ADMIN 無 filter: 全部角色
         ORG_ADMIN: 只有自己企業的角色
         """
         query = Role.query.filter_by(
@@ -566,6 +568,8 @@ class PermissionCentralService:
         )
         if not is_system_admin:
             query = query.filter(Role.org_secure_code == org_secure_code)
+        elif filter_org_code:
+            query = query.filter(Role.org_secure_code == filter_org_code)
 
         roles = query.order_by(Role.sort_order).all()
 

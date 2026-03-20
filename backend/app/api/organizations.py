@@ -2,8 +2,9 @@
 BeakMask Organizations API
 企業/組織管理路由
 """
+import json
 import logging
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
@@ -145,6 +146,18 @@ def create_organization():
             admin_password=data.get('admin_password'),
             created_by=current_user.email
         )
+
+        # 自動建立 10 天試用合約（預設啟用流程模組）
+        today = date.today()
+        OrganizationService.create_contract(
+            org_secure_code=org.secure_code,
+            start_date=today,
+            end_date=today + timedelta(days=10),
+            name=f'{data["name"]} 試用合約',
+            modules_config=json.dumps(['form_workflow']),
+            created_by=current_user.secure_code
+        )
+
         db.session.commit()
 
         result = {

@@ -88,6 +88,7 @@ def initial_setup():
         username = ''.join(username_raw.split()).lower()
         employee_id = form_data['employee_id'] or None
         password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
         nickname = form_data['nickname'] or None
         backup_email_1 = form_data['backup_email_1'] or None
         mobile_phone_1 = form_data['mobile_phone_1'] or None
@@ -116,6 +117,8 @@ def initial_setup():
             flash('密碼為必填', 'error')
         elif len(password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
+        elif password != confirm_password:
+            flash('兩次輸入的密碼不一致', 'error')
         else:
             employee_email = f"{username}@{org.domain_name}"
             admin_username = f"admin-{username}"

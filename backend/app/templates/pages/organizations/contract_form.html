@@ -1,74 +1,58 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{% if action == 'add' %}新增合約{% else %}編輯合約{% endif %} - {{ organization.name }} - BeakMask{% endblock %}
+{% block title %}{% if action == 'add' %}新增合約{% else %}合約詳情{% endif %} - {{ organization.name }} - BeakMask{% endblock %}
 
 {% block content %}
 <p><a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a></p>
 
-<h1>{% if action == 'add' %}新增合約{% else %}編輯合約{% endif %}</h1>
+<h1>{% if action == 'add' %}新增合約{% else %}合約詳情{% endif %}</h1>
 <p>企業：<strong>{{ organization.name }}</strong> ({{ organization.domain_name }})</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p><strong>{{ message }}</strong></p>
+<div class="alert {% if category == 'error' %}alert-error{% else %}alert-success{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
+{% if action == 'add' %}
+{# ========== 新增模式：完整表單 ========== #}
 <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
-        {% if contract %}
-        <tr>
-            <td>合約編號</td>
-            <td><code>{{ contract.contract_number }}</code> (不可變更)</td>
-        </tr>
-        {% endif %}
         <tr>
             <td><label for="name">合約名稱</label></td>
             <td>
                 <input type="text" id="name" name="name" size="40"
-                       value="{{ contract.name if contract and contract.name else '' }}"
                        placeholder="例：2025年度服務合約">
             </td>
         </tr>
         <tr>
             <td><label for="description">說明</label></td>
             <td>
-                <textarea id="description" name="description" rows="2" cols="40" placeholder="合約的簡短說明">{{ contract.description if contract and contract.description else '' }}</textarea>
+                <textarea id="description" name="description" rows="2" cols="40" placeholder="合約的簡短說明"></textarea>
             </td>
         </tr>
         <tr>
             <td><label for="start_date">開始日期 *</label></td>
             <td>
-                <input type="date" id="start_date" name="start_date" required
-                       value="{{ contract.start_date.isoformat() if contract and contract.start_date else '' }}">
+                <input type="date" id="start_date" name="start_date" required>
             </td>
         </tr>
         <tr>
             <td><label for="end_date">結束日期 *</label></td>
             <td>
-                <input type="date" id="end_date" name="end_date" required
-                       value="{{ contract.end_date.isoformat() if contract and contract.end_date else '' }}">
+                <input type="date" id="end_date" name="end_date" required>
             </td>
         </tr>
         <tr>
             <td><label for="amount">合約金額</label></td>
             <td>
-                <input type="number" id="amount" name="amount" min="0" step="1"
-                       value="{{ contract.amount|int if contract and contract.amount else '' }}"
-                       placeholder="0">
+                <input type="number" id="amount" name="amount" min="0" step="1" placeholder="0">
                 <small>（選填）</small>
-            </td>
-        </tr>
-        <tr>
-            <td><label for="status">狀態</label></td>
-            <td>
-                <select id="status" name="status">
-                    <option value="ACTIVE" {% if not contract or contract.status == 'ACTIVE' %}selected{% endif %}>有效</option>
-                    <option value="DISABLED" {% if contract and contract.status == 'DISABLED' %}selected{% endif %}>停用</option>
-                </select>
             </td>
         </tr>
         {% if available_modules %}
@@ -95,23 +79,76 @@
         <tr>
             <td><label for="notes">備註</label></td>
             <td>
-                <textarea id="notes" name="notes" rows="3" cols="40" placeholder="其他備註事項">{{ contract.notes if contract and contract.notes else '' }}</textarea>
+                <textarea id="notes" name="notes" rows="3" cols="40" placeholder="其他備註事項"></textarea>
             </td>
         </tr>
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit">{% if action == 'add' %}新增合約{% else %}儲存變更{% endif %}</button>
-                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">[取消]</a>
+                <button type="submit">新增合約</button>
+                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" style="margin-left: 10px;">[取消]</a>
             </td>
         </tr>
     </table>
 </form>
 
-{% if contract %}
-<hr>
-<h3>合約資訊</h3>
+{% else %}
+{# ========== 檢視模式：所有欄位唯讀，僅可停用 ========== #}
 <table class="info-table">
+    <tr>
+        <td>合約編號</td>
+        <td><code>{{ contract.contract_number }}</code></td>
+    </tr>
+    <tr>
+        <td>合約名稱</td>
+        <td>{{ contract.name or '-' }}</td>
+    </tr>
+    <tr>
+        <td>說明</td>
+        <td>{{ contract.description or '-' }}</td>
+    </tr>
+    <tr>
+        <td>開始日期</td>
+        <td>{{ contract.start_date.isoformat() if contract.start_date else '-' }}</td>
+    </tr>
+    <tr>
+        <td>結束日期</td>
+        <td>{{ contract.end_date.isoformat() if contract.end_date else '-' }}</td>
+    </tr>
+    <tr>
+        <td>合約金額</td>
+        <td>{{ contract.amount|int if contract.amount else '-' }}</td>
+    </tr>
+    <tr>
+        <td>狀態</td>
+        <td>
+            {% if contract.status == 'ACTIVE' %}
+            <span class="badge badge-success">有效</span>
+            {% else %}
+            <span class="badge badge-secondary">已停用</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% if available_modules %}
+    <tr>
+        <td style="vertical-align: top;">授權模組</td>
+        <td>
+            {% for mod in available_modules %}
+            <div style="margin-bottom: 4px;">
+                {% if mod.code in selected_modules %}
+                <strong>[v]</strong> {{ mod.label }}
+                {% else %}
+                <span class="text-muted">[ ] {{ mod.label }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>備註</td>
+        <td>{{ contract.notes or '-' }}</td>
+    </tr>
     <tr>
         <td>建立時間</td>
         <td>{{ contract.created_at.strftime('%Y-%m-%d %H:%M') if contract.created_at else '-' }}</td>
@@ -137,5 +174,29 @@
         </td>
     </tr>
 </table>
+
+{# 停用操作區 #}
+{% if contract.status == 'ACTIVE' %}
+<hr>
+<h3>停用此合約</h3>
+<p class="text-muted" style="font-size: 14px;">
+    合約建立後不可修改內容（稽核要求）。<br>
+    如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。
+</p>
+<form method="POST" onsubmit="return confirm('確定要停用合約「{{ contract.contract_number }}」嗎？停用後不可復原。')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="disable">
+    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer;">
+        停用此合約
+    </button>
+</form>
+{% else %}
+<hr>
+<p class="text-muted" style="font-size: 14px;">此合約已停用，不可再啟用。如需恢復服務，請建立新合約。</p>
+{% endif %}
+
+<p style="margin-top: 16px;">
+    <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a>
+</p>
 {% endif %}
 {% endblock %}

@@ -220,6 +220,7 @@ def create_org():
             flash('管理員密碼長度至少 12 碼', 'error')
         else:
             try:
+                from datetime import timedelta
                 org, admin_user = OrganizationService.create_organization(
                     code=code,
                     name=name,
@@ -230,10 +231,22 @@ def create_org():
                     admin_password=admin_password,
                     created_by=current_user.email
                 )
+
+                # 自動建立 10 天試用合約（預設啟用流程模組）
+                today = date.today()
+                OrganizationService.create_contract(
+                    org_secure_code=org.secure_code,
+                    start_date=today,
+                    end_date=today + timedelta(days=10),
+                    name=f'{name} 試用合約',
+                    modules_config=json.dumps(['form_workflow']),
+                    created_by=current_user.secure_code
+                )
+
                 db.session.commit()
 
                 admin_info = f'{admin_username}@{domain_name}'
-                flash(f'已建立企業 {name}，管理員帳號: {admin_info}', 'success')
+                flash(f'已建立企業 {name}（含 10 天試用合約），管理員帳號: {admin_info}', 'success')
                 return redirect(url_for('organizations.list_orgs'))
             except ValueError as e:
                 db.session.rollback()
@@ -428,26 +441,21 @@ def edit_contract(org_secure_code: str, contract_secure_code: str):
         abort(404)
 
     if request.method == 'POST':
-        try:
-            selected_modules = request.form.getlist('modules')
-            modules_config = json.dumps(selected_modules) if selected_modules else None
-
-            contract.name = request.form.get('name', '').strip() or None
-            contract.description = request.form.get('description', '').strip() or None
-            contract.start_date = date.fromisoformat(request.form.get('start_date'))
-            contract.end_date = date.fromisoformat(request.form.get('end_date'))
-            contract.amount = request.form.get('amount') or None
-            contract.status = request.form.get('status', 'ACTIVE')
-            contract.modules_config = modules_config
-            contract.notes = request.form.get('notes', '').strip() or None
-            contract.modified_by_secure_code = current_user.secure_code
-            contract.modified_at = datetime.utcnow()
-            db.session.commit()
-            flash('已更新合約', 'success')
-            return redirect(url_for('organizations.list_orgs', org=org.secure_code))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'更新失敗: {str(e)}', 'error')
+        # 合約建立後只允許停用，不可編輯其他欄位（稽核精神）
+        action = request.form.get('action', '')
+        if action == 'disable' and contract.status == 'ACTIVE':
+            try:
+                contract.status = 'DISABLED'
+                contract.modified_by_secure_code = current_user.secure_code
+                contract.modified_at = datetime.utcnow()
+                db.session.commit()
+                flash(f'已停用合約 {contract.contract_number}', 'success')
+                return redirect(url_for('organizations.list_orgs', org=org.secure_code))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'停用失敗: {str(e)}', 'error')
+        else:
+            flash('合約建立後不可修改內容，如需變更請建立新合約', 'error')
 
     available_modules = LookupService.get_items('INSTALLED_MODULES')
 
