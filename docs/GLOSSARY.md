@@ -27,7 +27,8 @@
 | 儀表板 | `/dashboard` | 首頁儀表板 |
 | 表單中心 | `/forms/center` | 使用者填寫表單的入口 |
 | 個人設定 | `/personal-settings` | 個人資料與密碼 |
-| 主機設定 | `/hostconfig/` | 主機環境設定 |
+| 主機設定 | `/hostconfig/server-settings` | 伺服器級系統設定 |
+| 資料維護 | `/hostconfig/data-maintenance` | 企業資料硬刪除與清理 |
 
 ### 人機互動流程模組（模組：form_workflow）
 

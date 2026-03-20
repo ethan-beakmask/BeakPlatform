@@ -7,7 +7,7 @@ BeakMask Host Config
 - 資料維護 (硬刪除、清除標記刪除資料)
 - 其他主機級操作
 """
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, redirect, url_for
 
 from app.security.decorators import system_admin_required
 from app import db
@@ -76,8 +76,15 @@ HARD_DELETE_TABLES = [
 @hostconfig_bp.route('/')
 @system_admin_required
 def index():
-    """主機設定首頁"""
-    return render_template('pages/hostconfig/index.html')
+    """主機設定首頁 - 重導向至伺服器設定"""
+    return redirect(url_for('hostconfig.server_settings'))
+
+
+@hostconfig_bp.route('/data-maintenance')
+@system_admin_required
+def data_maintenance():
+    """資料維護頁面 - 硬刪除、清除軟刪除記錄"""
+    return render_template('pages/hostconfig/data_maintenance.html')
 
 
 @hostconfig_bp.route('/server-settings')
