@@ -172,6 +172,25 @@
     font-size: 11px;
     white-space: nowrap;
 }
+.badge-system {
+    background: #f3e8ff;
+    color: #7c3aed;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* 系統企業列項樣式 */
+.org-item.org-system {
+    background: #faf5ff;
+}
+.org-item.org-system:hover {
+    background: #f3e8ff;
+}
+.org-item.org-system .org-name {
+    color: #7c3aed;
+}
 
 /* 集團模式 */
 .conglomerate-mode-bar {

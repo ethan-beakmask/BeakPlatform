@@ -76,8 +76,7 @@
                 <span class="col-contract">合約</span>
             </div>
             {% for org in organizations %}
-            {% if not org.is_system_org %}
-            <div class="org-item"
+            <div class="org-item{% if org.is_system_org %} org-system{% endif %}"
                  :class="{'selected': selectedOrgCode === '{{ org.secure_code }}' || selectedOrgs.includes('{{ org.secure_code }}')}"
                  @click="selectOrg('{{ org.secure_code }}')">
 
@@ -99,6 +98,9 @@
                     {% endif %}
                 </span>
                 <span class="org-contract">
+                    {% if org.is_system_org %}
+                    <span class="badge badge-system">系統</span>
+                    {% else %}
                     {% set active_count = org_active_counts.get(org.secure_code, 0) %}
                     {% set total_count = org_total_counts.get(org.secure_code, 0) %}
                     {% if total_count > 0 %}
@@ -109,9 +111,9 @@
                     {% if not org.is_active %}
                     <span class="badge badge-inactive">停用</span>
                     {% endif %}
+                    {% endif %}
                 </span>
             </div>
-            {% endif %}
             {% endfor %}
         </div>
 
