@@ -3,16 +3,16 @@
 {% block title %}{{ user.display_name }} - 外部廠商 - BeakMask{% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部廠商列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">&lt; 返回外部廠商列表</a>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
-          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
-          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}

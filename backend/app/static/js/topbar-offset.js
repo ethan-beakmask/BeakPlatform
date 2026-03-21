@@ -12,7 +12,7 @@
             var h = topbar.offsetHeight;
             document.documentElement.style.setProperty('--topbar-height', h + 'px');
             if (main) {
-                main.style.paddingTop = h + 'px';
+                main.style.paddingTop = (h + 30) + 'px';
             }
         }
     }

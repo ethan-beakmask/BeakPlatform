@@ -23,15 +23,17 @@ window.__SYS_ACCOUNTS_CONFIG = {
 
 <div x-data="sysAccountsManager()" x-init="init()">
 
-<h1 style="margin-bottom: 4px;">系統管理員帳號</h1>
+<div class="page-header">
+    <h1 class="page-title" style="margin-bottom: 4px;">系統管理員帳號</h1>
+</div>
 <p style="color: #777; margin-top: 0; font-size: 13px;">管理 system.local 的系統管理員帳號</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p class="{% if category == 'error' %}text-danger{% else %}text-success{% endif %}">
-    <strong>{{ message }}</strong>
-</p>
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}

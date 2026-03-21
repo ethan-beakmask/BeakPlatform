@@ -3,14 +3,20 @@
 {% block title %}編輯個人資料 - BeakMask{% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('profile.view') }}">&lt; 返回個人資料</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('profile.view') }}" class="btn btn-secondary btn-sm">&lt; 返回個人資料</a>
+</div>
 
-<h1>編輯個人資料</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">編輯個人資料</h1>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p><strong>{{ message }}</strong></p>
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -29,8 +35,8 @@
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit">儲存變更</button>
-                <a href="{{ url_for('profile.view') }}">[取消]</a>
+                <button type="submit" class="btn btn-primary">儲存變更</button>
+                <a href="{{ url_for('profile.view') }}" class="btn btn-cancel">取消</a>
             </td>
         </tr>
     </table>

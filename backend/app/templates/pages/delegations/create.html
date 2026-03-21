@@ -3,9 +3,13 @@
 {% block title %}新增代理授權 - BeakMask{% endblock %}
 
 {% block content %}
-<h1>新增代理授權</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('delegations.list_delegations') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+</div>
 
-<p><a href="{{ url_for('delegations.list_delegations') }}">[返回列表]</a></p>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增代理授權</h1>
+</div>
 
 <p class="text-muted" style="font-size: 0.9em;">
     代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住

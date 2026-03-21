@@ -7,16 +7,20 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('sys_accounts.list_accounts') }}">&lt; 返回列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+</div>
 
-<h1>新增系統管理員</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增系統管理員</h1>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p class="{% if category == 'error' %}text-danger{% else %}text-success{% endif %}">
-    <strong>{{ message }}</strong>
-</p>
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -83,7 +87,7 @@
             <td colspan="2">
                 <br>
                 <button type="submit" class="btn btn-primary">建立帳號</button>
-                <a href="{{ url_for('sys_accounts.list_accounts') }}" style="margin-left: 10px;">[取消]</a>
+                <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-cancel" style="margin-left: 10px;">取消</a>
             </td>
         </tr>
     </table>

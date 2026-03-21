@@ -8,7 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('organizations.list_orgs', org=org.secure_code) }}">&lt; 返回企業管理</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('organizations.list_orgs', org=org.secure_code) }}" class="btn btn-secondary btn-sm">&lt; 返回企業管理</a>
+</div>
 
 <div class="page-header">
     <h1 class="page-title">{{ org.name }} -- 管理員管理</h1>

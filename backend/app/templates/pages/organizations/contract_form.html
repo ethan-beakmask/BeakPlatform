@@ -3,9 +3,11 @@
 {% block title %}{% if action == 'add' %}新增合約{% else %}合約詳情{% endif %} - {{ organization.name }} - BeakMask{% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary btn-sm">&lt; 返回企業管理</a>
+</div>
 
-<h1>{% if action == 'add' %}新增合約{% else %}合約詳情{% endif %}</h1>
+<div class="page-header" style="margin-top:30px;"><h1 class="page-title">{% if action == 'add' %}新增合約{% else %}合約詳情{% endif %}</h1></div>
 <p>企業：<strong>{{ organization.name }}</strong> ({{ organization.domain_name }})</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -85,8 +87,8 @@
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit">新增合約</button>
-                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" style="margin-left: 10px;">[取消]</a>
+                <button type="submit" class="btn btn-primary">新增合約</button>
+                <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-cancel" style="margin-left: 10px;">取消</a>
             </td>
         </tr>
     </table>
@@ -177,8 +179,7 @@
 
 {# 停用操作區 #}
 {% if contract.status == 'ACTIVE' %}
-<hr>
-<h3>停用此合約</h3>
+<div class="section-title" style="margin-top:32px;">停用此合約</div>
 <p class="text-muted" style="font-size: 14px;">
     合約建立後不可修改內容（稽核要求）。<br>
     如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。
@@ -186,17 +187,16 @@
 <form method="POST" onsubmit="return confirm('確定要停用合約「{{ contract.contract_number }}」嗎？停用後不可復原。')">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="disable">
-    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer;">
+    <button type="submit" class="btn btn-danger">
         停用此合約
     </button>
 </form>
 {% else %}
-<hr>
-<p class="text-muted" style="font-size: 14px;">此合約已停用，不可再啟用。如需恢復服務，請建立新合約。</p>
+<div class="alert alert-info" style="margin-top:16px;">此合約已停用，不可再啟用。如需恢復服務，請建立新合約。</div>
 {% endif %}
 
-<p style="margin-top: 16px;">
-    <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}">&lt; 返回企業管理</a>
-</p>
+<div style="margin-bottom:12px; margin-top: 16px;">
+    <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary btn-sm">&lt; 返回企業管理</a>
+</div>
 {% endif %}
 {% endblock %}

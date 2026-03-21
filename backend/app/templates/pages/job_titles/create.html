@@ -7,9 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<h1>新增職稱</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('job_titles.list_job_titles') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+</div>
 
-<p><a href="{{ url_for('job_titles.list_job_titles') }}">[返回列表]</a></p>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增職稱</h1>
+</div>
 
 <form method="POST" style="max-width: 600px;"
       x-data="{...codeInputMixin('job_title'), codeval: '{{ request.form.get('code', '') }}'}"

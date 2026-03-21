@@ -7,9 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<h1>新增職系</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('job_families.list_job_families') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+</div>
 
-<p><a href="{{ url_for('job_families.list_job_families') }}">[返回列表]</a></p>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增職系</h1>
+</div>
 
 <form method="POST" style="max-width: 600px;"
       x-data="{...codeInputMixin('job_family'), codeval: '{{ request.form.get('code', '') }}'}"
@@ -88,8 +92,8 @@
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">建立職系</button>
-                <a href="{{ url_for('job_families.list_job_families') }}" style="margin-left: 20px;">取消</a>
+                <button type="submit" class="btn btn-primary">建立職系</button>
+                <a href="{{ url_for('job_families.list_job_families') }}" class="btn btn-cancel" style="margin-left: 20px;">取消</a>
             </td>
         </tr>
     </table>

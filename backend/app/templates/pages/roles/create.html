@@ -4,8 +4,12 @@
 
 {% block content %}
 <div x-data="roleCreateForm()">
-    <p><a href="{{ url_for('roles.list_roles') }}" style="color:#3b82f6;">← 返回列表</a></p>
-    <h1 style="font-size:20px; font-weight:bold; margin:16px 0;">新增角色</h1>
+    <div style="margin-bottom:12px;">
+        <a href="{{ url_for('roles.list_roles') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+    </div>
+    <div class="page-header" style="margin-top:30px;">
+        <h1 class="page-title">新增角色</h1>
+    </div>
 
     <form @submit.prevent="submitForm" style="max-width: 700px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -165,7 +169,7 @@
                         <span x-show="!isSubmitting">建立角色</span>
                         <span x-show="isSubmitting">建立中...</span>
                     </button>
-                    <a href="{{ url_for('roles.list_roles') }}" style="margin-left: 20px;">取消</a>
+                    <a href="{{ url_for('roles.list_roles') }}" class="btn btn-cancel" style="margin-left: 20px;">取消</a>
                 </td>
             </tr>
         </table>

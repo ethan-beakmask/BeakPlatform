@@ -8,7 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<h1>系統設定</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">系統設定</h1>
+</div>
 <p>企業級系統設定</p>
 
 <div class="settings-layout">
@@ -366,8 +368,9 @@
     </div>
 </div>
 
-<hr style="margin-top: 40px;">
-<p><a href="{{ url_for('admin.index') }}">&larr; 返回企業管理</a></p>
+<div style="margin-top:40px; margin-bottom:12px;">
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">&larr; 返回企業管理</a>
+</div>
 
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 <script src="/static/js/settings-recipients.js"></script>

@@ -3,9 +3,13 @@
 {% block title %}{{ unit.name }} - 組織單位詳情 - BeakMask{% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('units.list_units') }}">&lt; 返回組織單位列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('units.list_units') }}" class="btn btn-secondary btn-sm">&lt; 返回組織單位列表</a>
+</div>
 
-<h1>{{ unit.name }}</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ unit.name }}</h1>
+</div>
 
 <p><a href="{{ url_for('units.edit_unit', secure_code=unit.secure_code) }}">[編輯]</a></p>
 

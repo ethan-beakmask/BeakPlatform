@@ -7,9 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('org_admins.list_admins') }}">&lt; 返回管理員列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('org_admins.list_admins') }}" class="btn btn-secondary btn-sm">&lt; 返回管理員列表</a>
+</div>
 
-<h1 class="page-title" style="margin: 16px 0;">新增企業管理員</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增企業管理員</h1>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -105,7 +109,7 @@
                         :style="!selectedEmployee && 'opacity: 0.5; cursor: not-allowed'">
                     建立管理員
                 </button>
-                <a href="{{ url_for('org_admins.list_admins') }}" class="text-muted" style="margin-left: 20px;">取消</a>
+                <a href="{{ url_for('org_admins.list_admins') }}" class="btn btn-cancel" style="margin-left: 20px;">取消</a>
             </td>
         </tr>
     </table>

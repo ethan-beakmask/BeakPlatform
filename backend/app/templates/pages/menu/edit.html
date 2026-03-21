@@ -7,14 +7,17 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('menu.list_menu') }}">&lt; {{ _('返回選單管理') }}</a></p>
-
-<h1>{{ _('編輯選單項目') }} {{ item.title }}</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('menu.list_menu') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回選單管理') }}</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ _('編輯選單項目') }} {{ item.title }}</h1>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p><strong>{{ message }}</strong></p>
+<div class="alert alert-{{ 'success' if category == 'success' else ('error' if category == 'danger' else category) }}">{{ message }}</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -23,36 +26,36 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <td>{{ _('選單代碼') }}</td>
-            <td><code>{{ item.code }}</code> ({{ _('不可變更') }})</td>
+            <th>{{ _('選單代碼') }}</th>
+            <td><code>{{ item.code }}</code> <span class="text-muted">({{ _('不可變更') }})</span></td>
         </tr>
         <tr>
-            <td><label for="title">{{ _('選單標題 (繁中)') }} *</label></td>
-            <td><input type="text" id="title" name="title" size="40" value="{{ item.title }}" required></td>
+            <th><label for="title">{{ _('選單標題 (繁中)') }} <span class="text-danger">*</span></label></th>
+            <td><input type="text" id="title" name="title" class="form-control" style="max-width:400px;" value="{{ item.title }}" required></td>
         </tr>
         {% for code, name in [('en','English'),('zh-CN','简体中文'),('ja','日本語')] %}
         <tr>
-            <td><label for="title_{{ code }}">{{ name }}</label></td>
-            <td><input type="text" id="title_{{ code }}" name="title_{{ code }}" size="40" value="{{ (item.title_i18n or {}).get(code, '') }}"></td>
+            <th><label for="title_{{ code }}">{{ name }}</label></th>
+            <td><input type="text" id="title_{{ code }}" name="title_{{ code }}" class="form-control" style="max-width:400px;" value="{{ (item.title_i18n or {}).get(code, '') }}"></td>
         </tr>
         {% endfor %}
         <tr>
-            <td><label for="icon">{{ _('圖示') }}</label></td>
+            <th><label for="icon">{{ _('圖示') }}</label></th>
             <td>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span x-show="_ip_selectedIcon" style="font-size:20px;width:28px;text-align:center;"><i :class="_ip_selectedIcon"></i></span>
                     <input type="hidden" id="icon" name="icon" x-ref="iconField" value="{{ item.icon or '' }}">
-                    <button type="button" @click="ipOpen()" style="padding:4px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;">{{ _('選擇圖示') }}</button>
-                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" style="font-size:12px;color:#6b7280;"></span>
-                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" style="padding:2px 8px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#dc2626;">X</button>
+                    <button type="button" @click="ipOpen()" class="btn btn-secondary btn-sm">{{ _('選擇圖示') }}</button>
+                    <span x-show="_ip_selectedIcon" x-text="_ip_selectedIcon" class="text-muted" style="font-size:12px;"></span>
+                    <button type="button" x-show="_ip_selectedIcon" @click="ipClear()" class="btn btn-danger btn-sm">X</button>
                 </div>
                 {% include "partials/_icon_picker.html" %}
             </td>
         </tr>
         <tr>
-            <td><label for="parent_secure_code">{{ _('父選單') }}</label></td>
+            <th><label for="parent_secure_code">{{ _('父選單') }}</label></th>
             <td>
-                <select id="parent_secure_code" name="parent_secure_code">
+                <select id="parent_secure_code" name="parent_secure_code" class="form-control" style="max-width:400px;">
                     <option value="">-- {{ _('根層級') }} --</option>
                     {% for opt in parent_options %}
                     <option value="{{ opt.item.secure_code }}"
@@ -61,71 +64,68 @@
                     </option>
                     {% endfor %}
                 </select>
-                <br><small>{{ _('變更父選單會自動更新層級深度') }}</small>
+                <div class="help-text">{{ _('變更父選單會自動更新層級深度') }}</div>
             </td>
         </tr>
         <tr>
-            <td>{{ _('連結類型') }}</td>
+            <th>{{ _('連結類型') }}</th>
             <td>
                 <code>{{ item.link_type }}</code>
                 <input type="hidden" name="link_type" value="{{ item.link_type }}">
-                <small style="color:#6b7280;">{{ _('(系統設定，不可變更)') }}</small>
+                <span class="text-muted">({{ _('系統設定，不可變更') }})</span>
             </td>
         </tr>
         <tr>
-            <td>{{ _('連結目標') }}</td>
+            <th>{{ _('連結目標') }}</th>
             <td>
                 <code>{{ item.link_target or '-' }}</code>
                 <input type="hidden" name="link_target" value="{{ item.link_target or '' }}">
-                <small style="color:#6b7280;">{{ _('(系統設定，不可變更)') }}</small>
+                <span class="text-muted">({{ _('系統設定，不可變更') }})</span>
             </td>
         </tr>
         <tr>
-            <td valign="top">{{ _('授權用戶類型') }}</td>
+            <th style="vertical-align:top;">{{ _('授權用戶類型') }}</th>
             <td>
                 {% for user_type in user_types %}
-                <label style="display: block; margin-bottom: 4px;">
+                <label style="display:block;margin-bottom:4px;">
                     <input type="checkbox" name="allowed_user_types" value="{{ user_type }}"
                         {% if user_type in current_permissions %}checked{% endif %}>
                     {{ user_type_labels.get(user_type, user_type) }}
                 </label>
                 {% endfor %}
-                <small>{{ _('鑰匙1: 勾選哪些用戶類型有「資格」看到此選單（平行關係，非繼承）') }}</small>
+                <div class="help-text">{{ _('鑰匙1: 勾選哪些用戶類型有「資格」看到此選單（平行關係，非繼承）') }}</div>
                 {% if is_module_menu %}
-                <br><small style="color: #b91c1c;">{{ _('此為模組選單，企業須有合約授權才會生效') }}</small>
+                <div class="help-text text-danger">{{ _('此為模組選單，企業須有合約授權才會生效') }}</div>
                 {% endif %}
             </td>
         </tr>
         <tr>
-            <td><label for="display_order">{{ _('顯示順序') }}</label></td>
-            <td><input type="number" id="display_order" name="display_order" value="{{ item.display_order }}"></td>
+            <th><label for="display_order">{{ _('顯示順序') }}</label></th>
+            <td><input type="number" id="display_order" name="display_order" class="form-control" style="max-width:120px;" value="{{ item.display_order }}"></td>
         </tr>
         <tr>
-            <td><label for="is_expanded">{{ _('預設展開') }}</label></td>
+            <th><label for="is_expanded">{{ _('預設展開') }}</label></th>
             <td><input type="checkbox" id="is_expanded" name="is_expanded" {% if item.is_expanded %}checked{% endif %}></td>
         </tr>
         <tr>
-            <td><label for="is_active">{{ _('啟用') }}</label></td>
+            <th><label for="is_active">{{ _('啟用') }}</label></th>
             <td><input type="checkbox" id="is_active" name="is_active" {% if item.is_active %}checked{% endif %}></td>
         </tr>
-        <tr>
-            <td colspan="2">
-                <br>
-                <button type="submit">{{ _('儲存變更') }}</button>
-                <a href="{{ url_for('menu.list_menu') }}">[{{ _('取消') }}]</a>
-            </td>
-        </tr>
     </table>
+
+    <div style="margin-top:16px;display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+        <a href="{{ url_for('menu.list_menu') }}" class="btn btn-cancel">{{ _('取消') }}</a>
+    </div>
 </form>
 
-<hr>
-<h2>{{ _('存取角色需求') }}</h2>
-<p><small style="color:#b91c1c;">{{ _('鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。') }}</small></p>
+<div class="section-title" style="margin-top:32px;">{{ _('存取角色需求') }}</div>
+<div class="alert alert-warning" style="margin-top:8px;">{{ _('鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。') }}</div>
 
 <div x-data="menuRoleManager()" x-init="init()">
     <table class="info-table">
         <tr>
-            <td style="vertical-align:top;width:120px;">{{ _('已設定的角色') }}</td>
+            <th style="vertical-align:top;width:120px;">{{ _('已設定的角色') }}</th>
             <td>
                 <template x-if="assignedRoles.length > 0">
                     <table class="data-table bordered" style="margin:0;">
@@ -143,17 +143,17 @@
                                     <td x-text="r.role_name || (r.role ? r.role.name : r.role_secure_code)"></td>
                                     <td><code x-text="r.role_code || (r.role ? r.role.code : '-')"></code></td>
                                     <td x-text="r.role_type || (r.role ? r.role.role_level || '-' : '-')" style="font-size:12px;"></td>
-                                    <td><button type="button" @click="removeRole(r.role_code || r.role_secure_code)" style="color:#dc2626;border:none;background:none;cursor:pointer;">X</button></td>
+                                    <td><button type="button" @click="removeRole(r.role_code || r.role_secure_code)" class="btn btn-link text-danger" style="padding:0;">X</button></td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </template>
-                <p x-show="assignedRoles.length === 0" style="color:#6b7280;margin:0;">{{ _('尚未設定角色需求（任何已登入用戶可存取）') }}</p>
+                <p x-show="assignedRoles.length === 0" class="text-muted" style="margin:0;">{{ _('尚未設定角色需求（任何已登入用戶可存取）') }}</p>
             </td>
         </tr>
         <tr>
-            <td style="vertical-align:top;">{{ _('可選角色') }}</td>
+            <th style="vertical-align:top;">{{ _('可選角色') }}</th>
             <td>
                 <div style="max-height:300px;overflow-y:auto;">
                     <table class="data-table bordered" x-show="availableRoles.length > 0" style="margin:0;">
@@ -167,7 +167,7 @@
                         </thead>
                         <tbody>
                             <template x-for="r in availableRoles" :key="r.id">
-                                <tr :style="r.selected ? 'color:#6b7280;' : ''">
+                                <tr :class="r.selected ? 'text-muted' : ''">
                                     <td style="text-align:center;">
                                         <input type="checkbox" :checked="r.selected" @change="toggleRole(r)" :disabled="r.selected" style="cursor:pointer;">
                                     </td>
@@ -178,14 +178,14 @@
                             </template>
                         </tbody>
                     </table>
-                    <p x-show="availableRoles.length === 0" style="color:#6b7280;font-size:13px;margin:0;">{{ _('企業尚未建立角色') }}</p>
+                    <p x-show="availableRoles.length === 0" class="text-muted" style="font-size:13px;margin:0;">{{ _('企業尚未建立角色') }}</p>
                 </div>
             </td>
         </tr>
     </table>
 
     <div style="margin-top:8px;">
-        <span x-show="roleMessage" x-text="roleMessage" :style="roleMessageType === 'success' ? 'color:#16a34a;' : 'color:#dc2626;'" style="font-size:13px;"></span>
+        <span x-show="roleMessage" x-text="roleMessage" :class="roleMessageType === 'success' ? 'text-success' : 'text-danger'" style="font-size:13px;"></span>
     </div>
 </div>
 
@@ -221,7 +221,6 @@ function menuRoleManager() {
 
         toggleRole: async function(role) {
             if (role.selected) return;
-            // 加入角色：用 available_roles 的 id（SYSTEM_ADMIN=code, ORG_ADMIN=secure_code）
             var currentIds = this.availableRoles
                 .filter(function(r) { return r.selected; })
                 .map(function(r) { return r.id; });
@@ -230,7 +229,6 @@ function menuRoleManager() {
         },
 
         removeRole: async function(roleId) {
-            // 移除角色：從可選列表中取已選的，排除目標
             var currentIds = this.availableRoles
                 .filter(function(r) { return r.selected; })
                 .map(function(r) { return r.id; })
@@ -268,11 +266,12 @@ function menuRoleManager() {
 }
 </script>
 
-<hr>
-<h2>{{ _('刪除選單項目') }}</h2>
-<p>{{ _('刪除此選單項目將連同子項目一起刪除。') }}</p>
+<div class="section-title" style="margin-top:32px;border-left-color:var(--color-danger);">{{ _('刪除選單項目') }}</div>
+<div class="alert alert-error" style="margin-top:8px;">
+    {{ _('刪除此選單項目將連同子項目一起刪除。') }}
+</div>
 <form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm('{{ _('確定要刪除此選單項目嗎？子項目也會一併刪除。') }}');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit">{{ _('刪除選單項目') }}</button>
+    <button type="submit" class="btn btn-danger">{{ _('刪除選單項目') }}</button>
 </form>
 {% endblock %}

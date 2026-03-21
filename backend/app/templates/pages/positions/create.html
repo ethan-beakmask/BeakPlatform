@@ -3,9 +3,13 @@
 {% block title %}新增職位 - BeakMask{% endblock %}
 
 {% block content %}
-<h1>新增職位指派</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('positions.list_positions') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+</div>
 
-<p><a href="{{ url_for('positions.list_positions') }}">[返回列表]</a></p>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增職位指派</h1>
+</div>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -115,8 +119,8 @@
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">建立職位</button>
-                <a href="{{ url_for('positions.list_positions') }}" style="margin-left: 20px;">取消</a>
+                <button type="submit" class="btn btn-primary">建立職位</button>
+                <a href="{{ url_for('positions.list_positions') }}" class="btn btn-cancel" style="margin-left: 20px;">取消</a>
             </td>
         </tr>
     </table>

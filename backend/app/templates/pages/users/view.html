@@ -8,9 +8,13 @@
 
 {% block content %}
 <div x-data="resetPasswordForm()" x-init="init()">
-<p><a href="{{ url_for('users.list_users') }}">&lt; 返回用戶列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">&lt; 返回用戶列表</a>
+</div>
 
-<h1>{{ user.display_name }}</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">{{ user.display_name }}</h1>
+</div>
 
 <p>
     <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">[編輯]</a>

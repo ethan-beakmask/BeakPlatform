@@ -10,21 +10,25 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('users.list_users') }}">&lt; 返回用戶列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">&lt; 返回用戶列表</a>
+</div>
 
-<h1>新增用戶</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">新增用戶</h1>
+</div>
 
 <p style="margin-bottom: 20px;">
-    <button type="submit" form="create-user-form">建立用戶</button>
-    <a href="{{ url_for('users.list_users') }}" style="margin-left: 10px;">[取消]</a>
+    <button type="submit" form="create-user-form" class="btn btn-primary">建立用戶</button>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">取消</a>
 </p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}

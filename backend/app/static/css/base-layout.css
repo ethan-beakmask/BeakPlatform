@@ -179,5 +179,5 @@ input::placeholder, textarea::placeholder {
 .main-content {
     padding: 16px;
     /* padding-top 由 topbar-offset.js 動態設定，預設值防止初始閃跳 */
-    padding-top: 80px;
+    padding-top: 110px;
 }

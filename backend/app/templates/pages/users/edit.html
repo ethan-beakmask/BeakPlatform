@@ -8,19 +8,27 @@
 
 {% block content %}
 {% if is_self %}
-<p><a href="{{ url_for('main.dashboard') }}">&lt; 返回首頁</a></p>
-<h1>個人設定</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-sm">&lt; 返回首頁</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">個人設定</h1>
+</div>
 {% else %}
-<p><a href="{{ url_for('users.list_users') }}">&lt; 返回用戶列表</a></p>
-<h1>編輯用戶</h1>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">&lt; 返回用戶列表</a>
+</div>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">編輯用戶</h1>
+</div>
 {% endif %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -327,11 +335,11 @@
 
         {% if can_edit %}
         <div class="btn-row">
-            <button type="submit">儲存變更</button>
+            <button type="submit" class="btn btn-primary">儲存變更</button>
             {% if is_self %}
-            <a href="{{ url_for('main.dashboard') }}" style="margin-left: 10px;">[取消]</a>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-cancel">取消</a>
             {% else %}
-            <a href="{{ url_for('users.list_users') }}" style="margin-left: 10px;">[取消]</a>
+            <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">取消</a>
             {% endif %}
         </div>
         {% endif %}

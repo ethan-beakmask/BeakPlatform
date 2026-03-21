@@ -7,20 +7,20 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('external_users.list_external_users') }}">&lt; 返回外部廠商列表</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">&lt; 返回外部廠商列表</a>
+</div>
 
-<h1 style="font-size: 20px; font-weight: bold; margin: 16px 0;">
-    編輯外部廠商：{{ user.display_name }}
-</h1>
+<div class="page-header" style="margin-top:30px;">
+    <h1 class="page-title">編輯外部廠商：{{ user.display_name }}</h1>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="padding: 10px; border-radius: 4px; margin-bottom: 10px;
-          {% if category == 'error' %}background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
-          {% else %}background: #f0fdf4; color: #16a34a; border: 1px solid #86efac;{% endif %}">
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
@@ -64,7 +64,7 @@
                     儲存變更
                 </button>
                 <a href="{{ url_for('external_users.list_external_users') }}"
-                   style="margin-left: 15px; color: #6b7280;">取消</a>
+                   class="btn btn-cancel" style="margin-left: 15px;">取消</a>
             </td>
         </tr>
     </table>
@@ -183,7 +183,7 @@
         <option value="{{ group.code }}">{{ group.name }}</option>
         {% endfor %}
     </select>
-    <button type="submit">加入</button>
+    <button type="submit" class="btn btn-primary">加入</button>
 </form>
 {% else %}
 <p style="color: #9ca3af; font-size: 0.9em; margin-top: 10px;">已加入所有可用群組</p>

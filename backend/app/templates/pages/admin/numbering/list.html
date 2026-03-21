@@ -91,9 +91,11 @@
 {% endblock %}
 
 {% block content %}
-<p><a href="{{ url_for('admin.settings') }}">&lt; 返回系統設定</a></p>
+<div style="margin-bottom:12px;">
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">&lt; 返回系統設定</a>
+</div>
 
-<div class="rules-header">
+<div class="rules-header" style="margin-top:30px;">
     <h1>用戶編號規則</h1>
     <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">+ 新增規則</a>
 </div>
@@ -101,9 +103,9 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
-<p style="color: {% if category == 'error' %}#dc2626{% else %}#16a34a{% endif %}; padding: 8px; background: {% if category == 'error' %}#fef2f2{% else %}#f0fdf4{% endif %}; border-radius: 4px;">
+<div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% else %}alert-{{ category }}{% endif %}">
     {{ message }}
-</p>
+</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
