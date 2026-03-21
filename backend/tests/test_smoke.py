@@ -47,7 +47,6 @@ SKIP_PREFIXES = (
 # 已知問題路由（已記錄待修，排除以免遮蔽新迴歸）
 # 修復後從此清單移除
 KNOWN_ISSUES = {
-    '/api/admin/numbering-rules',  # is_default 是 @property 不是 column，.desc() 噴錯
     '/api/lookup/categories/<secure_code>',  # 需要 LookupCategory fixture
     '/api/lookup/categories/<secure_code>/items',  # 同上
 }

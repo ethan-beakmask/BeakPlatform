@@ -9,6 +9,7 @@ from flask_login import current_user
 from ..security.decorators import admin_required, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import UserNumberingRule, UsedUserNumber
+from ..models.user_numbering_rule import NumberingDefaultFor, NumberingUsageScope
 from ..services.numbering_service import NumberingService
 from .. import db
 
@@ -27,7 +28,7 @@ def list_rules():
         org_secure_code=current_user.org_secure_code,
         is_deleted=False
     ).order_by(
-        UserNumberingRule.is_default.desc(),
+        UserNumberingRule.default_for.desc().nullslast(),
         UserNumberingRule.name
     ).all()
 
@@ -59,7 +60,12 @@ def create_rule():
     name = data.get('name', '').strip()
     description = data.get('description', '').strip()
     elements = data.get('elements', {})
-    is_default = data.get('is_default', False)
+    default_for = data.get('default_for', '').strip() or None
+    usage_scope = data.get('usage_scope', NumberingUsageScope.INTERNAL_ONLY)
+
+    # 向後相容：舊版前端可能只傳 is_default
+    if not default_for and data.get('is_default'):
+        default_for = NumberingDefaultFor.EMPLOYEE
 
     # 驗證
     if not name:
@@ -79,13 +85,13 @@ def create_rule():
     if existing:
         return jsonify({'success': False, 'error': f'規則名稱「{name}」已存在'}), 400
 
-    # 如果要設為預設，先取消其他預設
-    if is_default:
+    # 如果要設為預設，先取消同類型的其他預設
+    if default_for:
         UserNumberingRule.query.filter_by(
             org_secure_code=current_user.org_secure_code,
-            is_default=True,
+            default_for=default_for,
             is_deleted=False
-        ).update({'is_default': False})
+        ).update({'default_for': None})
 
     # 建立規則
     rule = UserNumberingRule(
@@ -93,7 +99,8 @@ def create_rule():
         name=name,
         description=description,
         elements=elements,
-        is_default=is_default,
+        usage_scope=usage_scope,
+        default_for=default_for,
         is_active=True
     )
     db.session.add(rule)
@@ -198,8 +205,8 @@ def delete_rule(secure_code):
     if not rule:
         return jsonify({'success': False, 'error': '找不到此規則'}), 404
 
-    if rule.is_default:
-        return jsonify({'success': False, 'error': '無法刪除預設規則，請先設定其他規則為預設'}), 400
+    if rule.default_for:
+        return jsonify({'success': False, 'error': '無法刪除預設規則，請先取消預設設定'}), 400
 
     # 軟刪除
     rule.is_deleted = True
@@ -223,15 +230,19 @@ def set_default_rule(secure_code):
     if not rule.is_active:
         return jsonify({'success': False, 'error': '無法將停用的規則設為預設'}), 400
 
-    # 取消其他預設
+    # 從請求取得預設用途，預設為 EMPLOYEE
+    data = request.get_json(silent=True) or {}
+    default_for = data.get('default_for', NumberingDefaultFor.EMPLOYEE)
+
+    # 取消同類型的其他預設
     UserNumberingRule.query.filter_by(
         org_secure_code=current_user.org_secure_code,
-        is_default=True,
+        default_for=default_for,
         is_deleted=False
-    ).update({'is_default': False})
+    ).update({'default_for': None})
 
     # 設定新預設
-    rule.is_default = True
+    rule.default_for = default_for
     db.session.commit()
 
     return jsonify({
