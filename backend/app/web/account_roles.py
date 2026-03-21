@@ -125,6 +125,7 @@ def index():
         if not role:
             continue
         user_roles.setdefault(a.user_secure_code, []).append({
+            'secure_code': role.secure_code,
             'name': role.name,
             'code': role.code,
             'scope_type': role.scope_type,
