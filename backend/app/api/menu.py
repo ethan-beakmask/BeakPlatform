@@ -142,7 +142,7 @@ def get_menu_item(secure_code: str):
     Returns:
         MenuItem dict (含 children)
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
     return jsonify(menu_item.to_dict(include_children=True))
 
 
@@ -166,7 +166,7 @@ def update_menu_item(secure_code: str):
     Returns:
         Updated MenuItem dict
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
     data = request.get_json()
 
     # 允許更新的欄位
@@ -197,7 +197,7 @@ def delete_menu_item(secure_code: str):
     Returns:
         204 No Content
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
 
     success = MenuService.delete_menu_item(menu_item, soft=True)
 
@@ -246,7 +246,7 @@ def move_menu_item(secure_code: str):
     Returns:
         Updated MenuItem dict
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
     data = request.get_json()
 
     new_parent = data.get('parent_secure_code')
@@ -262,7 +262,7 @@ def move_menu_item(secure_code: str):
 
     # 重新計算深度
     if new_parent:
-        parent = ResourceGateway.get(MenuItem, new_parent, raise_on_not_found=False)
+        parent = ResourceGateway.get(MenuItem, new_parent, raise_on_not_found=False, check_permission=False)
         menu_item.depth = parent.depth + 1 if parent else 0
     else:
         menu_item.depth = 0
@@ -296,7 +296,7 @@ def get_menu_roles(secure_code: str):
     Returns:
         {roles: [...], available_roles: [...]}
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
 
     # RLS context: 管理員操作需要 system_admin 權限繞過租戶隔離
     db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
@@ -410,7 +410,7 @@ def set_menu_roles(secure_code: str):
     Returns:
         {success: true, count: int}
     """
-    menu_item = ResourceGateway.get(MenuItem, secure_code)
+    menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
     data = request.get_json()
 
     role_identifiers = data.get('role_secure_codes', [])
