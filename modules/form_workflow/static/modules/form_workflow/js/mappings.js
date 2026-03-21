@@ -24,11 +24,6 @@ function mappingsManager() {
 
         toast: { show: false, message: '', type: 'success' },
 
-        get defaultRuleName() {
-            const def = this.numberingRules.find(r => r.is_form_default);
-            return def ? def.name : '';
-        },
-
         async init() {
             // numberingRules 必須先載入，否則 select 的 option 不存在導致綁定失敗
             await this.loadNumberingRules();
@@ -46,9 +41,11 @@ function mappingsManager() {
                 const res = await fetch('/api/mappings/');
                 const data = await res.json();
                 if (data.success) {
+                    const defaultRule = this.numberingRules.find(r => r.is_form_default);
+                    const defaultCode = defaultRule ? defaultRule.secure_code : '';
                     this.mappings = (data.data || []).map(m => ({
                         ...m,
-                        numbering_rule_secure_code: m.numbering_rule_secure_code || ''
+                        numbering_rule_secure_code: m.numbering_rule_secure_code || defaultCode
                     }));
                 }
             } catch (e) {
@@ -377,13 +374,7 @@ function mappingsManager() {
         },
 
         getNumberingPreview(m) {
-            const sc = m.numbering_rule_secure_code;
-            if (!sc) {
-                // 企業預設
-                const def = this.numberingRules.find(r => r.is_form_default);
-                return def ? def.preview : '';
-            }
-            const rule = this.numberingRules.find(r => r.secure_code === sc);
+            const rule = this.numberingRules.find(r => r.secure_code === m.numbering_rule_secure_code);
             return rule ? rule.preview : '';
         },
 

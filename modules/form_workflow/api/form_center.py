@@ -2197,3 +2197,159 @@ def get_org_tree():
     }]
 
     return jsonify({'success': True, 'data': tree})
+
+
+# =============================================================================
+# 欄位顯示設定 API
+# =============================================================================
+
+# 欄位定義（column_key -> 預設值）
+FC_COLUMN_DEFAULTS = {
+    'serial_number':  {'width': 140, 'hidden': False},
+    'form_name':      {'width': 120, 'hidden': False},
+    'subject':        {'width': None, 'hidden': False},
+    'applicant':      {'width': 100, 'hidden': False},
+    'category':       {'width': 80, 'hidden': False},
+    'current_node':   {'width': 140, 'hidden': False},
+    'wait_time':      {'width': 150, 'hidden': False},
+    'submit_time':    {'width': 130, 'hidden': False},
+    'signed_elapsed': {'width': 130, 'hidden': False},
+    'end_time':       {'width': 130, 'hidden': False},
+    'status':         {'width': 70, 'hidden': False},
+    'duration':       {'width': 100, 'hidden': False},
+    'actions':        {'width': 110, 'hidden': False},
+}
+
+
+@form_center_bp.route('/column-config')
+@module_access_required('form_workflow', False)
+def get_column_config():
+    """
+    取得當前用戶語系的欄位顯示設定
+
+    查詢順序：用戶語系 -> '*' 通用 -> 程式預設值
+    """
+    from flask import g
+    from ..models import FwColumnDisplayConfig
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    user_locale = getattr(g, 'locale', 'zh-TW') or 'zh-TW'
+
+    # 查詢：先找精確語系，再找通用
+    config_row = FwColumnDisplayConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        locale=user_locale,
+        is_deleted=False
+    ).first()
+
+    if not config_row:
+        config_row = FwColumnDisplayConfig.query.filter_by(
+            org_secure_code=org.secure_code,
+            locale='*',
+            is_deleted=False
+        ).first()
+
+    if config_row:
+        # 用儲存的設定合併預設值（確保新增欄位有預設）
+        merged = {}
+        for key, defaults in FC_COLUMN_DEFAULTS.items():
+            saved = (config_row.config or {}).get(key, {})
+            merged[key] = {
+                'width': saved.get('width', defaults['width']),
+                'hidden': saved.get('hidden', defaults['hidden']),
+            }
+        return jsonify({
+            'success': True,
+            'data': {'locale': config_row.locale, 'config': merged}
+        })
+
+    # 無設定，回傳預設值
+    return jsonify({
+        'success': True,
+        'data': {'locale': None, 'config': FC_COLUMN_DEFAULTS}
+    })
+
+
+@form_center_bp.route('/column-config/all')
+@module_access_required('form_workflow')
+def list_column_configs():
+    """取得企業所有語系的欄位設定（管理員用）"""
+    from ..models import FwColumnDisplayConfig
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    configs = FwColumnDisplayConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).order_by(FwColumnDisplayConfig.locale).all()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'configs': [c.to_dict() for c in configs],
+            'defaults': FC_COLUMN_DEFAULTS,
+        }
+    })
+
+
+@form_center_bp.route('/column-config', methods=['PUT'])
+@csrf.exempt
+@module_access_required('form_workflow')
+def save_column_config():
+    """儲存欄位顯示設定（管理員用）"""
+    from ..models import FwColumnDisplayConfig
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    data = request.get_json()
+    locale = data.get('locale', '*')
+    config = data.get('config', {})
+
+    # 驗證 config 格式
+    valid_keys = set(FC_COLUMN_DEFAULTS.keys())
+    cleaned = {}
+    for key, val in config.items():
+        if key not in valid_keys:
+            continue
+        cleaned[key] = {
+            'width': val.get('width') if isinstance(val.get('width'), (int, float)) else FC_COLUMN_DEFAULTS[key]['width'],
+            'hidden': bool(val.get('hidden', False)),
+        }
+    # subject 和 actions 強制不隱藏
+    if 'subject' in cleaned:
+        cleaned['subject']['hidden'] = False
+        cleaned['subject']['width'] = None
+    if 'actions' in cleaned:
+        cleaned['actions']['hidden'] = False
+
+    config_row = FwColumnDisplayConfig.query.filter_by(
+        org_secure_code=org.secure_code,
+        locale=locale,
+        is_deleted=False
+    ).first()
+
+    if config_row:
+        config_row.config = cleaned
+        config_row.updated_at = datetime.utcnow()
+    else:
+        config_row = FwColumnDisplayConfig(
+            org_secure_code=org.secure_code,
+            locale=locale,
+            config=cleaned
+        )
+        db.session.add(config_row)
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'語系 {locale} 的欄位設定已儲存',
+        'data': config_row.to_dict()
+    })

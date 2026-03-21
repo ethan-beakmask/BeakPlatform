@@ -146,14 +146,20 @@ def center():
 
     # 判斷是否為管理員（用於前端顯示管理功能）
     is_admin = (
+        getattr(current_user, 'user_type', '') in ('ORG_ADMIN', 'SYSTEM_ADMIN') or
         getattr(current_user, 'is_system_admin', False) or
         getattr(current_user, 'level', 0) >= 90
     )
 
+    # 用戶語系
+    from flask import g
+    user_locale = getattr(g, 'locale', 'zh-TW') or 'zh-TW'
+
     return render_template(
         'modules/form_workflow/form_center.html',
         user_timezone=user_tz,
-        is_admin=is_admin
+        is_admin=is_admin,
+        user_locale=user_locale
     )
 
 

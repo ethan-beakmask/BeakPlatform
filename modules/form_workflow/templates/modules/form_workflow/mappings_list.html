@@ -64,7 +64,6 @@
                             <select class="fw-numbering-select"
                                     x-init="$nextTick(() => { $el.value = m.numbering_rule_secure_code || ''; })"
                                     @change="updateNumberingRule(m, $event.target.value)">
-                                <option value="" x-text="'企業預設' + (defaultRuleName ? ' (' + defaultRuleName + ')' : '')"></option>
                                 <template x-for="nr in numberingRules" :key="nr.secure_code">
                                     <option :value="nr.secure_code"
                                             x-text="nr.name + (nr.is_form_default ? ' (預設)' : '')"></option>

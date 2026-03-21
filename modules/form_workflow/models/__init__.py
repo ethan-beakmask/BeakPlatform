@@ -23,6 +23,7 @@ from .org_database import FwOrgDatabase
 from .sync_queue import FwSyncQueue
 from .node_definition import WorkflowNodeDefinition
 from .form_theme import FwFormTheme
+from .column_display_config import FwColumnDisplayConfig
 
 __all__ = [
     'ModuleBaseModel',
@@ -44,4 +45,5 @@ __all__ = [
     'FwSyncQueue',
     'WorkflowNodeDefinition',
     'FwFormTheme',
+    'FwColumnDisplayConfig',
 ]
