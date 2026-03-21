@@ -44,13 +44,15 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_admin_rescue import org_admin_rescue_bp
     from .external_users import external_users_bp
     from .account_roles import account_roles_bp
-    from .dev import dev_bp
-
     # Main routes (dashboard, etc.)
     app.register_blueprint(main_bp)
 
-    # Dev tools - 開發工具 (僅限內網)
-    app.register_blueprint(dev_bp, url_prefix='/dev')
+    # Dev tools - 開發工具 (僅限內網，生產環境不包含此檔案)
+    try:
+        from .dev import dev_bp
+        app.register_blueprint(dev_bp, url_prefix='/dev')
+    except ImportError:
+        pass
 
     # Public - 對外公開區 (無需登入)
     app.register_blueprint(public_bp, url_prefix='/public')
