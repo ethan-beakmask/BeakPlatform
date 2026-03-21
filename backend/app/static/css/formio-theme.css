@@ -5,6 +5,17 @@
  */
 
 /* ========================================
+   Font Awesome 相容修補
+   Form.io iconClass 產生的 class 與 FA 7.x 不一致時在此補齊
+   ======================================== */
+.fa-move                    { --fa: "\f047"; }  /* → arrows-up-down-left-right */
+.fa-new-window              { --fa: "\f2d2"; }  /* → window-restore            */
+.fa-question-sign           { --fa: "\f059"; }  /* → circle-question           */
+.fa-zoom-in                 { --fa: "\f00e"; }  /* → magnifying-glass-plus     */
+.fa-zoom-out                { --fa: "\f010"; }  /* → magnifying-glass-minus    */
+.fa-arrow-counterclockwise  { --fa: "\f0e2"; }  /* → rotate-left               */
+
+/* ========================================
    CSS 變數定義
    ======================================== */
 :root {
