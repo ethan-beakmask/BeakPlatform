@@ -24,7 +24,7 @@ from sqlalchemy import text
 from ..models.menu_item import MenuItem
 from ..models.menu_role_requirement import MenuRoleRequirement
 from ..models.associations import UserRoleAssignment
-from ..services.audit_service import AuditService
+from ..services.audit_service import AuditService, get_real_ip
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -133,7 +133,7 @@ class PageRoleGuard:
                 request_method=request.method,
                 request_path=request.path,
                 status_code=403,
-                ip_address=request.remote_addr,
+                ip_address=get_real_ip(),
                 user_agent=request.headers.get('User-Agent', '')[:500],
             )
             db.session.commit()

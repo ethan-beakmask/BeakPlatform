@@ -14,6 +14,17 @@ from .. import db
 
 logger = logging.getLogger(__name__)
 
+
+def get_real_ip() -> Optional[str]:
+    """取得真實用戶 IP (Cloudflare > X-Forwarded-For > remote_addr)"""
+    if not request:
+        return None
+    ip = request.headers.get('CF-Connecting-IP',
+         request.headers.get('X-Forwarded-For', request.remote_addr))
+    if ip and ',' in ip:
+        ip = ip.split(',')[0].strip()
+    return ip
+
 # 稽核等級
 AUDIT_LEVEL_MINIMAL = 'MINIMAL'    # 僅登入/登出 + 失敗嘗試
 AUDIT_LEVEL_STANDARD = 'STANDARD'  # 登入/登出 + 所有寫入操作
@@ -70,7 +81,7 @@ class AuditService:
         cls,
         action: str,
         resource_type: str,
-        org_secure_code: str,
+        org_secure_code: Optional[str] = None,
         user_secure_code: Optional[str] = None,
         resource_id: Optional[str] = None,
         details: Optional[str] = None,
@@ -86,7 +97,7 @@ class AuditService:
         Args:
             action: 操作類型 (LOGIN, LOGOUT, CREATE, UPDATE, DELETE, etc.)
             resource_type: 資源類型 (AUTH, USER, ROLE, etc.)
-            org_secure_code: 企業 secure_code (必填，FK 約束)
+            org_secure_code: 企業 secure_code (NULL 表示無法對應企業)
             user_secure_code: 操作者 secure_code
             resource_id: 資源識別碼
             details: 詳細描述
@@ -120,14 +131,14 @@ class AuditService:
     def log_auth_event(
         cls,
         action: str,
-        org_secure_code: str,
+        org_secure_code: Optional[str] = None,
         user_secure_code: Optional[str] = None,
         details: Optional[str] = None,
         status_code: Optional[int] = None,
     ):
         """
         記錄認證事件 (登入/登出/失敗)。
-        自動擷取 request 的 IP 和 User-Agent。
+        自動擷取 request 的真實 IP 和 User-Agent。
         所有稽核等級都會記錄。
         """
         cls.log(
@@ -139,7 +150,7 @@ class AuditService:
             request_method=request.method if request else None,
             request_path=request.path if request else None,
             status_code=status_code,
-            ip_address=request.remote_addr if request else None,
+            ip_address=get_real_ip(),
             user_agent=request.headers.get('User-Agent', '')[:500] if request else None,
         )
         try:
@@ -185,7 +196,7 @@ class AuditService:
             request_method=method,
             request_path=path,
             status_code=response_status_code,
-            ip_address=request.remote_addr,
+            ip_address=get_real_ip(),
             user_agent=request.headers.get('User-Agent', '')[:500],
         )
 

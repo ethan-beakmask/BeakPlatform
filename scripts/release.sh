@@ -69,9 +69,9 @@ if [ "$ACTION" = "status" ]; then
     echo "=== BeakPlatform 公開環境狀態 ==="
     if [ -d "$RELEASE_DIR/$DOCKER_COMPOSE_DIR" ]; then
         cd "$RELEASE_DIR/$DOCKER_COMPOSE_DIR"
-        docker compose ps 2>/dev/null || echo "Docker Compose 未啟動"
+        docker compose --env-file .env.production ps 2>/dev/null || echo "Docker Compose 未啟動"
         echo ""
-        if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+        if curl -s "$HEALTH_URL" 2>/dev/null | grep -q '"healthy"'; then
             log_info "健康檢查: 正常"
         else
             log_warn "健康檢查: 無回應"
@@ -87,7 +87,7 @@ if [ "$ACTION" = "stop" ]; then
     echo "=== 停止 BeakPlatform 公開環境 ==="
     if [ -d "$RELEASE_DIR/$DOCKER_COMPOSE_DIR" ]; then
         cd "$RELEASE_DIR/$DOCKER_COMPOSE_DIR"
-        docker compose down
+        docker compose --env-file .env.production down
         log_info "已停止"
     else
         log_warn "發行目錄不存在: $RELEASE_DIR"
@@ -249,17 +249,17 @@ cd "$RELEASE_DIR/$DOCKER_COMPOSE_DIR"
 
 if [ "$FORCE_REBUILD" = true ]; then
     log_info "強制重建 Docker image..."
-    docker compose build --no-cache
+    docker compose --env-file .env.production build --no-cache
     docker compose up -d
 else
-    docker compose up -d --build
+    docker compose --env-file .env.production up -d --build
 fi
 
 # Step 8: 健康檢查
 log_info "Step 8: 健康檢查 (等待最多 ${HEALTH_TIMEOUT}s)..."
 elapsed=0
 while [ $elapsed -lt $HEALTH_TIMEOUT ]; do
-    if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+    if curl -s "$HEALTH_URL" 2>/dev/null | grep -q '"healthy"'; then
         log_info "健康檢查通過"
         break
     fi

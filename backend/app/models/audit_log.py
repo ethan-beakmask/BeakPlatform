@@ -18,6 +18,14 @@ class AuditLog(TenantBaseModel):
     """
     __tablename__ = 'audit_logs'
 
+    # 覆寫父類: 允許 NULL (未知網域登入失敗時無法對應企業)
+    org_secure_code = Column(
+        String(32),
+        ForeignKey('organizations.secure_code'),
+        nullable=True,
+        index=True
+    )
+
     # 操作者
     user_secure_code = Column(
         String(32),
