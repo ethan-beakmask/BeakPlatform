@@ -71,7 +71,7 @@ def admin_required(f):
         if not current_user.is_active:
             abort(403, description="Account is disabled")
 
-        if not current_user.is_org_admin:
+        if not (current_user.is_org_admin or current_user.is_system_admin):
             abort(403, description="Admin privileges required")
 
         # Set tenant context

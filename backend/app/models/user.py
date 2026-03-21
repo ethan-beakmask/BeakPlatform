@@ -158,8 +158,8 @@ class User(TenantBaseModel, UserMixin):
 
     @property
     def is_org_admin(self) -> bool:
-        """是否為企業管理員"""
-        return self.user_type in (UserType.SYSTEM_ADMIN, UserType.ORG_ADMIN)
+        """是否為企業管理員（不含 SYSTEM_ADMIN，SEC-02）"""
+        return self.user_type == UserType.ORG_ADMIN
 
     @property
     def is_employee(self) -> bool:

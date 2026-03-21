@@ -144,12 +144,8 @@ def center():
         user_tz = current_user.organization.get_setting('timezone', 'Asia/Taipei')
     user_tz = user_tz or 'Asia/Taipei'
 
-    # 判斷是否為管理員（用於前端顯示管理功能）
-    is_admin = (
-        getattr(current_user, 'user_type', '') in ('ORG_ADMIN', 'SYSTEM_ADMIN') or
-        getattr(current_user, 'is_system_admin', False) or
-        getattr(current_user, 'level', 0) >= 90
-    )
+    # 判斷是否為企業管理員（用於前端顯示管理功能，SYSTEM_ADMIN 不適用模組管理）
+    is_admin = getattr(current_user, 'is_org_admin', False)
 
     # 用戶語系
     from flask import g
