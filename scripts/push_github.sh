@@ -39,6 +39,7 @@ EXCLUDE_FILES=(
     "deploy/deploy-remote.sh"
     # scripts - 內部工具與初始化
     "scripts/push_github.sh"
+    "scripts/release.sh"
     "scripts/init_database.sh"
     "scripts/install.sh"
     "scripts/seed_data.py"
