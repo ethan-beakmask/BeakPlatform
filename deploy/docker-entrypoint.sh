@@ -3,6 +3,9 @@ set -e
 
 echo "=== BeakPlatform Docker Entrypoint ==="
 
+# Check ADMIN_INITIAL_PASSWORD on first run
+# (will be validated inside Python block only when creating admin)
+
 # Wait for database
 echo "Waiting for database..."
 python3 -c "
@@ -36,8 +39,18 @@ with app.app_context():
         print("Creating database tables...")
         db.create_all()
 
+        # Require ADMIN_INITIAL_PASSWORD for first-time setup
+        import os, sys, bcrypt
+        admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
+        if not admin_password:
+            print("ERROR: ADMIN_INITIAL_PASSWORD environment variable is required for first-time setup.")
+            print("Set it in .env.production or pass via docker-compose.")
+            sys.exit(1)
+        if len(admin_password) < 8:
+            print("ERROR: ADMIN_INITIAL_PASSWORD must be at least 8 characters.")
+            sys.exit(1)
+
         # Create initial admin
-        import bcrypt
         from app.models import Organization, User, UserType
         system_org = Organization(
             secure_code='system.local',
@@ -49,7 +62,7 @@ with app.app_context():
         db.session.add(system_org)
         db.session.flush()
 
-        password = 'admin123'.encode('utf-8')
+        password = admin_password.encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
         admin = User(
@@ -64,7 +77,7 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
-        print("Database initialized with admin account.")
+        print("Database initialized with admin account. (must_change_password=True)")
     else:
         print(f"Database has {len(tables)} tables, skipping init.")
 PYEOF

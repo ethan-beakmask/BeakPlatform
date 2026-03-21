@@ -39,7 +39,29 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
 echo "5. 清除 session 目錄..."
 rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
-echo "6. 執行 Flask 資料庫遷移..."
+echo "6. 設定管理員密碼..."
+# 從環境變數或互動輸入取得密碼
+if [ -n "$ADMIN_INITIAL_PASSWORD" ]; then
+    ADMIN_PASS="$ADMIN_INITIAL_PASSWORD"
+else
+    while true; do
+        read -s -p "請輸入系統管理員初始密碼 (至少 8 字元): " ADMIN_PASS
+        echo ""
+        if [ ${#ADMIN_PASS} -lt 8 ]; then
+            echo "   密碼長度不足 8 字元，請重新輸入"
+            continue
+        fi
+        read -s -p "請再輸入一次確認: " ADMIN_PASS_CONFIRM
+        echo ""
+        if [ "$ADMIN_PASS" != "$ADMIN_PASS_CONFIRM" ]; then
+            echo "   兩次密碼不一致，請重新輸入"
+            continue
+        fi
+        break
+    done
+fi
+
+echo "7. 執行 Flask 資料庫遷移..."
 cd /opt/BeakPlatform/backend
 source /opt/BeakPlatform/venv/bin/activate
 set -a && source ../.env && set +a
@@ -53,11 +75,16 @@ with app.app_context():
     print("   資料表建立完成")
 EOF
 
-echo "7. 建立初始資料..."
-SKIP_MODULE_SYNC=1 python3 << 'EOF'
-import bcrypt
+echo "8. 建立初始資料..."
+SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'EOF'
+import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
+
+admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
+if not admin_password or len(admin_password) < 8:
+    print("   錯誤: 管理員密碼無效")
+    sys.exit(1)
 
 app = create_app()
 with app.app_context():
@@ -73,7 +100,7 @@ with app.app_context():
     db.session.flush()
 
     # 使用 bcrypt 產生密碼 hash
-    password = 'admin123'.encode('utf-8')
+    password = admin_password.encode('utf-8')
     salt = bcrypt.gensalt()
     password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
@@ -93,18 +120,18 @@ with app.app_context():
 
     print("   初始資料建立完成")
     print("   - 企業: system.local")
-    print("   - 管理員: admin@system.local / admin123")
+    print("   - 管理員: admin@system.local (首次登入須改密碼)")
 EOF
 
-echo "8. 初始化平台選單..."
+echo "9. 初始化平台選單..."
 python3 /opt/BeakPlatform/scripts/init_menus.py --force
 
 echo ""
 echo "=== 初始化完成 ==="
 echo ""
-echo "預設帳號："
+echo "管理員帳號："
 echo "  帳號: admin@system.local"
-echo "  密碼: admin123"
+echo "  密碼: (安裝時設定的密碼，首次登入須變更)"
 echo ""
 echo "啟動服務："
 echo "  cd /opt/BeakPlatform/backend"

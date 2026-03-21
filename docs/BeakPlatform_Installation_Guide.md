@@ -175,7 +175,13 @@ with app.app_context():
         db.session.add(system_org)
         db.session.flush()
 
-        password = 'admin123'.encode('utf-8')
+        import os, sys
+        admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
+        if not admin_password or len(admin_password) < 8:
+            print("ERROR: 請設定 ADMIN_INITIAL_PASSWORD 環境變數 (至少 8 字元)")
+            sys.exit(1)
+
+        password = admin_password.encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
@@ -193,7 +199,7 @@ with app.app_context():
         db.session.commit()
         print("初始資料建立完成")
         print("  帳號: admin@system.local")
-        print("  密碼: admin123")
+        print("  密碼: (由 ADMIN_INITIAL_PASSWORD 設定，首次登入須變更)")
 EOF
 ```
 
@@ -268,7 +274,7 @@ curl -s http://localhost:7000/health
 
 - URL: `http://<主機IP>:7000/auth/login`
 - 帳號: `admin@system.local`
-- 密碼: `admin123`
+- 密碼: 安裝時透過 `ADMIN_INITIAL_PASSWORD` 設定的密碼（首次登入強制變更）
 
 **重要: 系統管理員必須使用 `/auth/login` (共用登入頁)，不要使用 `/auth/org/system.local/login`。**
 
@@ -349,18 +355,19 @@ source /opt/BeakPlatform/venv/bin/activate
 set -a && source /opt/BeakPlatform/.env && set +a
 
 python3 -c "
-import bcrypt
+import bcrypt, getpass
 from app import create_app, db
 from app.models import User
 
+new_pw = getpass.getpass('輸入新密碼: ')
 app = create_app()
 with app.app_context():
     user = User.query.filter_by(username='admin', org_secure_code='system.local').first()
-    pw = bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode()
+    pw = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
     user.password_hash = pw
-    user.must_change_password = False
+    user.must_change_password = True
     db.session.commit()
-    print('密碼已重設為 admin123')
+    print('密碼已重設，下次登入須變更')
 "
 ```
 

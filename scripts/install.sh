@@ -149,8 +149,31 @@ else
     echo -e "${YELLOW}✓ .env 已存在，跳過${NC}"
 fi
 
+# 設定管理員密碼
+echo -e "${BLUE}[7/9] 設定管理員密碼...${NC}"
+if [ -n "$ADMIN_INITIAL_PASSWORD" ]; then
+    ADMIN_PASS="$ADMIN_INITIAL_PASSWORD"
+    echo -e "${GREEN}  使用環境變數 ADMIN_INITIAL_PASSWORD${NC}"
+else
+    while true; do
+        read -s -p "請輸入系統管理員初始密碼 (至少 8 字元): " ADMIN_PASS
+        echo ""
+        if [ ${#ADMIN_PASS} -lt 8 ]; then
+            echo -e "${RED}  密碼長度不足 8 字元，請重新輸入${NC}"
+            continue
+        fi
+        read -s -p "請再輸入一次確認: " ADMIN_PASS_CONFIRM
+        echo ""
+        if [ "$ADMIN_PASS" != "$ADMIN_PASS_CONFIRM" ]; then
+            echo -e "${RED}  兩次密碼不一致，請重新輸入${NC}"
+            continue
+        fi
+        break
+    done
+fi
+
 # 初始化資料庫
-echo -e "${BLUE}[7/8] 初始化資料庫...${NC}"
+echo -e "${BLUE}[8/9] 初始化資料庫...${NC}"
 cd "$INSTALL_DIR/backend"
 source ../venv/bin/activate
 set -a && source ../.env && set +a
@@ -171,10 +194,12 @@ PYEOF
 
 # 建立初始資料（跳過模組同步）
 echo "建立初始資料..."
-SKIP_MODULE_SYNC=1 python3 << 'PYEOF'
-import bcrypt
+SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
+import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
+
+admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
 
 app = create_app()
 with app.app_context():
@@ -183,6 +208,10 @@ with app.app_context():
     if existing:
         print("   初始資料已存在，跳過")
     else:
+        if not admin_password or len(admin_password) < 8:
+            print("   錯誤: 管理員密碼無效")
+            sys.exit(1)
+
         # 建立 system.local 企業
         system_org = Organization(
             secure_code='system.local',
@@ -195,7 +224,7 @@ with app.app_context():
         db.session.flush()
 
         # 使用 bcrypt 產生密碼 hash
-        password = 'admin123'.encode('utf-8')
+        password = admin_password.encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
@@ -231,7 +260,7 @@ echo -e "${GREEN}✓ 資料庫初始化完成${NC}"
 
 # 設定 Nginx
 if [ "$SKIP_NGINX" = false ]; then
-    echo -e "${BLUE}[8/8] 設定 Nginx...${NC}"
+    echo -e "${BLUE}[9/9] 設定 Nginx...${NC}"
 
     cat > /etc/nginx/sites-available/beakplatform << EOF
 server {
@@ -259,7 +288,7 @@ EOF
 
     echo -e "${GREEN}✓ Nginx 設定完成${NC}"
 else
-    echo -e "${YELLOW}[8/8] 跳過 Nginx 設定${NC}"
+    echo -e "${YELLOW}[9/9] 跳過 Nginx 設定${NC}"
 fi
 
 # 完成
@@ -280,6 +309,6 @@ echo "訪問:"
 echo "  開發工具: http://YOUR_IP:$FLASK_PORT/dev/quick-login"
 echo "  表單模組: http://YOUR_IP:$FLASK_PORT/forms/"
 echo ""
-echo "預設帳號:"
-echo "  系統管理員: admin@system.local / admin123"
+echo "管理員帳號:"
+echo "  系統管理員: admin@system.local (安裝時設定的密碼，首次登入須變更)"
 echo ""

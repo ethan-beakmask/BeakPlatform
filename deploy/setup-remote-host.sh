@@ -67,7 +67,7 @@ for i in $(seq 1 30); do
         docker compose ps
         echo ""
         echo "Application running at http://$(hostname -I | awk '{print $1}'):8000"
-        echo "Default login: admin@system.local / admin123"
+        echo "Default login: admin@system.local (password set via ADMIN_INITIAL_PASSWORD, must change on first login)"
         exit 0
     fi
     echo -n "."

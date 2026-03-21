@@ -175,11 +175,11 @@ CD 觸發後執行 `deploy/deploy-remote.sh`：
 3. `docker compose down && docker compose up -d`
 4. 輪詢 `/health` 等待 app 啟動（最多 90 秒）
 
-### 預設帳號
+### 管理員帳號
 
 | 帳號 | 密碼 | 說明 |
 |------|------|------|
-| admin@system.local | admin123 | 系統管理員（首次登入強制改密碼） |
+| admin@system.local | 由 `ADMIN_INITIAL_PASSWORD` 環境變數設定 | 系統管理員（首次登入強制改密碼） |
 
 ---
 
