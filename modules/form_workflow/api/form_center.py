@@ -539,6 +539,7 @@ def submit_form():
             source_type='WEB',
             source_ip=request.remote_addr,
             submitted_at=datetime.utcnow(),
+            is_test=is_test_mode,
         )
 
         db.session.add(form_instance)
