@@ -694,12 +694,14 @@ function buildBuilderGroups() {
     const defaults = getThemeComponentDefaults();
 
     // 將主題預設屬性注入元件的 schema
+    // 從 builderInfo.schema 取得基礎 schema（含 type/label/key 等必要欄位），
+    // 再疊加主題屬性。不使用 CompClass.schema() 以避免 widget 等複雜屬性
+    // 在不完整的 builder context 中引發錯誤
     function _themed(type, overrides) {
         const bi = overrides || _bi(type);
         if (!defaults) return overrides || true;
-        const CompClass = Formio.Components.components[type];
-        if (!CompClass || !CompClass.schema) return bi;
-        return { ...bi, schema: { ...CompClass.schema(), ...defaults } };
+        const baseSchema = (bi && bi.schema) ? bi.schema : { type };
+        return { ...bi, schema: { ...baseSchema, ...defaults } };
     }
 
     const groups = {
@@ -729,7 +731,11 @@ function buildBuilderGroups() {
                 day: _themed('day'),
                 time: _themed('time', { ..._bi('time'), icon: 'far fa-clock' }),
                 currency: _themed('currency'),
-                survey: _themed('survey')
+                survey: _themed('survey'),
+                // 排除已移至 basic 群組的元件，防止 defaultsDeep 從 Form.io
+                // 預設 advanced 群組補回未含主題的 schema 而覆蓋我們的設定
+                email: false,
+                phoneNumber: false
             }
         },
         layout: {
@@ -843,6 +849,9 @@ async function loadFormData() {
                             'infinite': null
                         };
                         setFormWidth(modeToWidth[formData.builder_config.pageMode] || null);
+                    } else if (wasJustCreated) {
+                        // 新建表單預設寬版
+                        setFormWidth(WIDTH_PRESETS.wide);
                     }
                 }, 100);
                 // 恢復底圖設定
@@ -855,8 +864,13 @@ async function loadFormData() {
                 if (formData.builder_config.placeholderToLabel) {
                     document.getElementById('chk-placeholder-to-label').checked = true;
                 }
-                // 恢復風格主題
-                setFormTheme(formData.builder_config.formTheme || 'default');
+                // 恢復風格主題（剛建立的表單若無已儲存主題，套用新表單預設主題）
+                const savedTheme = formData.builder_config.formTheme;
+                setFormTheme(savedTheme || (wasJustCreated ? DEFAULT_THEME_FOR_NEW_FORM : 'default'));
+            } else if (wasJustCreated) {
+                // 無 builder_config 的新建表單，套用新表單預設值
+                setFormTheme(DEFAULT_THEME_FOR_NEW_FORM);
+                setTimeout(() => setFormWidth(WIDTH_PRESETS.wide), 100);
             }
 
             // 返回 schema
@@ -890,16 +904,15 @@ async function loadFormData() {
 
 // 初始化 Builder (先載入翻譯 + 主題)
 Promise.all([loadFormioTranslations(), loadFormThemes()]).then(() => {
-    // 主題已載入，建構 builder options
+    return loadFormData();
+}).then(initialSchema => {
+    // loadFormData 已設定 currentFormTheme，此時建構 builder options 才能正確注入主題預設屬性
     builderOptions = {
         language: 'zh-TW',
         noDefaultSubmitButton: true,
         i18n: { 'zh-TW': formioI18n },
         builder: buildBuilderGroups()
     };
-
-    return loadFormData();
-}).then(initialSchema => {
     Formio.builder(document.getElementById('builder'), initialSchema, builderOptions)
         .then(builder => {
             formBuilder = builder;
@@ -925,6 +938,20 @@ Promise.all([loadFormioTranslations(), loadFormThemes()]).then(() => {
                     component.placeholder = component.placeholder.substring(sepIdx + 2);
                 }
                 setTimeout(() => builder.redraw(), 50);
+            });
+
+            // 新拖入元件套用主題預設屬性
+            // Form.io v3 的 builder 對部分元件（如 phoneNumber、email）不會採用
+            // builder group 定義中的 schema，改用 addComponent 事件可靠地注入
+            builder.on('addComponent', (component) => {
+                const defaults = getThemeComponentDefaults();
+                if (!defaults || component.input === false) return;
+                const props = ['labelPosition', 'labelWidth', 'labelMargin'];
+                props.forEach(prop => {
+                    if (defaults[prop] !== undefined) {
+                        component[prop] = defaults[prop];
+                    }
+                });
             });
 
             // 監聽變更
