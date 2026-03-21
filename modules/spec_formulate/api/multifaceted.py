@@ -1120,8 +1120,8 @@ def sync_to_form(spec_sc):
     if not template:
         return jsonify({'success': False, 'error': '關聯的表單模板不存在'}), 404
 
-    # 產生新的 FormIO schema
-    new_schema = multifaceted_to_formio_schema(spec.fields or [], form_title=None)
+    # 產生新的 FormIO schema（帶入表單名稱作為標題）
+    new_schema = multifaceted_to_formio_schema(spec.fields or [], form_title=template.name)
 
     # 保留原 schema 的非 components 設定
     old_schema = template.schema or {}

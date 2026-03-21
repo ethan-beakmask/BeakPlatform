@@ -90,6 +90,10 @@ let hasUnsavedChanges = false;
 let currentFormId = null;  // 目前編輯的表單 ID
 let currentFormWidth = null;  // 目前表單寬度（null 表示全寬）
 let currentFormTheme = 'default';  // 目前表單風格主題
+const DEFAULT_THEME_FOR_NEW_FORM = 'parallel-label';  // 新表單預設風格
+
+// 主題的元件預設屬性快取 { themeName: {labelPosition, labelWidth, ...} }
+const _themeComponentDefaults = {};
 
 // 表單風格主題切換
 function setFormTheme(theme) {
@@ -106,17 +110,76 @@ function setFormTheme(theme) {
     if (dropdown) {
         dropdown.value = currentFormTheme;
     }
+    // 切換主題時，對已存在的元件套用 component_defaults
+    if (formBuilder) {
+        applyThemeDefaultsToAll();
+    }
+}
+
+// 取得當前主題的元件預設屬性
+function getThemeComponentDefaults() {
+    return _themeComponentDefaults[currentFormTheme] || null;
+}
+
+// 遞迴走訪 schema 所有元件
+function _walkComponents(components, fn) {
+    if (!components) return;
+    components.forEach(comp => {
+        fn(comp);
+        // 巢狀結構：columns, fieldset, panel, tabs, well, table
+        if (comp.columns) {
+            comp.columns.forEach(col => _walkComponents(col.components, fn));
+        }
+        if (comp.components) {
+            _walkComponents(comp.components, fn);
+        }
+        if (comp.rows) {
+            comp.rows.forEach(row => row.forEach(cell => _walkComponents(cell.components, fn)));
+        }
+    });
+}
+
+// 切換主題時，強制套用到所有已存在的 input 元件
+function applyThemeDefaultsToAll() {
+    if (!formBuilder) return;
+    const defaults = getThemeComponentDefaults();
+    const schema = formBuilder.schema;
+    if (!schema || !schema.components) return;
+    const props = ['labelPosition', 'labelWidth', 'labelMargin'];
+    _walkComponents(schema.components, comp => {
+        if (comp.input === false) return;
+        if (!defaults) {
+            // 切回 formio預設 (default) 時，移除主題設定的屬性，回歸 Form.io 原始行為
+            props.forEach(prop => { delete comp[prop]; });
+        } else {
+            props.forEach(prop => {
+                if (defaults[prop] !== undefined) {
+                    comp[prop] = defaults[prop];
+                }
+            });
+        }
+    });
+    // 重建 builderGroups 讓新拖入的元件也用新主題的預設值
+    formBuilder.options.builder = buildBuilderGroups();
+    // 重新渲染 builder
+    formBuilder.setForm(schema).then(() => {
+        formBuilder.redraw();
+    });
 }
 
 // 從 API 載入可用主題並填充下拉選單
 function loadFormThemes() {
-    fetch('/api/form-workflow/form-themes')
+    return fetch('/api/form-workflow/form-themes')
         .then(r => r.json())
         .then(json => {
             if (!json.success) return;
             const dropdown = document.getElementById('form-theme');
             if (!dropdown) return;
             json.data.forEach(theme => {
+                // 快取元件預設屬性
+                if (theme.component_defaults) {
+                    _themeComponentDefaults[theme.name] = theme.component_defaults;
+                }
                 // 跳過已存在的選項
                 if (dropdown.querySelector(`option[value="${theme.name}"]`)) return;
                 const opt = document.createElement('option');
@@ -131,9 +194,6 @@ function loadFormThemes() {
         })
         .catch(e => console.warn('載入主題清單失敗:', e));
 }
-
-// 頁面載入時載入主題
-loadFormThemes();
 
 // 預設寬度常數
 const WIDTH_PRESETS = {
@@ -629,72 +689,82 @@ const _bi = (type) => Formio.Components.components[type]?.builderInfo || {};
 const _designerConfig = window.__DESIGNER_CONFIG || {};
 const _isOrgAdminOrAbove = ['ORG_ADMIN', 'SYSTEM_ADMIN'].indexOf(_designerConfig.userType) >= 0;
 
-// 初始化 Form.io Builder
-const builderGroups = {
-    basic: {
-        title: '基本元件',
-        weight: 0,
-        default: true,
-        components: {
-            textfield: true,
-            textarea: true,
-            number: true,
-            email: true,
-            phoneNumber: true,
-            checkbox: true,
-            selectboxes: true,
-            select: true,
-            radio: { ..._bi('radio'), icon: 'far fa-circle-dot' },
-            button: true
-        }
-    },
-    advanced: {
-        title: '進階元件',
-        weight: 10,
-        components: {
-            file: true,
-            datetime: true,
-            day: true,
-            time: { ..._bi('time'), icon: 'far fa-clock' },
-            currency: true,
-            survey: true
-        }
-    },
-    layout: {
-        title: '版面配置',
-        weight: 20,
-        components: {
-            htmlelement: true,
-            content: true,
-            columns: true,
-            fieldset: true,
-            panel: true,
-            table: true,
-            tabs: { ..._bi('tabs'), icon: 'fas fa-folder' },
-            well: { ..._bi('well'), icon: 'far fa-square' }
-        }
-    }
-};
+// 建構 builderGroups（依主題注入元件預設屬性）
+function buildBuilderGroups() {
+    const defaults = getThemeComponentDefaults();
 
-// 自行開發元件：僅企業管理員以上可見
-if (_isOrgAdminOrAbove) {
-    builderGroups.custom = {
-        title: '平台元件',
-        weight: 5,
-        components: {
-            userPicker: true
+    // 將主題預設屬性注入元件的 schema
+    function _themed(type, overrides) {
+        const bi = overrides || _bi(type);
+        if (!defaults) return overrides || true;
+        const CompClass = Formio.Components.components[type];
+        if (!CompClass || !CompClass.schema) return bi;
+        return { ...bi, schema: { ...CompClass.schema(), ...defaults } };
+    }
+
+    const groups = {
+        basic: {
+            title: '基本元件',
+            weight: 0,
+            default: true,
+            components: {
+                textfield: _themed('textfield'),
+                textarea: _themed('textarea'),
+                number: _themed('number'),
+                email: _themed('email'),
+                phoneNumber: _themed('phoneNumber'),
+                checkbox: _themed('checkbox'),
+                selectboxes: _themed('selectboxes'),
+                select: _themed('select'),
+                radio: _themed('radio', { ..._bi('radio'), icon: 'far fa-circle-dot' }),
+                button: true
+            }
+        },
+        advanced: {
+            title: '進階元件',
+            weight: 10,
+            components: {
+                file: _themed('file'),
+                datetime: _themed('datetime'),
+                day: _themed('day'),
+                time: _themed('time', { ..._bi('time'), icon: 'far fa-clock' }),
+                currency: _themed('currency'),
+                survey: _themed('survey')
+            }
+        },
+        layout: {
+            title: '版面配置',
+            weight: 20,
+            components: {
+                htmlelement: true,
+                content: true,
+                columns: true,
+                fieldset: true,
+                panel: true,
+                table: true,
+                tabs: { ..._bi('tabs'), icon: 'fas fa-folder' },
+                well: { ..._bi('well'), icon: 'far fa-square' }
+            }
         }
     };
+
+    // 自行開發元件：僅企業管理員以上可見
+    if (_isOrgAdminOrAbove) {
+        groups.custom = {
+            title: '平台元件',
+            weight: 5,
+            components: {
+                formTitle: true,
+                userPicker: true
+            }
+        };
+    }
+
+    return groups;
 }
 
-const options = {
-    language: 'zh-TW',
-    noDefaultSubmitButton: true,  // 禁用自動產生的 Submit 按鈕
-    i18n: {
-        'zh-TW': formioI18n
-    },
-    builder: builderGroups
-};
+// options 延後在初始化時組裝（需等主題載入）
+let builderOptions = null;
 
 // 載入表單資料
 async function loadFormData() {
@@ -797,33 +867,40 @@ async function loadFormData() {
             return { components: [] };
         }
     } else if (isNewForm) {
-        // 新增模式 - 使用 URL 預設值
+        // 新增模式 - 使用 URL 預設值，套用預設主題
         console.log('📝 新增表單模式');
         document.getElementById('form-name').value = formName;
         document.getElementById('form-category').value = urlCategory;
         document.getElementById('form-description').value = urlDescription;
-        const titleText = formName || '表單標題';
+        setFormTheme(DEFAULT_THEME_FOR_NEW_FORM);
+        const titleText = formName || '請設定表單名稱';
         return { components: [
-            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false }
+            { type: 'formTitle', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false }
         ] };
     } else {
-        // 無參數 - 新增空白表單
+        // 無參數 - 新增空白表單，套用預設主題
         console.log('📝 無參數，建立空白表單');
         document.getElementById('form-name').value = '新表單';
+        setFormTheme(DEFAULT_THEME_FOR_NEW_FORM);
         return { components: [
-            { type: 'htmlelement', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '表單標題', key: 'formTitle', input: false, tableView: false }
+            { type: 'formTitle', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '請設定表單名稱', key: 'formTitle', input: false, tableView: false }
         ] };
     }
 }
 
-// 初始化 Builder (先載入翻譯)
-loadFormioTranslations().then(() => {
-    // 更新 options 中的翻譯
-    options.i18n = { 'zh-TW': formioI18n };
+// 初始化 Builder (先載入翻譯 + 主題)
+Promise.all([loadFormioTranslations(), loadFormThemes()]).then(() => {
+    // 主題已載入，建構 builder options
+    builderOptions = {
+        language: 'zh-TW',
+        noDefaultSubmitButton: true,
+        i18n: { 'zh-TW': formioI18n },
+        builder: buildBuilderGroups()
+    };
 
     return loadFormData();
 }).then(initialSchema => {
-    Formio.builder(document.getElementById('builder'), initialSchema, options)
+    Formio.builder(document.getElementById('builder'), initialSchema, builderOptions)
         .then(builder => {
             formBuilder = builder;
             console.log('✅ Form.io Builder 初始化成功');

@@ -51,6 +51,10 @@ def generate_form_thumbnails(schema, form_name="表單"):
             os.path.dirname(__file__),
             '..', '..', '..', 'backend', 'app', 'static', 'vendor'
         ))
+        js_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__),
+            '..', '..', '..', 'backend', 'app', 'static', 'js'
+        ))
 
         # 建立 HTML 內容（使用本地資源）
         html_content = f'''
@@ -77,6 +81,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
         <body>
             <div id="form-container"></div>
             <script src="file://{vendor_path}/formio.full.min.js"></script>
+            <script src="file://{js_path}/formio-form-title.js"></script>
             <script>
                 Formio.icons = 'fontawesome';
                 const schema = {json.dumps(schema)};

@@ -104,14 +104,14 @@ def _data_class_to_component_type(data_class):
 
 
 def _make_form_title_component(title):
-    """建立 formTitle HTML Element component"""
+    """建立 formTitle 表單名稱元件"""
     return {
-        'type': 'htmlelement',
+        'type': 'formTitle',
         'tag': 'h3',
         'attrs': [
             {'attr': 'style', 'value': 'text-align:center; margin:0 0 0.5rem 0;'},
         ],
-        'content': title,
+        'content': title or '請設定表單名稱',
         'key': 'formTitle',
         'input': False,
         'tableView': False,
