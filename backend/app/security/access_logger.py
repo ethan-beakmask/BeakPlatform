@@ -6,6 +6,7 @@ HTTP 存取日誌 - 所有請求記錄到檔案
 輸出位置: /opt/tmp/BeakPlatform-access.log
 """
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from flask import Flask, request
@@ -21,6 +22,10 @@ def register_access_logger(app: Flask) -> None:
     access_logger = logging.getLogger('beakmask.access')
     access_logger.setLevel(logging.INFO)
     access_logger.propagate = False
+
+    # 確保 log 目錄存在 (Docker 容器內可能不存在)
+    log_dir = os.path.dirname(LOG_PATH)
+    os.makedirs(log_dir, exist_ok=True)
 
     handler = RotatingFileHandler(
         LOG_PATH,
