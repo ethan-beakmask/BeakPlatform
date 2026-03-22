@@ -51,11 +51,11 @@
     </tr>
     <tr>
         <th>建立時間</th>
-        <td>{{ role.created_at.strftime('%Y-%m-%d %H:%M') if role.created_at else '-' }}</td>
+        <td>{{ role.created_at|tz_format('%Y-%m-%d %H:%M') if role.created_at else '-' }}</td>
     </tr>
     <tr>
         <th>更新時間</th>
-        <td>{{ role.updated_at.strftime('%Y-%m-%d %H:%M') if role.updated_at else '-' }}</td>
+        <td>{{ role.updated_at|tz_format('%Y-%m-%d %H:%M') if role.updated_at else '-' }}</td>
     </tr>
 </table>
 

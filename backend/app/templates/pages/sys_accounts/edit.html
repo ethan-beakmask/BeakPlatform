@@ -117,15 +117,15 @@
 <table class="info-table text-muted">
     <tr>
         <td>建立時間</td>
-        <td>{{ account.created_at.strftime('%Y-%m-%d %H:%M') if account.created_at else '-' }}</td>
+        <td>{{ account.created_at|tz_format('%Y-%m-%d %H:%M') if account.created_at else '-' }}</td>
     </tr>
     <tr>
         <td>最後登入</td>
-        <td>{{ account.last_login_at.strftime('%Y-%m-%d %H:%M') if account.last_login_at else '-' }}</td>
+        <td>{{ account.last_login_at|tz_format('%Y-%m-%d %H:%M') if account.last_login_at else '-' }}</td>
     </tr>
     <tr>
         <td>密碼變更時間</td>
-        <td>{{ account.password_changed_at.strftime('%Y-%m-%d %H:%M') if account.password_changed_at else '-' }}</td>
+        <td>{{ account.password_changed_at|tz_format('%Y-%m-%d %H:%M') if account.password_changed_at else '-' }}</td>
     </tr>
 </table>
 {% endblock %}

@@ -1004,10 +1004,7 @@ function formCenterManager() {
         },
 
         formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const d = this._parseUTC(dateStr);
-            const tz = window.__USER_TIMEZONE || 'Asia/Taipei';
-            return d.toLocaleDateString('zh-TW', { timeZone: tz }) + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+            return BkTime.format(dateStr, 'short');
         },
 
         formatWaitTime(isoString) {
@@ -1595,10 +1592,7 @@ function formCenterManager() {
         },
 
         formatHistoryTime(dateStr) {
-            if (!dateStr) return '-';
-            const d = this._parseUTC(dateStr);
-            const tz = window.__USER_TIMEZONE || 'Asia/Taipei';
-            return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz });
+            return BkTime.format(dateStr, 'time');
         },
 
         // =============================================================

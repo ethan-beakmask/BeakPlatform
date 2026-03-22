@@ -141,6 +141,10 @@ def register_web_blueprints(app: Flask) -> None:
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp, url_prefix='/permissions')
 
+    # Security Center (本機安全)
+    from .security_center import security_center_bp
+    app.register_blueprint(security_center_bp, url_prefix='/security')
+
     # Platform Help (平台說明)
     from .platform_help import platform_help_bp
     app.register_blueprint(platform_help_bp, url_prefix='/help')

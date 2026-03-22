@@ -58,7 +58,7 @@
                 <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ _('停用') }}</span>
                 {% endif %}
             </td>
-            <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '-' }}</td>
+            <td>{{ user.created_at|tz_format('%Y-%m-%d') if user.created_at else '-' }}</td>
             <td style="text-align: center;">
                 <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}" style="color: #2563eb;">{{ _('編輯') }}</a>
                 {% if user.secure_code != current_user.secure_code %}

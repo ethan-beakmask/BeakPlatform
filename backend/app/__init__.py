@@ -93,6 +93,9 @@ def create_app(config_name: str = None) -> Flask:
     # Register error handlers
     register_error_handlers(app)
 
+    # Register template filters
+    register_template_filters(app)
+
     # Register context processors
     register_context_processors(app)
 
@@ -113,6 +116,37 @@ def create_app(config_name: str = None) -> Flask:
         return {'status': 'healthy', 'service': 'beakplatform'}, 200
 
     return app
+
+
+def register_template_filters(app: Flask) -> None:
+    """註冊 Jinja2 模板 filter"""
+    from flask import g
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    @app.template_filter('tz_format')
+    def tz_format_filter(dt, fmt='%Y-%m-%d %H:%M:%S'):
+        """
+        將 datetime 轉換為用戶時區後格式化。
+
+        用法:
+            {{ record.created_at|tz_format }}
+            {{ record.created_at|tz_format('%Y-%m-%d') }}
+        """
+        if dt is None:
+            return '-'
+        if not isinstance(dt, datetime):
+            return str(dt)
+        tz_name = getattr(g, 'timezone', 'Asia/Taipei')
+        try:
+            target_tz = ZoneInfo(tz_name)
+        except Exception:
+            target_tz = ZoneInfo('Asia/Taipei')
+
+        if dt.tzinfo is None:
+            # naive datetime: DB 使用 datetime.utcnow() 儲存，視為 UTC
+            dt = dt.replace(tzinfo=ZoneInfo('UTC'))
+        return dt.astimezone(target_tz).strftime(fmt)
 
 
 def register_context_processors(app: Flask) -> None:
@@ -172,6 +206,13 @@ def register_context_processors(app: Flask) -> None:
         return {
             'current_locale': getattr(g, 'locale', 'zh-TW'),
             'supported_languages': SUPPORTED_LANGUAGES,
+        }
+
+    @app.context_processor
+    def inject_timezone():
+        """將用戶時區注入到所有模板"""
+        return {
+            'current_timezone': getattr(g, 'timezone', 'Asia/Taipei'),
         }
 
 

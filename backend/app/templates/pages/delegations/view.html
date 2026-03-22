@@ -92,7 +92,7 @@
     </tr>
     <tr>
         <th>建立時間</th>
-        <td>{{ delegation.created_at.strftime('%Y-%m-%d %H:%M') if delegation.created_at else '-' }}</td>
+        <td>{{ delegation.created_at|tz_format('%Y-%m-%d %H:%M') if delegation.created_at else '-' }}</td>
     </tr>
     {% if delegation.status == 'REVOKED' %}
     <tr>
@@ -101,7 +101,7 @@
     </tr>
     <tr>
         <th class="text-danger">撤銷時間</th>
-        <td>{{ delegation.revoked_at.strftime('%Y-%m-%d %H:%M') if delegation.revoked_at else '-' }}</td>
+        <td>{{ delegation.revoked_at|tz_format('%Y-%m-%d %H:%M') if delegation.revoked_at else '-' }}</td>
     </tr>
     <tr>
         <th class="text-danger">撤銷原因</th>

@@ -352,10 +352,7 @@ function dataSpecManager() {
 
         // --- 工具 ---
         formatDate(iso) {
-            if (!iso) return '-';
-            const d = new Date(iso);
-            return d.toLocaleDateString('zh-TW') + ' ' +
-                   d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            return BkTime.format(iso, 'short');
         },
 
         getStatusClass(status) {

@@ -1,0 +1,177 @@
+/* login-failures.css - 登入錯誤監看頁面樣式 */
+
+/* 摘要卡片 */
+.lf-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.lf-summary-card {
+    background: var(--bs-light, #f8f9fa);
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 6px;
+    padding: 14px 16px;
+}
+.lf-summary-card .lf-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+.lf-summary-card .lf-value {
+    font-size: 22px;
+    font-weight: 700;
+}
+.lf-value-danger { color: #dc3545; }
+.lf-value-warning { color: #e67e22; }
+.lf-value-info { color: #0d6efd; }
+.lf-value-success { color: #198754; }
+
+/* 區塊 */
+.lf-section {
+    background: #fff;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.lf-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+    color: #343a40;
+}
+
+/* 熱力圖 */
+.lf-heatmap-wrap { overflow-x: auto; }
+table.lf-heatmap { border-collapse: collapse; font-size: 12px; }
+table.lf-heatmap th {
+    padding: 4px 3px;
+    text-align: center;
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 11px;
+}
+table.lf-heatmap th.lf-date-col {
+    text-align: right;
+    padding-right: 8px;
+    min-width: 105px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+table.lf-heatmap td {
+    width: 28px;
+    height: 24px;
+    text-align: center;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: default;
+}
+table.lf-heatmap td[title] { cursor: help; }
+.hc-0 { background: #ebedf0; color: transparent; }
+.hc-1 { background: #9be9a8; color: #1a5c2a; }
+.hc-2 { background: #40c463; color: #fff; }
+.hc-3 { background: #e6a817; color: #fff; }
+.hc-4 { background: #d35400; color: #fff; }
+.hc-5 { background: #c0392b; color: #fff; }
+
+.lf-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #6c757d;
+}
+.lf-legend-box {
+    width: 16px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.lf-weekday { color: #999; font-size: 10px; margin-left: 3px; }
+.lf-weekend { color: #c0392b; font-size: 10px; margin-left: 3px; }
+
+/* 統計表 */
+table.lf-stats { width: 100%; font-size: 12px; }
+table.lf-stats th {
+    background: #f8f9fa;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+table.lf-stats td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+}
+table.lf-stats tr:hover { background: #f8f9fa; }
+
+/* 標籤 */
+.lf-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+.lf-tag-wrong-pw { background: #dc3545; color: #fff; }
+.lf-tag-unknown-user { background: #6c757d; color: #fff; }
+.lf-tag-unknown-domain { background: #198754; color: #fff; }
+.lf-tag-denied { background: #6f42c1; color: #fff; }
+
+.lf-ip {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    color: #0d6efd;
+}
+.lf-mono {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    color: #6c757d;
+}
+.lf-ua {
+    font-size: 10px;
+    color: #999;
+    max-width: 300px;
+    word-break: break-all;
+}
+.lf-org-name { color: #e67e22; font-weight: 500; }
+.lf-org-null { color: #dc3545; font-weight: 600; }
+
+.lf-count-bar {
+    display: inline-block;
+    height: 12px;
+    background: #dc3545;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* 時間軸捲動 */
+.lf-scroll-table {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* 載入中 */
+.lf-loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+/* 時間範圍標示 */
+.lf-time-range {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}

@@ -93,3 +93,7 @@ def register_blueprints(app: Flask) -> None:
     # Permission central management (權限中央管理)
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp)
+
+    # Security center (本機安全)
+    from .security_center import security_center_bp
+    app.register_blueprint(security_center_bp)

@@ -399,9 +399,7 @@ function mappingsManager() {
         },
 
         formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            return BkTime.format(dateStr, 'short');
         },
 
         showToast(message, type = 'success') {

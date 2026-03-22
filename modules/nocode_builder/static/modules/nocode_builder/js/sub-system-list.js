@@ -135,8 +135,7 @@ function subSystemListManager() {
         },
 
         formatDate(dateStr) {
-            if (!dateStr) return '-';
-            return new Date(dateStr).toLocaleString('zh-TW');
+            return BkTime.format(dateStr, 'short');
         }
     };
 }

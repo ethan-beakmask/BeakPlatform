@@ -356,12 +356,7 @@ function specMultifacetedManager() {
         },
 
         formatDate(ts) {
-            if (!ts) return '-';
-            var d = new Date(ts);
-            var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' +
-                pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' +
-                pad(d.getMinutes());
+            return BkTime.format(ts, 'short');
         },
     };
 }

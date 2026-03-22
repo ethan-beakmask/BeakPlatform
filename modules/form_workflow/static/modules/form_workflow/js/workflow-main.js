@@ -3189,11 +3189,7 @@
                             card.className = 'workflow-selection-card';
 
                             // 格式化日期
-                            const createdDate = w.created_at ? new Date(w.created_at).toLocaleDateString('zh-TW', {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit'
-                            }) : '未知';
+                            const createdDate = w.created_at ? BkTime.format(w.created_at, 'date') : '未知';
 
                             // 計算節點數量
                             const nodeCount = w.cytoscape_config?.nodes?.length || 0;

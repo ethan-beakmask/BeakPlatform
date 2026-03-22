@@ -196,7 +196,7 @@
                     {% if selected_org.contact_phone %}
                     <tr><td>聯絡電話</td><td>{{ selected_org.contact_phone }}</td></tr>
                     {% endif %}
-                    <tr><td>建立時間</td><td>{{ selected_org.created_at.strftime('%Y-%m-%d %H:%M') if selected_org.created_at else '-' }}</td></tr>
+                    <tr><td>建立時間</td><td>{{ selected_org.created_at|tz_format('%Y-%m-%d %H:%M') if selected_org.created_at else '-' }}</td></tr>
                 </table>
             </div>
         </div>

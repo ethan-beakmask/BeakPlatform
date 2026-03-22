@@ -114,19 +114,18 @@ const API = {
 
 // Utility functions
 const Utils = {
-    // Format date
+    // Format date (時區感知，使用 BkTime)
     formatDate(dateString, options = {}) {
+        if (typeof BkTime !== 'undefined') return BkTime.format(dateString, 'date');
         const date = new Date(dateString);
         return date.toLocaleDateString('zh-TW', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            ...options
+            year: 'numeric', month: '2-digit', day: '2-digit', ...options
         });
     },
 
-    // Format datetime
+    // Format datetime (時區感知，使用 BkTime)
     formatDateTime(dateString) {
+        if (typeof BkTime !== 'undefined') return BkTime.format(dateString);
         const date = new Date(dateString);
         return date.toLocaleString('zh-TW');
     },

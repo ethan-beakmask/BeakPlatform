@@ -84,9 +84,7 @@ function fwDashboard() {
         },
 
         formatDate(dateStr) {
-            if (!dateStr) return '-';
-            var d = new Date(dateStr);
-            return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', {hour: '2-digit', minute: '2-digit'});
+            return BkTime.format(dateStr, 'short');
         },
 
         getStatusText(status) {

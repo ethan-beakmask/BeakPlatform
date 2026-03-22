@@ -116,6 +116,11 @@ def register_auth_interceptor(app: Flask) -> None:
             (current_user.organization.get_setting('locale', 'zh-TW')
              if current_user.organization else 'zh-TW')
 
+        # Set timezone: user preference > org setting > platform default
+        g.timezone = current_user.timezone or \
+            (current_user.organization.get_setting('timezone', 'Asia/Taipei')
+             if current_user.organization else 'Asia/Taipei')
+
         # [SEC-01] 網頁角色守衛 (Page Role Guard)
         # 檢查用戶是否持有存取該頁面所需的角色
         # 失敗時強制登出 + 寫稽核日誌

@@ -1,0 +1,253 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}登入錯誤監看 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login-failures.css') }}">
+{% endblock %}
+
+{% block content %}
+<script>
+window.__LF_CONFIG = {
+    isSystemAdmin: {{ is_system_admin | tojson }},
+    organizations: {{ organizations | tojson }},
+    orgLabel: {{ user_org_label | tojson }},
+    userOrgCode: {{ user_org_secure_code | tojson }}
+};
+</script>
+
+<div x-data="loginFailures()">
+    <div class="page-header">
+        <h1 class="page-title">登入錯誤監看</h1>
+    </div>
+
+    <!-- 企業選擇 -->
+    <div class="lf-section" style="margin-bottom: 16px; padding: 12px 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label class="form-label" style="margin-bottom: 0; white-space: nowrap;">指定企業</label>
+            <template x-if="isSystemAdmin">
+                <select class="form-control" style="max-width: 360px;"
+                        x-model="selectedOrgCode" @change="onOrgChange()">
+                    <option value="">-- 全部 (含未知網域) --</option>
+                    <template x-for="org in organizations" :key="org.secure_code">
+                        <option :value="org.secure_code" x-text="org.name"></option>
+                    </template>
+                </select>
+            </template>
+            <template x-if="!isSystemAdmin">
+                <span class="text-muted" x-text="orgLabel" style="font-size: 14px;"></span>
+            </template>
+            <!-- 時間範圍 -->
+            <template x-if="data">
+                <span class="lf-time-range" style="margin-left: auto;">
+                    <span x-text="data.time_range.start"></span> ~ <span x-text="data.time_range.end"></span>
+                </span>
+            </template>
+        </div>
+    </div>
+
+    <!-- SYSTEM_ADMIN 未選企業時直接載入全部 -->
+    <template x-if="isSystemAdmin && !loaded && !loading">
+        <div style="text-align: center; padding: 20px;">
+            <button class="btn btn-primary" @click="loadData()">載入全部資料</button>
+            <div class="text-muted mt-2" style="font-size: 13px;">或先選擇企業篩選</div>
+        </div>
+    </template>
+
+    <!-- 載入中 -->
+    <template x-if="loading">
+        <div class="lf-loading">載入中...</div>
+    </template>
+
+    <!-- 錯誤 -->
+    <template x-if="error">
+        <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+    <!-- 資料區 -->
+    <template x-if="loaded && data">
+        <div>
+            <!-- 摘要卡片 -->
+            <div class="lf-summary-grid">
+                <div class="lf-summary-card">
+                    <div class="lf-label">總失敗次數</div>
+                    <div class="lf-value lf-value-danger" x-text="data.summary.total"></div>
+                </div>
+                <template x-if="isSystemAdmin && !selectedOrgCode">
+                    <div class="lf-summary-card">
+                        <div class="lf-label">未知網域</div>
+                        <div class="lf-value lf-value-danger" x-text="data.summary.unknown_domain"></div>
+                    </div>
+                </template>
+                <div class="lf-summary-card">
+                    <div class="lf-label">涉及帳號</div>
+                    <div class="lf-value lf-value-warning" x-text="data.summary.unique_accounts"></div>
+                </div>
+                <div class="lf-summary-card">
+                    <div class="lf-label">來源 IP</div>
+                    <div class="lf-value lf-value-info" x-text="data.summary.unique_ips"></div>
+                </div>
+                <div class="lf-summary-card">
+                    <div class="lf-label">目標企業</div>
+                    <div class="lf-value lf-value-success" x-text="data.summary.target_orgs"></div>
+                </div>
+            </div>
+
+            <!-- 熱力圖 -->
+            <div class="lf-section">
+                <div class="lf-section-title">24 小時熱力圖</div>
+                <div class="lf-heatmap-wrap">
+                    <table class="lf-heatmap">
+                        <tr>
+                            <th class="lf-date-col"></th>
+                            <template x-for="h in hours" :key="h">
+                                <th x-text="String(h).padStart(2,'0')"></th>
+                            </template>
+                            <th style="padding-left:8px;color:#6c757d">Total</th>
+                        </tr>
+                        <template x-for="dt in heatmapDates" :key="dt">
+                            <tr>
+                                <th class="lf-date-col">
+                                    <span x-text="dt"></span>
+                                    <span :class="isWeekend(dt) ? 'lf-weekend' : 'lf-weekday'" x-text="weekday(dt)"></span>
+                                </th>
+                                <template x-for="h in hours" :key="h">
+                                    <td :class="heatClass(heatmapVal(dt, h))"
+                                        x-text="heatmapVal(dt, h) || ''"
+                                        :title="heatmapVal(dt, h) ? (dt + ' ' + String(h).padStart(2,'0') + ':00 - ' + heatmapVal(dt, h) + ' failures') : ''">
+                                    </td>
+                                </template>
+                                <th :style="dayTotal(dt) > 0 ? 'color:#dc3545;font-weight:700' : 'color:#ccc'"
+                                    x-text="dayTotal(dt)"></th>
+                            </tr>
+                        </template>
+                    </table>
+                </div>
+                <div class="lf-legend">
+                    <span>Low</span>
+                    <span class="lf-legend-box" style="background:#ebedf0"></span>
+                    <span class="lf-legend-box" style="background:#9be9a8"></span>
+                    <span class="lf-legend-box" style="background:#40c463"></span>
+                    <span class="lf-legend-box" style="background:#e6a817"></span>
+                    <span class="lf-legend-box" style="background:#d35400"></span>
+                    <span class="lf-legend-box" style="background:#c0392b"></span>
+                    <span>High</span>
+                </div>
+            </div>
+
+            <!-- IP 來源分析 -->
+            <div class="lf-section">
+                <div class="lf-section-title">Source IP Analysis</div>
+                <table class="table table-sm lf-stats">
+                    <thead>
+                        <tr><th>#</th><th>IP Address</th><th>Count</th><th>Targeted Accounts</th><th>Time Range</th><th>User-Agent</th></tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(s, idx) in ipStatsSorted" :key="s.ip">
+                            <tr>
+                                <td x-text="idx + 1"></td>
+                                <td class="lf-ip" x-text="s.ip"></td>
+                                <td>
+                                    <span x-text="s.count"></span>
+                                    <span class="lf-count-bar" :style="'width:' + ipBarWidth(s.count) + 'px'"></span>
+                                </td>
+                                <td style="font-size:11px" x-html="s.accounts.join('<br>')"></td>
+                                <td class="lf-mono" x-text="(s.first || '-') + ' ~ ' + (s.last || '-')"></td>
+                                <td class="lf-ua" x-html="s.uas.join('<br>')"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 企業統計 (SYSTEM_ADMIN 未篩選時顯示) -->
+            <template x-if="isSystemAdmin && !selectedOrgCode && Object.keys(data.org_stats).length > 0">
+                <div class="lf-section">
+                    <div class="lf-section-title">Targeted Organization</div>
+                    <table class="table table-sm lf-stats">
+                        <thead>
+                            <tr><th>#</th><th>Organization</th><th>Domain</th><th>Count</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(s, idx) in orgStatsSorted" :key="s.key">
+                                <tr>
+                                    <td x-text="idx + 1"></td>
+                                    <td :class="s.key === '(NULL)' ? 'lf-org-null' : 'lf-org-name'" x-text="s.name"></td>
+                                    <td class="lf-mono" x-text="s.domain"></td>
+                                    <td>
+                                        <span x-text="s.count"></span>
+                                        <span class="lf-count-bar" :style="'width:' + orgBarWidth(s.count) + 'px'"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- 帳號統計 -->
+            <div class="lf-section">
+                <div class="lf-section-title">Account / Failure Detail</div>
+                <table class="table table-sm lf-stats">
+                    <thead>
+                        <tr><th>#</th><th>Type</th><th>Detail</th><th>Organization</th><th>Source IPs</th><th>Count</th></tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(s, idx) in accountStatsSorted" :key="s.detail">
+                            <tr>
+                                <td x-text="idx + 1"></td>
+                                <td>
+                                    <span class="lf-tag" :class="typeTag(s.type)[1]" x-text="typeTag(s.type)[0]"></span>
+                                </td>
+                                <td style="font-size:11px" x-text="s.detail"></td>
+                                <td :class="s.org_name === '未知網域' ? 'lf-org-null' : 'lf-org-name'" x-text="s.org_name"></td>
+                                <td x-html="s.ips.map(ip => '<span class=\'lf-ip\'>' + ip + '</span>').join('<br>')"></td>
+                                <td>
+                                    <span x-text="s.count"></span>
+                                    <span class="lf-count-bar" :style="'width:' + accountBarWidth(s.count) + 'px'"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 完整時間軸 -->
+            <div class="lf-section">
+                <div class="lf-section-title">Full Event Timeline (<span x-text="data.timeline.length"></span> records)</div>
+                <div class="lf-scroll-table">
+                    <table class="table table-sm lf-stats">
+                        <thead>
+                            <tr><th>#</th><th>Time</th><th>Type</th><th>Detail</th><th>Organization</th><th>Source IP</th><th>Path</th><th>Status</th><th>User-Agent</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(r, idx) in data.timeline" :key="idx">
+                                <tr>
+                                    <td x-text="idx + 1"></td>
+                                    <td class="lf-mono" style="white-space:nowrap" x-text="r.time"></td>
+                                    <td>
+                                        <span class="lf-tag" :class="typeTag(r.type)[1]" x-text="typeTag(r.type)[0]"></span>
+                                    </td>
+                                    <td style="font-size:11px" x-text="r.details"></td>
+                                    <td :class="r.org_secure_code ? 'lf-org-name' : 'lf-org-null'" x-text="r.org_name"></td>
+                                    <td class="lf-ip" x-text="r.ip"></td>
+                                    <td class="lf-mono" x-text="r.path"></td>
+                                    <td x-text="r.status"></td>
+                                    <td class="lf-ua" :title="r.ua" x-text="r.ua_brief"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 無資料 -->
+            <template x-if="data.summary.total === 0">
+                <div class="alert alert-success">此期間內無登入失敗記錄。</div>
+            </template>
+        </div>
+    </template>
+</div>
+
+<script src="{{ url_for('static', filename='js/login-failures.js') }}"></script>
+{% endblock %}
