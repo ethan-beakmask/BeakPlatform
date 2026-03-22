@@ -21,7 +21,8 @@ from ..models.audit_log import AuditLog
 from ..models.organization import Organization
 from ..models.lookup_item import LookupItem
 from ..models.broadcast_acknowledgment import BroadcastAcknowledgment
-from ..models.user import User
+from ..models.user import User, UserType
+from ..models.organizational_unit import OrganizationalUnit
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -281,11 +282,35 @@ def get_broadcast_acks(secure_code):
     if not is_sys_admin and item.org_secure_code != org_code:
         return jsonify({'success': False, 'message': '無權限'}), 403
 
-    # 查詢已確認的用戶
+    # 該廣播所屬企業
+    broadcast_org = item.org_secure_code
+
+    # 全企業有效帳號數（排除 SYSTEM_ADMIN，僅計 is_active & !is_deleted）
+    total_active_users = User.query.filter(
+        User.org_secure_code == broadcast_org,
+        User.is_active == True,
+        User.is_deleted == False,
+        User.user_type != UserType.SYSTEM_ADMIN,
+    ).count()
+
+    # 有登入紀錄的帳號數（last_login_at 不為 NULL）
+    total_logged_in = User.query.filter(
+        User.org_secure_code == broadcast_org,
+        User.is_active == True,
+        User.is_deleted == False,
+        User.user_type != UserType.SYSTEM_ADMIN,
+        User.last_login_at.isnot(None),
+    ).count()
+
+    # 查詢已確認的用戶（含部門）
     acks = db.session.query(
-        BroadcastAcknowledgment, User
+        BroadcastAcknowledgment, User,
+        OrganizationalUnit.name.label('dept_name')
     ).join(
         User, User.secure_code == BroadcastAcknowledgment.user_secure_code
+    ).outerjoin(
+        OrganizationalUnit,
+        OrganizationalUnit.secure_code == User.primary_unit_secure_code
     ).filter(
         BroadcastAcknowledgment.broadcast_secure_code == secure_code,
         BroadcastAcknowledgment.is_deleted == False,
@@ -294,18 +319,55 @@ def get_broadcast_acks(secure_code):
     ).all()
 
     ack_list = []
-    for ack, user in acks:
+    acked_user_codes = set()
+    for ack, user, dept_name in acks:
+        acked_user_codes.add(user.secure_code)
         ack_list.append({
             'user_secure_code': user.secure_code,
             'display_name': user.display_name,
             'employee_id': user.employee_id,
+            'dept_name': dept_name or '',
             'acknowledged_at': ack.acknowledged_at.isoformat() if ack.acknowledged_at else None,
+        })
+
+    # 未簽到清單：有效帳號中排除已簽到者
+    unacked_query = db.session.query(
+        User, OrganizationalUnit.name.label('dept_name')
+    ).outerjoin(
+        OrganizationalUnit,
+        OrganizationalUnit.secure_code == User.primary_unit_secure_code
+    ).filter(
+        User.org_secure_code == broadcast_org,
+        User.is_active == True,
+        User.is_deleted == False,
+        User.user_type != UserType.SYSTEM_ADMIN,
+    )
+    if acked_user_codes:
+        unacked_query = unacked_query.filter(
+            User.secure_code.notin_(acked_user_codes)
+        )
+    unacked_rows = unacked_query.order_by(User.employee_id, User.display_name).all()
+
+    unacked_list = []
+    for user, dept_name in unacked_rows:
+        unacked_list.append({
+            'user_secure_code': user.secure_code,
+            'display_name': user.display_name,
+            'employee_id': user.employee_id,
+            'dept_name': dept_name or '',
+            'last_login_at': user.last_login_at.isoformat() if user.last_login_at else None,
         })
 
     return jsonify({
         'success': True,
         'broadcast_code': item.code,
         'title': (item.value or {}).get('title', ''),
+        'stats': {
+            'total_active_users': total_active_users,
+            'total_logged_in': total_logged_in,
+            'total_acks': len(ack_list),
+        },
         'total_acks': len(ack_list),
         'acks': ack_list,
+        'unacked': unacked_list,
     })

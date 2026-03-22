@@ -2,7 +2,7 @@
 {% block title %}緊急廣播管理 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
 <style>
 .broadcast-card {
     border: 1px solid #e5e7eb;
@@ -103,7 +103,7 @@
                 {% if b.require_ack %}
                 <button class="btn btn-sm btn-outline-secondary"
                         @click="toggleAckPanel('{{ b.secure_code }}')">
-                    已確認 {{ b.ack_count }} 人
+                    簽到明細 ({{ b.ack_count }} 人)
                 </button>
                 {% endif %}
             </div>
@@ -113,11 +113,34 @@
         <div class="ack-panel" :class="{ 'show': openPanel === '{{ b.secure_code }}' }" id="ack-{{ b.secure_code }}">
             <div x-show="loadingAck" style="text-align: center; padding: 10px; color: #999;">載入中...</div>
             <div x-show="!loadingAck && ackData['{{ b.secure_code }}']">
-                <table class="ack-table">
+                <div x-show="statsData['{{ b.secure_code }}']"
+                     style="margin-bottom: 10px; font-size: 13px; color: #374151;">
+                    有效帳號
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_active_users || 0"></strong> 人 /
+                    已登入
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_logged_in || 0"></strong> 人 /
+                    已簽到
+                    <strong x-text="statsData['{{ b.secure_code }}']?.total_acks || 0"></strong> 人
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <button class="btn btn-sm"
+                            :class="activeTab['{{ b.secure_code }}'] !== 'unacked' ? 'btn-secondary' : 'btn-outline-secondary'"
+                            @click="activeTab['{{ b.secure_code }}'] = 'acked'">
+                        已簽到
+                    </button>
+                    <button class="btn btn-sm"
+                            :class="activeTab['{{ b.secure_code }}'] === 'unacked' ? 'btn-secondary' : 'btn-outline-secondary'"
+                            @click="activeTab['{{ b.secure_code }}'] = 'unacked'">
+                        未簽到
+                        <span x-text="'(' + (unackedData['{{ b.secure_code }}'] || []).length + ')'"></span>
+                    </button>
+                </div>
+                <!-- 已簽到表 -->
+                <table class="ack-table" x-show="activeTab['{{ b.secure_code }}'] !== 'unacked'">
                     <thead>
                         <tr>
                             <th>姓名</th>
-                            <th>員工編號</th>
+                            <th>員工編號 / 部門</th>
                             <th>確認時間</th>
                         </tr>
                     </thead>
@@ -125,15 +148,48 @@
                         <template x-for="ack in (ackData['{{ b.secure_code }}'] || [])" :key="ack.user_secure_code">
                             <tr>
                                 <td x-text="ack.display_name"></td>
-                                <td x-text="ack.employee_id || '-'"></td>
+                                <td>
+                                    <span x-text="ack.employee_id || '-'"></span>
+                                    <span x-show="ack.dept_name"
+                                          x-text="' / ' + ack.dept_name"
+                                          style="color: #6b7280;"></span>
+                                </td>
                                 <td x-text="BkTime.format(ack.acknowledged_at, 'short')"></td>
                             </tr>
                         </template>
                     </tbody>
                 </table>
-                <div x-show="(ackData['{{ b.secure_code }}'] || []).length === 0"
+                <div x-show="activeTab['{{ b.secure_code }}'] !== 'unacked' && (ackData['{{ b.secure_code }}'] || []).length === 0"
                      style="text-align: center; padding: 10px; color: #999;">
                     尚無確認記錄
+                </div>
+                <!-- 未簽到表 -->
+                <table class="ack-table" x-show="activeTab['{{ b.secure_code }}'] === 'unacked'">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>員工編號 / 部門</th>
+                            <th>最後登入</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="u in (unackedData['{{ b.secure_code }}'] || [])" :key="u.user_secure_code">
+                            <tr>
+                                <td x-text="u.display_name"></td>
+                                <td>
+                                    <span x-text="u.employee_id || '-'"></span>
+                                    <span x-show="u.dept_name"
+                                          x-text="' / ' + u.dept_name"
+                                          style="color: #6b7280;"></span>
+                                </td>
+                                <td x-text="u.last_login_at ? BkTime.format(u.last_login_at, 'short') : '從未登入'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="activeTab['{{ b.secure_code }}'] === 'unacked' && (unackedData['{{ b.secure_code }}'] || []).length === 0"
+                     style="text-align: center; padding: 10px; color: #999;">
+                    全員已簽到
                 </div>
             </div>
         </div>
@@ -155,6 +211,9 @@ function alertBroadcastManager() {
         openPanel: null,
         loadingAck: false,
         ackData: {},
+        unackedData: {},
+        statsData: {},
+        activeTab: {},
 
         toggleAckPanel(securecode) {
             if (this.openPanel === securecode) {
@@ -177,6 +236,13 @@ function alertBroadcastManager() {
             .then(data => {
                 if (data.success) {
                     this.ackData[securecode] = data.acks;
+                    this.unackedData[securecode] = data.unacked || [];
+                    if (data.stats) {
+                        this.statsData[securecode] = data.stats;
+                    }
+                    if (!this.activeTab[securecode]) {
+                        this.activeTab[securecode] = 'acked';
+                    }
                 }
                 this.loadingAck = false;
             })

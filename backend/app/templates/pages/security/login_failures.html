@@ -44,6 +44,21 @@ window.__LF_CONFIG = {
                 </span>
             </template>
         </div>
+        <!-- 來源 IP 過濾 -->
+        <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px; font-size: 13px;">
+            <span style="color: #6c757d; white-space: nowrap;">來源 IP 過濾</span>
+            <label style="margin-bottom: 0; cursor: pointer;">
+                <input type="checkbox" x-model="hideLoopback" style="margin-right: 4px;">
+                隱藏 Loopback (127.x)
+            </label>
+            <label style="margin-bottom: 0; cursor: pointer;">
+                <input type="checkbox" x-model="hideInternal" style="margin-right: 4px;">
+                隱藏內網 IP (10.x / 172.16-31.x / 192.168.x)
+            </label>
+            <span class="text-muted" style="margin-left: auto; font-size: 12px;"
+                  x-show="data && _summary.total !== data.summary.total"
+                  x-text="data ? '(已過濾 ' + (data.summary.total - _summary.total) + ' 筆)' : ''"></span>
+        </div>
     </div>
 
     <!-- SYSTEM_ADMIN 未選企業時直接載入全部 -->
@@ -71,7 +86,7 @@ window.__LF_CONFIG = {
             <div class="lf-summary-grid">
                 <div class="lf-summary-card">
                     <div class="lf-label">總失敗次數</div>
-                    <div class="lf-value lf-value-danger" x-text="data.summary.total"></div>
+                    <div class="lf-value lf-value-danger" x-text="_summary.total"></div>
                 </div>
                 <template x-if="isSystemAdmin && !selectedOrgCode">
                     <div class="lf-summary-card">
