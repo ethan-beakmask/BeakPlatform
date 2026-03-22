@@ -130,7 +130,7 @@ class WorkflowExecutor:
                 # FormAdapter 等待簽核不在此處理
                 and_(
                     FwNodeExecutionQueue.status == 'WAITING',
-                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End']),
+                    FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin']),
                     FwNodeExecutionQueue.scheduled_at.isnot(None),
                     FwNodeExecutionQueue.scheduled_at <= now
                 )
@@ -264,11 +264,11 @@ class WorkflowExecutor:
         """
         from ..models import FwNodeExecutionQueue
 
-        # 處理 Delay / End (strict) 類型的 WAITING 節點（作為備份）
+        # 處理 Delay / End (strict) / ParallelJoin 類型的 WAITING 節點（作為備份）
         # FormAdapter 等需要用戶操作的節點不處理
         waiting_nodes = FwNodeExecutionQueue.query.filter(
             FwNodeExecutionQueue.status == 'WAITING',
-            FwNodeExecutionQueue.node_type.in_(['Delay', 'End']),
+            FwNodeExecutionQueue.node_type.in_(['Delay', 'End', 'ParallelJoin']),
             FwNodeExecutionQueue.scheduled_at.isnot(None),
             FwNodeExecutionQueue.scheduled_at <= datetime.utcnow()
         ).limit(10).all()
@@ -276,7 +276,7 @@ class WorkflowExecutor:
         if not waiting_nodes:
             return
 
-        logger.info(f'發現 {len(waiting_nodes)} 個等待中 Delay/End 節點')
+        logger.info(f'發現 {len(waiting_nodes)} 個等待中 Delay/End/ParallelJoin 節點')
 
         for queue_item in waiting_nodes:
             try:

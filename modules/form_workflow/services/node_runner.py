@@ -203,8 +203,10 @@ def advance_to_next_nodes(queue_item):
     """
     推進到下一個節點
 
-    解析 result.data.selected_edges（Branch 節點產出），
-    逐條 edge 呼叫 advance_workflow；若無 selected_edges 則 fallback 取所有出邊。
+    解析路徑選擇：
+    - selected_edges (list): Branch 節點產出，逐條 edge 推進
+    - selected_edge (str): ParallelJoin 逾時等單一 edge 選擇
+    - 皆無: fallback 取所有出邊
 
     Args:
         queue_item: 當前完成的佇列項目
@@ -214,6 +216,7 @@ def advance_to_next_nodes(queue_item):
     result = queue_item.result or {}
     result_data = result.get('data', {})
     selected_edges = result_data.get('selected_edges', [])
+    selected_edge = result_data.get('selected_edge', '')
 
     if selected_edges and isinstance(selected_edges, list):
         # Branch 節點：逐條 edge 推進（去重 target node 由 advance_workflow 內部處理）
@@ -223,6 +226,13 @@ def advance_to_next_nodes(queue_item):
                 queue_item.node_id,
                 edge_id
             )
+    elif selected_edge and isinstance(selected_edge, str):
+        # 單一 edge 選擇（ParallelJoin 逾時等）
+        WorkflowEngine.advance_workflow(
+            queue_item.workflow_instance_secure_code,
+            queue_item.node_id,
+            selected_edge
+        )
     else:
         # 其他節點 / 無 selected_edges：取所有出邊
         WorkflowEngine.advance_workflow(

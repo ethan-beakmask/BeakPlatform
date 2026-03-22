@@ -4153,7 +4153,8 @@
             const nodesWithSettings = [
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
-                'FormAdapter', 'End', 'Converge', 'SqlExecutor'
+                'FormAdapter', 'End', 'Converge', 'SqlExecutor',
+                'ParallelFork', 'ParallelJoin'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
 
@@ -5432,6 +5433,147 @@
                 `;
             }
 
+            // ParallelFork 並行分支節點配置
+            if (type === 'ParallelFork') {
+                // 取得出線資訊
+                const outEdges = cy.edges().filter(e => e.source().id() === nodeId);
+                const outCount = outEdges.length;
+
+                let outList = '';
+                if (outCount > 0) {
+                    outEdges.forEach(e => {
+                        const targetNode = e.target();
+                        const targetLabel = targetNode.data('label') || targetNode.id();
+                        const targetType = targetNode.data('type') || '?';
+                        outList += `<li>${targetLabel} <span style="color:#999;">(${targetType})</span></li>`;
+                    });
+                } else {
+                    outList = '<li style="color:#dc3545;">尚無出線，請連接目標節點</li>';
+                }
+
+                info += `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #2196F3;">
+                            <i class="fas fa-code-branch"></i> 並行分支說明
+                        </h4>
+                        <div style="font-size: 13px; line-height: 1.6; color: #666;">
+                            <p style="margin: 10px 0;">流程到達此節點後，會同時往所有出線推進，啟動並行執行。</p>
+                            <p style="margin: 10px 0;">通常搭配<strong>並行匯合 (ParallelJoin)</strong> 節點收攏分支。</p>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 15px 0; color: #2196F3;">
+                            <i class="fas fa-arrow-right"></i> 出線 (${outCount} 條)
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: #333;">
+                            ${outList}
+                        </ul>
+                    </div>
+
+                    <button class="btn-primary" onclick="applyNodeBasicInfo('${nodeId}')" style="width: 100%;">
+                        <i class="fas fa-check"></i> 套用
+                    </button>
+                `;
+            }
+
+            // ParallelJoin 並行匯合節點配置
+            if (type === 'ParallelJoin') {
+                const currentConfig = node.data('config') || {};
+                const enableTimeout = currentConfig.enable_timeout || false;
+                const timeoutMinutes = currentConfig.timeout_minutes || 5;
+                const timeoutEdgeId = currentConfig.timeout_edge_id || '';
+
+                // 取得入線資訊
+                const inEdges = cy.edges().filter(e => e.target().id() === nodeId);
+                const inCount = inEdges.length;
+
+                let inList = '';
+                if (inCount > 0) {
+                    inEdges.forEach(e => {
+                        const srcNode = e.source();
+                        const srcLabel = srcNode.data('label') || srcNode.id();
+                        const srcType = srcNode.data('type') || '?';
+                        inList += `<li>${srcLabel} <span style="color:#999;">(${srcType})</span></li>`;
+                    });
+                } else {
+                    inList = '<li style="color:#dc3545;">尚無入線，請從來源節點連接</li>';
+                }
+
+                // 取得出線清單（供逾時去向選擇）
+                const outEdges = cy.edges().filter(e => e.source().id() === nodeId);
+                let timeoutEdgeOptions = '<option value="">-- 請選擇逾時去向 --</option>';
+                outEdges.forEach(e => {
+                    const tgt = e.target();
+                    const tgtLabel = tgt.data('label') || tgt.id();
+                    const tgtType = tgt.data('type') || '?';
+                    const selected = e.id() === timeoutEdgeId ? 'selected' : '';
+                    timeoutEdgeOptions += `<option value="${e.id()}" ${selected}>${tgtLabel} (${tgtType})</option>`;
+                });
+
+                info += `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #9C27B0;">
+                            <i class="fas fa-compress-arrows-alt"></i> 並行匯合說明
+                        </h4>
+                        <div style="font-size: 13px; line-height: 1.6; color: #666;">
+                            <p style="margin: 10px 0;">等待所有入線的來源節點完成後才往下推進。</p>
+                            <p style="margin: 10px 0;">可設定逾時機制：超過指定時間未到齊，走逾時專用出線。</p>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 15px 0; color: #9C27B0;">
+                            <i class="fas fa-arrow-left"></i> 入線 (${inCount} 條)
+                        </h4>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: #333;">
+                            ${inList}
+                        </ul>
+                        <p style="font-size: 11px; color: #999; margin-top: 10px;">
+                            <i class="fas fa-info-circle"></i> 流程執行時，需等待以上所有來源節點都完成才繼續
+                        </p>
+                    </div>
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 15px 0; color: #9C27B0;">
+                            <i class="fas fa-cog"></i> 逾時設定
+                        </h4>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 15px;">
+                            <input type="checkbox" id="pjEnableTimeout" ${enableTimeout ? 'checked' : ''}
+                                   onchange="toggleParallelJoinTimeout()"
+                                   style="transform: scale(1.2);">
+                            <span style="font-size: 13px; font-weight: bold;">啟用逾時機制</span>
+                        </label>
+
+                        <div id="pjTimeoutSettings" style="display: ${enableTimeout ? 'block' : 'none'};">
+                            <div style="margin-bottom: 12px;">
+                                <strong style="font-size: 12px;">逾時時間（分鐘）：</strong><br>
+                                <input type="number" id="pjTimeoutMinutes" value="${timeoutMinutes}"
+                                       min="1" max="14400"
+                                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                                <p style="font-size: 11px; color: #999; margin-top: 5px;">
+                                    <i class="fas fa-info-circle"></i> 從第一條入線到達開始計時，最大 14400 分鐘（10 天）
+                                </p>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <strong style="font-size: 12px;">逾時去向：</strong><br>
+                                <select id="pjTimeoutEdgeId"
+                                        style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 5px; box-sizing: border-box;">
+                                    ${timeoutEdgeOptions}
+                                </select>
+                                <p style="font-size: 11px; color: #999; margin-top: 5px;">
+                                    <i class="fas fa-info-circle"></i> 逾時後走此出線；未到齊的分支將被略過
+                                </p>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="applyParallelJoinConfig('${nodeId}')" style="width: 100%;">
+                            <i class="fas fa-check"></i> 套用
+                        </button>
+                    </div>
+                `;
+            }
+
             document.getElementById('nodeSettings').innerHTML = info;
 
             // 如果是子流程節點，載入可用子流程清單
@@ -5946,6 +6088,70 @@
             });
         }
         window.applyDelayConfig = applyDelayConfig;
+
+        // ==================== ParallelJoin 並行匯合函數 ====================
+
+        function toggleParallelJoinTimeout() {
+            const checkbox = document.getElementById('pjEnableTimeout');
+            const settingsDiv = document.getElementById('pjTimeoutSettings');
+            if (checkbox && settingsDiv) {
+                settingsDiv.style.display = checkbox.checked ? 'block' : 'none';
+            }
+        }
+        window.toggleParallelJoinTimeout = toggleParallelJoinTimeout;
+
+        function applyParallelJoinConfig(nodeId) {
+            const node = applyNodeBasicInfo(nodeId, true);
+            if (!node) return;
+
+            const enableTimeout = document.getElementById('pjEnableTimeout')?.checked || false;
+            let timeoutMinutes = 0;
+            let timeoutEdgeId = '';
+
+            if (enableTimeout) {
+                const minutesInput = document.getElementById('pjTimeoutMinutes');
+                timeoutMinutes = parseInt(minutesInput?.value, 10);
+
+                if (isNaN(timeoutMinutes) || timeoutMinutes < 1) {
+                    updateStatus('逾時時間必須至少 1 分鐘', 'warning');
+                    return;
+                }
+                if (timeoutMinutes > 14400) {
+                    updateStatus('逾時時間不能超過 14400 分鐘（10 天）', 'warning');
+                    return;
+                }
+
+                const edgeSelect = document.getElementById('pjTimeoutEdgeId');
+                timeoutEdgeId = edgeSelect?.value || '';
+
+                if (!timeoutEdgeId) {
+                    updateStatus('啟用逾時時必須指定逾時去向', 'warning');
+                    return;
+                }
+            }
+
+            const currentConfig = node.data('config') || {};
+            const updatedConfig = {
+                ...currentConfig,
+                enable_timeout: enableTimeout,
+                timeout_minutes: enableTimeout ? timeoutMinutes : 0,
+                timeout_edge_id: enableTimeout ? timeoutEdgeId : ''
+            };
+
+            node.data('config', updatedConfig);
+
+            if (enableTimeout) {
+                updateStatus(`並行匯合設定已套用：逾時 ${timeoutMinutes} 分鐘`, 'success');
+            } else {
+                updateStatus('並行匯合設定已套用：無逾時限制', 'success');
+            }
+
+            console.log('ParallelJoin 節點配置已更新:', {
+                nodeId: nodeId,
+                config: updatedConfig
+            });
+        }
+        window.applyParallelJoinConfig = applyParallelJoinConfig;
 
         // ==================== OP_FIELDWRITE 表單寫值函數 ====================
 

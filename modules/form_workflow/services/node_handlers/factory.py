@@ -93,11 +93,12 @@ def register_builtin_handlers():
     節點類型名稱與 API 定義 (_get_node_definitions) 一致，不使用別名。
     Factory 已支援大小寫不敏感查找，無需重複註冊。
 
-    標準節點類型（共 15 種）：
+    標準節點類型（共 17 種）：
     - Start, End, Abandon: 流程控制
     - FormAdapter: 簽核
     - Delay: 延遲
     - Branch, Converge: 分支/匯合
+    - ParallelFork, ParallelJoin: 並行分支/匯合
     - Telegram, EmailAdapter: 企業級通知
     - SysTelegram, EmailRelay: 系統級通知
     - SubFlow: 子流程
@@ -109,6 +110,8 @@ def register_builtin_handlers():
     from .formadapter_handler import FormAdapterHandler
     from .branch_handler import BranchHandler
     from .converge_handler import ConvergeHandler
+    from .parallelfork_handler import ParallelForkHandler
+    from .paralleljoin_handler import ParallelJoinHandler
     from .opset_handler import OpSetHandler
     from .fieldread_handler import FieldReadHandler
     from .fieldwrite_handler import FieldWriteHandler
@@ -133,6 +136,10 @@ def register_builtin_handlers():
     # 分支/匯合
     NodeHandlerFactory.register('Branch', BranchHandler)
     NodeHandlerFactory.register('Converge', ConvergeHandler)
+
+    # 並行分支/匯合
+    NodeHandlerFactory.register('ParallelFork', ParallelForkHandler)
+    NodeHandlerFactory.register('ParallelJoin', ParallelJoinHandler)
 
     # 企業級通知
     NodeHandlerFactory.register('Telegram', TelegramHandler)
