@@ -105,6 +105,31 @@ Generated with Claude Code"
 - 包含但不限於：用戶列表、組織樹、簽核人選擇、角色成員解析、部門成員解析
 - 關聯查詢（如透過角色/部門取用戶）需 JOIN User 表確認帳號狀態
 
+### MENU-01: 選單項目新增規範
+
+**新增 menu_items 記錄時，必須遵守以下規則：**
+
+**link_type 有效值**（`_resolve_link()` in `menu_service.py` 只認以下值）：
+
+| link_type | link_target 格式 | 說明 |
+|-----------|-----------------|------|
+| `url` | `/security/alert-broadcasts/` | 直接 URL 路徑（最常用） |
+| `route` | `admin.settings` 或 `/path/` | Flask endpoint 名稱，或以 `/` 開頭的路徑 |
+| `page` | `page_secure_code` | 動態頁面，自動加 `/p/` 前綴 |
+| `divider` | （空） | 分隔線 |
+| `header` | （空） | 群組標題 |
+
+**其他 link_type 值（如 `path`）會導致 href 變成 `#`，選單點了沒反應。**
+
+**參考既有同類選單**：新增前先查 DB 中同層級或同功能的選單用什麼 link_type，照著用。
+```sql
+SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '目標父選單SC';
+```
+
+**禁止事項**：
+- **禁止** 為了「選單無法點擊」而修改 `menu_service.py` 的 `_resolve_link()` -- 問題一定出在 DB 的 link_type 設定
+- **禁止** 為了選單顯示問題而修改權限控制邏輯（`auth_interceptor`、`page_permission_service`、`page_role_guard`）-- 這些是安全核心，選單顯示異常的根因是 DB 資料設定錯誤
+
 ---
 
 ## 專案結構
@@ -234,6 +259,58 @@ function pageManager() {
 
 ---
 
+## 時區處理規範 (TZ-01)
+
+### 儲存層
+- DB 一律使用 `datetime.utcnow()` 儲存 UTC 時間
+- PostgreSQL 時區設定為 `Etc/UTC`，欄位類型 `timestamp without time zone`
+- **純日期欄位**（`effective_from`、`start_date`、合約日期等）不涉及時區，直接存日曆日期
+
+### 時區優先順序
+`g.timezone` 由 `auth_interceptor.py` 設定：**用戶個人 > 企業設定 > `Asia/Taipei`**
+
+### 後端模板顯示
+- **必須** 使用 `|tz_format` filter 顯示 datetime 欄位
+- **禁止** 直接 `.strftime()` 格式化 datetime 欄位（會顯示 UTC 時間）
+- 純日期欄位可用 `.strftime('%Y-%m-%d')`（不需時區轉換）
+
+```jinja2
+{# 正確 #}
+{{ record.created_at|tz_format('%Y-%m-%d %H:%M') if record.created_at else '-' }}
+
+{# 錯誤 - 會顯示 UTC 時間 #}
+{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}
+```
+
+### 後端 API 回傳
+- 若回傳已格式化時間字串：先將 UTC 轉為用戶時區再 `strftime`
+- 若回傳 `isoformat()`：前端用 `BkTime.format()` 處理
+
+```python
+from zoneinfo import ZoneInfo
+from flask import g
+
+utc_tz = ZoneInfo('UTC')
+user_tz = ZoneInfo(getattr(g, 'timezone', 'Asia/Taipei'))
+local_dt = dt.replace(tzinfo=utc_tz).astimezone(user_tz)
+```
+
+### 前端 JS 顯示
+- **必須** 使用 `BkTime.format(dateStr, style)` 格式化 DB 時間
+- **禁止** 用 `new Date(x).toLocaleString()` 顯示 DB 時間（會用瀏覽器時區）
+- `timezone.js` 已在 `base.html` 全域載入，`BkTime` 全站可用
+- style: `'full'`(預設), `'short'`, `'date'`, `'time'`
+
+```javascript
+// 正確
+BkTime.format(record.created_at, 'short')
+
+// 錯誤 - 會用瀏覽器時區
+new Date(record.created_at).toLocaleString('zh-TW')
+```
+
+---
+
 ## 禁止事項
 
 1. **禁止** 繞過認證攔截器
@@ -245,6 +322,8 @@ function pageManager() {
 7. **禁止** 將模組靜態檔案複製到 `backend/app/static/`（會造成雙份不同步）
 8. **禁止** 在 API 程式碼中硬編碼 node type 定義（應查 DB）
 9. **禁止** HTML 模板內嵌大量 JS/CSS（應抽為獨立靜態檔或 partial）
+10. **禁止** 後端模板直接 `.strftime()` 顯示 datetime 欄位（應用 `|tz_format`，參見 TZ-01）
+11. **禁止** 前端 JS 用 `new Date().toLocaleString()` 顯示 DB 時間（應用 `BkTime.format()`，參見 TZ-01）
 
 ---
 
