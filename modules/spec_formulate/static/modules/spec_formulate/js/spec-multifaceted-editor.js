@@ -97,6 +97,7 @@ function specMultifacetedEditor() {
         // 製作規格書 modal
         showDocxModal: false,
         docxExporting: false,
+        pdfExporting: false,
         docxTitle: '',
         docxItems: [],
 
@@ -1258,6 +1259,72 @@ function specMultifacetedEditor() {
                 alert('匯出失敗: ' + e.message);
             }
             this.docxExporting = false;
+        },
+
+        async doExportPdf() {
+            if (this.docxItems.length === 0) {
+                alert('請至少加入一個規格');
+                return;
+            }
+            var specs = [];
+            for (var i = 0; i < this.docxItems.length; i++) {
+                var item = this.docxItems[i];
+                var facets = [];
+                var af = item.activeFacets || [];
+                for (var j = 0; j < af.length; j++) {
+                    if (item.selectedFacets[af[j]]) facets.push(af[j]);
+                }
+                if (facets.length === 0) {
+                    alert(item.name + ': 請至少選擇一種格式');
+                    return;
+                }
+                specs.push({
+                    spec_sc: item.spec_sc,
+                    version: parseInt(item.version),
+                    facets: facets,
+                });
+            }
+            this.pdfExporting = true;
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/export/pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.csrfToken,
+                    },
+                    body: JSON.stringify({
+                        doc_title: this.docxTitle || '',
+                        specs: specs,
+                    }),
+                });
+                if (resp.ok) {
+                    var blob = await resp.blob();
+                    var cd = resp.headers.get('content-disposition') || '';
+                    var filename = '規格書.pdf';
+                    var starMatch = cd.match(/filename\*=UTF-8''([^;\s]+)/i);
+                    if (starMatch) {
+                        filename = decodeURIComponent(starMatch[1]);
+                    } else {
+                        var plainMatch = cd.match(/filename="?([^";]+)"?/i);
+                        if (plainMatch) filename = plainMatch[1];
+                    }
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    this.showDocxModal = false;
+                } else {
+                    var errData = await resp.json();
+                    alert(errData.error || '匯出失敗');
+                }
+            } catch (e) {
+                alert('匯出失敗: ' + e.message);
+            }
+            this.pdfExporting = false;
         },
 
         showToast(message, type) {

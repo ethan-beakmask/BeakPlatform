@@ -624,9 +624,15 @@ window.__MF_SPEC_CONFIG = {
                       x-text="docxItems.length + ' 個規格, ' + docxGetSelectedCount() + ' 個格式表'"></span>
                 <button class="mfe-btn" @click="showDocxModal = false">取消</button>
                 <button class="mfe-btn primary" @click="doExportDocx()"
-                        :disabled="docxExporting || docxItems.length === 0">
+                        :disabled="docxExporting || pdfExporting || docxItems.length === 0">
                     <span x-show="!docxExporting">匯出 DOCX</span>
                     <span x-show="docxExporting">匯出中...</span>
+                </button>
+                <button class="mfe-btn primary" @click="doExportPdf()"
+                        :disabled="pdfExporting || docxExporting || docxItems.length === 0"
+                        style="background-color: #dc3545; border-color: #dc3545;">
+                    <span x-show="!pdfExporting">匯出 PDF</span>
+                    <span x-show="pdfExporting">匯出中...</span>
                 </button>
             </div>
         </div>
