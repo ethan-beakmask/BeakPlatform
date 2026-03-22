@@ -91,26 +91,34 @@ window.__LF_CONFIG = {
                 <template x-if="isSystemAdmin && !selectedOrgCode">
                     <div class="lf-summary-card">
                         <div class="lf-label">未知網域</div>
-                        <div class="lf-value lf-value-danger" x-text="data.summary.unknown_domain"></div>
+                        <div class="lf-value lf-value-danger" x-text="_summary.unknown_domain"></div>
                     </div>
                 </template>
                 <div class="lf-summary-card">
                     <div class="lf-label">涉及帳號</div>
-                    <div class="lf-value lf-value-warning" x-text="data.summary.unique_accounts"></div>
+                    <div class="lf-value lf-value-warning" x-text="_summary.unique_accounts"></div>
                 </div>
                 <div class="lf-summary-card">
                     <div class="lf-label">來源 IP</div>
-                    <div class="lf-value lf-value-info" x-text="data.summary.unique_ips"></div>
+                    <div class="lf-value lf-value-info" x-text="_summary.unique_ips"></div>
                 </div>
                 <div class="lf-summary-card">
                     <div class="lf-label">目標企業</div>
-                    <div class="lf-value lf-value-success" x-text="data.summary.target_orgs"></div>
+                    <div class="lf-value lf-value-success" x-text="_summary.target_orgs"></div>
                 </div>
             </div>
 
             <!-- 熱力圖 -->
             <div class="lf-section">
-                <div class="lf-section-title">24 小時熱力圖</div>
+                <div class="lf-section-title" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span>24 小時熱力圖</span>
+                    <div class="btn-group btn-group-sm" style="margin-bottom: -4px;">
+                        <button class="btn" :class="heatmapPage === 1 ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="heatmapPage = 1">近 10 天</button>
+                        <button class="btn" :class="heatmapPage === 2 ? 'btn-primary' : 'btn-outline-secondary'"
+                                @click="heatmapPage = 2">近三個月</button>
+                    </div>
+                </div>
                 <div class="lf-heatmap-wrap">
                     <table class="lf-heatmap">
                         <tr>
@@ -120,7 +128,7 @@ window.__LF_CONFIG = {
                             </template>
                             <th style="padding-left:8px;color:#6c757d">Total</th>
                         </tr>
-                        <template x-for="dt in heatmapDates" :key="dt">
+                        <template x-for="dt in displayedHeatmapDates" :key="dt">
                             <tr>
                                 <th class="lf-date-col">
                                     <span x-text="dt"></span>
@@ -158,7 +166,7 @@ window.__LF_CONFIG = {
                         <tr><th>#</th><th>IP Address</th><th>Count</th><th>Targeted Accounts</th><th>Time Range</th><th>User-Agent</th></tr>
                     </thead>
                     <tbody>
-                        <template x-for="(s, idx) in ipStatsSorted" :key="s.ip">
+                        <template x-for="(s, idx) in _ipStats" :key="s.ip">
                             <tr>
                                 <td x-text="idx + 1"></td>
                                 <td class="lf-ip" x-text="s.ip"></td>
@@ -176,7 +184,7 @@ window.__LF_CONFIG = {
             </div>
 
             <!-- 企業統計 (SYSTEM_ADMIN 未篩選時顯示) -->
-            <template x-if="isSystemAdmin && !selectedOrgCode && Object.keys(data.org_stats).length > 0">
+            <template x-if="isSystemAdmin && !selectedOrgCode && _orgStats.length > 0">
                 <div class="lf-section">
                     <div class="lf-section-title">Targeted Organization</div>
                     <table class="table table-sm lf-stats">
@@ -184,7 +192,7 @@ window.__LF_CONFIG = {
                             <tr><th>#</th><th>Organization</th><th>Domain</th><th>Count</th></tr>
                         </thead>
                         <tbody>
-                            <template x-for="(s, idx) in orgStatsSorted" :key="s.key">
+                            <template x-for="(s, idx) in _orgStats" :key="s.key">
                                 <tr>
                                     <td x-text="idx + 1"></td>
                                     <td :class="s.key === '(NULL)' ? 'lf-org-null' : 'lf-org-name'" x-text="s.name"></td>
@@ -208,7 +216,7 @@ window.__LF_CONFIG = {
                         <tr><th>#</th><th>Type</th><th>Detail</th><th>Organization</th><th>Source IPs</th><th>Count</th></tr>
                     </thead>
                     <tbody>
-                        <template x-for="(s, idx) in accountStatsSorted" :key="s.detail">
+                        <template x-for="(s, idx) in _accountStats" :key="s.detail">
                             <tr>
                                 <td x-text="idx + 1"></td>
                                 <td>
