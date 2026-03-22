@@ -1688,7 +1688,7 @@ def delete_my_test_forms():
     # 權限：僅管理員可操作
     is_admin = (
         getattr(current_user, 'is_system_admin', False) or
-        getattr(current_user, 'level', 0) >= 90
+        getattr(current_user, 'is_org_admin', False)
     )
     if not is_admin:
         return jsonify({'success': False, 'error': '無權限執行此操作'}), 403
