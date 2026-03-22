@@ -11,7 +11,7 @@ SELECT
     'alert_broadcasts_org',
     '緊急廣播管理',
     'ri-alarm-warning-line',
-    'path',
+    'url',
     '/security/alert-broadcasts/',
     false, 57, 1, false, true, 30,
     'BYB5IqmunA3lcCrROPrifv',
