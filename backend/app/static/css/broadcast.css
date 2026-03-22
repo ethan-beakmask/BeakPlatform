@@ -1,0 +1,149 @@
+/* ============================================================
+   Broadcast System - 跑馬燈廣播 + 緊急廣播彈窗
+   ============================================================ */
+
+/* ---- NavbarBroadcast 跑馬燈列 ---- */
+.bk-broadcast-marquee {
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 4px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+    line-height: 1.4;
+    min-height: 26px;
+}
+
+.bk-broadcast-marquee-inner {
+    display: inline-block;
+    animation: bk-marquee-scroll 15s linear infinite;
+    padding-left: 100%;
+}
+
+.bk-broadcast-marquee.bk-marquee-paused .bk-broadcast-marquee-inner {
+    animation-play-state: paused;
+}
+
+@keyframes bk-marquee-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+/* 多條訊息切換時的淡入效果 */
+.bk-broadcast-marquee-inner.bk-fade-in {
+    animation: bk-marquee-scroll 15s linear infinite, bk-fade 0.5s ease-in;
+}
+
+@keyframes bk-fade {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* ---- AlertBroadcast 緊急廣播彈窗 ---- */
+.bk-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bk-alert-dialog {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-top: 6px solid #DC2626;
+}
+
+.bk-alert-header {
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.bk-alert-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #DC2626;
+    font-weight: 700;
+}
+
+.bk-alert-body {
+    padding: 16px 24px;
+    overflow-y: auto;
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #1f2937;
+}
+
+.bk-alert-footer {
+    padding: 12px 24px 16px;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.bk-alert-ack-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.bk-alert-ack-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.bk-alert-ack-row label {
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+}
+
+.bk-alert-ack-row label.bk-disabled {
+    color: #9ca3af;
+}
+
+.bk-alert-confirm-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: #DC2626;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.bk-alert-confirm-btn:disabled {
+    background: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.bk-alert-confirm-btn:not(:disabled):hover {
+    background: #b91c1c;
+}
+
+/* 捲動提示 */
+.bk-alert-scroll-hint {
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    padding: 4px 0;
+}

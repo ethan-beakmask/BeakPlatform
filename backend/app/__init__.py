@@ -219,6 +219,20 @@ def register_context_processors(app: Flask) -> None:
             'current_timezone': getattr(g, 'timezone', 'Asia/Taipei'),
         }
 
+    @app.context_processor
+    def inject_broadcast_config():
+        """將廣播輪詢間隔注入到所有模板"""
+        from flask_login import current_user as ctx_user
+        interval = 1
+        if hasattr(ctx_user, 'is_authenticated') and ctx_user.is_authenticated:
+            if hasattr(ctx_user, 'organization') and ctx_user.organization:
+                interval = ctx_user.organization.get_setting(
+                    'broadcast_poll_interval_minutes', 1
+                )
+        return {
+            'broadcast_poll_interval_minutes': interval,
+        }
+
 
 def register_error_handlers(app: Flask) -> None:
     """註冊錯誤處理器"""

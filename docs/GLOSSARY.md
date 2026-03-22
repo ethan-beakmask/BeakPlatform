@@ -83,6 +83,7 @@
 | 系統設定 | `/admin/settings` | Logo、密碼政策等 |
 | 企業管理員 | `/org-admins/` | 各企業管理員帳號 |
 | 獨立資料庫 | `/org-databases/` | 企業管理員視角的 DB |
+| 緊急廣播管理 | `/security/alert-broadcasts/` | AlertBroadcast 歷史與確認統計 |
 
 ### 帳號管理
 

@@ -26,4 +26,7 @@
 
     // 視窗縮放時重算（選單可能換行）
     window.addEventListener('resize', adjustOffset);
+
+    // 提供給外部呼叫（如 broadcast-poller 插入跑馬燈後重算）
+    window.adjustTopbarOffset = adjustOffset;
 })();

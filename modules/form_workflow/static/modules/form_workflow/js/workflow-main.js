@@ -4052,7 +4052,6 @@
                 'paralleljoin': 'ParallelJoin',
                 'parallel_join': 'ParallelJoin',
                 'subflow': 'Subflow',
-                'notification': 'Notification',
                 'telegram': 'Telegram',
                 'emailadapter': 'EmailAdapter',
                 'opset': 'OpSet',
@@ -4060,12 +4059,15 @@
                 'op_fieldread': 'OpFieldRead',
                 'opfieldwrite': 'OpFieldWrite',
                 'op_fieldwrite': 'OpFieldWrite',
-                'formexp': 'FormExp',
                 'emailrelay': 'EmailRelay',
                 'sqlexecutor': 'SqlExecutor',
                 'sys_telegram': 'SysTelegram',
                 'systelegram': 'SysTelegram',
                 'abandon': 'Abandon',
+                'navbarbroadcast': 'NavbarBroadcast',
+                'navbar_broadcast': 'NavbarBroadcast',
+                'alertbroadcast': 'AlertBroadcast',
+                'alert_broadcast': 'AlertBroadcast',
             };
             return typeMap[type.toLowerCase()] || type;
         }
@@ -4138,13 +4140,14 @@
                 'Converge': '匯聚節點',
                 'Delay': '暫停',
                 'OpSet': '設定變數',
-                'FormExp': '表單過期',
                 'FormAdapter': '簽核',
                 'EmailAdapter': '郵件通知',
                 'SQLExecutor': 'SQL 執行器',
                 'Abandon': '放棄流程',
                 'Telegram': 'Telegram 通知',
-                'EmailRelay': '系統郵件'
+                'EmailRelay': '系統郵件',
+                'NavbarBroadcast': '跑馬燈廣播',
+                'AlertBroadcast': '緊急廣播'
             };
 
             const description = node.data('description') || '';
@@ -4154,7 +4157,8 @@
                 'Subflow', 'Delay', 'OpFieldWrite', 'OpSet', 'Telegram',
                 'SysTelegram', 'EmailRelay', 'EmailAdapter', 'Branch',
                 'FormAdapter', 'End', 'Converge', 'SqlExecutor',
-                'ParallelFork', 'ParallelJoin'
+                'ParallelFork', 'ParallelJoin',
+                'NavbarBroadcast', 'AlertBroadcast'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
 
@@ -5046,6 +5050,161 @@
 
                 // 載入可用的收件人群組
                 setTimeout(() => loadEmailRelayGroups(recipientGroups), 100);
+            }
+
+            // NavbarBroadcast 跑馬燈廣播節點配置
+            if (type === 'NavbarBroadcast') {
+                const currentConfig = node.data('config') || {};
+                const mode = currentConfig.mode || 'start';
+                const broadcastCode = currentConfig.broadcast_code || '';
+                const message = currentConfig.message || '';
+                const textColor = currentConfig.text_color || '#000000';
+                const bgColor = currentConfig.bg_color || '#FDE047';
+                const displaySeconds = currentConfig.display_seconds || 5;
+                const durationMinutes = currentConfig.duration_minutes || 0;
+
+                info += `
+                    <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
+                        <div style="font-weight: bold; color: #B45309; font-size: 12px; margin-bottom: 8px;">
+                            <i class="ri-broadcast-line"></i> 跑馬燈廣播設定
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">模式</label>
+                            <select id="nbMode" onchange="toggleNbFields()" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option value="start" ${mode === 'start' ? 'selected' : ''}>StartBroadcast - 啟動跑馬燈</option>
+                                <option value="end" ${mode === 'end' ? 'selected' : ''}>EndBroadcast - 停止跑馬燈</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">廣播代碼 <span style="color: #DC2626;">*</span></label>
+                            <input type="text" id="nbBroadcastCode" value="${broadcastCode}" placeholder="唯一代碼，EndBroadcast 用此對應" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            <div style="font-size: 10px; color: #888; margin-top: 2px;">EndBroadcast 填入相同代碼以停止對應跑馬燈</div>
+                        </div>
+
+                        <div id="nbStartFields" style="${mode === 'end' ? 'display: none;' : ''}">
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">訊息內容 <span style="color: #DC2626;">*</span>
+                                    <button type="button" onclick="VarPicker.open(this, document.getElementById('nbMessage'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                                </label>
+                                <textarea id="nbMessage" rows="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; resize: vertical;" placeholder="跑馬燈顯示的訊息...">${message}</textarea>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">文字顏色</label>
+                                    <input type="color" id="nbTextColor" value="${textColor}" style="width: 100%; height: 32px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">背景顏色</label>
+                                    <input type="color" id="nbBgColor" value="${bgColor}" style="width: 100%; height: 32px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">每則顯示秒數</label>
+                                    <input type="number" id="nbDisplaySeconds" value="${displaySeconds}" min="3" max="60" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">自動過期(分鐘)</label>
+                                    <input type="number" id="nbDurationMinutes" value="${durationMinutes}" min="0" placeholder="0=不過期" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                    <div style="font-size: 10px; color: #888; margin-top: 2px;">0 或留空=持續到 EndBroadcast</div>
+                                </div>
+                            </div>
+
+                            <!-- 預覽 -->
+                            <div id="nbPreview" style="margin-bottom: 8px; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; overflow: hidden; white-space: nowrap; background: ${bgColor}; color: ${textColor};">
+                                ${message || '預覽：跑馬燈訊息將顯示在此'}
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="applyNavbarBroadcastConfig('${nodeId}')" style="width: 100%; padding: 6px; font-size: 12px;">
+                            <i class="fas fa-check"></i> 套用
+                        </button>
+                    </div>
+                `;
+            }
+
+            // AlertBroadcast 緊急廣播節點配置
+            if (type === 'AlertBroadcast') {
+                const currentConfig = node.data('config') || {};
+                const broadcastCode = currentConfig.broadcast_code || '';
+                const title = currentConfig.title || '';
+                const message = currentConfig.message || '';
+                const requireAck = currentConfig.require_ack !== false;
+                const targetType = currentConfig.target_type || 'all';
+                const targetRoles = currentConfig.target_roles || [];
+                const targetDepartments = currentConfig.target_departments || [];
+                const includeChildren = currentConfig.include_children !== false;
+
+                info += `
+                    <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e0e0e0;">
+                        <div style="font-weight: bold; color: #DC2626; font-size: 12px; margin-bottom: 8px;">
+                            <i class="ri-alarm-warning-line"></i> 緊急廣播設定
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">廣播代碼 <span style="color: #DC2626;">*</span></label>
+                            <input type="text" id="abBroadcastCode" value="${broadcastCode}" placeholder="唯一識別代碼" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">標題 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('abTitle'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
+                            <input type="text" id="abTitle" value="${title}" placeholder="大字標題" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: flex; align-items: center; margin-bottom: 3px;">訊息內容 <span style="color: #DC2626;">*</span>
+                                <button type="button" onclick="VarPicker.open(this, document.getElementById('abMessage'))" style="margin-left:auto;padding:1px 5px;font-size:11px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;font-family:monospace;color:#666;" title="插入變數">{x}</button>
+                            </label>
+                            <textarea id="abMessage" rows="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; resize: vertical;" placeholder="支援 HTML：&lt;b&gt;粗體&lt;/b&gt;、&lt;br&gt;換行">${message}</textarea>
+                            <div style="font-size: 10px; color: #888; margin-top: 2px;">支援 HTML 標籤：&lt;b&gt; &lt;i&gt; &lt;br&gt; &lt;p&gt; &lt;ul&gt; &lt;li&gt;</div>
+                        </div>
+
+                        <div style="margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">目標對象</label>
+                            <select id="abTargetType" onchange="toggleAbTargetFields()" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                <option value="all" ${targetType === 'all' ? 'selected' : ''}>全企業</option>
+                                <option value="specific" ${targetType === 'specific' ? 'selected' : ''}>指定對象</option>
+                            </select>
+                        </div>
+
+                        <div id="abTargetFields" style="${targetType !== 'specific' ? 'display: none;' : ''}">
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">角色（可多選）</label>
+                                <select id="abTargetRoles" multiple style="width: 100%; height: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                                    <option value="">載入中...</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <label style="font-size: 11px; color: #666; display: block; margin-bottom: 3px;">部門（可多選）</label>
+                                <select id="abTargetDepartments" multiple style="width: 100%; height: 60px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                                    <option value="">載入中...</option>
+                                </select>
+                            </div>
+                            <label style="display: flex; align-items: center; font-size: 11px; cursor: pointer; margin-bottom: 8px;">
+                                <input type="checkbox" id="abIncludeChildren" ${includeChildren ? 'checked' : ''} style="margin-right: 4px;">
+                                包含子部門
+                            </label>
+                        </div>
+
+                        <label style="display: flex; align-items: center; font-size: 11px; cursor: pointer; margin-bottom: 8px;">
+                            <input type="checkbox" id="abRequireAck" ${requireAck ? 'checked' : ''} style="margin-right: 4px;">
+                            需要已讀確認（勾選後管理員可查看確認統計）
+                        </label>
+
+                        <button class="btn-primary" onclick="applyAlertBroadcastConfig('${nodeId}')" style="width: 100%; padding: 6px; font-size: 12px;">
+                            <i class="fas fa-check"></i> 套用
+                        </button>
+                    </div>
+                `;
+
+                // 載入角色和部門選項
+                setTimeout(() => loadAlertBroadcastOptions(targetRoles, targetDepartments), 100);
             }
 
             // EmailAdapter 企業郵件節點配置
@@ -7102,6 +7261,166 @@
             });
         }
         window.applyEmailRelayConfig = applyEmailRelayConfig;
+
+        // ============================================
+        // NavbarBroadcast 跑馬燈廣播節點函數
+        // ============================================
+
+        function toggleNbFields() {
+            const mode = document.getElementById('nbMode')?.value;
+            const startFields = document.getElementById('nbStartFields');
+            if (startFields) {
+                startFields.style.display = mode === 'end' ? 'none' : '';
+            }
+        }
+        window.toggleNbFields = toggleNbFields;
+
+        function applyNavbarBroadcastConfig(nodeId) {
+            const node = applyNodeBasicInfo(nodeId, true);
+            if (!node) return;
+
+            const mode = document.getElementById('nbMode')?.value || 'start';
+            const broadcastCode = document.getElementById('nbBroadcastCode')?.value?.trim();
+
+            if (!broadcastCode) {
+                updateStatus('請輸入廣播代碼', 'warning');
+                return;
+            }
+
+            const currentConfig = node.data('config') || {};
+            const updatedConfig = { ...currentConfig, mode, broadcast_code: broadcastCode };
+
+            if (mode === 'start') {
+                const message = document.getElementById('nbMessage')?.value?.trim();
+                if (!message) {
+                    updateStatus('請輸入訊息內容', 'warning');
+                    return;
+                }
+                updatedConfig.message = message;
+                updatedConfig.text_color = document.getElementById('nbTextColor')?.value || '#000000';
+                updatedConfig.bg_color = document.getElementById('nbBgColor')?.value || '#FDE047';
+                updatedConfig.display_seconds = parseInt(document.getElementById('nbDisplaySeconds')?.value, 10) || 5;
+                updatedConfig.duration_minutes = parseInt(document.getElementById('nbDurationMinutes')?.value, 10) || 0;
+            }
+
+            node.data('config', updatedConfig);
+            updateStatus('跑馬燈廣播設定已套用', 'success');
+        }
+        window.applyNavbarBroadcastConfig = applyNavbarBroadcastConfig;
+
+        // 預覽即時更新
+        document.addEventListener('input', function(e) {
+            if (['nbMessage', 'nbTextColor', 'nbBgColor'].includes(e.target?.id)) {
+                const preview = document.getElementById('nbPreview');
+                if (!preview) return;
+                const msg = document.getElementById('nbMessage')?.value || '預覽：跑馬燈訊息';
+                const tc = document.getElementById('nbTextColor')?.value || '#000000';
+                const bg = document.getElementById('nbBgColor')?.value || '#FDE047';
+                preview.textContent = msg;
+                preview.style.color = tc;
+                preview.style.backgroundColor = bg;
+            }
+        });
+
+        // ============================================
+        // AlertBroadcast 緊急廣播節點函數
+        // ============================================
+
+        function toggleAbTargetFields() {
+            const targetType = document.getElementById('abTargetType')?.value;
+            const fields = document.getElementById('abTargetFields');
+            if (fields) {
+                fields.style.display = targetType === 'specific' ? '' : 'none';
+            }
+        }
+        window.toggleAbTargetFields = toggleAbTargetFields;
+
+        function loadAlertBroadcastOptions(selectedRoles, selectedDepts) {
+            // 載入角色
+            fetch('/api/form-workflow/data/org-roles', {
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                const sel = document.getElementById('abTargetRoles');
+                if (!sel) return;
+                sel.innerHTML = '';
+                (data.roles || data.data || []).forEach(role => {
+                    const opt = document.createElement('option');
+                    opt.value = role.secure_code || role.code;
+                    opt.textContent = role.name;
+                    if (selectedRoles.includes(opt.value)) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            })
+            .catch(() => {});
+
+            // 載入部門
+            fetch('/api/form-workflow/data/org-departments', {
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                const sel = document.getElementById('abTargetDepartments');
+                if (!sel) return;
+                sel.innerHTML = '';
+                (data.departments || data.data || []).forEach(dept => {
+                    const opt = document.createElement('option');
+                    opt.value = dept.secure_code || dept.code;
+                    opt.textContent = (dept.full_path || dept.name);
+                    if (selectedDepts.includes(opt.value)) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            })
+            .catch(() => {});
+        }
+        window.loadAlertBroadcastOptions = loadAlertBroadcastOptions;
+
+        function applyAlertBroadcastConfig(nodeId) {
+            const node = applyNodeBasicInfo(nodeId, true);
+            if (!node) return;
+
+            const broadcastCode = document.getElementById('abBroadcastCode')?.value?.trim();
+            const title = document.getElementById('abTitle')?.value?.trim();
+            const message = document.getElementById('abMessage')?.value?.trim();
+
+            if (!broadcastCode) {
+                updateStatus('請輸入廣播代碼', 'warning');
+                return;
+            }
+            if (!title) {
+                updateStatus('請輸入標題', 'warning');
+                return;
+            }
+
+            const targetType = document.getElementById('abTargetType')?.value || 'all';
+            const requireAck = document.getElementById('abRequireAck')?.checked ?? true;
+            const includeChildren = document.getElementById('abIncludeChildren')?.checked ?? true;
+
+            const currentConfig = node.data('config') || {};
+            const updatedConfig = {
+                ...currentConfig,
+                broadcast_code: broadcastCode,
+                title: title,
+                message: message,
+                target_type: targetType,
+                require_ack: requireAck,
+            };
+
+            if (targetType === 'specific') {
+                const rolesEl = document.getElementById('abTargetRoles');
+                const deptsEl = document.getElementById('abTargetDepartments');
+                updatedConfig.target_roles = rolesEl ? Array.from(rolesEl.selectedOptions).map(o => o.value) : [];
+                updatedConfig.target_departments = deptsEl ? Array.from(deptsEl.selectedOptions).map(o => o.value) : [];
+                updatedConfig.include_children = includeChildren;
+            }
+
+            node.data('config', updatedConfig);
+            updateStatus('緊急廣播設定已套用', 'success');
+        }
+        window.applyAlertBroadcastConfig = applyAlertBroadcastConfig;
 
         // ============================================
         // EmailAdapter 企業郵件節點函數

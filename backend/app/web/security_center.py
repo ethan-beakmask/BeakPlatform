@@ -7,7 +7,10 @@ from flask_login import current_user
 
 from ..security.decorators import admin_required
 from ..models.organization import Organization
+from ..models.lookup_item import LookupItem
+from ..models.broadcast_acknowledgment import BroadcastAcknowledgment
 from ..constants import SYSTEM_ORG_CODE
+from .. import db
 
 security_center_bp = Blueprint('security_center', __name__)
 
@@ -48,4 +51,53 @@ def login_failures():
         organizations=organizations,
         user_org_secure_code=current_user.org_secure_code,
         user_org_label=user_org_label,
+    )
+
+
+@security_center_bp.route('/alert-broadcasts/')
+@admin_required
+def alert_broadcasts():
+    """緊急廣播管理頁面"""
+    org_code = current_user.org_secure_code
+
+    # 設定 RLS context
+    db.session.execute(
+        db.text("SELECT set_config('app.current_org', :org, true)"),
+        {'org': org_code}
+    )
+
+    # 取得該企業所有 alert 類型廣播
+    items = LookupItem.query.filter_by(
+        org_secure_code=org_code,
+        category_code='broadcast',
+        is_deleted=False,
+    ).order_by(LookupItem.created_at.desc()).all()
+
+    broadcasts = []
+    for item in items:
+        value = item.value or {}
+        if value.get('type') != 'alert':
+            continue
+
+        # 計算已確認數
+        ack_count = BroadcastAcknowledgment.query.filter_by(
+            broadcast_secure_code=item.secure_code,
+            is_deleted=False,
+        ).count()
+
+        broadcasts.append({
+            'secure_code': item.secure_code,
+            'code': item.code,
+            'title': value.get('title', ''),
+            'message': value.get('message', ''),
+            'target': value.get('target', {}),
+            'require_ack': value.get('require_ack', True),
+            'is_active': item.is_active,
+            'created_at': item.created_at,
+            'ack_count': ack_count,
+        })
+
+    return render_template(
+        'pages/security/alert_broadcasts.html',
+        broadcasts=broadcasts,
     )

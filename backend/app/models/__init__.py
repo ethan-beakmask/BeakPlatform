@@ -63,6 +63,7 @@ from .page import Page
 # 通用選項清單
 from .lookup_category import LookupCategory
 from .lookup_item import LookupItem
+from .broadcast_acknowledgment import BroadcastAcknowledgment
 
 # 系統設定
 from .system_setting import SystemSetting

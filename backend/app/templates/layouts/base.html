@@ -83,6 +83,14 @@
 
     <!-- 置頂列高度偏移計算 -->
     <script src="{{ url_for('static', filename='js/topbar-offset.js') }}"></script>
+
+    {% if current_user.is_authenticated %}
+    <!-- 廣播系統 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/broadcast.css') }}">
+    <script>window.__BROADCAST_POLL_INTERVAL = {{ broadcast_poll_interval_minutes|default(1) }};</script>
+    <script src="{{ url_for('static', filename='js/broadcast-poller.js') }}"></script>
+    {% endif %}
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

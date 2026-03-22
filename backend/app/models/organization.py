@@ -94,6 +94,7 @@ class Organization(BaseModel):
         'login_employee_show_name': True,   # 員工登入頁顯示企業名稱
         'login_external_show_logo': True,   # 外部廠商登入頁顯示企業 Logo
         'login_external_show_name': True,   # 外部廠商登入頁顯示企業名稱
+        'broadcast_poll_interval_minutes': 1,  # 廣播輪詢間隔（分鐘）
     }
 
     @property

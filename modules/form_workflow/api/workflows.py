@@ -1713,3 +1713,57 @@ def _extract_form_fields(components, path_prefix='data', nested_level=0):
                 fields.extend(sub_fields)
 
     return fields
+
+
+# =============================================================================
+# 廣播節點輔助 API（用於 AlertBroadcast 目標選擇）
+# =============================================================================
+
+@workflows_bp.route('/data/org-roles')
+@module_access_required('form_workflow')
+def get_org_roles():
+    """取得企業角色列表（用於廣播目標選擇）"""
+    from app.models import Role
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    roles = Role.query.filter_by(
+        org_secure_code=org.secure_code,
+        is_active=True,
+        is_deleted=False
+    ).order_by(Role.name).all()
+
+    return jsonify({
+        'success': True,
+        'roles': [{'secure_code': r.secure_code, 'code': r.code, 'name': r.name} for r in roles]
+    })
+
+
+@workflows_bp.route('/data/org-departments')
+@module_access_required('form_workflow')
+def get_org_departments():
+    """取得企業部門列表（用於廣播目標選擇）"""
+    from app.models.organizational_unit import OrganizationalUnit, UnitType
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    departments = OrganizationalUnit.query.filter_by(
+        org_secure_code=org.secure_code,
+        unit_type=UnitType.DEPARTMENT,
+        is_active=True,
+        is_deleted=False
+    ).order_by(OrganizationalUnit.sort_order.asc()).all()
+
+    return jsonify({
+        'success': True,
+        'departments': [{
+            'secure_code': d.secure_code,
+            'code': d.code,
+            'name': d.name,
+            'full_path': d.full_path,
+        } for d in departments]
+    })

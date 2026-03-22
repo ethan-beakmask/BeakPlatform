@@ -19,6 +19,9 @@ from sqlalchemy import func, extract, text
 from ..security.decorators import admin_required
 from ..models.audit_log import AuditLog
 from ..models.organization import Organization
+from ..models.lookup_item import LookupItem
+from ..models.broadcast_acknowledgment import BroadcastAcknowledgment
+from ..models.user import User
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -242,3 +245,67 @@ def login_failures():
         'org_stats': org_stats,
         'timeline': timeline,
     }), 200
+
+
+# =============================================================================
+# 緊急廣播確認統計
+# =============================================================================
+
+@security_center_bp.route('/alert-broadcasts/<secure_code>/acks', methods=['GET'])
+@admin_required
+def get_broadcast_acks(secure_code):
+    """
+    取得某筆緊急廣播的已確認名單
+
+    ORG_ADMIN 只能查自己企業的廣播。
+    """
+    org_code = current_user.org_secure_code
+    is_sys_admin = str(current_user.user_type) == 'SYSTEM_ADMIN'
+
+    # 設定 RLS context
+    db.session.execute(
+        db.text("SELECT set_config('app.current_org', :org, true)"),
+        {'org': org_code}
+    )
+
+    # 確認廣播存在且屬於該企業
+    item = LookupItem.query.filter_by(
+        secure_code=secure_code,
+        category_code='broadcast',
+        is_deleted=False,
+    ).first()
+
+    if not item:
+        return jsonify({'success': False, 'message': '找不到廣播'}), 404
+
+    if not is_sys_admin and item.org_secure_code != org_code:
+        return jsonify({'success': False, 'message': '無權限'}), 403
+
+    # 查詢已確認的用戶
+    acks = db.session.query(
+        BroadcastAcknowledgment, User
+    ).join(
+        User, User.secure_code == BroadcastAcknowledgment.user_secure_code
+    ).filter(
+        BroadcastAcknowledgment.broadcast_secure_code == secure_code,
+        BroadcastAcknowledgment.is_deleted == False,
+    ).order_by(
+        BroadcastAcknowledgment.acknowledged_at.asc()
+    ).all()
+
+    ack_list = []
+    for ack, user in acks:
+        ack_list.append({
+            'user_secure_code': user.secure_code,
+            'display_name': user.display_name,
+            'employee_id': user.employee_id,
+            'acknowledged_at': ack.acknowledged_at.isoformat() if ack.acknowledged_at else None,
+        })
+
+    return jsonify({
+        'success': True,
+        'broadcast_code': item.code,
+        'title': (item.value or {}).get('title', ''),
+        'total_acks': len(ack_list),
+        'acks': ack_list,
+    })

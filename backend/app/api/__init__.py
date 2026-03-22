@@ -97,3 +97,7 @@ def register_blueprints(app: Flask) -> None:
     # Security center (本機安全)
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)
+
+    # Broadcasts (廣播系統)
+    from .broadcasts import broadcasts_bp
+    app.register_blueprint(broadcasts_bp)

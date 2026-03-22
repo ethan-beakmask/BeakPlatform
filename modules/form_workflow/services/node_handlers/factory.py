@@ -93,7 +93,7 @@ def register_builtin_handlers():
     節點類型名稱與 API 定義 (_get_node_definitions) 一致，不使用別名。
     Factory 已支援大小寫不敏感查找，無需重複註冊。
 
-    標準節點類型（共 17 種）：
+    標準節點類型（共 19 種）：
     - Start, End, Abandon: 流程控制
     - FormAdapter: 簽核
     - Delay: 延遲
@@ -101,6 +101,7 @@ def register_builtin_handlers():
     - ParallelFork, ParallelJoin: 並行分支/匯合
     - Telegram, EmailAdapter: 企業級通知
     - SysTelegram, EmailRelay: 系統級通知
+    - NavbarBroadcast, AlertBroadcast: 企業級廣播
     - SubFlow: 子流程
     - OpSet, OpFieldRead, OpFieldWrite: 變數操作
     """
@@ -121,6 +122,8 @@ def register_builtin_handlers():
     from .subflow_handler import SubFlowHandler
     from .abandon_handler import AbandonHandler
     from .sub_system_provision_handler import SubSystemProvisionHandler
+    from .navbar_broadcast_handler import NavbarBroadcastHandler
+    from .alert_broadcast_handler import AlertBroadcastHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -159,6 +162,10 @@ def register_builtin_handlers():
 
     # 整合（系統動作）
     NodeHandlerFactory.register('SubSystemProvision', SubSystemProvisionHandler)
+
+    # 廣播
+    NodeHandlerFactory.register('NavbarBroadcast', NavbarBroadcastHandler)
+    NodeHandlerFactory.register('AlertBroadcast', AlertBroadcastHandler)
 
 
 # 自動執行註冊

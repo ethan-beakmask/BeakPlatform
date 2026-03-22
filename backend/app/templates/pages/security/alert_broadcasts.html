@@ -1,0 +1,188 @@
+{% extends "layouts/base.html" %}
+{% block title %}緊急廣播管理 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+<style>
+.broadcast-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: white;
+}
+.broadcast-card.active {
+    border-left: 4px solid #DC2626;
+}
+.broadcast-card.inactive {
+    border-left: 4px solid #9ca3af;
+    opacity: 0.7;
+}
+.broadcast-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+.broadcast-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+.broadcast-meta span {
+    margin-right: 12px;
+}
+.badge-active {
+    background: #DC2626;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.badge-inactive {
+    background: #9ca3af;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.ack-panel {
+    background: #f9fafb;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+    display: none;
+}
+.ack-panel.show { display: block; }
+.ack-table {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+.ack-table th, .ack-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+.ack-table th {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #374151;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="alertBroadcastManager()">
+    <h3 style="margin-bottom: 20px;">緊急廣播管理</h3>
+
+    {% if broadcasts %}
+    {% for b in broadcasts %}
+    <div class="broadcast-card {{ 'active' if b.is_active else 'inactive' }}">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div class="broadcast-title">{{ b.title }}</div>
+                <div class="broadcast-meta">
+                    <span>代碼: {{ b.code }}</span>
+                    <span>建立: {{ b.created_at|tz_format('%Y-%m-%d %H:%M') if b.created_at else '-' }}</span>
+                    <span>
+                        {% if b.is_active %}
+                        <span class="badge-active">進行中</span>
+                        {% else %}
+                        <span class="badge-inactive">已結束</span>
+                        {% endif %}
+                    </span>
+                    {% if b.target.type == 'all' %}
+                    <span>對象: 全企業</span>
+                    {% else %}
+                    <span>對象: 指定</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if b.require_ack %}
+                <button class="btn btn-sm btn-outline-secondary"
+                        @click="toggleAckPanel('{{ b.secure_code }}')">
+                    已確認 {{ b.ack_count }} 人
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if b.require_ack %}
+        <div class="ack-panel" :class="{ 'show': openPanel === '{{ b.secure_code }}' }" id="ack-{{ b.secure_code }}">
+            <div x-show="loadingAck" style="text-align: center; padding: 10px; color: #999;">載入中...</div>
+            <div x-show="!loadingAck && ackData['{{ b.secure_code }}']">
+                <table class="ack-table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>員工編號</th>
+                            <th>確認時間</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="ack in (ackData['{{ b.secure_code }}'] || [])" :key="ack.user_secure_code">
+                            <tr>
+                                <td x-text="ack.display_name"></td>
+                                <td x-text="ack.employee_id || '-'"></td>
+                                <td x-text="BkTime.format(ack.acknowledged_at, 'short')"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <div x-show="(ackData['{{ b.secure_code }}'] || []).length === 0"
+                     style="text-align: center; padding: 10px; color: #999;">
+                    尚無確認記錄
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        尚無緊急廣播記錄
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function alertBroadcastManager() {
+    return {
+        openPanel: null,
+        loadingAck: false,
+        ackData: {},
+
+        toggleAckPanel(securecode) {
+            if (this.openPanel === securecode) {
+                this.openPanel = null;
+                return;
+            }
+            this.openPanel = securecode;
+            this.loadAcks(securecode);
+        },
+
+        loadAcks(securecode) {
+            if (this.ackData[securecode]) return;
+            this.loadingAck = true;
+
+            fetch('/api/security/alert-broadcasts/' + securecode + '/acks', {
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    this.ackData[securecode] = data.acks;
+                }
+                this.loadingAck = false;
+            })
+            .catch(() => { this.loadingAck = false; });
+        }
+    };
+}
+</script>
+{% endblock %}
