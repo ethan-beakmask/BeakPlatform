@@ -237,14 +237,14 @@ window.__LF_CONFIG = {
 
             <!-- 完整時間軸 -->
             <div class="lf-section">
-                <div class="lf-section-title">Full Event Timeline (<span x-text="data.timeline.length"></span> records)</div>
+                <div class="lf-section-title">Full Event Timeline (<span x-text="_timeline.length"></span> records)</div>
                 <div class="lf-scroll-table">
                     <table class="table table-sm lf-stats">
                         <thead>
                             <tr><th>#</th><th>Time</th><th>Type</th><th>Detail</th><th>Organization</th><th>Source IP</th><th>Path</th><th>Status</th><th>User-Agent</th></tr>
                         </thead>
                         <tbody>
-                            <template x-for="(r, idx) in data.timeline" :key="idx">
+                            <template x-for="(r, idx) in _timeline" :key="idx">
                                 <tr>
                                     <td x-text="idx + 1"></td>
                                     <td class="lf-mono" style="white-space:nowrap" x-text="r.time"></td>
@@ -265,7 +265,7 @@ window.__LF_CONFIG = {
             </div>
 
             <!-- 無資料 -->
-            <template x-if="data.summary.total === 0">
+            <template x-if="_summary.total === 0">
                 <div class="alert alert-success">此期間內無登入失敗記錄。</div>
             </template>
         </div>
