@@ -11,7 +11,7 @@ from datetime import date, datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 
-from ..security.decorators import admin_required
+from ..security.decorators import system_admin_required
 from ..services.module_builder_service import ModuleBuilderService
 from ..services.lookup_service import LookupService
 from ..models.module import Module
@@ -21,7 +21,7 @@ modules_web_bp = Blueprint('modules', __name__)
 
 
 @modules_web_bp.route('/')
-@admin_required
+@system_admin_required
 def list_modules():
     """
     模組列表頁面
@@ -82,7 +82,7 @@ def list_modules():
 
 
 @modules_web_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
+@system_admin_required
 def create_module():
     """新增模組頁面"""
     if request.method == 'POST':
@@ -122,7 +122,7 @@ def create_module():
 
 
 @modules_web_bp.route('/<secure_code>')
-@admin_required
+@system_admin_required
 def view_module(secure_code: str):
     """模組詳情頁面"""
     structure = ModuleBuilderService.get_module_structure(secure_code)
@@ -139,7 +139,7 @@ def view_module(secure_code: str):
 
 
 @modules_web_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
+@system_admin_required
 def edit_module(secure_code: str):
     """編輯模組頁面"""
     module = Module.query.filter_by(
@@ -182,7 +182,7 @@ def edit_module(secure_code: str):
 
 
 @modules_web_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
+@system_admin_required
 def delete_module(secure_code: str):
     """刪除模組"""
     module = Module.query.filter_by(

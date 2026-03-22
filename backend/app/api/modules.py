@@ -5,7 +5,7 @@ BeakMask Modules API
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from ..security.decorators import login_required, admin_required
+from ..security.decorators import login_required, system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.module_builder_service import ModuleBuilderService
 from ..models.module import Module
@@ -65,7 +65,7 @@ def get_module(secure_code: str):
 
 
 @modules_bp.route('', methods=['POST'])
-@admin_required
+@system_admin_required
 def create_module():
     """
     建立新模組 (No-Code Builder 入口)
@@ -138,7 +138,7 @@ def create_module():
 
 
 @modules_bp.route('/<secure_code>', methods=['PUT'])
-@admin_required
+@system_admin_required
 def update_module(secure_code: str):
     """
     更新模組基本資訊
@@ -172,7 +172,7 @@ def update_module(secure_code: str):
 
 
 @modules_bp.route('/<secure_code>', methods=['DELETE'])
-@admin_required
+@system_admin_required
 def delete_module(secure_code: str):
     """
     刪除模組

@@ -9,7 +9,7 @@ from flask_login import current_user
 from markupsafe import Markup
 
 from sqlalchemy import func
-from ..security.decorators import admin_required
+from ..security.decorators import system_admin_required
 from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
 from ..models.user import UserType
@@ -61,7 +61,7 @@ def flatten_menu_tree(items, depth=0):
 
 
 @menu_web_bp.route('/')
-@admin_required
+@system_admin_required
 def list_menu():
     """選單管理頁面"""
     root_items, _ = get_menu_tree()
@@ -222,7 +222,7 @@ def _build_trellis_data(root_items, permission_matrix, module_menu_codes):
 
 
 @menu_web_bp.route('/create', methods=['GET', 'POST'])
-@admin_required
+@system_admin_required
 def create_menu():
     """新增選單項目頁面"""
     root_items, _ = get_menu_tree()
@@ -329,7 +329,7 @@ def create_menu():
 
 
 @menu_web_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
-@admin_required
+@system_admin_required
 def edit_menu(secure_code: str):
     """編輯選單項目頁面"""
     item = MenuItem.query.filter_by(
@@ -439,7 +439,7 @@ def edit_menu(secure_code: str):
 
 
 @menu_web_bp.route('/<secure_code>/delete', methods=['POST'])
-@admin_required
+@system_admin_required
 def delete_menu(secure_code: str):
     """刪除選單項目"""
     item = MenuItem.query.filter_by(

@@ -532,6 +532,10 @@ class MenuService:
         """
         設定選單的用戶類型權限
 
+        [SEC-03] 儲存前即時驗證：
+        - 比對目標路由的 decorator，確保 user_type 組合不會比 decorator 更寬鬆
+        - 不一致時拒絕儲存並拋出 ValueError
+
         同時自動更新 is_shared 欄位：
         - 權限只給 1 種用戶類型 → is_shared = False
         - 權限給 2+ 種用戶類型 → is_shared = True
@@ -539,7 +543,15 @@ class MenuService:
         Args:
             menu_secure_code: 選單識別碼
             user_types: 允許的用戶類型列表
+
+        Raises:
+            ValueError: user_type 組合與路由 decorator 不一致
         """
+        # [SEC-03] 即時驗證: user_type 不能比路由 decorator 更寬鬆
+        menu_item = MenuItem.query.filter_by(secure_code=menu_secure_code).first()
+        if menu_item and menu_item.link_target and menu_item.link_type == 'route':
+            cls._validate_permission_consistency(menu_item, user_types)
+
         # 刪除現有權限
         MenuPermission.query.filter(
             MenuPermission.menu_secure_code == menu_secure_code
@@ -557,6 +569,81 @@ class MenuService:
         menu_item = MenuItem.query.filter_by(secure_code=menu_secure_code).first()
         if menu_item:
             menu_item.is_shared = len(user_types) > 1
+
+    # decorator flag → 允許的最寬 user_type 集合
+    _DECORATOR_ALLOWED_TYPES = {
+        'system_admin_required': {'SYSTEM_ADMIN'},
+        'admin_required': {'SYSTEM_ADMIN', 'ORG_ADMIN'},
+        'login_required': {'SYSTEM_ADMIN', 'ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL'},
+    }
+
+    # user_type 中文名稱 (用於錯誤訊息)
+    _USER_TYPE_LABELS = {
+        'SYSTEM_ADMIN': '系統管理員',
+        'ORG_ADMIN': '企業管理員',
+        'EMPLOYEE': '員工',
+        'EXTERNAL': '外部廠商',
+    }
+
+    # decorator 中文名稱 (用於錯誤訊息)
+    _DECORATOR_LABELS = {
+        'system_admin_required': '僅限系統管理員',
+        'admin_required': '僅限管理員（系統+企業）',
+        'login_required': '所有已登入用戶',
+    }
+
+    @classmethod
+    def _validate_permission_consistency(
+        cls,
+        menu_item: MenuItem,
+        user_types: List[str],
+    ) -> None:
+        """
+        [SEC-03] 即時驗證 user_type 與路由 decorator 一致性
+
+        如果新的 user_type 包含路由 decorator 不允許的類型，拒絕並拋出 ValueError。
+
+        Args:
+            menu_item: 選單項目
+            user_types: 欲設定的 user_type 列表
+
+        Raises:
+            ValueError: 權限與路由不一致
+        """
+        link_target = menu_item.link_target
+        if not link_target or link_target.startswith('/'):
+            return  # URL 路徑，非 Flask endpoint
+
+        from flask import current_app
+        view_func = current_app.view_functions.get(link_target)
+        if not view_func:
+            return  # 端點不存在（另外處理）
+
+        # 偵測 decorator
+        if getattr(view_func, '_module_access_required', False):
+            return  # 模組路由有獨立存取控制
+
+        decorator_name = None
+        for flag in ('system_admin_required', 'admin_required', 'login_required'):
+            if getattr(view_func, f'_{flag}', False):
+                decorator_name = flag
+                break
+
+        if not decorator_name:
+            return  # 無法偵測，跳過
+
+        allowed = cls._DECORATOR_ALLOWED_TYPES[decorator_name]
+        proposed = {str(ut) for ut in user_types}
+        overflow = proposed - allowed
+
+        if overflow:
+            overflow_labels = [cls._USER_TYPE_LABELS.get(t, t) for t in sorted(overflow)]
+            route_label = cls._DECORATOR_LABELS[decorator_name]
+            raise ValueError(
+                f'權限衝突：此選單指向的路由 ({link_target}) '
+                f'存取限制為「{route_label}」，'
+                f'無法授權給 {", ".join(overflow_labels)}'
+            )
 
     @classmethod
     def get_menu_permissions(cls, menu_secure_code: str) -> List[str]:

@@ -125,7 +125,7 @@
 <div x-data="menuRoleManager()" x-init="init()">
     <table class="info-table">
         <tr>
-            <th style="vertical-align:top;width:120px;">{{ _('已設定的角色') }}</th>
+            <th style="vertical-align:top;width:120px;">{{ _('被授權的角色') }}</th>
             <td>
                 <template x-if="assignedRoles.length > 0">
                     <table class="data-table bordered" style="margin:0;">
@@ -149,7 +149,7 @@
                         </tbody>
                     </table>
                 </template>
-                <p x-show="assignedRoles.length === 0" class="text-muted" style="margin:0;">{{ _('尚未設定角色需求（任何已登入用戶可存取）') }}</p>
+                <p x-show="assignedRoles.length === 0" class="text-muted" style="margin:0;">{{ _('尚未授權任何角色') }}</p>
             </td>
         </tr>
         <tr>

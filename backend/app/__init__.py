@@ -115,6 +115,10 @@ def create_app(config_name: str = None) -> Flask:
     def health_check():
         return {'status': 'healthy', 'service': 'beakplatform'}, 200
 
+    # SEC-03: 選單權限與路由裝飾器一致性審計
+    from .security.permission_audit import run_startup_audit
+    run_startup_audit(app)
+
     return app
 
 

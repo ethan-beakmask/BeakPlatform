@@ -338,10 +338,14 @@ def seed_menu_items(org, module):
         ('system_settings', '系統設定', 'route', 'admin.settings', 2, 1),
         ('users', '用戶管理', 'route', 'users.list_users', 3, 1),
         ('roles', '角色權限', 'route', 'roles.list_roles', 4, 1),
-        ('menu_manage', '選單管理', 'route', 'menu.list_menu', 5, 1),
         ('modules', '模組管理', 'route', 'modules.list_modules', 6, 1),
         ('organizations', '企業總覽', 'route', 'organizations.list_orgs', 7, 0),
     ]
+
+    # 選單管理僅在開發環境啟用
+    import os
+    if os.environ.get('MENU_ADMIN_ENABLED'):
+        menus_data.insert(5, ('menu_manage', '選單管理', 'route', 'menu.list_menu', 5, 0))
 
     menus = []
     for code, title, link_type, link_target, order, level in menus_data:

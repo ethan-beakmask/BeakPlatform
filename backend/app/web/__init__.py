@@ -99,8 +99,10 @@ def register_web_blueprints(app: Flask) -> None:
     # Profile pages
     app.register_blueprint(profile_bp, url_prefix='/profile')
 
-    # Menu management pages
-    app.register_blueprint(menu_web_bp, url_prefix='/menu')
+    # Menu management pages (requires MENU_ADMIN_ENABLED)
+    import os
+    if os.environ.get('MENU_ADMIN_ENABLED'):
+        app.register_blueprint(menu_web_bp, url_prefix='/menu')
 
     # Module management pages (No-Code Builder)
     app.register_blueprint(modules_web_bp, url_prefix='/modules')

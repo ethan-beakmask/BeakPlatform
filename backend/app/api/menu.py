@@ -2,14 +2,14 @@
 BeakMask Menu API
 選單管理 API
 """
-from flask import Blueprint, jsonify, request
-from flask_login import current_user
-
+import os
 import logging
 
+from flask import Blueprint, jsonify, request, abort
+from flask_login import current_user
 from sqlalchemy import text
 
-from ..security.decorators import login_required, admin_required
+from ..security.decorators import login_required, system_admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.menu_service import MenuService
 from ..services.page_role_guard import PageRoleGuard
@@ -20,6 +20,15 @@ from .. import db
 logger = logging.getLogger(__name__)
 
 menu_bp = Blueprint('api_menu', __name__)
+
+
+@menu_bp.before_request
+def _check_menu_admin_enabled():
+    """管理用 API 需要 MENU_ADMIN_ENABLED 環境變數，get_user_menu 例外"""
+    if request.endpoint == 'api_menu.get_user_menu':
+        return
+    if not os.environ.get('MENU_ADMIN_ENABLED'):
+        abort(404)
 
 
 @menu_bp.route('', methods=['GET'])
@@ -43,7 +52,7 @@ def get_user_menu():
 
 
 @menu_bp.route('/all', methods=['GET'])
-@admin_required
+@system_admin_required
 def get_all_menu_items():
     """
     取得企業內所有選單項目 (管理用)
@@ -65,7 +74,7 @@ def get_all_menu_items():
 
 
 @menu_bp.route('/tree', methods=['GET'])
-@admin_required
+@system_admin_required
 def get_menu_tree():
     """
     取得選單樹結構 (管理用，包含所有選單)
@@ -81,7 +90,7 @@ def get_menu_tree():
 
 
 @menu_bp.route('', methods=['POST'])
-@admin_required
+@system_admin_required
 def create_menu_item():
     """
     新增選單項目
@@ -134,7 +143,7 @@ def create_menu_item():
 
 
 @menu_bp.route('/<secure_code>', methods=['GET'])
-@admin_required
+@system_admin_required
 def get_menu_item(secure_code: str):
     """
     取得單一選單項目
@@ -147,7 +156,7 @@ def get_menu_item(secure_code: str):
 
 
 @menu_bp.route('/<secure_code>', methods=['PUT'])
-@admin_required
+@system_admin_required
 def update_menu_item(secure_code: str):
     """
     更新選單項目
@@ -187,7 +196,7 @@ def update_menu_item(secure_code: str):
 
 
 @menu_bp.route('/<secure_code>', methods=['DELETE'])
-@admin_required
+@system_admin_required
 def delete_menu_item(secure_code: str):
     """
     刪除選單項目
@@ -210,7 +219,7 @@ def delete_menu_item(secure_code: str):
 
 
 @menu_bp.route('/reorder', methods=['POST'])
-@admin_required
+@system_admin_required
 def reorder_menu():
     """
     重新排序選單項目
@@ -234,7 +243,7 @@ def reorder_menu():
 
 
 @menu_bp.route('/move/<secure_code>', methods=['POST'])
-@admin_required
+@system_admin_required
 def move_menu_item(secure_code: str):
     """
     移動選單項目到新的父節點
@@ -285,7 +294,7 @@ def move_menu_item(secure_code: str):
 # =============================================================================
 
 @menu_bp.route('/<secure_code>/roles', methods=['GET'])
-@admin_required
+@system_admin_required
 def get_menu_roles(secure_code: str):
     """
     取得選單項目的角色需求
@@ -397,7 +406,7 @@ def get_menu_roles(secure_code: str):
 
 
 @menu_bp.route('/<secure_code>/roles', methods=['PUT'])
-@admin_required
+@system_admin_required
 def set_menu_roles(secure_code: str):
     """
     設定選單項目的角色需求（全量替換）
