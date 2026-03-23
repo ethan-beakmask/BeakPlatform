@@ -51,13 +51,15 @@ def module_info():
 @api_bp.route('/db-info')
 @module_access_required('nocode_builder')
 def db_info():
-    """取得當前連線的資料庫資訊"""
-    from ..services.db_connector import get_db_display_name
+    """取得當前連線的資料庫資訊（支援 ?source=org|conglomerate）"""
+    from ..services.db_connector import get_db_display_name, check_cg_available
+    source = request.args.get('source', 'org')
     return jsonify({
         'success': True,
         'data': {
-            'db_name': get_db_display_name(),
+            'db_name': get_db_display_name(data_source=source),
             'is_system_admin': current_user.is_system_admin,
+            'cg_info': check_cg_available(),
         }
     })
 
@@ -69,14 +71,16 @@ def db_info():
 @api_bp.route('/schema/tables')
 @module_access_required('nocode_builder')
 def list_tables():
-    """列出可用資料表"""
+    """列出可用資料表（支援 ?source=org|conglomerate）"""
     from ..services.schema_service import SchemaService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+
+    source = request.args.get('source', 'org')
 
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(data_source=source) as conn:
             tables = SchemaService.list_tables(conn)
-    except OrgDatabaseNotFound as e:
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': tables})
@@ -85,17 +89,19 @@ def list_tables():
 @api_bp.route('/schema/tables/<table_name>/columns')
 @module_access_required('nocode_builder')
 def get_table_columns(table_name):
-    """取得指定表的欄位"""
+    """取得指定表的欄位（支援 ?source=org|conglomerate）"""
     from ..services.schema_service import SchemaService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     if not IDENTIFIER_RE.match(table_name):
         return jsonify({'success': False, 'error': 'Invalid table name'}), 400
 
+    source = request.args.get('source', 'org')
+
     try:
-        with get_data_conn() as conn:
+        with get_data_conn(data_source=source) as conn:
             columns = SchemaService.get_columns(conn, table_name)
-    except OrgDatabaseNotFound as e:
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if columns is None:
@@ -152,6 +158,10 @@ def create_view():
     if not IDENTIFIER_RE.match(table_name):
         return jsonify({'success': False, 'error': 'Invalid table name'}), 400
 
+    data_source = data.get('data_source', 'org')
+    if data_source not in ('org', 'conglomerate'):
+        return jsonify({'success': False, 'error': 'Invalid data_source'}), 400
+
     view = ResourceGateway.create(
         DcCrudView,
         check_permission=False,
@@ -168,6 +178,7 @@ def create_view():
         page_size=data.get('page_size', 20),
         fixed_filters=data.get('fixed_filters', {}),
         is_active=data.get('is_active', True),
+        data_source=data_source,
     )
     ResourceGateway.commit()
 
@@ -225,7 +236,7 @@ def update_view(secure_code):
         'name', 'description', 'columns_config',
         'allow_create', 'allow_edit', 'allow_delete',
         'soft_delete_column', 'default_sort_column', 'default_sort_dir',
-        'page_size', 'fixed_filters', 'is_active',
+        'page_size', 'fixed_filters', 'is_active', 'data_source',
     ]
     for field in allowed_fields:
         if field in data:
@@ -554,7 +565,7 @@ def query_rows(secure_code):
     """查詢視圖資料（分頁）"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -585,7 +596,7 @@ def query_rows(secure_code):
                 dynamic_filters[col_name] = request.args.get(key)
 
     try:
-        with get_data_conn(view.org_secure_code) as conn:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
             result = CrudService.query_rows(
                 conn=conn,
                 view=view,
@@ -596,7 +607,7 @@ def query_rows(secure_code):
                 sort_dir=sort_dir,
                 dynamic_filters=dynamic_filters,
             )
-    except OrgDatabaseNotFound as e:
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': result})
@@ -608,7 +619,7 @@ def get_row(secure_code, row_id):
     """取得單筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -619,9 +630,9 @@ def get_row(secure_code, row_id):
         return jsonify({'success': False, 'error': 'View not found'}), 404
 
     try:
-        with get_data_conn(view.org_secure_code) as conn:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
             result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
-    except OrgDatabaseNotFound as e:
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -636,7 +647,7 @@ def create_row(secure_code):
     """新增一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -656,9 +667,12 @@ def create_row(secure_code):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn(view.org_secure_code) as conn:
-            result = CrudService.create_row(conn=conn, view=view, row_data=data)
-    except OrgDatabaseNotFound as e:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            result = CrudService.create_row(
+                conn=conn, view=view, row_data=data,
+                is_conglomerate=(view.data_source == 'conglomerate'),
+            )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -673,7 +687,7 @@ def update_row(secure_code, row_id):
     """更新一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -693,9 +707,12 @@ def update_row(secure_code, row_id):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn(view.org_secure_code) as conn:
-            result = CrudService.update_row(conn=conn, view=view, row_id=row_id, row_data=data)
-    except OrgDatabaseNotFound as e:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            result = CrudService.update_row(
+                conn=conn, view=view, row_id=row_id, row_data=data,
+                is_conglomerate=(view.data_source == 'conglomerate'),
+            )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -710,7 +727,7 @@ def delete_row(secure_code, row_id):
     """刪除一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -729,9 +746,12 @@ def delete_row(secure_code, row_id):
         return jsonify({'success': False, 'error': 'Delete not allowed'}), 403
 
     try:
-        with get_data_conn(view.org_secure_code) as conn:
-            result = CrudService.delete_row(conn=conn, view=view, row_id=row_id)
-    except OrgDatabaseNotFound as e:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
+            result = CrudService.delete_row(
+                conn=conn, view=view, row_id=row_id,
+                is_conglomerate=(view.data_source == 'conglomerate'),
+            )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:

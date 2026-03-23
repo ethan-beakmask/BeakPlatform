@@ -54,7 +54,10 @@
                 <template x-for="v in views" :key="v.secure_code">
                     <tr>
                         <td style="font-weight: 500;" x-text="v.name"></td>
-                        <td style="font-family: monospace; color: #666; font-size: 12px;" x-text="v.table_name"></td>
+                        <td style="font-family: monospace; color: #666; font-size: 12px;">
+                            <span x-text="v.table_name"></span>
+                            <span x-show="v.data_source === 'conglomerate'" style="display: inline-block; padding: 0 4px; font-size: 10px; background: #e8f4fd; color: #0b6faa; border-radius: 2px; font-family: sans-serif;">集團</span>
+                        </td>
                         <td style="color: #666;" x-text="truncate(v.description, 40)"></td>
                         <td><span class="dc-badge" :class="v.allow_create ? 'yes' : 'no'" x-text="v.allow_create ? 'Y' : 'N'"></span></td>
                         <td><span class="dc-badge" :class="v.allow_edit ? 'yes' : 'no'" x-text="v.allow_edit ? 'Y' : 'N'"></span></td>

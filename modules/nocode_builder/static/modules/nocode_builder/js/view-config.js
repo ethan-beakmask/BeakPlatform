@@ -11,6 +11,7 @@ function viewConfigManager() {
         tables: [],
         columns: [],
         dbName: '',
+        cgInfo: { available: false, conglomerate_name: null, db_name: null },
         loadingCols: false,
         saving: false,
         lookupCategories: [],
@@ -28,6 +29,7 @@ function viewConfigManager() {
             default_sort_column: '',
             default_sort_dir: 'ASC',
             soft_delete_column: '',
+            data_source: 'org',
         },
 
         async init() {
@@ -41,10 +43,12 @@ function viewConfigManager() {
 
         async loadDbInfo() {
             try {
-                const res = await fetch('/api/nocode-builder/db-info');
+                const source = this.form.data_source || 'org';
+                const res = await fetch('/api/nocode-builder/db-info?source=' + source);
                 const data = await res.json();
                 if (data.success) {
                     this.dbName = data.data.db_name || '';
+                    this.cgInfo = data.data.cg_info || { available: false };
                 }
             } catch (e) {
                 console.error('Load db info failed:', e);
@@ -53,7 +57,8 @@ function viewConfigManager() {
 
         async loadTables() {
             try {
-                const res = await fetch('/api/nocode-builder/schema/tables');
+                const source = this.form.data_source || 'org';
+                const res = await fetch('/api/nocode-builder/schema/tables?source=' + source);
                 const data = await res.json();
                 if (data.success) {
                     this.tables = data.data || [];
@@ -61,6 +66,14 @@ function viewConfigManager() {
             } catch (e) {
                 console.error('Load tables failed:', e);
             }
+        },
+
+        async onDataSourceChange() {
+            // 切換資料來源時，清空已選表和欄位，重新載入表清單
+            this.form.table_name = '';
+            this.columns = [];
+            await this.loadDbInfo();
+            await this.loadTables();
         },
 
         async loadLookupCategories() {
@@ -92,6 +105,11 @@ function viewConfigManager() {
                     this.form.default_sort_column = v.default_sort_column || '';
                     this.form.default_sort_dir = v.default_sort_dir || 'ASC';
                     this.form.soft_delete_column = v.soft_delete_column || '';
+                    this.form.data_source = v.data_source || 'org';
+
+                    // 重新載入 DB info 與表清單（依 data_source）
+                    await this.loadDbInfo();
+                    await this.loadTables();
 
                     // 載入欄位，然後 merge 已存的 config
                     await this.loadColumns(v.table_name);
@@ -120,7 +138,8 @@ function viewConfigManager() {
         async loadColumns(tableName) {
             this.loadingCols = true;
             try {
-                const res = await fetch(`/api/nocode-builder/schema/tables/${tableName}/columns`);
+                const source = this.form.data_source || 'org';
+                const res = await fetch(`/api/nocode-builder/schema/tables/${tableName}/columns?source=${source}`);
                 const data = await res.json();
                 if (data.success) {
                     this.columns = (data.data || []).map((col, idx) => {
@@ -221,6 +240,7 @@ function viewConfigManager() {
                 default_sort_column: this.form.default_sort_column || null,
                 default_sort_dir: this.form.default_sort_dir,
                 soft_delete_column: this.form.soft_delete_column || null,
+                data_source: this.form.data_source,
             };
 
             this.saving = true;

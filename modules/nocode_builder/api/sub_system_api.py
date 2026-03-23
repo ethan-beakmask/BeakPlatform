@@ -397,6 +397,192 @@ def get_page_permission_context(ss_sc, ssp_sc):
 
 
 # =============================================================================
+# 資料來源 API (Studio 設計用)
+# =============================================================================
+
+@api_bp.route('/sub-systems/<secure_code>/data-sources')
+@module_access_required('nocode_builder')
+def list_data_sources(secure_code):
+    """
+    列出子系統可用的資料來源
+
+    固定回傳企業 DB（若已建立）+ 集團 DB（若企業屬於集團且有共享 DB）。
+    未來可擴充 ODBC 等自訂來源。
+    """
+    from ..models import DcSubSystem
+    from ..services.db_connector import check_cg_available
+
+    ss = ResourceGateway.get(
+        DcSubSystem, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    org_sc = ss.org_secure_code
+    sources = []
+
+    # 企業 DB
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+    org_db = FwOrgDatabase.query.filter_by(
+        org_secure_code=org_sc,
+        is_ready=True,
+        is_deleted=False,
+    ).first()
+    sources.append({
+        'key': 'org',
+        'label': '企業資料庫',
+        'db_name': org_db.db_name if org_db else None,
+        'available': bool(org_db),
+    })
+
+    # 集團 DB
+    cg_info = check_cg_available(org_sc)
+    sources.append({
+        'key': 'conglomerate',
+        'label': '集團共享資料庫' + (
+            f' ({cg_info["conglomerate_name"]})' if cg_info.get('conglomerate_name') else ''
+        ),
+        'db_name': cg_info.get('db_name'),
+        'available': cg_info.get('available', False),
+    })
+
+    return jsonify({'success': True, 'data': sources})
+
+
+@api_bp.route('/sub-systems/<secure_code>/data-sources/<source_key>/tables')
+@module_access_required('nocode_builder')
+def list_source_tables(secure_code, source_key):
+    """
+    列出指定資料來源下的可用表
+
+    source_key: 'org' 或 'conglomerate'
+    """
+    from ..models import DcSubSystem
+    from ..services.schema_service import SchemaService
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+
+    if source_key not in ('org', 'conglomerate'):
+        return jsonify({'success': False, 'error': f'Unknown source: {source_key}'}), 400
+
+    ss = ResourceGateway.get(
+        DcSubSystem, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    try:
+        with get_data_conn(ss.org_secure_code, data_source=source_key) as conn:
+            tables = SchemaService.list_tables(conn)
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    return jsonify({'success': True, 'data': tables})
+
+
+@api_bp.route('/sub-systems/<secure_code>/resolve-view', methods=['POST'])
+@csrf.exempt
+@module_access_required('nocode_builder')
+def resolve_view(secure_code):
+    """
+    為指定的資料來源+表取得或自動建立 View
+
+    Body: { "data_source": "org|conglomerate", "table_name": "xxx" }
+
+    邏輯:
+    1. 找同 org + table_name + data_source 的既有 active view -> 回傳
+    2. 沒有 -> 自動建立 (讀表結構生成 columns_config) -> 回傳
+    """
+    from ..models import DcSubSystem, DcCrudView
+    from ..services.schema_service import SchemaService
+    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+
+    ss = ResourceGateway.get(
+        DcSubSystem, secure_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    data = request.get_json() or {}
+    data_source = data.get('data_source', 'org')
+    table_name = data.get('table_name', '').strip()
+
+    if data_source not in ('org', 'conglomerate'):
+        return jsonify({'success': False, 'error': 'Invalid data_source'}), 400
+    if not table_name:
+        return jsonify({'success': False, 'error': 'table_name is required'}), 400
+
+    org_sc = ss.org_secure_code
+
+    # 1. 找既有 view
+    existing = DcCrudView.query.filter_by(
+        org_secure_code=org_sc,
+        table_name=table_name,
+        data_source=data_source,
+        is_deleted=False,
+    ).first()
+    if existing:
+        return jsonify({'success': True, 'data': existing.to_dict(), 'created': False})
+
+    # 2. 讀表結構 -> 自動建
+    try:
+        with get_data_conn(org_sc, data_source=data_source) as conn:
+            columns = SchemaService.get_columns(conn, table_name)
+    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    if columns is None:
+        return jsonify({'success': False, 'error': f'Table {table_name} not found'}), 404
+
+    # 生成 columns_config
+    columns_config = []
+    has_is_deleted = False
+    for i, c in enumerate(columns):
+        is_sys = c.get('is_system', False)
+        is_pk = c.get('is_pk', False)
+        if c['column'] == 'is_deleted':
+            has_is_deleted = True
+        columns_config.append({
+            'column': c['column'],
+            'db_type': c['db_type'],
+            'nullable': c.get('nullable', True),
+            'is_pk': is_pk,
+            'is_system': is_sys,
+            'system_reason': c.get('system_reason'),
+            'label': c.get('comment') or c['column'],
+            'visible': not is_sys,
+            'visible_in_form': not is_pk and not is_sys,
+            'readonly': is_sys or is_pk,
+            'sort_order': i + 1,
+            'width': 150,
+            'lookup_category_code': None,
+        })
+
+    view = ResourceGateway.create(
+        DcCrudView,
+        check_permission=False,
+        name=table_name,
+        table_name=table_name,
+        description='',
+        columns_config=columns_config,
+        data_source=data_source,
+        soft_delete_column='is_deleted' if has_is_deleted else None,
+        allow_create=True,
+        allow_edit=True,
+        allow_delete=True,
+        is_active=True,
+    )
+    ResourceGateway.commit()
+
+    return jsonify({'success': True, 'data': view.to_dict(), 'created': True})
+
+
+# =============================================================================
 # 內部輔助函式
 # =============================================================================
 

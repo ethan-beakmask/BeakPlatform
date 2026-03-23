@@ -1,10 +1,10 @@
 """
 Data CRUD Module - DB Connector
-根據視圖的 org_secure_code 取得企業專屬資料庫連線
+根據視圖的 data_source 路由到正確的資料庫連線
 
 路由策略:
-  視圖綁定的 org_secure_code → 企業專屬資料庫 (org_{org_id})
-  無論當前用戶是系統管理員或企業用戶，SQL Sync 表都在企業 DB。
+  data_source='org'           → 企業專屬資料庫 (org_{org_id})
+  data_source='conglomerate'  → 集團共享資料庫 (cg_{cg_id})，member 角色 + RLS
 """
 import logging
 from contextlib import contextmanager
@@ -19,23 +19,36 @@ class OrgDatabaseNotFound(Exception):
     pass
 
 
+class CgDatabaseNotFound(Exception):
+    """集團尚未建立共享資料庫，或企業不屬於任何集團"""
+    pass
+
+
 @contextmanager
-def get_data_conn(org_secure_code=None):
+def get_data_conn(org_secure_code=None, data_source='org'):
     """
     取得目標資料庫連線（context manager）
-
-    統一透過 form_workflow pool 連企業 DB，與 SQL Sync 使用相同路徑。
 
     Args:
         org_secure_code: 視圖綁定的企業代碼。
             若未指定，使用當前用戶的 org_secure_code。
+        data_source: 'org' = 企業 DB, 'conglomerate' = 集團共享 DB
 
     Usage:
-        with get_data_conn(view.org_secure_code) as conn:
+        with get_data_conn(view.org_secure_code, view.data_source) as conn:
             with conn.cursor() as cur:
                 cur.execute(...)
     """
     org_sc = org_secure_code or current_user.org_secure_code
+
+    if data_source == 'conglomerate':
+        yield from _get_cg_data_conn(org_sc)
+    else:
+        yield from _get_org_data_conn(org_sc)
+
+
+def _get_org_data_conn(org_sc):
+    """企業 DB 連線"""
     try:
         from modules.form_workflow.services.sql_sync.pool import get_org_conn
         with get_org_conn(org_sc, role='sync') as conn:
@@ -48,9 +61,49 @@ def get_data_conn(org_secure_code=None):
         raise
 
 
-def get_db_display_name(org_secure_code=None):
+def _get_cg_data_conn(org_sc):
+    """集團共享 DB 連線（member 角色，RLS 自動生效）"""
+    from app.models.organization import Organization
+    try:
+        org = Organization.query.filter_by(
+            secure_code=org_sc,
+            is_deleted=False,
+        ).first()
+    except Exception:
+        org = None
+
+    if not org:
+        raise CgDatabaseNotFound(f'找不到企業 {org_sc}')
+
+    cg_sc = getattr(org, 'conglomerate_secure_code', None)
+    if not cg_sc:
+        raise CgDatabaseNotFound(
+            f'企業 {org_sc} 不屬於任何集團，無法存取集團共享資料庫'
+        )
+
+    try:
+        from modules.form_workflow.services.sql_sync.pool import get_cg_conn
+        with get_cg_conn(cg_sc, role='member', org_secure_code=org_sc) as conn:
+            yield conn
+    except RuntimeError as e:
+        if '找不到集團' in str(e):
+            raise CgDatabaseNotFound(
+                f'集團 {cg_sc} 尚未建立共享資料庫，請聯繫系統管理員'
+            )
+        raise
+
+
+def get_db_display_name(org_secure_code=None, data_source='org'):
     """取得目前連線的資料庫顯示名稱（供 UI 顯示）"""
     org_sc = org_secure_code or current_user.org_secure_code
+
+    if data_source == 'conglomerate':
+        return _get_cg_db_display_name(org_sc)
+    return _get_org_db_display_name(org_sc)
+
+
+def _get_org_db_display_name(org_sc):
+    """企業 DB 顯示名稱"""
     try:
         from modules.form_workflow.models.org_database import FwOrgDatabase
         org_db = FwOrgDatabase.query.filter_by(
@@ -63,3 +116,76 @@ def get_db_display_name(org_secure_code=None):
         return '(尚未建立企業資料庫)'
     except Exception:
         return '(無法取得資料庫資訊)'
+
+
+def _get_cg_db_display_name(org_sc):
+    """集團 DB 顯示名稱"""
+    try:
+        from app.models.organization import Organization
+        org = Organization.query.filter_by(
+            secure_code=org_sc,
+            is_deleted=False,
+        ).first()
+        if not org or not org.conglomerate_secure_code:
+            return '(不屬於任何集團)'
+
+        from modules.form_workflow.models.conglomerate_database import (
+            FwConglomerateDatabase,
+        )
+        cg_db = FwConglomerateDatabase.query.filter_by(
+            conglomerate_secure_code=org.conglomerate_secure_code,
+            is_ready=True,
+            is_deleted=False,
+        ).first()
+        if cg_db:
+            return f'{cg_db.db_name} (集團共享資料庫)'
+        return '(集團尚未建立共享資料庫)'
+    except Exception:
+        return '(無法取得集團資料庫資訊)'
+
+
+def check_cg_available(org_secure_code=None):
+    """
+    檢查企業是否可使用集團共享 DB
+
+    Returns:
+        dict: {available: bool, conglomerate_name: str|None, db_name: str|None}
+    """
+    org_sc = org_secure_code or current_user.org_secure_code
+    try:
+        from app.models.organization import Organization
+        org = Organization.query.filter_by(
+            secure_code=org_sc,
+            is_deleted=False,
+        ).first()
+        if not org or not org.conglomerate_secure_code:
+            return {'available': False, 'conglomerate_name': None, 'db_name': None}
+
+        from app.models.conglomerate import Conglomerate
+        cg = Conglomerate.query.filter_by(
+            secure_code=org.conglomerate_secure_code,
+            is_deleted=False,
+        ).first()
+        if not cg or not cg.has_shared_db:
+            return {
+                'available': False,
+                'conglomerate_name': cg.name if cg else None,
+                'db_name': None,
+            }
+
+        from modules.form_workflow.models.conglomerate_database import (
+            FwConglomerateDatabase,
+        )
+        cg_db = FwConglomerateDatabase.query.filter_by(
+            conglomerate_secure_code=org.conglomerate_secure_code,
+            is_ready=True,
+            is_deleted=False,
+        ).first()
+        return {
+            'available': bool(cg_db),
+            'conglomerate_name': cg.name,
+            'db_name': cg_db.db_name if cg_db else None,
+        }
+    except Exception as e:
+        logger.warning('check_cg_available error: %s', e)
+        return {'available': False, 'conglomerate_name': None, 'db_name': None}

@@ -46,6 +46,8 @@ function studioManager() {
         selectedZoneId: null,
 
         // Widget settings
+        settingDataSource: '',
+        settingTableName: '',
         settingViewCode: '',
         settingTitle: '',
         settingPageSize: 10,
@@ -57,7 +59,13 @@ function studioManager() {
         settingContextOutputs: [],
         settingContextInputs: [],
 
-        // Available views
+        // Data sources & tables
+        dataSources: [],
+        sourceTables: [],
+        loadingTables: false,
+        resolvingView: false,
+
+        // Available views (for backward compat)
         availableViews: [],
 
         // Node form
@@ -90,11 +98,12 @@ function studioManager() {
                 this._loadTree(),
                 this._loadViews(),
                 this._loadPages(),
+                this._loadDataSources(),
             ]);
 
             this.loading = false;
 
-            this.$nextTick(function () {
+            this.$nextTick(() => {
                 this._initSiteMapTree();
             });
         },
@@ -149,6 +158,81 @@ function studioManager() {
                 if (data.success) this.pageList = data.data || [];
             } catch (e) {
                 console.error('Load pages failed:', e);
+            }
+        },
+
+        async _loadDataSources() {
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources');
+                var data = await res.json();
+                if (data.success) {
+                    // 只顯示 available 的來源
+                    this.dataSources = (data.data || []).filter(function (s) { return s.available; });
+                }
+            } catch (e) {
+                console.error('Load data sources failed:', e);
+            }
+        },
+
+        async onDataSourceChange() {
+            this.sourceTables = [];
+            this.settingTableName = '';
+            this.settingViewCode = '';
+            if (!this.settingDataSource) return;
+
+            this.loadingTables = true;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc +
+                    '/data-sources/' + this.settingDataSource + '/tables'
+                );
+                var data = await res.json();
+                if (data.success) this.sourceTables = data.data || [];
+            } catch (e) {
+                console.error('Load source tables failed:', e);
+            } finally {
+                this.loadingTables = false;
+            }
+        },
+
+        async onTableNameChange() {
+            this.settingViewCode = '';
+            if (!this.settingDataSource || !this.settingTableName) return;
+
+            this.resolvingView = true;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data_source: this.settingDataSource,
+                            table_name: this.settingTableName,
+                        }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.settingViewCode = data.data.secure_code;
+                    // 更新 availableViews 以便 getViewColumns 能找到
+                    var exists = this.availableViews.some(function (v) {
+                        return v.secure_code === data.data.secure_code;
+                    });
+                    if (!exists) {
+                        this.availableViews.push(data.data);
+                    }
+                    if (data.created) {
+                        this.showToast('已自動建立視圖配置', 'success');
+                    }
+                } else {
+                    this.showToast(data.error || '無法取得視圖', 'error');
+                }
+            } catch (e) {
+                console.error('Resolve view failed:', e);
+                this.showToast('視圖解析失敗', 'error');
+            } finally {
+                this.resolvingView = false;
             }
         },
 
@@ -552,7 +636,9 @@ function studioManager() {
         // Property Panel
         // ================================================================
 
-        _populateWidgetSettings: function (widgetConfig) {
+        _populateWidgetSettings: async function (widgetConfig) {
+            this.settingDataSource = widgetConfig.dataSource || '';
+            this.settingTableName = widgetConfig.tableName || '';
             this.settingViewCode = widgetConfig.viewCode || '';
             this.settingTitle = widgetConfig.title || '';
             this.settingPageSize = widgetConfig.pageSize || 10;
@@ -563,6 +649,13 @@ function studioManager() {
             this.settingAllowDelete = widgetConfig.allowDelete || false;
             this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
             this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
+
+            // 如果有 dataSource，載入該來源的表清單（回填用）
+            if (this.settingDataSource) {
+                await this.onDataSourceChange();
+                // 回填 tableName（onDataSourceChange 會清空）
+                this.settingTableName = widgetConfig.tableName || '';
+            }
         },
 
         getViewColumns: function () {
@@ -574,6 +667,8 @@ function studioManager() {
 
         applyWidgetSettings: function () {
             var widgetConfig = {
+                dataSource: this.settingDataSource,
+                tableName: this.settingTableName,
                 viewCode: this.settingViewCode,
                 title: this.settingTitle,
                 pageSize: parseInt(this.settingPageSize, 10) || 10,

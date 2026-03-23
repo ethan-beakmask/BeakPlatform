@@ -183,6 +183,19 @@ def _check_required_columns(conn, table_name: str, insert_data: dict) -> List[st
     return missing
 
 
+def _auto_fill_owner_org_code(insert_data: dict):
+    """
+    集團 DB 寫入時自動填入 owner_org_code（RLS 依據欄位）。
+    不覆蓋前端已提供的值（正常情況前端不會送此欄位）。
+    """
+    if 'owner_org_code' not in insert_data:
+        try:
+            from flask_login import current_user
+            insert_data['owner_org_code'] = current_user.org_secure_code
+        except RuntimeError:
+            pass
+
+
 def _auto_fill_system_columns(conn, table_name: str, insert_data: dict):
     """
     自動填入系統欄位（in-place 修改 insert_data）。
@@ -402,7 +415,8 @@ class CrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def create_row(conn, view, row_data: Dict) -> Dict[str, Any]:
+    def create_row(conn, view, row_data: Dict,
+                   is_conglomerate: bool = False) -> Dict[str, Any]:
         """新增一筆資料到目標表"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -419,6 +433,10 @@ class CrudService:
 
         if not insert_data:
             return {'success': False, 'error': 'No valid data provided'}
+
+        # 集團 DB: 自動填入 owner_org_code（RLS 必要欄位）
+        if is_conglomerate:
+            _auto_fill_owner_org_code(insert_data)
 
         # 自動填入系統欄位（如 form_instance_secure_code）
         _auto_fill_system_columns(conn, table_name, insert_data)
@@ -449,7 +467,8 @@ class CrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def update_row(conn, view, row_id: str, row_data: Dict) -> Dict[str, Any]:
+    def update_row(conn, view, row_id: str, row_data: Dict,
+                   is_conglomerate: bool = False) -> Dict[str, Any]:
         """更新一筆資料"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -467,6 +486,9 @@ class CrudService:
         for col in writable:
             if col in row_data:
                 update_data[col] = row_data[col]
+
+        # 禁止修改 owner_org_code（集團 DB RLS 欄位）
+        update_data.pop('owner_org_code', None)
 
         if not update_data:
             return {'success': False, 'error': 'No valid data provided'}
@@ -487,6 +509,12 @@ class CrudService:
                 cur.execute(query, values)
                 if cur.rowcount == 0:
                     conn.rollback()
+                    # 集團 DB: RLS 可能靜默拒絕非本企業的 row
+                    if is_conglomerate:
+                        return {
+                            'success': False,
+                            'error': '找不到資料，或該筆資料屬於其他企業無法修改',
+                        }
                     return {'success': False, 'error': 'Row not found'}
             conn.commit()
             return {'success': True, 'message': 'Row updated'}
@@ -496,7 +524,8 @@ class CrudService:
             return {'success': False, 'error': str(e)}
 
     @staticmethod
-    def delete_row(conn, view, row_id: str) -> Dict[str, Any]:
+    def delete_row(conn, view, row_id: str,
+                   is_conglomerate: bool = False) -> Dict[str, Any]:
         """刪除一筆資料（軟刪除或物理刪除）"""
         table_name = view.table_name
         if not _validate_identifier(table_name):
@@ -522,6 +551,11 @@ class CrudService:
                 cur.execute(query, (row_id,))
                 if cur.rowcount == 0:
                     conn.rollback()
+                    if is_conglomerate:
+                        return {
+                            'success': False,
+                            'error': '找不到資料，或該筆資料屬於其他企業無法刪除',
+                        }
                     return {'success': False, 'error': 'Row not found'}
             conn.commit()
             return {'success': True, 'message': 'Row deleted'}

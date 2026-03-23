@@ -27,6 +27,8 @@ class DcCrudView(ModuleBaseModel):
     page_size = Column(Integer, default=20, nullable=False)
     fixed_filters = Column(JSONB, default=dict, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
+    # 資料來源: 'org' = 企業 DB (預設), 'conglomerate' = 集團共享 DB
+    data_source = Column(String(20), default='org', nullable=False, server_default='org')
 
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典"""
@@ -45,5 +47,6 @@ class DcCrudView(ModuleBaseModel):
             'page_size': self.page_size,
             'fixed_filters': self.fixed_filters or {},
             'is_active': self.is_active,
+            'data_source': self.data_source or 'org',
         })
         return data

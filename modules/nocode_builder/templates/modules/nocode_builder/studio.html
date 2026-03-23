@@ -183,13 +183,32 @@
                     <div class="stu-panel-title">元件設定</div>
                     <div class="stu-props-body">
                         <div class="stu-field">
-                            <label>資料來源 (View)</label>
-                            <select x-model="settingViewCode">
-                                <option value="">-- 請選擇 --</option>
-                                <template x-for="v in availableViews" :key="v.secure_code">
-                                    <option :value="v.secure_code" x-text="v.name + ' (' + v.table_name + ')'"></option>
+                            <label>資料來源</label>
+                            <select x-model="settingDataSource" @change="onDataSourceChange()">
+                                <option value="">-- 選擇來源 --</option>
+                                <template x-for="ds in dataSources" :key="ds.key">
+                                    <option :value="ds.key" x-text="ds.label"></option>
                                 </template>
                             </select>
+                            <div x-show="dataSources.length === 0" style="margin-top: 4px; font-size: 11px; color: #999;">
+                                無可用資料來源
+                            </div>
+                        </div>
+                        <div class="stu-field" x-show="settingDataSource">
+                            <label>資料表</label>
+                            <select x-model="settingTableName" @change="onTableNameChange()"
+                                    :disabled="loadingTables">
+                                <option value="">-- 選擇資料表 --</option>
+                                <template x-for="t in sourceTables" :key="t.name">
+                                    <option :value="t.name" x-text="t.name + (t.comment ? ' (' + t.comment + ')' : '')"></option>
+                                </template>
+                            </select>
+                            <div x-show="loadingTables" style="font-size: 11px; color: #999;">載入中...</div>
+                            <div x-show="!loadingTables && settingDataSource && sourceTables.length === 0"
+                                 style="font-size: 11px; color: #999;">此來源無可用表</div>
+                        </div>
+                        <div x-show="resolvingView" style="font-size: 11px; color: #999; padding: 4px 0;">
+                            正在準備視圖配置...
                         </div>
                         <div class="stu-field">
                             <label>標題</label>

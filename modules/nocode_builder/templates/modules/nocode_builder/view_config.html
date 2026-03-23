@@ -19,7 +19,9 @@ window.__DC_CONFIG = {
     <div class="dc-header">
         <div>
             <h1 x-text="isEdit ? '編輯視圖: ' + form.name : '建立新視圖'"></h1>
-            <p>目標資料庫: <strong x-text="dbName" style="font-family: monospace;"></strong></p>
+            <p>目標資料庫: <strong x-text="dbName" style="font-family: monospace;"></strong>
+                <span x-show="form.data_source === 'conglomerate'" style="display: inline-block; padding: 1px 6px; font-size: 11px; background: #e8f4fd; color: #0b6faa; border-radius: 3px; margin-left: 6px;">集團共享</span>
+            </p>
         </div>
         <div class="dc-toolbar">
             <a href="/nocode-builder/" class="dc-btn">返回列表</a>
@@ -37,6 +39,14 @@ window.__DC_CONFIG = {
             <div class="dc-form-group" style="flex: 1;">
                 <label>視圖名稱 *</label>
                 <input type="text" x-model="form.name" placeholder="例: 使用者列表">
+            </div>
+            <div class="dc-form-group" style="width: 220px;">
+                <label>資料來源 *</label>
+                <select x-model="form.data_source" @change="onDataSourceChange()" :disabled="isEdit">
+                    <option value="org">企業資料庫</option>
+                    <option value="conglomerate" x-show="cgInfo.available" x-text="'集團: ' + (cgInfo.conglomerate_name || '共享資料庫')"></option>
+                </select>
+                <small x-show="!cgInfo.available" style="color: #999; font-size: 11px;">企業未加入集團或集團無共享 DB</small>
             </div>
             <div class="dc-form-group" style="flex: 1;">
                 <label>資料表 *</label>
