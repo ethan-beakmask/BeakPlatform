@@ -246,22 +246,7 @@ function siteMapPortal() {
                 var widgetConfig = item.widget;
                 if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
-
-                    // 套用節點 CRUD 覆蓋
-                    var crud = ctx.crud || {};
-                    if ('create' in crud) widgetConfig.allowCreate = crud.create;
-                    if ('edit' in crud) widgetConfig.allowEdit = crud.edit;
-                    if ('delete' in crud) widgetConfig.allowDelete = crud.delete;
-
-                    // 套用節點資料篩選
-                    var dataFilters = ctx.data_filters || {};
-                    if (Object.keys(dataFilters).length > 0) {
-                        widgetConfig._subSystemFilters = dataFilters;
-                    }
-
-                    // 注入 site map context headers
-                    widgetConfig._siteMapNodeSc = ctx.node_secure_code;
-                    widgetConfig._subSystemSc = self.subSystemSc;
+                    self._applyWidgetPermissions(widgetConfig, ctx);
 
                     var content = gsItem.querySelector('.grid-stack-item-content');
                     if (content) {
@@ -322,21 +307,7 @@ function siteMapPortal() {
                 if (widgetConfig && widgetConfig.viewCode) {
                     var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
                     widgetConfig.id = wid;
-
-                    // 套用 CRUD 覆蓋
-                    var crud = ctx.crud || {};
-                    if ('create' in crud) widgetConfig.allowCreate = crud.create;
-                    if ('edit' in crud) widgetConfig.allowEdit = crud.edit;
-                    if ('delete' in crud) widgetConfig.allowDelete = crud.delete;
-
-                    // 套用資料篩選
-                    var dataFilters = ctx.data_filters || {};
-                    if (Object.keys(dataFilters).length > 0) {
-                        widgetConfig._subSystemFilters = dataFilters;
-                    }
-
-                    widgetConfig._siteMapNodeSc = ctx.node_secure_code;
-                    widgetConfig._subSystemSc = self.subSystemSc;
+                    self._applyWidgetPermissions(widgetConfig, ctx);
 
                     var widget = new DataListWidget(cell, widgetConfig);
                     widget.init();
@@ -351,6 +322,84 @@ function siteMapPortal() {
             if (zones.length === 0) {
                 container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;">此頁面尚未配置佈局</div>';
             }
+        },
+
+        // ===== Widget 層級權限 (Phase 3) =====
+
+        /**
+         * 套用 widget 層級的 CRUD 權限和資料篩選
+         *
+         * 優先順序:
+         *   1. widget.rolePermissions[roleType] — widget 層級明確設定
+         *   2. ctx.crud / ctx.data_filters — 節點層級 (backward compat)
+         *   3. 管理層預設全權，其他角色預設唯讀
+         */
+        _applyWidgetPermissions(widgetConfig, ctx) {
+            var roleType = this.roleType;
+            var isAdmin = this.isAdmin;
+
+            // --- CRUD 權限 ---
+            var rolePerm = (widgetConfig.rolePermissions || {})[roleType];
+            if (rolePerm) {
+                // Widget 層級: 明確按角色設定
+                widgetConfig.allowCreate = !!rolePerm.create;
+                widgetConfig.allowEdit = !!rolePerm.edit;
+                widgetConfig.allowDelete = !!rolePerm.delete;
+            } else if (widgetConfig.rolePermissions) {
+                // rolePermissions 存在但無此角色的設定
+                if (isAdmin) {
+                    widgetConfig.allowCreate = true;
+                    widgetConfig.allowEdit = true;
+                    widgetConfig.allowDelete = true;
+                } else {
+                    widgetConfig.allowCreate = false;
+                    widgetConfig.allowEdit = false;
+                    widgetConfig.allowDelete = false;
+                }
+            } else {
+                // 無 rolePermissions → fallback 到節點層級
+                var crud = ctx.crud || {};
+                if ('create' in crud) widgetConfig.allowCreate = crud.create;
+                if ('edit' in crud) widgetConfig.allowEdit = crud.edit;
+                if ('delete' in crud) widgetConfig.allowDelete = crud.delete;
+            }
+
+            // --- 資料篩選 ---
+            var roleFilter = (widgetConfig.roleFilters || {})[roleType];
+            if (roleFilter && Object.keys(roleFilter).length > 0) {
+                // Widget 層級: 用 resolved_vars 替換變數
+                widgetConfig._subSystemFilters = this._resolveFilterVars(
+                    roleFilter, ctx.resolved_vars || {}
+                );
+            } else if (!widgetConfig.roleFilters) {
+                // 無 roleFilters → fallback 到節點層級
+                var dataFilters = ctx.data_filters || {};
+                if (Object.keys(dataFilters).length > 0) {
+                    widgetConfig._subSystemFilters = dataFilters;
+                }
+            }
+            // roleFilters 存在但無此角色 → 無額外篩選
+
+            // 注入 site map context headers
+            widgetConfig._siteMapNodeSc = ctx.node_secure_code;
+            widgetConfig._subSystemSc = this.subSystemSc;
+        },
+
+        /**
+         * 前端變數替換 (對應後端 resolve_filter_variables)
+         */
+        _resolveFilterVars(filters, resolvedVars) {
+            var result = {};
+            for (var col in filters) {
+                var val = filters[col];
+                if (typeof val === 'string' && val.charAt(0) === '$'
+                        && resolvedVars[val] !== undefined) {
+                    result[col] = resolvedVars[val];
+                } else {
+                    result[col] = val;
+                }
+            }
+            return result;
         },
 
         /**

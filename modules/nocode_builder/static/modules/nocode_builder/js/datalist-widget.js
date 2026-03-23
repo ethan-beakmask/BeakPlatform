@@ -539,6 +539,10 @@ class DataListWidget {
             headers['X-SubSystem-SSP'] = this.config._subSystemSspSc;
             headers['X-SubSystem-SC'] = this.config._subSystemSc;
         }
+        // Widget ID: 後端用來從 layout_json 定位 widget 做權限檢查
+        if (this.id) {
+            headers['X-Widget-Id'] = this.id;
+        }
         return headers;
     }
 

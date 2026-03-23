@@ -1047,10 +1047,12 @@ def _check_site_map_crud(sub_sc, node_sc, action):
     """
     Site Map 模式的 CRUD 權限檢查
 
-    從 DcSiteMapNode 取 crud_overrides 做檢查。
+    優先順序:
+    1. Widget 層級 rolePermissions (從 layout_json 中按 X-Widget-Id 定位)
+    2. 節點層級 crud_overrides (backward compat)
     """
     try:
-        from ..models import DcSubSystem
+        from ..models import DcSubSystem, DcPageLayout
         from ..services.sub_system_service import SubSystemService
         from ..services.site_map_service import SiteMapService
 
@@ -1069,6 +1071,22 @@ def _check_site_map_crud(sub_sc, node_sc, action):
         if not node:
             return jsonify({'success': False, 'error': 'Site map node not found'}), 404
 
+        # 嘗試 widget 層級權限檢查
+        widget_id = request.headers.get('X-Widget-Id', '').strip()
+        if widget_id and node.page_layout_secure_code:
+            widget_crud = _get_widget_role_crud(
+                node.page_layout_secure_code, widget_id, role_type,
+                SubSystemService.is_admin_role(role_type)
+            )
+            if widget_crud is not None:
+                if not widget_crud.get(action, False):
+                    return jsonify({
+                        'success': False,
+                        'error': f'您的角色 ({role_type}) 不允許此操作'
+                    }), 403
+                return None  # 通過
+
+        # Fallback: 節點層級 crud_overrides
         ctx = SiteMapService.get_node_context(node, role_type)
         crud = ctx.get('crud', {})
 
@@ -1082,6 +1100,46 @@ def _check_site_map_crud(sub_sc, node_sc, action):
     except Exception as e:
         logger.warning('Site map CRUD check error: %s', e)
         return None  # 檢查失敗時不阻擋
+
+
+def _get_widget_role_crud(page_layout_sc, widget_id, role_type, is_admin):
+    """
+    從 layout_json 中定位 widget，取得其 rolePermissions 對應角色的 CRUD 設定。
+
+    Returns:
+        dict: {'create': bool, 'edit': bool, 'delete': bool} 或 None (無法定位時)
+    """
+    from ..models import DcPageLayout
+
+    page = DcPageLayout.query.filter_by(
+        secure_code=page_layout_sc,
+        is_deleted=False,
+    ).first()
+    if not page:
+        return None
+
+    layout = page.layout_json or {}
+    widgets = layout.get('widgets', [])
+
+    # 在 widgets 中找到匹配的 widget
+    role_perms = None
+    for w in widgets:
+        wc = w.get('widget') or w
+        if wc.get('id') == widget_id and 'rolePermissions' in wc:
+            role_perms = wc['rolePermissions']
+            break
+
+    if role_perms is None:
+        return None  # widget 無 rolePermissions，呼叫端 fallback
+
+    perm = role_perms.get(role_type)
+    if perm:
+        return perm
+
+    # rolePermissions 存在但無此角色: 管理層全權，其他禁止
+    if is_admin:
+        return {'create': True, 'edit': True, 'delete': True}
+    return {'create': False, 'edit': False, 'delete': False}
 
 
 # =============================================================================

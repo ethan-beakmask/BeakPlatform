@@ -6,6 +6,7 @@ Admin API: 完整樹 CRUD + 權限管理
 User API: 用戶可見樹 + 節點 context
 """
 import logging
+from datetime import date
 
 from flask import jsonify, request
 from flask_login import current_user
@@ -383,6 +384,14 @@ def get_site_map_node_context(ss_sc, node_sc):
         context['data_filters'], current_user
     )
 
+    # 提供已解析的變數值，供前端解析 widget-level roleFilters
+    resolved_vars = {
+        '$CURRENT_USER': getattr(current_user, 'secure_code', ''),
+        '$CURRENT_USER_NAME': getattr(current_user, 'username', ''),
+        '$CURRENT_ORG': getattr(current_user, 'org_secure_code', ''),
+        '$TODAY': date.today().isoformat(),
+    }
+
     return jsonify({
         'success': True,
         'data': {
@@ -390,6 +399,7 @@ def get_site_map_node_context(ss_sc, node_sc):
             'is_admin': is_admin,
             'node_secure_code': node_sc,
             'page_layout_secure_code': node.page_layout_secure_code,
+            'resolved_vars': resolved_vars,
             **context,
         }
     })
