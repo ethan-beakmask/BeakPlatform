@@ -7,7 +7,7 @@
     <title>Studio 設計器 - BeakPlatform</title>
     <link rel="stylesheet" href="/static/css/themes.css">
     <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
+    <link rel="stylesheet" href="/static/vendor/beak-trellis/beak-tree.css">
     <link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
     <link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
     <link rel="stylesheet" href="/static/modules/nocode_builder/css/studio.css">
@@ -83,7 +83,7 @@
                     <div class="stu-panel-title"><i class="fas fa-sitemap"></i> Site Map</div>
                     <div class="stu-tree-toolbar">
                         <button class="stu-btn sm" @click="openAddNode()"><i class="fas fa-plus"></i> 節點</button>
-                        <button class="stu-btn sm" @click="openNodePerms()" :disabled="!selectedNode">權限</button>
+                        <button class="stu-btn sm" @click="openAccessRoles()" :disabled="!selectedNode">准入</button>
                         <button class="stu-btn sm danger" @click="deleteNode()" :disabled="!selectedNode">刪除</button>
                     </div>
                     <div class="stu-tree-wrap">
@@ -132,48 +132,35 @@
             <!-- Right Panel (Properties) -->
             <div class="stu-props" :class="{ 'stu-props-hidden': !showProps }">
 
-                <!-- Permissions mode -->
+                <!-- Access Roles mode -->
                 <template x-if="propsMode === 'perm'">
                     <div>
                         <div class="stu-panel-title">
-                            節點權限
+                            准入設定
                             <button class="stu-btn sm" @click="showProps = false" style="float:right;">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                         <div class="stu-props-body">
-                            <p class="stu-hint">白名單制：無記錄 = 所有人可見</p>
-                            <div class="stu-section-divider">已設定</div>
-                            <div x-show="nodePerms.length === 0" class="stu-hint">(無限制)</div>
-                            <template x-for="p in nodePerms" :key="p.secure_code">
-                                <div class="stu-perm-row">
-                                    <span class="stu-perm-type" x-text="p.target_type"></span>
-                                    <span class="stu-perm-name" x-text="p.target_name || p.target_secure_code"></span>
-                                    <button class="stu-btn sm danger" @click="removeNodePerm(p.secure_code)">x</button>
+                            <p class="stu-hint">勾選可進入此頁面的角色。未勾選任何角色 = 禁止所有人進入。</p>
+                            <div class="stu-section-divider">准入角色</div>
+                            <template x-for="role in accessRoleOptions" :key="role.value">
+                                <div class="stu-field-check">
+                                    <input type="checkbox"
+                                           :id="'ar-' + role.value"
+                                           :checked="editAccessRoles.indexOf(role.value) >= 0"
+                                           @change="toggleAccessRole(role.value, $event.target.checked)">
+                                    <label :for="'ar-' + role.value">
+                                        <span x-text="role.label"></span>
+                                        <span class="stu-hint" x-show="role.hint" x-text="role.hint" style="margin-left:4px;"></span>
+                                    </label>
                                 </div>
                             </template>
-                            <div class="stu-section-divider">新增</div>
-                            <div class="stu-field">
-                                <label>目標類型</label>
-                                <select x-model="permForm.target_type" @change="loadPermTargets()">
-                                    <option value="">-- 選擇 --</option>
-                                    <option value="ROLE">角色</option>
-                                    <option value="DEPARTMENT">部門</option>
-                                    <option value="GROUP">群組</option>
-                                    <option value="ACCOUNT">帳號</option>
-                                </select>
+                            <div class="stu-section-divider">目前狀態</div>
+                            <div class="stu-hint" x-text="accessRolesStatus()"></div>
+                            <div style="margin-top:12px;">
+                                <button class="stu-btn primary" @click="saveAccessRoles()">儲存</button>
                             </div>
-                            <div class="stu-field" x-show="permForm.target_type">
-                                <label>目標</label>
-                                <select x-model="permForm.target_sc">
-                                    <option value="">-- 選擇 --</option>
-                                    <template x-for="t in permTargets" :key="t.secure_code">
-                                        <option :value="t.secure_code" x-text="t.display_name || t.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <button class="stu-btn primary" @click="addNodePerm()"
-                                    :disabled="!permForm.target_type || !permForm.target_sc">新增權限</button>
                         </div>
                     </div>
                 </template>
@@ -334,7 +321,10 @@ window.__STUDIO_CONFIG = {
     subSystemSc: '{{ sub_system_sc }}',
 };
 </script>
-<script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="/static/vendor/beak-trellis/beak-tree.js"></script>
+<script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="/static/vendor/beak-trellis/beak-tree-drag.js"></script>
 <script src="/static/vendor/gridstack/gridstack-all.js"></script>
 <script src="/static/modules/nocode_builder/js/page-context.js"></script>
 <script src="/static/modules/nocode_builder/js/datalist-widget.js"></script>

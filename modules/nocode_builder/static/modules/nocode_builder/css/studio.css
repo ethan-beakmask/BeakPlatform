@@ -226,6 +226,41 @@ html, body {
     font-size: 13px;
 }
 
+/* BeakTree 在 Studio 側欄的微調 */
+.stu-tree-wrap .bk-tree-container {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+}
+.stu-tree-wrap .bk-tree-container .bt-row {
+    border-bottom: none;
+}
+.stu-tree-wrap .bk-tree-container .bt-row:hover {
+    background: #eef2ff;
+}
+.stu-tree-wrap .bk-tree-container .bt-td {
+    padding: 3px 4px;
+}
+.stu-tree-wrap .bk-tree-container .bt-tree-cell {
+    height: 20px;
+}
+.stu-tree-wrap .bk-tree-container .bt-toggle {
+    width: 18px;
+    height: 14px;
+    font-size: 10px;
+}
+.stu-tree-wrap .bk-tree-container .bt-leaf-spacer {
+    width: 22px;
+}
+
+/* 選取的節點列 */
+.stu-tree-wrap .stu-tree-selected {
+    background: #dbeafe;
+}
+.stu-tree-wrap .stu-tree-selected:hover {
+    background: #dbeafe;
+}
+
 /* -- Center Canvas -- */
 .stu-canvas {
     flex: 1;

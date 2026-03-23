@@ -6,7 +6,28 @@
  * 支援兩種佈局模式 (可在同頁面切換):
  *   - grid: 框架模式 (GridLayoutEditor, 16宮格矩陣)
  *   - free: 自由模式 (GridStack, 12欄拖放)
+ *
+ * Site Map 樹使用 BeakTree 元件 (lines-dom 渲染器 + 拖曳排序)
  */
+
+var SM_ROLES = ['GUEST', 'MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2', 'MEMBER'];
+var SM_ROLE_LABELS = {
+    GUEST: '訪客 (任何人)',
+    MANAGER: '管理者',
+    DEPUTY: '副管理者',
+    PROXY1: '代理人 1',
+    PROXY2: '代理人 2',
+    MEMBER: '成員',
+};
+var SM_ROLE_HINTS = {
+    GUEST: '含非成員',
+    MANAGER: '',
+    DEPUTY: '',
+    PROXY1: '',
+    PROXY2: '',
+    MEMBER: '',
+};
+
 function studioManager() {
     var config = window.__STUDIO_CONFIG || {};
 
@@ -26,7 +47,7 @@ function studioManager() {
 
         // Site Map
         tree: [],
-        _wbTree: null,
+        _bkTree: null,
         selectedNode: null,
 
         // Page layout
@@ -72,10 +93,11 @@ function studioManager() {
         showAddNodeModal: false,
         addNodeForm: { name: '', node_type: 'page', parent_sc: '' },
 
-        // Permissions
-        nodePerms: [],
-        permForm: { target_type: '', target_sc: '' },
-        permTargets: [],
+        // Access Roles (准入設定)
+        editAccessRoles: [],
+        accessRoleOptions: SM_ROLES.map(function (r) {
+            return { value: r, label: SM_ROLE_LABELS[r] || r, hint: SM_ROLE_HINTS[r] || '' };
+        }),
 
         // Pages list
         pageList: [],
@@ -166,7 +188,6 @@ function studioManager() {
                 var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources');
                 var data = await res.json();
                 if (data.success) {
-                    // 只顯示 available 的來源
                     this.dataSources = (data.data || []).filter(function (s) { return s.available; });
                 }
             } catch (e) {
@@ -215,7 +236,6 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.settingViewCode = data.data.secure_code;
-                    // 更新 availableViews 以便 getViewColumns 能找到
                     var exists = this.availableViews.some(function (v) {
                         return v.secure_code === data.data.secure_code;
                     });
@@ -244,10 +264,8 @@ function studioManager() {
             if (mode === this.editMode) return;
             if (!this.selectedNode || this.selectedNode.node_type !== 'page') return;
 
-            // 有佈局內容時確認
             var hasContent = false;
             if (this.editMode === 'grid' && this._gridEditor) {
-                var regions = this._gridEditor._getRegions();
                 hasContent = Object.keys(this._gridEditor.widgetMap).length > 0;
             } else if (this.editMode === 'free' && this._gsGrid) {
                 hasContent = Object.keys(this._gsWidgetConfigs).length > 0;
@@ -285,7 +303,7 @@ function studioManager() {
         },
 
         // ================================================================
-        // Site Map Tree
+        // Site Map Tree (BeakTree)
         // ================================================================
 
         _initSiteMapTree: function () {
@@ -294,60 +312,91 @@ function studioManager() {
 
             var source = this._treeToSource(this.tree);
 
-            if (this._wbTree) {
-                try { this._wbTree.destroy(); } catch (e) { /* ignore */ }
-                this._wbTree = null;
+            if (this._bkTree) {
+                try { this._bkTree.destroy(); } catch (e) { /* ignore */ }
+                this._bkTree = null;
             }
 
             var el = document.getElementById('stu-tree');
-            if (el) el.remove();
-            el = document.createElement('div');
-            el.id = 'stu-tree';
-            wrap.prepend(el);
+            if (el) el.innerHTML = '';
+            else {
+                el = document.createElement('div');
+                el.id = 'stu-tree';
+                wrap.prepend(el);
+            }
+
+            if (source.length === 0) return;
 
             var self = this;
-            this._wbTree = new mar10.Wunderbaum({
-                element: el,
-                source: source,
-                selectMode: 'single',
-                activate: function (e) {
-                    if (e.node) self._onTreeNodeActivate(e.node);
+            this._bkTree = new BeakTree(el, {
+                data: source,
+                treeMode: 'lines-dom',
+                draggable: true,
+                hideHeader: true,
+                onNodeClick: function (nodeId, node) {
+                    self._onBeakTreeNodeClick(nodeId, node);
                 },
-                dnd: {
-                    effectAllowed: 'move',
-                    dragStart: function (e) {
-                        e.event.dataTransfer.effectAllowed = 'move';
-                        return true;
-                    },
-                    dragEnter: function () { return true; },
-                    drop: function (e) {
-                        var src = e.sourceNode;
-                        var tgt = e.node;
-                        if (!src || !tgt) return;
-                        e.sourceNode.moveTo(tgt, e.suggestedDropMode);
-                        self._saveReorder();
-                    },
+                onNodeMoved: function (nodeId, newParentId, newIndex) {
+                    self._saveReorder();
                 },
             });
         },
 
+        /**
+         * API 樹資料 → BeakTree 格式
+         * { secure_code, name, icon, node_type, access_roles, ... }
+         * → { id, label, data, children }
+         */
         _treeToSource: function (nodes) {
             if (!nodes || nodes.length === 0) return [];
             var self = this;
             return nodes.map(function (n) {
                 return {
-                    title: (n.icon ? n.icon + ' ' : '') + n.name,
-                    key: n.secure_code,
-                    expanded: true,
-                    refRaw: JSON.parse(JSON.stringify(n)),
+                    id: n.secure_code,
+                    label: self._buildNodeLabel(n),
+                    data: JSON.parse(JSON.stringify(n)),
                     children: self._treeToSource(n.children || []),
-                    icon: false,
                 };
             });
         },
 
-        _onTreeNodeActivate: function (wbNode) {
-            var nodeData = (wbNode.data && wbNode.data.refRaw) || wbNode.data || {};
+        /**
+         * 組合節點顯示 label（含 icon + 名稱 + 准入 badge）
+         */
+        _buildNodeLabel: function (n) {
+            var parts = [];
+            if (n.icon) parts.push(n.icon);
+            parts.push(n.name);
+            // 准入 badge（僅 page 節點）
+            if (n.node_type === 'page') {
+                parts.push(this._accessBadgeText(n.access_roles));
+            }
+            return parts.join(' ');
+        },
+
+        /**
+         * 准入狀態文字 badge
+         */
+        _accessBadgeText: function (roles) {
+            if (!roles || roles.length === 0) return '[禁]';
+            if (roles.indexOf('GUEST') >= 0) return '[開放]';
+            return '[' + roles.length + '角色]';
+        },
+
+        /**
+         * BeakTree 節點點擊 → 選取節點並載入頁面
+         */
+        _onBeakTreeNodeClick: function (nodeId, bkNode) {
+            var nodeData = (bkNode && bkNode.data) ? bkNode.data : {};
+
+            // 高亮選取的列
+            if (this._bkTree && this._bkTree._tbodyEl) {
+                var old = this._bkTree._tbodyEl.querySelector('.stu-tree-selected');
+                if (old) old.classList.remove('stu-tree-selected');
+                var row = this._bkTree._tbodyEl.querySelector('tr[data-id="' + nodeId + '"]');
+                if (row) row.classList.add('stu-tree-selected');
+            }
+
             this._onTreeNodeSelect(nodeData);
         },
 
@@ -381,7 +430,6 @@ function studioManager() {
                 var layout = data.data.layout_json || {};
                 var detectedMode = this._detectMode(layout);
 
-                // 切換到頁面所儲存的模式
                 this.editMode = detectedMode;
                 this.dirty = false;
 
@@ -492,7 +540,6 @@ function studioManager() {
             var el = document.getElementById('stu-gridstack');
             if (!el) return;
 
-            // 銷毀既有 GridStack
             if (this._gsGrid) {
                 try { this._gsGrid.destroy(false); } catch (e) { /* ignore */ }
                 this._gsGrid = null;
@@ -600,11 +647,9 @@ function studioManager() {
         },
 
         _gsSelectItem: function (wid) {
-            // 清除所有選取
             document.querySelectorAll('.grid-stack-item.stu-gs-selected').forEach(function (el) {
                 el.classList.remove('stu-gs-selected');
             });
-            // 選取指定
             var el = document.querySelector('.grid-stack-item[gs-id="' + wid + '"]');
             if (el) el.classList.add('stu-gs-selected');
             this.selectedZoneId = wid;
@@ -650,10 +695,8 @@ function studioManager() {
             this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
             this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
 
-            // 如果有 dataSource，載入該來源的表清單（回填用）
             if (this.settingDataSource) {
                 await this.onDataSourceChange();
-                // 回填 tableName（onDataSourceChange 會清空）
                 this.settingTableName = widgetConfig.tableName || '';
             }
         },
@@ -771,7 +814,6 @@ function studioManager() {
                     parent_secure_code: this.addNodeForm.parent_sc || null,
                 };
 
-                // page 類型自動建立 page layout
                 if (this.addNodeForm.node_type === 'page') {
                     var emptyLayout = this.editMode === 'grid'
                         ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
@@ -833,17 +875,35 @@ function studioManager() {
             }
         },
 
+        /**
+         * 從 BeakTree 的 model 取得全部節點順序，送回後端 reorder
+         */
         async _saveReorder() {
-            if (!this._wbTree) return;
+            if (!this._bkTree) return;
+
+            var flatNodes = this._bkTree._flatNodes;
+            var nodeMap = this._bkTree._nodeMap;
             var ordered = [];
-            this._wbTree.visit(function (node) {
+
+            // 遍歷整棵樹（包括收合的節點），收集所有節點
+            function collectAll(nodeId) {
+                var node = nodeMap.get(nodeId);
+                if (!node) return;
                 ordered.push({
-                    secure_code: node.key,
-                    parent_secure_code: node.parent && !node.parent.isRootNode()
-                        ? node.parent.key : null,
+                    secure_code: node.id,
+                    parent_secure_code: node.parentId || null,
                     sort_order: ordered.length,
                 });
-            });
+                for (var i = 0; i < node.children.length; i++) {
+                    collectAll(node.children[i].id);
+                }
+            }
+
+            // 從根節點開始
+            var roots = this._bkTree.getRootNodes();
+            for (var i = 0; i < roots.length; i++) {
+                collectAll(roots[i].id);
+            }
 
             try {
                 await fetch(
@@ -923,97 +983,67 @@ function studioManager() {
         },
 
         // ================================================================
-        // Node Permissions
+        // Access Roles (准入設定)
         // ================================================================
 
-        async openNodePerms() {
+        openAccessRoles: function () {
             if (!this.selectedNode) return;
+            this.editAccessRoles = (this.selectedNode.access_roles || []).slice();
             this.propsMode = 'perm';
             this.showProps = true;
-            this.permForm = { target_type: '', target_sc: '' };
-            this.permTargets = [];
-            await this._loadNodePerms();
         },
 
-        async _loadNodePerms() {
+        toggleAccessRole: function (role, checked) {
+            if (role === 'GUEST' && checked) {
+                // GUEST 互斥：勾 GUEST 清除其他
+                this.editAccessRoles = ['GUEST'];
+            } else if (role === 'GUEST' && !checked) {
+                this.editAccessRoles = this.editAccessRoles.filter(function (r) { return r !== 'GUEST'; });
+            } else if (checked) {
+                // 勾選非 GUEST → 移除 GUEST
+                this.editAccessRoles = this.editAccessRoles.filter(function (r) { return r !== 'GUEST'; });
+                if (this.editAccessRoles.indexOf(role) < 0) {
+                    this.editAccessRoles.push(role);
+                }
+            } else {
+                this.editAccessRoles = this.editAccessRoles.filter(function (r) { return r !== role; });
+            }
+        },
+
+        accessRolesStatus: function () {
+            var roles = this.editAccessRoles;
+            if (!roles || roles.length === 0) return '禁止所有人進入 (NONE)';
+            if (roles.indexOf('GUEST') >= 0) return '開放 -- 任何人皆可進入';
+            return '限定 ' + roles.length + ' 個角色可進入: ' + roles.join(', ');
+        },
+
+        async saveAccessRoles() {
             if (!this.selectedNode) return;
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
-                    + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions'
-                );
-                var data = await res.json();
-                if (data.success) this.nodePerms = data.data || [];
-            } catch (e) {
-                console.error('Load node permissions failed:', e);
-            }
-        },
-
-        async loadPermTargets() {
-            var type = this.permForm.target_type;
-            this.permForm.target_sc = '';
-            this.permTargets = [];
-            if (!type) return;
+            var sc = this.selectedNode.secure_code;
 
             try {
                 var res = await fetch(
                     '/api/nocode-builder/sub-systems/' + this.subSystemSc
-                    + '/site-map/targets?type=' + type
-                );
-                var data = await res.json();
-                if (data.success) this.permTargets = data.data || [];
-            } catch (e) {
-                console.error('Load targets failed:', e);
-            }
-        },
-
-        async addNodePerm() {
-            if (!this.selectedNode || !this.permForm.target_type || !this.permForm.target_sc) return;
-
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
-                    + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
+                    + '/site-map/nodes/' + sc,
                     {
-                        method: 'POST',
+                        method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            target_type: this.permForm.target_type,
-                            target_secure_code: this.permForm.target_sc,
-                        }),
+                        body: JSON.stringify({ access_roles: this.editAccessRoles }),
                     }
                 );
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast('權限已新增', 'success');
-                    this.permForm.target_sc = '';
-                    await this._loadNodePerms();
+                    // 更新本地資料
+                    this.selectedNode.access_roles = this.editAccessRoles.slice();
+                    this.showToast('准入設定已儲存', 'success');
+                    // 重新載入樹以更新 badge
+                    await this._loadTree();
+                    this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || '新增失敗', 'error');
+                    this.showToast(data.error || '儲存失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
-            }
-        },
-
-        async removeNodePerm(permSc) {
-            if (!confirm('確定要移除此權限嗎?')) return;
-
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
-                    + '/site-map/permissions/' + permSc,
-                    { method: 'DELETE' }
-                );
-                var data = await res.json();
-                if (data.success) {
-                    this.showToast('權限已移除', 'success');
-                    await this._loadNodePerms();
-                } else {
-                    this.showToast(data.error || '移除失敗', 'error');
-                }
-            } catch (e) {
-                this.showToast('移除失敗: ' + e.message, 'error');
+                this.showToast('儲存失敗: ' + e.message, 'error');
             }
         },
 
