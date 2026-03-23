@@ -389,6 +389,11 @@ function studioManager() {
         _onBeakTreeNodeClick: function (nodeId, bkNode) {
             var nodeData = (bkNode && bkNode.data) ? bkNode.data : {};
 
+            // 未儲存變更提示
+            if (this.dirty && this.currentPageSc) {
+                if (!confirm('目前頁面有未儲存的變更，確定要切換嗎?')) return;
+            }
+
             // 高亮選取的列
             if (this._bkTree && this._bkTree._tbodyEl) {
                 var old = this._bkTree._tbodyEl.querySelector('.stu-tree-selected');
@@ -503,6 +508,7 @@ function studioManager() {
             if (!el) return;
 
             if (this._gridEditor) {
+                this._gridEditor.destroy();
                 this._gridEditor = null;
             }
             el.innerHTML = '';
@@ -698,6 +704,7 @@ function studioManager() {
             if (this.settingDataSource) {
                 await this.onDataSourceChange();
                 this.settingTableName = widgetConfig.tableName || '';
+                this.settingViewCode = widgetConfig.viewCode || '';
             }
         },
 
@@ -827,6 +834,9 @@ function studioManager() {
                     var pageData = await pageRes.json();
                     if (pageData.success) {
                         body.page_layout_secure_code = pageData.data.secure_code;
+                    } else {
+                        this.showToast(pageData.error || '建立頁面佈局失敗', 'error');
+                        return;
                     }
                 }
 

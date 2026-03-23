@@ -911,6 +911,21 @@ class GridLayoutEditor {
         this._fireChanged();
     }
 
+    /** Cleanup: remove document-level event listeners */
+    destroy() {
+        if (this._onMouseUpBound) {
+            document.removeEventListener('mouseup', this._onMouseUpBound);
+            this._onMouseUpBound = null;
+        }
+        if (this._onKeyDownBound) {
+            document.removeEventListener('keydown', this._onKeyDownBound);
+            this._onKeyDownBound = null;
+        }
+        this.onZoneSelect = null;
+        this.onWidgetSelect = null;
+        this.onChanged = null;
+    }
+
     // ===== Helpers =====
 
     _fireChanged() {
