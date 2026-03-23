@@ -80,6 +80,18 @@ function studioManager() {
         settingContextOutputs: [],
         settingContextInputs: [],
 
+        // Role permissions & filters
+        settingUseRolePerms: false,
+        settingRolePerms: {},       // { ROLE: { create:bool, edit:bool, delete:bool } }
+        settingRoleFilters: {},     // { ROLE: { column: value, ... } }
+        settingFilterRole: '',      // 目前正在編輯篩選的角色
+        settingFilterEntries: [],   // [{ key, value }] 目前角色的篩選條件
+
+        // Role permission matrix helpers
+        rolePermRoles: ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2', 'MEMBER', 'GUEST'],
+        roleLabels: SM_ROLE_LABELS,
+        filterVarOptions: ['$CURRENT_USER', '$CURRENT_USER_NAME', '$CURRENT_ORG', '$TODAY'],
+
         // Data sources & tables
         dataSources: [],
         sourceTables: [],
@@ -701,6 +713,17 @@ function studioManager() {
             this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
             this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
 
+            // Role permissions
+            var rp = widgetConfig.rolePermissions;
+            this.settingUseRolePerms = !!(rp && Object.keys(rp).length > 0);
+            this.settingRolePerms = rp ? JSON.parse(JSON.stringify(rp)) : {};
+
+            // Role filters
+            var rf = widgetConfig.roleFilters;
+            this.settingRoleFilters = rf ? JSON.parse(JSON.stringify(rf)) : {};
+            this.settingFilterRole = '';
+            this.settingFilterEntries = [];
+
             if (this.settingDataSource) {
                 await this.onDataSourceChange();
                 this.settingTableName = widgetConfig.tableName || '';
@@ -716,6 +739,9 @@ function studioManager() {
         },
 
         applyWidgetSettings: function () {
+            // 先存回目前正在編輯的篩選角色
+            this._saveFilterEntries();
+
             var widgetConfig = {
                 dataSource: this.settingDataSource,
                 tableName: this.settingTableName,
@@ -731,6 +757,37 @@ function studioManager() {
                 contextInputs: this.settingContextInputs,
             };
 
+            // Role permissions
+            if (this.settingUseRolePerms && Object.keys(this.settingRolePerms).length > 0) {
+                widgetConfig.rolePermissions = JSON.parse(JSON.stringify(this.settingRolePerms));
+            }
+
+            // Role filters (清理空條目)
+            var cleanFilters = {};
+            var self = this;
+            Object.keys(this.settingRoleFilters).forEach(function (role) {
+                var f = self.settingRoleFilters[role];
+                if (f && Object.keys(f).length > 0) {
+                    cleanFilters[role] = JSON.parse(JSON.stringify(f));
+                }
+            });
+            if (Object.keys(cleanFilters).length > 0) {
+                widgetConfig.roleFilters = cleanFilters;
+            }
+
+            // 取得目標 widget config，先清除需要移除的 key
+            var target = null;
+            if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
+                target = this._gridEditor.widgetMap[this.selectedZoneId];
+            } else if (this.editMode === 'free' && this.selectedZoneId) {
+                target = this._gsWidgetConfigs[this.selectedZoneId];
+            }
+            if (target) {
+                if (!this.settingUseRolePerms) delete target.rolePermissions;
+                if (Object.keys(cleanFilters).length === 0) delete target.roleFilters;
+            }
+
+            // 套用設定
             if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
                 this._gridEditor.updateWidget(this.selectedZoneId, widgetConfig);
             } else if (this.editMode === 'free' && this.selectedZoneId) {
@@ -795,6 +852,127 @@ function studioManager() {
         },
         removeContextInput: function (idx) {
             this.settingContextInputs.splice(idx, 1);
+        },
+
+        // ================================================================
+        // Role Permissions & Filters
+        // ================================================================
+
+        /**
+         * 啟用/停用依角色 CRUD 設定。啟用時以管理層全權、其他唯讀為預設值。
+         */
+        toggleRolePermMode: function (enabled) {
+            this.settingUseRolePerms = enabled;
+            if (enabled && Object.keys(this.settingRolePerms).length === 0) {
+                var adminRoles = ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'];
+                var perms = {};
+                for (var i = 0; i < this.rolePermRoles.length; i++) {
+                    var r = this.rolePermRoles[i];
+                    var isAdmin = adminRoles.indexOf(r) >= 0;
+                    perms[r] = {
+                        create: isAdmin,
+                        edit: isAdmin,
+                        'delete': isAdmin,
+                    };
+                }
+                this.settingRolePerms = perms;
+            }
+        },
+
+        /**
+         * 取得指定角色的指定 CRUD 權限值
+         */
+        getRolePerm: function (role, action) {
+            var rp = this.settingRolePerms[role];
+            return rp ? !!rp[action] : false;
+        },
+
+        /**
+         * 設定指定角色的指定 CRUD 權限值
+         */
+        setRolePerm: function (role, action, value) {
+            if (!this.settingRolePerms[role]) {
+                this.settingRolePerms[role] = { create: false, edit: false, 'delete': false };
+            }
+            this.settingRolePerms[role][action] = value;
+        },
+
+        /**
+         * 切換正在編輯的篩選角色，先存回上一個角色再載入新角色
+         */
+        selectFilterRole: function (role) {
+            // 存回目前角色
+            this._saveFilterEntries();
+            // 載入新角色
+            this.settingFilterRole = role;
+            if (role && this.settingRoleFilters[role]) {
+                var f = this.settingRoleFilters[role];
+                this.settingFilterEntries = Object.keys(f).map(function (k) {
+                    return { key: k, value: f[k] };
+                });
+            } else {
+                this.settingFilterEntries = [];
+            }
+        },
+
+        /**
+         * 將目前的 filterEntries 寫回 settingRoleFilters
+         */
+        _saveFilterEntries: function () {
+            if (!this.settingFilterRole) return;
+            var obj = {};
+            for (var i = 0; i < this.settingFilterEntries.length; i++) {
+                var e = this.settingFilterEntries[i];
+                var k = (e.key || '').trim();
+                var v = (e.value || '').trim();
+                if (k) obj[k] = v;
+            }
+            if (Object.keys(obj).length > 0) {
+                this.settingRoleFilters[this.settingFilterRole] = obj;
+            } else {
+                delete this.settingRoleFilters[this.settingFilterRole];
+            }
+        },
+
+        addFilterEntry: function () {
+            this.settingFilterEntries.push({ key: '', value: '' });
+        },
+
+        removeFilterEntry: function (idx) {
+            this.settingFilterEntries.splice(idx, 1);
+        },
+
+        /**
+         * 取得已設定篩選的角色摘要
+         */
+        getFilterSummary: function () {
+            var self = this;
+            var summary = [];
+            this.rolePermRoles.forEach(function (r) {
+                // 目前正在編輯的角色用 filterEntries 計算
+                if (r === self.settingFilterRole) {
+                    var cnt = self.settingFilterEntries.filter(function (e) {
+                        return (e.key || '').trim();
+                    }).length;
+                    if (cnt > 0) summary.push((SM_ROLE_LABELS[r] || r) + '(' + cnt + ')');
+                } else {
+                    var f = self.settingRoleFilters[r];
+                    if (f && Object.keys(f).length > 0) {
+                        summary.push((SM_ROLE_LABELS[r] || r) + '(' + Object.keys(f).length + ')');
+                    }
+                }
+            });
+            return summary.length > 0 ? summary.join(', ') : '(無)';
+        },
+
+        /**
+         * 清除指定角色的所有篩選
+         */
+        clearFilterRole: function (role) {
+            delete this.settingRoleFilters[role];
+            if (this.settingFilterRole === role) {
+                this.settingFilterEntries = [];
+            }
         },
 
         // ================================================================

@@ -216,17 +216,100 @@
                         </div>
                         <div class="stu-section-divider">CRUD 權限</div>
                         <div class="stu-field-check">
-                            <input type="checkbox" x-model="settingAllowCreate" id="stu-create">
-                            <label for="stu-create">允許新增</label>
+                            <input type="checkbox" id="stu-use-role-perms"
+                                   :checked="settingUseRolePerms"
+                                   @change="toggleRolePermMode($event.target.checked)">
+                            <label for="stu-use-role-perms">依角色設定</label>
                         </div>
-                        <div class="stu-field-check">
-                            <input type="checkbox" x-model="settingAllowEdit" id="stu-edit">
-                            <label for="stu-edit">允許編輯</label>
+
+                        <!-- 全域 CRUD (未啟用角色權限時) -->
+                        <div x-show="!settingUseRolePerms">
+                            <div class="stu-field-check">
+                                <input type="checkbox" x-model="settingAllowCreate" id="stu-create">
+                                <label for="stu-create">允許新增</label>
+                            </div>
+                            <div class="stu-field-check">
+                                <input type="checkbox" x-model="settingAllowEdit" id="stu-edit">
+                                <label for="stu-edit">允許編輯</label>
+                            </div>
+                            <div class="stu-field-check">
+                                <input type="checkbox" x-model="settingAllowDelete" id="stu-delete">
+                                <label for="stu-delete">允許刪除</label>
+                            </div>
                         </div>
-                        <div class="stu-field-check">
-                            <input type="checkbox" x-model="settingAllowDelete" id="stu-delete">
-                            <label for="stu-delete">允許刪除</label>
+
+                        <!-- 角色權限矩陣 (啟用角色權限時) -->
+                        <div x-show="settingUseRolePerms" class="stu-role-matrix">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>角色</th>
+                                        <th title="新增">C</th>
+                                        <th title="編輯">E</th>
+                                        <th title="刪除">D</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="role in rolePermRoles" :key="role">
+                                        <tr>
+                                            <td class="stu-rm-role" x-text="roleLabels[role] || role"></td>
+                                            <td><input type="checkbox"
+                                                       :checked="getRolePerm(role, 'create')"
+                                                       @change="setRolePerm(role, 'create', $event.target.checked)"></td>
+                                            <td><input type="checkbox"
+                                                       :checked="getRolePerm(role, 'edit')"
+                                                       @change="setRolePerm(role, 'edit', $event.target.checked)"></td>
+                                            <td><input type="checkbox"
+                                                       :checked="getRolePerm(role, 'delete')"
+                                                       @change="setRolePerm(role, 'delete', $event.target.checked)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <p class="stu-hint" style="margin-top:4px;">C=新增 E=編輯 D=刪除 (讀取恆開)</p>
                         </div>
+
+                        <!-- 角色資料篩選 -->
+                        <div class="stu-section-divider">角色資料篩選</div>
+                        <div class="stu-filter-section">
+                            <div class="stu-field" style="margin-bottom:6px;">
+                                <select @change="selectFilterRole($event.target.value)"
+                                        :value="settingFilterRole">
+                                    <option value="">-- 選擇角色 --</option>
+                                    <template x-for="role in rolePermRoles" :key="'f-'+role">
+                                        <option :value="role" x-text="roleLabels[role] || role"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <!-- 目前角色的篩選條件 -->
+                            <div x-show="settingFilterRole">
+                                <template x-for="(entry, idx) in settingFilterEntries" :key="'fe-'+idx">
+                                    <div class="stu-filter-row">
+                                        <input type="text" x-model="entry.key" placeholder="欄位名">
+                                        <span class="stu-filter-eq">=</span>
+                                        <input type="text" x-model="entry.value" placeholder="值 / $變數"
+                                               list="stu-filter-vars">
+                                        <button class="stu-btn sm danger" @click="removeFilterEntry(idx)">x</button>
+                                    </div>
+                                </template>
+                                <button class="stu-btn sm" @click="addFilterEntry()"
+                                        style="margin-top:4px;">+ 條件</button>
+                            </div>
+
+                            <!-- 變數提示 -->
+                            <datalist id="stu-filter-vars">
+                                <template x-for="v in filterVarOptions" :key="v">
+                                    <option :value="v"></option>
+                                </template>
+                            </datalist>
+
+                            <!-- 已設定篩選摘要 -->
+                            <div class="stu-hint" style="margin-top:8px;">
+                                已設定: <span x-text="getFilterSummary()"></span>
+                            </div>
+                        </div>
+
                         <div class="stu-section-divider">
                             Context Outputs
                             <button class="stu-btn sm" style="float:right;" @click="addContextOutput()">+</button>

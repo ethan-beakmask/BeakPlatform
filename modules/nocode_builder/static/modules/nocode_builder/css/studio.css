@@ -492,6 +492,70 @@ html, body {
     white-space: nowrap;
 }
 
+/* Role Permission Matrix */
+.stu-role-matrix table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.stu-role-matrix th {
+    text-align: center;
+    padding: 3px 4px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    width: 32px;
+}
+.stu-role-matrix th:first-child {
+    text-align: left;
+    width: auto;
+}
+.stu-role-matrix td {
+    padding: 3px 4px;
+    text-align: center;
+    border-bottom: 1px solid #f3f4f6;
+}
+.stu-role-matrix td:first-child {
+    text-align: left;
+}
+.stu-role-matrix td input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+.stu-rm-role {
+    font-size: 12px;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+/* Role Filter Section */
+.stu-filter-section {
+    margin-bottom: 4px;
+}
+.stu-filter-row {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 3px;
+    align-items: center;
+}
+.stu-filter-row input[type="text"] {
+    flex: 1;
+    padding: 3px 6px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.stu-filter-eq {
+    font-size: 12px;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
 /* -- Toast -- */
 .stu-toast {
     position: fixed;
