@@ -5,6 +5,10 @@
 {% block head %}
 <link rel="stylesheet" href="/static/vendor/beak-trellis/beak-trellis.css">
 <style>
+/* 選項樹：隱藏展開/收合按鈕，一律全展開 */
+#bt-lookup-tree .bt-toggle { display: none; }
+#bt-lookup-tree .bt-td-tree { cursor: default; }
+
 .lk-page {
     max-width: 1400px;
     margin: 0 auto;

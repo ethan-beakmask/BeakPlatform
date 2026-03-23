@@ -293,7 +293,13 @@ function lookupManager() {
         _destroyGrid() {
             this._btGrid = null;
             var el = document.getElementById('bt-lookup-tree');
-            if (el) el.innerHTML = '';
+            if (el) {
+                if (this._gridClickHandler) {
+                    el.removeEventListener('click', this._gridClickHandler);
+                    this._gridClickHandler = null;
+                }
+                el.innerHTML = '';
+            }
         },
 
         _renderGrid() {
@@ -363,7 +369,7 @@ function lookupManager() {
                     treeMode: 'lines-dom',
                     draggable: true,
                     dragFlatOnly: !isHier,
-                    showExpandCollapseButtons: isHier,
+                    showExpandCollapseButtons: false,
                     onNodeMoved: function(nodeId, newParentId, newIndex, node) {
                         self._persistOrder();
                     },
@@ -372,8 +378,14 @@ function lookupManager() {
                     }
                 });
 
-                // 委派按鈕事件
-                el.addEventListener('click', function(e) {
+                // 一律全展開，禁止收合
+                self._btGrid.expandAll();
+                self._btGrid.toggle = function() {};
+                self._btGrid.collapse = function() {};
+                self._btGrid.collapseAll = function() {};
+
+                // 委派按鈕事件（存為屬性，_destroyGrid 時移除，避免重複綁定）
+                self._gridClickHandler = function(e) {
                     var btn = e.target.closest('.lk-act-btn');
                     if (!btn) return;
                     e.stopPropagation();
@@ -391,7 +403,8 @@ function lookupManager() {
                     } else if (action === 'add-child') {
                         self.openItemModal(null, code);
                     }
-                });
+                };
+                el.addEventListener('click', self._gridClickHandler);
             });
         },
 

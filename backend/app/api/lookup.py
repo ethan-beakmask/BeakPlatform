@@ -346,15 +346,24 @@ def delete_item(secure_code):
         return jsonify({'success': False, 'error': '選項不存在'}), 404
 
     try:
-        # 取得 category_code 以便 invalidate 快取
+        # 取得 item 資訊
         org_item = LookupOrgService.get_item_by_secure_code(org_sc, secure_code)
-        cat_code = org_item.get('category_code', '') if org_item else ''
+        if not org_item:
+            return jsonify({'success': False, 'error': '選項不存在'}), 404
+        cat_code = org_item.get('category_code', '')
+
+        # 後端也檢查：必須先停用才能刪除
+        if org_item.get('is_active', True):
+            return jsonify({'success': False, 'error': '請先停用選項後再刪除'}), 400
 
         success = LookupOrgService.delete_item(org_sc, secure_code)
         if not success:
             return jsonify({'success': False, 'error': '刪除失敗'}), 400
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({'success': True, 'message': '已刪除選項'})
+    except RuntimeError as e:
+        # 子選項仍啟用中等業務錯誤
+        return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         logger.exception('[Lookup] delete_item error')
         return jsonify({'success': False, 'error': str(e)}), 500

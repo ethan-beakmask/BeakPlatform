@@ -539,17 +539,65 @@ class LookupOrgService:
 
     @classmethod
     def delete_item(cls, org_secure_code: str, sc: str) -> bool:
-        """軟刪除企業 item (admin 角色寫)"""
+        """軟刪除企業 item + 所有子孫 (admin 角色寫)
+
+        階層式類別中，刪除父項會連帶軟刪所有子孫。
+        若子孫中有啟用中的項目，拒絕刪除並拋出 RuntimeError。
+        """
         cls.ensure_tables(org_secure_code)
         now = datetime.utcnow()
 
         get_org_conn = _get_org_conn()
         with get_org_conn(org_secure_code, role='admin') as conn:
             with conn.cursor() as cur:
+                # 取得被刪除項目的 code 和 category_code
+                cur.execute(
+                    "SELECT code, category_code FROM lookup_items "
+                    "WHERE secure_code = %s AND is_deleted = FALSE",
+                    (sc,)
+                )
+                row = cur.fetchone()
+                if not row:
+                    return False
+                item_code, cat_code = row[0], row[1]
+
+                # 用遞迴 CTE 找出所有子孫 code
+                cur.execute(
+                    "WITH RECURSIVE descendants AS ("
+                    "  SELECT code FROM lookup_items "
+                    "  WHERE parent_code = %s AND category_code = %s "
+                    "    AND is_deleted = FALSE "
+                    "  UNION ALL "
+                    "  SELECT li.code FROM lookup_items li "
+                    "  JOIN descendants d ON li.parent_code = d.code "
+                    "  WHERE li.category_code = %s AND li.is_deleted = FALSE"
+                    ") SELECT code FROM descendants",
+                    (item_code, cat_code, cat_code)
+                )
+                descendant_codes = [r[0] for r in cur.fetchall()]
+
+                # 檢查子孫中是否有啟用中的項目
+                if descendant_codes:
+                    cur.execute(
+                        "SELECT code FROM lookup_items "
+                        "WHERE category_code = %s AND code = ANY(%s) "
+                        "  AND is_active = TRUE AND is_deleted = FALSE",
+                        (cat_code, descendant_codes)
+                    )
+                    active_rows = cur.fetchall()
+                    if active_rows:
+                        active_codes = ', '.join(r[0] for r in active_rows)
+                        raise RuntimeError(
+                            f'以下子選項仍啟用中，請先停用：{active_codes}'
+                        )
+
+                # 軟刪除本項 + 所有子孫
+                all_codes = [item_code] + descendant_codes
                 cur.execute(
                     "UPDATE lookup_items SET is_deleted = TRUE, deleted_at = %s "
-                    "WHERE secure_code = %s AND is_deleted = FALSE",
-                    (now, sc)
+                    "WHERE category_code = %s AND code = ANY(%s) "
+                    "  AND is_deleted = FALSE",
+                    (now, cat_code, all_codes)
                 )
                 affected = cur.rowcount
             conn.commit()
