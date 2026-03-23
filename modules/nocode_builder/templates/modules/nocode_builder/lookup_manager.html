@@ -5,16 +5,24 @@
 {% block head %}
 <link rel="stylesheet" href="/static/vendor/beak-trellis/beak-trellis.css">
 <style>
-.lk-page { max-width: 1400px; margin: 0 auto; padding: 16px; }
-.lk-page h1 { margin: 0 0 4px 0; font-size: 1.2em; }
-.lk-page .lk-desc { font-size: 0.85em; color: var(--color-text-muted); margin-bottom: 14px; }
+.lk-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+    height: calc(100vh - var(--topbar-height, 60px) - 46px);
+    display: flex;
+    flex-direction: column;
+}
+.lk-page h1 { margin: 0 0 4px 0; font-size: 1.2em; flex-shrink: 0; }
+.lk-page .lk-desc { font-size: 0.85em; color: var(--color-text-muted); margin-bottom: 14px; flex-shrink: 0; }
 
 /* 主佈局 */
 .lk-layout {
     display: flex;
     gap: 0;
-    height: calc(100vh - 140px);
-    min-height: 480px;
+    flex: 1;
+    min-height: 200px;
     border: 1px solid var(--color-border);
     background: #fff;
 }
@@ -27,6 +35,7 @@
     display: flex;
     flex-direction: column;
     background: #fafafa;
+    overflow: hidden;
 }
 .lk-sidebar-header {
     padding: 8px 10px;
@@ -48,6 +57,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius);
     font-size: var(--font-size-sm);
+    box-sizing: border-box;
 }
 .lk-search input:focus {
     outline: none;
@@ -56,6 +66,7 @@
 .lk-cat-list {
     flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 .lk-cat-item {
     padding: 8px 10px;
@@ -83,12 +94,13 @@
     padding: 0 4px; line-height: 16px;
 }
 .lk-sidebar-actions {
-    padding: 8px 10px;
-    border-top: 1px solid var(--color-border);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border-light);
     background: var(--color-bg-header);
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 .lk-cat-item.inactive { opacity: 0.55; }
 .lk-cat-item.inactive .lk-cat-name { text-decoration: line-through; }
@@ -196,6 +208,14 @@
                 <span>類別</span>
                 <button type="button" class="btn btn-primary btn-sm" @click="openCategoryModal()">+ 新增</button>
             </div>
+            <!-- 類別操作區（選中時顯示） -->
+            <div class="lk-sidebar-actions" x-show="selectedCat">
+                <button type="button" class="btn btn-secondary btn-sm" @click="openCategoryModal(selectedCat)" :disabled="selectedCat && selectedCat.is_system">編輯</button>
+                <button type="button" class="btn btn-secondary btn-sm" @click="toggleCategoryActive()" :disabled="selectedCat && selectedCat.is_system"
+                        x-text="selectedCat && selectedCat.is_active === false ? '啟用' : '停用'"></button>
+                <button type="button" class="btn btn-danger btn-sm" @click="deleteCategory()"
+                        :disabled="!selectedCat || selectedCat.is_system || selectedCat.is_active !== false">刪除</button>
+            </div>
             <div class="lk-search">
                 <input type="text" x-model="catFilter" placeholder="搜尋類別...">
             </div>
@@ -221,14 +241,6 @@
                 <div x-show="!loading && filteredCategories.length === 0" class="lk-cat-empty">
                     無符合的類別
                 </div>
-            </div>
-            <!-- 類別操作區（選中時顯示） -->
-            <div class="lk-sidebar-actions" x-show="selectedCat" x-cloak>
-                <button type="button" class="btn btn-secondary btn-sm" @click="openCategoryModal(selectedCat)" :disabled="selectedCat && selectedCat.is_system">編輯</button>
-                <button type="button" class="btn btn-secondary btn-sm" @click="toggleCategoryActive()" :disabled="selectedCat && selectedCat.is_system"
-                        x-text="selectedCat && selectedCat.is_active === false ? '啟用' : '停用'"></button>
-                <button type="button" class="btn btn-danger btn-sm" @click="deleteCategory()"
-                        :disabled="!selectedCat || selectedCat.is_system || selectedCat.is_active !== false">刪除</button>
             </div>
         </div>
 
