@@ -3,6 +3,7 @@
  *
  * 自治的 widget：給一組 config JSON，在指定容器內自動渲染資料表。
  * 支援搜尋、排序、分頁、CRUD 操作、PageContext 共享狀態通訊。
+ * 新增/編輯透過 modal 表單完成（從 columns_config 動態產生欄位）。
  *
  * PageContext 介面：
  *   contextOutputs: [{ event, contextKey, sourceColumn }]
@@ -61,6 +62,9 @@ class DataListWidget {
 
         // DOM 快取
         this._els = {};
+
+        // Modal 狀態
+        this._modalOverlay = null;
     }
 
     // ===== 初始化 =====
@@ -95,6 +99,8 @@ class DataListWidget {
     }
 
     destroy() {
+        // 關閉 modal
+        this._closeModal();
         // 從 PageContext 取消登錄
         if (typeof PageContext !== 'undefined') {
             PageContext.unregister(this.id);
@@ -293,6 +299,18 @@ class DataListWidget {
         return cols;
     }
 
+    // ===== 表單欄位（modal 用） =====
+
+    /**
+     * 取得表單可見欄位（依 visible_in_form 過濾，sort_order 排序）
+     */
+    _getFormColumns() {
+        if (!this.viewConfig || !this.viewConfig.columns_config) return [];
+        return this.viewConfig.columns_config
+            .filter(c => c.visible_in_form)
+            .sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
+    }
+
     // ===== 權限判斷 =====
 
     _canCreate() {
@@ -372,6 +390,16 @@ class DataListWidget {
     _updateTitle() {
         if (!this._els.title) return;
         this._els.title.textContent = this.config.title || this.viewConfig?.name || '';
+
+        // 新增按鈕（viewConfig 載入後才知道權限）
+        if (this._canCreate() && this._els.toolbar && !this._els.createBtn) {
+            const btn = document.createElement('button');
+            btn.className = 'dlw-btn sm primary';
+            btn.textContent = '+新增';
+            btn.addEventListener('click', () => this._openModal('create'));
+            this._els.toolbar.appendChild(btn);
+            this._els.createBtn = btn;
+        }
     }
 
     _showLoading(show) {
@@ -456,13 +484,13 @@ class DataListWidget {
                 const td = document.createElement('td');
                 td.className = 'dlw-actions';
                 if (this._canEdit()) {
-                    const btn = document.createElement('a');
+                    const btn = document.createElement('button');
                     btn.className = 'dlw-btn sm';
                     btn.textContent = '編輯';
-                    btn.href = '/nocode-builder/views/' + this.config.viewCode + '/rows/' + row._row_id + '/edit'
-                        + this._buildContextQueryString();
-                    btn.target = '_blank';
-                    btn.addEventListener('click', (e) => e.stopPropagation());
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this._openModal('edit', row._row_id);
+                    });
                     td.appendChild(btn);
                 }
                 if (this._canDelete()) {
@@ -574,6 +602,443 @@ class DataListWidget {
             }
         } catch (e) {
             alert('刪除失敗: ' + e.message);
+        }
+    }
+
+    // ===== Modal 表單 =====
+
+    /**
+     * 開啟新增/編輯 modal
+     * @param {'create'|'edit'} mode
+     * @param {string} [rowId] - 編輯模式的 row ID
+     */
+    async _openModal(mode, rowId) {
+        // 防止重複開啟
+        if (this._modalOverlay) return;
+
+        const isEdit = mode === 'edit';
+        const title = (isEdit ? '編輯' : '新增') + ' - '
+            + (this.config.title || this.viewConfig?.name || '資料');
+
+        // 建立 overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'dlw-modal-overlay';
+
+        const modal = document.createElement('div');
+        modal.className = 'dlw-modal';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'dlw-modal-header';
+        const titleEl = document.createElement('span');
+        titleEl.className = 'dlw-modal-title';
+        titleEl.textContent = title;
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'dlw-modal-close';
+        closeBtn.innerHTML = '&#215;';
+        closeBtn.addEventListener('click', () => this._closeModal());
+        header.appendChild(titleEl);
+        header.appendChild(closeBtn);
+        modal.appendChild(header);
+
+        // Body
+        const body = document.createElement('div');
+        body.className = 'dlw-modal-body';
+        body.innerHTML = '<div class="dlw-modal-loading">載入中...</div>';
+        modal.appendChild(body);
+
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'dlw-modal-footer';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'dlw-btn';
+        cancelBtn.textContent = '取消';
+        cancelBtn.addEventListener('click', () => this._closeModal());
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'dlw-btn primary';
+        saveBtn.textContent = '儲存';
+        saveBtn.disabled = true;
+        footer.appendChild(cancelBtn);
+        footer.appendChild(saveBtn);
+        modal.appendChild(footer);
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        this._modalOverlay = overlay;
+
+        // ESC 關閉
+        this._modalEscHandler = (e) => {
+            if (e.key === 'Escape') this._closeModal();
+        };
+        document.addEventListener('keydown', this._modalEscHandler);
+
+        // 載入表單欄位
+        let rowData = {};
+        if (isEdit && rowId) {
+            try {
+                const res = await fetch(
+                    '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId
+                );
+                const data = await res.json();
+                if (!data.success) {
+                    body.innerHTML = '<div class="dlw-form-error">載入資料失敗: '
+                        + (data.error || '') + '</div>';
+                    return;
+                }
+                rowData = data.data || {};
+            } catch (e) {
+                body.innerHTML = '<div class="dlw-form-error">載入資料失敗: '
+                    + e.message + '</div>';
+                return;
+            }
+        }
+
+        // 渲染表單
+        this._renderFormFields(body, mode, rowData);
+
+        // 啟用儲存按鈕
+        saveBtn.disabled = false;
+        saveBtn.addEventListener('click', () => {
+            this._submitForm(mode, rowId, body, saveBtn);
+        });
+    }
+
+    /**
+     * 關閉 modal
+     */
+    _closeModal() {
+        if (this._modalOverlay) {
+            this._modalOverlay.remove();
+            this._modalOverlay = null;
+        }
+        if (this._modalEscHandler) {
+            document.removeEventListener('keydown', this._modalEscHandler);
+            this._modalEscHandler = null;
+        }
+    }
+
+    /**
+     * 渲染表單欄位到 modal body
+     * @param {HTMLElement} body - modal body 容器
+     * @param {'create'|'edit'} mode
+     * @param {object} rowData - 編輯時的現有資料
+     */
+    _renderFormFields(body, mode, rowData) {
+        body.innerHTML = '';
+        const formCols = this._getFormColumns();
+        const isEdit = mode === 'edit';
+
+        // 收集自動填入欄位（fixed_filters + subSystemFilters）
+        const autoFill = {};
+        if (!isEdit) {
+            // 新增時自動填入 fixed_filters
+            const fixed = this.viewConfig?.fixed_filters || {};
+            for (const [col, val] of Object.entries(fixed)) {
+                if (typeof val === 'string' && val.startsWith('$')) continue;  // 變數由後端處理
+                autoFill[col] = val;
+            }
+            // 新增時自動填入 subSystemFilters（已在前端替換變數）
+            const sysFilters = this.config._subSystemFilters || {};
+            for (const [col, val] of Object.entries(sysFilters)) {
+                autoFill[col] = val;
+            }
+            // 新增時自動填入 externalFilters（PageContext 篩選）
+            for (const [col, val] of Object.entries(this._externalFilters)) {
+                autoFill[col] = val;
+            }
+        }
+
+        for (const col of formCols) {
+            const colName = col.column;
+            const isPk = col.is_pk || false;
+            const isReadonly = col.readonly || isPk || col.is_system || false;
+            const isAutoFilled = !isEdit && colName in autoFill;
+            const disabled = isReadonly || isAutoFilled;
+
+            // 取值：編輯取 rowData，新增取 autoFill
+            let value = isEdit ? (rowData[colName] ?? '') : (autoFill[colName] ?? '');
+
+            const field = document.createElement('div');
+            field.className = 'dlw-form-field';
+
+            // Label
+            const label = document.createElement('label');
+            label.className = 'dlw-form-label';
+            label.textContent = col.label || colName;
+            if (!col.nullable && !isPk && !col.is_system) {
+                const req = document.createElement('span');
+                req.className = 'dlw-required';
+                req.textContent = '*';
+                label.appendChild(req);
+            }
+            field.appendChild(label);
+
+            // 依據型別產生欄位
+            const dbType = (col.db_type || '').toUpperCase();
+
+            if (col.lookup_category_code && this._lookupMaps[colName]) {
+                // Lookup → select
+                const select = document.createElement('select');
+                select.className = 'dlw-form-select';
+                select.name = colName;
+                select.disabled = disabled;
+
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = '-- 請選擇 --';
+                select.appendChild(emptyOpt);
+
+                const map = this._lookupMaps[colName];
+                for (const [code, lbl] of Object.entries(map)) {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.textContent = lbl;
+                    if (String(value) === code) opt.selected = true;
+                    select.appendChild(opt);
+                }
+                field.appendChild(select);
+
+            } else if (dbType === 'BOOLEAN' || dbType === 'BOOL') {
+                // Boolean → checkbox
+                const wrap = document.createElement('div');
+                wrap.className = 'dlw-form-check';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.name = colName;
+                cb.checked = value === true || value === 'true' || value === 't';
+                cb.disabled = disabled;
+                const cbLabel = document.createElement('span');
+                cbLabel.textContent = value === true || value === 'true' || value === 't' ? 'Y' : 'N';
+                cb.addEventListener('change', () => {
+                    cbLabel.textContent = cb.checked ? 'Y' : 'N';
+                });
+                wrap.appendChild(cb);
+                wrap.appendChild(cbLabel);
+                field.appendChild(wrap);
+
+            } else if (dbType === 'JSONB' || dbType === 'JSON') {
+                // JSON → textarea
+                const ta = document.createElement('textarea');
+                ta.className = 'dlw-form-textarea';
+                ta.name = colName;
+                ta.disabled = disabled;
+                if (value && typeof value === 'object') {
+                    ta.value = JSON.stringify(value, null, 2);
+                } else {
+                    ta.value = value !== null && value !== undefined ? String(value) : '';
+                }
+                field.appendChild(ta);
+
+            } else if (dbType === 'DATE') {
+                // Date
+                const input = document.createElement('input');
+                input.type = 'date';
+                input.className = 'dlw-form-input';
+                input.name = colName;
+                input.disabled = disabled;
+                // ISO date → YYYY-MM-DD
+                if (value) {
+                    input.value = String(value).substring(0, 10);
+                }
+                field.appendChild(input);
+
+            } else if (dbType.indexOf('TIMESTAMP') >= 0) {
+                // Timestamp → datetime-local
+                const input = document.createElement('input');
+                input.type = 'datetime-local';
+                input.className = 'dlw-form-input';
+                input.name = colName;
+                input.disabled = disabled;
+                if (value) {
+                    // ISO 轉 datetime-local 格式
+                    const s = String(value).replace('T', 'T').substring(0, 16);
+                    input.value = s;
+                }
+                field.appendChild(input);
+
+            } else if (this._isNumericType(dbType)) {
+                // Numeric
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'dlw-form-input';
+                input.name = colName;
+                input.disabled = disabled;
+                if (value !== '' && value !== null && value !== undefined) {
+                    input.value = value;
+                }
+                // DECIMAL/NUMERIC 允許小數
+                if (dbType === 'NUMERIC' || dbType === 'DECIMAL'
+                    || dbType.indexOf('NUMERIC') >= 0 || dbType.indexOf('DECIMAL') >= 0) {
+                    input.step = 'any';
+                }
+                field.appendChild(input);
+
+            } else if (dbType === 'TEXT') {
+                // TEXT → textarea（較長文字）
+                const ta = document.createElement('textarea');
+                ta.className = 'dlw-form-textarea';
+                ta.name = colName;
+                ta.disabled = disabled;
+                ta.style.fontFamily = 'inherit';
+                ta.value = value !== null && value !== undefined ? String(value) : '';
+                field.appendChild(ta);
+
+            } else {
+                // 預設: text input (VARCHAR, CHAR, etc.)
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'dlw-form-input';
+                input.name = colName;
+                input.disabled = disabled;
+                input.value = value !== null && value !== undefined ? String(value) : '';
+                field.appendChild(input);
+            }
+
+            // 提示訊息
+            if (isPk && isEdit) {
+                const hint = document.createElement('div');
+                hint.className = 'dlw-form-hint';
+                hint.textContent = '主鍵，不可修改';
+                field.appendChild(hint);
+            } else if (isAutoFilled) {
+                const hint = document.createElement('div');
+                hint.className = 'dlw-form-hint';
+                hint.textContent = '自動填入';
+                field.appendChild(hint);
+            }
+
+            body.appendChild(field);
+        }
+
+        if (formCols.length === 0) {
+            body.innerHTML = '<div class="dlw-form-error">此視圖未設定表單欄位</div>';
+        }
+    }
+
+    /**
+     * 判斷 db_type 是否為數值型別
+     */
+    _isNumericType(dbType) {
+        var numTypes = ['INTEGER', 'BIGINT', 'SMALLINT', 'INT', 'INT4', 'INT8', 'INT2',
+                        'NUMERIC', 'DECIMAL', 'REAL', 'FLOAT', 'DOUBLE', 'FLOAT4', 'FLOAT8'];
+        for (var i = 0; i < numTypes.length; i++) {
+            if (dbType.indexOf(numTypes[i]) >= 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 提交表單
+     * @param {'create'|'edit'} mode
+     * @param {string} [rowId]
+     * @param {HTMLElement} body - modal body
+     * @param {HTMLElement} saveBtn - 儲存按鈕
+     */
+    async _submitForm(mode, rowId, body, saveBtn) {
+        const isEdit = mode === 'edit';
+        const formCols = this._getFormColumns();
+        const data = {};
+
+        // 收集表單值
+        for (const col of formCols) {
+            const colName = col.column;
+            const isPk = col.is_pk || false;
+            const isReadonly = col.readonly || isPk || col.is_system || false;
+
+            // PK 和 readonly 不送到後端（後端也會擋，但前端先過濾）
+            if (isPk) continue;
+            if (isReadonly) continue;
+
+            const dbType = (col.db_type || '').toUpperCase();
+            const el = body.querySelector('[name="' + colName + '"]');
+            if (!el) continue;
+
+            // 如果 disabled（autoFill），也要送值
+            if (dbType === 'BOOLEAN' || dbType === 'BOOL') {
+                data[colName] = el.checked;
+            } else if (dbType === 'JSONB' || dbType === 'JSON') {
+                const raw = el.value.trim();
+                if (raw) {
+                    try {
+                        data[colName] = JSON.parse(raw);
+                    } catch (e) {
+                        alert('JSON 格式錯誤: ' + col.label);
+                        return;
+                    }
+                } else {
+                    data[colName] = null;
+                }
+            } else if (this._isNumericType(dbType)) {
+                const raw = el.value.trim();
+                if (raw !== '') {
+                    data[colName] = Number(raw);
+                    if (isNaN(data[colName])) {
+                        alert('數值格式錯誤: ' + col.label);
+                        return;
+                    }
+                } else {
+                    data[colName] = null;
+                }
+            } else {
+                const val = el.value;
+                data[colName] = val === '' ? null : val;
+            }
+        }
+
+        // 自動填入欄位也要送值（新增時）
+        if (!isEdit) {
+            const fixed = this.viewConfig?.fixed_filters || {};
+            for (const [col, val] of Object.entries(fixed)) {
+                if (typeof val === 'string' && val.startsWith('$')) continue;
+                if (!(col in data)) data[col] = val;
+            }
+            const sysFilters = this.config._subSystemFilters || {};
+            for (const [col, val] of Object.entries(sysFilters)) {
+                if (!(col in data)) data[col] = val;
+            }
+            for (const [col, val] of Object.entries(this._externalFilters)) {
+                if (!(col in data)) data[col] = val;
+            }
+        }
+
+        // 送出
+        saveBtn.disabled = true;
+        saveBtn.textContent = '儲存中...';
+
+        try {
+            let url, method;
+            if (isEdit) {
+                url = '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId;
+                method = 'PUT';
+            } else {
+                url = '/api/nocode-builder/views/' + this.config.viewCode + '/rows';
+                method = 'POST';
+            }
+
+            const headers = Object.assign(
+                { 'Content-Type': 'application/json' },
+                this._buildContextHeaders()
+            );
+
+            const res = await fetch(url, {
+                method: method,
+                headers: headers,
+                body: JSON.stringify(data),
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                this._closeModal();
+                this._loadRows();
+            } else {
+                alert('儲存失敗: ' + (result.error || ''));
+                saveBtn.disabled = false;
+                saveBtn.textContent = '儲存';
+            }
+        } catch (e) {
+            alert('儲存失敗: ' + e.message);
+            saveBtn.disabled = false;
+            saveBtn.textContent = '儲存';
         }
     }
 }
