@@ -765,6 +765,29 @@ def change_password():
 
 # ==================== 忘記密碼功能 (二階段驗證) ====================
 
+def _get_notification_emails(user) -> list:
+    """
+    取得用戶的可寄送信箱清單
+
+    優先順序:
+    1. backup_email_1 + backup_email_2 (非空的都收集)
+    2. 若兩者皆空，fallback 到 email (登入帳號)
+
+    Returns:
+        list: 去重後的信箱清單
+    """
+    emails = []
+    if user.backup_email_1:
+        emails.append(user.backup_email_1.strip())
+    if user.backup_email_2:
+        emails.append(user.backup_email_2.strip())
+    if not emails:
+        emails.append(user.email)
+    # 去重（保持順序）
+    seen = set()
+    return [e for e in emails if not (e in seen or seen.add(e))]
+
+
 def _process_forgot_password(username: str, domain_name: str, login_type: str, org=None):
     """
     處理忘記密碼請求 (共用邏輯)
@@ -773,6 +796,7 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
     - 無論帳號是否存在，都顯示相同訊息 (防止帳號列舉)
     - 使用 username@domain 組成 email
     - 二階段驗證: 先寄驗證碼 URL，驗證後才寄暫時密碼
+    - 寄信目標: backup_email_1 + backup_email_2，兩者皆空時 fallback 到 email
     """
     from ..models import PasswordResetToken
     from ..services.email_service import EmailService
@@ -814,13 +838,18 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
                 token=token.verification_url_token,
                 _external=True
             )
-            EmailService.send_password_reset_verification(
-                to_email=email,
-                verification_url=verification_url,
-                verification_code=token.verification_code,
-                org_name=target_org.name
+            notification_emails = _get_notification_emails(user)
+            for to_addr in notification_emails:
+                EmailService.send_password_reset_verification(
+                    to_email=to_addr,
+                    verification_url=verification_url,
+                    verification_code=token.verification_code,
+                    org_name=target_org.name
+                )
+            logger.info(
+                f"Password reset requested for: {email}, "
+                f"notifications sent to: {notification_emails}"
             )
-            logger.info(f"Password reset requested for: {email}")
 
     # 一律顯示成功訊息 (防止帳號列舉)
     flash('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證', 'success')
@@ -1001,13 +1030,19 @@ def verify_reset(token: str):
         reset_token.mark_temp_password_sent()
         db.session.commit()
 
-        # 寄送暫時密碼
-        EmailService.send_temp_password(
-            to_email=reset_token.email,
-            temp_password=temp_password,
-            org_name=org.name if org else 'BeakMask'
+        # 寄送暫時密碼到用戶的可寄送信箱
+        org_name = org.name if org else 'BeakMask'
+        notification_emails = _get_notification_emails(user)
+        for to_addr in notification_emails:
+            EmailService.send_temp_password(
+                to_email=to_addr,
+                temp_password=temp_password,
+                org_name=org_name
+            )
+        logger.info(
+            f"Temp password sent for: {reset_token.email}, "
+            f"notifications sent to: {notification_emails}"
         )
-        logger.info(f"Temp password sent for: {reset_token.email}")
     else:
         # 用戶不存在但仍標記為已使用 (防止重複嘗試)
         reset_token.mark_temp_password_sent()
