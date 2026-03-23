@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
 <link rel="stylesheet" href="/static/vendor/wunderbaum/bootstrap-icons.css">
 <link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
+<link rel="stylesheet" href="/static/vendor/beak-trellis/beak-trellis.css">
 <style>
     .ssc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .ssc-section {
@@ -215,7 +216,9 @@ window.__SSC_CONFIG = {
                 <div class="ssc-section">
                     <div class="ssc-section-title">角色類型說明</div>
                     <div class="ssc-section-body" style="font-size: 13px; color: #666;">
+                        <p style="margin: 0 0 8px 0; font-weight: 500;">准入角色:</p>
                         <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                            <tr><td style="padding: 4px 0; font-weight: 500;">GUEST</td><td>任何人 (含非成員)</td></tr>
                             <tr><td style="padding: 4px 0; font-weight: 500;">MANAGER</td><td>團長 (管理層)</td></tr>
                             <tr><td style="padding: 4px 0; font-weight: 500;">DEPUTY</td><td>副團長 (管理層)</td></tr>
                             <tr><td style="padding: 4px 0; font-weight: 500;">PROXY1</td><td>代理人一 (管理層)</td></tr>
@@ -223,16 +226,11 @@ window.__SSC_CONFIG = {
                             <tr><td style="padding: 4px 0; font-weight: 500;">MEMBER</td><td>一般團員</td></tr>
                         </table>
                         <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
-                        <p style="margin: 0;">管理層角色 (MANAGER/DEPUTY/PROXY1/PROXY2) 預設擁有完整 CRUD 權限。</p>
-                        <p style="margin: 4px 0 0 0;">一般團員 (MEMBER) 預設無 CRUD 權限，需在頁面設定中覆蓋。</p>
-                        <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
-                        <p style="margin: 0; font-weight: 500;">資料篩選變數:</p>
-                        <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 11px;">
-                            $CURRENT_USER - 當前用戶 secure_code<br>
-                            $CURRENT_USER_NAME - 當前用戶名<br>
-                            $CURRENT_ORG - 當前企業代碼<br>
-                            $TODAY - 今天日期
-                        </p>
+                        <p style="margin: 0; font-weight: 500;">准入規則:</p>
+                        <p style="margin: 4px 0 0 0;">空 (NONE) = 任何人都無法進入 (安全防呆)</p>
+                        <p style="margin: 2px 0 0 0;">GUEST = 任何人都能進入</p>
+                        <p style="margin: 2px 0 0 0;">角色清單 = 只有符合角色的成員能進入</p>
+                        <p style="margin: 2px 0 0 0;">管理層自動有所有網頁的存取權</p>
                     </div>
                 </div>
             </div>
@@ -241,6 +239,8 @@ window.__SSC_CONFIG = {
             <div class="ssc-tabs">
                 <div class="ssc-tab" :class="activeTab === 'sitemap' ? 'active' : ''"
                      @click="activeTab = 'sitemap'">網站地圖</div>
+                <div class="ssc-tab" :class="activeTab === 'matrix' ? 'active' : ''"
+                     @click="activeTab = 'matrix'">准入矩陣</div>
                 <div class="ssc-tab" :class="activeTab === 'pages' ? 'active' : ''"
                      @click="activeTab = 'pages'">頁面管理 (舊)</div>
             </div>
@@ -344,45 +344,29 @@ window.__SSC_CONFIG = {
                                 </div>
                             </template>
 
-                            <!-- 權限白名單 -->
-                            <div class="ssc-section-title">存取權限白名單</div>
+                            <!-- 准入控制 (access_roles) -->
+                            <div class="ssc-section-title">准入控制</div>
                             <div class="ssc-section-body">
-                                <p style="font-size: 12px; color: #999; margin: 0 0 8px 0;">
-                                    無任何權限記錄 = 所有人可見; 有記錄 = 僅白名單內可見
+                                <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">
+                                    目前: <strong x-text="getAccessLabel()"></strong>
                                 </p>
 
-                                <!-- 新增權限 -->
-                                <div style="display: flex; gap: 4px; margin-bottom: 12px; align-items: center;">
-                                    <select x-model="addPermForm.target_type" @change="onPermTargetTypeChange()"
-                                            style="width: 100px; padding: 4px 6px; font-size: 12px; border: 1px solid #ddd;">
-                                        <option value="ROLE">角色</option>
-                                        <option value="DEPARTMENT">部門</option>
-                                        <option value="GROUP">群組</option>
-                                        <option value="ACCOUNT">帳號</option>
-                                    </select>
-                                    <select x-model="addPermForm.target_secure_code"
-                                            style="flex: 1; padding: 4px 6px; font-size: 12px; border: 1px solid #ddd;">
-                                        <option value="">-- 選擇對象 --</option>
-                                        <template x-for="t in permTargets" :key="t.secure_code">
-                                            <option :value="t.secure_code" x-text="t.name + (t.detail ? ' (' + t.detail + ')' : '')"></option>
-                                        </template>
-                                    </select>
-                                    <button class="dc-btn sm primary" @click="addPermission()">新增</button>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <template x-for="role in ['GUEST','MANAGER','DEPUTY','PROXY1','PROXY2','MEMBER']" :key="'ar_' + role">
+                                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+                                            <input type="checkbox"
+                                                   :checked="hasAccessRole(role)"
+                                                   @change="toggleAccessRole(role)">
+                                            <span x-text="role"></span>
+                                        </label>
+                                    </template>
                                 </div>
 
-                                <!-- 權限列表 -->
-                                <div x-show="permLoading" style="color: #999; font-size: 12px;">載入中...</div>
-                                <div x-show="!permLoading && permissions.length === 0" style="color: #999; font-size: 12px;">
-                                    無權限限制 (所有成員可見)
+                                <div class="ssc-field" style="margin-top: 12px;" x-show="nodeForm.node_type === 'page'">
+                                    <label style="font-size: 12px;">拒絕時轉向</label>
+                                    <input type="text" x-model="nodeForm.redirect_to"
+                                           style="width: 200px; font-size: 12px;" placeholder="/dashboard">
                                 </div>
-                                <template x-for="perm in permissions" :key="perm.secure_code">
-                                    <div class="sm-perm-item">
-                                        <span class="sm-perm-type" x-text="targetTypeLabel(perm.target_type)"></span>
-                                        <span style="flex: 1;" x-text="perm.target_name"></span>
-                                        <button class="dc-btn sm danger" @click="removePermission(perm.secure_code)"
-                                                style="padding: 2px 6px;">x</button>
-                                    </div>
-                                </template>
                             </div>
                         </div>
                     </div>
@@ -429,6 +413,31 @@ window.__SSC_CONFIG = {
                 </div>
 
                 <!-- Toast (site map) -->
+                <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
+                     x-text="toast.message" x-transition></div>
+            </div>
+
+            <!-- Tab: 准入矩陣 -->
+            <div x-show="activeTab === 'matrix'" x-data="accessMatrixManager(secureCode)">
+                <div class="ssc-section">
+                    <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>准入矩陣 -- 網頁 x 角色</span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span x-show="dirty" style="font-size: 12px; color: #e65100;">有未儲存的變更</span>
+                            <button class="dc-btn sm primary" @click="saveAll()"
+                                    :disabled="saving || !dirty"
+                                    x-text="saving ? '儲存中...' : '儲存'"></button>
+                            <button class="dc-btn sm" @click="loadAndRender()">重新載入</button>
+                        </div>
+                    </div>
+                    <div class="ssc-section-body" style="padding: 0;">
+                        <div x-show="loading" style="padding: 40px; text-align: center; color: #999;">載入中...</div>
+                        <div id="access-matrix" style="min-height: 200px;"></div>
+                    </div>
+                </div>
+                <div style="margin-top: 8px; font-size: 12px; color: #999;">
+                    GUEST = 任何人 (含非成員) | 空 = NONE (預設拒絕) | GUEST 與角色互斥
+                </div>
                 <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
                      x-text="toast.message" x-transition></div>
             </div>
@@ -567,6 +576,10 @@ window.__SSC_CONFIG = {
 </div>
 
 <script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="/static/vendor/beak-trellis/beak-trellis.js"></script>
+<script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
 <script src="/static/modules/nocode_builder/js/site-map-editor.js"></script>
+<script src="/static/modules/nocode_builder/js/access-matrix.js"></script>
 <script src="/static/modules/nocode_builder/js/sub-system-config.js"></script>
 {% endblock %}

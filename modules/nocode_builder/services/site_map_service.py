@@ -2,16 +2,18 @@
 Data CRUD Module - SiteMap Service
 網站地圖服務
 
-管理樹狀節點結構和節點權限。
-權限規則: 節點無任何權限記錄 = 所有人可見; 有記錄 = 白名單匹配。
+管理樹狀節點結構和節點准入控制。
+
+准入模型 (access_roles):
+  [] (空)     → NONE: 預設安全防呆，任何人都無法到此頁面
+  ["GUEST"]   → 任何人都能到此頁面（含非成員）
+  ["MANAGER", "MEMBER", ...] → 只有符合角色的成員才能到此頁面
 """
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Set, Tuple
 
 from app import db
-from app.models.associations import UserRoleAssignment
-from app.models.user_unit_membership import UserUnitMembership, MembershipType
 from ..models.site_map_node import DcSiteMapNode
 from ..models.site_map_permission import DcSiteMapPermission
 from ..models.page_layout import DcPageLayout
@@ -81,18 +83,24 @@ class SiteMapService:
         return roots
 
     @staticmethod
-    def get_user_tree(user, sub_system) -> Optional[Dict[str, Any]]:
+    def get_user_tree(user, sub_system) -> Dict[str, Any]:
         """
-        Portal 用: 取得用戶可見的樹 (權限過濾)
+        Portal 用: 取得用戶可見的樹 (access_roles 過濾)
+
+        非成員 role_type='GUEST'，只能看到 access_roles 含 GUEST 的節點。
+        管理層角色不做過濾（全部可見）。
 
         Returns:
-            { role_type, is_admin, tree: [...] } 或 None (非成員)
+            { role_type, is_admin, tree: [...] }
+            tree 為空表示無可見節點。
         """
         role_type = SubSystemService.get_user_role_type(user, sub_system)
-        if role_type is None:
-            return None
+        is_admin = False
 
-        is_admin = SubSystemService.is_admin_role(role_type)
+        if role_type is None:
+            role_type = 'GUEST'
+        else:
+            is_admin = SubSystemService.is_admin_role(role_type)
 
         nodes = DcSiteMapNode.query.filter(
             DcSiteMapNode.sub_system_secure_code == sub_system.secure_code,
@@ -104,13 +112,11 @@ class SiteMapService:
         if not nodes:
             return {'role_type': role_type, 'is_admin': is_admin, 'tree': []}
 
-        # Admin 不做權限過濾
+        # 管理層不做過濾
         if is_admin:
             visible_scs = {n.secure_code for n in nodes}
         else:
-            visible_scs = SiteMapService._filter_by_permissions(
-                nodes, user, sub_system.org_secure_code
-            )
+            visible_scs = SiteMapService._filter_by_access_roles(nodes, role_type)
 
         # 補充 page_layout 名稱
         layout_scs = {n.page_layout_secure_code for n in nodes if n.page_layout_secure_code}
@@ -159,7 +165,7 @@ class SiteMapService:
         """
         取得節點的權限 context (CRUD + data_filters)
 
-        類似 SubSystemService.get_page_context 但讀取節點自身的 overrides。
+        暫時保留，Phase 3 將 CRUD 權限移至 widget 層級。
         """
         crud_overrides = node.crud_overrides or {}
         data_filters_map = node.data_filters or {}
@@ -177,6 +183,33 @@ class SiteMapService:
             'crud': crud,
             'data_filters': data_filters,
         }
+
+    @staticmethod
+    def check_page_access(role_type: Optional[str], node: DcSiteMapNode) -> bool:
+        """
+        檢查用戶是否有權進入此頁面
+
+        Args:
+            role_type: 用戶角色（None 表示非成員，視為 GUEST）
+            node: 目標節點
+
+        Returns:
+            True = 允許, False = 拒絕（轉向 node.redirect_to）
+        """
+        access_roles = node.access_roles or []
+
+        if not access_roles:
+            return False  # NONE: 預設拒絕
+
+        if 'GUEST' in access_roles:
+            return True  # 任何人都能進入
+
+        # 角色檢查: 非成員一律拒絕
+        effective_role = role_type or 'GUEST'
+        if effective_role == 'GUEST':
+            return False
+
+        return effective_role in access_roles
 
     # ==========================================================================
     # 節點 CRUD
@@ -236,7 +269,8 @@ class SiteMapService:
         """更新節點屬性"""
         allowed = {
             'name', 'icon', 'page_layout_secure_code',
-            'display_order', 'crud_overrides', 'data_filters', 'is_active',
+            'display_order', 'access_roles', 'redirect_to',
+            'crud_overrides', 'data_filters', 'is_active',
         }
         for key, value in kwargs.items():
             if key in allowed:
@@ -405,117 +439,48 @@ class SiteMapService:
         perm.deleted_at = datetime.utcnow()
         return True
 
-    @staticmethod
-    def check_node_access(user, node: DcSiteMapNode) -> bool:
-        """檢查用戶是否有權限存取此節點"""
-        perms = DcSiteMapPermission.query.filter(
-            DcSiteMapPermission.node_secure_code == node.secure_code,
-            DcSiteMapPermission.org_secure_code == node.org_secure_code,
-            DcSiteMapPermission.is_deleted == False,
-        ).all()
-
-        if not perms:
-            return True  # 無權限記錄 = 所有人可見
-
-        user_ids = SiteMapService._get_user_identifiers(user)
-        for p in perms:
-            if (p.target_type, p.target_secure_code) in user_ids:
-                return True
-        return False
-
     # ==========================================================================
     # 內部方法
     # ==========================================================================
 
     @staticmethod
-    def _get_user_identifiers(user) -> Set[Tuple[str, str]]:
-        """
-        取得使用者的所有身份標識 (target_type, target_secure_code) 集合
-
-        復用 ModuleAccessService._get_user_identifiers 的邏輯模式。
-        """
-        identifiers = set()
-
-        # ACCOUNT
-        identifiers.add(('ACCOUNT', user.secure_code))
-
-        # ROLE
-        role_assignments = UserRoleAssignment.query.filter(
-            UserRoleAssignment.user_secure_code == user.secure_code,
-            UserRoleAssignment.is_deleted == False,
-        ).all()
-        for ra in role_assignments:
-            if ra.is_valid:
-                identifiers.add(('ROLE', ra.role_secure_code))
-
-        # DEPARTMENT + GROUP (via UserUnitMembership)
-        memberships = UserUnitMembership.query.filter(
-            UserUnitMembership.user_secure_code == user.secure_code,
-            UserUnitMembership.is_deleted == False,
-        ).all()
-        for m in memberships:
-            if not m.is_active:
-                continue
-            if m.membership_type in (MembershipType.SOLID, MembershipType.DOTTED):
-                identifiers.add(('DEPARTMENT', m.unit_secure_code))
-            elif m.membership_type == MembershipType.MEMBER:
-                identifiers.add(('GROUP', m.unit_secure_code))
-
-        return identifiers
-
-    @staticmethod
-    def _filter_by_permissions(
+    def _filter_by_access_roles(
         nodes: List[DcSiteMapNode],
-        user,
-        org_sc: str,
+        role_type: str,
     ) -> Set[str]:
         """
-        權限過濾演算法
+        access_roles 過濾演算法
 
-        1. 一次查詢所有 node 的 permissions，按 node_secure_code 分組
-        2. 每個 node: 無 perms = 可見，有 perms = 白名單匹配
-        3. folder: 子節點全不可見時，folder 也隱藏
+        page 節點: 檢查 access_roles 是否允許此角色
+        folder 節點: 子節點全不可見時，folder 也隱藏
+
+        Args:
+            nodes: 所有啟用節點
+            role_type: 用戶角色（'GUEST' 表示非成員）
 
         Returns:
             可見節點的 secure_code 集合
         """
-        node_scs = [n.secure_code for n in nodes]
-        if not node_scs:
-            return set()
-
-        # 一次查詢所有權限
-        all_perms = DcSiteMapPermission.query.filter(
-            DcSiteMapPermission.node_secure_code.in_(node_scs),
-            DcSiteMapPermission.org_secure_code == org_sc,
-            DcSiteMapPermission.is_deleted == False,
-        ).all()
-
-        # 按 node 分組
-        perm_by_node: Dict[str, List[DcSiteMapPermission]] = {}
-        for p in all_perms:
-            perm_by_node.setdefault(p.node_secure_code, []).append(p)
-
-        user_ids = SiteMapService._get_user_identifiers(user)
-
-        # 先判定 page 節點可見性
         visible = set()
-        node_type_map = {n.secure_code: n.node_type for n in nodes}
-        parent_map = {n.secure_code: n.parent_secure_code for n in nodes}
 
         for n in nodes:
-            perms = perm_by_node.get(n.secure_code, [])
-            if not perms:
-                # 無權限記錄 = 可見
-                visible.add(n.secure_code)
-            else:
-                # 白名單匹配
-                for p in perms:
-                    if (p.target_type, p.target_secure_code) in user_ids:
-                        visible.add(n.secure_code)
-                        break
+            access_roles = n.access_roles or []
 
-        # folder: 若子節點全不可見則隱藏
-        # 反覆迭代直到穩定
+            if n.node_type == 'folder':
+                # folder 先暫時標記可見，後面再檢查子節點
+                visible.add(n.secure_code)
+                continue
+
+            # page 節點: 檢查准入
+            if not access_roles:
+                continue  # NONE: 不可見
+
+            if 'GUEST' in access_roles:
+                visible.add(n.secure_code)
+            elif role_type != 'GUEST' and role_type in access_roles:
+                visible.add(n.secure_code)
+
+        # folder: 若子節點全不可見則隱藏（反覆迭代直到穩定）
         changed = True
         while changed:
             changed = False
@@ -524,12 +489,11 @@ class SiteMapService:
                     continue
                 if n.node_type != 'folder':
                     continue
-                # 檢查此 folder 是否有任何可見子節點
-                has_visible_child = False
-                for other in nodes:
-                    if other.parent_secure_code == n.secure_code and other.secure_code in visible:
-                        has_visible_child = True
-                        break
+                has_visible_child = any(
+                    other.parent_secure_code == n.secure_code
+                    and other.secure_code in visible
+                    for other in nodes
+                )
                 if not has_visible_child:
                     visible.discard(n.secure_code)
                     changed = True

@@ -109,7 +109,8 @@ def update_site_map_node(ss_sc, node_sc):
     data = request.get_json() or {}
     update_fields = {}
     for field in ('name', 'icon', 'page_layout_secure_code',
-                  'display_order', 'crud_overrides', 'data_filters', 'is_active'):
+                  'display_order', 'access_roles', 'redirect_to',
+                  'crud_overrides', 'data_filters', 'is_active'):
         if field in data:
             update_fields[field] = data[field]
 
@@ -326,7 +327,7 @@ def get_site_map_targets(ss_sc):
 @api_bp.route('/sub-systems/<ss_sc>/site-map/user-tree')
 @module_access_required('nocode_builder', False)
 def get_user_site_map_tree(ss_sc):
-    """取得用戶可見的 site map 樹"""
+    """取得用戶可見的 site map 樹（含 GUEST 節點）"""
     from ..models import DcSubSystem
     from ..services.site_map_service import SiteMapService
 
@@ -339,16 +340,13 @@ def get_user_site_map_tree(ss_sc):
         return jsonify({'success': False, 'error': 'Sub system not found'}), 404
 
     result = SiteMapService.get_user_tree(current_user, ss)
-    if result is None:
-        return jsonify({'success': False, 'error': '您不是此子系統的成員'}), 403
-
     return jsonify({'success': True, 'data': result})
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/context')
 @module_access_required('nocode_builder', False)
 def get_site_map_node_context(ss_sc, node_sc):
-    """取得節點權限 context (CRUD + data_filters)"""
+    """取得節點權限 context (准入檢查 + CRUD + data_filters)"""
     from ..models import DcSubSystem
     from ..services.site_map_service import SiteMapService
     from ..services.sub_system_service import SubSystemService
@@ -364,16 +362,21 @@ def get_site_map_node_context(ss_sc, node_sc):
 
     role_type = SubSystemService.get_user_role_type(current_user, ss)
     if role_type is None:
-        return jsonify({'success': False, 'error': '您不是此子系統的成員'}), 403
+        role_type = 'GUEST'
+    is_admin = SubSystemService.is_admin_role(role_type)
 
     node = SiteMapService.get_node(node_sc, ss.org_secure_code)
     if not node:
         return jsonify({'success': False, 'error': 'Node not found'}), 404
 
-    # 檢查節點存取權限
-    is_admin = SubSystemService.is_admin_role(role_type)
-    if not is_admin and not SiteMapService.check_node_access(current_user, node):
-        return jsonify({'success': False, 'error': '您沒有存取此節點的權限'}), 403
+    # 准入檢查（管理層跳過）
+    if not is_admin and not SiteMapService.check_page_access(role_type, node):
+        redirect_to = node.redirect_to or '/dashboard'
+        return jsonify({
+            'success': False,
+            'error': '您沒有存取此頁面的權限',
+            'redirect_to': redirect_to,
+        }), 403
 
     context = SiteMapService.get_node_context(node, role_type)
     context['data_filters'] = resolve_filter_variables(

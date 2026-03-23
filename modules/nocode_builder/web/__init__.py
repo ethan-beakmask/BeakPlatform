@@ -4,7 +4,7 @@ Data CRUD Module - Web Routes
 """
 import logging
 
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request, abort, redirect
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
@@ -22,29 +22,8 @@ web_bp = Blueprint(
 @web_bp.route('/')
 @module_access_required('nocode_builder')
 def index():
-    """視圖管理首頁"""
-    return render_template('modules/nocode_builder/view_list.html')
-
-
-@web_bp.route('/views/new')
-@module_access_required('nocode_builder')
-def view_new():
-    """建立視圖"""
-    return render_template('modules/nocode_builder/view_config.html', secure_code=None)
-
-
-@web_bp.route('/views/<secure_code>/config')
-@module_access_required('nocode_builder')
-def view_config(secure_code):
-    """編輯視圖配置"""
-    return render_template('modules/nocode_builder/view_config.html', secure_code=secure_code)
-
-
-@web_bp.route('/views/<secure_code>')
-@module_access_required('nocode_builder', False)
-def view_browse(secure_code):
-    """資料瀏覽/操作"""
-    return render_template('modules/nocode_builder/view_browse.html', secure_code=secure_code)
+    """模組首頁 → 導向子系統列表"""
+    return redirect('/nocode-builder/sub-systems')
 
 
 @web_bp.route('/lab')
@@ -96,9 +75,8 @@ def page_view(secure_code):
 @web_bp.route('/sub-systems/<secure_code>/portal')
 @module_access_required('nocode_builder', False)
 def sub_system_portal(secure_code):
-    """子系統入口導航頁"""
+    """子系統入口導航頁（含 GUEST 支援）"""
     from ..models import DcSubSystem
-    from ..services.sub_system_service import SubSystemService
     from ..services.site_map_service import SiteMapService
     from app.security.resource_gateway import ResourceGateway
 
@@ -110,14 +88,8 @@ def sub_system_portal(secure_code):
     if not ss or ss.is_deleted or not ss.is_active:
         abort(404)
 
-    role_type = SubSystemService.get_user_role_type(current_user, ss)
-    if role_type is None:
-        # [SEC-01] 非成員存取子系統 → 強制登出 + 稽核日誌
-        _deny_and_logout('nocode_portal', secure_code)
-        from flask import redirect
-        return redirect('/auth/login')
-
     # 有 site map 時使用 V2 Portal (樹狀選單)
+    # 非成員也可進入，user-tree API 會回傳 GUEST 可見節點
     if SiteMapService.has_site_map(ss.secure_code, ss.org_secure_code):
         return render_template(
             'modules/nocode_builder/sub_system_portal_v2.html',
@@ -131,20 +103,6 @@ def sub_system_portal(secure_code):
         sub_system_sc=secure_code,
         sub_system_name=ss.name,
     )
-
-
-@web_bp.route('/views/<secure_code>/rows/new')
-@module_access_required('nocode_builder', False)
-def row_create(secure_code):
-    """新增資料（全頁面）"""
-    return render_template('modules/nocode_builder/row_form.html', secure_code=secure_code, row_id=None)
-
-
-@web_bp.route('/views/<secure_code>/rows/<row_id>/edit')
-@module_access_required('nocode_builder', False)
-def row_edit(secure_code, row_id):
-    """編輯資料（全頁面）"""
-    return render_template('modules/nocode_builder/row_form.html', secure_code=secure_code, row_id=row_id)
 
 
 # =============================================================================
@@ -311,18 +269,21 @@ def _deny_and_logout(resource_type, resource_id, sub_sc=''):
 
 def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
     """
-    [SEC-01] 檢查用戶是否有權存取 SiteMap 中對應的節點
+    [SEC-01] 檢查用戶是否有權存取 SiteMap 中對應的頁面
 
     透過 page_layout_secure_code 找到對應的 SiteMapNode，
-    再用 SiteMapService.check_node_access 檢查權限。
+    再用 access_roles 做准入檢查。
 
-    無對應 node 或無權限設定時放行（向下相容）。
+    無對應 node 時放行（向下相容）。
+    拒絕時回傳 redirect_to 路徑，允許時回傳 True。
     """
     from ..models.site_map_node import DcSiteMapNode
+    from ..models import DcSubSystem
     from ..services.site_map_service import SiteMapService
+    from ..services.sub_system_service import SubSystemService
+    from app.security.resource_gateway import ResourceGateway
 
     try:
-        # 透過 page_layout_secure_code 找到對應節點
         node = DcSiteMapNode.query.filter(
             DcSiteMapNode.sub_system_secure_code == sub_system_sc,
             DcSiteMapNode.page_layout_secure_code == page_layout_sc,
@@ -333,7 +294,16 @@ def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
         if not node:
             return True  # 無對應節點 → 放行
 
-        return SiteMapService.check_node_access(user, node)
+        ss = ResourceGateway.get(
+            DcSubSystem, sub_system_sc,
+            raise_on_not_found=False,
+            check_permission=False
+        )
+        if not ss:
+            return True
+
+        role_type = SubSystemService.get_user_role_type(user, ss)
+        return SiteMapService.check_page_access(role_type, node)
 
     except Exception as e:
         logger.warning('SiteMap node access check failed: %s', e)

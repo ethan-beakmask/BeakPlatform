@@ -1,7 +1,9 @@
 /**
  * site-map-editor.js -- 網站地圖編輯器
- * Alpine.js component: Wunderbaum 樹 + 節點屬性面板 + 權限白名單
+ * Alpine.js component: Wunderbaum 樹 + 節點屬性面板 + access_roles 准入設定
  */
+var SM_ROLES = ['GUEST', 'MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2', 'MEMBER'];
+
 function siteMapEditor(subSystemSc) {
     return {
         loading: true,
@@ -14,15 +16,10 @@ function siteMapEditor(subSystemSc) {
         nodeForm: {
             name: '', icon: '', node_type: 'page',
             page_layout_secure_code: '', is_active: true,
+            access_roles: [],
+            redirect_to: '/dashboard',
             crud_overrides: {}, data_filters: {},
         },
-
-        // 權限面板
-        permissions: [],
-        permLoading: false,
-        addPermForm: { target_type: 'ROLE', target_secure_code: '' },
-        permTargets: [],
-        permTargetLoading: false,
 
         // 新增節點 Modal
         showAddModal: false,
@@ -146,10 +143,51 @@ function siteMapEditor(subSystemSc) {
                 node_type: d.node_type || 'page',
                 page_layout_secure_code: d.page_layout_secure_code || '',
                 is_active: d.is_active !== false,
+                access_roles: (d.access_roles || []).slice(),
+                redirect_to: d.redirect_to || '/dashboard',
                 crud_overrides: JSON.parse(JSON.stringify(d.crud_overrides || {})),
                 data_filters: JSON.parse(JSON.stringify(d.data_filters || {})),
             };
-            this.loadPermissions(d.secure_code);
+        },
+
+        // ===== 准入控制 (access_roles) =====
+
+        hasAccessRole(role) {
+            return (this.nodeForm.access_roles || []).indexOf(role) >= 0;
+        },
+
+        toggleAccessRole(role) {
+            var roles = this.nodeForm.access_roles || [];
+            var idx = roles.indexOf(role);
+
+            if (role === 'GUEST') {
+                if (idx >= 0) {
+                    // 取消 GUEST → 變成 NONE
+                    this.nodeForm.access_roles = [];
+                } else {
+                    // 勾選 GUEST → 清除其他角色
+                    this.nodeForm.access_roles = ['GUEST'];
+                }
+                return;
+            }
+
+            // 非 GUEST 角色
+            // 先移除 GUEST（角色限制和任何人互斥）
+            roles = roles.filter(function(r) { return r !== 'GUEST'; });
+
+            if (idx >= 0) {
+                roles = roles.filter(function(r) { return r !== role; });
+            } else {
+                roles.push(role);
+            }
+            this.nodeForm.access_roles = roles;
+        },
+
+        getAccessLabel() {
+            var roles = this.nodeForm.access_roles || [];
+            if (roles.length === 0) return 'NONE (任何人都無法進入)';
+            if (roles.indexOf('GUEST') >= 0) return 'GUEST (任何人都能進入)';
+            return roles.join(', ');
         },
 
         // ===== 節點 CRUD =====
@@ -205,6 +243,8 @@ function siteMapEditor(subSystemSc) {
                     icon: this.nodeForm.icon || null,
                     page_layout_secure_code: this.nodeForm.page_layout_secure_code || null,
                     is_active: this.nodeForm.is_active,
+                    access_roles: this.nodeForm.access_roles,
+                    redirect_to: this.nodeForm.redirect_to || '/dashboard',
                     crud_overrides: this.nodeForm.crud_overrides,
                     data_filters: this.nodeForm.data_filters,
                 };
@@ -278,98 +318,7 @@ function siteMapEditor(subSystemSc) {
             }
         },
 
-        // ===== 權限管理 =====
-
-        async loadPermissions(nodeSc) {
-            this.permLoading = true;
-            this.permissions = [];
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions'
-                );
-                var data = await res.json();
-                if (data.success) {
-                    this.permissions = data.data || [];
-                }
-            } catch (e) {
-                console.error('loadPermissions:', e);
-            }
-            this.permLoading = false;
-        },
-
-        async onPermTargetTypeChange() {
-            this.addPermForm.target_secure_code = '';
-            this.permTargets = [];
-            if (!this.addPermForm.target_type) return;
-
-            this.permTargetLoading = true;
-            try {
-                var res = await fetch(
-                    '/api/module-access/targets?type=' + this.addPermForm.target_type
-                );
-                var data = await res.json();
-                if (data.success) {
-                    this.permTargets = data.data || [];
-                }
-            } catch (e) {
-                console.error('loadTargets:', e);
-            }
-            this.permTargetLoading = false;
-        },
-
-        async addPermission() {
-            if (!this.selectedNode) return;
-            if (!this.addPermForm.target_secure_code) {
-                this.showToast('請選擇對象', 'error');
-                return;
-            }
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            target_type: this.addPermForm.target_type,
-                            target_secure_code: this.addPermForm.target_secure_code,
-                        }),
-                    }
-                );
-                var data = await res.json();
-                if (data.success) {
-                    this.showToast('權限已新增', 'success');
-                    this.addPermForm.target_secure_code = '';
-                    await this.loadPermissions(this.selectedNode.secure_code);
-                } else {
-                    this.showToast(data.error || '新增失敗', 'error');
-                }
-            } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
-            }
-        },
-
-        async removePermission(permSc) {
-            if (!confirm('確定要移除此權限?')) return;
-            try {
-                var res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/permissions/' + permSc,
-                    { method: 'DELETE' }
-                );
-                var data = await res.json();
-                if (data.success) {
-                    this.showToast('權限已刪除', 'success');
-                    if (this.selectedNode) {
-                        await this.loadPermissions(this.selectedNode.secure_code);
-                    }
-                } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
-                }
-            } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
-            }
-        },
-
-        // ===== CRUD Overrides (簡化版) =====
+        // ===== CRUD Overrides (保留，Phase 3 移至 widget) =====
 
         getCrud(role, action) {
             var overrides = this.nodeForm.crud_overrides || {};
@@ -425,13 +374,6 @@ function siteMapEditor(subSystemSc) {
             if (this.nodeForm.data_filters && this.nodeForm.data_filters[role]) {
                 this.nodeForm.data_filters[role][col] = value;
             }
-        },
-
-        // ===== Target Type 翻譯 =====
-
-        targetTypeLabel(type) {
-            var map = { 'ROLE': '角色', 'DEPARTMENT': '部門', 'GROUP': '群組', 'ACCOUNT': '帳號' };
-            return map[type] || type;
         },
 
         // ===== Toast =====
