@@ -127,9 +127,21 @@ def provision_org_database(org_id, org_secure_code, db_host='localhost', db_port
                         psql.Identifier(admin_user),
                     )
                 )
-                logger.info(f'OrgDB: 建立資料庫 {db_name}')
+                # 移除 PUBLIC 的 CONNECT 權限，防止其他企業帳號連入
+                cur.execute(
+                    psql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
+                        psql.Identifier(db_name),
+                    )
+                )
+                logger.info(f'OrgDB: 建立資料庫 {db_name}（已 REVOKE PUBLIC CONNECT）')
             else:
-                logger.info(f'OrgDB: 資料庫 {db_name} 已存在')
+                # 既有資料庫也確保 PUBLIC CONNECT 已移除
+                cur.execute(
+                    psql.SQL("REVOKE CONNECT ON DATABASE {} FROM PUBLIC").format(
+                        psql.Identifier(db_name),
+                    )
+                )
+                logger.info(f'OrgDB: 資料庫 {db_name} 已存在（已確認 REVOKE PUBLIC CONNECT）')
 
     finally:
         conn.close()
