@@ -207,6 +207,19 @@ class ConglomerateService:
                 f'集團 {conglomerate.name} 解散，企業 {org.name} 退出'
             )
 
+        # 軟刪除集團共享 DB 記錄（如有）
+        if conglomerate.has_shared_db:
+            from modules.form_workflow.models.conglomerate_database import (
+                FwConglomerateDatabase,
+            )
+            cg_db = FwConglomerateDatabase.query.filter_by(
+                conglomerate_secure_code=secure_code,
+                is_deleted=False,
+            ).first()
+            if cg_db:
+                cg_db.is_deleted = True
+                cg_db.deleted_at = datetime.utcnow()
+
         # 軟刪除集團
         conglomerate.is_deleted = True
         conglomerate.deleted_at = datetime.utcnow()

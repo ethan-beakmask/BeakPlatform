@@ -71,6 +71,9 @@ class FwSpecMultifaceted(ModuleBaseModel):
     # 關聯 SQL 表名（nullable，套用後記錄）
     linked_sql_table = Column(String(100), nullable=True)
 
+    # 關聯 SQL 目標資料庫: 'org'=企業DB, 'conglomerate'=集團共享DB
+    linked_sql_target = Column(String(20), nullable=True)
+
     # 修改者
     last_modified_by = Column(String(32))
     last_modified_by_name = Column(String(200))
@@ -93,6 +96,7 @@ class FwSpecMultifaceted(ModuleBaseModel):
             'status': self.status,
             'linked_form_template_sc': self.linked_form_template_sc,
             'linked_sql_table': self.linked_sql_table,
+            'linked_sql_target': self.linked_sql_target,
             'last_modified_by': self.last_modified_by,
             'last_modified_by_name': self.last_modified_by_name,
         })

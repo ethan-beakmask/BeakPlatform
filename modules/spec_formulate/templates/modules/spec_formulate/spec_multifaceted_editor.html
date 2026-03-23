@@ -75,6 +75,15 @@ window.__MF_SPEC_CONFIG = {
                         @click="populateFacet('postgresql')"
                         :disabled="saving">PostgreSQL</button>
                 <div class="facet-actions" x-show="specSc">
+                    <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 4px;">
+                        <select x-model="pgTarget" @change="onPgTargetChange()"
+                                style="font-size: 0.8em; padding: 2px 4px;">
+                            <option value="org">企業 DB</option>
+                            <template x-if="cgDbAvailable">
+                                <option value="conglomerate" x-text="'集團 DB (' + cgDbName + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
                     <template x-if="!linkedSqlTable">
                         <div class="facet-action-btns">
                             <button class="mfe-btn" @click="openReadTableModal()">讀入資料表</button>
@@ -85,6 +94,8 @@ window.__MF_SPEC_CONFIG = {
                     <template x-if="linkedSqlTable">
                         <div class="facet-linked-info">
                             <span class="linked-name" x-text="linkedSqlTable"></span>
+                            <span x-show="linkedSqlTarget === 'conglomerate'"
+                                  style="font-size: 0.75em; color: #0d6efd;">[集團]</span>
                             <button class="mfe-btn danger" @click="pgUnlinkTable()">解除</button>
                         </div>
                     </template>
@@ -436,8 +447,8 @@ window.__MF_SPEC_CONFIG = {
                     <label>選擇資料表</label>
                     <select x-model="pgSelectedTable" @change="pgCompareTable()">
                         <option value="">-- 選擇 --</option>
-                        <template x-for="t in pgTables" :key="t">
-                            <option :value="t" x-text="t"></option>
+                        <template x-for="t in pgTableOptions()" :key="t.value">
+                            <option :value="t.value" x-text="t.label"></option>
                         </template>
                     </select>
                 </div>

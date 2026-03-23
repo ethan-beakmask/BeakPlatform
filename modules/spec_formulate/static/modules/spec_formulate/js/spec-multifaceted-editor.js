@@ -77,6 +77,10 @@ function specMultifacetedEditor() {
 
         // PostgreSQL 資料表
         linkedSqlTable: '',
+        linkedSqlTarget: '',
+        pgTarget: 'org',          // 'org' or 'conglomerate'
+        cgDbAvailable: false,     // 企業是否屬於有共享 DB 的集團
+        cgDbName: '',             // 集團名稱（顯示用）
         showReadTableModal: false,
         pgTables: [],
         pgTablesLoading: false,
@@ -109,6 +113,7 @@ function specMultifacetedEditor() {
             this.csrfToken = meta ? meta.getAttribute('content') : '';
 
             await this.loadDataClasses();
+            this.loadCgInfo();
             this.loadSpecList();
             if (this.specSc) {
                 await this.loadSpec();
@@ -191,6 +196,10 @@ function specMultifacetedEditor() {
                     this.linkedFormTemplateSc = s.linked_form_template_sc || '';
                     this.linkedFormTemplateName = s.linked_form_template_name || '';
                     this.linkedSqlTable = s.linked_sql_table || '';
+                    this.linkedSqlTarget = s.linked_sql_target || '';
+                    if (this.linkedSqlTarget === 'conglomerate') {
+                        this.pgTarget = 'conglomerate';
+                    }
                     if (this.activeFacets.length > 0 && !this.activeFacetTab) {
                         this.activeFacetTab = this.activeFacets[0];
                     }
@@ -847,19 +856,69 @@ function specMultifacetedEditor() {
 
         // ── PostgreSQL 資料表 ──
 
+        async loadCgInfo() {
+            try {
+                var resp = await fetch('/api/spec-formulate/multifaceted/cg/info');
+                var data = await resp.json();
+                if (data.success && data.data.has_conglomerate_db) {
+                    this.cgDbAvailable = true;
+                    this.cgDbName = data.data.conglomerate_name || '';
+                }
+            } catch (e) {
+                // 無集團 DB 不影響正常功能
+            }
+        },
+
+        onPgTargetChange() {
+            // 切換目標時清除已載入的表列表
+            this.pgTables = [];
+            this.pgSelectedTable = '';
+            this.pgCompareResult = null;
+        },
+
+        pgTableOptions() {
+            // 統一成 {value, label} 格式
+            // org: pgTables = ['name1', 'name2']
+            // conglomerate: pgTables = [{name, creator_org_name, is_owner}]
+            var result = [];
+            for (var i = 0; i < this.pgTables.length; i++) {
+                var t = this.pgTables[i];
+                if (typeof t === 'string') {
+                    result.push({ value: t, label: t });
+                } else {
+                    var label = t.name;
+                    if (t.creator_org_name) {
+                        label += ' (' + t.creator_org_name;
+                        if (t.is_owner) label += ', 自己建立';
+                        label += ')';
+                    }
+                    result.push({ value: t.name, label: label });
+                }
+            }
+            return result;
+        },
+
+        // 根據 pgTarget 回傳 API 路徑前綴
+        _pgApiPrefix() {
+            return this.pgTarget === 'conglomerate' ? '/cg/' : '/pg/';
+        },
+
         async openReadTableModal() {
             this.showReadTableModal = true;
             this.pgSelectedTable = '';
             this.pgCompareResult = null;
             this.pgTables = [];
             this.pgTablesLoading = true;
+            var prefix = this._pgApiPrefix();
             try {
-                // 確保企業 DB 存在
-                await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': this.csrfToken },
-                });
-                var resp = await fetch('/api/spec-formulate/multifaceted/pg/tables');
+                if (this.pgTarget === 'org') {
+                    // 企業 DB: 先確保存在
+                    await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.csrfToken },
+                    });
+                }
+                var resp = await fetch('/api/spec-formulate/multifaceted' + prefix + 'tables');
                 var data = await resp.json();
                 if (data.success) {
                     this.pgTables = data.data || [];
@@ -877,10 +936,14 @@ function specMultifacetedEditor() {
                 this.pgCompareResult = null;
                 return;
             }
+            var prefix = this._pgApiPrefix();
+            var tableName = this.pgTarget === 'conglomerate'
+                ? (this.pgSelectedTable.name || this.pgSelectedTable)
+                : this.pgSelectedTable;
             try {
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc +
-                    '/pg/compare/' + encodeURIComponent(this.pgSelectedTable)
+                    prefix + 'compare/' + encodeURIComponent(tableName)
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -895,11 +958,11 @@ function specMultifacetedEditor() {
 
         async pgLinkTable(tableName) {
             // 僅關聯，不修改資料表
+            var prefix = this._pgApiPrefix();
             try {
-                // 用 saveSpec 儲存 linked_sql_table（透過後端更新）
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc +
-                    '/pg/apply-to-table',
+                    prefix + 'apply-to-table',
                     {
                         method: 'POST',
                         headers: {
@@ -911,6 +974,7 @@ function specMultifacetedEditor() {
                 );
                 var data = await resp.json();
                 this.linkedSqlTable = tableName;
+                this.linkedSqlTarget = this.pgTarget;
                 this.showReadTableModal = false;
                 this.showToast('已關聯資料表: ' + tableName, 'success');
             } catch (e) {
@@ -921,22 +985,27 @@ function specMultifacetedEditor() {
         async pgApplySpecToTable() {
             if (!this.pgSelectedTable) return;
             this.pgApplying = true;
+            var prefix = this._pgApiPrefix();
+            var tableName = this.pgTarget === 'conglomerate'
+                ? (this.pgSelectedTable.name || this.pgSelectedTable)
+                : this.pgSelectedTable;
             try {
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc +
-                    '/pg/apply-to-table',
+                    prefix + 'apply-to-table',
                     {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': this.csrfToken,
                         },
-                        body: JSON.stringify({ table_name: this.pgSelectedTable }),
+                        body: JSON.stringify({ table_name: tableName }),
                     }
                 );
                 var data = await resp.json();
                 if (data.success) {
-                    this.linkedSqlTable = this.pgSelectedTable;
+                    this.linkedSqlTable = tableName;
+                    this.linkedSqlTarget = this.pgTarget;
                     var toastMsg = data.message;
                     if (data.data && data.data.errors && data.data.errors.length > 0) {
                         toastMsg += ' (' + data.data.errors.length + ' 個失敗)';
@@ -977,19 +1046,22 @@ function specMultifacetedEditor() {
                 }
             }
 
+            var prefix = this._pgApiPrefix();
             try {
                 // 先儲存最新欄位（含 PG Type）
                 await this.saveSpec();
 
-                // 確保企業 DB 存在
-                await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': this.csrfToken },
-                });
+                if (this.pgTarget === 'org') {
+                    // 確保企業 DB 存在
+                    await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': this.csrfToken },
+                    });
+                }
 
                 var resp = await fetch(
                     '/api/spec-formulate/multifaceted/specs/' + this.specSc +
-                    '/pg/create-table',
+                    prefix + 'create-table',
                     {
                         method: 'POST',
                         headers: {
@@ -1002,6 +1074,7 @@ function specMultifacetedEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = this.specTableName;
+                    this.linkedSqlTarget = this.pgTarget;
                     var msg = data.message;
                     if (data.data && data.data.warnings && data.data.warnings.length > 0) {
                         msg += ' (' + data.data.warnings.length + ' 個警告)';
@@ -1030,6 +1103,7 @@ function specMultifacetedEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.linkedSqlTable = '';
+                    this.linkedSqlTarget = '';
                     this.showToast('已解除資料表關聯', 'success');
                 } else {
                     this.showToast(data.error || '解除失敗', 'error');
