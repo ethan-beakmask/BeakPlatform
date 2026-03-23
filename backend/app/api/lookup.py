@@ -20,6 +20,7 @@ BeakPlatform - Lookup Table API
 - GET    /api/lookup/by-code/<category_code>            用 code 取選項 (合併)
 """
 import logging
+import re
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
@@ -27,7 +28,10 @@ from flask_login import current_user
 from ..security.decorators import login_required, admin_required
 from ..services.lookup_service import LookupService
 from ..services.lookup_org_service import LookupOrgService
+from ..services.code_generator import get_code_generator
 from .. import csrf
+
+_CODE_PATTERN = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +66,12 @@ def create_category():
         return jsonify({'success': False, 'error': '缺少 code'}), 400
     if not name:
         return jsonify({'success': False, 'error': '缺少 name'}), 400
+
+    # 代碼格式驗證
+    generator = get_code_generator()
+    is_valid, error = generator.validate(code)
+    if not is_valid:
+        return jsonify({'success': False, 'error': error}), 400
 
     org_sc = current_user.org_secure_code
 
@@ -139,7 +149,7 @@ def update_category(secure_code):
         updated = LookupOrgService.update_category(
             org_sc, secure_code,
             **{k: v for k, v in data.items()
-               if k in ('name', 'name_i18n', 'description', 'is_hierarchical')}
+               if k in ('name', 'name_i18n', 'description', 'is_hierarchical', 'is_active')}
         )
         if not updated:
             return jsonify({'success': False, 'error': '更新失敗'}), 400
@@ -170,9 +180,15 @@ def delete_category(secure_code):
         return jsonify({'success': False, 'error': '類別不存在'}), 404
 
     try:
-        # 先取 code 以便 invalidate 快取
+        # 先取類別資訊
         org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
-        cat_code = org_cat.get('code', '') if org_cat else ''
+        if not org_cat:
+            return jsonify({'success': False, 'error': '類別不存在'}), 404
+        cat_code = org_cat.get('code', '')
+
+        # 必須先停用才能刪除
+        if org_cat.get('is_active', True):
+            return jsonify({'success': False, 'error': '請先停用類別後再刪除'}), 400
 
         success = LookupOrgService.delete_category(org_sc, secure_code)
         if not success:
@@ -249,6 +265,10 @@ def create_item(secure_code):
         return jsonify({'success': False, 'error': '缺少 code'}), 400
     if not label:
         return jsonify({'success': False, 'error': '缺少 label'}), 400
+
+    # 代碼格式驗證
+    if not _CODE_PATTERN.match(code):
+        return jsonify({'success': False, 'error': '代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭'}), 400
 
     cat_code = org_cat['code']
 

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS lookup_categories (
     name_i18n JSONB DEFAULT '{}',
     description TEXT,
     is_hierarchical BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -103,8 +104,9 @@ def _row_to_category_dict(row) -> dict:
         'description': row[5],
         'is_system': False,       # 企業級一律 False
         'is_hierarchical': row[6],
-        'created_at': row[7].isoformat() if row[7] else None,
-        'updated_at': row[8].isoformat() if row[8] else None,
+        'is_active': row[7],
+        'created_at': row[8].isoformat() if row[8] else None,
+        'updated_at': row[9].isoformat() if row[9] else None,
     }
 
 
@@ -129,7 +131,7 @@ def _row_to_item_dict(row) -> dict:
 # Category SELECT 欄位順序
 _CAT_COLS = (
     'id, secure_code, code, name, name_i18n, description, '
-    'is_hierarchical, created_at, updated_at'
+    'is_hierarchical, is_active, created_at, updated_at'
 )
 
 # Item SELECT 欄位順序
@@ -190,6 +192,23 @@ class LookupOrgService:
                             )
                         )
                 conn.commit()
+
+            # 遷移: 為既有 lookup_categories 表補上 is_active 欄位
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'lookup_categories' AND column_name = 'is_active'
+                """)
+                if not cur.fetchone():
+                    cur.execute(
+                        "ALTER TABLE lookup_categories "
+                        "ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE"
+                    )
+                    logger.info(
+                        f'[LookupOrg] 已為企業 {org_secure_code} '
+                        f'lookup_categories 補上 is_active 欄位'
+                    )
+            conn.commit()
 
         cls._tables_ensured.add(org_secure_code)
         logger.info(f'[LookupOrg] 已確認企業 {org_secure_code} lookup 表存在')
@@ -291,6 +310,7 @@ class LookupOrgService:
             'description': description,
             'is_system': False,
             'is_hierarchical': is_hierarchical,
+            'is_active': True,
             'created_at': now.isoformat(),
             'updated_at': now.isoformat(),
         }
@@ -299,7 +319,7 @@ class LookupOrgService:
     def update_category(cls, org_secure_code: str, sc: str, **kwargs) -> Optional[dict]:
         """更新企業類別 (admin 角色寫)"""
         cls.ensure_tables(org_secure_code)
-        allowed = ('name', 'name_i18n', 'description', 'is_hierarchical')
+        allowed = ('name', 'name_i18n', 'description', 'is_hierarchical', 'is_active')
         updates = {}
         for f in allowed:
             if f in kwargs:

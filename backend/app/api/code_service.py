@@ -26,6 +26,17 @@ logger = logging.getLogger(__name__)
 code_bp = Blueprint('api_code', __name__, url_prefix='/api/code')
 
 # 實體註冊表：定義各實體的 Model 與查詢條件
+def _build_lookup_category_exists_checker():
+    """建立 lookup_category 的重複檢查函數（查企業 DB）"""
+    def exists_checker(code):
+        from flask_login import current_user
+        from ..services.lookup_org_service import LookupOrgService
+        org_sc = current_user.org_secure_code
+        cat = LookupOrgService.get_category_by_code(org_sc, code)
+        return cat is not None
+    return exists_checker
+
+
 ENTITY_REGISTRY = {
     'role': {
         'model': Role,
@@ -75,11 +86,22 @@ ENTITY_REGISTRY = {
         'code_field': 'code',
         '_lazy_model': _get_dc_sub_system,
     },
+    'lookup_category': {
+        'model': None,
+        'tenant': True,
+        'code_field': 'code',
+        '_custom_exists': _build_lookup_category_exists_checker,
+    },
 }
 
 
 def _build_exists_checker(entity_config):
     """建立 case-insensitive 的重複檢查函數"""
+    # 自訂 exists checker（如 lookup_category 查企業 DB）
+    custom_builder = entity_config.get('_custom_exists')
+    if custom_builder:
+        return custom_builder()
+
     lazy_loader = entity_config.get('_lazy_model')
     model = lazy_loader() if lazy_loader else entity_config['model']
     code_field = entity_config['code_field']

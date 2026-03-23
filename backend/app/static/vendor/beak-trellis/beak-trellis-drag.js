@@ -199,6 +199,11 @@
                 dropAction = 'inside';
             }
 
+            // dragFlatOnly: 禁止拖入子層，只允許同層排序
+            if (grid.options.dragFlatOnly && dropAction === 'inside') {
+                dropAction = 'after';
+            }
+
             grid._trellisDropTarget = {
                 id: targetId,
                 tr: tr,
