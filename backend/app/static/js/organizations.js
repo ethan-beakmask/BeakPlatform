@@ -128,7 +128,7 @@ function orgManager() {
                 const data = await resp.json();
                 if (resp.ok) {
                     this.editingConglomerate = data.conglomerate;
-                    this.selectedOrgs = data.organizations.map(o => o.id || o.secure_code);
+                    this.selectedOrgs = data.organizations.map(o => o.secure_code);
                 } else {
                     alert(data.error || '載入失敗');
                 }
@@ -142,7 +142,7 @@ function orgManager() {
                 alert('請選擇至少兩家企業');
                 return;
             }
-            const conglomerateId = this.editingConglomerate.id || this.editingConglomerate.secure_code;
+            const conglomerateId = this.editingConglomerate.secure_code;
             try {
                 await fetch('/api/conglomerates/' + conglomerateId, {
                     method: 'PUT',
@@ -170,7 +170,7 @@ function orgManager() {
             if (!this.editingConglomerate) return;
             if (!confirm('確定要解散集團「' + this.editingConglomerate.name + '」嗎？')) return;
 
-            const conglomerateId = this.editingConglomerate.id || this.editingConglomerate.secure_code;
+            const conglomerateId = this.editingConglomerate.secure_code;
             try {
                 const resp = await fetch('/api/conglomerates/' + conglomerateId, {
                     method: 'DELETE',
@@ -185,6 +185,29 @@ function orgManager() {
                 }
             } catch (e) {
                 alert('解散失敗: ' + e.message);
+            }
+        },
+
+        async provisionSharedDb() {
+            if (!this.editingConglomerate) return;
+            if (!confirm('確定要為集團「' + this.editingConglomerate.name + '」建立共享資料庫嗎？')) return;
+
+            const sc = this.editingConglomerate.secure_code;
+            try {
+                const resp = await fetch('/api/conglomerates/' + sc + '/provision-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken }
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    this.editingConglomerate.has_shared_db = true;
+                    this.editingConglomerate.shared_db_name = data.db_name;
+                    alert('共享資料庫建立成功: ' + data.db_name);
+                } else {
+                    alert(data.error || '建立失敗');
+                }
+            } catch (e) {
+                alert('建立失敗: ' + e.message);
             }
         },
 

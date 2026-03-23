@@ -53,13 +53,28 @@
                 </div>
             </template>
             <template x-if="editingConglomerate">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <input type="text" x-model="editingConglomerate.name">
-                    <button type="button" class="btn btn-success btn-sm" @click="updateConglomerate()">
-                        更新 (<span x-text="selectedOrgs.length"></span>)
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm" @click="dissolveConglomerate()">解散</button>
-                    <button type="button" class="btn btn-secondary btn-sm" @click="cancelEditConglomerate()">取消</button>
+                <div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                        <input type="text" x-model="editingConglomerate.name">
+                        <button type="button" class="btn btn-success btn-sm" @click="updateConglomerate()">
+                            更新 (<span x-text="selectedOrgs.length"></span>)
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" @click="dissolveConglomerate()">解散</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="cancelEditConglomerate()">取消</button>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; font-size: 0.85em;">
+                        <span style="color: #6c757d;">共享資料庫：</span>
+                        <template x-if="editingConglomerate.has_shared_db">
+                            <span style="color: #198754;">已建立 (<span x-text="editingConglomerate.shared_db_name || ''"></span>)</span>
+                        </template>
+                        <template x-if="!editingConglomerate.has_shared_db">
+                            <span>
+                                <span style="color: #6c757d;">未建立</span>
+                                <button type="button" class="btn btn-primary btn-sm" style="margin-left: 4px;"
+                                        @click="provisionSharedDb()">建立共享資料庫</button>
+                            </span>
+                        </template>
+                    </div>
                 </div>
             </template>
         </div>
