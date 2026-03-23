@@ -6,6 +6,10 @@
  * - 非階層類別: 扁平列表，拖拉排序
  * - 階層類別: 樹狀展開(預設全展開)，拖拉排序+跨層移動
  */
+
+// 值欄位名稱對照
+var _VALUE_FIELDS = ['value_str', 'value_int', 'value_decimal', 'value_date', 'value_time', 'value_datetime'];
+
 function lookupManager() {
     var mixin = codeInputMixin('lookup_category');
 
@@ -32,7 +36,7 @@ function lookupManager() {
 
         // Item Modal
         showItemModal: false,
-        itemForm: { secure_code: null, code: '', label: '', parent_code: '', sort_order: 0, valueJson: '', is_active: true },
+        itemForm: _emptyItemForm(),
         itemSaving: false,
 
         // Toast
@@ -240,20 +244,30 @@ function lookupManager() {
                 return (a.sort_order || 0) - (b.sort_order || 0);
             });
 
+            function itemToNodeData(item) {
+                return {
+                    secure_code: item.secure_code,
+                    code: item.code,
+                    label: item.label,
+                    parent_code: item.parent_code || '',
+                    sort_order: item.sort_order || 0,
+                    is_active: item.is_active,
+                    value: item.value,
+                    value_str: item.value_str,
+                    value_int: item.value_int,
+                    value_decimal: item.value_decimal,
+                    value_date: item.value_date,
+                    value_time: item.value_time,
+                    value_datetime: item.value_datetime
+                };
+            }
+
             if (!isHier) {
                 return sorted.map(function(item) {
                     return {
                         id: item.secure_code,
                         label: item.label,
-                        data: {
-                            secure_code: item.secure_code,
-                            code: item.code,
-                            label: item.label,
-                            parent_code: item.parent_code || '',
-                            sort_order: item.sort_order || 0,
-                            is_active: item.is_active,
-                            value: item.value
-                        }
+                        data: itemToNodeData(item)
                     };
                 });
             }
@@ -269,22 +283,13 @@ function lookupManager() {
             function buildChildren(parentCode) {
                 var list = childrenMap[parentCode] || [];
                 return list.map(function(item) {
-                    var node = {
+                    return {
                         id: item.secure_code,
                         label: item.label,
-                        data: {
-                            secure_code: item.secure_code,
-                            code: item.code,
-                            label: item.label,
-                            parent_code: item.parent_code || '',
-                            sort_order: item.sort_order || 0,
-                            is_active: item.is_active,
-                            value: item.value
-                        },
+                        data: itemToNodeData(item),
                         children: buildChildren(item.code),
                         expanded: true
                     };
-                    return node;
                 });
             }
             return buildChildren('');
@@ -321,7 +326,7 @@ function lookupManager() {
                     {
                         id: 'code',
                         label: '代碼',
-                        width: '140px',
+                        width: '130px',
                         sortable: false,
                         renderer: function(value, node) {
                             var d = node.data || {};
@@ -329,9 +334,19 @@ function lookupManager() {
                         }
                     },
                     {
+                        id: 'values',
+                        label: '值',
+                        width: '280px',
+                        sortable: false,
+                        renderer: function(value, node) {
+                            var d = node.data || {};
+                            return _renderValueColumn(d);
+                        }
+                    },
+                    {
                         id: 'status',
                         label: '狀態',
-                        width: '70px',
+                        width: '60px',
                         sortable: false,
                         renderer: function(value, node) {
                             var d = node.data || {};
@@ -525,28 +540,71 @@ function lookupManager() {
                     label: item.label,
                     parent_code: item.parent_code || '',
                     sort_order: item.sort_order || 0,
+                    value_str: item.value_str || '',
+                    value_int: (item.value_int != null) ? item.value_int : '',
+                    value_decimal: (item.value_decimal != null) ? item.value_decimal : '',
+                    value_date: item.value_date || '',
+                    value_time: item.value_time || '',
+                    value_datetime: item.value_datetime ? item.value_datetime.replace(' ', 'T') : '',
                     valueJson: item.value ? JSON.stringify(item.value, null, 2) : '',
+                    jsonMode: 'simple',
+                    jsonPairs: _jsonToPairs(item.value),
                     is_active: item.is_active,
                 };
             } else {
                 var maxSort = this.items.length > 0
                     ? Math.max.apply(null, this.items.map(function(i) { return i.sort_order || 0; }))
                     : -1;
-                this.itemForm = {
-                    secure_code: null,
-                    code: '',
-                    label: '',
-                    parent_code: parentCode || '',
-                    sort_order: maxSort + 1,
-                    valueJson: '',
-                    is_active: true,
-                };
+                this.itemForm = _emptyItemForm();
+                this.itemForm.parent_code = parentCode || '';
+                this.itemForm.sort_order = maxSort + 1;
             }
             this._ci_generatedCode = '';
             this._ci_suggestions = [];
             this._ci_codeValid = false;
             this._ci_codeError = '';
             this.showItemModal = true;
+        },
+
+        // JSON 模式切換
+        toggleJsonMode() {
+            if (this.itemForm.jsonMode === 'simple') {
+                // simple -> raw: 將 pairs 序列化為 JSON
+                var obj = _pairsToJson(this.itemForm.jsonPairs);
+                this.itemForm.valueJson = obj !== null ? JSON.stringify(obj, null, 2) : '';
+                this.itemForm.jsonMode = 'raw';
+            } else {
+                // raw -> simple: 嘗試解析 JSON 為 pairs
+                if (!this.itemForm.valueJson || !this.itemForm.valueJson.trim()) {
+                    this.itemForm.jsonPairs = [];
+                    this.itemForm.jsonMode = 'simple';
+                    return;
+                }
+                try {
+                    var parsed = JSON.parse(this.itemForm.valueJson);
+                    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                        // 檢查是否為扁平物件
+                        var isFlat = true;
+                        for (var k in parsed) {
+                            var v = parsed[k];
+                            if (typeof v === 'object' && v !== null) {
+                                isFlat = false;
+                                break;
+                            }
+                        }
+                        if (isFlat) {
+                            this.itemForm.jsonPairs = _jsonToPairs(parsed);
+                            this.itemForm.jsonMode = 'simple';
+                        } else {
+                            this.showToast('JSON 含巢狀結構，無法轉為簡易模式', 'error');
+                        }
+                    } else {
+                        this.showToast('JSON 非物件格式，無法轉為簡易模式', 'error');
+                    }
+                } catch (e) {
+                    this.showToast('JSON 格式錯誤，無法切換', 'error');
+                }
+            }
         },
 
         async saveItem() {
@@ -563,13 +621,18 @@ function lookupManager() {
                 return;
             }
 
+            // 組裝 JSON value
             var parsedValue = null;
-            if (this.itemForm.valueJson && this.itemForm.valueJson.trim()) {
-                try {
-                    parsedValue = JSON.parse(this.itemForm.valueJson);
-                } catch (e) {
-                    this.showToast('附加資料 JSON 格式錯誤', 'error');
-                    return;
+            if (this.itemForm.jsonMode === 'simple') {
+                parsedValue = _pairsToJson(this.itemForm.jsonPairs);
+            } else {
+                if (this.itemForm.valueJson && this.itemForm.valueJson.trim()) {
+                    try {
+                        parsedValue = JSON.parse(this.itemForm.valueJson);
+                    } catch (e) {
+                        this.showToast('JSON 附加資料格式錯誤', 'error');
+                        return;
+                    }
                 }
             }
 
@@ -589,6 +652,12 @@ function lookupManager() {
                     parent_code: this.itemForm.parent_code || null,
                     sort_order: this.itemForm.sort_order,
                     value: parsedValue,
+                    value_str: this.itemForm.value_str || null,
+                    value_int: (this.itemForm.value_int !== '' && this.itemForm.value_int != null) ? this.itemForm.value_int : null,
+                    value_decimal: (this.itemForm.value_decimal !== '' && this.itemForm.value_decimal != null) ? this.itemForm.value_decimal : null,
+                    value_date: this.itemForm.value_date || null,
+                    value_time: this.itemForm.value_time || null,
+                    value_datetime: this.itemForm.value_datetime || null,
                     is_active: this.itemForm.is_active,
                 };
                 var res = await fetch(url, {
@@ -618,4 +687,166 @@ function lookupManager() {
             setTimeout(function() { self.toast.show = false; }, 3000);
         }
     };
+}
+
+// ===== 輔助函式 =====
+
+function _emptyItemForm() {
+    return {
+        secure_code: null,
+        code: '',
+        label: '',
+        parent_code: '',
+        sort_order: 0,
+        value_str: '',
+        value_int: '',
+        value_decimal: '',
+        value_date: '',
+        value_time: '',
+        value_datetime: '',
+        valueJson: '',
+        jsonMode: 'simple',
+        jsonPairs: [],
+        is_active: true
+    };
+}
+
+/**
+ * 將 JSONB 物件轉為 key-value pairs 陣列
+ * 每個 pair: { key, value, type }
+ * type: 'auto' | 'string' | 'number' | 'boolean'
+ */
+function _jsonToPairs(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return [];
+    var pairs = [];
+    for (var k in obj) {
+        if (!obj.hasOwnProperty(k)) continue;
+        var v = obj[k];
+        var t = 'auto';
+        if (typeof v === 'boolean') {
+            t = 'boolean';
+            v = v ? 'true' : 'false';
+        } else if (typeof v === 'number') {
+            t = 'number';
+            v = String(v);
+        } else if (typeof v === 'string') {
+            t = 'string';
+        } else {
+            // 巢狀物件/陣列 -- 轉為字串表示
+            t = 'string';
+            v = JSON.stringify(v);
+        }
+        pairs.push({ key: k, value: v, type: t });
+    }
+    return pairs;
+}
+
+/**
+ * 將 key-value pairs 陣列轉回 JSON 物件
+ * 自動偵測型別
+ */
+function _pairsToJson(pairs) {
+    if (!pairs || pairs.length === 0) return null;
+    // 過濾空行
+    var validPairs = pairs.filter(function(p) { return p.key && p.key.trim(); });
+    if (validPairs.length === 0) return null;
+
+    var obj = {};
+    for (var i = 0; i < validPairs.length; i++) {
+        var p = validPairs[i];
+        var key = p.key.trim();
+        var val = (p.value || '').trim();
+        var type = p.type || 'auto';
+
+        if (type === 'boolean') {
+            obj[key] = (val === 'true');
+        } else if (type === 'number') {
+            var n = Number(val);
+            obj[key] = isNaN(n) ? val : n;
+        } else if (type === 'string') {
+            obj[key] = val;
+        } else {
+            // auto: 自動推斷
+            if (val === 'true') {
+                obj[key] = true;
+            } else if (val === 'false') {
+                obj[key] = false;
+            } else if (val !== '' && !isNaN(Number(val))) {
+                obj[key] = Number(val);
+            } else {
+                obj[key] = val;
+            }
+        }
+    }
+    return obj;
+}
+
+/**
+ * 根據 node data 產生值欄位 HTML（badge + 實際值）
+ * 每個有值的欄位顯示一行: [badge] 值
+ */
+function _renderValueColumn(d) {
+    var lines = [];
+    var badge = 'display:inline-block;font-size:9px;font-weight:600;padding:0 3px;line-height:14px;margin-right:3px;vertical-align:middle;';
+    var valSty = 'font-size:0.8em;color:#333;vertical-align:middle;';
+    var mono = valSty + 'font-family:monospace;';
+
+    if (d.value_str != null && d.value_str !== '') {
+        var s = d.value_str.length > 30 ? d.value_str.substring(0, 30) + '...' : d.value_str;
+        lines.push(
+            '<span style="' + badge + 'color:#276749;background:#c6f6d5;border:1px solid #9ae6b4;">STR</span>' +
+            '<span style="' + valSty + '" title="' + _escAttr(d.value_str) + '">' + _escHtml(s) + '</span>'
+        );
+    }
+    if (d.value_int != null) {
+        lines.push(
+            '<span style="' + badge + 'color:#2b6cb0;background:#bee3f8;border:1px solid #90cdf4;">INT</span>' +
+            '<span style="' + mono + '">' + d.value_int + '</span>'
+        );
+    }
+    if (d.value_decimal != null) {
+        lines.push(
+            '<span style="' + badge + 'color:#2b6cb0;background:#bee3f8;border:1px solid #90cdf4;">DEC</span>' +
+            '<span style="' + mono + '">' + Number(d.value_decimal).toFixed(2) + '</span>'
+        );
+    }
+    if (d.value_date) {
+        lines.push(
+            '<span style="' + badge + 'color:#9c4221;background:#feebc8;border:1px solid #fbd38d;">DATE</span>' +
+            '<span style="' + mono + '">' + _escHtml(d.value_date) + '</span>'
+        );
+    }
+    if (d.value_time) {
+        lines.push(
+            '<span style="' + badge + 'color:#9c4221;background:#feebc8;border:1px solid #fbd38d;">TIME</span>' +
+            '<span style="' + mono + '">' + _escHtml(d.value_time) + '</span>'
+        );
+    }
+    if (d.value_datetime) {
+        var dt = d.value_datetime.replace('T', ' ');
+        lines.push(
+            '<span style="' + badge + 'color:#9c4221;background:#feebc8;border:1px solid #fbd38d;">DT</span>' +
+            '<span style="' + mono + '">' + _escHtml(dt) + '</span>'
+        );
+    }
+    if (d.value && typeof d.value === 'object' && Object.keys(d.value).length > 0) {
+        var keys = Object.keys(d.value);
+        var summary = keys.length <= 3 ? keys.join(', ') : keys.slice(0, 3).join(', ') + '...';
+        lines.push(
+            '<span style="' + badge + 'color:#553c9a;background:#e9d8fd;border:1px solid #d6bcfa;">JSON</span>' +
+            '<span style="' + valSty + '" title="' + _escAttr(JSON.stringify(d.value)) + '">{' + _escHtml(summary) + '}</span>'
+        );
+    }
+    if (lines.length === 0) return '<span style="color:#aaa;font-size:0.8em;">--</span>';
+    return '<div style="line-height:18px;">' + lines.join('<br>') + '</div>';
+}
+
+function _escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function _escAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

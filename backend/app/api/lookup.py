@@ -33,7 +33,52 @@ from .. import csrf
 
 _CODE_PATTERN = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
 
+_VALUE_FIELDS = ('value_str', 'value_int', 'value_decimal',
+                 'value_date', 'value_time', 'value_datetime')
+
 logger = logging.getLogger(__name__)
+
+
+def _extract_value_fields(data: dict) -> dict:
+    """從 request data 提取並驗證多型別值欄位"""
+    result = {}
+    for field in _VALUE_FIELDS:
+        if field not in data:
+            continue
+        val = data[field]
+        if val == '' or val is None:
+            result[field] = None
+            continue
+        if field == 'value_str':
+            val = str(val)
+            if len(val) > 500:
+                raise ValueError('字串值不得超過 500 字元')
+            result[field] = val
+        elif field == 'value_int':
+            try:
+                result[field] = int(val)
+            except (ValueError, TypeError):
+                raise ValueError('整數值格式錯誤')
+        elif field == 'value_decimal':
+            try:
+                result[field] = round(float(val), 2)
+            except (ValueError, TypeError):
+                raise ValueError('小數值格式錯誤')
+        elif field == 'value_date':
+            if not re.match(r'^\d{4}-\d{2}-\d{2}$', str(val)):
+                raise ValueError('日期格式錯誤，應為 YYYY-MM-DD')
+            result[field] = str(val)
+        elif field == 'value_time':
+            if not re.match(r'^\d{2}:\d{2}(:\d{2})?$', str(val)):
+                raise ValueError('時間格式錯誤，應為 HH:MM')
+            result[field] = str(val)
+        elif field == 'value_datetime':
+            # datetime-local 輸入格式: YYYY-MM-DDTHH:MM
+            s = str(val).replace('T', ' ').replace('t', ' ')
+            if not re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$', s):
+                raise ValueError('日期時間格式錯誤，應為 YYYY-MM-DD HH:MM')
+            result[field] = s
+    return result
 
 lookup_bp = Blueprint('lookup', __name__, url_prefix='/api/lookup')
 
@@ -277,6 +322,11 @@ def create_item(secure_code):
         return jsonify({'success': False, 'error': f'選項代碼 {code} 已存在'}), 409
 
     try:
+        value_fields = _extract_value_fields(data)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    try:
         item = LookupOrgService.create_item(
             org_secure_code=org_sc,
             category_code=cat_code,
@@ -286,6 +336,7 @@ def create_item(secure_code):
             value=data.get('value'),
             parent_code=data.get('parent_code'),
             sort_order=data.get('sort_order', 0),
+            **value_fields,
         )
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({
@@ -314,10 +365,16 @@ def update_item(secure_code):
     # 企業級 -> org DB
     data = request.get_json() or {}
     try:
+        value_fields = _extract_value_fields(data)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    try:
+        base_fields = {k: v for k, v in data.items()
+                       if k in ('label', 'label_i18n', 'value', 'parent_code', 'sort_order', 'is_active')}
+        base_fields.update(value_fields)
         updated = LookupOrgService.update_item(
-            org_sc, secure_code,
-            **{k: v for k, v in data.items()
-               if k in ('label', 'label_i18n', 'value', 'parent_code', 'sort_order', 'is_active')}
+            org_sc, secure_code, **base_fields
         )
         if not updated:
             return jsonify({'success': False, 'error': '更新失敗'}), 400

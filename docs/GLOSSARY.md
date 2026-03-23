@@ -54,7 +54,7 @@
 | 子系統開發 | `/nocode-builder/sub-systems` | 子系統列表與開發入口 |
 | 視圖管理 | `/nocode-builder/` | CRUD 視圖管理 |
 | 頁面管理 | `/nocode-builder/lab` | 自由介面頁面設計器 |
-| 選項清單 | `/nocode-builder/lookup` | 子系統選單開發測試 |
+| 選項-清單-資料樹 | `/nocode-builder/lookup` | 子系統選單開發測試 |
 
 ### 企業管理
 

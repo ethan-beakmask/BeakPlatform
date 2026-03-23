@@ -48,6 +48,12 @@ CREATE TABLE IF NOT EXISTS lookup_items (
     label VARCHAR(200) NOT NULL,
     label_i18n JSONB DEFAULT '{}',
     value JSONB,
+    value_str VARCHAR(500),
+    value_int BIGINT,
+    value_decimal NUMERIC(20,2),
+    value_date DATE,
+    value_time TIME WITHOUT TIME ZONE,
+    value_datetime TIMESTAMP WITHOUT TIME ZONE,
     parent_code VARCHAR(100),
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -112,6 +118,7 @@ def _row_to_category_dict(row) -> dict:
 
 def _row_to_item_dict(row) -> dict:
     """將 DB row 轉為與 LookupItem.to_dict() 相容的 dict"""
+    # 欄位順序對應 _ITEM_COLS
     return {
         'id': row[1],             # secure_code 作為 public ID
         'secure_code': row[1],
@@ -120,11 +127,17 @@ def _row_to_item_dict(row) -> dict:
         'label': row[4],
         'label_i18n': row[5] or {},
         'value': row[6],
-        'parent_code': row[7],
-        'sort_order': row[8],
-        'is_active': row[9],
-        'created_at': row[10].isoformat() if row[10] else None,
-        'updated_at': row[11].isoformat() if row[11] else None,
+        'value_str': row[7],
+        'value_int': row[8],
+        'value_decimal': float(row[9]) if row[9] is not None else None,
+        'value_date': row[10].isoformat() if row[10] else None,
+        'value_time': row[11].strftime('%H:%M') if row[11] else None,
+        'value_datetime': row[12].isoformat() if row[12] else None,
+        'parent_code': row[13],
+        'sort_order': row[14],
+        'is_active': row[15],
+        'created_at': row[16].isoformat() if row[16] else None,
+        'updated_at': row[17].isoformat() if row[17] else None,
     }
 
 
@@ -137,7 +150,8 @@ _CAT_COLS = (
 # Item SELECT 欄位順序
 _ITEM_COLS = (
     'id, secure_code, category_code, code, label, label_i18n, '
-    'value, parent_code, sort_order, is_active, created_at, updated_at'
+    'value, value_str, value_int, value_decimal, value_date, value_time, value_datetime, '
+    'parent_code, sort_order, is_active, created_at, updated_at'
 )
 
 
@@ -207,6 +221,28 @@ class LookupOrgService:
                     logger.info(
                         f'[LookupOrg] 已為企業 {org_secure_code} '
                         f'lookup_categories 補上 is_active 欄位'
+                    )
+            conn.commit()
+
+            # 遷移: 為既有 lookup_items 表補上多型別值欄位
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'lookup_items' AND column_name = 'value_str'
+                """)
+                if not cur.fetchone():
+                    cur.execute(
+                        "ALTER TABLE lookup_items "
+                        "ADD COLUMN value_str VARCHAR(500), "
+                        "ADD COLUMN value_int BIGINT, "
+                        "ADD COLUMN value_decimal NUMERIC(20,2), "
+                        "ADD COLUMN value_date DATE, "
+                        "ADD COLUMN value_time TIME WITHOUT TIME ZONE, "
+                        "ADD COLUMN value_datetime TIMESTAMP WITHOUT TIME ZONE"
+                    )
+                    logger.info(
+                        f'[LookupOrg] 已為企業 {org_secure_code} '
+                        f'lookup_items 補上多型別值欄位'
                     )
             conn.commit()
 
@@ -459,6 +495,12 @@ class LookupOrgService:
         label: str,
         label_i18n: Optional[dict] = None,
         value: Optional[Any] = None,
+        value_str: Optional[str] = None,
+        value_int: Optional[int] = None,
+        value_decimal=None,
+        value_date: Optional[str] = None,
+        value_time: Optional[str] = None,
+        value_datetime: Optional[str] = None,
         parent_code: Optional[str] = None,
         sort_order: int = 0,
     ) -> dict:
@@ -474,11 +516,16 @@ class LookupOrgService:
                 cur.execute(
                     "INSERT INTO lookup_items "
                     "(secure_code, category_code, code, label, label_i18n, "
-                    " value, parent_code, sort_order, created_at, updated_at) "
-                    "VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s) "
+                    " value, value_str, value_int, value_decimal, "
+                    " value_date, value_time, value_datetime, "
+                    " parent_code, sort_order, created_at, updated_at) "
+                    "VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, "
+                    " %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                     "RETURNING id",
                     (sc, category_code, code, label, _json_str(label_i18n),
-                     _json_str(value), parent_code, sort_order, now, now)
+                     _json_str(value), value_str, value_int, value_decimal,
+                     value_date, value_time, value_datetime,
+                     parent_code, sort_order, now, now)
                 )
             conn.commit()
 
@@ -490,6 +537,12 @@ class LookupOrgService:
             'label': label,
             'label_i18n': label_i18n,
             'value': value,
+            'value_str': value_str,
+            'value_int': value_int,
+            'value_decimal': float(value_decimal) if value_decimal is not None else None,
+            'value_date': value_date,
+            'value_time': value_time,
+            'value_datetime': value_datetime,
             'parent_code': parent_code,
             'sort_order': sort_order,
             'is_active': True,
@@ -501,8 +554,9 @@ class LookupOrgService:
     def update_item(cls, org_secure_code: str, sc: str, **kwargs) -> Optional[dict]:
         """更新企業 item (admin 角色寫)"""
         cls.ensure_tables(org_secure_code)
-        allowed = ('label', 'label_i18n', 'value', 'parent_code',
-                    'sort_order', 'is_active')
+        allowed = ('label', 'label_i18n', 'value', 'value_str', 'value_int',
+                    'value_decimal', 'value_date', 'value_time', 'value_datetime',
+                    'parent_code', 'sort_order', 'is_active')
         updates = {}
         for f in allowed:
             if f in kwargs:

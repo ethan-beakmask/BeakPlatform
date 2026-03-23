@@ -154,7 +154,7 @@ def row_edit(secure_code, row_id):
 @web_bp.route('/lookup')
 @module_access_required('nocode_builder')
 def lookup_manager():
-    """選項清單管理"""
+    """選項-清單-資料樹"""
     return render_template('modules/nocode_builder/lookup_manager.html')
 
 

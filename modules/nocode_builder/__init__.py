@@ -42,7 +42,7 @@ MODULE_INFO = {
                 },
                 {
                     'code': 'nocode_builder.lookup',
-                    'name': '選項清單',
+                    'name': '選項-清單-資料樹',
                     'url': 'nocode_builder_web.lookup_manager',
                     'sort_order': 4
                 },

@@ -196,6 +196,12 @@ class LookupService:
         org_secure_code: Optional[str] = None,
         label_i18n: Optional[dict] = None,
         value: Optional[Any] = None,
+        value_str: Optional[str] = None,
+        value_int: Optional[int] = None,
+        value_decimal=None,
+        value_date=None,
+        value_time=None,
+        value_datetime=None,
         parent_code: Optional[str] = None,
         sort_order: int = 0,
     ) -> LookupItem:
@@ -208,6 +214,12 @@ class LookupService:
             label=label,
             label_i18n=label_i18n or {},
             value=value,
+            value_str=value_str,
+            value_int=value_int,
+            value_decimal=value_decimal,
+            value_date=value_date,
+            value_time=value_time,
+            value_datetime=value_datetime,
             parent_code=parent_code,
             sort_order=sort_order,
         )
@@ -226,8 +238,9 @@ class LookupService:
         if not item:
             return None
 
-        allowed_fields = ('label', 'label_i18n', 'value', 'parent_code',
-                          'sort_order', 'is_active')
+        allowed_fields = ('label', 'label_i18n', 'value', 'value_str', 'value_int',
+                          'value_decimal', 'value_date', 'value_time', 'value_datetime',
+                          'parent_code', 'sort_order', 'is_active')
         for field in allowed_fields:
             if field in kwargs:
                 setattr(item, field, kwargs[field])

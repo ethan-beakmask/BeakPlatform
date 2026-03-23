@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}選項清單管理{% endblock %}
+{% block title %}選項-清單-資料樹{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/vendor/beak-trellis/beak-trellis.css">
@@ -201,8 +201,9 @@
 {% block content %}
 <div class="lk-page" x-data="lookupManager()" x-cloak>
 
-    <h1>選項清單管理</h1>
+    <h1>選項-清單-資料樹</h1>
     <p class="lk-desc">管理 Lookup Table 類別與選項，供下拉選單、表單欄位使用</p>
+    <p class="lk-desc" style="margin-top: -10px; color: #856404;">雖然選項容許填入多種資料形態，建議還是同一樹系都用相同的資料型別，以避免前端取得空值</p>
 
     <div class="lk-layout">
 
@@ -332,12 +333,12 @@
     <!-- 選項 Modal -->
     <template x-if="showItemModal">
         <div class="modal-overlay">
-            <div class="modal-content modal-sm">
+            <div class="modal-content" style="width: 620px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h3 x-text="itemForm.secure_code ? '編輯選項' : '新增選項'"></h3>
                     <button type="button" class="modal-close" @click="showItemModal = false">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="overflow-y: auto; flex: 1;">
                     <table class="form-table">
                         <tr>
                             <th>顯示文字 *</th>
@@ -373,17 +374,114 @@
                             <th>排序</th>
                             <td><input type="number" class="form-control" x-model.number="itemForm.sort_order" min="0"></td>
                         </tr>
+                    </table>
+
+                    <!-- 多型別值欄位 -->
+                    <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
+                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">值欄位</legend>
+                        <table class="form-table" style="margin: 0;">
+                            <tr>
+                                <th style="width: 80px;">字串</th>
+                                <td><input type="text" class="form-control" x-model="itemForm.value_str" maxlength="500" placeholder="文字值 (最長 500 字元)"></td>
+                            </tr>
+                            <tr>
+                                <th>整數</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_int" step="1" placeholder="整數值"></td>
+                            </tr>
+                            <tr>
+                                <th>小數</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_decimal" step="0.01" placeholder="小數值 (2 位)"></td>
+                            </tr>
+                            <tr>
+                                <th>日期</th>
+                                <td><input type="date" class="form-control" x-model="itemForm.value_date"></td>
+                            </tr>
+                            <tr>
+                                <th>時間</th>
+                                <td><input type="time" class="form-control" x-model="itemForm.value_time"></td>
+                            </tr>
+                            <tr>
+                                <th>日期時間</th>
+                                <td><input type="datetime-local" class="form-control" x-model="itemForm.value_datetime"></td>
+                            </tr>
+                        </table>
+                    </fieldset>
+
+                    <!-- JSON 附加資料 -->
+                    <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
+                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">
+                            JSON 附加資料
+                            <span style="float: right; font-weight: normal;">
+                                <button type="button" class="btn btn-secondary" style="padding: 0 6px; font-size: 0.75em; line-height: 18px;"
+                                        @click="toggleJsonMode()">
+                                    <span x-show="itemForm.jsonMode === 'simple'">原始模式</span>
+                                    <span x-show="itemForm.jsonMode === 'raw'">簡易模式</span>
+                                </button>
+                            </span>
+                        </legend>
+
+                        <!-- 簡易模式: 鍵值對 -->
+                        <div x-show="itemForm.jsonMode === 'simple'">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                                <thead>
+                                    <tr style="background: var(--color-bg-header);">
+                                        <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 30%;">Key</th>
+                                        <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 40%;">Value</th>
+                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 20%;">型別</th>
+                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 10%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(pair, idx) in itemForm.jsonPairs" :key="idx">
+                                        <tr>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <input type="text" class="form-control" x-model="pair.key" placeholder="key"
+                                                       style="font-size: 0.9em; padding: 2px 4px; font-family: monospace;">
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <template x-if="pair.type === 'boolean'">
+                                                    <select class="form-control" x-model="pair.value" style="font-size: 0.9em; padding: 2px 4px;">
+                                                        <option value="true">true</option>
+                                                        <option value="false">false</option>
+                                                    </select>
+                                                </template>
+                                                <template x-if="pair.type !== 'boolean'">
+                                                    <input type="text" class="form-control" x-model="pair.value" placeholder="value"
+                                                           style="font-size: 0.9em; padding: 2px 4px; font-family: monospace;">
+                                                </template>
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border);">
+                                                <select class="form-control" x-model="pair.type"
+                                                        style="font-size: 0.8em; padding: 1px 2px;">
+                                                    <option value="auto">自動</option>
+                                                    <option value="string">字串</option>
+                                                    <option value="number">數字</option>
+                                                    <option value="boolean">布林</option>
+                                                </select>
+                                            </td>
+                                            <td style="padding: 2px; border: 1px solid var(--color-border); text-align: center;">
+                                                <button type="button" class="btn btn-danger" style="padding: 0 5px; font-size: 0.75em; line-height: 18px;"
+                                                        @click="itemForm.jsonPairs.splice(idx, 1)">X</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 4px; font-size: 0.8em;"
+                                    @click="itemForm.jsonPairs.push({key:'', value:'', type:'auto'})">+ 新增</button>
+                        </div>
+
+                        <!-- 原始模式: textarea -->
+                        <div x-show="itemForm.jsonMode === 'raw'">
+                            <textarea class="form-control" rows="4" x-model="itemForm.valueJson"
+                                      placeholder='{"key": "value"}'
+                                      style="font-family: monospace; font-size: 0.85em;"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <table class="form-table" style="margin-top: 12px;">
                         <tr>
-                            <th>附加資料</th>
-                            <td>
-                                <textarea class="form-control" rows="3" x-model="itemForm.valueJson"
-                                          placeholder='{"key": "value"}'
-                                          style="font-family: monospace; font-size: 0.85em;"></textarea>
-                                <div class="text-muted" style="font-size: 0.75em; margin-top: 2px;">JSON 格式</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>狀態</th>
+                            <th style="width: 80px;">狀態</th>
                             <td><label><input type="checkbox" x-model="itemForm.is_active"> 啟用</label></td>
                         </tr>
                     </table>
