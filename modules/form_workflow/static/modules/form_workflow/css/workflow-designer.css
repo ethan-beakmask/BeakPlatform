@@ -1775,6 +1775,21 @@
             font-weight: 600;
         }
 
+        .edge-mapping-area.connecting {
+            cursor: crosshair;
+        }
+
+        .edge-mapping-area.connecting .edge-mapping-node[data-side="right"] {
+            border-color: #1565C0;
+            background: #E3F2FD;
+            transition: background 0.1s, border-color 0.1s;
+        }
+
+        .edge-mapping-area.connecting .edge-mapping-node[data-side="right"]:hover {
+            background: #BBDEFB;
+            box-shadow: 0 0 0 2px #1565C0;
+        }
+
         .edge-mapping-hint {
             font-size: 10px;
             color: #888;

@@ -229,6 +229,11 @@
     var _mappingOutEdges = [];
     var _mappingOptions = [];
 
+    // 連線拖曳視覺效果狀態
+    var _dragLine = null;       // SVG <line> 臨時線元素
+    var _dragFromLeft = -1;     // 正在連線中的左欄 index（-1 = 無）
+    var _dragBound = false;     // mousemove 是否已綁定
+
     var MAPPING_COLORS = {
         'primary': '#667eea',
         'success': '#28a745',
@@ -240,6 +245,9 @@
     function renderEdgeMapping(nodeId, options, outEdges) {
         var container = document.getElementById('edgeMappingContainer');
         if (!container) return;
+
+        // 清除殘留的拖曳狀態
+        _cancelDragLine();
 
         _mappingNodeId = nodeId;
         _mappingOptions = options || [];
@@ -326,29 +334,131 @@
         var side = node.dataset.side;
         var index = parseInt(node.dataset.index);
 
-        if (!_mappingSelected) {
-            _mappingSelected = { side: side, index: index };
-        } else if (_mappingSelected.side === side) {
-            if (_mappingSelected.index === index) {
-                _mappingSelected = null;
-            } else {
-                _mappingSelected = { side: side, index: index };
-            }
-        } else {
-            var leftIdx = side === 'left' ? index : _mappingSelected.index;
-            var rightIdx = side === 'right' ? index : _mappingSelected.index;
-            _toggleMappingConnection(leftIdx, rightIdx);
-            _mappingSelected = null;
-        }
-
-        // 點選左方 → 載入組態方塊
         if (side === 'left') {
+            // 點選左方 → 進入連線中狀態 + 載入組態方塊
             _saveConfigBlockToCurrentOption();
             _loadOptionToConfigBlock(index);
+
+            if (_dragFromLeft === index) {
+                // 再點同一個 → 取消連線狀態
+                _cancelDragLine();
+                _mappingSelected = null;
+            } else {
+                // 開始新的連線（或切換到另一個左欄項目）
+                _cancelDragLine();
+                _mappingSelected = { side: 'left', index: index };
+                _startDragLine(index);
+            }
+        } else {
+            // 點選右方
+            if (_dragFromLeft >= 0) {
+                // 連線中 → 完成配對
+                _toggleMappingConnection(_dragFromLeft, index);
+                _cancelDragLine();
+                _mappingSelected = null;
+            } else if (_mappingSelected && _mappingSelected.side === 'right') {
+                // 無連線中，右欄切換選取
+                if (_mappingSelected.index === index) {
+                    _mappingSelected = null;
+                } else {
+                    _mappingSelected = { side: 'right', index: index };
+                }
+            } else {
+                _mappingSelected = { side: 'right', index: index };
+            }
         }
 
         _updateMappingNodeStyles();
         _drawMappingLines();
+    }
+
+    // -- 連線拖曳視覺效果 --
+
+    function _startDragLine(leftIdx) {
+        _dragFromLeft = leftIdx;
+
+        var area = document.getElementById('edgeMappingArea');
+        if (!area) return;
+        area.classList.add('connecting');
+
+        // 建立臨時 SVG 線
+        var svg = document.getElementById('edgeMappingSvg');
+        if (!svg) return;
+
+        var leftNode = area.querySelector('[data-side="left"][data-index="' + leftIdx + '"]');
+        if (!leftNode) return;
+
+        var areaRect = area.getBoundingClientRect();
+        var lRect = leftNode.getBoundingClientRect();
+        var x1 = lRect.right - areaRect.left;
+        var y1 = lRect.top + lRect.height / 2 - areaRect.top;
+
+        var color = MAPPING_COLORS[(_mappingOptions[leftIdx] || {}).style] || MAPPING_COLORS['default'];
+
+        _dragLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        _dragLine.setAttribute('x1', x1);
+        _dragLine.setAttribute('y1', y1);
+        _dragLine.setAttribute('x2', x1);
+        _dragLine.setAttribute('y2', y1);
+        _dragLine.setAttribute('stroke', color);
+        _dragLine.setAttribute('stroke-width', '2');
+        _dragLine.setAttribute('stroke-dasharray', '6 3');
+        _dragLine.setAttribute('stroke-linecap', 'round');
+        _dragLine.setAttribute('opacity', '0.7');
+        svg.appendChild(_dragLine);
+
+        // 綁定 mousemove
+        if (!_dragBound) {
+            area.addEventListener('mousemove', _onDragMouseMove);
+            document.addEventListener('keydown', _onDragKeyDown);
+            area.addEventListener('contextmenu', _onDragRightClick);
+            _dragBound = true;
+        }
+    }
+
+    function _onDragMouseMove(e) {
+        if (!_dragLine) return;
+        var area = document.getElementById('edgeMappingArea');
+        if (!area) return;
+        var areaRect = area.getBoundingClientRect();
+        _dragLine.setAttribute('x2', e.clientX - areaRect.left);
+        _dragLine.setAttribute('y2', e.clientY - areaRect.top);
+    }
+
+    function _onDragKeyDown(e) {
+        if (e.key === 'Escape' && _dragFromLeft >= 0) {
+            _cancelDragLine();
+            _mappingSelected = null;
+            _updateMappingNodeStyles();
+        }
+    }
+
+    function _onDragRightClick(e) {
+        if (_dragFromLeft >= 0) {
+            e.preventDefault();
+            _cancelDragLine();
+            _mappingSelected = null;
+            _updateMappingNodeStyles();
+        }
+    }
+
+    function _cancelDragLine() {
+        if (_dragLine && _dragLine.parentNode) {
+            _dragLine.parentNode.removeChild(_dragLine);
+        }
+        _dragLine = null;
+        _dragFromLeft = -1;
+
+        var area = document.getElementById('edgeMappingArea');
+        if (area) {
+            area.classList.remove('connecting');
+            if (_dragBound) {
+                area.removeEventListener('mousemove', _onDragMouseMove);
+                document.removeEventListener('keydown', _onDragKeyDown);
+                area.removeEventListener('contextmenu', _onDragRightClick);
+                _dragBound = false;
+            }
+        }
     }
 
     function _toggleMappingConnection(leftIdx, rightIdx) {
@@ -425,6 +535,11 @@
             line.setAttribute('stroke-linecap', 'round');
             svg.appendChild(line);
         });
+
+        // 重繪後保留拖曳臨時線
+        if (_dragLine) {
+            svg.appendChild(_dragLine);
+        }
     }
 
     function _updateMappingNodeStyles() {
