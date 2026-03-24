@@ -212,6 +212,7 @@ def _build_trellis_data(root_items, permission_matrix, module_menu_codes):
                 'link_target': item.link_target or '',
                 'display_order': item.display_order,
                 'is_active': item.is_active,
+                'is_user_created': item.is_user_created,
                 'row_class': row_class,
                 'perms': perms_str,
             },
@@ -372,7 +373,8 @@ def create_root_header():
             display_order=display_order,
             is_expanded=False,
             depth=0,
-            is_active=True
+            is_active=True,
+            is_user_created=True
         )
         db.session.add(item)
         db.session.flush()
@@ -488,6 +490,12 @@ def edit_menu(secure_code: str):
                 db.session.rollback()
                 flash(f'更新失敗: {str(e)}', 'error')
 
+    # 計算子孫中的預設項目（用於刪除區塊提示）
+    protected_children = []
+    if item.is_user_created:
+        descendants = item.get_descendants()
+        protected_children = [d.title for d in descendants if not d.is_user_created]
+
     return render_template(
         'pages/menu/edit.html',
         item=item,
@@ -495,7 +503,8 @@ def edit_menu(secure_code: str):
         current_permissions=current_permissions,
         is_module_menu=is_module,
         user_types=MenuService.USER_TYPES,
-        user_type_labels=USER_TYPE_LABELS
+        user_type_labels=USER_TYPE_LABELS,
+        protected_children=protected_children
     )
 
 
@@ -511,9 +520,22 @@ def delete_menu(secure_code: str):
     if not item:
         abort(404)
 
+    if not item.is_user_created:
+        flash('預設選單項目禁止刪除', 'error')
+        return redirect(url_for('menu.list_menu'))
+
+    # 檢查子孫是否包含預設項目
+    descendants = item.get_descendants()
+    protected = [d for d in descendants if not d.is_user_created]
+    if protected:
+        names = '、'.join(d.title for d in protected[:5])
+        if len(protected) > 5:
+            names += f' 等共 {len(protected)} 項'
+        flash(f'無法刪除：子項目中包含預設選單（{names}），請先將其移出', 'error')
+        return redirect(url_for('menu.list_menu'))
+
     try:
         # 同時刪除所有子項目
-        descendants = item.get_descendants()
         for d in descendants:
             d.is_deleted = True
             d.deleted_at = datetime.utcnow()

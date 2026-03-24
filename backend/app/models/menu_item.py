@@ -99,6 +99,10 @@ class MenuItem(TenantBaseModel):
     # 若設定，只有擁有該權限的用戶才能看到此選單
     required_permission = Column(String(50), nullable=True, index=True)
 
+    # 是否為用戶自建項目（透過「新增根項目」建立）
+    # True = 可刪除, False = 預設選單，禁止刪除
+    is_user_created = Column(Boolean, default=False, nullable=False)
+
     # Relationships
     module = relationship('Module', back_populates='menu_items')
     parent = relationship(

@@ -208,6 +208,16 @@ def delete_menu_item(secure_code: str):
     """
     menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
 
+    if not menu_item.is_user_created:
+        return jsonify({'error': '預設選單項目禁止刪除'}), 403
+
+    # 檢查子孫是否包含預設項目
+    descendants = menu_item.get_descendants()
+    protected = [d for d in descendants if not d.is_user_created]
+    if protected:
+        names = '、'.join(d.title for d in protected[:5])
+        return jsonify({'error': f'子項目中包含預設選單（{names}），請先將其移出'}), 400
+
     success = MenuService.delete_menu_item(menu_item, soft=True)
 
     if not success:

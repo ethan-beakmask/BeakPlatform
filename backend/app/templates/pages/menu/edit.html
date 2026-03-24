@@ -266,7 +266,14 @@ function menuRoleManager() {
 }
 </script>
 
+{% if item.is_user_created %}
 <div class="section-title" style="margin-top:32px;border-left-color:var(--color-danger);">{{ _('刪除選單項目') }}</div>
+{% if protected_children %}
+<div class="alert alert-error" style="margin-top:8px;">
+    {{ _('無法刪除：子項目中包含預設選單（') }}{{ protected_children[:5]|join('、') }}{% if protected_children|length > 5 %} {{ _('等共') }} {{ protected_children|length }} {{ _('項') }}{% endif %}{{ _('），請先將其移出') }}
+</div>
+<button type="button" class="btn btn-danger" disabled>{{ _('刪除選單項目') }}</button>
+{% else %}
 <div class="alert alert-error" style="margin-top:8px;">
     {{ _('刪除此選單項目將連同子項目一起刪除。') }}
 </div>
@@ -274,4 +281,6 @@ function menuRoleManager() {
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">{{ _('刪除選單項目') }}</button>
 </form>
+{% endif %}
+{% endif %}
 {% endblock %}
