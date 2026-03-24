@@ -93,6 +93,7 @@ function menuTreeManager() {
         saving: false,
         message: '',
         messageType: '',
+        showRootHeaderModal: false,
 
         init: function() {
             this.buildTree();

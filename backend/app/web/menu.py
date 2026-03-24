@@ -328,6 +328,67 @@ def create_menu():
     )
 
 
+@menu_web_bp.route('/create-root-header', methods=['POST'])
+@system_admin_required
+def create_root_header():
+    """快速建立根層級 header 項目（系統管理員分類用）"""
+    title = request.form.get('title', '').strip()
+    if not title:
+        flash('標題為必填', 'error')
+        return redirect(url_for('menu.list_menu'))
+
+    # 自動產生 code
+    generator = get_code_generator()
+
+    def _exists(c):
+        return MenuItem.query.filter(
+            func.upper(MenuItem.code) == c.upper(),
+            MenuItem.is_deleted == False
+        ).first() is not None
+
+    try:
+        code = generator.generate(title, exists_checker=_exists)
+    except ValueError:
+        flash('無法自動產生代碼，請手動輸入', 'error')
+        return redirect(url_for('menu.list_menu'))
+
+    # display_order: 排到最前面（現有最小值 - 1）
+    min_order = db.session.query(func.min(MenuItem.display_order)).filter(
+        MenuItem.parent_secure_code.is_(None),
+        MenuItem.is_deleted == False
+    ).scalar()
+    display_order = (min_order - 1) if min_order is not None else 0
+
+    try:
+        item = MenuItem(
+            org_secure_code='system.local',
+            code=code,
+            title=title,
+            title_i18n={},
+            icon=None,
+            parent_secure_code=None,
+            link_type='header',
+            link_target=None,
+            display_order=display_order,
+            is_expanded=False,
+            depth=0,
+            is_active=True
+        )
+        db.session.add(item)
+        db.session.flush()
+
+        # 權限只開 SYSTEM_ADMIN
+        MenuService.set_menu_permissions(item.secure_code, ['SYSTEM_ADMIN'])
+
+        db.session.commit()
+        flash(f'已建立根項目「{title}」', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'建立失敗: {str(e)}', 'error')
+
+    return redirect(url_for('menu.list_menu'))
+
+
 @menu_web_bp.route('/<secure_code>/edit', methods=['GET', 'POST'])
 @system_admin_required
 def edit_menu(secure_code: str):
