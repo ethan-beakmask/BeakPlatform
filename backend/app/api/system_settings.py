@@ -1851,6 +1851,84 @@ def update_audit_settings():
     })
 
 
+# ==================== 速率限制 ====================
+
+@api_system_settings.route('/rate-limits', methods=['GET'])
+@system_admin_required
+def get_rate_limit_settings():
+    """
+    取得認證速率限制設定
+
+    Returns:
+        categories: 五個分類的設定值、來源、預設值
+    """
+    from ..services.rate_limit_service import RateLimitService
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'categories': RateLimitService.get_all_settings()
+        }
+    })
+
+
+@api_system_settings.route('/rate-limits', methods=['PUT'])
+@system_admin_required
+def update_rate_limit_settings():
+    """
+    更新認證速率限制設定
+
+    Body: {
+        "shared_login": "20 per 10 minutes",
+        "org_login": "20 per 10 minutes",
+        ...
+    }
+    """
+    from ..services.rate_limit_service import (
+        RateLimitService, RATE_LIMIT_CATEGORIES, validate_rate_limit_string
+    )
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少 request body'}), 400
+
+    updated = []
+    errors = []
+
+    for category in RATE_LIMIT_CATEGORIES:
+        if category in data:
+            value = str(data[category]).strip()
+            if not validate_rate_limit_string(value):
+                errors.append(
+                    f'{category}: 格式無效 "{value}"'
+                    f' (正確格式如: 20 per 10 minutes, 5 per hour)'
+                )
+                continue
+
+            RateLimitService.set_limit(
+                category=category,
+                value=value,
+                updated_by=current_user.email,
+            )
+            updated.append(f'{category}={value}')
+
+    if errors:
+        return jsonify({
+            'success': False,
+            'error': '部分設定格式無效',
+            'details': errors,
+            'updated': updated,
+        }), 400
+
+    if not updated:
+        return jsonify({'success': False, 'error': '未提供任何有效設定'}), 400
+
+    return jsonify({
+        'success': True,
+        'message': f'速率限制已更新: {", ".join(updated)}'
+    })
+
+
 # ==================== 選單配色 ====================
 
 # CSS 變數名稱 -> 預設值 對照表

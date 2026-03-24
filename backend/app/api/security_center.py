@@ -17,6 +17,9 @@ from flask_login import current_user
 from sqlalchemy import func, extract, text
 
 from ..security.decorators import admin_required
+from ..services.rate_limit_service import (
+    RateLimitService, ORG_RATE_LIMIT_CATEGORIES, validate_rate_limit_string
+)
 from ..models.audit_log import AuditLog
 from ..models.organization import Organization
 from ..models.lookup_item import LookupItem
@@ -370,4 +373,104 @@ def get_broadcast_acks(secure_code):
         'total_acks': len(ack_list),
         'acks': ack_list,
         'unacked': unacked_list,
+    })
+
+
+# ==================== 企業速率限制 ====================
+
+@security_center_bp.route('/rate-limits', methods=['GET'])
+@admin_required
+def get_org_rate_limits():
+    """取得企業速率限制設定
+
+    ORG_ADMIN: 自己企業的 3 個分類設定
+    """
+    org = Organization.query.filter_by(
+        secure_code=current_user.org_secure_code,
+        is_deleted=False,
+    ).first()
+
+    if not org:
+        return jsonify({'success': False, 'error': '企業不存在'}), 404
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'categories': RateLimitService.get_org_settings(org),
+            'org_name': org.display_name or org.name,
+        }
+    })
+
+
+@security_center_bp.route('/rate-limits', methods=['PUT'])
+@admin_required
+def update_org_rate_limits():
+    """更新企業速率限制設定
+
+    Body: {
+        "org_login": "20 per 10 minutes",
+        "vendor_login": "20 per 10 minutes",
+        "forgot_password": "10 per 10 minutes"
+    }
+
+    傳空字串或 null 表示清除覆寫，回歸系統預設。
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少 request body'}), 400
+
+    org = Organization.query.filter_by(
+        secure_code=current_user.org_secure_code,
+        is_deleted=False,
+    ).first()
+
+    if not org:
+        return jsonify({'success': False, 'error': '企業不存在'}), 404
+
+    updated = []
+    cleared = []
+    errors = []
+
+    for category in ORG_RATE_LIMIT_CATEGORIES:
+        if category not in data:
+            continue
+
+        value = data[category]
+
+        # 空值 = 清除覆寫
+        if not value or (isinstance(value, str) and not value.strip()):
+            RateLimitService.clear_org_limit(org, category)
+            cleared.append(category)
+            continue
+
+        value = str(value).strip()
+        if not validate_rate_limit_string(value):
+            errors.append(
+                f'{category}: 格式無效 "{value}"'
+                f' (正確格式如: 20 per 10 minutes)'
+            )
+            continue
+
+        RateLimitService.set_org_limit(org, category, value)
+        updated.append(f'{category}={value}')
+
+    if errors:
+        return jsonify({
+            'success': False,
+            'error': '部分設定格式無效',
+            'details': errors,
+        }), 400
+
+    # commit changes
+    db.session.commit()
+
+    parts = []
+    if updated:
+        parts.append(f'已更新: {", ".join(updated)}')
+    if cleared:
+        parts.append(f'已恢復系統預設: {", ".join(cleared)}')
+
+    return jsonify({
+        'success': True,
+        'message': '; '.join(parts) if parts else '無變更',
     })

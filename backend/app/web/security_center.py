@@ -54,6 +54,13 @@ def login_failures():
     )
 
 
+@security_center_bp.route('/rate-limits/')
+@admin_required
+def rate_limits():
+    """企業速率限制設定頁面"""
+    return render_template('pages/security/org_rate_limits.html')
+
+
 @security_center_bp.route('/alert-broadcasts/')
 @admin_required
 def alert_broadcasts():

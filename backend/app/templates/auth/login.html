@@ -125,7 +125,12 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
+    {% if category == 'rate_limit' %}
     <div class="error-msg">{{ message }}</div>
+    <script>alert('{{ message }}');</script>
+    {% else %}
+    <div class="error-msg">{{ message }}</div>
+    {% endif %}
     {% endfor %}
     {% endif %}
     {% endwith %}

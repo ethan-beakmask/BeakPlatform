@@ -21,24 +21,44 @@ from ..services.auth_service import AuthService
 from ..services.password_policy_service import PasswordPolicyService
 from ..models import Organization, User
 from .. import limiter, csrf, db
-from flask_limiter.util import get_remote_address
+from ..services.rate_limit_service import RateLimitService, make_auth_key_func
+
+def _org_limit(category: str):
+    """取得企業級速率限制（從 URL domain_name 查企業設定）"""
+    domain_name = request.view_args.get('domain_name', '') if request.view_args else ''
+    return RateLimitService.get_org_limit(category, domain_name)
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
 
-# Rate limit helpers (從 config 讀取)
-def _get_login_limit():
-    return current_app.config.get('RATELIMIT_LOGIN', '5 per minute')
+# --- Rate limit on_breach handlers (429 -> flash + redirect) ---
+
+def _on_breach_redirect(endpoint):
+    """Rate limit breach: flash 提示 + redirect 回 GET 頁面"""
+    if request.is_json:
+        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
+    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+    return redirect(url_for(endpoint))
 
 
-def _get_forgot_password_limit():
-    return current_app.config.get('RATELIMIT_FORGOT_PASSWORD', '3 per hour')
+def _on_breach_with_domain(endpoint):
+    """Rate limit breach: 含 domain_name 的 redirect"""
+    if request.is_json:
+        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
+    domain_name = request.view_args.get('domain_name', '')
+    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+    return redirect(url_for(endpoint, domain_name=domain_name))
 
 
-def _get_reset_password_limit():
-    return current_app.config.get('RATELIMIT_RESET_PASSWORD', '5 per hour')
+def _on_breach_verify_reset():
+    """Rate limit breach: verify-reset 頁面 redirect"""
+    if request.is_json:
+        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
+    token = request.view_args.get('token', '')
+    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+    return redirect(url_for('auth.verify_reset', token=token))
 
 
 def _parse_account(account: str, domain_name: str = None) -> tuple:
@@ -230,7 +250,12 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt  # 登入不需要 CSRF（沒有已登入 session 可被攻擊）
-@limiter.limit(_get_login_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: RateLimitService.get_limit('shared_login'),
+    methods=['POST'],
+    key_func=make_auth_key_func('account'),
+    on_breach=lambda rl: _on_breach_redirect('auth.login'),
+)
 def login():
     """
     共用登入端點。
@@ -290,7 +315,12 @@ def login():
 @auth_bp.route('/org/<domain_name>/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_login_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: _org_limit('org_login'),
+    methods=['POST'],
+    key_func=make_auth_key_func('username', domain_from_url=True),
+    on_breach=lambda rl: _on_breach_with_domain('auth.org_login'),
+)
 def org_login(domain_name: str):
     """
     企業專屬登入端點。
@@ -436,7 +466,12 @@ def org_public(domain_name: str):
 @auth_bp.route('/org/<domain_name>/public/login', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt  # 登入端點不需要 CSRF
-@limiter.limit(_get_login_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: _org_limit('vendor_login'),
+    methods=['POST'],
+    key_func=make_auth_key_func('email'),
+    on_breach=lambda rl: _on_breach_with_domain('auth.org_public_login'),
+)
 def org_public_login(domain_name: str):
     """
     非員工（外部廠商）專屬登入端點。
@@ -863,7 +898,12 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
 @auth_bp.route('/org/<domain_name>/forgot-password', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_forgot_password_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: _org_limit('forgot_password'),
+    methods=['POST'],
+    key_func=make_auth_key_func('username', domain_from_url=True),
+    on_breach=lambda rl: _on_breach_with_domain('auth.org_forgot_password'),
+)
 def org_forgot_password(domain_name: str):
     """
     企業專屬忘記密碼頁面
@@ -911,7 +951,12 @@ def org_forgot_password(domain_name: str):
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_forgot_password_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: RateLimitService.get_limit('forgot_password'),
+    methods=['POST'],
+    key_func=make_auth_key_func('account'),
+    on_breach=lambda rl: _on_breach_redirect('auth.forgot_password'),
+)
 def forgot_password():
     """
     共用忘記密碼頁面
@@ -949,7 +994,12 @@ def forgot_password():
 @auth_bp.route('/verify-reset/<token>', methods=['GET', 'POST'])
 @public_route
 @csrf.exempt
-@limiter.limit(_get_reset_password_limit, key_func=get_remote_address)
+@limiter.limit(
+    lambda: RateLimitService.get_limit('reset_password'),
+    methods=['POST'],
+    key_func=make_auth_key_func('code'),
+    on_breach=lambda rl: _on_breach_verify_reset(),
+)
 def verify_reset(token: str):
     """
     驗證密碼重設 - 輸入 6 碼驗證碼

@@ -1,0 +1,21 @@
+-- 052: 認證速率限制設定
+-- 日期: 2026-03-24
+-- 說明: 速率限制從 .env 環境變數遷移至 DB 可設定
+--
+-- DB keys (system_settings 表):
+--   ratelimit_shared_login      通用登入        預設 20 per 10 minutes
+--   ratelimit_org_login         企業員工登入    預設 20 per 10 minutes
+--   ratelimit_vendor_login      廠商登入        預設 20 per 10 minutes
+--   ratelimit_forgot_password   忘記密碼        預設 10 per 10 minutes
+--   ratelimit_reset_password    密碼重設驗證    預設 10 per 10 minutes
+--
+-- 設計: 不預先 seed DB 記錄。
+-- RateLimitService 的 fallback chain: DB -> .env config -> 硬編碼預設值
+-- 管理員在 UI 修改後才會寫入 DB 記錄。
+--
+-- 限制 key: {帳號}:{IP}（per-user per-IP，各企業自然分離）
+-- 計數: POST only（GET 不計數）
+-- UI: 系統設定 > 速率限制
+
+-- 無實際 SQL 操作（版本追蹤用）
+SELECT 1;
