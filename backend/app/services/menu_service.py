@@ -56,10 +56,15 @@ class MenuService:
         """
         取得用戶可見的選單樹
 
-        可見性邏輯：
-        1. 根據 user.user_type 查詢 MenuPermission 取得有權限的選單
-        2. 過濾需要 RBAC 權限的選單 (required_permission)
-        3. 不受 org_secure_code 限制
+        可見性邏輯（雙鑰匙安全模型）：
+        1. MenuPermission (user_type) 取得有權限的選單
+        2. 模組注入（非 SYSTEM_ADMIN，依 ACL）
+        3. RBAC 權限過濾 (required_permission)
+        4. 合約/ACL/社群過濾
+        5. 角色過濾（非 SYSTEM_ADMIN，MenuRoleRequirement 雙鑰匙）
+        6. 空 header 裁剪
+
+        SYSTEM_ADMIN 走程式控制（decorator），不受角色過濾。
 
         Args:
             user: 當前用戶
@@ -73,12 +78,12 @@ class MenuService:
         perm_governed_codes = cls._get_allowed_menu_codes(user)
 
         # 1.5 模組選單注入 (模組治理)
+        # ORG_ADMIN 不再無條件注入所有模組選單，改由 MenuPermission 統一治理
+        # 模組安裝時 module_menu_service 已為 ORG_ADMIN 建立 MenuPermission 記錄
         module_injected_codes = set()
         user_type_str = str(user.user_type)
         if user_type_str == 'SYSTEM_ADMIN':
             module_injected_codes = set()  # 系統管理員不看模組選單
-        elif user_type_str == 'ORG_ADMIN':
-            module_injected_codes = cls._get_all_module_menu_codes()
         else:
             module_injected_codes = cls._get_module_access_menu_codes(user)
 
@@ -138,19 +143,29 @@ class MenuService:
                 cls._filter_by_sub_system_membership, user
             )
 
-        # 7. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
+        # 7. 雙鑰匙角色過濾 (SYSTEM_ADMIN bypass)
+        # 非 SYSTEM_ADMIN 的用戶必須同時通過 user_type + 角色兩把鑰匙
+        # 選單項目必須在該企業有 MenuRoleRequirement 設定，且用戶持有所需角色
+        if user_type_str != 'SYSTEM_ADMIN':
+            filtered_items = cls._filter_by_role_requirements(
+                filtered_items, user
+            )
+            # 裁剪空 header/divider（子項被角色過濾後變空的結構元素）
+            filtered_items = cls._prune_empty_parents(filtered_items)
+
+        # 9. 預先載入所有選單的權限資訊 (用於顯示權限等級標記)
         menu_permissions_map = cls._get_menu_permissions_map(
             [item.secure_code for item in filtered_items]
         )
 
-        # 8. 取得語系 (優先用 g.locale，由 auth_interceptor 設定)
+        # 10. 取得語系 (優先用 g.locale，由 auth_interceptor 設定)
         locale = getattr(g, 'locale', None)
         if not locale:
             locale = 'zh-TW'
             if hasattr(user, 'organization') and user.organization:
                 locale = user.organization.get_setting('locale', 'zh-TW')
 
-        # 9. 建構樹狀結構
+        # 11. 建構樹狀結構
         return cls._build_tree(
             filtered_items,
             menu_permissions_map=menu_permissions_map,
@@ -216,6 +231,112 @@ class MenuService:
                 filtered.append(item)
 
         return filtered
+
+    @classmethod
+    def _filter_by_role_requirements(
+        cls,
+        items: List[MenuItem],
+        user
+    ) -> List[MenuItem]:
+        """
+        雙鑰匙角色過濾：選單必須有角色設定且用戶持有所需角色。
+
+        規則：
+        - header/divider → 通過（結構元素，無 URL，後續由 _prune_empty_parents 裁剪）
+        - 有角色設定且用戶持有所需角色 → 通過
+        - 有角色設定但用戶未持有 → 過濾
+        - 無角色設定 → 過濾（雙鑰匙：必須配置角色才能存取）
+
+        Args:
+            items: 選單項目列表
+            user: 當前用戶
+
+        Returns:
+            過濾後的選單項目列表
+        """
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        from ..models.associations import UserRoleAssignment
+        from datetime import date
+
+        org_sc = user.org_secure_code
+        item_scs = [i.secure_code for i in items]
+
+        if not item_scs:
+            return []
+
+        # 批量查詢該企業的角色需求
+        requirements = MenuRoleRequirement.query.filter(
+            MenuRoleRequirement.menu_secure_code.in_(item_scs),
+            MenuRoleRequirement.org_secure_code == org_sc,
+            MenuRoleRequirement.is_deleted == False,
+        ).all()
+
+        # 建立映射: menu_sc -> {required_role_sc, ...}
+        role_map = {}
+        for req in requirements:
+            role_map.setdefault(req.menu_secure_code, set()).add(
+                req.role_secure_code
+            )
+
+        # 取得用戶當前有效角色
+        user_role_scs = set()
+        today = date.today()
+        assignments = UserRoleAssignment.query.filter(
+            UserRoleAssignment.user_secure_code == user.secure_code,
+            UserRoleAssignment.is_deleted == False,
+        ).all()
+        for a in assignments:
+            if a.valid_from and today < a.valid_from:
+                continue
+            if a.valid_until and today > a.valid_until:
+                continue
+            user_role_scs.add(a.role_secure_code)
+
+        filtered = []
+        for item in items:
+            # 結構元素（header/divider）直接通過，後續由 _prune_empty_parents 裁剪
+            if item.link_type in ('header', 'divider'):
+                filtered.append(item)
+                continue
+
+            required = role_map.get(item.secure_code)
+            if required is None:
+                # 無角色設定 → 雙鑰匙擋下（不顯示在 sidebar）
+                continue
+
+            if user_role_scs & required:
+                filtered.append(item)
+            # else: 有角色設定但用戶未持有 → 過濾
+
+        return filtered
+
+    @classmethod
+    def _prune_empty_parents(cls, items: List[MenuItem]) -> List[MenuItem]:
+        """
+        遞迴移除沒有可見子項目的 header/divider。
+
+        當子項目被角色過濾移除後，空的父結構元素也應移除，
+        避免 sidebar 出現空的分類標題。
+        """
+        while True:
+            item_scs = {i.secure_code for i in items}
+            # 收集有子項目的 parent_secure_code
+            has_children = set()
+            for item in items:
+                if item.parent_secure_code and item.parent_secure_code in item_scs:
+                    has_children.add(item.parent_secure_code)
+
+            pruned = [
+                i for i in items
+                if i.link_type not in ('header', 'divider')
+                or i.secure_code in has_children
+            ]
+
+            if len(pruned) == len(items):
+                break  # 無更多可裁剪
+            items = pruned
+
+        return items
 
     @staticmethod
     def _filter_with_bypass(items, subject_codes, filter_fn, *args):
