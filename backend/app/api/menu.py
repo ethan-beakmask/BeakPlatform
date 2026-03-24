@@ -326,7 +326,6 @@ def get_menu_roles(secure_code: str):
             Role.is_system_role == True,
             Role.is_deleted == False,
             Role.is_active == True,
-            Role.org_secure_code != 'system.local',
         ).order_by(Role.role_level, Role.name).all()
 
         # 去重 by code，取第一筆
@@ -445,7 +444,6 @@ def set_menu_roles(secure_code: str):
             orgs = Organization.query.filter(
                 Organization.is_deleted == False,
                 Organization.is_active == True,
-                Organization.secure_code != 'system.local',
             ).all()
 
             total_count = 0
