@@ -3,9 +3,6 @@ set -e
 
 echo "=== BeakPlatform Docker Entrypoint ==="
 
-# Check ADMIN_INITIAL_PASSWORD on first run
-# (will be validated inside Python block only when creating admin)
-
 # Wait for database
 echo "Waiting for database..."
 python3 -c "
@@ -27,11 +24,13 @@ else:
 
 # Initialize database tables if needed
 echo "Checking database tables..."
+FRESH_INSTALL="no"
 python3 << 'PYEOF'
+import os
 from app import create_app, db
 app = create_app()
 with app.app_context():
-    from sqlalchemy import inspect, text
+    from sqlalchemy import inspect
     inspector = inspect(db.engine)
     tables = inspector.get_table_names()
 
@@ -40,7 +39,7 @@ with app.app_context():
         db.create_all()
 
         # Require ADMIN_INITIAL_PASSWORD for first-time setup
-        import os, sys, bcrypt
+        import sys, bcrypt
         admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
         if not admin_password:
             print("ERROR: ADMIN_INITIAL_PASSWORD environment variable is required for first-time setup.")
@@ -78,12 +77,30 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print("Database initialized with admin account. (must_change_password=True)")
+
+        # Signal fresh install
+        with open('/tmp/.fresh_install', 'w') as f:
+            f.write('1')
     else:
         print(f"Database has {len(tables)} tables, skipping init.")
 PYEOF
 
+# Migration tracking
+echo "Checking migrations..."
+cd /opt/BeakPlatform
+if [ -f /tmp/.fresh_install ]; then
+    # 全新安裝：db.create_all() 已建立最新 schema，標記所有 migrations 為已執行
+    echo "Fresh install detected, marking all migrations as applied..."
+    python3 scripts/run_migrations.py --mark-all
+    rm -f /tmp/.fresh_install
+else
+    # 既有環境：執行待處理的 migrations
+    python3 scripts/run_migrations.py --run
+fi
+cd /opt/BeakPlatform/backend
+
 # Initialize platform menus (runs before module sync to avoid menu count conflict)
-# init_menus.py is idempotent — skips if platform menus already exist
+# init_menus.py is idempotent -- skips if platform menus already exist
 echo "Initializing platform menus..."
 cd /opt/BeakPlatform
 python3 scripts/init_menus.py || echo "Menu init skipped"
