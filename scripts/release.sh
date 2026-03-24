@@ -247,7 +247,7 @@ if [ "$ACTION" = "fresh" ]; then
     echo "============================================"
     log_info "全新安裝完成"
     echo "  URL: https://app.beakmask.org"
-    echo "  管理帳號: admin / Admin1234"
+    echo "  管理帳號: admin / Admin1234 (由 .env.production 設定)"
     echo "============================================"
     exit 0
 fi

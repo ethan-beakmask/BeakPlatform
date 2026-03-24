@@ -38,14 +38,20 @@ with app.app_context():
         print("Creating database tables...")
         db.create_all()
 
-        # Require ADMIN_INITIAL_PASSWORD for first-time setup
-        import sys, bcrypt
+        # Admin password: use env var if set, otherwise generate random
+        import sys, bcrypt, secrets, string
         admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
+        generated = False
         if not admin_password:
-            print("ERROR: ADMIN_INITIAL_PASSWORD environment variable is required for first-time setup.")
-            print("Set it in .env.production or pass via docker-compose.")
-            sys.exit(1)
-        if len(admin_password) < 8:
+            alphabet = string.ascii_letters + string.digits
+            admin_password = (
+                secrets.choice(string.ascii_uppercase)
+                + secrets.choice(string.ascii_lowercase)
+                + secrets.choice(string.digits)
+                + ''.join(secrets.choice(alphabet) for _ in range(13))
+            )
+            generated = True
+        elif len(admin_password) < 8:
             print("ERROR: ADMIN_INITIAL_PASSWORD must be at least 8 characters.")
             sys.exit(1)
 
@@ -77,6 +83,18 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print("Database initialized with admin account. (must_change_password=True)")
+
+        if generated:
+            print("")
+            print("============================================")
+            print("  INITIAL ADMIN CREDENTIALS")
+            print("  Username: admin")
+            print(f"  Password: {admin_password}")
+            print("")
+            print("  ** Save this password now --")
+            print("     it will NOT be shown again **")
+            print("============================================")
+            print("")
 
         # Signal fresh install
         with open('/tmp/.fresh_install', 'w') as f:
