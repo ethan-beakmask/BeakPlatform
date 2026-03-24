@@ -71,8 +71,7 @@ def get_applied(conn):
 def get_migration_files():
     """取得排序後的 migration 檔案清單"""
     if not os.path.isdir(MIGRATIONS_DIR):
-        print(f"ERROR: migrations 目錄不存在: {MIGRATIONS_DIR}")
-        sys.exit(1)
+        return []
 
     files = []
     for f in os.listdir(MIGRATIONS_DIR):
