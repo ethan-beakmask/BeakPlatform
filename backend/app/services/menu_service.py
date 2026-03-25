@@ -1240,3 +1240,143 @@ class MenuService:
             if menu_code == module_code or menu_code.startswith(f'{module_code}.'):
                 return module_code
         return None
+
+    # ========================================
+    # 選單重置功能
+    # ========================================
+
+    @classmethod
+    def _build_defaults_map(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        建構完整的選單預設值 map（平台 + 模組）
+
+        Returns:
+            {code: {display_order, parent_code, depth, title, ...}, ...}
+        """
+        from ..defaults.menu_defaults import build_defaults_map
+        from ..module_loader import module_loader
+        return build_defaults_map(module_loader)
+
+    @classmethod
+    def reset_menu_positions(cls) -> Dict[str, int]:
+        """
+        重置選單項目位置（只還原 display_order / parent / depth）
+
+        不影響權限、標題、icon 等其他設定。
+        用戶自建選單（is_user_created=True 且不在預設定義中）保持原位。
+
+        Returns:
+            {'updated': n, 'skipped': n}
+        """
+        defaults = cls._build_defaults_map()
+
+        items = MenuItem.query.filter_by(is_deleted=False).all()
+        code_to_item = {item.code: item for item in items}
+
+        updated = 0
+        skipped = 0
+
+        for code, default in defaults.items():
+            item = code_to_item.get(code)
+            if not item:
+                skipped += 1
+                continue
+
+            # 解析 parent_secure_code
+            parent_code = default.get('parent_code')
+            if parent_code:
+                parent_item = code_to_item.get(parent_code)
+                parent_sc = parent_item.secure_code if parent_item else None
+            else:
+                parent_sc = None
+
+            changed = False
+
+            if item.display_order != default['display_order']:
+                item.display_order = default['display_order']
+                changed = True
+
+            if item.parent_secure_code != parent_sc:
+                item.parent_secure_code = parent_sc
+                changed = True
+
+            new_depth = default.get('depth', 0)
+            if item.depth != new_depth:
+                item.depth = new_depth
+                changed = True
+
+            if changed:
+                updated += 1
+
+        db.session.commit()
+        logger.info(f"Menu positions reset: {updated} updated, {skipped} skipped")
+        return {'updated': updated, 'skipped': skipped}
+
+    @classmethod
+    def reset_menu_factory(cls) -> Dict[str, int]:
+        """
+        重置選單所有設定成出廠值（完全覆蓋回預設值）
+
+        覆蓋範圍：位置、標題、icon、link_type、link_target、
+        is_expanded、is_active、is_shared、required_permission、MenuPermission。
+        用戶自建選單（is_user_created=True 且不在預設定義中）不受影響。
+
+        Returns:
+            {'updated': n, 'skipped': n, 'permissions_reset': n}
+        """
+        defaults = cls._build_defaults_map()
+
+        items = MenuItem.query.filter_by(is_deleted=False).all()
+        code_to_item = {item.code: item for item in items}
+
+        updated = 0
+        skipped = 0
+        permissions_reset = 0
+
+        for code, default in defaults.items():
+            item = code_to_item.get(code)
+            if not item:
+                skipped += 1
+                continue
+
+            # 解析 parent_secure_code
+            parent_code = default.get('parent_code')
+            if parent_code:
+                parent_item = code_to_item.get(parent_code)
+                parent_sc = parent_item.secure_code if parent_item else None
+            else:
+                parent_sc = None
+
+            # 位置欄位
+            item.display_order = default['display_order']
+            item.parent_secure_code = parent_sc
+            item.depth = default.get('depth', 0)
+
+            # 內容欄位
+            item.title = default['title']
+            item.icon = default.get('icon')
+            item.link_type = default['link_type']
+            item.link_target = default.get('link_target')
+            item.is_expanded = default.get('is_expanded', False)
+            item.is_active = True
+            item.is_shared = default.get('is_shared', False)
+            item.required_permission = default.get('required_permission')
+
+            # 權限重置（MenuPermission）
+            user_types = default.get('user_types', [])
+            if user_types:
+                cls.set_menu_permissions(item.secure_code, user_types)
+                permissions_reset += 1
+
+            updated += 1
+
+        db.session.commit()
+        logger.info(
+            f"Menu factory reset: {updated} updated, "
+            f"{skipped} skipped, {permissions_reset} permissions reset"
+        )
+        return {
+            'updated': updated,
+            'skipped': skipped,
+            'permissions_reset': permissions_reset,
+        }

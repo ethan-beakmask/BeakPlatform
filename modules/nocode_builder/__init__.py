@@ -19,13 +19,19 @@ MODULE_INFO = {
             'name': '子系統開發模組',
             'icon': 'ri-database-2-line',
             'parent': None,
-            'sort_order': 200,
+            'sort_order': 5,
             'user_types': ['ORG_ADMIN'],
             'children': [
                 {
                     'code': 'nocode_builder.sub_systems',
                     'name': '子系統開發',
                     'url': 'nocode_builder_web.sub_system_list',
+                    'sort_order': 0
+                },
+                {
+                    'code': 'nocode_builder.lookup',
+                    'name': '選項-清單-資料樹',
+                    'url': 'nocode_builder_web.lookup_manager',
                     'sort_order': 1
                 },
                 {
@@ -39,12 +45,6 @@ MODULE_INFO = {
                     'name': '頁面管理',
                     'url': 'nocode_builder_web.lab',
                     'sort_order': 3
-                },
-                {
-                    'code': 'nocode_builder.lookup',
-                    'name': '選項-清單-資料樹',
-                    'url': 'nocode_builder_web.lookup_manager',
-                    'sort_order': 4
                 },
             ]
         }

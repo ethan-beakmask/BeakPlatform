@@ -17,6 +17,33 @@
         <button type="button" @click="_grid && _grid.collapseAll()">{{ _('全部收合') }}</button>
         <button type="button" @click="showRootHeaderModal = true">+ {{ _('新增根項目') }}</button>
         <span class="trellis-hint">{{ _('拖曳調整位置') }}</span>
+        <span style="margin-left:auto; display:flex; gap:6px;">
+            <button type="button" @click="resetPositions()" :disabled="saving">{{ _('重置MENU項目位置') }}</button>
+            <button type="button" @click="showFactoryResetModal = true" :disabled="saving" style="color:#f87171;">{{ _('重置MENU所有設定成出廠值') }}</button>
+        </span>
+    </div>
+
+    {# 出廠值重置確認 Modal #}
+    <div x-show="showFactoryResetModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showFactoryResetModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:480px;">
+            <h3 style="margin-top:0; color:#f87171;">{{ _('確認重置所有選單設定') }}</h3>
+            <p style="color:#ccc; line-height:1.6;">
+                {{ _('此操作將把所有預設選單的設定還原成出廠值，包含：') }}
+            </p>
+            <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
+                <li>{{ _('選單位置、排序、父子關係') }}</li>
+                <li>{{ _('標題、圖示、連結設定') }}</li>
+                <li>{{ _('用戶類型權限 (鑰匙1)') }}</li>
+            </ul>
+            <p style="color:#aaa; font-size:0.85em;">
+                {{ _('用戶自建選單不受影響。角色需求 (鑰匙2) 不受影響。') }}
+            </p>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showFactoryResetModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="resetFactory()" style="background:#991b1b; color:white; border:1px solid #dc2626;">{{ _('確認重置') }}</button>
+            </div>
+        </div>
     </div>
 
     {# 新增根項目 Modal #}

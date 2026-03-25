@@ -94,6 +94,7 @@ function menuTreeManager() {
         message: '',
         messageType: '',
         showRootHeaderModal: false,
+        showFactoryResetModal: false,
 
         init: function() {
             this.buildTree();
@@ -260,6 +261,65 @@ function menuTreeManager() {
 
             var self = this;
             setTimeout(function() { self.message = ''; }, 3000);
+        },
+
+        resetPositions: async function() {
+            this.saving = true;
+            this.message = '';
+
+            try {
+                var resp = await fetch('/api/menu/reset-positions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': _menuTreeCsrfToken
+                    }
+                });
+                var data = await resp.json();
+                if (resp.ok && data.success) {
+                    this.message = '位置已重置 (' + data.updated + ' 項更新)';
+                    this.messageType = 'success';
+                    setTimeout(function() { location.reload(); }, 800);
+                } else {
+                    this.message = '重置失敗: ' + (data.error || resp.status);
+                    this.messageType = 'error';
+                }
+            } catch (e) {
+                this.message = '重置失敗: ' + e.message;
+                this.messageType = 'error';
+            }
+
+            this.saving = false;
+        },
+
+        resetFactory: async function() {
+            this.showFactoryResetModal = false;
+            this.saving = true;
+            this.message = '';
+
+            try {
+                var resp = await fetch('/api/menu/reset-factory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': _menuTreeCsrfToken
+                    }
+                });
+                var data = await resp.json();
+                if (resp.ok && data.success) {
+                    this.message = '出廠值已重置 (' + data.updated + ' 項更新)';
+                    this.messageType = 'success';
+                    setTimeout(function() { location.reload(); }, 800);
+                } else {
+                    this.message = '重置失敗: ' + (data.error || resp.status);
+                    this.messageType = 'error';
+                }
+            } catch (e) {
+                this.message = '重置失敗: ' + e.message;
+                this.messageType = 'error';
+            }
+
+            this.saving = false;
         }
     };
 }

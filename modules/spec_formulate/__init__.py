@@ -22,14 +22,14 @@ MODULE_INFO = {
             'name': '規格制定模組',
             'icon': 'ri-file-list-line',
             'parent': None,
-            'sort_order': 150,
+            'sort_order': 4,
             'user_types': ['ORG_ADMIN'],
             'children': [
                 {
                     'code': 'spec_formulate.spec_multifaceted',
                     'name': '規格管理',
                     'url': 'spec_formulate_web.spec_multifaceted',
-                    'sort_order': 1,
+                    'sort_order': 0,
                 },
             ]
         }

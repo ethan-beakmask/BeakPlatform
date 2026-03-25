@@ -478,3 +478,48 @@ def set_menu_roles(secure_code: str):
         db.session.rollback()
         logger.error(f"Failed to set menu roles: {e}")
         return jsonify({'error': '更新角色需求失敗'}), 500
+
+
+# =============================================================================
+# 選單重置 API
+# =============================================================================
+
+@menu_bp.route('/reset-positions', methods=['POST'])
+@system_admin_required
+def reset_menu_positions():
+    """
+    重置選單項目位置（只還原排序、父子關係、深度）
+
+    不影響權限、標題、icon 等其他設定。
+
+    Returns:
+        {success: true, updated: int, skipped: int}
+    """
+    try:
+        result = MenuService.reset_menu_positions()
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to reset menu positions: {e}")
+        return jsonify({'error': '重置選單位置失敗'}), 500
+
+
+@menu_bp.route('/reset-factory', methods=['POST'])
+@system_admin_required
+def reset_menu_factory():
+    """
+    重置選單所有設定成出廠值（完全覆蓋回預設值）
+
+    覆蓋範圍：位置、標題、icon、連結、權限等所有屬性。
+    用戶自建選單不受影響。
+
+    Returns:
+        {success: true, updated: int, skipped: int, permissions_reset: int}
+    """
+    try:
+        result = MenuService.reset_menu_factory()
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to reset menu factory: {e}")
+        return jsonify({'error': '重置選單出廠值失敗'}), 500

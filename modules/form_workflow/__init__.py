@@ -29,42 +29,42 @@ MODULE_INFO = {
             'name': '表單流程',
             'icon': 'ri-flow-chart',
             'parent': None,
-            'sort_order': 100,
+            'sort_order': 3,
             'user_types': ['ORG_ADMIN'],
             'children': [
-                {
-                    'code': 'form_workflow.templates',
-                    'name': '表單範本',
-                    'url': 'form_workflow_web.templates',
-                    'sort_order': 10,
-                    'required_permission': 'form_workflow.template.manage'
-                },
                 {
                     'code': 'form_workflow.workflows',
                     'name': '流程設計',
                     'url': 'form_workflow_web.workflows',
-                    'sort_order': 11,
+                    'sort_order': 0,
                     'required_permission': 'form_workflow.workflow.manage'
+                },
+                {
+                    'code': 'form_workflow.templates',
+                    'name': '表單範本',
+                    'url': 'form_workflow_web.templates',
+                    'sort_order': 1,
+                    'required_permission': 'form_workflow.template.manage'
                 },
                 {
                     'code': 'form_workflow.mappings',
                     'name': '配對管理',
                     'url': 'form_workflow_web.mappings',
-                    'sort_order': 12,
+                    'sort_order': 2,
                     'required_permission': 'form_workflow.workflow.manage'
-                },
-                {
-                    'code': 'form_workflow.form_themes',
-                    'name': '表單風格管理',
-                    'url': 'form_workflow_web.form_themes',
-                    'sort_order': 15,
-                    'required_permission': 'form_workflow.admin'
                 },
                 {
                     'code': 'form_workflow.categories',
                     'name': '分類管理',
                     'url': 'form_workflow_web.categories',
-                    'sort_order': 20,
+                    'sort_order': 3,
+                    'required_permission': 'form_workflow.admin'
+                },
+                {
+                    'code': 'form_workflow.form_themes',
+                    'name': '表單風格管理',
+                    'url': 'form_workflow_web.form_themes',
+                    'sort_order': 4,
                     'required_permission': 'form_workflow.admin'
                 },
             ]
