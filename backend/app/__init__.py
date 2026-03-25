@@ -44,6 +44,10 @@ def create_app(config_name: str = None) -> Flask:
     """Application factory pattern."""
     app = Flask(__name__)
 
+    # 關閉尾部斜線強制重導向
+    # 避免 /api/users → 308 → /api/users/ 造成 CSP connect-src 'self' 阻擋
+    app.url_map.strict_slashes = False
+
     # Load configuration
     config_name = config_name or os.getenv('FLASK_ENV', 'production')
     app.config.from_object(f'app.config.{config_name.capitalize()}Config')
