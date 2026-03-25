@@ -216,7 +216,24 @@ def initial_setup():
                         admin_user.set_password(password)
                         db.session.add(admin_user)
 
-                        # 3. 停用原始管理員
+                        # 3. 指派 ORG_ADMIN 角色
+                        from ..models.role import Role
+                        from ..models.associations import UserRoleAssignment
+                        org_admin_role = Role.query.filter(
+                            Role.org_secure_code == org.secure_code,
+                            Role.code == 'ORG_ADMIN',
+                            Role.is_deleted == False,
+                        ).first()
+                        if org_admin_role:
+                            role_assignment = UserRoleAssignment(
+                                org_secure_code=org.secure_code,
+                                user_secure_code=admin_user.secure_code,
+                                role_secure_code=org_admin_role.secure_code,
+                                assigned_by='system:initial-setup',
+                            )
+                            db.session.add(role_assignment)
+
+                        # 4. 停用原始管理員
                         current_user.is_active = False
                         logger.info(
                             f"[INITIAL-SETUP] org={org.domain_name} "
@@ -364,6 +381,22 @@ def create_admin():
                             )
                             user.set_password(password)
                             db.session.add(user)
+
+                            # 指派 ORG_ADMIN 角色
+                            from ..models.associations import UserRoleAssignment
+                            org_admin_role = Role.query.filter(
+                                Role.org_secure_code == org.secure_code,
+                                Role.code == 'ORG_ADMIN',
+                                Role.is_deleted == False,
+                            ).first()
+                            if org_admin_role:
+                                role_assignment = UserRoleAssignment(
+                                    org_secure_code=org.secure_code,
+                                    user_secure_code=user.secure_code,
+                                    role_secure_code=org_admin_role.secure_code,
+                                    assigned_by=current_user.email,
+                                )
+                                db.session.add(role_assignment)
 
                             # 自動停用預設管理員帳號（名稱易被猜測，安全考量）
                             original_admin = User.query.filter(

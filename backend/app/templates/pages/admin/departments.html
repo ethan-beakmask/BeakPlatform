@@ -323,7 +323,7 @@ window.__DEPT_CONFIG = {
                             <div class="cross-member-list" x-show="crossMembers.length > 0">
                                 <template x-for="cm in crossMembers" :key="cm.id">
                                     <div class="cross-member-item">
-                                        <span class="cross-tag" :class="cm.is_leader ? 'leader' : ''" x-text="cm.is_leader ? '[跨]' : '跨'"></span>
+                                        <span class="role-tag" :class="crossRoleTagClass(cm)" x-text="crossRoleTag(cm)"></span>
                                         <span class="emp-id" x-text="cm.user?.employee_id || '-'"></span>
                                         <span class="emp-native" x-text="cm.user?.native_name || cm.user?.display_name || '?'"></span>
                                         <span class="emp-english" x-text="cm.user?.english_name || ''"></span>
@@ -379,7 +379,8 @@ window.__DEPT_CONFIG = {
                                          @drop.stop="dropToLeadership($event,'proxy1')">
                                         <div class="proxy-label">代理人(一)</div>
                                         <template x-if="leadership.proxy1">
-                                            <div class="staff-person" draggable="true" @dragstart="dragStartLeader($event, leadership.proxy1, 'proxy1')" @dragend="clearDrag()">
+                                            <div class="staff-person" :draggable="!leadership.proxy1._isCross" @dragstart="leadership.proxy1._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy1, 'proxy1')" @dragend="clearDrag()" :style="leadership.proxy1._isCross ? 'cursor:default;opacity:0.85' : ''">
+                                                <span x-show="leadership.proxy1._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
                                                 <span class="emp-id" x-text="leadership.proxy1.employee_id||'-'"></span>
                                                 <span class="emp-native" x-text="leadership.proxy1.native_name||leadership.proxy1.display_name"></span>
                                             </div>
@@ -414,7 +415,8 @@ window.__DEPT_CONFIG = {
                                          @drop.stop="dropToLeadership($event,'proxy2')">
                                         <div class="proxy-label">代理人(二)</div>
                                         <template x-if="leadership.proxy2">
-                                            <div class="staff-person" draggable="true" @dragstart="dragStartLeader($event, leadership.proxy2, 'proxy2')" @dragend="clearDrag()">
+                                            <div class="staff-person" :draggable="!leadership.proxy2._isCross" @dragstart="leadership.proxy2._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy2, 'proxy2')" @dragend="clearDrag()" :style="leadership.proxy2._isCross ? 'cursor:default;opacity:0.85' : ''">
+                                                <span x-show="leadership.proxy2._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
                                                 <span class="emp-id" x-text="leadership.proxy2.employee_id||'-'"></span>
                                                 <span class="emp-native" x-text="leadership.proxy2.native_name||leadership.proxy2.display_name"></span>
                                             </div>
@@ -436,7 +438,8 @@ window.__DEPT_CONFIG = {
                                     <template x-if="regularMembers.length > 0">
                                         <div>
                                             <template x-for="m in regularMembers" :key="m.id">
-                                                <div class="staff-person" draggable="true" @dragstart="dragStartMember($event, m)" @dragend="clearDrag()">
+                                                <div class="staff-person" :draggable="!m._isCross" @dragstart="m._isCross ? $event.preventDefault() : dragStartMember($event, m)" @dragend="clearDrag()" :style="m._isCross ? 'cursor:default;opacity:0.85' : ''">
+                                                    <span x-show="m._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
                                                     <span class="emp-id" x-text="m.employee_id||'-'"></span>
                                                     <span class="emp-native" x-text="m.native_name||m.display_name"></span>
                                                     <span class="emp-english" x-text="m.english_name||''"></span>

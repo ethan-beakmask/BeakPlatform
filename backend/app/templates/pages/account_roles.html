@@ -29,11 +29,12 @@
 <table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th data-sort="text" style="width: 12%;">{{ _('姓名') }}</th>
-            <th data-sort="text" style="width: 10%;">{{ _('帳號類型') }}</th>
-            <th data-sort="text" style="width: 10%;">{{ _('用戶編號') }}</th>
-            <th style="width: 30%;">{{ _('社群參與') }}</th>
-            <th style="width: 38%;">{{ _('角色指派') }}</th>
+            <th data-sort="text" style="width: 11%;">{{ _('姓名') }}</th>
+            <th data-sort="text" style="width: 8%;">{{ _('帳號類型') }}</th>
+            <th data-sort="text" style="width: 8%;">{{ _('用戶編號') }}</th>
+            <th style="width: 18%;">{{ _('部門') }}</th>
+            <th style="width: 22%;">{{ _('社群參與') }}</th>
+            <th style="width: 33%;">{{ _('角色指派') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -54,6 +55,23 @@
                 {% endif %}
             </td>
             <td style="font-size: 0.9em;">{{ user.employee_id or '-' }}</td>
+            <td>
+                {% set depts = user_depts.get(user.secure_code, []) %}
+                {% if depts %}
+                    {% for d in depts %}
+                    <div style="margin-bottom: 2px;">
+                        <span>{{ d.name }}</span>
+                        {% if d.is_cross %}
+                        <span style="color: #7c3aed; font-size: 0.85em; margin-left: 4px;">[{{ d.role }}]</span>
+                        {% else %}
+                        <span style="color: #2563eb; font-weight: 600; font-size: 0.85em; margin-left: 4px;">[{{ d.role }}]</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <span style="color: #9ca3af; font-size: 0.9em;">-</span>
+                {% endif %}
+            </td>
             <td>
                 {% set groups = user_groups.get(user.secure_code, []) %}
                 {% if groups %}

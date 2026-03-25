@@ -66,6 +66,89 @@ def index():
     users = query.order_by(User.user_type, User.display_name).all()
     user_codes = [u.secure_code for u in users]
 
+    # 批次查詢部門歸屬（SOLID=主要部門, DOTTED=跨部門）
+    dept_memberships = []
+    if user_codes:
+        dept_memberships = UserUnitMembership.query.filter(
+            UserUnitMembership.user_secure_code.in_(user_codes),
+            UserUnitMembership.membership_type.in_([MembershipType.SOLID, MembershipType.DOTTED]),
+            UserUnitMembership.is_deleted == False,
+        ).all()
+
+    # 批次查詢部門名稱
+    dept_unit_codes = list({m.unit_secure_code for m in dept_memberships})
+    dept_unit_map = {}
+    if dept_unit_codes:
+        dept_units = OrganizationalUnit.query.filter(
+            OrganizationalUnit.secure_code.in_(dept_unit_codes),
+            OrganizationalUnit.is_deleted == False,
+        ).all()
+        dept_unit_map = {u.secure_code: u.name for u in dept_units}
+
+    # 批次查詢部門職務角色（DEPT_MANAGER 等）
+    dept_role_codes = ['DEPT_MANAGER', 'DEPT_DEPUTY', 'DEPT_PROXY1', 'DEPT_PROXY2']
+    dept_roles = Role.query.filter(
+        Role.org_secure_code == org_sc,
+        Role.code.in_(dept_role_codes),
+        Role.is_deleted == False,
+    ).all()
+    dept_role_sc_map = {r.secure_code: r.code for r in dept_roles}
+    dept_role_scs = list(dept_role_sc_map.keys())
+
+    # 查詢部門級角色指派
+    dept_role_assignments = []
+    if user_codes and dept_role_scs:
+        dept_role_assignments = UserRoleAssignment.query.filter(
+            UserRoleAssignment.user_secure_code.in_(user_codes),
+            UserRoleAssignment.role_secure_code.in_(dept_role_scs),
+            UserRoleAssignment.is_deleted == False,
+        ).all()
+
+    # 建立 (user_sc, unit_sc) → role_code 對照
+    _dept_role_label_map = {
+        'DEPT_MANAGER': '\u4E3B\u7BA1',
+        'DEPT_DEPUTY': '\u526F\u4E3B\u7BA1',
+        'DEPT_PROXY1': '\u4EE3\u7406\u4EBA(\u4E00)',
+        'DEPT_PROXY2': '\u4EE3\u7406\u4EBA(\u4E8C)',
+    }
+    user_unit_role = {}
+    for a in dept_role_assignments:
+        if a.unit_secure_code:
+            role_code = dept_role_sc_map.get(a.role_secure_code, '')
+            label = _dept_role_label_map.get(role_code, '')
+            if label:
+                user_unit_role[(a.user_secure_code, a.unit_secure_code)] = label
+
+    # 組裝部門資料：user_sc -> [{name, role, is_cross}]
+    user_depts = {}
+    _cross_role_label = {
+        'MANAGER': '\u4EE3\u7406',
+        'DEPUTY': '\u4EE3\u7406',
+        'PROXY1': '\u4EE3\u7406',
+        'PROXY2': '\u4EE3\u7406',
+        'MEMBER': '\u54E1\u5DE5',
+    }
+    for m in dept_memberships:
+        dept_name = dept_unit_map.get(m.unit_secure_code)
+        if not dept_name:
+            continue
+        is_cross = m.membership_type == MembershipType.DOTTED
+        if is_cross:
+            role_label = _cross_role_label.get(m.role_type, '\u54E1\u5DE5')
+        else:
+            role_label = user_unit_role.get(
+                (m.user_secure_code, m.unit_secure_code), '\u54E1\u5DE5'
+            )
+        user_depts.setdefault(m.user_secure_code, []).append({
+            'name': dept_name,
+            'role': role_label,
+            'is_cross': is_cross,
+        })
+
+    # 排序：主要部門優先，再按名稱
+    for depts in user_depts.values():
+        depts.sort(key=lambda d: (d['is_cross'], d['name']))
+
     # 批次查詢社群成員關係
     memberships = []
     if user_codes:
@@ -154,6 +237,7 @@ def index():
     return render_template(
         'pages/account_roles.html',
         users=users,
+        user_depts=user_depts,
         user_groups=user_groups,
         user_roles=user_roles,
         user_type_labels=user_type_labels,

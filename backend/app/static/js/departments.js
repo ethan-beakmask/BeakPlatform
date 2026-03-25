@@ -129,7 +129,12 @@ function departmentManager() {
         },
 
         get regularMembers() {
-            return this.members.filter(m => !this.leaderIds.includes(m.id));
+            var base = this.members.filter(m => !this.leaderIds.includes(m.id));
+            // 跨部門 MEMBER 也顯示在員工欄，帶 _isCross 標記
+            var crossEmployees = this.crossMembers
+                .filter(cm => cm.role_type === 'MEMBER' && cm.user)
+                .map(cm => ({ ...cm.user, _isCross: true, _crossId: cm.id }));
+            return base.concat(crossEmployees);
         },
 
         get membersExcludeLeaders() { return this.regularMembers; },
@@ -473,6 +478,7 @@ function departmentManager() {
                 this.loadLeadership(id),
                 this.loadCrossMembers(id)
             ]);
+            this._mergeCrossToProxy();
         },
 
         startCreate() {
@@ -587,6 +593,29 @@ function departmentManager() {
             return parts.join(' ');
         },
 
+        // ==================== 跨部門人員標示 ====================
+
+        crossRoleTag(cm) {
+            var map = { MANAGER: '\u4EE3', DEPUTY: '\u4EE3', PROXY1: '\u4EE3', PROXY2: '\u4EE3', MEMBER: '\u54E1' };
+            return '[' + (map[cm.role_type] || '\u54E1') + ']';
+        },
+
+        crossRoleTagClass(cm) {
+            if (['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(cm.role_type)) return 'leader';
+            return 'employee';
+        },
+
+        _mergeCrossToProxy() {
+            var crossMgr = this.crossMembers.find(cm => cm.role_type === 'MANAGER');
+            if (crossMgr && !this.leadership.proxy1 && crossMgr.user) {
+                this.leadership.proxy1 = { ...crossMgr.user, _isCross: true };
+            }
+            var crossDep = this.crossMembers.find(cm => cm.role_type === 'DEPUTY');
+            if (crossDep && !this.leadership.proxy2 && crossDep.user) {
+                this.leadership.proxy2 = { ...crossDep.user, _isCross: true };
+            }
+        },
+
         // ==================== 跨部門人員 ====================
 
         async removeCrossMember(cm) {
@@ -600,7 +629,11 @@ function departmentManager() {
                 });
                 if (res.ok) {
                     this.showToast('已移除跨部門關係', 'success');
-                    await this.loadCrossMembers(this.selectedDept.id);
+                    await Promise.all([
+                        this.loadLeadership(this.selectedDept.id),
+                        this.loadCrossMembers(this.selectedDept.id)
+                    ]);
+                    this._mergeCrossToProxy();
                 } else {
                     var data = await res.json();
                     this.showToast(data.error || '移除失敗', 'error');
@@ -622,6 +655,11 @@ function departmentManager() {
         // ==================== 外部面板 DnD ====================
 
         dragStartMember(e, member) {
+            // 跨部門員工不可拖拉
+            if (member._isCross) {
+                e.preventDefault();
+                return;
+            }
             this.draggedMember = member;
             this._dragData = { source: 'external', type: 'person', person: member, role: 'member', deptId: this.selectedDept?.id };
             this._isDragging = true;
@@ -630,6 +668,11 @@ function departmentManager() {
         },
 
         dragStartLeader(e, leader, type) {
+            // 跨部門代理人不可拖拉
+            if (leader._isCross) {
+                e.preventDefault();
+                return;
+            }
             this.draggedLeader = leader;
             this.draggedLeaderType = type;
             this._dragData = { source: 'external', type: 'person', person: leader, role: type, deptId: this.selectedDept?.id };
@@ -678,8 +721,27 @@ function departmentManager() {
             }
             if (!person) return;
 
+            // 跨部門代理人不可在部門內拖拉異動
+            if (person._isCross) {
+                this.showToast('\u8DE8\u90E8\u9580\u4EE3\u7406\u4EBA\u4E0D\u53EF\u76F4\u63A5\u7570\u52D5\uFF0C\u8ACB\u5F9E\u8DE8\u90E8\u9580\u4EBA\u54E1\u5340\u7BA1\u7406', 'error');
+                this.clearDrag();
+                return;
+            }
+
             // Ctrl + 非未分配來源 = 跨部門
             if (this._shouldCross(e)) {
+                // manager/proxy1 → 代理人(一)，deputy/proxy2 → 代理人(二)
+                // 對應代理席有人 → 阻擋
+                if ((position === 'manager' || position === 'proxy1') && this.leadership.proxy1) {
+                    this.showToast('\u4EE3\u7406\u4EBA(\u4E00)\u4F4D\u7F6E\u5DF2\u4F54\u4F4D\uFF0C\u8ACB\u5148\u79FB\u9664', 'error');
+                    this.clearDrag();
+                    return;
+                }
+                if ((position === 'deputy' || position === 'proxy2') && this.leadership.proxy2) {
+                    this.showToast('\u4EE3\u7406\u4EBA(\u4E8C)\u4F4D\u7F6E\u5DF2\u4F54\u4F4D\uFF0C\u8ACB\u5148\u79FB\u9664', 'error');
+                    this.clearDrag();
+                    return;
+                }
                 var roleType = this._crossRoleType(position);
                 await this._addCrossViaApi(this.selectedDept.id, person.id, roleType);
                 await this._refreshAll();
@@ -729,6 +791,13 @@ function departmentManager() {
                 fromTree = this._dragData.source === 'tree';
             }
             if (!person) return;
+
+            // 跨部門代理人不可在部門內拖拉異動
+            if (person._isCross) {
+                this.showToast('\u8DE8\u90E8\u9580\u4EE3\u7406\u4EBA\u4E0D\u53EF\u76F4\u63A5\u7570\u52D5\uFF0C\u8ACB\u5F9E\u8DE8\u90E8\u9580\u4EBA\u54E1\u5340\u7BA1\u7406', 'error');
+                this.clearDrag();
+                return;
+            }
 
             // Ctrl + 非未分配來源 = 跨部門
             if (this._shouldCross(e)) {
@@ -802,8 +871,9 @@ function departmentManager() {
         },
 
         _crossRoleType(position) {
-            if (position === 'manager') return 'MANAGER';
-            if (position === 'deputy') return 'DEPUTY';
+            // manager/proxy1 都對應代理人(一)，deputy/proxy2 都對應代理人(二)
+            if (position === 'manager' || position === 'proxy1') return 'MANAGER';
+            if (position === 'deputy' || position === 'proxy2') return 'DEPUTY';
             return 'MEMBER';
         },
 
@@ -886,6 +956,13 @@ function departmentManager() {
                 var person = self.draggedMember || self.draggedLeader || self.draggedUser;
                 if (!person && self._dragData.person) person = self._dragData.person;
                 if (!person) return;
+
+                // 跨部門代理人不可拖拉異動
+                if (person._isCross) {
+                    self.showToast('\u8DE8\u90E8\u9580\u4EE3\u7406\u4EBA\u4E0D\u53EF\u76F4\u63A5\u7570\u52D5\uFF0C\u8ACB\u5F9E\u8DE8\u90E8\u9580\u4EBA\u54E1\u5340\u7BA1\u7406', 'error');
+                    self.clearDrag();
+                    return;
+                }
 
                 // Ctrl + 非未分配 = 跨部門
                 if (e.ctrlKey && !self.draggedUser) {
@@ -975,6 +1052,7 @@ function departmentManager() {
                     this.loadLeadership(this.selectedDept.id),
                     this.loadCrossMembers(this.selectedDept.id)
                 ]);
+                this._mergeCrossToProxy();
             }
             this.buildTree();
             if (this.selectedDept) {
