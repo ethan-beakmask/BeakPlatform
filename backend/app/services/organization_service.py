@@ -154,7 +154,7 @@ class OrganizationService:
             )
 
             # 建立預設編號規則
-            OrganizationService._create_default_numbering_rule(org)
+            OrganizationService._create_default_numbering_rules(org)
 
             # 建立預設外部廠商群組
             OrganizationService._create_default_external_group(org)
@@ -493,20 +493,22 @@ class OrganizationService:
             )
 
     @staticmethod
-    def _create_default_numbering_rule(org: Organization) -> UserNumberingRule:
+    def _create_default_numbering_rules(org: Organization) -> UserNumberingRule:
         """
-        建立預設員工編號規則 (4 位數序號: 0001, 0002, ...)
+        建立預設編號規則（5 個）
 
-        新企業建立時自動產生，供初始設定精靈自動編號使用。
+        新企業建立時自動產生。格式刻意不完美，
+        半強迫管理員進入 /admin/numbering 認真規劃自家編號系統。
         """
-        rule = UserNumberingRule(
+        # 1. 預設員工編號 — 純 4 位序號
+        employee_rule = UserNumberingRule(
             org_secure_code=org.secure_code,
             name='預設員工編號',
             description='4 位數序號',
             elements={
                 'components': [
-                    {'type': 'sequence', 'order': 1, 'start': 1,
-                     'digits': 4, 'reset_period': 'never'},
+                    {'type': NumberingElementType.SEQUENCE, 'order': 1,
+                     'start': 1, 'digits': 4, 'reset_period': 'never'},
                 ],
                 'total_length': 4,
             },
@@ -514,18 +516,21 @@ class OrganizationService:
             default_for=NumberingDefaultFor.EMPLOYEE,
             is_active=True,
         )
-        db.session.add(rule)
+        db.session.add(employee_rule)
 
-        # 外部廠商預設編號規則
+        # 2. 外部廠商編號 — 賓 + 4 位序號 + (臨)
         ext_rule = UserNumberingRule(
             org_secure_code=org.secure_code,
             name='外部廠商編號',
-            description='前綴「外賓」+ 4 位數序號',
+            description='前綴「賓」+ 4 位序號 + 後綴「(臨)」',
             elements={
                 'components': [
-                    {'type': 'prefix', 'order': 1, 'values': ['外賓']},
-                    {'type': 'sequence', 'order': 5, 'start': 1,
-                     'digits': 4, 'reset_period': 'never'},
+                    {'type': NumberingElementType.PREFIX, 'order': 1,
+                     'values': ['賓']},
+                    {'type': NumberingElementType.SEQUENCE, 'order': 5,
+                     'start': 1, 'digits': 4, 'reset_period': 'never'},
+                    {'type': NumberingElementType.SUFFIX, 'order': 6,
+                     'values': ['(臨)']},
                 ],
                 'total_length': 0,
             },
@@ -535,22 +540,19 @@ class OrganizationService:
         )
         db.session.add(ext_rule)
 
-        # 表單編號預設規則（前綴 + 年碼2位 + 月碼 + 5位序號，每月重置）
-        # 新企業可自行到 /admin/numbering 修改格式
+        # 3. 預設表單編號 — Form-YYMM + 5 位序號（每月重置）
         form_rule = UserNumberingRule(
             org_secure_code=org.secure_code,
             name='預設表單編號',
-            description='前綴 + 年月 + 5 位序號（每月重置）',
+            description='Form- + 年月 + 5 位序號（每月重置）',
             elements={
                 'components': [
                     {'type': NumberingElementType.PREFIX, 'order': 1,
-                     'values': [org.code[:3].upper() + '-']},
+                     'values': ['Form-']},
                     {'type': NumberingElementType.YEAR, 'order': 2,
                      'format': 'yy'},
-                    {'type': NumberingElementType.MONTH, 'order': 3,
+                    {'type': NumberingElementType.MONTH, 'order': 4,
                      'format': 'mm'},
-                    {'type': NumberingElementType.PREFIX, 'order': 4,
-                     'values': ['-']},
                     {'type': NumberingElementType.SEQUENCE, 'order': 5,
                      'start': 1, 'digits': 5, 'reset_period': 'monthly'},
                 ],
@@ -562,9 +564,47 @@ class OrganizationService:
         )
         db.session.add(form_rule)
 
-        logger.info(f"Default numbering rules created for org {org.code}")
+        # 4. 門禁卡實體卡號 — 純 4 位序號（內部通用）
+        card_rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='門禁卡實體卡號',
+            description='4 位數序號（內部通用）',
+            elements={
+                'components': [
+                    {'type': NumberingElementType.SEQUENCE, 'order': 5,
+                     'start': 1, 'digits': 4, 'reset_period': 'never'},
+                ],
+                'total_length': 0,
+            },
+            usage_scope=NumberingUsageScope.INTERNAL_UNIVERSAL,
+            is_active=True,
+        )
+        db.session.add(card_rule)
 
-        return rule
+        # 5. 行政資產編號 — ADMN- + 年碼 + 4 位序號
+        asset_rule = UserNumberingRule(
+            org_secure_code=org.secure_code,
+            name='行政資產編號',
+            description='ADMN- + 年碼 + 4 位序號',
+            elements={
+                'components': [
+                    {'type': NumberingElementType.PREFIX, 'order': 1,
+                     'values': ['ADMN-']},
+                    {'type': NumberingElementType.YEAR, 'order': 2,
+                     'format': 'yy'},
+                    {'type': NumberingElementType.SEQUENCE, 'order': 5,
+                     'start': 1, 'digits': 4, 'reset_period': 'never'},
+                ],
+                'total_length': 0,
+            },
+            usage_scope=NumberingUsageScope.INTERNAL_ONLY,
+            is_active=True,
+        )
+        db.session.add(asset_rule)
+
+        logger.info(f"Default numbering rules (5) created for org {org.code}")
+
+        return employee_rule
 
     @staticmethod
     def _create_default_external_group(org: Organization) -> OrganizationalUnit:
@@ -578,7 +618,7 @@ class OrganizationService:
             org_secure_code=org.secure_code,
             unit_type=UnitType.GROUP,
             code='EXTERNAL_VENDORS',
-            name='外部廠商社群',
+            name='外部廠商',
             description='外部廠商帳號預設歸屬群組',
             is_system_unit=True,
             is_active=True,
