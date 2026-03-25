@@ -70,6 +70,14 @@ class PageRoleGuard:
         if getattr(user, 'is_system_admin', False):
             return None
 
+        # ORG_ADMIN bypass: 企業管理員負責設定角色與權限，已由 MenuPermission 管控可見範圍
+        if getattr(user, 'is_org_admin', False):
+            return None
+
+        # 原始管理員 bypass: 初始設定階段尚無角色，由 auth_interceptor AUTH-03 管控
+        if getattr(user, 'is_original_admin', False):
+            return None
+
         # RLS context: 選單項目屬於 system.local，角色需求跨企業
         # 需要 system_admin 權限才能查詢所有企業的資料
         try:

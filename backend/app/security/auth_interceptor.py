@@ -121,17 +121,10 @@ def register_auth_interceptor(app: Flask) -> None:
             (current_user.organization.get_setting('timezone', 'Asia/Taipei')
              if current_user.organization else 'Asia/Taipei')
 
-        # [SEC-01] 網頁角色守衛 (Page Role Guard)
-        # 檢查用戶是否持有存取該頁面所需的角色
-        # 失敗時強制登出 + 寫稽核日誌
-        from ..services.page_role_guard import PageRoleGuard
-        denial = PageRoleGuard.enforce(current_user)
-        if denial is not None:
-            redirect_url, status_code = denial
-            return redirect(redirect_url)
-
         # [AUTH-03] 原始管理員強制初始設定
         # 原始管理員登入後，若企業尚未建立綁定管理員，強制導向初始設定頁面
+        # 必須在 PageRoleGuard 之前執行，否則新企業無角色設定時
+        # PageRoleGuard 會因「無角色 = 擋下」而強制登出原始管理員
         if current_user.is_original_admin and current_user.is_active:
             # 允許通過的路徑: 初始設定頁面本身、變更密碼、登出、靜態資源、API
             allowed_prefixes = (
@@ -155,6 +148,15 @@ def register_auth_interceptor(app: Flask) -> None:
 
                 if not has_bound_admin:
                     return redirect(url_for('org_admins.initial_setup'))
+
+        # [SEC-01] 網頁角色守衛 (Page Role Guard)
+        # 檢查用戶是否持有存取該頁面所需的角色
+        # 失敗時強制登出 + 寫稽核日誌
+        from ..services.page_role_guard import PageRoleGuard
+        denial = PageRoleGuard.enforce(current_user)
+        if denial is not None:
+            redirect_url, status_code = denial
+            return redirect(redirect_url)
 
         return None
 

@@ -143,10 +143,10 @@ class MenuService:
                 cls._filter_by_sub_system_membership, user
             )
 
-        # 7. 雙鑰匙角色過濾 (SYSTEM_ADMIN bypass)
-        # 非 SYSTEM_ADMIN 的用戶必須同時通過 user_type + 角色兩把鑰匙
-        # 選單項目必須在該企業有 MenuRoleRequirement 設定，且用戶持有所需角色
-        if user_type_str != 'SYSTEM_ADMIN':
+        # 7. 雙鑰匙角色過濾 (SYSTEM_ADMIN / ORG_ADMIN bypass)
+        # ORG_ADMIN 負責設定角色與權限，已由 MenuPermission 管控可見範圍
+        # 僅 EMPLOYEE / EXTERNAL 須通過 user_type + 角色兩把鑰匙
+        if user_type_str not in ('SYSTEM_ADMIN', 'ORG_ADMIN'):
             filtered_items = cls._filter_by_role_requirements(
                 filtered_items, user
             )
