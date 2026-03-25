@@ -112,160 +112,192 @@
 
     <!-- 編號元素 -->
     <div class="form-section">
-        <div class="section-title">編號元素（勾選並設定）</div>
+        <div class="section-title">編號元素（勾選並設定，拖曳左側把手調整順序）</div>
+        <div id="element-container" x-ref="elementContainer">
 
-        <!-- 前綴文字 -->
-        <div class="element-group" :class="{ 'disabled': !usePrefix }">
-            <div class="element-header">
-                <input type="checkbox" id="use_prefix" name="use_prefix" value="1"
-                       x-model="usePrefix"
-                       {% if rule and rule.get_prefix_config() %}checked{% endif %}>
-                <label for="use_prefix">前綴文字</label>
-            </div>
-            <div class="element-config" x-show="usePrefix">
-                <label>順序:</label>
-                <input type="number" name="prefix_order" min="1" max="10" value="{{ (rule.get_prefix_config().order if rule and rule.get_prefix_config() else 1) }}" style="width: 50px;">
-                <label>文字（逗號分隔）:</label>
-                <input type="text" name="prefix_values" placeholder="天,地,玄,黃"
-                       value="{{ (rule.get_prefix_config()['values'] | join(',') if rule and rule.get_prefix_config() and rule.get_prefix_config()['values'] else '') }}"
-                       style="width: 200px;">
-                <div class="help-text" style="width: 100%;">序號滿時進位到下一個，最後一個滿時回到第一個</div>
-            </div>
-        </div>
-
-        <!-- 公元年碼 -->
-        <div class="element-group" :class="{ 'disabled': !useYear }">
-            <div class="element-header">
-                <input type="checkbox" id="use_year" name="use_year" value="1"
-                       x-model="useYear"
-                       {% if year_config.val %}checked{% endif %}>
-                <label for="use_year">公元年碼</label>
-            </div>
-            <div class="element-config" x-show="useYear">
-                <label>順序:</label>
-                <input type="number" name="year_order" min="1" max="10" value="{{ year_config.val.order if year_config.val else 2 }}" style="width: 50px;">
-                <label>格式:</label>
-                <select name="year_format">
-                    <option value="yyyy" {% if year_config.val and year_config.val.format == 'yyyy' %}selected{% endif %}>2026（4位）</option>
-                    <option value="yy" {% if year_config.val and year_config.val.format == 'yy' %}selected{% endif %}>26（2位）</option>
-                    <option value="y" {% if year_config.val and year_config.val.format == 'y' %}selected{% endif %}>6（1位）</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- 年換算碼 -->
-        <div class="element-group" :class="{ 'disabled': !useYearOffset }">
-            <div class="element-header">
-                <input type="checkbox" id="use_year_offset" name="use_year_offset" value="1"
-                       x-model="useYearOffset"
-                       {% if year_offset_config.val %}checked{% endif %}>
-                <label for="use_year_offset">年換算碼</label>
-            </div>
-            <div class="element-config" x-show="useYearOffset" style="flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                    <span><label>順序:</label>
-                    <input type="number" name="year_offset_order" min="1" max="10" value="{{ year_offset_config.val.order if year_offset_config.val else 2 }}" style="width: 50px;"></span>
-                    <span><label>運算:</label>
-                    <input type="number" name="year_offset_value" value="{{ year_offset_config.val.offset if year_offset_config.val else -1911 }}" style="width: 80px;"></span>
-                    <span><label>位數:</label>
-                    <select name="year_offset_format">
-                        <option value="f" {% if year_offset_config.val and year_offset_config.val.format == 'f' %}selected{% endif %}>1 位</option>
-                        <option value="ff" {% if year_offset_config.val and year_offset_config.val.format == 'ff' %}selected{% endif %}>2 位</option>
-                        <option value="fff" {% if year_offset_config.val and year_offset_config.val.format == 'fff' %}selected{% endif %}>3 位</option>
-                        <option value="ffff" {% if year_offset_config.val and year_offset_config.val.format == 'ffff' %}selected{% endif %}>4 位</option>
-                    </select></span>
+            <!-- 前綴文字 -->
+            <div class="element-group" :class="{ 'disabled': !usePrefix }"
+                 data-element-type="prefix"
+                 data-initial-order="{{ rule.get_prefix_config().order if rule and rule.get_prefix_config() else 1 }}">
+                <input type="hidden" name="prefix_order" value="{{ (rule.get_prefix_config().order if rule and rule.get_prefix_config() else 1) }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" id="use_prefix" name="use_prefix" value="1"
+                           x-model="usePrefix"
+                           {% if rule and rule.get_prefix_config() %}checked{% endif %}>
+                    <label for="use_prefix">前綴文字</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
                 </div>
-                <div class="help-text" style="margin-top: 8px; background: #f0f8ff; padding: 8px; border-radius: 4px; width: 100%;">
-                    <strong>公式：</strong>|公元年 + 運算值| 補0至指定位數<br>
-                    <strong>範例：</strong>運算值填 <code>-1911</code>，位數選 3 位<br>
-                    → 公元 2010 年：|2010 + (-1911)| = 99 → 補0得 <code>099</code>（民國99年）<br>
-                    → 公元 2026 年：|2026 + (-1911)| = 115 → <code>115</code>（民國115年）
+                <div class="element-config" x-show="usePrefix">
+                    <label>文字（逗號分隔）:</label>
+                    <input type="text" name="prefix_values" placeholder="天,地,玄,黃"
+                           value="{{ (rule.get_prefix_config()['values'] | join(',') if rule and rule.get_prefix_config() and rule.get_prefix_config()['values'] else '') }}"
+                           style="width: 200px;">
+                    <div class="help-text" style="width: 100%;">序號滿時進位到下一個，最後一個滿時回到第一個</div>
                 </div>
             </div>
-        </div>
 
-        <!-- 月碼 -->
-        <div class="element-group" :class="{ 'disabled': !useMonth }">
-            <div class="element-header">
-                <input type="checkbox" id="use_month" name="use_month" value="1"
-                       x-model="useMonth"
-                       {% if month_config.val %}checked{% endif %}>
-                <label for="use_month">月碼</label>
+            <!-- 公元年碼 -->
+            <div class="element-group" :class="{ 'disabled': !useYear }"
+                 data-element-type="year"
+                 data-initial-order="{{ year_config.val.order if year_config.val else 2 }}">
+                <input type="hidden" name="year_order" value="{{ year_config.val.order if year_config.val else 2 }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" id="use_year" name="use_year" value="1"
+                           x-model="useYear"
+                           {% if year_config.val %}checked{% endif %}>
+                    <label for="use_year">公元年碼</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
+                </div>
+                <div class="element-config" x-show="useYear">
+                    <label>格式:</label>
+                    <select name="year_format">
+                        <option value="yyyy" {% if year_config.val and year_config.val.format == 'yyyy' %}selected{% endif %}>2026（4位）</option>
+                        <option value="yy" {% if year_config.val and year_config.val.format == 'yy' %}selected{% endif %}>26（2位）</option>
+                        <option value="y" {% if year_config.val and year_config.val.format == 'y' %}selected{% endif %}>6（1位）</option>
+                    </select>
+                </div>
             </div>
-            <div class="element-config" x-show="useMonth">
-                <label>順序:</label>
-                <input type="number" name="month_order" min="1" max="10" value="{{ month_config.val.order if month_config.val else 3 }}" style="width: 50px;">
-                <label>格式:</label>
-                <select name="month_format">
-                    <option value="mm" {% if month_config.val and month_config.val.format == 'mm' %}selected{% endif %}>01（2位）</option>
-                    <option value="m" {% if month_config.val and month_config.val.format == 'm' %}selected{% endif %}>1（1位）</option>
-                </select>
-            </div>
-        </div>
 
-        <!-- 序號（必要）-->
-        <div class="element-group" style="border-color: #0066cc;">
-            <div class="element-header">
-                <input type="checkbox" checked disabled>
-                <label style="color: #0066cc;">序號（必要）</label>
+            <!-- 年換算碼 -->
+            <div class="element-group" :class="{ 'disabled': !useYearOffset }"
+                 data-element-type="year_offset"
+                 data-initial-order="{{ year_offset_config.val.order if year_offset_config.val else 3 }}">
+                <input type="hidden" name="year_offset_order" value="{{ year_offset_config.val.order if year_offset_config.val else 3 }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" id="use_year_offset" name="use_year_offset" value="1"
+                           x-model="useYearOffset"
+                           {% if year_offset_config.val %}checked{% endif %}>
+                    <label for="use_year_offset">年換算碼</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
+                </div>
+                <div class="element-config" x-show="useYearOffset" style="flex-direction: column; align-items: flex-start;">
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <span><label>運算:</label>
+                        <input type="number" name="year_offset_value" value="{{ year_offset_config.val.offset if year_offset_config.val else -1911 }}" style="width: 80px;"></span>
+                        <span><label>位數:</label>
+                        <select name="year_offset_format">
+                            <option value="f" {% if year_offset_config.val and year_offset_config.val.format == 'f' %}selected{% endif %}>1 位</option>
+                            <option value="ff" {% if year_offset_config.val and year_offset_config.val.format == 'ff' %}selected{% endif %}>2 位</option>
+                            <option value="fff" {% if year_offset_config.val and year_offset_config.val.format == 'fff' %}selected{% endif %}>3 位</option>
+                            <option value="ffff" {% if year_offset_config.val and year_offset_config.val.format == 'ffff' %}selected{% endif %}>4 位</option>
+                        </select></span>
+                    </div>
+                    <div class="help-text" style="margin-top: 8px; background: #f0f8ff; padding: 8px; border-radius: 4px; width: 100%;">
+                        <strong>公式：</strong>|公元年 + 運算值| 補0至指定位數<br>
+                        <strong>範例：</strong>運算值填 <code>-1911</code>，位數選 3 位<br>
+                        → 公元 2010 年：|2010 + (-1911)| = 99 → 補0得 <code>099</code>（民國99年）<br>
+                        → 公元 2026 年：|2026 + (-1911)| = 115 → <code>115</code>（民國115年）
+                    </div>
+                </div>
             </div>
-            <div class="element-config">
-                <label>順序:</label>
-                <input type="number" name="seq_order" min="1" max="10"
-                       value="{{ (rule.get_sequence_config().order if rule and rule.get_sequence_config() else 5) }}"
-                       style="width: 50px;">
-                <label>位數:</label>
-                <input type="number" name="seq_digits" min="1" max="10"
-                       value="{{ (rule.get_sequence_config().digits if rule and rule.get_sequence_config() else 4) }}"
-                       x-model="seqDigits"
-                       style="width: 50px;">
-                <label>起始:</label>
-                <input type="number" name="seq_start" min="0"
-                       value="{{ (rule.get_sequence_config().start if rule and rule.get_sequence_config() else 1) }}"
-                       style="width: 80px;">
-                <label>重置:</label>
-                <select name="seq_reset">
-                    <option value="never" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'never' %}selected{% endif %}>永不重置</option>
-                    <option value="yearly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'yearly' %}selected{% endif %}>每年重置</option>
-                    <option value="monthly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'monthly' %}selected{% endif %}>每月重置</option>
-                </select>
-            </div>
-        </div>
 
-        <!-- 後綴文字 -->
-        <div class="element-group" :class="{ 'disabled': !useSuffix }">
-            <div class="element-header">
-                <input type="checkbox" id="use_suffix" name="use_suffix" value="1"
-                       x-model="useSuffix"
-                       {% if rule and rule.get_suffix_config() %}checked{% endif %}>
-                <label for="use_suffix">後綴文字</label>
+            <!-- 月碼 -->
+            <div class="element-group" :class="{ 'disabled': !useMonth }"
+                 data-element-type="month"
+                 data-initial-order="{{ month_config.val.order if month_config.val else 4 }}">
+                <input type="hidden" name="month_order" value="{{ month_config.val.order if month_config.val else 4 }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" id="use_month" name="use_month" value="1"
+                           x-model="useMonth"
+                           {% if month_config.val %}checked{% endif %}>
+                    <label for="use_month">月碼</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
+                </div>
+                <div class="element-config" x-show="useMonth">
+                    <label>格式:</label>
+                    <select name="month_format">
+                        <option value="mm" {% if month_config.val and month_config.val.format == 'mm' %}selected{% endif %}>01（2位）</option>
+                        <option value="m" {% if month_config.val and month_config.val.format == 'm' %}selected{% endif %}>1（1位）</option>
+                    </select>
+                </div>
             </div>
-            <div class="element-config" x-show="useSuffix">
-                <label>順序:</label>
-                <input type="number" name="suffix_order" min="1" max="10" value="6" style="width: 50px;">
-                <label>文字（逗號分隔）:</label>
-                <input type="text" name="suffix_values" placeholder="A,B,C"
-                       value="{{ (rule.get_suffix_config()['values'] | join(',') if rule and rule.get_suffix_config() and rule.get_suffix_config()['values'] else '') }}"
-                       style="width: 200px;">
+
+            <!-- 序號（必要）-->
+            <div class="element-group element-group-required"
+                 data-element-type="sequence"
+                 data-initial-order="{{ rule.get_sequence_config().order if rule and rule.get_sequence_config() else 5 }}">
+                <input type="hidden" name="seq_order" value="{{ (rule.get_sequence_config().order if rule and rule.get_sequence_config() else 5) }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" checked disabled>
+                    <label style="color: #0066cc;">序號（必要）</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
+                </div>
+                <div class="element-config">
+                    <label>位數:</label>
+                    <input type="number" name="seq_digits" min="1" max="10"
+                           value="{{ (rule.get_sequence_config().digits if rule and rule.get_sequence_config() else 4) }}"
+                           x-model="seqDigits"
+                           style="width: 50px;">
+                    <label>起始:</label>
+                    <input type="number" name="seq_start" min="0"
+                           value="{{ (rule.get_sequence_config().start if rule and rule.get_sequence_config() else 1) }}"
+                           style="width: 80px;">
+                    <label>重置:</label>
+                    <select name="seq_reset">
+                        <option value="never" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'never' %}selected{% endif %}>永不重置</option>
+                        <option value="yearly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'yearly' %}selected{% endif %}>每年重置</option>
+                        <option value="monthly" {% if rule and rule.get_sequence_config() and rule.get_sequence_config().reset_period == 'monthly' %}selected{% endif %}>每月重置</option>
+                    </select>
+                </div>
             </div>
+
+            <!-- 後綴文字 -->
+            <div class="element-group" :class="{ 'disabled': !useSuffix }"
+                 data-element-type="suffix"
+                 data-initial-order="{{ rule.get_suffix_config().order if rule and rule.get_suffix_config() else 6 }}">
+                <input type="hidden" name="suffix_order" value="{{ (rule.get_suffix_config().order if rule and rule.get_suffix_config() else 6) }}">
+                <div class="element-header">
+                    <span class="drag-handle" draggable="true"
+                          @dragstart="onDragStart($event)" @dragend="onDragEnd($event)">&#8942;&#8942;</span>
+                    <input type="checkbox" id="use_suffix" name="use_suffix" value="1"
+                           x-model="useSuffix"
+                           {% if rule and rule.get_suffix_config() %}checked{% endif %}>
+                    <label for="use_suffix">後綴文字</label>
+                    <span class="order-badge" x-text="getOrderLabel($el)"></span>
+                </div>
+                <div class="element-config" x-show="useSuffix">
+                    <label>文字（逗號分隔）:</label>
+                    <input type="text" name="suffix_values" placeholder="A,B,C"
+                           value="{{ (rule.get_suffix_config()['values'] | join(',') if rule and rule.get_suffix_config() and rule.get_suffix_config()['values'] else '') }}"
+                           style="width: 200px;">
+                </div>
+            </div>
+
         </div>
     </div>
 
     <!-- 預覽 -->
-    {% if rule and rule.preview_list %}
-    <div class="preview-section">
+    <div class="preview-section" x-show="previewList.length > 0" x-cloak>
         <h3>編號預覽（連續 10 個）</h3>
         <div class="preview-list">
-            {% for num in rule.preview_list %}
-            <span class="preview-item">{{ num }}</span>
-            {% endfor %}
+            <template x-for="num in previewList" :key="num">
+                <span class="preview-item" x-text="num"></span>
+            </template>
         </div>
     </div>
-    {% endif %}
+    <div class="preview-section" x-show="previewError" x-cloak
+         style="background: #fff3f3; border-color: var(--color-danger);">
+        <h3 style="color: var(--color-danger);">預覽失敗</h3>
+        <p x-text="previewError" style="margin: 0;"></p>
+    </div>
 
     <!-- 提交按鈕 -->
     <div class="btn-row">
         <button type="submit" class="btn btn-primary">{% if rule %}儲存變更{% else %}建立規則{% endif %}</button>
+        <button type="button" class="btn btn-secondary" @click="previewNumbers()" :disabled="previewLoading">
+            <span x-show="!previewLoading">編號預覽</span>
+            <span x-show="previewLoading">產生中...</span>
+        </button>
         <a href="{{ url_for('numbering.list_rules') }}" class="btn btn-secondary" style="text-decoration: none;">取消</a>
     </div>
 </form>
@@ -280,6 +312,113 @@ function numberingEditor() {
         useYear: {% if year_config.val %}true{% else %}false{% endif %},
         useYearOffset: {% if year_offset_config.val %}true{% else %}false{% endif %},
         useMonth: {% if month_config.val %}true{% else %}false{% endif %},
+        previewList: [],
+        previewError: '',
+        previewLoading: false,
+        _dragEl: null,
+        _orderVersion: 0,
+
+        init() {
+            // 編輯模式：按 data-initial-order 排序 DOM
+            this.$nextTick(() => {
+                const container = this.$refs.elementContainer;
+                const groups = Array.from(container.querySelectorAll('.element-group'));
+                groups.sort((a, b) => {
+                    return parseInt(a.dataset.initialOrder) - parseInt(b.dataset.initialOrder);
+                });
+                groups.forEach(el => container.appendChild(el));
+                this.updateOrderValues();
+
+                // 在容器上監聽 dragover/drop（事件委派）
+                container.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!this._dragEl) return;
+                    const target = e.target.closest('.element-group');
+                    if (!target || target === this._dragEl) {
+                        this._clearDropIndicators(container);
+                        return;
+                    }
+                    this._clearDropIndicators(container);
+                    const rect = target.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    if (e.clientY < midY) {
+                        target.classList.add('drop-before');
+                    } else {
+                        target.classList.add('drop-after');
+                    }
+                });
+
+                container.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (!this._dragEl) return;
+                    const target = e.target.closest('.element-group');
+                    if (!target || target === this._dragEl) return;
+                    const rect = target.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    if (e.clientY < midY) {
+                        container.insertBefore(this._dragEl, target);
+                    } else {
+                        container.insertBefore(this._dragEl, target.nextSibling);
+                    }
+                    this._clearDropIndicators(container);
+                    this.updateOrderValues();
+                });
+
+                container.addEventListener('dragleave', (e) => {
+                    const target = e.target.closest('.element-group');
+                    if (target) {
+                        target.classList.remove('drop-before', 'drop-after');
+                    }
+                });
+            });
+        },
+
+        onDragStart(event) {
+            this._dragEl = event.target.closest('.element-group');
+            this._dragEl.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        },
+
+        onDragEnd(event) {
+            if (this._dragEl) {
+                this._dragEl.classList.remove('dragging');
+                this._clearDropIndicators(this.$refs.elementContainer);
+                this._dragEl = null;
+            }
+        },
+
+        _clearDropIndicators(container) {
+            container.querySelectorAll('.drop-before, .drop-after').forEach(el => {
+                el.classList.remove('drop-before', 'drop-after');
+            });
+        },
+
+        updateOrderValues() {
+            const groups = this.$refs.elementContainer.querySelectorAll('.element-group');
+            groups.forEach((el, idx) => {
+                const type = el.dataset.elementType;
+                const orderMap = {
+                    prefix: 'prefix_order', year: 'year_order',
+                    year_offset: 'year_offset_order', month: 'month_order',
+                    sequence: 'seq_order', suffix: 'suffix_order'
+                };
+                const input = el.querySelector('input[name="' + orderMap[type] + '"]');
+                if (input) input.value = idx + 1;
+            });
+            this._orderVersion++;
+        },
+
+        getOrderLabel(el) {
+            // 觸發響應式更新
+            void this._orderVersion;
+            const group = el.closest('.element-group');
+            if (!group) return '';
+            const container = this.$refs.elementContainer;
+            if (!container) return '';
+            const groups = Array.from(container.querySelectorAll('.element-group'));
+            const idx = groups.indexOf(group);
+            return idx >= 0 ? '#' + (idx + 1) : '';
+        },
 
         validateForm(event) {
             const name = document.getElementById('name').value.trim();
@@ -289,6 +428,100 @@ function numberingEditor() {
                 return false;
             }
             return true;
+        },
+
+        buildElements() {
+            const form = this.$el.closest('form');
+            const components = [];
+
+            if (this.usePrefix) {
+                const raw = form.querySelector('[name="prefix_values"]').value.trim();
+                const values = raw ? raw.split(',').map(v => v.trim()).filter(Boolean) : [];
+                if (values.length > 0) {
+                    components.push({
+                        type: 'prefix',
+                        order: parseInt(form.querySelector('[name="prefix_order"]').value) || 1,
+                        values: values
+                    });
+                }
+            }
+
+            if (this.useYear) {
+                components.push({
+                    type: 'year',
+                    order: parseInt(form.querySelector('[name="year_order"]').value) || 2,
+                    format: form.querySelector('[name="year_format"]').value
+                });
+            }
+
+            if (this.useYearOffset) {
+                components.push({
+                    type: 'year_offset',
+                    order: parseInt(form.querySelector('[name="year_offset_order"]').value) || 2,
+                    offset: parseInt(form.querySelector('[name="year_offset_value"]').value) || 0,
+                    format: form.querySelector('[name="year_offset_format"]').value
+                });
+            }
+
+            if (this.useMonth) {
+                components.push({
+                    type: 'month',
+                    order: parseInt(form.querySelector('[name="month_order"]').value) || 3,
+                    format: form.querySelector('[name="month_format"]').value
+                });
+            }
+
+            // 序號（必要）
+            components.push({
+                type: 'sequence',
+                order: parseInt(form.querySelector('[name="seq_order"]').value) || 5,
+                digits: parseInt(form.querySelector('[name="seq_digits"]').value) || 4,
+                start: parseInt(form.querySelector('[name="seq_start"]').value) || 1,
+                reset_period: form.querySelector('[name="seq_reset"]').value
+            });
+
+            if (this.useSuffix) {
+                const raw = form.querySelector('[name="suffix_values"]').value.trim();
+                const values = raw ? raw.split(',').map(v => v.trim()).filter(Boolean) : [];
+                if (values.length > 0) {
+                    components.push({
+                        type: 'suffix',
+                        order: parseInt(form.querySelector('[name="suffix_order"]').value) || 6,
+                        values: values
+                    });
+                }
+            }
+
+            return {
+                total_length: parseInt(this.totalLength) || 0,
+                components: components
+            };
+        },
+
+        async previewNumbers() {
+            this.previewList = [];
+            this.previewError = '';
+            this.previewLoading = true;
+
+            try {
+                const elements = this.buildElements();
+                const csrfToken = this.$el.closest('form').querySelector('[name="csrf_token"]').value;
+                const resp = await fetch('/api/admin/numbering-rules/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ elements: elements, count: 10 })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    this.previewList = result.data;
+                } else {
+                    this.previewError = result.error || '未知錯誤';
+                }
+            } catch (e) {
+                this.previewError = '無法連線伺服器';
+            } finally {
+                this.previewLoading = false;
+            }
         }
     };
 }
