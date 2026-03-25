@@ -2,10 +2,9 @@
 BeakMask Menu API
 選單管理 API
 """
-import os
 import logging
 
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, request
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -21,14 +20,6 @@ logger = logging.getLogger(__name__)
 
 menu_bp = Blueprint('api_menu', __name__)
 
-
-@menu_bp.before_request
-def _check_menu_admin_enabled():
-    """管理用 API 需要 MENU_ADMIN_ENABLED 環境變數，get_user_menu 例外"""
-    if request.endpoint == 'api_menu.get_user_menu':
-        return
-    if not os.environ.get('MENU_ADMIN_ENABLED'):
-        abort(404)
 
 
 @menu_bp.route('', methods=['GET'])

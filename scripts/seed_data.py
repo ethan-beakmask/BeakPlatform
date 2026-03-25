@@ -342,10 +342,7 @@ def seed_menu_items(org, module):
         ('organizations', '企業總覽', 'route', 'organizations.list_orgs', 7, 0),
     ]
 
-    # 選單管理僅在開發環境啟用
-    import os
-    if os.environ.get('MENU_ADMIN_ENABLED'):
-        menus_data.insert(5, ('menu_manage', '選單管理', 'route', 'menu.list_menu', 5, 0))
+    menus_data.insert(5, ('menu_manage', '選單管理', 'route', 'menu.list_menu', 5, 0))
 
     menus = []
     for code, title, link_type, link_target, order, level in menus_data:
