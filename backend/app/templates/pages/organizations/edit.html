@@ -75,8 +75,8 @@
                 <div class="form-group">
                     <label class="form-label" for="user_limit">帳號上限</label>
                     <input type="number" id="user_limit" name="user_limit" class="form-control"
-                           value="{{ organization.user_limit }}" min="1">
-                    <div class="form-hint">目前已使用 {{ active_user_count }} 個帳號</div>
+                           value="{{ organization.user_limit }}" min="1" readonly>
+                    <div class="form-hint">目前已使用 {{ active_user_count }} 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^</div>
                 </div>
             </div>
 
