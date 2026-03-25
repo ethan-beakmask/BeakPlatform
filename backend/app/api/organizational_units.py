@@ -81,6 +81,21 @@ def _get_managed_group_scs(user) -> list:
     return [m.unit_secure_code for m in memberships]
 
 
+def _is_in_external_tree(unit: OrganizationalUnit) -> bool:
+    """判斷群組是否屬於 EXTERNAL_VENDORS 子樹（含自身）"""
+    cur = unit
+    while cur:
+        if cur.code == 'EXTERNAL_VENDORS':
+            return True
+        if not cur.parent_secure_code:
+            return False
+        cur = OrganizationalUnit.query.filter(
+            OrganizationalUnit.secure_code == cur.parent_secure_code,
+            OrganizationalUnit.is_deleted == False
+        ).first()
+    return False
+
+
 @units_bp.route('/', methods=['GET'])
 @admin_required
 def list_units():
@@ -309,6 +324,13 @@ def update_unit(secure_code: str):
 
                 if not parent:
                     return jsonify({'error': '父層單位不存在'}), 400
+
+                # 群組不可跨樹系移動（企業 <-> EXTERNAL_VENDORS）
+                if unit.unit_type == UnitType.GROUP:
+                    src_ext = _is_in_external_tree(unit)
+                    tgt_ext = _is_in_external_tree(parent)
+                    if src_ext != tgt_ext:
+                        return jsonify({'error': '不可在企業群組與外部廠商群組之間移動'}), 400
 
                 unit.parent_secure_code = parent.secure_code
             else:
@@ -1187,10 +1209,12 @@ def get_cross_members(secure_code: str):
     if not _is_group_leader(current_user, secure_code):
         return jsonify({'error': '無權限存取此社群'}), 403
 
+    # _is_group_leader 已做授權，不需 ResourceGateway 二次 permission check
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
-        is_deleted=False
+        is_deleted=False,
+        check_permission=False
     )
 
     if not unit:
@@ -1252,7 +1276,8 @@ def add_cross_member(secure_code: str):
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
-        is_deleted=False
+        is_deleted=False,
+        check_permission=False
     )
 
     if not unit:
@@ -1271,6 +1296,12 @@ def add_cross_member(secure_code: str):
 
     if not user:
         return jsonify({'error': '用戶不存在'}), 404
+
+    # EXTERNAL 用戶不可加入企業樹群組（僅限 GROUP 類型）
+    if unit.unit_type == UnitType.GROUP:
+        from ..models.user import UserType
+        if user.user_type == UserType.EXTERNAL and not _is_in_external_tree(unit):
+            return jsonify({'error': '外部人員不可加入企業群組'}), 400
 
     # 取得成員類型（部門用 DOTTED，社群用 MEMBER）
     if unit.is_department:
@@ -1380,7 +1411,8 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
-        is_deleted=False
+        is_deleted=False,
+        check_permission=False
     )
 
     if not unit:
@@ -1443,7 +1475,8 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
         secure_code=secure_code,
-        is_deleted=False
+        is_deleted=False,
+        check_permission=False
     )
 
     if not unit:

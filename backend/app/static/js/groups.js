@@ -328,6 +328,28 @@ function groupManager() {
                 },
                 onNodeMoved: function(nodeId, newParentId, newIndex, node) {
                     self._onNodeMoved(nodeId, newParentId, newIndex, node);
+                },
+                canDrop: function(sourceNode, targetNode, action) {
+                    // 只限制群組節點的跨樹拖拉
+                    if (sourceNode.data.type !== 'group') return true;
+                    // 人員節點不受此規則限制（由 dropToRole 處理）
+                    if (sourceNode.data.type === 'person') return true;
+
+                    // 判斷來源與目標的樹系
+                    var srcExt = self._isInExternalTree(sourceNode.id);
+                    var tgtExt;
+                    if (action === 'inside') {
+                        tgtExt = self._isInExternalTree(targetNode.id);
+                    } else {
+                        // before/after: 目標的 parent 決定樹系
+                        tgtExt = targetNode.parentId
+                            ? self._isInExternalTree(targetNode.parentId)
+                            : (targetNode.data.type === 'ext_root');
+                    }
+
+                    // 跨樹系 → 禁止
+                    if (srcExt !== tgtExt) return false;
+                    return true;
                 }
             });
 
@@ -437,6 +459,48 @@ function groupManager() {
             });
         },
 
+        // ==================== 樹系判斷 ====================
+
+        /**
+         * 判斷 Tree 節點是否屬於 EXTERNAL_VENDORS 樹系。
+         * 沿 parent chain 往上走，碰到 ext_root 回傳 true，碰到 'root' 回傳 false。
+         */
+        _isInExternalTree: function(nodeId) {
+            if (!this._tree) return false;
+            var model = this._tree._model;
+            var cur = model.getNode(nodeId);
+            while (cur) {
+                if (cur.data.type === 'ext_root') return true;
+                if (cur.id === 'root') return false;
+                cur = cur.parentId ? model.getNode(cur.parentId) : null;
+            }
+            return false;
+        },
+
+        /**
+         * 用 groups 原始資料判斷一個群組 ID 是否屬於 EXTERNAL_VENDORS 子樹。
+         * 不依賴 _tree 實例，適合在右側面板拖入時使用。
+         */
+        _isGroupInExternalVendors: function(groupId) {
+            var self = this;
+            var _find = function(items) {
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].id === groupId) return true;
+                    if (items[i].children && _find(items[i].children)) return true;
+                }
+                return false;
+            };
+            // 在 groups 中找 EXTERNAL_VENDORS 根，檢查 groupId 是否在其子樹
+            for (var i = 0; i < this.groups.length; i++) {
+                var g = this.groups[i];
+                if (g.code === 'EXTERNAL_VENDORS' || g.code === 'external_vendors') {
+                    if (g.id === groupId) return true;
+                    if (g.children && _find(g.children)) return true;
+                }
+            }
+            return false;
+        },
+
         // ==================== Tree 事件 ====================
 
         _onNodeClick: function(id, node) {
@@ -531,7 +595,7 @@ function groupManager() {
 
         async createGroup() {
             try {
-                var res = await fetch('/api/units', {
+                var res = await fetch('/api/units/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
@@ -679,6 +743,21 @@ function groupManager() {
             }
             if (!userId) { this.clearDrag(); return; }
 
+            // EXTERNAL 用戶不可加入企業樹群組
+            var dragUserType = null;
+            if (this.draggedUser) {
+                dragUserType = this.draggedUser.user_type;
+            } else if (this.draggedMember) {
+                dragUserType = this.draggedMember.user?.user_type;
+            } else if (this.draggedLeader) {
+                dragUserType = this.draggedLeader.user_type;
+            }
+            if (dragUserType === 'EXTERNAL' && !this._isGroupInExternalVendors(this.selectedGroup.id)) {
+                this.showToast('外部人員不可加入企業群組', 'error');
+                this.clearDrag();
+                return;
+            }
+
             var existing = this.members.find(function(m) { return m.user_secure_code === userId; });
 
             try {
@@ -800,7 +879,14 @@ function groupManager() {
                 if (tr) {
                     var nodeId = tr.dataset.id;
                     var node = self._tree._model.getNode(nodeId);
-                    if (node && node.data.type === 'group') {
+                    if (node && (node.data.type === 'group' || node.data.type === 'ext_root')) {
+                        // EXTERNAL 用戶不可拖入企業樹群組
+                        var userType = self.draggedUser.user_type;
+                        var targetIsExt = self._isInExternalTree(nodeId);
+                        if (userType === 'EXTERNAL' && !targetIsExt) {
+                            e.dataTransfer.dropEffect = 'none';
+                            return;
+                        }
                         tr.classList.add('bk-tree-drop-highlight');
                     }
                 }
@@ -818,7 +904,16 @@ function groupManager() {
                 if (!tr || !self.draggedUser) return;
                 var targetId = tr.dataset.id;
                 var targetNode = self._tree._model.getNode(targetId);
-                if (!targetNode || targetNode.data.type !== 'group') return;
+                if (!targetNode || (targetNode.data.type !== 'group' && targetNode.data.type !== 'ext_root')) return;
+
+                // EXTERNAL 用戶不可加入企業樹群組
+                var userType = self.draggedUser.user_type;
+                var targetIsExt = self._isInExternalTree(targetId);
+                if (userType === 'EXTERNAL' && !targetIsExt) {
+                    self.showToast('外部人員不可加入企業群組', 'error');
+                    self.clearDrag();
+                    return;
+                }
 
                 var userId = self.draggedUser.id;
                 try {

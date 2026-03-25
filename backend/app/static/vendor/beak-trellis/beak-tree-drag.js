@@ -15,6 +15,7 @@
  *
  * 回呼：
  *   options.onNodeMoved(nodeId, newParentId, newIndex, node)
+ *   options.canDrop(sourceNode, targetNode, action) -- 回傳 false 阻止放置
  *
  * 依賴：tree.js, tree-model.js
  * 授權：MIT
@@ -160,6 +161,23 @@
                 return;
             }
 
+            var targetNode = tree._model.getNode(targetId);
+
+            // canDrop 回呼：呼叫端自訂禁止規則
+            if (tree.options.canDrop && targetNode) {
+                var rect0 = tr.getBoundingClientRect();
+                var y0 = e.clientY - rect0.top;
+                var ratio0 = y0 / rect0.height;
+                var preAction = ratio0 < DROP_ZONE_EDGE ? 'before'
+                              : ratio0 > (1 - DROP_ZONE_EDGE) ? 'after'
+                              : 'inside';
+                if (tree.options.canDrop(tree._dragSource.node, targetNode, preAction) === false) {
+                    _hideIndicator(tree);
+                    e.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+            }
+
             var rect = tr.getBoundingClientRect();
             var y = e.clientY - rect.top;
             var ratio = y / rect.height;
@@ -204,6 +222,14 @@
             if (!targetNode) {
                 _clearDragState(tree);
                 return;
+            }
+
+            // canDrop 回呼：最終確認
+            if (tree.options.canDrop) {
+                if (tree.options.canDrop(sourceNode, targetNode, action) === false) {
+                    _clearDragState(tree);
+                    return;
+                }
             }
 
             var newParentId, newIndex;
