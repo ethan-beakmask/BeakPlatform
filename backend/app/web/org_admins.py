@@ -216,7 +216,7 @@ def initial_setup():
                         admin_user.set_password(password)
                         db.session.add(admin_user)
 
-                        # 3. 指派 ORG_ADMIN 角色
+                        # 3. 指派角色（雙鑰匙 Key2 必要）
                         from ..models.role import Role
                         from ..models.associations import UserRoleAssignment
                         org_admin_role = Role.query.filter(
@@ -232,6 +232,21 @@ def initial_setup():
                                 assigned_by='system:initial-setup',
                             )
                             db.session.add(role_assignment)
+
+                        # 員工帳號指派 EMPLOYEE 角色
+                        employee_role = Role.query.filter(
+                            Role.org_secure_code == org.secure_code,
+                            Role.code == 'EMPLOYEE',
+                            Role.is_deleted == False,
+                        ).first()
+                        if employee_role:
+                            emp_role_assignment = UserRoleAssignment(
+                                org_secure_code=org.secure_code,
+                                user_secure_code=employee.secure_code,
+                                role_secure_code=employee_role.secure_code,
+                                assigned_by='system:initial-setup',
+                            )
+                            db.session.add(emp_role_assignment)
 
                         # 4. 停用原始管理員
                         current_user.is_active = False
