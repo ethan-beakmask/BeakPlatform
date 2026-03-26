@@ -116,6 +116,7 @@ def create_app(config_name: str = None) -> Flask:
 
     @app.route('/health')
     @public_route
+    @limiter.exempt
     def health_check():
         return {'status': 'healthy', 'service': 'beakplatform'}, 200
 

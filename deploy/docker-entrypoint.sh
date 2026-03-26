@@ -122,6 +122,11 @@ cd /opt/BeakPlatform/backend
 echo "Initializing platform menus..."
 cd /opt/BeakPlatform
 python3 scripts/init_menus.py || echo "Menu init skipped"
+
+# Initialize system permissions and ABAC conditions
+# init_permissions.py is idempotent -- skips if permissions already exist
+echo "Initializing system permissions..."
+python3 scripts/init_permissions.py || echo "Permission init skipped"
 cd /opt/BeakPlatform/backend
 
 # Sync modules (registers module menus, permissions, etc.)

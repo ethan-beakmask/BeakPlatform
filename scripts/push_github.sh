@@ -20,7 +20,6 @@ EXCLUDE_DIRS=(
     "tools"
     "devtools"
     ".forgejo"
-    "scripts/migrations"
     "scripts/systemd"
     "backend/app/templates/pages/dev"
 )
