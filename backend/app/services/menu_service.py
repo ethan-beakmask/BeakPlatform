@@ -1318,11 +1318,13 @@ class MenuService:
         重置選單所有設定成出廠值（完全覆蓋回預設值）
 
         覆蓋範圍：位置、標題、icon、link_type、link_target、
-        is_expanded、is_active、is_shared、required_permission、MenuPermission。
+        is_expanded、is_active、is_shared、required_permission、
+        MenuPermission（鑰匙 1）、MenuRoleRequirement（鑰匙 2）。
         用戶自建選單（is_user_created=True 且不在預設定義中）不受影響。
 
         Returns:
-            {'updated': n, 'skipped': n, 'permissions_reset': n}
+            {'updated': n, 'skipped': n, 'permissions_reset': n,
+             'role_requirements_reset': n}
         """
         defaults = cls._build_defaults_map()
 
@@ -1362,7 +1364,7 @@ class MenuService:
             item.is_shared = default.get('is_shared', False)
             item.required_permission = default.get('required_permission')
 
-            # 權限重置（MenuPermission）
+            # 權限重置（MenuPermission，鑰匙 1）
             user_types = default.get('user_types', [])
             if user_types:
                 cls.set_menu_permissions(item.secure_code, user_types)
@@ -1370,13 +1372,146 @@ class MenuService:
 
             updated += 1
 
+        # 角色需求重置（MenuRoleRequirement，鑰匙 2）
+        role_req_count = cls.seed_all_orgs_role_requirements(code_to_item)
+
         db.session.commit()
         logger.info(
             f"Menu factory reset: {updated} updated, "
-            f"{skipped} skipped, {permissions_reset} permissions reset"
+            f"{skipped} skipped, {permissions_reset} permissions reset, "
+            f"{role_req_count} role requirements reset"
         )
         return {
             'updated': updated,
             'skipped': skipped,
             'permissions_reset': permissions_reset,
+            'role_requirements_reset': role_req_count,
         }
+
+    @classmethod
+    def seed_org_role_requirements(
+        cls,
+        org_secure_code: str,
+        code_to_item: Dict[str, MenuItem] = None,
+    ) -> int:
+        """
+        為指定企業建立預設選單角色需求（雙鑰匙 Key2）
+
+        根據 MENU_ROLE_DEFAULTS 定義，找到企業的對應角色（by role code），
+        為每個選單建立 MenuRoleRequirement 記錄。已存在的記錄不會重複建立。
+
+        Args:
+            org_secure_code: 目標企業 secure_code
+            code_to_item: 選單 code → MenuItem 映射（可選，避免重複查詢）
+
+        Returns:
+            新建的 MRR 記錄數
+        """
+        from ..defaults.menu_defaults import MENU_ROLE_DEFAULTS
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        from ..models.role import Role
+        from sqlalchemy import text
+
+        # 繞過 RLS
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        # 取得選單 code → secure_code 映射
+        if code_to_item is None:
+            items = MenuItem.query.filter_by(is_deleted=False).all()
+            code_to_item = {item.code: item for item in items}
+
+        # 取得該企業的角色 code → secure_code 映射
+        org_roles = Role.query.filter(
+            Role.org_secure_code == org_secure_code,
+            Role.is_deleted == False,
+        ).all()
+        role_code_to_sc = {r.code: r.secure_code for r in org_roles}
+
+        if not role_code_to_sc:
+            logger.warning(
+                f"No roles found for org {org_secure_code}, "
+                f"skipping MRR seed"
+            )
+            return 0
+
+        # 取得該企業現有的 MRR（避免重複）
+        existing_mrrs = MenuRoleRequirement.query.filter(
+            MenuRoleRequirement.org_secure_code == org_secure_code,
+            MenuRoleRequirement.is_deleted == False,
+        ).all()
+        existing_keys = {
+            (m.menu_secure_code, m.role_secure_code)
+            for m in existing_mrrs
+        }
+
+        count = 0
+        for menu_code, role_codes in MENU_ROLE_DEFAULTS.items():
+            item = code_to_item.get(menu_code)
+            if not item:
+                continue
+
+            for role_code in role_codes:
+                role_sc = role_code_to_sc.get(role_code)
+                if not role_sc:
+                    continue
+
+                key = (item.secure_code, role_sc)
+                if key in existing_keys:
+                    continue
+
+                req = MenuRoleRequirement(
+                    menu_secure_code=item.secure_code,
+                    role_secure_code=role_sc,
+                    org_secure_code=org_secure_code,
+                )
+                db.session.add(req)
+                existing_keys.add(key)
+                count += 1
+
+        if count:
+            logger.info(
+                f"Seeded {count} menu role requirements for org "
+                f"{org_secure_code}"
+            )
+
+        return count
+
+    @classmethod
+    def seed_all_orgs_role_requirements(
+        cls,
+        code_to_item: Dict[str, MenuItem] = None,
+    ) -> int:
+        """
+        為所有企業建立預設選單角色需求
+
+        Args:
+            code_to_item: 選單 code → MenuItem 映射（可選）
+
+        Returns:
+            總共新建的 MRR 記錄數
+        """
+        from ..models.organization import Organization
+        from sqlalchemy import text
+
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        orgs = Organization.query.filter(
+            Organization.is_deleted == False,
+            Organization.secure_code != 'system.local',
+        ).all()
+
+        if code_to_item is None:
+            items = MenuItem.query.filter_by(is_deleted=False).all()
+            code_to_item = {item.code: item for item in items}
+
+        total = 0
+        # system.local 也要 seed
+        total += cls.seed_org_role_requirements(
+            'system.local', code_to_item
+        )
+        for org in orgs:
+            total += cls.seed_org_role_requirements(
+                org.secure_code, code_to_item
+            )
+
+        return total

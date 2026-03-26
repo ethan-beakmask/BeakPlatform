@@ -427,66 +427,16 @@ class OrganizationService:
         """
         為新企業建立預設選單角色需求（雙鑰匙 Key2）。
 
-        雙鑰匙機制：
-        - Key1 (MenuPermission): 哪些 user_type 可看到選單
-        - Key2 (MenuRoleRequirement): 哪些角色可存取選單（per-org）
+        使用 MENU_ROLE_DEFAULTS 定義，為每個選單建立完整的角色需求，
+        包含 ORG_ADMIN、EMPLOYEE、EXTERNAL_USERS、FORM_EDITOR 等角色。
 
-        此方法找出所有平台選單中，Key1 包含 ORG_ADMIN 的項目，
-        自動為新企業建立 Key2（指向該企業的 ORG_ADMIN 角色），
-        確保企業管理員能存取所有應有權限的頁面。
+        委託給 MenuService.seed_org_role_requirements() 統一處理。
         """
-        from ..models.menu_item import MenuItem
-        from ..models.menu_permission import MenuPermission
-        from ..models.menu_role_requirement import MenuRoleRequirement
-        from ..constants import SYSTEM_ORG_CODE
-        from sqlalchemy import text
+        from .menu_service import MenuService
 
-        org_admin_role = default_roles.get('org_admin')
-        if not org_admin_role:
-            return
+        db.session.flush()  # 確保角色都有 secure_code
 
-        db.session.flush()  # 確保 org_admin_role 有 secure_code
-
-        # 繞過 RLS：平台選單屬於 system.local，需要 system_admin 權限才能查到
-        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
-
-        # 找出所有平台選單中 Key1 包含 ORG_ADMIN 的項目
-        # 條件：system.local 的選單、有路由、Key1 勾了 ORG_ADMIN
-        org_admin_menus = db.session.query(MenuItem.secure_code).join(
-            MenuPermission,
-            db.and_(
-                MenuPermission.menu_secure_code == MenuItem.secure_code,
-                MenuPermission.is_deleted == False,
-            )
-        ).filter(
-            MenuItem.org_secure_code == SYSTEM_ORG_CODE,
-            MenuItem.is_deleted == False,
-            MenuItem.is_active == True,
-            MenuItem.link_target.like('/%'),
-            MenuPermission.user_type == 'ORG_ADMIN',
-        ).all()
-
-        target_menu_scs = {row[0] for row in org_admin_menus}
-
-        count = 0
-        for menu_sc in target_menu_scs:
-            # 避免重複
-            exists = MenuRoleRequirement.query.filter(
-                MenuRoleRequirement.menu_secure_code == menu_sc,
-                MenuRoleRequirement.org_secure_code == org.secure_code,
-                MenuRoleRequirement.is_deleted == False,
-            ).first()
-            if exists:
-                continue
-
-            req = MenuRoleRequirement(
-                menu_secure_code=menu_sc,
-                role_secure_code=org_admin_role.secure_code,
-                org_secure_code=org.secure_code,
-            )
-            db.session.add(req)
-            count += 1
-
+        count = MenuService.seed_org_role_requirements(org.secure_code)
         if count:
             logger.info(
                 f"Created {count} menu role requirements for org {org.code}"

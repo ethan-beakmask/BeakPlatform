@@ -180,6 +180,16 @@ def init_menus(force=False):
 
         db.session.commit()
         print(f"成功建立 {created_count} 個選單項目")
+
+        # 建立預設選單角色需求（雙鑰匙 Key2）
+        print("建立選單角色需求...")
+        from app.services.menu_service import MenuService
+        items = MenuItem.query.filter_by(is_deleted=False).all()
+        code_to_item = {item.code: item for item in items}
+        mrr_count = MenuService.seed_all_orgs_role_requirements(code_to_item)
+        db.session.commit()
+        print(f"建立 {mrr_count} 筆選單角色需求")
+
         print("模組選單（表單流程、資料表工具等）將在 Flask 啟動時自動同步")
         return True
 

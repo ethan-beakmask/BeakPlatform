@@ -584,6 +584,83 @@ CORE_MENUS = [
 ]
 
 
+# ============================================================================
+# 選單角色需求預設值 (雙鑰匙 Key2)
+# menu_code → [role_codes]
+#
+# 從 system.local 的 menu_role_requirements 匯出 (2026-03-26)
+# SYSTEM_ADMIN 專用選單不需要角色（程式 bypass），故不在此列
+# ============================================================================
+MENU_ROLE_DEFAULTS = {
+    # 共用選單（ALL user types）
+    'dashboard': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
+    'personal_settings': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
+    'form_workflow.center': ['ORG_ADMIN', 'EMPLOYEE'],
+    'platform_help': ['ORG_ADMIN', 'EMPLOYEE', 'EXTERNAL_USERS'],
+
+    # 說明子選單（各 user_type 專屬）
+    'platform_help.org_admin': ['ORG_ADMIN'],
+    'platform_help.employee': ['EMPLOYEE'],
+    'platform_help.external': ['EXTERNAL_USERS'],
+
+    # 表單流程模組（ORG_ADMIN + FORM_EDITOR）
+    'form_workflow': ['ORG_ADMIN', 'FORM_EDITOR'],
+    'form_workflow.categories': ['ORG_ADMIN', 'FORM_EDITOR'],
+    'form_workflow.form_themes': ['ORG_ADMIN', 'FORM_EDITOR'],
+    'form_workflow.mappings': ['ORG_ADMIN', 'FORM_EDITOR'],
+    'form_workflow.templates': ['ORG_ADMIN', 'FORM_EDITOR'],
+    'form_workflow.workflows': ['ORG_ADMIN', 'FORM_EDITOR'],
+
+    # 系統管理區（ORG_ADMIN only）
+    'org_config_mgr': ['ORG_ADMIN'],
+    'system_settings': ['ORG_ADMIN'],
+    'org_admins': ['ORG_ADMIN'],
+    'org_databases_org': ['ORG_ADMIN'],
+
+    # 帳號管理區（ORG_ADMIN only）
+    'org_account': ['ORG_ADMIN'],
+    'numbering': ['ORG_ADMIN'],
+    'roles': ['ORG_ADMIN'],
+    'users': ['ORG_ADMIN'],
+    'work_schedules': ['ORG_ADMIN'],
+    'external_users': ['ORG_ADMIN'],
+
+    # 職級職稱區（ORG_ADMIN only）
+    'jobs_config': ['ORG_ADMIN'],
+    'job_matrix': ['ORG_ADMIN'],
+    'job_levels': ['ORG_ADMIN'],
+    'job_families': ['ORG_ADMIN'],
+    'job_titles': ['ORG_ADMIN'],
+    'job_approval_categories': ['ORG_ADMIN'],
+
+    # 部門/社群（ORG_ADMIN only）
+    'departments': ['ORG_ADMIN'],
+    'groups': ['ORG_ADMIN'],
+
+    # 角色管控區（ORG_ADMIN only）
+    'ROLES_CONTROL': ['ORG_ADMIN'],
+    'account_roles': ['ORG_ADMIN'],
+    'module_perm_mgmt': ['ORG_ADMIN'],
+    'module_users': ['ORG_ADMIN'],
+    'permission_central_org': ['ORG_ADMIN'],
+
+    # 系統安全區（ORG_ADMIN only）
+    'org_security': ['ORG_ADMIN'],
+    'login_fail_monitor_org': ['ORG_ADMIN'],
+    'org_rate_limits': ['ORG_ADMIN'],
+    'alert_broadcasts_org': ['ORG_ADMIN'],
+
+    # 模組根選單（ORG_ADMIN only）
+    'spec_formulate': ['ORG_ADMIN'],
+    'spec_formulate.spec_multifaceted': ['ORG_ADMIN'],
+    'nocode_builder': ['ORG_ADMIN'],
+    'nocode_builder.sub_systems': ['ORG_ADMIN'],
+    'nocode_builder.lab': ['ORG_ADMIN'],
+    'nocode_builder.views': ['ORG_ADMIN'],
+    'nocode_builder.lookup': ['ORG_ADMIN'],
+}
+
+
 def build_defaults_map(module_loader=None):
     """
     建構完整的選單預設值 map

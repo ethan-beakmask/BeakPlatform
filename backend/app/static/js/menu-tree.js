@@ -307,7 +307,10 @@ function menuTreeManager() {
                 });
                 var data = await resp.json();
                 if (resp.ok && data.success) {
-                    this.message = '出廠值已重置 (' + data.updated + ' 項更新)';
+                    var roleReqMsg = data.role_requirements_reset
+                        ? ', ' + data.role_requirements_reset + ' 筆角色需求'
+                        : '';
+                    this.message = '出廠值已重置 (' + data.updated + ' 項更新' + roleReqMsg + ')';
                     this.messageType = 'success';
                     setTimeout(function() { location.reload(); }, 800);
                 } else {
