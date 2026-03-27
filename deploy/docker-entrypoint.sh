@@ -57,11 +57,12 @@ with app.app_context():
 
         # Create initial admin
         from app.models import Organization, User, UserType
+        from app.constants import SYSTEM_ORG_CODE
         system_org = Organization(
-            secure_code='system.local',
+            secure_code=SYSTEM_ORG_CODE,
             code='SYSTEM',
-            name='system.local',
-            domain_name='system.local',
+            name=SYSTEM_ORG_CODE,
+            domain_name=SYSTEM_ORG_CODE,
             is_active=True
         )
         db.session.add(system_org)
@@ -71,9 +72,9 @@ with app.app_context():
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
         admin = User(
-            org_secure_code='system.local',
+            org_secure_code=SYSTEM_ORG_CODE,
             username='admin',
-            email='admin@system.local',
+            email=f'admin@{SYSTEM_ORG_CODE}',
             display_name='System Admin',
             password_hash=password_hash,
             user_type=UserType.SYSTEM_ADMIN,

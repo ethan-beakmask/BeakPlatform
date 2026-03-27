@@ -100,9 +100,15 @@ ensure_env_file() {
         secret_key=$(python3 -c "import secrets; print(secrets.token_hex(32))")
         db_pass="postgres123"
 
+        local sys_org_code
+        sys_org_code=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
+
         cat > "$DOCKER_ENV_FILE" << ENVEOF
 # BeakPlatform Release Environment
 # 自動產生於 $(date '+%Y-%m-%d %H:%M')
+
+# 系統企業識別碼 (每套部署唯一，勿變更)
+SYSTEM_ORG_CODE=$sys_org_code
 
 # Database
 DB_PASSWORD=$db_pass
