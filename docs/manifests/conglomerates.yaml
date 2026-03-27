@@ -1,0 +1,22 @@
+# 集團管理
+# 系統管理員管理集團、成員企業
+page: /api/conglomerates/
+description: 集團管理（CRUD、成員企業管理、共享資料庫佈建）
+
+files:
+  api:      backend/app/api/conglomerates.py
+  service:  backend/app/services/conglomerate_service.py
+  model:
+    - backend/app/models/conglomerate.py
+    - backend/app/models/organization.py
+    - backend/app/models/conglomerate_log.py
+
+tables:
+  primary: conglomerates
+  related:
+    - organizations
+    - conglomerate_logs
+
+security:
+  decorator: "@system_admin_required"
+  note: 純 API，無獨立 Web 頁面（在 organizations 頁面中操作）

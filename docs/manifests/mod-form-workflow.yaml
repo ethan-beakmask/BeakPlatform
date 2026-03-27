@@ -1,0 +1,43 @@
+# 表單工作流模組
+# 表單設計、工作流設計、表單中心、儀表板
+page:
+  - /form-workflow/dashboard
+  - /form-workflow/form-center
+  - /form-workflow/form-designer
+  - /form-workflow/workflow-designer
+  - /form-workflow/workflow-list
+  - /form-workflow/templates
+  - /form-workflow/form-themes
+description: 表單工作流模組（表單設計器、工作流設計器、表單中心、審核流程）
+
+files:
+  module_root: modules/form_workflow/
+  route:       modules/form_workflow/routes.py
+  api:         modules/form_workflow/api.py
+  service:     modules/form_workflow/services/
+  model:       modules/form_workflow/models/
+  template:    modules/form_workflow/templates/modules/form_workflow/
+  js:
+    - modules/form_workflow/static/modules/form_workflow/js/fw-dashboard.js
+    - modules/form_workflow/static/modules/form_workflow/js/form-center.js
+    - modules/form_workflow/static/modules/form_workflow/js/form-designer-main.js
+    - modules/form_workflow/static/modules/form_workflow/js/workflow-main.js
+    - modules/form_workflow/static/modules/form_workflow/js/workflow-designer-init.js
+    - modules/form_workflow/static/modules/form_workflow/js/workflow-list.js
+    - modules/form_workflow/static/modules/form_workflow/js/var-picker.js
+    - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
+  css:
+    - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
+    - modules/form_workflow/static/modules/form_workflow/css/form-center.css
+    - modules/form_workflow/static/modules/form_workflow/css/form-designer.css
+    - modules/form_workflow/static/modules/form_workflow/css/workflow-designer.css
+    - modules/form_workflow/static/modules/form_workflow/css/workflow-list.css
+  vendor_deps:
+    - backend/app/static/vendor/formio.full.min.js     # 表單設計器
+    - backend/app/static/vendor/cytoscape.min.js       # 流程圖
+    - backend/app/static/vendor/beak-trellis/          # 樹狀元件
+
+note: |
+  此模組是平台最複雜的模組，包含表單設計器和工作流設計器。
+  前端大量使用 FormIO、Cytoscape、Beak-Trellis。
+  模組有自己的 models/、services/ 子目錄。

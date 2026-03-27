@@ -1,0 +1,56 @@
+# 模組管理
+# 模組 CRUD、模組存取控制、模組權限
+page:
+  - /modules/
+  - /admin/module-permissions
+  - /admin/module-list
+description: 模組管理（CRUD、存取控制、權限同步）
+
+files:
+  route:
+    - backend/app/web/modules.py
+    - backend/app/web/admin.py                    # module_permissions, module_list
+  api:
+    - backend/app/api/modules.py
+    - backend/app/api/module_access.py
+  service:
+    - backend/app/services/module_builder_service.py
+    - backend/app/services/module_access_service.py
+    - backend/app/services/module_menu_service.py
+    - backend/app/services/module_permission_service.py
+  model:
+    - backend/app/models/module.py
+    - backend/app/models/module_access_control.py
+    - backend/app/models/page.py
+    - backend/app/models/menu_item.py
+  template:
+    - backend/app/templates/pages/modules/list.html
+    - backend/app/templates/pages/modules/view.html
+    - backend/app/templates/pages/modules/create.html
+    - backend/app/templates/pages/modules/edit.html
+    - backend/app/templates/pages/admin/module_permissions.html
+    - backend/app/templates/pages/admin/module_list.html
+  js:
+    - backend/app/static/js/module-permissions.js
+  css:
+    - backend/app/static/css/module-permissions.css
+
+tables:
+  primary: modules
+  related:
+    - module_access_control
+    - pages
+    - menu_items
+    - permissions
+
+dependencies:
+  - menu_service._filter_by_module_access
+  - module_menu_service.register_module_menus
+
+security:
+  decorator:
+    modules_crud: "@system_admin_required"
+    module_permissions: "@admin_required"
+  note: |
+    模組存取控制支援 4 種 TargetType: ACCOUNT/ROLE/DEPARTMENT/GROUP
+    模組安裝時自動註冊選單和權限

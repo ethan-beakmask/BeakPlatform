@@ -1,0 +1,53 @@
+# 企業設定 + 系統設定
+# SMTP、Telegram、收件群組、密碼策略、速率限制、選單配色
+page:
+  - /admin/settings
+  - /admin/settings/general
+  - /hostconfig/server-settings
+description: 企業設定（SMTP、Telegram、通知群組、密碼策略）+ 系統設定（EmailRelay、速率限制）
+
+files:
+  route:
+    - backend/app/web/admin.py                    # settings, settings_general
+    - backend/app/web/hostconfig.py               # server_settings
+  api:
+    - backend/app/api/enterprise_settings.py      # 企業級設定
+    - backend/app/api/enterprise_data.py          # 企業資料查詢
+    - backend/app/api/system_settings.py          # 系統級設定
+  service:
+    - backend/app/services/email_service.py
+    - backend/app/services/rate_limit_service.py
+    - backend/app/services/password_policy_service.py
+  model:
+    - backend/app/models/smtp_config.py
+    - backend/app/models/telegram_config.py
+    - backend/app/models/recipient_group.py
+    - backend/app/models/system_setting.py
+    - backend/app/models/organization.py
+  template:
+    - backend/app/templates/pages/admin/settings.html
+    - backend/app/templates/pages/admin/settings_general.html
+    - backend/app/templates/pages/hostconfig/system_settings.html
+  js:
+    - backend/app/static/js/settings.js
+    - backend/app/static/js/settings-recipients.js
+    - backend/app/static/js/settings-smtp.js
+    - backend/app/static/js/settings-telegram.js
+  css:
+    - backend/app/static/css/settings.css
+    - backend/app/static/css/system-settings.css
+
+tables:
+  primary:
+    - system_settings
+    - smtp_configs
+    - telegram_configs
+    - recipient_groups
+  related:
+    - organizations
+    - users
+
+security:
+  decorator:
+    enterprise: "@admin_required"
+    system: "@system_admin_required"

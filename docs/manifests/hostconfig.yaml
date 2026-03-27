@@ -1,0 +1,27 @@
+# 系統主機設定 + 資料維護
+# 主機設定首頁、資料維護、硬刪除、清除已刪除
+page:
+  - /hostconfig/
+  - /hostconfig/data-maintenance
+  - /hostconfig/hard-delete/
+  - /hostconfig/purge-deleted/
+description: 系統主機設定（資料維護、硬刪除、清除軟刪除資料）
+
+files:
+  route:    backend/app/web/hostconfig.py
+  template:
+    - backend/app/templates/pages/hostconfig/index.html
+    - backend/app/templates/pages/hostconfig/data_maintenance.html
+    - backend/app/templates/pages/hostconfig/hard_delete_preview.html
+    - backend/app/templates/pages/hostconfig/purge_deleted_preview.html
+  js:
+    - backend/app/static/js/hostconfig-index.js
+  css:
+    - backend/app/static/css/hostconfig-index.css
+
+tables:
+  note: 操作多個表的維護功能，依操作對象而定
+
+security:
+  decorator: "@system_admin_required"
+  note: 高危操作，涉及資料刪除

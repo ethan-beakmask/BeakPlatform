@@ -1,0 +1,30 @@
+# 無程式碼建構模組
+# 頁面設計器、查詢表管理、子系統設定
+page:
+  - /nocode/studio
+  - /nocode/lab
+  - /nocode/lookup-manager
+  - /nocode/sub-system-config
+description: 無程式碼建構模組（頁面設計器、查詢表管理、子系統設定、存取矩陣）
+
+files:
+  module_root: modules/nocode_builder/
+  template:    modules/nocode_builder/templates/modules/nocode_builder/
+  js:
+    - modules/nocode_builder/static/modules/nocode_builder/js/studio.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/page-context.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/datalist-widget.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/grid-layout-editor.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/lab-designer.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/site-map-editor.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/access-matrix.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
+  css:
+    - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/datalist-widget.css
+  vendor_deps:
+    - backend/app/static/vendor/gridstack/            # 柵欄佈局
+    - backend/app/static/vendor/beak-trellis/         # 樹狀元件
+    - backend/app/static/vendor/wunderbaum/           # 高效樹

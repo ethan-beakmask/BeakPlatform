@@ -1,0 +1,27 @@
+# 帳號編號規則
+# 編號規則 CRUD、預覽、消耗號碼
+page: /admin/numbering
+description: 帳號編號規則（規則 CRUD、號碼預覽、自動編號）
+
+files:
+  route:    backend/app/web/numbering.py
+  api:      backend/app/api/user_numbering.py
+  service:  backend/app/services/numbering_service.py
+  model:    backend/app/models/user_numbering_rule.py    # Rule + Counter + UsedNumber
+  template:
+    - backend/app/templates/pages/admin/numbering/list.html
+    - backend/app/templates/pages/admin/numbering/edit.html
+  css:
+    - backend/app/static/css/numbering-edit.css
+
+tables:
+  primary:
+    - user_numbering_rules
+    - user_numbering_counters
+    - used_user_numbers
+  related:
+    - users
+
+security:
+  decorator: "@admin_required"
+  rls: true

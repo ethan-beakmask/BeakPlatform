@@ -1,0 +1,14 @@
+# 代碼生成服務
+# 自動產生唯一識別碼（code）、驗證
+page: /api/code/
+description: 代碼自動生成與驗證服務（供所有需要 code 欄位的表單使用）
+
+files:
+  api:      backend/app/api/code_service.py
+
+tables:
+  note: 動態查詢目標 entity 的表來檢查 code 唯一性
+
+security:
+  decorator: "@login_required"
+  note: 前端透過 code-input.js mixin 呼叫此 API

@@ -1,0 +1,21 @@
+# 頁面管理
+# 動態頁面 CRUD、存取控制檢查
+page:
+  - /api/pages/
+  - /p/<secure_code>
+description: 動態頁面管理（CRUD、存取權限、發布頁面檢視）
+
+files:
+  route:    backend/app/web/main.py              # published_page (/p/<sc>)
+  api:      backend/app/api/pages.py
+  service:  backend/app/services/page_permission_service.py
+  model:    backend/app/models/page.py
+
+tables:
+  primary: pages
+  related:
+    - modules
+
+security:
+  decorator: "@login_required"
+  note: 頁面存取由 page_permission_service 控制

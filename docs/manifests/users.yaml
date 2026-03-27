@@ -1,0 +1,57 @@
+# 帳號管理
+# 列表、新增、檢視、編輯、停用、匯入
+page: /users/
+description: 帳號使用者管理（CRUD、匯入、密碼重設）
+
+files:
+  route:    backend/app/web/users.py
+  api:      backend/app/api/users.py
+  service:
+    - backend/app/services/auth_service.py          # 密碼驗證
+    - backend/app/services/numbering_service.py      # 帳號編號
+    - backend/app/services/password_policy_service.py # 密碼策略
+  model:
+    - backend/app/models/user.py
+    - backend/app/models/associations.py             # UserRoleAssignment, UserUnitAssignment
+    - backend/app/models/employee_position.py
+    - backend/app/models/user_unit_membership.py
+  template:
+    - backend/app/templates/pages/users/list.html
+    - backend/app/templates/pages/users/create.html
+    - backend/app/templates/pages/users/view.html
+    - backend/app/templates/pages/users/edit.html
+    - backend/app/templates/pages/users/import.html
+  js:
+    - backend/app/static/js/user-form.js
+    - backend/app/static/js/user-edit.js
+    - backend/app/static/js/user-view.js
+    - backend/app/static/js/code-input.js
+    - backend/app/static/js/password-form.js
+  css:
+    - backend/app/static/css/user-form.css
+    - backend/app/static/css/user-view.css
+
+tables:
+  primary: users
+  related:
+    - user_role_assignments
+    - user_unit_assignments
+    - user_unit_memberships
+    - employee_positions
+    - organizations
+    - roles
+    - organizational_units
+    - password_history
+    - user_numbering_rules
+    - used_user_numbers
+
+dependencies:
+  - numbering_service.get_next_number
+  - password_policy_service.validate_password_strength
+  - auth_service.authenticate
+
+security:
+  decorator: "@admin_required"
+  rls: true
+  gateway: true
+  note: 編輯自己的資料時用 @login_required

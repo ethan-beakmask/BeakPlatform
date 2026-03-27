@@ -69,6 +69,47 @@ Generated with Claude Code"
 
 ---
 
+## Manifest 導向開發流程（強制）
+
+**所有程式修改必須先查 manifest，禁止盲目探索。**
+
+### 流程
+
+1. **收到工單** → 讀 `docs/manifests/README.yaml` 找到目標 manifest
+2. **讀 manifest** → 取得精確的檔案清單（route、api、service、model、template、js）
+3. **只讀 manifest 列出的檔案** → 在這些檔案中定位問題並修正
+4. **如果不夠** → 向用戶說明需要查看哪些額外檔案及原因，等確認後再讀
+
+### 禁止
+
+- **禁止** 收到 URL 後自行 grep/glob 搜尋相關程式（manifest 已列出）
+- **禁止** 在 manifest 範圍外自行讀取檔案（除非向用戶說明並獲同意）
+- **禁止** 修改 `security-core.yaml` 列出的安全核心檔案（除非用戶明確要求）
+
+### 安全防雷
+
+修改程式前必須查閱 `docs/manifests/SECURITY_PITFALLS.md`，確認不踩以下坑：
+- 租戶隔離（org_secure_code 過濾）
+- 帳號狀態過濾（is_deleted + is_active）
+- ResourceGateway 使用（API 層禁止 Model.query）
+- 雙鑰匙選單安全（MenuPermission + MenuRoleRequirement）
+- 時區處理（TZ-01 規範）
+
+### 工單格式
+
+用戶會以此格式提交工單：
+```
+目標頁面: /users/
+問題類型: bug | 功能調整 | 新增欄位 | UI 修正
+症狀: （問題描述）
+影響範圍: list / create / edit / view
+已知線索: （選填）
+```
+
+完整工單模板見 `docs/manifests/TICKET_TEMPLATE.md`。
+
+---
+
 ## 當前開發階段
 
 平台基礎建設與模組化標準已完成。目前處於**功能完善階段**。
@@ -359,4 +400,4 @@ cd backend && flask run --host=0.0.0.0 --port=7000
 
 ---
 
-*最後更新: 2026-03-07*
+*最後更新: 2026-03-27*

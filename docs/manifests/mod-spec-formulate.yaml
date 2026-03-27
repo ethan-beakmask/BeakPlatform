@@ -1,0 +1,19 @@
+# 規格制定模組
+# 多面向規格編輯器
+page:
+  - /spec-formulate/spec-multifaceted
+  - /spec-formulate/spec-multifaceted-editor
+description: 規格制定模組（多面向規格檢視與編輯）
+
+files:
+  module_root: modules/spec_formulate/
+  template:    modules/spec_formulate/templates/modules/spec_formulate/
+  js:
+    - modules/spec_formulate/static/modules/spec_formulate/js/spec-multifaceted.js
+    - modules/spec_formulate/static/modules/spec_formulate/js/spec-multifaceted-editor.js
+  css:
+    - modules/spec_formulate/static/modules/spec_formulate/css/spec-multifaceted.css
+    - modules/spec_formulate/static/modules/spec_formulate/css/spec-multifaceted-editor.css
+  vendor:
+    - modules/spec_formulate/static/modules/spec_formulate/vendor/tabulator.min.js
+    - modules/spec_formulate/static/modules/spec_formulate/vendor/tabulator_bootstrap5.min.css

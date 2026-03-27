@@ -1,0 +1,30 @@
+# 個人檔案與設定
+# 檢視/編輯個人資料、修改密碼、個人設定
+page:
+  - /profile/
+  - /personal-settings
+  - /change-password
+description: 個人檔案（檢視/編輯個人資料、修改密碼）
+
+files:
+  route:
+    - backend/app/web/profile.py
+    - backend/app/web/main.py              # personal_settings, change_password
+  model:
+    - backend/app/models/user.py
+    - backend/app/models/password_history.py
+  template:
+    - backend/app/templates/pages/profile/view.html
+    - backend/app/templates/pages/profile/edit.html
+    - backend/app/templates/pages/profile/password.html
+    - backend/app/templates/pages/personal_settings.html
+    - backend/app/templates/pages/change_password.html
+
+tables:
+  primary: users
+  related:
+    - password_history
+
+security:
+  decorator: "@login_required"
+  note: 用戶只能編輯自己的資料

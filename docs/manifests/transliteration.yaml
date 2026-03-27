@@ -1,0 +1,11 @@
+# 轉寫服務
+# 中/日/韓名字轉拉丁字母
+page: /api/transliterate/
+description: 姓名轉寫服務（中文拼音、日文羅馬字、語言偵測）
+
+files:
+  api:      backend/app/api/transliteration.py
+  service:  backend/app/services/transliteration_service.py
+
+tables: null
+note: 純工具類 API，無資料庫操作。使用 pypinyin、pykakasi 第三方庫。

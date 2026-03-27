@@ -1,0 +1,40 @@
+# 班表設定
+# 班表 CRUD、假日管理、個人班表、班別
+page:
+  - /admin/settings/work-schedules
+  - /admin/settings/work-schedules/<sc>/holidays
+description: 班表設定（班表 CRUD、假日管理、批次匯入）
+
+files:
+  route:    backend/app/web/work_schedules.py
+  api:      backend/app/api/work_schedules.py
+  service:  backend/app/services/schedule_service.py
+  model:
+    - backend/app/models/work_schedule.py
+    - backend/app/models/schedule_holiday.py
+    - backend/app/models/shift_type.py
+    - backend/app/models/personal_schedule.py
+    - backend/app/models/schedule_adjustment.py
+  template:
+    - backend/app/templates/pages/admin/work_schedules/list.html
+    - backend/app/templates/pages/admin/work_schedules/holidays.html
+  js:
+    - backend/app/static/js/schedules.js
+    - backend/app/static/js/holidays.js
+  css:
+    - backend/app/static/css/schedules.css
+    - backend/app/static/css/holidays.css
+
+tables:
+  primary:
+    - work_schedules
+    - schedule_holidays
+  related:
+    - shift_types
+    - personal_schedules
+    - schedule_adjustments
+    - users                    # work_schedule_secure_code
+
+security:
+  decorator: "@admin_required"
+  rls: true

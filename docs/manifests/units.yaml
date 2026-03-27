@@ -1,0 +1,55 @@
+# 組織單位（部門與群組）
+# 部門樹、群組管理、成員指派、主管設定
+page:
+  - /units/
+  - /units/departments
+  - /units/groups
+  - /admin/departments/
+  - /admin/groups/
+  - /my-groups/
+description: 組織單位管理（部門樹、群組、成員指派、跨部門成員）
+
+files:
+  route:
+    - backend/app/web/units.py
+    - backend/app/web/departments.py       # 重導向至 units
+    - backend/app/web/groups.py
+  api:      backend/app/api/organizational_units.py
+  model:
+    - backend/app/models/organizational_unit.py
+    - backend/app/models/user_unit_membership.py
+    - backend/app/models/associations.py       # UserUnitAssignment
+  template:
+    - backend/app/templates/pages/units/list.html
+    - backend/app/templates/pages/units/departments.html
+    - backend/app/templates/pages/units/groups.html
+    - backend/app/templates/pages/units/view.html
+    - backend/app/templates/pages/units/create.html
+    - backend/app/templates/pages/units/edit.html
+    - backend/app/templates/pages/admin/departments.html
+    - backend/app/templates/pages/admin/groups.html
+    - backend/app/templates/pages/my_groups.html
+  js:
+    - backend/app/static/js/departments.js
+    - backend/app/static/js/groups.js
+    - backend/app/static/js/code-input.js
+    - backend/app/static/js/user-create-mixin.js
+  css:
+    - backend/app/static/css/org-tree.css
+  vendor:
+    - backend/app/static/vendor/beak-trellis/    # 樹狀元件
+
+tables:
+  primary: organizational_units
+  related:
+    - user_unit_memberships
+    - user_unit_assignments
+    - users
+
+dependencies:
+  - code_service.generate / validate
+
+security:
+  decorator: "@admin_required"
+  rls: true
+  note: /my-groups/ 用 @login_required

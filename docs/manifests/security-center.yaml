@@ -1,0 +1,40 @@
+# 安全中心
+# 登入失敗紀錄、速率限制、警報廣播
+page:
+  - /security/login-failures/
+  - /security/rate-limits/
+  - /security/alert-broadcasts/
+description: 安全中心（登入失敗監控、速率限制設定、警報廣播管理）
+
+files:
+  route:    backend/app/web/security_center.py
+  api:
+    - backend/app/api/security_center.py
+    - backend/app/api/broadcasts.py
+  service:  backend/app/services/rate_limit_service.py
+  model:
+    - backend/app/models/audit_log.py
+    - backend/app/models/broadcast_acknowledgment.py
+    - backend/app/models/system_setting.py
+  template:
+    - backend/app/templates/pages/security/login_failures.html
+    - backend/app/templates/pages/security/org_rate_limits.html
+    - backend/app/templates/pages/security/alert_broadcasts.html
+  js:
+    - backend/app/static/js/login-failures.js
+    - backend/app/static/js/broadcast-poller.js     # 全域廣播輪詢
+  css:
+    - backend/app/static/css/login-failures.css
+    - backend/app/static/css/broadcast.css           # 全域廣播樣式
+
+tables:
+  primary:
+    - audit_logs
+    - broadcast_acknowledgments
+    - system_settings          # 速率限制設定
+  related:
+    - users
+    - organizations
+
+security:
+  decorator: "@admin_required"
