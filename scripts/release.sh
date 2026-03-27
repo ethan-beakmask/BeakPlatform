@@ -250,7 +250,6 @@ if [ "$ACTION" = "fresh" ]; then
     health_check
 
     # 從 .env.production 讀取 SYSTEM_ORG_CODE
-    local deployed_org_code
     deployed_org_code=$(grep '^SYSTEM_ORG_CODE=' "$DOCKER_ENV_FILE" | cut -d'=' -f2-)
 
     echo ""
