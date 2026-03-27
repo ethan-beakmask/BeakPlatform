@@ -249,11 +249,16 @@ if [ "$ACTION" = "fresh" ]; then
 
     health_check
 
+    # 從 .env.production 讀取 SYSTEM_ORG_CODE
+    local deployed_org_code
+    deployed_org_code=$(grep '^SYSTEM_ORG_CODE=' "$DOCKER_ENV_FILE" | cut -d'=' -f2-)
+
     echo ""
     echo "============================================"
     log_info "全新安裝完成"
     echo "  URL: https://app.beakmask.org"
-    echo "  管理帳號: admin / Admin1234 (由 .env.production 設定)"
+    echo "  系統企業: $deployed_org_code"
+    echo "  登入帳號: admin@$deployed_org_code / Admin1234"
     echo "============================================"
     exit 0
 fi
