@@ -26,12 +26,12 @@ def index():
         # 系統企業放最前面
         organizations.append({
             'secure_code': SYSTEM_ORG_CODE,
-            'name': '系統 (system.local)',
+            'name': f'系統 ({SYSTEM_ORG_CODE})',
         })
         # 其他企業
         orgs = Organization.query.filter(
             Organization.is_deleted == False,
-            Organization.domain_name != 'system.local',
+            Organization.domain_name != SYSTEM_ORG_CODE,
         ).order_by(Organization.name).all()
         for org in orgs:
             organizations.append({

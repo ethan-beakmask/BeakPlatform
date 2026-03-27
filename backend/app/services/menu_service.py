@@ -1497,7 +1497,7 @@ class MenuService:
 
         orgs = Organization.query.filter(
             Organization.is_deleted == False,
-            Organization.secure_code != 'system.local',
+            Organization.secure_code != SYSTEM_ORG_CODE,
         ).all()
 
         if code_to_item is None:
@@ -1507,7 +1507,7 @@ class MenuService:
         total = 0
         # system.local 也要 seed
         total += cls.seed_org_role_requirements(
-            'system.local', code_to_item
+            SYSTEM_ORG_CODE, code_to_item
         )
         for org in orgs:
             total += cls.seed_org_role_requirements(

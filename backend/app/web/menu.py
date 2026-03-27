@@ -15,6 +15,7 @@ from ..models.menu_permission import MenuPermission
 from ..models.user import UserType
 from ..services.menu_service import MenuService
 from ..services.code_generator import get_code_generator
+from ..constants import SYSTEM_ORG_CODE
 from .. import db
 
 menu_web_bp = Blueprint('menu', __name__)
@@ -362,7 +363,7 @@ def create_root_header():
 
     try:
         item = MenuItem(
-            org_secure_code='system.local',
+            org_secure_code=SYSTEM_ORG_CODE,
             code=code,
             title=title,
             title_i18n={},

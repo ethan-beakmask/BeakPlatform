@@ -131,11 +131,16 @@ echo -e "${GREEN}✓ Python 環境建立完成${NC}"
 # 設定環境變數
 echo -e "${BLUE}[6/8] 設定環境變數...${NC}"
 if [ ! -f "$INSTALL_DIR/.env" ]; then
+    # 生成隨機系統企業識別碼 (每套部署不同)
+    SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
     cat > "$INSTALL_DIR/.env" << EOF
 # BeakPlatform 環境變數
 FLASK_APP=app
 FLASK_ENV=development
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+
+# 系統企業識別碼 (每套部署唯一，勿變更)
+SYSTEM_ORG_CODE=$SYS_ORG_CODE
 
 # 資料庫
 DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME
@@ -182,7 +187,7 @@ set -a && source ../.env && set +a
 echo "清除 session 目錄..."
 rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
-# 使用 Python 建立資料表（跳過模組同步，因為 system.local 還沒建立）
+# 使用 Python 建立資料表（跳過模組同步，因為系統企業還沒建立）
 echo "建立平台資料表..."
 SKIP_MODULE_SYNC=1 python3 << 'PYEOF'
 from app import create_app, db
@@ -198,13 +203,13 @@ SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
 import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
+from app.constants import SYSTEM_ORG_CODE
 
 admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
 
 app = create_app()
 with app.app_context():
-    # 檢查是否已有 system.local
-    existing = Organization.query.filter_by(domain_name='system.local').first()
+    existing = Organization.query.filter_by(domain_name=SYSTEM_ORG_CODE).first()
     if existing:
         print("   初始資料已存在，跳過")
     else:
@@ -212,27 +217,24 @@ with app.app_context():
             print("   錯誤: 管理員密碼無效")
             sys.exit(1)
 
-        # 建立 system.local 企業
         system_org = Organization(
-            secure_code='system.local',
+            secure_code=SYSTEM_ORG_CODE,
             code='SYSTEM',
-            name='system.local',
-            domain_name='system.local',
+            name=SYSTEM_ORG_CODE,
+            domain_name=SYSTEM_ORG_CODE,
             is_active=True
         )
         db.session.add(system_org)
         db.session.flush()
 
-        # 使用 bcrypt 產生密碼 hash
         password = admin_password.encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
-        # 建立系統管理員
         admin = User(
-            org_secure_code='system.local',
+            org_secure_code=SYSTEM_ORG_CODE,
             username='admin',
-            email='admin@system.local',
+            email=f'admin@{SYSTEM_ORG_CODE}',
             display_name='系統管理員',
             password_hash=password_hash,
             user_type=UserType.SYSTEM_ADMIN,
@@ -310,5 +312,5 @@ echo "  開發工具: http://YOUR_IP:$FLASK_PORT/dev/quick-login"
 echo "  表單模組: http://YOUR_IP:$FLASK_PORT/forms/"
 echo ""
 echo "管理員帳號:"
-echo "  系統管理員: admin@system.local (安裝時設定的密碼，首次登入須變更)"
+echo "  系統管理員: admin@\$SYSTEM_ORG_CODE (安裝時設定的密碼，首次登入須變更)"
 echo ""

@@ -66,7 +66,7 @@
                                     <div class="item-name" x-text="org.name"></div>
                                     <div class="item-meta" x-text="org.domain_name"></div>
                                 </div>
-                                <span x-show="org.domain_name === 'system.local'" class="badge system">SYSTEM</span>
+                                <span x-show="org.domain_name === window.__SYSTEM_ORG_CODE" class="badge system">SYSTEM</span>
                             </div>
                         </template>
                     </div>
@@ -122,18 +122,18 @@
                         <div class="info-item">
                             <div class="info-label">
                                 <i class="fas fa-building" style="color: #2563eb;"></i>
-                                員工登入（<span x-text="selectedOrgDomain || 'system.local'"></span>）
+                                員工登入（<span x-text="selectedOrgDomain || window.__SYSTEM_ORG_CODE"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/auth/org/' + (selectedOrgDomain || 'system.local') + '/login'" target="_blank" class="info-link">
+                                <a :href="'/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/auth/org/' + (selectedOrgDomain || 'system.local') + '/login'"></span>
+                                    <span x-text="'/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'"></span>
                                 </a>
                                 <div class="info-hint">登入格式: username（自動帶入企業網域）</div>
                             </div>
                         </div>
 
-                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== 'system.local'">
+                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== window.__SYSTEM_ORG_CODE">
                             <div class="info-label">
                                 <i class="fas fa-user-friends" style="color: #10b981;"></i>
                                 外部廠商登入（<span x-text="selectedOrgDomain"></span>）
@@ -147,7 +147,7 @@
                             </div>
                         </div>
 
-                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== 'system.local'">
+                        <div class="info-item" x-show="selectedOrgDomain && selectedOrgDomain !== window.__SYSTEM_ORG_CODE">
                             <div class="info-label">
                                 <i class="fas fa-door-open" style="color: #8b5cf6;"></i>
                                 公開區入口（<span x-text="selectedOrgDomain"></span>）
@@ -170,7 +170,7 @@
                             <div class="info-content">
                                 <div class="credential">
                                     <span class="cred-label">帳號:</span>
-                                    <code>admin@system.local</code>
+                                    <code>admin@{{ SYSTEM_ORG_CODE }}</code>
                                 </div>
                             </div>
                         </div>
@@ -200,6 +200,7 @@
         </div>
     </div>
 
+    <script>window.__SYSTEM_ORG_CODE = '{{ SYSTEM_ORG_CODE }}';</script>
     <script src="{{ url_for('static', filename='vendor/alpine.min.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/quick-login.js') }}"></script>
 </body>

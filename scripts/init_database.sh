@@ -80,6 +80,7 @@ SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'EOF'
 import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
+from app.constants import SYSTEM_ORG_CODE
 
 admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
 if not admin_password or len(admin_password) < 8:
@@ -88,27 +89,24 @@ if not admin_password or len(admin_password) < 8:
 
 app = create_app()
 with app.app_context():
-    # 建立 system.local 企業
     system_org = Organization(
-        secure_code='system.local',
+        secure_code=SYSTEM_ORG_CODE,
         code='SYSTEM',
-        name='system.local',
-        domain_name='system.local',
+        name=SYSTEM_ORG_CODE,
+        domain_name=SYSTEM_ORG_CODE,
         is_active=True
     )
     db.session.add(system_org)
     db.session.flush()
 
-    # 使用 bcrypt 產生密碼 hash
     password = admin_password.encode('utf-8')
     salt = bcrypt.gensalt()
     password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
-    # 建立系統管理員
     admin = User(
-        org_secure_code='system.local',
+        org_secure_code=SYSTEM_ORG_CODE,
         username='admin',
-        email='admin@system.local',
+        email=f'admin@{SYSTEM_ORG_CODE}',
         display_name='系統管理員',
         password_hash=password_hash,
         user_type=UserType.SYSTEM_ADMIN,
@@ -119,8 +117,8 @@ with app.app_context():
     db.session.commit()
 
     print("   初始資料建立完成")
-    print("   - 企業: system.local")
-    print("   - 管理員: admin@system.local (首次登入須改密碼)")
+    print(f"   - 企業: {SYSTEM_ORG_CODE}")
+    print(f"   - 管理員: admin@{SYSTEM_ORG_CODE} (首次登入須改密碼)")
 EOF
 
 echo "9. 初始化平台選單..."
@@ -130,7 +128,7 @@ echo ""
 echo "=== 初始化完成 ==="
 echo ""
 echo "管理員帳號："
-echo "  帳號: admin@system.local"
+echo "  帳號: admin@\$SYSTEM_ORG_CODE"
 echo "  密碼: (安裝時設定的密碼，首次登入須變更)"
 echo ""
 echo "啟動服務："

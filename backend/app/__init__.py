@@ -225,6 +225,12 @@ def register_context_processors(app: Flask) -> None:
         }
 
     @app.context_processor
+    def inject_system_org_code():
+        """將系統企業識別碼注入到所有模板"""
+        from .constants import SYSTEM_ORG_CODE
+        return {'SYSTEM_ORG_CODE': SYSTEM_ORG_CODE}
+
+    @app.context_processor
     def inject_broadcast_config():
         """將廣播輪詢間隔注入到所有模板"""
         from flask_login import current_user as ctx_user

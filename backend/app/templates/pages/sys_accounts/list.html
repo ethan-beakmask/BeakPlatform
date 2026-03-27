@@ -10,6 +10,7 @@
 
 {% block content %}
 <script>
+window.__SYSTEM_ORG_CODE = '{{ SYSTEM_ORG_CODE }}';
 window.__SYS_ACCOUNTS_CONFIG = {
     accounts: {{ accounts_json | tojson }},
     csrfToken: '{{ csrf_token() }}',
@@ -26,7 +27,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
 <div class="page-header">
     <h1 class="page-title" style="margin-bottom: 4px;">系統管理員帳號</h1>
 </div>
-<p style="color: #777; margin-top: 0; font-size: 13px;">管理 system.local 的系統管理員帳號</p>
+<p style="color: #777; margin-top: 0; font-size: 13px;">管理 {{ SYSTEM_ORG_CODE }} 的系統管理員帳號</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -97,7 +98,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
                     <!-- 帳號 (唯讀) -->
                     <div class="field-row">
                         <label>帳號</label>
-                        <span class="field-value"><code x-text="selected.username + '@system.local'"></code> (不可變更)</span>
+                        <span class="field-value"><code x-text="selected.username + '@' + window.__SYSTEM_ORG_CODE"></code> (不可變更)</span>
                     </div>
 
                     <!-- Email (唯讀) -->
@@ -230,7 +231,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
                     <label for="create_username">帳號 *</label>
                     <input type="text" id="create_username" x-model="createForm.username"
                            placeholder="英數字和底線">
-                    <small>登入時為: username@system.local</small>
+                    <small>登入時為: username@{{ SYSTEM_ORG_CODE }}</small>
                 </div>
 
                 <div class="field-row">

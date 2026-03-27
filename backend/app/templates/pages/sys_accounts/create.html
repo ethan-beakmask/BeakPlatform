@@ -33,7 +33,7 @@
             <td>
                 <input type="text" id="username" name="username" size="30" required
                        pattern="[a-zA-Z0-9_]+" value="{{ request.form.get('username', '') }}">
-                <br><small>英數字和底線，登入時為: username@system.local</small>
+                <br><small>英數字和底線，登入時為: username@{{ SYSTEM_ORG_CODE }}</small>
             </td>
         </tr>
         <tr>

@@ -27,11 +27,11 @@ def login_failures():
     if is_system_admin:
         organizations.append({
             'secure_code': SYSTEM_ORG_CODE,
-            'name': '系統 (system.local)',
+            'name': f'系統 ({SYSTEM_ORG_CODE})',
         })
         orgs = Organization.query.filter(
             Organization.is_deleted == False,
-            Organization.domain_name != 'system.local',
+            Organization.domain_name != SYSTEM_ORG_CODE,
         ).order_by(Organization.name).all()
         for org in orgs:
             organizations.append({

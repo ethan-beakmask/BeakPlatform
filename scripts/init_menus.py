@@ -22,6 +22,7 @@ from app import create_app, db
 from app.models import MenuItem, Organization, MenuPermission
 from app.models.user import UserType
 from app.defaults.menu_defaults import CORE_MENUS, get_allowed_user_types
+from app.constants import SYSTEM_ORG_CODE
 import secrets
 
 
@@ -54,7 +55,7 @@ def init_menus(force=False):
 
     with app.app_context():
         # 確認 system.local 企業存在
-        org = Organization.query.filter_by(secure_code='system.local').first()
+        org = Organization.query.filter_by(secure_code=SYSTEM_ORG_CODE).first()
         if not org:
             print("錯誤: system.local 企業不存在，請先執行 init_database.sh")
             return False
@@ -62,7 +63,7 @@ def init_menus(force=False):
         # 統計現有平台選單（排除模組選單）
         # 模組選單以模組名開頭 (如 form_workflow.*, nocode_builder.*, spec_formulate.*)
         existing_count = MenuItem.query.filter_by(
-            org_secure_code='system.local',
+            org_secure_code=SYSTEM_ORG_CODE,
             is_deleted=False
         ).count()
 
@@ -71,7 +72,7 @@ def init_menus(force=False):
                 print(f"清除現有的 {existing_count} 個選單項目...")
                 # 取得所有選單的 secure_code
                 menu_codes = [m.secure_code for m in MenuItem.query.filter(
-                    MenuItem.org_secure_code == 'system.local'
+                    MenuItem.org_secure_code == SYSTEM_ORG_CODE
                 ).all()]
                 # 先刪除權限
                 if menu_codes:
@@ -80,12 +81,12 @@ def init_menus(force=False):
                     ).delete(synchronize_session=False)
                 # 再刪除子選單（有 parent_secure_code 的）
                 MenuItem.query.filter(
-                    MenuItem.org_secure_code == 'system.local',
+                    MenuItem.org_secure_code == SYSTEM_ORG_CODE,
                     MenuItem.parent_secure_code.isnot(None)
                 ).delete(synchronize_session=False)
                 # 最後刪除父選單
                 MenuItem.query.filter(
-                    MenuItem.org_secure_code == 'system.local'
+                    MenuItem.org_secure_code == SYSTEM_ORG_CODE
                 ).delete(synchronize_session=False)
                 db.session.commit()
                 print("選單已清除")
@@ -107,7 +108,7 @@ def init_menus(force=False):
             secure_code = generate_secure_code()
             menu = MenuItem(
                 secure_code=secure_code,
-                org_secure_code='system.local',
+                org_secure_code=SYSTEM_ORG_CODE,
                 code=menu_def['code'],
                 title=menu_def['title'],
                 icon=menu_def.get('icon'),
@@ -151,7 +152,7 @@ def init_menus(force=False):
             secure_code = generate_secure_code()
             menu = MenuItem(
                 secure_code=secure_code,
-                org_secure_code='system.local',
+                org_secure_code=SYSTEM_ORG_CODE,
                 parent_secure_code=parent_secure_code,
                 code=menu_def['code'],
                 title=menu_def['title'],

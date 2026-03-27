@@ -24,6 +24,7 @@ from app import create_app, db
 from app.models import Organization, Role, RoleType, ScopeType
 from app.models.permission import Permission
 from app.models.role_permission import RolePermission
+from app.constants import SYSTEM_ORG_CODE
 
 # 角色 → 預設權限對照表
 ROLE_PERM_MAP = {
@@ -115,7 +116,7 @@ def patch_permissions(dry_run=False):
     # 查詢所有非系統企業
     orgs = Organization.query.filter(
         Organization.is_deleted == False,
-        Organization.secure_code != 'system.local'
+        Organization.secure_code != SYSTEM_ORG_CODE
     ).all()
 
     # 收集所有需要的權限代碼

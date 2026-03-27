@@ -739,7 +739,7 @@ class OrganizationService:
         admin = User(
             org_secure_code=org.secure_code,
             username='admin',
-            email='admin@system.local',
+            email=f'admin@{SYSTEM_ORG_CODE}',
             display_name='系統管理員',
             user_type=UserType.SYSTEM_ADMIN,
             is_active=True

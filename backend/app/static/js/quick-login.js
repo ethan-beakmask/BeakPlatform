@@ -1,4 +1,5 @@
 /* quick-login.js — 開發環境快速登入頁面 */
+const _SYSTEM_ORG = window.__SYSTEM_ORG_CODE || 'system.local';
 
 function quickLoginManager() {
     return {
@@ -16,9 +17,9 @@ function quickLoginManager() {
         async init() {
             await this.loadOrganizations();
 
-            // 預設選擇 system.local
+            // 預設選擇系統企業
             if (this.organizations.length > 0) {
-                const systemOrg = this.organizations.find(org => org.domain_name === 'system.local');
+                const systemOrg = this.organizations.find(org => org.domain_name === _SYSTEM_ORG);
                 if (systemOrg) {
                     await this.selectOrg(systemOrg.secure_code);
                 } else {
@@ -32,10 +33,10 @@ function quickLoginManager() {
                 const response = await fetch('/dev/get-orgs');
                 const result = await response.json();
                 if (result.success) {
-                    // system.local 排在最前面
+                    // 系統企業排在最前面
                     this.organizations = result.data.sort((a, b) => {
-                        if (a.domain_name === 'system.local') return -1;
-                        if (b.domain_name === 'system.local') return 1;
+                        if (a.domain_name === _SYSTEM_ORG) return -1;
+                        if (b.domain_name === _SYSTEM_ORG) return 1;
                         return a.name.localeCompare(b.name);
                     });
                 } else {

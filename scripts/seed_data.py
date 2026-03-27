@@ -33,6 +33,7 @@ from app.models.permission import (
 )
 from app.models.permission_condition import DEFAULT_CONDITIONS
 from app.utils.security import generate_secure_code
+from app.constants import SYSTEM_ORG_CODE
 
 
 def clear_existing_data():
@@ -78,26 +79,25 @@ def clear_existing_data():
 
 def seed_system_org():
     """
-    建立 system.local 系統企業
+    建立系統企業
 
-    system.local 是 B 方案設計中的特殊企業，用於：
+    系統企業是特殊企業，用於：
     - 定義系統級共用選單 (is_shared=True)
     - 管理跨企業的系統功能
     - 作為「虛擬公司」承載全局設定
     """
-    print("建立 system.local 系統企業...")
+    print(f"建立 {SYSTEM_ORG_CODE} 系統企業...")
 
     system_org = Organization(
         code='SYSTEM',
         name='系統管理',
-        domain_name='system.local',
+        domain_name=SYSTEM_ORG_CODE,
         customer_type='SYSTEM',
         user_limit=10,
         description='系統級虛擬企業，用於承載跨企業共用功能',
         is_active=True
     )
-    # 手動設定 secure_code 為固定值，便於程式識別
-    system_org.secure_code = 'system.local'
+    system_org.secure_code = SYSTEM_ORG_CODE
     db.session.add(system_org)
     db.session.commit()
 
@@ -130,18 +130,17 @@ def seed_organization():
 def seed_admin_user(org):
     """建立管理員帳號
 
-    重要：系統管理員必須歸屬 system.local（系統管理組織），
+    重要：系統管理員必須歸屬系統企業（SYSTEM_ORG_CODE），
     而不是預設企業。這確保系統管理員與企業級帳號完全分離。
 
     系統級 vs 企業級：
-    - 系統級 (SYSTEM_ADMIN): org_secure_code = 'system.local'
+    - 系統級 (SYSTEM_ADMIN): org_secure_code = SYSTEM_ORG_CODE
     - 企業級 (ORG_ADMIN/EMPLOYEE): org_secure_code = 企業的 secure_code
     """
     print("建立管理員帳號...")
 
-    # 系統管理員歸屬 system.local，不是預設企業
     admin = User(
-        org_secure_code='system.local',  # 重要：系統管理員必須歸屬系統管理組織
+        org_secure_code=SYSTEM_ORG_CODE,
         username='admin',
         email='admin@beakmask.local',
         display_name='系統管理員',
@@ -154,7 +153,7 @@ def seed_admin_user(org):
 
     print(f"  帳號: admin@beakmask.local")
     print(f"  密碼: admin123")
-    print(f"  歸屬: system.local (系統管理)")
+    print(f"  歸屬: {SYSTEM_ORG_CODE} (系統管理)")
     print(f"  secure_code: {admin.secure_code}")
     return admin
 
@@ -395,7 +394,7 @@ def seed_menu_permissions(menus):
 
 def seed_system_menus(system_org):
     """
-    建立 system.local 的共用選單
+    建立系統企業的共用選單
 
     共用選單 (is_shared=True) 會出現在所有企業用戶的選單中。
     這些選單可以設定 required_permission 來控制可見性。
@@ -420,7 +419,7 @@ def seed_system_menus(system_org):
         ('help_center', '說明中心', 'url', 'https://docs.beakmask.local/help', 100, True, None),
         # 系統公告 - 所有人可見
         ('announcements', '系統公告', 'route', 'main.announcements', 101, True, None),
-        # 伺服器設定 - 僅系統管理員可見 (is_shared=False，只在 system.local 顯示)
+        # 伺服器設定 - 僅系統管理員可見 (is_shared=False，只在系統企業顯示)
         ('server_settings', '伺服器設定', 'route', 'portal.server_settings', 200, False, None),
     ]
 
@@ -1011,7 +1010,7 @@ def main():
         conditions = seed_permission_conditions()  # 13 個條件
 
         # =============================================
-        # 2. 系統企業 (system.local)
+        # 2. 系統企業
         # =============================================
         system_org = seed_system_org()
         system_menus = seed_system_menus(system_org)
@@ -1059,7 +1058,7 @@ def main():
         print()
         print("登入資訊:")
         print(f"  URL: http://localhost:7000/auth/login")
-        print(f"  帳號: admin@system.local")
+        print(f"  帳號: admin@{SYSTEM_ORG_CODE}")
         print(f"  密碼: admin123")
 
 

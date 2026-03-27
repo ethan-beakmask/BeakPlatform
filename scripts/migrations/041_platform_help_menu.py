@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'
 from app import create_app, db
 from app.services.menu_service import MenuService
 from app.models.menu_item import MenuItem
+from app.constants import SYSTEM_ORG_CODE
 
 
 def run():
@@ -25,7 +26,7 @@ def run():
             return
 
         help_root = MenuService.create_menu_item(
-            org_secure_code='system.local',
+            org_secure_code=SYSTEM_ORG_CODE,
             code='platform_help',
             title='說明',
             link_type='header',
@@ -47,7 +48,7 @@ def run():
 
         for code, title, user_type, order in children:
             child = MenuService.create_menu_item(
-                org_secure_code='system.local',
+                org_secure_code=SYSTEM_ORG_CODE,
                 code=code,
                 title=title,
                 link_type='route',

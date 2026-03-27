@@ -71,12 +71,13 @@ def smoke_app():
 def smoke_data(smoke_app):
     """建立冒煙測試所需的全部測試資料。"""
     with smoke_app.app_context():
-        # --- 系統企業 (system.local) ---
+        # --- 系統企業 ---
+        from app.constants import SYSTEM_ORG_CODE
         system_org = Organization(
             secure_code='smoke_system_local__',
             code='SYSTEM_LOCAL',
             name='System Local',
-            domain_name='system.local',
+            domain_name=SYSTEM_ORG_CODE,
             is_active=True,
             is_deleted=False,
         )
@@ -134,7 +135,7 @@ def smoke_data(smoke_app):
         db.session.add_all([system_admin, org_admin, employee])
         db.session.flush()
 
-        # --- 選單項目 (屬於 system.local) ---
+        # --- 選單項目 (屬於系統企業) ---
         menu_item = MenuItem(
             secure_code='smoke_menu_________',
             org_secure_code=system_org.secure_code,

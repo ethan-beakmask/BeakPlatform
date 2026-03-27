@@ -674,7 +674,7 @@ class PermissionCentralService:
         if not org_secure_code:
             return '-'
         if org_secure_code == SYSTEM_ORG_CODE:
-            return '系統 (system.local)'
+            return f'系統 ({SYSTEM_ORG_CODE})'
         from ..models import Organization
         org = Organization.query.filter_by(
             secure_code=org_secure_code,
