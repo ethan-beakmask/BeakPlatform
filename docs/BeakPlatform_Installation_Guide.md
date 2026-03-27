@@ -1,7 +1,7 @@
 # BeakPlatform 安裝手冊
 
-版本: 1.0
-日期: 2026-03-10
+版本: 1.1
+日期: 2026-03-28
 適用系統: Ubuntu 24.04 LTS
 
 ---
@@ -14,8 +14,9 @@
 4. 啟動服務
 5. 首次登入
 6. 服務管理
-7. 已知問題與注意事項
-8. 疑難排解
+7. 升級更新
+8. 已知問題與注意事項
+9. 疑難排解
 
 ---
 
@@ -327,7 +328,7 @@ flask run --host=0.0.0.0 --port=7000
 
 ---
 
-## 7. 已知問題與注意事項
+## 8. 已知問題與注意事項
 
 ### 7.1 選單 icon 顯示問題
 - 部分模組選單 (如「表單流程」) 會顯示為「F 表單流程」
@@ -373,7 +374,76 @@ with app.app_context():
 
 ---
 
-## 8. 疑難排解
+## 7. 升級更新
+
+### 7.1 Migration 管理機制
+
+BeakPlatform 使用 `scripts/run_migrations.py` 統一管理資料庫 schema 變更。
+
+Migration 檔案來源：
+- **平台級**: `scripts/migrations/*.sql|*.py`
+- **模組級**: `modules/*/migrations/*.sql|*.py`
+
+追蹤表 `schema_migrations` 記錄已執行的 migration，避免重複執行。
+
+### 7.2 首次啟用 migration 管理（既有安裝）
+
+如果是從未使用 migration 管理的舊版本升級，需要先建立 baseline：
+
+```bash
+cd /opt/BeakPlatform
+source venv/bin/activate
+set -a && source .env && set +a
+
+# 標記所有既有 migration 為已執行（不會實際執行 SQL）
+python3 scripts/run_migrations.py --mark-all
+```
+
+### 7.3 日常更新流程
+
+```bash
+cd /opt/BeakPlatform
+git pull
+
+source venv/bin/activate
+set -a && source .env && set +a
+
+# 安裝新增的 Python 套件（如有）
+pip install -r requirements.txt
+
+# 查看待執行的 migration
+python3 scripts/run_migrations.py --status
+
+# 執行 migration
+python3 scripts/run_migrations.py --run
+
+# 同步模組選單與權限
+cd backend
+flask module sync
+
+# 重啟服務
+sudo systemctl restart beakplatform
+```
+
+### 7.4 run_migrations.py 指令參考
+
+| 指令 | 說明 |
+|------|------|
+| `--status` | 顯示 migration 狀態（已執行/待執行） |
+| `--scan` | 掃描所有 migration 檔案（不需 DB 連線） |
+| `--run` | 依序執行待處理的 migration |
+| `--mark-all` | 標記所有為已執行（baseline 用，不實際跑 SQL） |
+
+### 7.5 注意事項
+
+- Migration SQL 必須冪等（使用 `IF NOT EXISTS`、`ADD COLUMN IF NOT EXISTS`）
+- 檔名含 `_drop_` 的視為 rollback 腳本，不會自動執行
+- 執行失敗時會中斷並顯示錯誤，修正後重新 `--run` 即可（已成功的不會重跑）
+- 資料庫表的 owner 必須與 `DATABASE_URL` 中的使用者一致，否則 DDL 操作會失敗
+
+---
+
+## 9. 疑難排解
 
 ### 問題: 登入後出現 InternalError / InFailedSqlTransaction
 

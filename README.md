@@ -52,6 +52,67 @@ You will be prompted to change the password on first login.
 | Redis 7 | beakmask-redis | 6379 (internal) |
 | Nginx | beakmask-nginx | 8000 |
 
+## Updating
+
+Update to the latest version while preserving all data:
+
+```bash
+cd BeakPlatform
+git pull
+
+cd deploy
+docker compose --env-file .env.production up -d --build
+```
+
+The container entrypoint automatically detects existing data and runs pending database migrations. No manual steps required.
+
+To verify migration status after update:
+
+```bash
+docker exec beakmask-app python3 /opt/BeakPlatform/scripts/run_migrations.py --status
+```
+
+### What happens during update
+
+1. `git pull` fetches the latest code
+2. `docker compose up -d --build` rebuilds the app image (database volume is preserved)
+3. On startup, the entrypoint runs `run_migrations.py --run` to apply any new schema changes
+4. Platform menus and module definitions are synced automatically
+
+### Bare-metal update (without Docker)
+
+If running directly on the host instead of Docker:
+
+```bash
+cd /opt/BeakPlatform
+git pull
+
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Set DATABASE_URL if not already in environment
+set -a && source .env && set +a
+
+# Run pending migrations
+python3 scripts/run_migrations.py --status    # check what will run
+python3 scripts/run_migrations.py --run       # apply changes
+
+# Restart the application
+sudo systemctl restart beakplatform
+```
+
+### First-time migration setup (existing installations)
+
+If upgrading from a version before migration tracking was introduced:
+
+```bash
+# Mark all existing migrations as already applied (do NOT use --run)
+python3 scripts/run_migrations.py --mark-all
+
+# Future updates will only run new migrations
+python3 scripts/run_migrations.py --run
+```
+
 ## Stopping / Restarting
 
 ```bash
