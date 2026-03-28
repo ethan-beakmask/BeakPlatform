@@ -83,9 +83,17 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS user_type VARCHAR(20) DEFAULT 'EMPLOYEE';
 
--- 遷移現有的角色
-UPDATE users SET user_type = 'SYSTEM_ADMIN' WHERE is_system_admin = TRUE;
-UPDATE users SET user_type = 'ORG_ADMIN' WHERE is_org_admin = TRUE AND is_system_admin = FALSE;
+-- 遷移現有的角色 (僅升級時有效，全新安裝時舊欄位不存在則跳過)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'is_system_admin'
+    ) THEN
+        UPDATE users SET user_type = 'SYSTEM_ADMIN' WHERE is_system_admin = TRUE;
+        UPDATE users SET user_type = 'ORG_ADMIN' WHERE is_org_admin = TRUE AND is_system_admin = FALSE;
+    END IF;
+END $$;
 
 -- 新增主要組織單位欄位 (稍後會建立外鍵)
 ALTER TABLE users
