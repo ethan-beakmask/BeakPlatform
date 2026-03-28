@@ -31,14 +31,8 @@ EXCLUDE_FILES=(
     "workflow_node開發進度表.csv"
     "beakplatform.service"
     "restart_flask.sh"
-    # deploy - 內部部署腳本與設定
-    "deploy/.env.production"
-    "deploy/setup-remote-host.sh"
-    "deploy/setup-ssh-deploy-key.sh"
-    "deploy/deploy-remote.sh"
     # scripts - 內部工具與初始化
     "scripts/push_github.sh"
-    "scripts/release.sh"
     "scripts/init_database.sh"
     "scripts/seed_data.py"
     "scripts/seed_test_companies.py"
