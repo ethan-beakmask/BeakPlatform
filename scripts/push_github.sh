@@ -40,7 +40,6 @@ EXCLUDE_FILES=(
     "scripts/push_github.sh"
     "scripts/release.sh"
     "scripts/init_database.sh"
-    "scripts/install.sh"
     "scripts/seed_data.py"
     "scripts/seed_test_companies.py"
     "scripts/analyze_project.py"
@@ -57,7 +56,7 @@ EXCLUDE_FILES=(
     "scripts/spec_check.py"
     "scripts/add_column_comments.sql"
     "scripts/init_db.sql"
-    "scripts/verify_install.sh"
+    # scripts/verify_install.sh 已隨 install.sh 開放給用戶
     # backend - 開發工具
     "backend/app/web/dev.py"
     "backend/app/static/js/quick-login.js"

@@ -1,205 +1,499 @@
 #!/bin/bash
-#
-# BeakPlatform 自動安裝腳本
+# =============================================================================
+# BeakPlatform 安裝與升級腳本
 # 適用於 Ubuntu 22.04/24.04 LTS
+# =============================================================================
+# 用法:
+#   sudo bash install.sh                         全新安裝 (互動式設定密碼)
+#   sudo bash install.sh --update                升級更新 (保留資料)
+#   sudo bash install.sh --status                查看服務狀態
+#   sudo bash install.sh --start                 啟動服務
+#   sudo bash install.sh --stop                  停止服務
+#   sudo bash install.sh --uninstall             移除安裝
 #
-# 用法: sudo ./install.sh [選項]
-#   --skip-db       跳過資料庫設定（使用已存在的資料庫）
-#   --skip-nginx    跳過 Nginx 設定
-#   --dev           開發模式（包含 DevTools）
-#
-
+# 環境變數 (可選):
+#   INSTALL_DIR            安裝目錄 (預設: /opt/BeakPlatform)
+#   DB_NAME                資料庫名稱 (預設: beakplatform_dev)
+#   DB_USER                資料庫使用者 (預設: beakplatform)
+#   DB_PASS                資料庫密碼 (預設: postgres123)
+#   APP_PORT               應用程式 port (預設: 8000)
+#   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
+#   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
+# =============================================================================
 set -e
 
-# 顏色定義
+# === 設定 ===
+INSTALL_DIR="${INSTALL_DIR:-/opt/BeakPlatform}"
+DB_NAME="${DB_NAME:-beakplatform_dev}"
+DB_USER="${DB_USER:-beakplatform}"
+DB_PASS="${DB_PASS:-postgres123}"
+APP_PORT="${APP_PORT:-8000}"
+GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
+SERVICE_NAME="beakplatform"
+HEALTH_URL="http://localhost:${APP_PORT}/health"
+HEALTH_TIMEOUT=60
+
+# === 顏色 ===
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# 預設值
-INSTALL_DIR="/opt/BeakPlatform"
-DB_NAME="beakplatform_dev"
-DB_USER="beakplatform"
-DB_PASS="postgres123"
-FLASK_PORT=7000
-SKIP_DB=false
-SKIP_NGINX=false
-DEV_MODE=true
+log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_step()  { echo -e "${BLUE}[$1]${NC} $2"; }
 
-# 解析參數
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --skip-db)
-            SKIP_DB=true
-            shift
-            ;;
-        --skip-nginx)
-            SKIP_NGINX=true
-            shift
-            ;;
-        --dev)
-            DEV_MODE=true
-            shift
-            ;;
-        *)
-            echo -e "${RED}未知參數: $1${NC}"
-            exit 1
-            ;;
-    esac
-done
+# === 共用函式 ===
 
-echo -e "${BLUE}"
-echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║           BeakPlatform 自動安裝腳本                       ║"
-echo "╚═══════════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "此腳本需要 root 權限執行"
+        echo "  用法: sudo bash $0 $*"
+        exit 1
+    fi
+}
 
-# 檢查是否為 root
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${YELLOW}建議以 root 執行此腳本${NC}"
-   echo "繼續執行中..."
+check_ubuntu() {
+    if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
+        log_warn "此腳本針對 Ubuntu 22.04/24.04 設計，其他系統可能需要調整"
+    fi
+}
+
+health_check() {
+    log_info "健康檢查 (等待最多 ${HEALTH_TIMEOUT}s)..."
+    local elapsed=0
+    while [ $elapsed -lt $HEALTH_TIMEOUT ]; do
+        if curl -sf "$HEALTH_URL" 2>/dev/null | grep -q '"healthy"'; then
+            log_info "健康檢查通過"
+            return 0
+        fi
+        sleep 3
+        elapsed=$((elapsed + 3))
+        printf "."
+    done
+    echo ""
+    log_error "健康檢查逾時 (${HEALTH_TIMEOUT}s)"
+    log_warn "檢查服務日誌: journalctl -u ${SERVICE_NAME} -n 50"
+    return 1
+}
+
+load_env() {
+    if [ -f "$INSTALL_DIR/.env" ]; then
+        set -a
+        source "$INSTALL_DIR/.env"
+        set +a
+    fi
+}
+
+activate_venv() {
+    source "$INSTALL_DIR/venv/bin/activate"
+}
+
+# === 參數處理 ===
+ACTION="fresh"
+
+case "${1:-}" in
+    --update)    ACTION="update" ;;
+    --status)    ACTION="status" ;;
+    --start)     ACTION="start" ;;
+    --stop)      ACTION="stop" ;;
+    --uninstall) ACTION="uninstall" ;;
+    "")          ACTION="fresh" ;;
+    *)
+        echo "BeakPlatform 安裝與升級腳本"
+        echo ""
+        echo "用法:"
+        echo "  sudo bash install.sh                  全新安裝"
+        echo "  sudo bash install.sh --update         升級更新 (保留資料)"
+        echo "  sudo bash install.sh --status         查看服務狀態"
+        echo "  sudo bash install.sh --start          啟動服務"
+        echo "  sudo bash install.sh --stop           停止服務"
+        echo "  sudo bash install.sh --uninstall      移除安裝"
+        echo ""
+        echo "環境變數:"
+        echo "  INSTALL_DIR=$INSTALL_DIR"
+        echo "  DB_NAME=$DB_NAME"
+        echo "  APP_PORT=$APP_PORT"
+        echo "  GITHUB_REPO=$GITHUB_REPO"
+        exit 1
+        ;;
+esac
+
+
+# =========================================================================
+#  --status
+# =========================================================================
+if [ "$ACTION" = "status" ]; then
+    echo "=== BeakPlatform 服務狀態 ==="
+    echo ""
+
+    # systemd service
+    if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        log_info "服務狀態: 運行中"
+        systemctl status "$SERVICE_NAME" --no-pager -l 2>/dev/null | head -15
+    else
+        log_warn "服務狀態: 未運行"
+    fi
+
+    echo ""
+
+    # 健康檢查
+    if curl -sf "$HEALTH_URL" 2>/dev/null | grep -q '"healthy"'; then
+        log_info "健康檢查: 正常"
+    else
+        log_warn "健康檢查: 無回應"
+    fi
+
+    # Nginx
+    echo ""
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        log_info "Nginx: 運行中"
+    else
+        log_warn "Nginx: 未運行"
+    fi
+
+    # Redis
+    if systemctl is-active --quiet redis-server 2>/dev/null; then
+        log_info "Redis: 運行中"
+    else
+        log_warn "Redis: 未運行"
+    fi
+
+    # PostgreSQL
+    if systemctl is-active --quiet postgresql 2>/dev/null; then
+        log_info "PostgreSQL: 運行中"
+    else
+        log_warn "PostgreSQL: 未運行"
+    fi
+
+    # Migration 狀態
+    if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/.env" ]; then
+        echo ""
+        cd "$INSTALL_DIR"
+        activate_venv
+        load_env
+        cd backend
+        python3 ../scripts/run_migrations.py --status 2>/dev/null || true
+    fi
+
+    exit 0
 fi
 
-# 檢查系統
-echo -e "${BLUE}[1/8] 檢查系統...${NC}"
-if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
-    echo -e "${YELLOW}警告: 此腳本針對 Ubuntu 設計，其他系統可能需要調整${NC}"
+
+# =========================================================================
+#  --start
+# =========================================================================
+if [ "$ACTION" = "start" ]; then
+    check_root
+    log_info "啟動 BeakPlatform..."
+    systemctl start "$SERVICE_NAME"
+    health_check
+    exit 0
 fi
 
-# 安裝系統依賴
-echo -e "${BLUE}[2/8] 安裝系統依賴...${NC}"
-apt-get update -qq
+
+# =========================================================================
+#  --stop
+# =========================================================================
+if [ "$ACTION" = "stop" ]; then
+    check_root
+    log_info "停止 BeakPlatform..."
+    systemctl stop "$SERVICE_NAME"
+    log_info "服務已停止"
+    exit 0
+fi
+
+
+# =========================================================================
+#  --uninstall
+# =========================================================================
+if [ "$ACTION" = "uninstall" ]; then
+    check_root
+    echo "=== BeakPlatform 移除 ==="
+    echo ""
+    log_warn "此操作將移除:"
+    echo "  - systemd 服務 ($SERVICE_NAME)"
+    echo "  - Nginx 設定"
+    echo "  - 安裝目錄 ($INSTALL_DIR)"
+    echo "  - 資料庫 ($DB_NAME)"
+    echo ""
+    read -p "確定要移除嗎？(輸入 YES 確認): " CONFIRM
+    if [ "$CONFIRM" != "YES" ]; then
+        echo "取消移除"
+        exit 0
+    fi
+
+    # 停止服務
+    systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+    systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+    rm -f "/etc/systemd/system/${SERVICE_NAME}.service"
+    systemctl daemon-reload
+
+    # 移除 Nginx 設定
+    rm -f "/etc/nginx/sites-enabled/$SERVICE_NAME"
+    rm -f "/etc/nginx/sites-available/$SERVICE_NAME"
+    systemctl reload nginx 2>/dev/null || true
+
+    # 移除資料庫
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
+    # 附屬 DB
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakform_data;" 2>/dev/null || true
+
+    # 移除安裝目錄
+    rm -rf "$INSTALL_DIR"
+
+    log_info "移除完成"
+    exit 0
+fi
+
+
+# =========================================================================
+#  --update 升級更新
+# =========================================================================
+if [ "$ACTION" = "update" ]; then
+    check_root
+
+    echo "============================================"
+    echo "  BeakPlatform 升級更新"
+    echo "============================================"
+
+    if [ ! -d "$INSTALL_DIR/.git" ]; then
+        log_error "安裝目錄不存在或不是 git repo: $INSTALL_DIR"
+        log_error "請先執行全新安裝: sudo bash install.sh"
+        exit 1
+    fi
+
+    cd "$INSTALL_DIR"
+
+    # [1] 拉取最新程式碼
+    log_step "1/6" "拉取最新程式碼..."
+    git fetch origin main
+    local_hash=$(git rev-parse HEAD)
+    remote_hash=$(git rev-parse origin/main)
+
+    if [ "$local_hash" = "$remote_hash" ]; then
+        log_info "程式碼已是最新版本 ($(git log --oneline -1))"
+        echo "如需強制重新初始化，請使用全新安裝"
+        exit 0
+    fi
+
+    git reset --hard origin/main
+    log_info "更新至: $(git log --oneline -1)"
+
+    # [2] 更新 Python 依賴
+    log_step "2/6" "更新 Python 依賴..."
+    activate_venv
+    pip install --upgrade pip -q
+    pip install -r backend/requirements.txt -q
+
+    # [3] 載入環境變數 + 執行 migrations
+    log_step "3/6" "執行資料庫遷移..."
+    load_env
+    cd backend
+    EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run
+
+    # [4] 初始化選單與權限 (冪等)
+    log_step "4/6" "同步選單與權限..."
+    cd "$INSTALL_DIR"
+    EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py || log_warn "選單初始化跳過"
+    EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py || log_warn "權限初始化跳過"
+
+    # [5] 同步模組
+    log_step "5/6" "同步模組..."
+    cd "$INSTALL_DIR/backend"
+    EXECUTOR_STANDALONE=1 FLASK_ENV=${FLASK_ENV:-production} flask module sync 2>/dev/null || log_warn "模組同步跳過"
+
+    # [6] 重啟服務
+    log_step "6/6" "重啟服務..."
+    systemctl restart "$SERVICE_NAME"
+
+    health_check
+
+    echo ""
+    echo "============================================"
+    log_info "升級更新完成"
+    echo "  版本: $(cd "$INSTALL_DIR" && git log --oneline -1)"
+    echo "============================================"
+    exit 0
+fi
+
+
+# =========================================================================
+#  全新安裝
+# =========================================================================
+check_root
+check_ubuntu
+
+echo "============================================"
+echo "  BeakPlatform 全新安裝"
+echo "============================================"
+echo ""
+echo "  安裝目錄: $INSTALL_DIR"
+echo "  資料庫:   $DB_NAME"
+echo "  Port:     $APP_PORT"
+echo "  來源:     $GITHUB_REPO"
+echo ""
+
+# 如果目錄已存在且有 .env，警告
+if [ -f "$INSTALL_DIR/.env" ]; then
+    log_warn "偵測到既有安裝: $INSTALL_DIR"
+    read -p "要覆蓋安裝嗎？既有資料將被清除 (y/N): " OVERWRITE
+    if [[ ! "$OVERWRITE" =~ ^[yY]$ ]]; then
+        echo "取消安裝。如需升級請用: sudo bash install.sh --update"
+        exit 0
+    fi
+    # 停掉舊服務
+    systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+fi
+
+
+# === [1/9] 系統依賴 ===
+log_step "1/9" "安裝系統依賴..."
+apt-get update -qq || log_warn "部分 apt 來源無法更新，繼續安裝..."
 apt-get install -y -qq \
     python3 \
     python3-venv \
     python3-pip \
     postgresql \
     postgresql-contrib \
+    redis-server \
     nginx \
     git \
     curl \
     sudo
 
-echo -e "${GREEN}✓ 系統依賴安裝完成${NC}"
+# 確保服務啟動
+systemctl enable --now postgresql 2>/dev/null || true
+systemctl enable --now redis-server 2>/dev/null || true
+systemctl enable --now nginx 2>/dev/null || true
 
-# 設定 PostgreSQL
-if [ "$SKIP_DB" = false ]; then
-    echo -e "${BLUE}[3/8] 設定 PostgreSQL...${NC}"
+log_info "系統依賴安裝完成"
 
-    # 確保 PostgreSQL 運行
-    systemctl start postgresql || true
-    systemctl enable postgresql || true
 
-    # 建立用戶和資料庫
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || echo "用戶已存在"
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || echo "資料庫已存在"
-    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+# === [2/9] PostgreSQL ===
+log_step "2/9" "設定 PostgreSQL..."
 
-    echo -e "${GREEN}✓ PostgreSQL 設定完成${NC}"
-else
-    echo -e "${YELLOW}[3/8] 跳過 PostgreSQL 設定${NC}"
-fi
+sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
+sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || true
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
+sudo -u postgres psql -c "CREATE DATABASE beakform_data OWNER $DB_USER;" 2>/dev/null || true
 
-# 取得程式碼
-echo -e "${BLUE}[4/8] 取得程式碼...${NC}"
+log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
+
+
+# === [3/9] 取得程式碼 ===
+log_step "3/9" "取得程式碼..."
+
 if [ -d "$INSTALL_DIR/.git" ]; then
-    echo "目錄已存在，執行 git pull..."
     cd "$INSTALL_DIR"
-    git pull origin main || true
+    git fetch origin main
+    git reset --hard origin/main
+    log_info "程式碼已更新: $(git log --oneline -1)"
 else
-    mkdir -p "$INSTALL_DIR"
-    git clone http://192.168.0.16:3000/forgejoadmin/BeakPlatform.git "$INSTALL_DIR" || {
-        echo -e "${RED}無法從 Forgejo clone，嘗試本地複製...${NC}"
-        if [ -d "/opt/BeakPlatform" ] && [ "$INSTALL_DIR" != "/opt/BeakPlatform" ]; then
-            cp -r /opt/BeakPlatform/* "$INSTALL_DIR/"
-        fi
-    }
+    if [ -d "$INSTALL_DIR" ]; then
+        # 目錄存在但不是 git repo，備份後重新 clone
+        mv "$INSTALL_DIR" "${INSTALL_DIR}.bak.$(date +%s)"
+        log_warn "既有目錄已備份"
+    fi
+    git clone "$GITHUB_REPO" "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+    log_info "程式碼 clone 完成: $(git log --oneline -1)"
 fi
-echo -e "${GREEN}✓ 程式碼取得完成${NC}"
 
-# 建立虛擬環境
-echo -e "${BLUE}[5/8] 建立 Python 虛擬環境...${NC}"
+
+# === [4/9] Python 虛擬環境 ===
+log_step "4/9" "建立 Python 虛擬環境..."
 cd "$INSTALL_DIR"
 python3 -m venv venv
-source venv/bin/activate
+activate_venv
 pip install --upgrade pip -q
 pip install -r backend/requirements.txt -q
-echo -e "${GREEN}✓ Python 環境建立完成${NC}"
+log_info "Python 環境建立完成"
 
-# 設定環境變數
-echo -e "${BLUE}[6/8] 設定環境變數...${NC}"
-if [ ! -f "$INSTALL_DIR/.env" ]; then
-    # 生成隨機系統企業識別碼 (每套部署不同)
-    SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
-    cat > "$INSTALL_DIR/.env" << EOF
-# BeakPlatform 環境變數
-FLASK_APP=app
-FLASK_ENV=development
+
+# === [5/9] 環境變數 ===
+log_step "5/9" "設定環境變數..."
+
+SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+
+cat > "$INSTALL_DIR/.env" << ENVEOF
+# BeakPlatform 環境設定
+# 自動產生於 $(date '+%Y-%m-%d %H:%M')
+FLASK_APP=app
+FLASK_ENV=production
 
 # 系統企業識別碼 (每套部署唯一，勿變更)
 SYSTEM_ORG_CODE=$SYS_ORG_CODE
 
+# 應用程式
+SECRET_KEY=$SECRET_KEY
+ENABLE_DEV_TOOLS=false
+
 # 資料庫
 DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME
 
-# 開發工具
-ENABLE_DEV_TOOLS=true
-DEV_ALLOWED_IPS=127.0.0.1,192.168.0.0/16,10.0.0.0/8
-EOF
-    echo -e "${GREEN}✓ 環境變數設定完成${NC}"
-else
-    echo -e "${YELLOW}✓ .env 已存在，跳過${NC}"
-fi
+# Redis
+REDIS_URL=redis://localhost:6379/0
 
-# 設定管理員密碼
-echo -e "${BLUE}[7/9] 設定管理員密碼...${NC}"
-if [ -n "$ADMIN_INITIAL_PASSWORD" ]; then
+# Rate Limiting
+RATELIMIT_ENABLED=true
+RATELIMIT_DEFAULT="200 per day;50 per hour"
+RATELIMIT_LOGIN="30 per minute"
+
+# Gunicorn
+GUNICORN_BIND=127.0.0.1:${APP_PORT}
+GUNICORN_WORKERS=3
+GUNICORN_THREADS=2
+
+# Session
+SESSION_COOKIE_SECURE=false
+
+# Form Data Sync
+FORMDATA_DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/beakform_data
+ENVEOF
+
+log_info "環境變數設定完成 (SYSTEM_ORG_CODE=$SYS_ORG_CODE)"
+
+
+# === [6/9] 管理員密碼 ===
+log_step "6/9" "設定管理員密碼..."
+
+if [ -n "${ADMIN_INITIAL_PASSWORD:-}" ]; then
     ADMIN_PASS="$ADMIN_INITIAL_PASSWORD"
-    echo -e "${GREEN}  使用環境變數 ADMIN_INITIAL_PASSWORD${NC}"
+    log_info "使用環境變數 ADMIN_INITIAL_PASSWORD"
 else
     while true; do
         read -s -p "請輸入系統管理員初始密碼 (至少 8 字元): " ADMIN_PASS
         echo ""
         if [ ${#ADMIN_PASS} -lt 8 ]; then
-            echo -e "${RED}  密碼長度不足 8 字元，請重新輸入${NC}"
+            log_error "密碼長度不足 8 字元，請重新輸入"
             continue
         fi
         read -s -p "請再輸入一次確認: " ADMIN_PASS_CONFIRM
         echo ""
         if [ "$ADMIN_PASS" != "$ADMIN_PASS_CONFIRM" ]; then
-            echo -e "${RED}  兩次密碼不一致，請重新輸入${NC}"
+            log_error "兩次密碼不一致，請重新輸入"
             continue
         fi
         break
     done
 fi
 
-# 初始化資料庫
-echo -e "${BLUE}[8/9] 初始化資料庫...${NC}"
-cd "$INSTALL_DIR/backend"
-source ../venv/bin/activate
-set -a && source ../.env && set +a
 
-# 清除舊的 session 目錄（避免權限問題）
-echo "清除 session 目錄..."
+# === [7/9] 初始化資料庫 ===
+log_step "7/9" "初始化資料庫..."
+cd "$INSTALL_DIR/backend"
+load_env
+
+# 清除舊 session
 rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
-# 使用 Python 建立資料表（跳過模組同步，因為系統企業還沒建立）
-echo "建立平台資料表..."
-SKIP_MODULE_SYNC=1 python3 << 'PYEOF'
-from app import create_app, db
-app = create_app()
-with app.app_context():
-    db.create_all()
-    print("   資料表建立完成")
-PYEOF
-
-# 建立初始資料（跳過模組同步）
-echo "建立初始資料..."
-SKIP_MODULE_SYNC=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
+# 建立資料表 + 初始資料
+# EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
+EXECUTOR_STANDALONE=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
 import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
@@ -209,14 +503,20 @@ admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
 
 app = create_app()
 with app.app_context():
+    # 建立所有資料表
+    db.create_all()
+    print("  資料表建立完成")
+
+    # 檢查是否已有初始資料
     existing = Organization.query.filter_by(domain_name=SYSTEM_ORG_CODE).first()
     if existing:
-        print("   初始資料已存在，跳過")
+        print("  初始資料已存在，跳過")
     else:
         if not admin_password or len(admin_password) < 8:
-            print("   錯誤: 管理員密碼無效")
+            print("  錯誤: 管理員密碼無效")
             sys.exit(1)
 
+        # 建立系統企業
         system_org = Organization(
             secure_code=SYSTEM_ORG_CODE,
             code='SYSTEM',
@@ -227,6 +527,7 @@ with app.app_context():
         db.session.add(system_org)
         db.session.flush()
 
+        # 建立管理員
         password = admin_password.encode('utf-8')
         salt = bcrypt.gensalt()
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
@@ -235,7 +536,7 @@ with app.app_context():
             org_secure_code=SYSTEM_ORG_CODE,
             username='admin',
             email=f'admin@{SYSTEM_ORG_CODE}',
-            display_name='系統管理員',
+            display_name='System Admin',
             password_hash=password_hash,
             user_type=UserType.SYSTEM_ADMIN,
             is_active=True,
@@ -243,74 +544,146 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
-        print("   初始資料建立完成")
+        print("  初始資料建立完成")
 PYEOF
 
-# 執行模組資料庫遷移
-echo "執行 FormWorkflow 模組遷移..."
-PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/001_create_tables.sql 2>/dev/null || echo "   表格已存在"
-PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f ../modules/form_workflow/migrations/002_add_subflow_columns.sql 2>/dev/null || echo "   欄位已存在"
+# 標記所有 migrations 為已執行 (全新安裝，schema 已是最新)
+cd "$INSTALL_DIR"
+EXECUTOR_STANDALONE=1 python3 scripts/run_migrations.py --mark-all
 
-# 同步模組權限和選單
-flask module sync 2>/dev/null || echo "   模組同步跳過"
+# 初始化選單
+EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force || log_warn "選單初始化跳過"
 
-# 初始化平台選單
-echo "初始化平台選單..."
-python3 ../scripts/init_menus.py --force 2>/dev/null || echo "   選單初始化跳過"
+# 初始化權限
+EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py || log_warn "權限初始化跳過"
 
-echo -e "${GREEN}✓ 資料庫初始化完成${NC}"
+# 同步模組
+cd "$INSTALL_DIR/backend"
+EXECUTOR_STANDALONE=1 FLASK_ENV=production flask module sync 2>/dev/null || log_warn "模組同步跳過"
 
-# 設定 Nginx
-if [ "$SKIP_NGINX" = false ]; then
-    echo -e "${BLUE}[9/9] 設定 Nginx...${NC}"
+log_info "資料庫初始化完成"
 
-    cat > /etc/nginx/sites-available/beakplatform << EOF
+
+# === [8/9] systemd 服務 ===
+log_step "8/9" "設定 systemd 服務..."
+
+cat > "/etc/systemd/system/${SERVICE_NAME}.service" << SVCEOF
+[Unit]
+Description=BeakPlatform Gunicorn Service
+After=network.target postgresql.service redis-server.service
+Requires=postgresql.service redis-server.service
+
+[Service]
+Type=notify
+User=root
+Group=root
+WorkingDirectory=$INSTALL_DIR/backend
+EnvironmentFile=$INSTALL_DIR/.env
+ExecStart=$INSTALL_DIR/venv/bin/gunicorn -c gunicorn.conf.py wsgi:application
+ExecReload=/bin/kill -s HUP \$MAINPID
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+systemctl daemon-reload
+systemctl enable "$SERVICE_NAME"
+log_info "systemd 服務已建立: ${SERVICE_NAME}.service"
+
+
+# === [9/9] Nginx ===
+log_step "9/9" "設定 Nginx..."
+
+cat > "/etc/nginx/sites-available/$SERVICE_NAME" << 'NGXEOF'
+upstream beakplatform {
+    server 127.0.0.1:APP_PORT_PLACEHOLDER;
+}
+
 server {
     listen 80;
     server_name _;
 
+    client_max_body_size 20M;
+
+    # Security headers
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
     location / {
-        proxy_pass http://127.0.0.1:$FLASK_PORT;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_pass http://beakplatform;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 30s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
     }
 
-    location /static {
-        alias $INSTALL_DIR/backend/app/static;
-        expires 1d;
+    location /static/ {
+        proxy_pass http://beakplatform;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /health {
+        proxy_pass http://beakplatform;
+        access_log off;
     }
 }
-EOF
+NGXEOF
 
-    ln -sf /etc/nginx/sites-available/beakplatform /etc/nginx/sites-enabled/
-    rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-    nginx -t && systemctl reload nginx
+# 替換 port placeholder
+sed -i "s/APP_PORT_PLACEHOLDER/${APP_PORT}/" "/etc/nginx/sites-available/$SERVICE_NAME"
 
-    echo -e "${GREEN}✓ Nginx 設定完成${NC}"
-else
-    echo -e "${YELLOW}[9/9] 跳過 Nginx 設定${NC}"
-fi
+ln -sf "/etc/nginx/sites-available/$SERVICE_NAME" "/etc/nginx/sites-enabled/"
+rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 
-# 完成
+# 移除可能衝突的舊站台設定
+for old_conf in beakmask; do
+    if [ -f "/etc/nginx/sites-enabled/$old_conf" ]; then
+        rm -f "/etc/nginx/sites-enabled/$old_conf"
+        log_warn "移除舊 Nginx 設定: $old_conf"
+    fi
+done
+
+nginx -t && systemctl reload nginx
+log_info "Nginx 設定完成 (port 80 -> $APP_PORT)"
+
+
+# === 啟動服務 ===
+log_info "啟動 BeakPlatform..."
+systemctl restart "$SERVICE_NAME"
+
+health_check
+
+# 讀取部署資訊
+deployed_org_code=$(grep '^SYSTEM_ORG_CODE=' "$INSTALL_DIR/.env" | cut -d'=' -f2-)
+
 echo ""
-echo -e "${GREEN}"
-echo "╔═══════════════════════════════════════════════════════════╗"
-echo "║               安裝完成！                                  ║"
-echo "╚═══════════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+echo "============================================"
+log_info "全新安裝完成"
 echo ""
-echo "啟動服務:"
-echo "  cd $INSTALL_DIR/backend"
-echo "  source ../venv/bin/activate"
-echo "  set -a && source ../.env && set +a"
-echo "  flask run --host=0.0.0.0 --port=$FLASK_PORT"
+echo "  URL:  http://YOUR_SERVER_IP (Nginx port 80)"
+echo "        http://YOUR_SERVER_IP:$APP_PORT (直連 Gunicorn)"
 echo ""
-echo "訪問:"
-echo "  開發工具: http://YOUR_IP:$FLASK_PORT/dev/quick-login"
-echo "  表單模組: http://YOUR_IP:$FLASK_PORT/forms/"
+echo "  系統企業: $deployed_org_code"
+echo "  管理員:   admin@$deployed_org_code"
+echo "  密碼:     (安裝時設定，首次登入須變更)"
 echo ""
-echo "管理員帳號:"
-echo "  系統管理員: admin@\$SYSTEM_ORG_CODE (安裝時設定的密碼，首次登入須變更)"
+echo "  服務管理:"
+echo "    sudo bash $INSTALL_DIR/scripts/install.sh --status"
+echo "    sudo bash $INSTALL_DIR/scripts/install.sh --update"
+echo "    sudo bash $INSTALL_DIR/scripts/install.sh --stop"
+echo "    sudo bash $INSTALL_DIR/scripts/install.sh --start"
 echo ""
+echo "  日誌查看:"
+echo "    journalctl -u $SERVICE_NAME -f"
+echo "============================================"
