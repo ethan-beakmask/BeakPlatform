@@ -10,24 +10,24 @@ WHERE title = '用戶帳號' AND org_secure_code = 'system.local';
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
-    created_at, updated_at
+    is_shared, is_user_created, created_at, updated_at
 ) VALUES (
     'ORG_ADMIN_MENU_' || SUBSTRING(md5(random()::text), 1, 16),
     'system.local', 'org_admins', '企業管理員', 'ROUTE', 'org_admins.list_admins',
     59, 0, true, 20, false, false, false,
-    NOW(), NOW()
+    false, false, NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
 -- 3. 新增「外部廠商」選單項目
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
-    created_at, updated_at
+    is_shared, is_user_created, created_at, updated_at
 ) VALUES (
     'EXT_USER_MENU_' || SUBSTRING(md5(random()::text), 1, 16),
     'system.local', 'external_users', '外部廠商', 'ROUTE', 'external_users.list_external_users',
     60, 0, true, 20, false, false, false,
-    NOW(), NOW()
+    false, false, NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
 -- 調整原本的「員工帳號」(原用戶帳號) display_order，讓三個帳號管理放一起

@@ -14,7 +14,7 @@ INSERT INTO menu_items (
     icon, link_type, link_target,
     open_in_new_tab, required_level,
     parent_secure_code, display_order, depth,
-    is_expanded, is_active, is_shared,
+    is_expanded, is_active, is_shared, is_user_created,
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_HDR_' || substr(md5(random()::text), 1, 16),
@@ -36,6 +36,7 @@ INSERT INTO menu_items (
     true,
     true,
     false,
+    false,
     NOW(),
     NOW()
 )
@@ -48,7 +49,7 @@ INSERT INTO menu_items (
     icon, link_type, link_target,
     open_in_new_tab, required_level,
     parent_secure_code, display_order, depth,
-    is_expanded, is_active, is_shared,
+    is_expanded, is_active, is_shared, is_user_created,
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_SUB_' || substr(md5(random()::text), 1, 16),
@@ -70,6 +71,7 @@ INSERT INTO menu_items (
     true,
     true,
     false,
+    false,
     NOW(),
     NOW()
 )
@@ -82,7 +84,7 @@ INSERT INTO menu_items (
     icon, link_type, link_target,
     open_in_new_tab, required_level,
     parent_secure_code, display_order, depth,
-    is_expanded, is_active, is_shared,
+    is_expanded, is_active, is_shared, is_user_created,
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_LAB_' || substr(md5(random()::text), 1, 16),
@@ -103,6 +105,7 @@ INSERT INTO menu_items (
     false,
     true,
     true,
+    false,
     false,
     NOW(),
     NOW()

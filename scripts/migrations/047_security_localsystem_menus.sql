@@ -8,13 +8,13 @@
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, icon, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
-    is_shared, parent_secure_code, module_secure_code,
+    is_shared, is_user_created, parent_secure_code, module_secure_code,
     created_at, updated_at
 ) VALUES (
     'sec_localsys_root_001',
     'system.local', 'security_localsystem', '本機安全', 'bi-shield-lock', 'header', NULL,
     100, 0, true, 0, false, false, false,
-    false, NULL, NULL,
+    false, false, NULL, NULL,
     NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
@@ -32,13 +32,13 @@ INSERT INTO menu_permissions (
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, icon, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
-    is_shared, parent_secure_code, module_secure_code,
+    is_shared, is_user_created, parent_secure_code, module_secure_code,
     created_at, updated_at
 ) VALUES (
     'sec_loginfail_sys_001',
     'system.local', 'login_fail_monitor', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
     10, 1, true, 0, false, false, false,
-    false, 'sec_localsys_root_001', NULL,
+    false, false, 'sec_localsys_root_001', NULL,
     NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
@@ -56,13 +56,13 @@ INSERT INTO menu_permissions (
 INSERT INTO menu_items (
     secure_code, org_secure_code, code, title, icon, link_type, link_target,
     display_order, depth, is_active, required_level, open_in_new_tab, is_expanded, is_deleted,
-    is_shared, parent_secure_code, module_secure_code,
+    is_shared, is_user_created, parent_secure_code, module_secure_code,
     created_at, updated_at
 ) VALUES (
     'sec_loginfail_org_001',
     'system.local', 'login_fail_monitor_org', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
     55, 1, true, 30, false, false, false,
-    false, 'BYB5IqmunA3lcCrROPrifv', NULL,
+    false, false, 'BYB5IqmunA3lcCrROPrifv', NULL,
     NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 

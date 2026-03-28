@@ -9,12 +9,12 @@
 INSERT INTO menu_items (
     secure_code, code, title, link_type, link_target,
     display_order, depth, required_level, icon, org_secure_code,
-    is_shared, is_active, is_deleted, open_in_new_tab, is_expanded,
+    is_shared, is_active, is_deleted, open_in_new_tab, is_expanded, is_user_created,
     created_at, updated_at
 ) VALUES (
     'sec_org_security_root', 'org_security', '系統安全', 'header', '',
     12, 0, 30, 'bi-shield-lock', 'system.local',
-    false, true, false, false, false,
+    false, true, false, false, false, false,
     NOW(), NOW()
 ) ON CONFLICT (secure_code) DO NOTHING;
 
@@ -29,13 +29,13 @@ INSERT INTO menu_items (
     secure_code, code, title, link_type, link_target,
     display_order, depth, required_level, icon, org_secure_code,
     parent_secure_code,
-    is_shared, is_active, is_deleted, open_in_new_tab, is_expanded,
+    is_shared, is_active, is_deleted, open_in_new_tab, is_expanded, is_user_created,
     created_at, updated_at
 ) VALUES (
     'sec_ratelimit_org_001', 'org_rate_limits', '速率限制', 'url',
     '/security/rate-limits/',
     60, 1, 30, 'bi-speedometer2', 'system.local',
     'sec_org_security_root',
-    false, true, false, false, false,
+    false, true, false, false, false, false,
     NOW(), NOW()
 ) ON CONFLICT (secure_code) DO NOTHING;
