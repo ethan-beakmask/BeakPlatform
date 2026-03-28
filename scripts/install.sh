@@ -493,7 +493,8 @@ rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
 # 建立資料表 + 初始資料
 # EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
-EXECUTOR_STANDALONE=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
+# SKIP_MODULE_SYNC=1 避免 create_app 在表建立前嘗試同步模組產生大量錯誤訊息
+SKIP_MODULE_SYNC=1 EXECUTOR_STANDALONE=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
 import os, sys, bcrypt
 from app import create_app, db
 from app.models import Organization, User, UserType
