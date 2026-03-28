@@ -6,7 +6,7 @@ Phase 3: 將 DcSiteMapNode.crud_overrides/data_filters
 複製到 layout_json 中每個 widget 的 rolePermissions/roleFilters。
 
 用法:
-    cd /opt/BeakPlatform/backend
+    cd <project_root>/backend
     python3 ../modules/nocode_builder/migrations/008_widget_role_permissions.py --dry-run
     python3 ../modules/nocode_builder/migrations/008_widget_role_permissions.py --run
 """

@@ -3,8 +3,8 @@ FormWorkflow Module - Workflow Engine Tests
 工作流引擎測試
 
 使用方式：
-    cd /opt/BeakPlatform/backend
-    PYTHONPATH=/opt/BeakPlatform:/opt/BeakPlatform/backend pytest ../modules/form_workflow/tests/test_workflow_engine.py -v
+    cd <project_root>/backend
+    PYTHONPATH=<project_root>:<project_root>/backend pytest ../modules/form_workflow/tests/test_workflow_engine.py -v
 """
 import pytest
 import secrets

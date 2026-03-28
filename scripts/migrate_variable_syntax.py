@@ -25,10 +25,14 @@
 import argparse
 import json
 import logging
+import os
 import re
 import sys
 
-sys.path.insert(0, '/opt/BeakPlatform/backend')
+# 基於本檔位置動態偵測專案路徑
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_project_dir = os.path.dirname(_script_dir)
+sys.path.insert(0, os.path.join(_project_dir, 'backend'))
 
 logging.basicConfig(
     level=logging.INFO,

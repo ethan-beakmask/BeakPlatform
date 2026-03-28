@@ -8,6 +8,7 @@ BeakPlatform - 工作流執行器啟動腳本
     python workflow_executor_main.py
     或透過 systemd: sudo systemctl start beakplatform-executor
 """
+import os
 import sys
 import signal
 import logging
@@ -24,9 +25,11 @@ def main():
     """主程式入口"""
     logger.info('啟動 BeakPlatform 工作流執行器...')
 
-    # 加入專案路徑
-    sys.path.insert(0, '/opt/BeakPlatform/backend')
-    sys.path.insert(0, '/opt/BeakPlatform')
+    # 加入專案路徑（基於本檔位置動態偵測）
+    _backend_dir = os.path.dirname(os.path.abspath(__file__))
+    _project_dir = os.path.dirname(_backend_dir)
+    sys.path.insert(0, _backend_dir)
+    sys.path.insert(0, _project_dir)
 
     from modules.form_workflow.services.workflow_executor import (
         start_executor,

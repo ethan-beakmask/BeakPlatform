@@ -13,7 +13,7 @@ Level 1 冒煙測試 - API GET 路由 500 偵測
 - 每次請求後 rollback，防止 DB transaction 污染
 
 手動執行：
-    cd /opt/BeakPlatform && source venv/bin/activate && set -a && source .env && set +a
+    cd <project_root> && source venv/bin/activate && set -a && source .env && set +a
     cd backend && DATABASE_URL="postgresql://beakplatform:postgres123@localhost:5432/beakplatform_test" \\
         python -m pytest tests/test_smoke.py -v --tb=short
 
