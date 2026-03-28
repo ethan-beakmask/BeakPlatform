@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS user_numbering_rules (
     elements JSONB NOT NULL,
 
     -- 狀態
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    usage_scope VARCHAR(20) NOT NULL DEFAULT 'INTERNAL_ONLY',
+    default_for VARCHAR(20),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- 時間戳記
@@ -45,7 +46,7 @@ CREATE TABLE IF NOT EXISTS user_numbering_rules (
 CREATE INDEX IF NOT EXISTS idx_numbering_rules_org
     ON user_numbering_rules(org_secure_code);
 CREATE INDEX IF NOT EXISTS idx_numbering_rules_default
-    ON user_numbering_rules(org_secure_code, is_default)
+    ON user_numbering_rules(org_secure_code, default_for)
     WHERE is_deleted = FALSE AND is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_numbering_rules_secure_code
     ON user_numbering_rules(secure_code);
@@ -57,7 +58,7 @@ COMMENT ON COLUMN user_numbering_rules.org_secure_code IS '企業識別碼';
 COMMENT ON COLUMN user_numbering_rules.name IS '規則名稱（如：員工編號、來賓編號）';
 COMMENT ON COLUMN user_numbering_rules.description IS '規則描述';
 COMMENT ON COLUMN user_numbering_rules.elements IS '編號元素配置 (JSONB)';
-COMMENT ON COLUMN user_numbering_rules.is_default IS '是否為預設規則（每企業只能有一個）';
+COMMENT ON COLUMN user_numbering_rules.default_for IS '預設用途: EMPLOYEE=員工預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設';
 COMMENT ON COLUMN user_numbering_rules.is_active IS '是否啟用';
 
 -- ============================================================
@@ -157,7 +158,7 @@ BEGIN
         IF NOT EXISTS (
             SELECT 1 FROM user_numbering_rules
             WHERE org_secure_code = org.secure_code
-              AND is_default = TRUE
+              AND default_for IS NOT NULL
               AND is_deleted = FALSE
         ) THEN
             -- 產生新的 secure_code
@@ -170,7 +171,7 @@ BEGIN
                 name,
                 description,
                 elements,
-                is_default,
+                default_for,
                 is_active
             )
             VALUES (
@@ -190,7 +191,7 @@ BEGIN
                         }
                     ]
                 }'::jsonb,
-                TRUE,
+                'EMPLOYEE',
                 TRUE
             );
         END IF;
