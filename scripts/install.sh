@@ -515,7 +515,8 @@ rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 # EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
 # SKIP_MODULE_SYNC=1 避免 create_app 在表建立前嘗試同步模組產生大量錯誤訊息
 SKIP_MODULE_SYNC=1 EXECUTOR_STANDALONE=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
-import os, sys, bcrypt
+import os, sys, bcrypt, importlib
+from pathlib import Path
 from app import create_app, db
 from app.models import Organization, User, UserType
 from app.constants import SYSTEM_ORG_CODE
@@ -524,7 +525,21 @@ admin_password = os.environ.get('ADMIN_INITIAL_PASSWORD', '').strip()
 
 app = create_app()
 with app.app_context():
-    # 建立所有資料表
+    # 顯式載入所有模組 models，確保 db.create_all() 能建立模組表
+    # app.root_path = <INSTALL_DIR>/backend/app，往上兩層到專案根目錄
+    modules_dir = Path(app.root_path).parent.parent / 'modules'
+    if modules_dir.exists():
+        for mod_dir in sorted(modules_dir.iterdir()):
+            models_init = mod_dir / 'models' / '__init__.py'
+            if models_init.exists():
+                mod_name = mod_dir.name
+                try:
+                    importlib.import_module(f'modules.{mod_name}.models')
+                    print(f"  載入模組 models: {mod_name}")
+                except Exception as e:
+                    print(f"  警告: 載入 {mod_name} models 失敗: {e}")
+
+    # 建立所有資料表（含平台 + 模組）
     db.create_all()
     print("  資料表建立完成")
 
@@ -568,9 +583,10 @@ with app.app_context():
         print("  初始資料建立完成")
 PYEOF
 
-# 標記所有 migrations 為已執行 (全新安裝，schema 已是最新)
+# 執行所有 migrations（冪等，db.create_all 已建的表會被 IF NOT EXISTS 跳過）
+# 確保非 ORM 管理的表（如 timeout_trackers、workflow_node_categories）也被建立
 cd "$INSTALL_DIR"
-EXECUTOR_STANDALONE=1 python3 scripts/run_migrations.py --mark-all
+EXECUTOR_STANDALONE=1 python3 scripts/run_migrations.py --run
 
 # 初始化選單
 EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force || log_warn "選單初始化跳過"
