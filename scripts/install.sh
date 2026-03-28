@@ -376,9 +376,16 @@ log_info "系統依賴安裝完成"
 log_step "2/9" "設定 PostgreSQL..."
 
 sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || true
+
+# 全新安裝：先清除舊 DB 再建立（避免殘留資料衝突）
+sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null
+sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
-sudo -u postgres psql -c "CREATE DATABASE beakform_data OWNER $DB_USER;" 2>/dev/null || true
+
+sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='beakform_data' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakform_data;" 2>/dev/null
+sudo -u postgres psql -c "CREATE DATABASE beakform_data OWNER $DB_USER;" 2>/dev/null
 
 log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
 
@@ -388,7 +395,20 @@ log_step "3/9" "取得程式碼..."
 
 if [ -d "$INSTALL_DIR/.git" ]; then
     cd "$INSTALL_DIR"
-    git fetch origin main
+
+    # 安全檢查：如果有未 push 的 commit，警告用戶
+    git fetch origin main 2>/dev/null
+    local_ahead=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo "0")
+    if [ "$local_ahead" -gt 0 ]; then
+        log_warn "偵測到 $local_ahead 個未 push 的 commit:"
+        git log --oneline origin/main..HEAD
+        read -p "繼續將會 reset 到 remote 版本，這些 commit 會遺失。繼續？(y/N): " CONFIRM_RESET
+        if [[ ! "$CONFIRM_RESET" =~ ^[yY]$ ]]; then
+            log_error "取消安裝"
+            exit 1
+        fi
+    fi
+
     git reset --hard origin/main
     log_info "程式碼已更新: $(git log --oneline -1)"
 else
