@@ -43,7 +43,7 @@
 **每次對話結束前**：
 
 ```bash
-cd /opt/BeakPlatform
+cd /opt/BeakPlatform-dev
 git add -A
 git commit -m "類型: 簡短摘要
 
@@ -176,7 +176,7 @@ SELECT code, link_type, link_target FROM menu_items WHERE parent_secure_code = '
 ## 專案結構
 
 ```
-/opt/BeakPlatform/
+/opt/BeakPlatform-dev/
 ├── backend/
 │   ├── app/
 │   │   ├── security/       # 安全核心（勿隨意修改）
@@ -388,7 +388,7 @@ new Date(record.created_at).toLocaleString('zh-TW')
 
 ### 服務啟動
 ```bash
-cd /opt/BeakPlatform
+cd /opt/BeakPlatform-dev
 source venv/bin/activate
 set -a && source .env && set +a
 cd backend && flask run --host=0.0.0.0 --port=7000

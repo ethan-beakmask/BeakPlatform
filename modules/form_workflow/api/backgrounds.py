@@ -31,7 +31,8 @@ def allowed_file(filename):
 def get_upload_dir():
     """取得上傳目錄"""
     # 使用 backend/app/static/uploads/backgrounds 目錄
-    upload_dir = '/opt/BeakPlatform/backend/app/static/uploads/backgrounds'
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    upload_dir = os.path.join(_project_root, 'backend', 'app', 'static', 'uploads', 'backgrounds')
     os.makedirs(upload_dir, exist_ok=True)
     return upload_dir
 

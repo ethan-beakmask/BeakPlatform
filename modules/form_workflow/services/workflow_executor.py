@@ -22,10 +22,9 @@ logger = logging.getLogger(__name__)
 # PENDING 節點輪詢間隔（秒）
 PENDING_POLL_INTERVAL_SECONDS = 120
 
-# 模組根目錄
-MODULE_ROOT = '/opt/BeakPlatform'
-# Backend 目錄（node_runner 需要從這裡執行）
-BACKEND_ROOT = '/opt/BeakPlatform/backend'
+# 動態偵測專案根目錄（支援 dev / production 不同路徑）
+MODULE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+BACKEND_ROOT = os.path.join(MODULE_ROOT, 'backend')
 
 
 class WorkflowExecutor:

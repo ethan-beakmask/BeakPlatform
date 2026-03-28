@@ -31,8 +31,9 @@ def main():
     queue_item_code = args.queue_item_code
     logger.info(f'Node Runner 啟動，queue_item_code={queue_item_code}, PID={os.getpid()}')
 
-    # 加入專案路徑
-    sys.path.insert(0, '/opt/BeakPlatform/backend')
+    # 動態偵測專案路徑
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    sys.path.insert(0, os.path.join(_project_root, 'backend'))
 
     # 初始化 Flask app context
     from app import create_app, db
@@ -250,7 +251,8 @@ def handle_error(queue_item_code, error_message):
         queue_item_code: FwNodeExecutionQueue secure_code
         error_message: 錯誤訊息
     """
-    sys.path.insert(0, '/opt/BeakPlatform/backend')
+    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    sys.path.insert(0, os.path.join(_project_root, 'backend'))
 
     from app import create_app, db
     from modules.form_workflow.models import FwNodeExecutionQueue, FwWorkflowInstance
