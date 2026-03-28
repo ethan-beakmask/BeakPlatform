@@ -26,7 +26,8 @@ INSERT INTO workflow_node_definitions (
     canvas_shape, canvas_color, canvas_width, canvas_height,
     max_input_connections, max_output_connections,
     config_schema, default_timeout_seconds, max_timeout_seconds,
-    require_system_admin
+    require_system_admin,
+    created_at, updated_at, is_deleted
 ) VALUES (
     encode(gen_random_bytes(16), 'base64'),
     'SubSystemProvision', TRUE, 'SYSTEM', NULL,
@@ -62,7 +63,8 @@ INSERT INTO workflow_node_definitions (
         "required": ["action"]
     }',
     300, 600,
-    FALSE
+    FALSE,
+    NOW(), NOW(), FALSE
 ) ON CONFLICT (node_type) DO NOTHING;
 
 COMMIT;

@@ -164,7 +164,7 @@ BEGIN
             -- 產生新的 secure_code
             new_secure_code := encode(gen_random_bytes(16), 'hex');
 
-            -- 插入預設規則
+            -- 插入預設規則（明確指定所有 NOT NULL 欄位，不依賴 DEFAULT）
             INSERT INTO user_numbering_rules (
                 secure_code,
                 org_secure_code,
@@ -173,7 +173,10 @@ BEGIN
                 elements,
                 usage_scope,
                 default_for,
-                is_active
+                is_active,
+                created_at,
+                updated_at,
+                is_deleted
             )
             VALUES (
                 new_secure_code,
@@ -194,7 +197,10 @@ BEGIN
                 }'::jsonb,
                 'INTERNAL_ONLY',
                 'EMPLOYEE',
-                TRUE
+                TRUE,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP,
+                FALSE
             );
         END IF;
     END LOOP;
@@ -204,12 +210,16 @@ $$;
 -- ============================================================
 -- 5. 將現有 users.employee_id 記錄到 used_user_numbers
 -- ============================================================
-INSERT INTO used_user_numbers (secure_code, org_secure_code, number, user_secure_code)
+INSERT INTO used_user_numbers (secure_code, org_secure_code, number, user_secure_code,
+    created_at, updated_at, is_deleted)
 SELECT
     encode(gen_random_bytes(16), 'hex'),
     u.org_secure_code,
     u.employee_id,
-    u.secure_code
+    u.secure_code,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    FALSE
 FROM users u
 WHERE u.employee_id IS NOT NULL
   AND u.employee_id != ''

@@ -20,7 +20,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_form_org_seq
 INSERT INTO user_numbering_rules (
     secure_code, org_secure_code, name, description,
     elements, usage_scope, default_for, is_active,
-    created_at, updated_at
+    created_at, updated_at, is_deleted
 )
 SELECT
     encode(gen_random_bytes(16), 'hex'),
@@ -44,7 +44,8 @@ SELECT
     'FORM',
     true,
     now(),
-    now()
+    now(),
+    false
 FROM organizations o
 WHERE NOT EXISTS (
     SELECT 1 FROM user_numbering_rules r

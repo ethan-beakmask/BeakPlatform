@@ -4,7 +4,7 @@
 INSERT INTO menu_items (
     secure_code, code, title, icon, link_type, link_target,
     open_in_new_tab, display_order, depth, is_expanded, is_active,
-    required_level, parent_secure_code, org_secure_code, is_shared, is_deleted, created_at, updated_at
+    required_level, parent_secure_code, org_secure_code, is_shared, is_deleted, is_user_created, created_at, updated_at
 )
 SELECT
     encode(gen_random_bytes(16), 'hex'),
@@ -16,7 +16,7 @@ SELECT
     false, 57, 1, false, true, 30,
     'BYB5IqmunA3lcCrROPrifv',
     'system.local',
-    false, false, NOW(), NOW()
+    false, false, false, NOW(), NOW()
 WHERE NOT EXISTS (
     SELECT 1 FROM menu_items WHERE code = 'alert_broadcasts_org'
 );
