@@ -291,6 +291,8 @@ if [ "$ACTION" = "update" ]; then
     # [3] 載入環境變數 + 執行 migrations
     log_step "3/6" "執行資料庫遷移..."
     load_env
+    # 確保必要的 PostgreSQL extensions 存在
+    sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
     cd backend
     EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run
 
@@ -396,6 +398,8 @@ for target_db in "$DB_NAME" "beakform_data"; do
     fi
 done
 
+# 啟用必要的 PostgreSQL extensions
+sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null
 log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
 
 

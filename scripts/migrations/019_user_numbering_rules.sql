@@ -171,6 +171,7 @@ BEGIN
                 name,
                 description,
                 elements,
+                usage_scope,
                 default_for,
                 is_active
             )
@@ -191,6 +192,7 @@ BEGIN
                         }
                     ]
                 }'::jsonb,
+                'INTERNAL_ONLY',
                 'EMPLOYEE',
                 TRUE
             );
