@@ -13,7 +13,7 @@
 #
 # 環境變數 (可選):
 #   INSTALL_DIR            安裝目錄 (預設: /opt/BeakPlatform)
-#   DB_NAME                資料庫名稱 (預設: beakplatform_dev)
+#   DB_NAME                資料庫名稱 (預設: beakplatform)
 #   DB_USER                資料庫使用者 (預設: beakplatform)
 #   DB_PASS                資料庫密碼 (預設: postgres123)
 #   APP_PORT               應用程式 port (預設: 8000)
@@ -24,7 +24,7 @@ set -e
 
 # === 設定 ===
 INSTALL_DIR="${INSTALL_DIR:-/opt/BeakPlatform}"
-DB_NAME="${DB_NAME:-beakplatform_dev}"
+DB_NAME="${DB_NAME:-beakplatform}"
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-postgres123}"
 APP_PORT="${APP_PORT:-8000}"
@@ -346,6 +346,9 @@ if [ -f "$INSTALL_DIR/.env" ]; then
     fi
     # 停掉舊服務
     systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+    # 備份舊 .env（含手動調整的設定）
+    cp "$INSTALL_DIR/.env" "$INSTALL_DIR/.env.bak.$(date +%s)"
+    log_info "已備份舊 .env"
 fi
 
 
@@ -378,14 +381,20 @@ log_step "2/9" "設定 PostgreSQL..."
 sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
 
 # 全新安裝：先清除舊 DB 再建立（避免殘留資料衝突）
-sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null
-sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
-
-sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='beakform_data' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakform_data;" 2>/dev/null
-sudo -u postgres psql -c "CREATE DATABASE beakform_data OWNER $DB_USER;" 2>/dev/null
+# 斷開所有連線後再 DROP，並驗證結果
+for target_db in "$DB_NAME" "beakform_data"; do
+    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$target_db' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+    sleep 1
+    if ! sudo -u postgres psql -c "DROP DATABASE IF EXISTS $target_db;" 2>/dev/null; then
+        log_error "無法刪除資料庫 $target_db（可能有程式佔用連線）"
+        log_error "請先停止所有連線此資料庫的程式，再重新執行安裝"
+        exit 1
+    fi
+    sudo -u postgres psql -c "CREATE DATABASE $target_db OWNER $DB_USER;" 2>/dev/null
+    if [ "$target_db" = "$DB_NAME" ]; then
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $target_db TO $DB_USER;" 2>/dev/null
+    fi
+done
 
 log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
 
@@ -543,10 +552,10 @@ with app.app_context():
     db.create_all()
     print("  資料表建立完成")
 
-    # 檢查是否已有初始資料
-    existing = Organization.query.filter_by(domain_name=SYSTEM_ORG_CODE).first()
+    # 檢查是否已有初始資料（用 code='SYSTEM' 檢查，不受 SYSTEM_ORG_CODE 變動影響）
+    existing = Organization.query.filter_by(code='SYSTEM').first()
     if existing:
-        print("  初始資料已存在，跳過")
+        print(f"  初始資料已存在 (secure_code={existing.secure_code})，跳過")
     else:
         if not admin_password or len(admin_password) < 8:
             print("  錯誤: 管理員密碼無效")
