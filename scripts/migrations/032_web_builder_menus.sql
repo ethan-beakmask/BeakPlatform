@@ -18,7 +18,7 @@ INSERT INTO menu_items (
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_HDR_' || substr(md5(random()::text), 1, 16),
-    'system.local',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     'web_builder',
     'Web Builder',
     '{"en": "Web Builder", "zh-CN": "Web Builder"}',
@@ -53,7 +53,7 @@ INSERT INTO menu_items (
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_SUB_' || substr(md5(random()::text), 1, 16),
-    'system.local',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     'web_builder.sub_systems',
     '子系統管理',
     '{"en": "Sub-Systems", "zh-CN": "子系统管理"}',
@@ -88,7 +88,7 @@ INSERT INTO menu_items (
     is_deleted, created_at, updated_at
 ) VALUES (
     'WB_MENU_LAB_' || substr(md5(random()::text), 1, 16),
-    'system.local',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     'web_builder.lab',
     '設計器',
     '{"en": "Designer", "zh-CN": "设计器"}',

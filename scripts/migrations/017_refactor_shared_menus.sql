@@ -10,7 +10,7 @@ BEGIN;
 -- 1. 將通用選單移到 system.local 並設為共用
 -- 這些選單對所有企業都適用，由 ResourceGateway 保證資料隔離
 UPDATE menu_items
-SET org_secure_code = 'system.local',
+SET org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     is_shared = true,
     updated_at = NOW()
 WHERE org_secure_code = 'lkpjrhad7yXuJuLOhxyS38'  -- beakmask.local
@@ -37,11 +37,11 @@ WHERE org_secure_code = 'lkpjrhad7yXuJuLOhxyS38'  -- beakmask.local
 UPDATE menu_items
 SET module_secure_code = (
     SELECT secure_code FROM modules
-    WHERE org_secure_code = 'system.local'
+    WHERE org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1)
     AND code = 'system_core'
     LIMIT 1
 )
-WHERE org_secure_code = 'system.local'
+WHERE org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1)
 AND module_secure_code IN (
     SELECT secure_code FROM modules
     WHERE org_secure_code = 'lkpjrhad7yXuJuLOhxyS38'

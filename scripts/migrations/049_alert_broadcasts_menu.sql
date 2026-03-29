@@ -15,7 +15,7 @@ SELECT
     '/security/alert-broadcasts/',
     false, 57, 1, false, true, 30,
     'BYB5IqmunA3lcCrROPrifv',
-    'system.local',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     false, false, false, NOW(), NOW()
 WHERE NOT EXISTS (
     SELECT 1 FROM menu_items WHERE code = 'alert_broadcasts_org'

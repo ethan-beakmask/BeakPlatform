@@ -12,7 +12,8 @@ INSERT INTO menu_items (
     created_at, updated_at
 ) VALUES (
     'sec_localsys_root_001',
-    'system.local', 'security_localsystem', '本機安全', 'bi-shield-lock', 'header', NULL,
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
+    'security_localsystem', '本機安全', 'bi-shield-lock', 'header', NULL,
     100, 0, true, 0, false, false, false,
     false, false, NULL, NULL,
     NOW(), NOW()
@@ -36,7 +37,8 @@ INSERT INTO menu_items (
     created_at, updated_at
 ) VALUES (
     'sec_loginfail_sys_001',
-    'system.local', 'login_fail_monitor', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
+    'login_fail_monitor', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
     10, 1, true, 0, false, false, false,
     false, false, 'sec_localsys_root_001', NULL,
     NOW(), NOW()
@@ -60,7 +62,8 @@ INSERT INTO menu_items (
     created_at, updated_at
 ) VALUES (
     'sec_loginfail_org_001',
-    'system.local', 'login_fail_monitor_org', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
+    'login_fail_monitor_org', '登入錯誤監看', 'bi-shield-exclamation', 'url', '/security/login-failures/',
     55, 1, true, 30, false, false, false,
     false, false, 'BYB5IqmunA3lcCrROPrifv', NULL,
     NOW(), NOW()

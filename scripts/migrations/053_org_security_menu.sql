@@ -13,7 +13,8 @@ INSERT INTO menu_items (
     created_at, updated_at
 ) VALUES (
     'sec_org_security_root', 'org_security', '系統安全', 'header', '',
-    12, 0, 30, 'bi-shield-lock', 'system.local',
+    12, 0, 30, 'bi-shield-lock',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     false, true, false, false, false, false,
     NOW(), NOW()
 ) ON CONFLICT (secure_code) DO NOTHING;
@@ -34,7 +35,8 @@ INSERT INTO menu_items (
 ) VALUES (
     'sec_ratelimit_org_001', 'org_rate_limits', '速率限制', 'url',
     '/security/rate-limits/',
-    60, 1, 30, 'bi-speedometer2', 'system.local',
+    60, 1, 30, 'bi-speedometer2',
+    (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     'sec_org_security_root',
     false, true, false, false, false, false,
     NOW(), NOW()
