@@ -18,6 +18,7 @@
 #   DB_PASS                資料庫密碼 (預設: postgres123)
 #   APP_PORT               應用程式 port (預設: 8000)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
+#   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
 # =============================================================================
 set -e
@@ -116,7 +117,7 @@ case "${1:-}" in
         echo "  INSTALL_DIR=$INSTALL_DIR"
         echo "  DB_NAME=$DB_NAME"
         echo "  APP_PORT=$APP_PORT"
-        echo "  GITHUB_REPO=$GITHUB_REPO"
+        echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
         exit 1
         ;;
 esac
@@ -269,6 +270,22 @@ if [ "$ACTION" = "update" ]; then
 
     # [1] 拉取最新程式碼
     log_step "1/6" "拉取最新程式碼..."
+
+    # 檢查 remote URL 是否帶有 token（能自動認證）
+    current_url=$(git remote get-url origin 2>/dev/null)
+    if ! echo "$current_url" | grep -q '@github.com'; then
+        # remote URL 不含 token，需要取得
+        if [ -z "${GITHUB_TOKEN:-}" ]; then
+            read -s -p "請輸入 GitHub Personal Access Token: " GITHUB_TOKEN
+            echo ""
+            if [ -z "$GITHUB_TOKEN" ]; then
+                log_error "未輸入 Token，無法繼續"
+                exit 1
+            fi
+        fi
+        git remote set-url origin "https://${GITHUB_TOKEN}@github.com/beakplatform/BeakPlatform.git"
+    fi
+
     git fetch origin main
     local_hash=$(git rev-parse HEAD)
     remote_hash=$(git rev-parse origin/main)
@@ -406,8 +423,29 @@ log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
 # === [3/9] 取得程式碼 ===
 log_step "3/9" "取得程式碼..."
 
+# 取得 GitHub Token（私有 repo 必須）
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+    echo ""
+    echo "  BeakPlatform 使用私有 GitHub 儲存庫，需要 Personal Access Token (PAT) 才能下載。"
+    echo "  產生方式: GitHub → Settings → Developer settings → Personal access tokens"
+    echo "  權限需求: repo (Full control of private repositories)"
+    echo ""
+    read -s -p "請輸入 GitHub Personal Access Token: " GITHUB_TOKEN
+    echo ""
+    if [ -z "$GITHUB_TOKEN" ]; then
+        log_error "未輸入 Token，無法繼續"
+        exit 1
+    fi
+fi
+
+# 組成帶 token 的 clone URL
+GITHUB_CLONE_URL="https://${GITHUB_TOKEN}@github.com/beakplatform/BeakPlatform.git"
+
 if [ -d "$INSTALL_DIR/.git" ]; then
     cd "$INSTALL_DIR"
+
+    # 更新 remote URL（token 可能已變更）
+    git remote set-url origin "$GITHUB_CLONE_URL"
 
     # 安全檢查：如果有未 push 的 commit，警告用戶
     git fetch origin main 2>/dev/null
@@ -430,7 +468,7 @@ else
         mv "$INSTALL_DIR" "${INSTALL_DIR}.bak.$(date +%s)"
         log_warn "既有目錄已備份"
     fi
-    git clone "$GITHUB_REPO" "$INSTALL_DIR"
+    git clone "$GITHUB_CLONE_URL" "$INSTALL_DIR"
     cd "$INSTALL_DIR"
     log_info "程式碼 clone 完成: $(git log --oneline -1)"
 fi
@@ -571,7 +609,8 @@ with app.app_context():
             code='SYSTEM',
             name=SYSTEM_ORG_CODE,
             domain_name=SYSTEM_ORG_CODE,
-            is_active=True
+            is_active=True,
+            is_system_org=True
         )
         db.session.add(system_org)
         db.session.flush()

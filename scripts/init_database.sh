@@ -94,7 +94,8 @@ with app.app_context():
         code='SYSTEM',
         name=SYSTEM_ORG_CODE,
         domain_name=SYSTEM_ORG_CODE,
-        is_active=True
+        is_active=True,
+        is_system_org=True
     )
     db.session.add(system_org)
     db.session.flush()

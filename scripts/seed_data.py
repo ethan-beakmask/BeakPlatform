@@ -95,7 +95,8 @@ def seed_system_org():
         customer_type='SYSTEM',
         user_limit=10,
         description='系統級虛擬企業，用於承載跨企業共用功能',
-        is_active=True
+        is_active=True,
+        is_system_org=True
     )
     system_org.secure_code = SYSTEM_ORG_CODE
     db.session.add(system_org)
