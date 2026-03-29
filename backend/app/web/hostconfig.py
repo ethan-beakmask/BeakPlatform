@@ -38,6 +38,8 @@ HARD_DELETE_TABLES = [
     ('user_numbering_counters', 'org_secure_code', '員工編號計數器'),
     ('job_level_approval_limits', 'org_secure_code', '職等簽核額度'),
     ('menu_permissions', 'menu_secure_code', '選單權限', 'menu_items'),
+    ('menu_role_requirements', 'org_secure_code', '選單角色需求'),
+    ('broadcast_acknowledgments', 'org_secure_code', '公告確認'),
     ('module_access_control', 'org_secure_code', '模組使用權'),
     ('lookup_items', 'org_secure_code', '查找項目'),
     ('workflow_node_definitions', 'org_secure_code', '流程節點定義'),
@@ -284,6 +286,8 @@ PURGE_DISPLAY_NAMES = {
     'schedule_holidays': '班表假日',
     'duties': '職責',
     'menu_permissions': '選單權限',
+    'menu_role_requirements': '選單角色需求',
+    'broadcast_acknowledgments': '公告確認',
     'duty_categories': '職責分類',
     'job_titles': '職稱',
     'users': '用戶',
@@ -336,6 +340,7 @@ PURGE_DELETE_ORDER = [
     'audit_logs', 'used_user_numbers', 'user_numbering_counters',
     'job_level_approval_limits', 'approval_categories', 'conglomerate_logs',
     'schedule_holidays', 'duties', 'menu_permissions',
+    'menu_role_requirements', 'broadcast_acknowledgments',
     'permission_conditions',
     # FormFlow 葉節點
     'fw_approval_records', 'fw_form_field_changes', 'fw_node_execution_logs',
@@ -369,48 +374,106 @@ PURGE_SYSTEM_TABLES = {
     'permissions', 'permission_conditions', 'system_settings', 'conglomerates',
 }
 
-# 孤兒清理：刪除 soft-deleted 父記錄前，先刪指向它的子記錄
-# 格式: {parent_table: [(child_table, fk_column)]}
+# 孤兒清理：刪除 soft-deleted 父記錄前，先處理指向它的子記錄
+# 格式: {parent_table: [(child_table, fk_column, action)]}
+# action: 'delete'（預設）= 刪除子記錄, 'set_null' = FK 欄位置 NULL
 PURGE_ORPHAN_CLEANUP = {
     'users': [
-        ('user_role_assignments', 'user_secure_code'),
-        ('user_unit_assignments', 'user_secure_code'),
-        ('user_unit_memberships', 'user_secure_code'),
-        ('delegations', 'delegator_secure_code'),
-        ('delegations', 'delegate_secure_code'),
-        ('employee_positions', 'user_secure_code'),
-        ('personal_schedules', 'user_secure_code'),
-        ('schedule_adjustments', 'user_secure_code'),
-        ('used_user_numbers', 'user_secure_code'),
+        # NOT NULL FK -- 刪除子記錄
+        ('user_role_assignments', 'user_secure_code', 'delete'),
+        ('user_unit_assignments', 'user_secure_code', 'delete'),
+        ('user_unit_memberships', 'user_secure_code', 'delete'),
+        ('delegations', 'delegator_secure_code', 'delete'),
+        ('delegations', 'delegate_secure_code', 'delete'),
+        ('employee_positions', 'user_secure_code', 'delete'),
+        ('personal_schedules', 'user_secure_code', 'delete'),
+        ('schedule_adjustments', 'user_secure_code', 'delete'),
+        ('broadcast_acknowledgments', 'user_secure_code', 'delete'),
+        ('password_history', 'user_secure_code', 'delete'),
+        ('timeout_trackers', 'assignee_secure_code', 'delete'),
+        # NULLABLE FK -- 保留子記錄，置 NULL
+        ('audit_logs', 'user_secure_code', 'set_null'),
+        ('used_user_numbers', 'user_secure_code', 'set_null'),
+        ('contracts', 'created_by_secure_code', 'set_null'),
+        ('contracts', 'modified_by_secure_code', 'set_null'),
+        ('employee_positions', 'direct_manager_secure_code', 'set_null'),
+        ('employee_positions', 'dotted_line_manager_secure_code', 'set_null'),
+        ('schedule_adjustments', 'substitute_user_secure_code', 'set_null'),
+        # 自引用 (nullable)
+        ('users', 'bound_employee_secure_code', 'set_null'),
     ],
     'roles': [
-        ('role_permissions', 'role_secure_code'),
-        ('user_role_assignments', 'role_secure_code'),
+        ('role_permissions', 'role_secure_code', 'delete'),
+        ('user_role_assignments', 'role_secure_code', 'delete'),
+        ('menu_role_requirements', 'role_secure_code', 'delete'),
+        # 自引用 (nullable)
+        ('roles', 'parent_secure_code', 'set_null'),
+        ('roles', 'inherits_from_secure_code', 'set_null'),
     ],
     'organizational_units': [
-        ('user_unit_assignments', 'unit_secure_code'),
-        ('user_unit_memberships', 'unit_secure_code'),
-        ('duties', 'unit_secure_code'),
-        ('employee_positions', 'unit_secure_code'),
+        ('user_unit_assignments', 'unit_secure_code', 'delete'),
+        ('user_unit_memberships', 'unit_secure_code', 'delete'),
+        ('duties', 'unit_secure_code', 'delete'),
+        ('employee_positions', 'unit_secure_code', 'delete'),
+        # NULLABLE FK
+        ('roles', 'bound_unit_secure_code', 'set_null'),
+        ('user_role_assignments', 'unit_secure_code', 'set_null'),
+        ('users', 'primary_unit_secure_code', 'set_null'),
+        # 自引用 (nullable)
+        ('organizational_units', 'parent_secure_code', 'set_null'),
     ],
     'menu_items': [
-        ('menu_permissions', 'menu_secure_code'),
+        ('menu_permissions', 'menu_secure_code', 'delete'),
+        ('menu_role_requirements', 'menu_secure_code', 'delete'),
+        # 自引用 (nullable)
+        ('menu_items', 'parent_secure_code', 'set_null'),
     ],
     'work_schedules': [
-        ('schedule_holidays', 'schedule_secure_code'),
+        ('schedule_holidays', 'schedule_secure_code', 'delete'),
+        ('users', 'work_schedule_secure_code', 'set_null'),
+    ],
+    'shift_types': [
+        ('personal_schedules', 'shift_type_secure_code', 'set_null'),
     ],
     'job_titles': [
-        ('employee_positions', 'job_title_secure_code'),
+        ('employee_positions', 'job_title_secure_code', 'delete'),
+    ],
+    'job_levels': [
+        ('job_level_approval_limits', 'job_level_secure_code', 'delete'),
+        ('job_titles', 'job_level_secure_code', 'delete'),
+    ],
+    'job_families': [
+        ('job_titles', 'job_family_secure_code', 'delete'),
+        # 自引用 (nullable)
+        ('job_families', 'parent_secure_code', 'set_null'),
+    ],
+    'approval_categories': [
+        ('job_level_approval_limits', 'category_secure_code', 'delete'),
+    ],
+    'modules': [
+        ('menu_items', 'module_secure_code', 'set_null'),
+        ('pages', 'module_secure_code', 'set_null'),
+    ],
+    'permissions': [
+        ('role_permissions', 'permission_secure_code', 'delete'),
+    ],
+    'user_numbering_rules': [
+        ('user_numbering_counters', 'rule_secure_code', 'delete'),
+        ('used_user_numbers', 'rule_secure_code', 'set_null'),
+    ],
+    'conglomerates': [
+        ('conglomerate_logs', 'conglomerate_secure_code', 'delete'),
+        ('organizations', 'conglomerate_secure_code', 'set_null'),
     ],
     'fw_form_templates': [
-        ('fw_form_workflow_mappings', 'form_template_secure_code'),
-        ('fw_published_form_workflows', 'source_form_template_secure_code'),
-        ('fw_form_instances', 'form_template_secure_code'),
+        ('fw_form_workflow_mappings', 'form_template_secure_code', 'delete'),
+        ('fw_published_form_workflows', 'source_form_template_secure_code', 'delete'),
+        ('fw_form_instances', 'form_template_secure_code', 'delete'),
     ],
     'fw_workflow_templates': [
-        ('fw_form_workflow_mappings', 'workflow_template_secure_code'),
-        ('fw_published_form_workflows', 'source_workflow_template_secure_code'),
-        ('fw_workflow_instances', 'workflow_template_secure_code'),
+        ('fw_form_workflow_mappings', 'workflow_template_secure_code', 'delete'),
+        ('fw_published_form_workflows', 'source_workflow_template_secure_code', 'delete'),
+        ('fw_workflow_instances', 'workflow_template_secure_code', 'delete'),
     ],
 }
 
@@ -525,10 +588,14 @@ def _purge_delete_sql(table_name, scope):
 
 def _purge_orphan_cleanup(parent_table, scope):
     """
-    清理孤兒記錄：刪除指向 soft-deleted 父記錄的子記錄
+    清理孤兒記錄：處理指向 soft-deleted 父記錄的子記錄
+
+    支援兩種動作：
+    - delete: 刪除子記錄（NOT NULL FK 或無意義的關聯記錄）
+    - set_null: FK 欄位置 NULL（保留子記錄，如稽核日誌）
 
     Returns:
-        dict {child_table: deleted_count}
+        dict {child_table: affected_count}
     """
     if parent_table not in PURGE_ORPHAN_CLEANUP:
         return {}
@@ -547,13 +614,22 @@ def _purge_orphan_cleanup(parent_table, scope):
         )
         params = {'org': scope}
 
-    for child_table, fk_col in PURGE_ORPHAN_CLEANUP[parent_table]:
+    for entry in PURGE_ORPHAN_CLEANUP[parent_table]:
+        child_table, fk_col = entry[0], entry[1]
+        action = entry[2] if len(entry) > 2 else 'delete'
+
         try:
             with db.session.begin_nested():
-                sql = (
-                    f"DELETE FROM {child_table} "
-                    f"WHERE {fk_col} IN ({parent_subquery})"
-                )
+                if action == 'set_null':
+                    sql = (
+                        f"UPDATE {child_table} SET {fk_col} = NULL "
+                        f"WHERE {fk_col} IN ({parent_subquery})"
+                    )
+                else:
+                    sql = (
+                        f"DELETE FROM {child_table} "
+                        f"WHERE {fk_col} IN ({parent_subquery})"
+                    )
                 result = db.session.execute(db.text(sql), params)
                 if result.rowcount > 0:
                     results[child_table] = results.get(child_table, 0) + result.rowcount
