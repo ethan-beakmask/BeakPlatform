@@ -108,8 +108,8 @@ def run_migration(check_only=False):
                 db.session.execute(db.text(
                     "INSERT INTO fw_form_themes "
                     "(secure_code, name, display_name, description, css_content, "
-                    " is_system, is_active, sort_order) "
-                    "VALUES (:sc, :name, :dn, :desc, :css, TRUE, TRUE, :so)"
+                    " is_system, is_active, sort_order, is_deleted, created_at, updated_at) "
+                    "VALUES (:sc, :name, :dn, :desc, :css, TRUE, TRUE, :so, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
                 ), {
                     'sc': sec.token_urlsafe(16),
                     'name': seed['name'],
