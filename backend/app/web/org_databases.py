@@ -128,6 +128,14 @@ def _get_org_db_list(org_secure_code=None):
         try:
             dsn = odb.get_admin_dsn()
             stats = _query_db_stats(dsn)
+        except RuntimeError as e:
+            logger.error(f'OrgDB credential config error: {e}')
+            stats = {
+                'db_size_bytes': 0,
+                'table_count': 0,
+                'tables': [],
+                'error': '憑證解密失敗，請檢查伺服器環境設定',
+            }
         except Exception as e:
             stats = {
                 'db_size_bytes': 0,
@@ -225,6 +233,15 @@ def system_org_stats(org_secure_code):
     try:
         dsn = odb.get_admin_dsn()
         stats = _query_db_stats(dsn)
+    except RuntimeError as e:
+        # 配置錯誤（如 SYNC_CREDENTIAL_KEY 未設定）
+        logger.error(f'OrgDB credential config error: {e}')
+        stats = {
+            'db_size_bytes': 0,
+            'table_count': 0,
+            'tables': [],
+            'error': '憑證解密失敗，請檢查伺服器環境設定',
+        }
     except Exception as e:
         stats = {
             'db_size_bytes': 0,
@@ -266,6 +283,14 @@ def org_view():
         try:
             dsn = odb.get_admin_dsn()
             stats = _query_db_stats(dsn)
+        except RuntimeError as e:
+            logger.error(f'OrgDB credential config error: {e}')
+            stats = {
+                'db_size_bytes': 0,
+                'table_count': 0,
+                'tables': [],
+                'error': '憑證解密失敗，請檢查伺服器環境設定',
+            }
         except Exception as e:
             stats = {
                 'db_size_bytes': 0,
