@@ -100,9 +100,9 @@ echo "======================================"
 echo "  開發環境狀態"
 echo "======================================"
 if $DEV_OK; then
-    echo "  Flask          app.beakmask.org (7000)   OK"
+    echo "  Flask          dev.beakmask.org (7000)   OK"
 else
-    echo "  Flask          app.beakmask.org (7000)   FAIL"
+    echo "  Flask          dev.beakmask.org (7000)   FAIL"
 fi
 if $DEVTOOLS_OK; then
     echo "  DevTools       localhost:7001             OK"

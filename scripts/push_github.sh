@@ -30,7 +30,7 @@ EXCLUDE_FILES=(
     "temp_WEB_Builder全程序.txt"
     "workflow_node開發進度表.csv"
     "beakplatform.service"
-    "restart_flask.sh"
+    "restart_dev.sh"
     # scripts - 內部工具與初始化
     "scripts/push_github.sh"
     "scripts/init_database.sh"
