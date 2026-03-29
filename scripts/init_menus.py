@@ -54,10 +54,10 @@ def init_menus(force=False):
     app = create_app()
 
     with app.app_context():
-        # 確認 system.local 企業存在
+        # 確認系統企業存在
         org = Organization.query.filter_by(secure_code=SYSTEM_ORG_CODE).first()
         if not org:
-            print("錯誤: system.local 企業不存在，請先執行 init_database.sh")
+            print(f"錯誤: {SYSTEM_ORG_CODE} 企業不存在，請先執行 init_database.sh")
             return False
 
         # 統計現有平台選單（排除模組選單）
