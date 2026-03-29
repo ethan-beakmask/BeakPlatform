@@ -239,8 +239,7 @@ if [ "$ACTION" = "uninstall" ]; then
 
     # 移除資料庫
     sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
-    # 附屬 DB
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS beakform_data;" 2>/dev/null || true
+
 
     # 移除安裝目錄
     rm -rf "$INSTALL_DIR"
@@ -403,23 +402,19 @@ sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev
 
 # 全新安裝：先清除舊 DB 再建立（避免殘留資料衝突）
 # 斷開所有連線後再 DROP，並驗證結果
-for target_db in "$DB_NAME" "beakform_data"; do
-    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$target_db' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-    sleep 1
-    if ! sudo -u postgres psql -c "DROP DATABASE IF EXISTS $target_db;" 2>/dev/null; then
-        log_error "無法刪除資料庫 $target_db（可能有程式佔用連線）"
-        log_error "請先停止所有連線此資料庫的程式，再重新執行安裝"
-        exit 1
-    fi
-    sudo -u postgres psql -c "CREATE DATABASE $target_db OWNER $DB_USER;" 2>/dev/null
-    if [ "$target_db" = "$DB_NAME" ]; then
-        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $target_db TO $DB_USER;" 2>/dev/null
-    fi
-done
+sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+sleep 1
+if ! sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null; then
+    log_error "無法刪除資料庫 $DB_NAME（可能有程式佔用連線）"
+    log_error "請先停止所有連線此資料庫的程式，再重新執行安裝"
+    exit 1
+fi
+sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null
 
 # 啟用必要的 PostgreSQL extensions
 sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null
-log_info "PostgreSQL 設定完成 (DB: $DB_NAME + beakform_data)"
+log_info "PostgreSQL 設定完成 (DB: $DB_NAME)"
 
 
 # === [3/9] 取得程式碼 ===
@@ -523,9 +518,6 @@ GUNICORN_THREADS=2
 
 # Session
 SESSION_COOKIE_SECURE=false
-
-# Form Data Sync
-FORMDATA_DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/beakform_data
 ENVEOF
 
 log_info "環境變數設定完成 (SYSTEM_ORG_CODE=$SYS_ORG_CODE)"

@@ -3,7 +3,7 @@ FormWorkflow Module - SQL Form Registry Model
 SQL 同步登記表
 
 記錄所有已建立的 SQL 同步表，存放在主資料庫 (beakplatform_dev)。
-每筆記錄對應 beakform_data 中的一張 SQL 同步表。
+每筆記錄對應企業獨立資料庫 (org_{id}) 或集團共享資料庫 (cg_{id}) 中的一張 SQL 同步表。
 """
 import secrets
 from datetime import datetime
