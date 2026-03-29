@@ -126,11 +126,14 @@ def init_menus(force=False):
             db.session.add(menu)
             code_to_secure_code[menu_def['code']] = secure_code
 
-            # 設定選單權限
-            user_types = get_allowed_user_types(
-                menu_def['required_level'],
-                menu_def.get('is_shared', False)
-            )
+            # 設定選單權限（_user_types_override 優先）
+            if '_user_types_override' in menu_def:
+                user_types = menu_def['_user_types_override']
+            else:
+                user_types = get_allowed_user_types(
+                    menu_def['required_level'],
+                    menu_def.get('is_shared', False)
+                )
             set_menu_permissions(secure_code, user_types)
             created_count += 1
 
@@ -171,11 +174,14 @@ def init_menus(force=False):
             db.session.add(menu)
             code_to_secure_code[menu_def['code']] = secure_code
 
-            # 設定選單權限
-            user_types = get_allowed_user_types(
-                menu_def['required_level'],
-                menu_def.get('is_shared', False)
-            )
+            # 設定選單權限（_user_types_override 優先）
+            if '_user_types_override' in menu_def:
+                user_types = menu_def['_user_types_override']
+            else:
+                user_types = get_allowed_user_types(
+                    menu_def['required_level'],
+                    menu_def.get('is_shared', False)
+                )
             set_menu_permissions(secure_code, user_types)
             created_count += 1
 
