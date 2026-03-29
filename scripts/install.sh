@@ -310,6 +310,8 @@ if [ "$ACTION" = "update" ]; then
     load_env
     # 確保必要的 PostgreSQL extensions 存在
     sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
+    # 終止其他 DB 連線，避免 ALTER TABLE 被鎖住
+    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
     cd backend
     EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run
 
@@ -637,6 +639,8 @@ PYEOF
 
 # 執行所有 migrations（冪等，db.create_all 已建的表會被 IF NOT EXISTS 跳過）
 # 確保非 ORM 管理的表（如 timeout_trackers、workflow_node_categories）也被建立
+# 先終止其他 DB 連線，避免 ALTER TABLE 被 idle in transaction 的連線鎖住
+sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
 cd "$INSTALL_DIR"
 EXECUTOR_STANDALONE=1 python3 scripts/run_migrations.py --run
 
