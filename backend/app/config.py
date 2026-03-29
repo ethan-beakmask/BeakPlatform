@@ -126,9 +126,13 @@ class TestingConfig(BaseConfig):
     # else: inherit from BaseConfig
 
     # Use cachelib filesystem session for testing (no Redis dependency)
+    # 根據專案路徑衍生目錄名，避免多實例共用同一目錄導致權限衝突
     SESSION_TYPE = 'cachelib'
     from cachelib import FileSystemCache
-    SESSION_CACHELIB = FileSystemCache('/tmp/beakmask_test_sessions')
+    import hashlib
+    _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _session_suffix = hashlib.md5(_project_root.encode()).hexdigest()[:8]
+    SESSION_CACHELIB = FileSystemCache(f'/tmp/beakplatform_test_sessions_{_session_suffix}')
 
     # Disable CSRF for testing
     WTF_CSRF_ENABLED = False
