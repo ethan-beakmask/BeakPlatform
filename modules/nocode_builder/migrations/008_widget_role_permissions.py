@@ -132,9 +132,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='遷移 CRUD 權限從節點層級到 widget 層級'
     )
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('--dry-run', action='store_true', help='預覽變更，不修改 DB')
     group.add_argument('--run', action='store_true', help='執行遷移')
     args = parser.parse_args()
 
+    # 無參數時預設執行（相容 run_migrations.py 無參數呼叫）
     run(dry_run=args.dry_run)
