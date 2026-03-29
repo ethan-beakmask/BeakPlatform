@@ -1,5 +1,5 @@
 /* quick-login.js — 開發環境快速登入頁面 */
-const _SYSTEM_ORG = window.__SYSTEM_ORG_CODE || 'system.local';
+const _SYSTEM_ORG = window.__SYSTEM_ORG_CODE || '';
 
 function quickLoginManager() {
     return {

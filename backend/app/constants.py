@@ -6,5 +6,7 @@ BeakPlatform 系統常數
 import os
 
 # 系統企業識別碼 (secure_code 和 domain_name 皆為此值)
-# 部署時由 .env 的 SYSTEM_ORG_CODE 決定，開發環境預設 'system.local'
-SYSTEM_ORG_CODE = os.environ.get('SYSTEM_ORG_CODE', 'system.local')
+# 必須在 .env 設定 SYSTEM_ORG_CODE，未設定則啟動失敗
+SYSTEM_ORG_CODE = os.environ.get('SYSTEM_ORG_CODE')
+if not SYSTEM_ORG_CODE:
+    raise RuntimeError("環境變數 SYSTEM_ORG_CODE 未設定，請檢查 .env 檔案")
