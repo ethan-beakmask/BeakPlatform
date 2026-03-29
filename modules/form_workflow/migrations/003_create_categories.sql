@@ -36,11 +36,19 @@ CREATE INDEX IF NOT EXISTS idx_fw_categories_name ON fw_categories(name);
 CREATE INDEX IF NOT EXISTS idx_fw_categories_display_order ON fw_categories(display_order);
 
 -- 插入預設分類（系統分類，org_secure_code = NULL）
-INSERT INTO fw_categories (secure_code, org_secure_code, name, description, display_order, is_system, show_in_form_design, show_in_workflow_design, show_in_form_center)
-VALUES
-    ('SYS_CAT_WORKFLOW_REC', NULL, '流程記錄', '流程運行時自動建立的記錄單', 0, TRUE, TRUE, TRUE, TRUE),
-    ('SYS_CAT_OTHER', NULL, '其他', '未分類的表單和流程', 999, TRUE, TRUE, TRUE, TRUE)
-ON CONFLICT (name, org_secure_code) DO NOTHING;
+INSERT INTO fw_categories (secure_code, org_secure_code, name, description, display_order, is_system,
+    show_in_form_design, show_in_workflow_design, show_in_form_center,
+    created_at, updated_at, is_deleted)
+SELECT 'SYS_CAT_WORKFLOW_REC', NULL, '流程記錄', '流程運行時自動建立的記錄單', 0, TRUE, TRUE, TRUE, TRUE,
+    NOW(), NOW(), FALSE
+WHERE NOT EXISTS (SELECT 1 FROM fw_categories WHERE secure_code = 'SYS_CAT_WORKFLOW_REC');
+
+INSERT INTO fw_categories (secure_code, org_secure_code, name, description, display_order, is_system,
+    show_in_form_design, show_in_workflow_design, show_in_form_center,
+    created_at, updated_at, is_deleted)
+SELECT 'SYS_CAT_OTHER', NULL, '其他', '未分類的表單和流程', 999, TRUE, TRUE, TRUE, TRUE,
+    NOW(), NOW(), FALSE
+WHERE NOT EXISTS (SELECT 1 FROM fw_categories WHERE secure_code = 'SYS_CAT_OTHER');
 
 -- 更新現有表單和流程的預設分類
 UPDATE fw_form_templates
