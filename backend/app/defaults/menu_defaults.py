@@ -181,7 +181,17 @@ CORE_MENUS = [
         'required_level': 30,
         'is_shared': False,
     },
-    # order 15: ROLES_CONTROL (用戶自建，不在預設定義中)
+    {
+        'code': 'ROLES_CONTROL',
+        'title': '角色管控',
+        'icon': None,
+        'link_type': 'header',
+        'link_target': None,
+        'display_order': 15,
+        'depth': 0,
+        'required_level': 30,
+        'is_shared': False,
+    },
     {
         'code': 'org_security',
         'title': '系統安全',
