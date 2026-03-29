@@ -191,6 +191,21 @@ def execute_py_file(filepath):
         raise RuntimeError(f"Migration failed with exit code {result.returncode}")
 
 
+def terminate_other_connections(conn):
+    """終止同 DB 的其他連線，避免 idle in transaction 鎖住後續 DDL"""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = current_database()
+                  AND pid <> pg_backend_pid()
+                  AND state = 'idle in transaction'
+            """)
+    except Exception:
+        pass  # 非關鍵操作，失敗不中斷
+
+
 def record_applied(conn, tracking_key):
     """記錄 migration 為已執行"""
     with conn.cursor() as cur:
@@ -298,6 +313,9 @@ def cmd_run(conn):
             elif filepath.endswith('.py'):
                 print()  # .py 會有子輸出，換行
                 execute_py_file(filepath)
+                # .py migration 可能透過 create_app() 產生背景 DB 連線
+                # 終止這些 idle in transaction 連線，避免鎖住後續 DDL
+                terminate_other_connections(conn)
             record_applied(conn, key)
             if filepath.endswith('.sql'):
                 print("OK")
