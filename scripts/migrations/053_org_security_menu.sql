@@ -4,6 +4,7 @@
 --   1. 新增「系統安全」根選單 (ORG_ADMIN level)
 --   2. 將「登入錯誤監看」從「系統管理」移至「系統安全」
 --   3. 新增「速率限制」子選單
+-- 注意: 全新安裝時由 init_menus.py 建立，此 migration 僅供升級使用
 
 -- 1. 新增「系統安全」根選單
 INSERT INTO menu_items (
@@ -11,19 +12,22 @@ INSERT INTO menu_items (
     display_order, depth, required_level, icon, org_secure_code,
     is_shared, is_active, is_deleted, open_in_new_tab, is_expanded, is_user_created,
     created_at, updated_at
-) VALUES (
+)
+SELECT
     'sec_org_security_root', 'org_security', '系統安全', 'header', '',
     12, 0, 30, 'bi-shield-lock',
     (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
     false, true, false, false, false, false,
     NOW(), NOW()
-) ON CONFLICT (secure_code) DO NOTHING;
+WHERE NOT EXISTS (SELECT 1 FROM menu_items WHERE code = 'org_security')
+  AND EXISTS (SELECT 1 FROM organizations WHERE code = 'SYSTEM');
 
--- 2. 移動「登入錯誤監看」到「系統安全」下
+-- 2. 移動「登入錯誤監看」到「系統安全」下 (僅升級時 sec_loginfail_org_001 存在)
 UPDATE menu_items
-SET parent_secure_code = 'sec_org_security_root',
+SET parent_secure_code = (SELECT secure_code FROM menu_items WHERE code = 'org_security' AND is_deleted = false LIMIT 1),
     updated_at = NOW()
-WHERE secure_code = 'sec_loginfail_org_001';
+WHERE secure_code = 'sec_loginfail_org_001'
+  AND EXISTS (SELECT 1 FROM menu_items WHERE code = 'org_security' AND is_deleted = false);
 
 -- 3. 新增「速率限制」子選單
 INSERT INTO menu_items (
@@ -32,12 +36,14 @@ INSERT INTO menu_items (
     parent_secure_code,
     is_shared, is_active, is_deleted, open_in_new_tab, is_expanded, is_user_created,
     created_at, updated_at
-) VALUES (
+)
+SELECT
     'sec_ratelimit_org_001', 'org_rate_limits', '速率限制', 'url',
     '/security/rate-limits/',
     60, 1, 30, 'bi-speedometer2',
     (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
-    'sec_org_security_root',
+    (SELECT secure_code FROM menu_items WHERE code = 'org_security' AND is_deleted = false LIMIT 1),
     false, true, false, false, false, false,
     NOW(), NOW()
-) ON CONFLICT (secure_code) DO NOTHING;
+WHERE NOT EXISTS (SELECT 1 FROM menu_items WHERE code = 'org_rate_limits')
+  AND EXISTS (SELECT 1 FROM menu_items WHERE code = 'org_security' AND is_deleted = false);
