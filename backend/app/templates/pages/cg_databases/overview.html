@@ -1,0 +1,280 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}集團資料庫總覽 - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+.cgdb-page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.cgdb-header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; }
+.cgdb-header h2 { margin: 0; font-size: 18px; }
+.cgdb-summary { font-size: 13px; color: #888; }
+.cgdb-loading { text-align: center; padding: 60px 20px; color: #999; }
+.cgdb-empty { text-align: center; padding: 60px 20px; color: #999; font-size: 14px; }
+
+/* 卡片 */
+.cgdb-card { background: white; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+.cgdb-card.orphan { border-color: #e8a838; }
+.cgdb-card.ghost { border-color: #dc3545; }
+
+.cgdb-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; cursor: pointer; transition: background 0.1s; user-select: none;
+}
+.cgdb-card-header:hover { background: #f8f8f8; }
+
+.cgdb-card-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.cgdb-card-dbname { font-weight: 600; font-size: 14px; font-family: monospace; white-space: nowrap; }
+.cgdb-card-cgname { color: #555; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cgdb-card-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #666; flex-shrink: 0; }
+
+.cgdb-badge {
+    display: inline-block; padding: 1px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.cgdb-badge-ok { background: #d4edda; color: #155724; }
+.cgdb-badge-orphan { background: #fff3cd; color: #856404; }
+.cgdb-badge-ghost { background: #f8d7da; color: #721c24; }
+.cgdb-badge-inactive { background: #e2e3e5; color: #383d41; }
+.cgdb-badge-not-ready { background: #fff3cd; color: #856404; }
+
+.cgdb-arrow { transition: transform 0.2s; font-size: 12px; color: #999; }
+.cgdb-arrow.open { transform: rotate(90deg); }
+
+/* 展開內容 */
+.cgdb-card-body { padding: 0 16px 16px; border-top: 1px solid #eee; }
+.cgdb-section { margin-top: 12px; }
+.cgdb-section-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+
+/* 資訊格 */
+.cgdb-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 24px; font-size: 13px; }
+.cgdb-info-item label { color: #888; margin-right: 6px; }
+.cgdb-info-item span { color: #333; }
+
+/* 成員表格 */
+.cgdb-members-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cgdb-members-table th { text-align: left; padding: 4px 8px; border-bottom: 1px solid #ddd; color: #666; font-weight: 600; }
+.cgdb-members-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+
+/* 異動歷程 */
+.cgdb-log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cgdb-log-table th { text-align: left; padding: 4px 8px; border-bottom: 1px solid #ddd; color: #666; font-weight: 600; }
+.cgdb-log-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+.cgdb-log-join { color: #155724; font-weight: 600; }
+.cgdb-log-leave { color: #721c24; font-weight: 600; }
+
+.cgdb-log-loading { font-size: 13px; color: #999; padding: 8px 0; }
+.cgdb-log-empty { font-size: 13px; color: #999; padding: 8px 0; }
+
+/* 統計 loading */
+.cgdb-stats-loading { font-size: 12px; color: #999; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cgdb-page" x-data="cgdbOverview()">
+    <div class="cgdb-header">
+        <h2>集團資料庫總覽</h2>
+        <span class="cgdb-summary" x-show="!loading" x-text="summaryText"></span>
+    </div>
+
+    {# 載入中 #}
+    <template x-if="loading">
+        <div class="cgdb-loading">載入中...</div>
+    </template>
+
+    {# 載入失敗 #}
+    <template x-if="error">
+        <div class="cgdb-empty" x-text="'載入失敗: ' + error"></div>
+    </template>
+
+    {# 空狀態 #}
+    <template x-if="!loading && !error && databases.length === 0">
+        <div class="cgdb-empty">尚無任何集團資料庫</div>
+    </template>
+
+    {# 資料庫卡片列表 #}
+    <template x-for="db in databases" :key="db.db_name">
+        <div class="cgdb-card"
+             :class="{'orphan': db.is_orphan, 'ghost': db.is_ghost_record}">
+            {# 卡片標題列 #}
+            <div class="cgdb-card-header" @click="toggle(db)">
+                <div class="cgdb-card-left">
+                    <span class="cgdb-arrow" :class="{'open': db._expanded}">&#9654;</span>
+                    <span class="cgdb-card-dbname" x-text="db.db_name"></span>
+                    <template x-if="db.conglomerate_name">
+                        <span class="cgdb-card-cgname" x-text="db.conglomerate_name"></span>
+                    </template>
+                </div>
+                <div class="cgdb-card-right">
+                    {# 狀態標籤 #}
+                    <template x-if="db.is_orphan">
+                        <span class="cgdb-badge cgdb-badge-orphan">孤兒資料庫</span>
+                    </template>
+                    <template x-if="db.is_ghost_record">
+                        <span class="cgdb-badge cgdb-badge-ghost">資料庫不存在</span>
+                    </template>
+                    <template x-if="db.has_record && db.exists_in_pg && !db.is_ready">
+                        <span class="cgdb-badge cgdb-badge-not-ready">未就緒</span>
+                    </template>
+                    <template x-if="db.has_record && db.exists_in_pg && db.is_ready">
+                        <span class="cgdb-badge cgdb-badge-ok">正常</span>
+                    </template>
+                    <template x-if="db.has_record && db.conglomerate_active === false">
+                        <span class="cgdb-badge cgdb-badge-inactive">集團停用</span>
+                    </template>
+
+                    {# 成員數量 #}
+                    <template x-if="db.has_record">
+                        <span x-text="db.member_count + ' 家企業'"></span>
+                    </template>
+
+                    {# 容量 #}
+                    <template x-if="db.exists_in_pg">
+                        <span x-text="db.db_size_display"></span>
+                    </template>
+                </div>
+            </div>
+
+            {# 展開內容 #}
+            <template x-if="db._expanded">
+                <div class="cgdb-card-body">
+                    {# 孤兒警告 #}
+                    <template x-if="db.is_orphan">
+                        <div class="cgdb-section">
+                            <p style="color:#856404;font-size:13px;margin:0;">
+                                此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。
+                                可能是舊資料殘留或手動建立的資料庫。
+                            </p>
+                        </div>
+                    </template>
+                    <template x-if="db.is_ghost_record">
+                        <div class="cgdb-section">
+                            <p style="color:#721c24;font-size:13px;margin:0;">
+                                fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。
+                                可能已被手動刪除。
+                            </p>
+                        </div>
+                    </template>
+
+                    {# 基本資訊 #}
+                    <template x-if="db.has_record">
+                        <div class="cgdb-section">
+                            <div class="cgdb-section-title">基本資訊</div>
+                            <div class="cgdb-info-grid">
+                                <div class="cgdb-info-item">
+                                    <label>集團代碼:</label>
+                                    <span x-text="db.conglomerate_code"></span>
+                                </div>
+                                <div class="cgdb-info-item">
+                                    <label>集團 ID:</label>
+                                    <span x-text="db.conglomerate_id"></span>
+                                </div>
+                                <div class="cgdb-info-item">
+                                    <label>主機:</label>
+                                    <span x-text="db.db_host + ':' + db.db_port"></span>
+                                </div>
+                                <div class="cgdb-info-item">
+                                    <label>Admin 帳號:</label>
+                                    <span x-text="db.admin_user" style="font-family:monospace"></span>
+                                </div>
+                                <div class="cgdb-info-item">
+                                    <label>Member 帳號:</label>
+                                    <span x-text="db.member_user" style="font-family:monospace"></span>
+                                </div>
+                                <div class="cgdb-info-item">
+                                    <label>建立時間:</label>
+                                    <span x-text="db.created_at ? BkTime.format(db.created_at, 'short') : '-'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    {# DB 容量 #}
+                    <template x-if="db.exists_in_pg">
+                        <div class="cgdb-section">
+                            <div class="cgdb-section-title">資料庫統計</div>
+                            <div class="cgdb-info-grid">
+                                <div class="cgdb-info-item">
+                                    <label>容量:</label>
+                                    <span x-text="db.db_size_display"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    {# 成員企業 #}
+                    <template x-if="db.has_record && db.members.length > 0">
+                        <div class="cgdb-section">
+                            <div class="cgdb-section-title">目前成員企業</div>
+                            <table class="cgdb-members-table">
+                                <thead>
+                                    <tr><th>企業名稱</th><th>代碼</th><th>狀態</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="m in db.members" :key="m.secure_code">
+                                        <tr>
+                                            <td x-text="m.name"></td>
+                                            <td style="font-family:monospace" x-text="m.code"></td>
+                                            <td>
+                                                <template x-if="m.is_active">
+                                                    <span class="cgdb-badge cgdb-badge-ok">啟用</span>
+                                                </template>
+                                                <template x-if="!m.is_active">
+                                                    <span class="cgdb-badge cgdb-badge-inactive">停用</span>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template x-if="db.has_record && db.members.length === 0">
+                        <div class="cgdb-section">
+                            <div class="cgdb-section-title">目前成員企業</div>
+                            <div class="cgdb-log-empty">無成員企業</div>
+                        </div>
+                    </template>
+
+                    {# 異動歷程 #}
+                    <template x-if="db.has_record && db.conglomerate_secure_code">
+                        <div class="cgdb-section">
+                            <div class="cgdb-section-title">異動歷程</div>
+                            <template x-if="db._logsLoading">
+                                <div class="cgdb-log-loading">載入中...</div>
+                            </template>
+                            <template x-if="db._logs && db._logs.length > 0">
+                                <table class="cgdb-log-table">
+                                    <thead>
+                                        <tr><th>時間</th><th>動作</th><th>企業</th><th>操作者</th><th>說明</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(log, idx) in db._logs" :key="idx">
+                                            <tr>
+                                                <td style="white-space:nowrap" x-text="log.created_at ? BkTime.format(log.created_at, 'short') : '-'"></td>
+                                                <td>
+                                                    <span :class="log.action === 'JOIN' ? 'cgdb-log-join' : 'cgdb-log-leave'"
+                                                          x-text="log.action === 'JOIN' ? '加入' : '退出'"></span>
+                                                </td>
+                                                <td x-text="log.org_name"></td>
+                                                <td x-text="log.operator_email"></td>
+                                                <td x-text="log.description"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </template>
+                            <template x-if="db._logs && db._logs.length === 0">
+                                <div class="cgdb-log-empty">無異動記錄</div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+</div>
+
+<script src="/static/js/cg-databases.js"></script>
+{% endblock %}

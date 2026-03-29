@@ -264,6 +264,17 @@ CORE_MENUS = [
         'required_level': 0,
         'is_shared': False,
     },
+    {
+        'code': 'cg_databases_overview',
+        'title': '集團資料庫總覽',
+        'parent_code': 'org_management',
+        'link_type': 'route',
+        'link_target': 'cg_databases.overview',
+        'display_order': 3,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
 
     # -- 權限管理 (perm_mgmt) --
     {

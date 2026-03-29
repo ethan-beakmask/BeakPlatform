@@ -137,6 +137,10 @@ def register_web_blueprints(app: Flask) -> None:
     from .org_databases import org_databases_bp
     app.register_blueprint(org_databases_bp)
 
+    # Conglomerate Database Overview (集團資料庫總覽)
+    from .cg_databases import cg_databases_bp
+    app.register_blueprint(cg_databases_bp)
+
     # Permission Central Management (權限中央管理)
     from .permission_central import permission_central_bp
     app.register_blueprint(permission_central_bp, url_prefix='/permissions')

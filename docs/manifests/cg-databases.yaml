@@ -1,0 +1,20 @@
+# 集團資料庫總覽
+# 系統管理員檢視所有 cg_* 資料庫狀態
+page: /admin/cg-databases
+description: 集團資料庫總覽（檢視集團 DB、孤兒偵測、成員企業、異動歷程）
+
+files:
+  route:    backend/app/web/cg_databases.py
+  template: backend/app/templates/pages/cg_databases/overview.html
+  js:       backend/app/static/js/cg-databases.js
+
+tables:
+  primary: fw_conglomerate_databases
+  related:
+    - conglomerates
+    - organizations
+    - conglomerate_logs
+
+security:
+  decorator: "@system_admin_required"
+  note: 純檢視，無修改操作
