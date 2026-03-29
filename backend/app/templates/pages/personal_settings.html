@@ -78,6 +78,9 @@
                     <label class="form-label" for="nickname">{{ _('暱稱') }}</label>
                     <input type="text" id="nickname" name="nickname" class="form-control"
                            value="{{ current_user.nickname or '' }}" placeholder="Nickname">
+                    {% if current_user.is_org_admin %}
+                    <div class="form-hint">{{ _('企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）') }}</div>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     <!-- 空白佔位 -->
