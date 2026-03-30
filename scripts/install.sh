@@ -303,6 +303,9 @@ if [ "$ACTION" = "update" ]; then
     # [1] 拉取最新程式碼
     log_step "1/6" "拉取最新程式碼..."
 
+    # 允許 root 操作非 root 擁有的 repo
+    git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
+
     # 檢查 remote URL 是否帶有 token（能自動認證）
     current_url=$(git remote get-url origin 2>/dev/null)
     if ! echo "$current_url" | grep -q '@github.com'; then
@@ -471,6 +474,9 @@ fi
 
 # 組成帶 token 的 clone URL
 GITHUB_CLONE_URL="https://${GITHUB_TOKEN}@github.com/beakplatform/BeakPlatform.git"
+
+# 允許 root 操作非 root 擁有的 repo（覆蓋安裝時目錄已 chown 給 service user）
+git config --global --add safe.directory "$INSTALL_DIR" 2>/dev/null || true
 
 if [ -d "$INSTALL_DIR/.git" ]; then
     cd "$INSTALL_DIR"
