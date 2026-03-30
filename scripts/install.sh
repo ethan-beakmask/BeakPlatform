@@ -589,7 +589,7 @@ load_env
 # 清除舊 session（Redis + filesystem）
 # 必須清 Redis，否則舊 session 可跨安裝穿越，繼承前一套系統的登入狀態
 redis-cli FLUSHDB > /dev/null 2>&1 || log_warn "Redis FLUSHDB 失敗，請手動清除"
-rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
+rm -rf /tmp/beakplatform_sessions* /tmp/beakplatform_test_sessions* 2>/dev/null || true
 
 # 建立資料表 + 初始資料（以應用帳號執行，避免產生 root 擁有的暫存檔）
 # EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
