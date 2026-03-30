@@ -102,10 +102,10 @@ ensure_service_user() {
 
 fix_ownership() {
     chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
-    # 確保 log 目錄可寫
+    # 確保 log 目錄可寫（1777 sticky bit，允許多帳號寫入但不能互刪）
     mkdir -p /opt/tmp
     chown "$SERVICE_USER:$SERVICE_USER" /opt/tmp
-    chmod 755 /opt/tmp
+    chmod 1777 /opt/tmp
 }
 
 # 以應用帳號身分執行指令（載入 venv + .env）

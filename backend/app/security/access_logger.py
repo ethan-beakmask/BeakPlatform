@@ -13,8 +13,9 @@ from datetime import datetime
 from flask import Flask, request
 
 
-# 根據專案路徑產生唯一後綴，與 session 目錄同一策略
-_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 根據專案路徑產生唯一後綴，與 config.py session 目錄同一策略
+# __file__ 在 backend/app/security/，往上 3 層到 backend/
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _log_suffix = hashlib.md5(_project_root.encode()).hexdigest()[:8]
 LOG_PATH = f'/opt/tmp/BeakPlatform-access-{_log_suffix}.log'
 
