@@ -152,3 +152,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Platform Help (平台說明)
     from .platform_help import platform_help_bp
     app.register_blueprint(platform_help_bp, url_prefix='/help')
+
+    # Server Manage - 主機管理 (系統管理員)
+    from .server_manage import server_manage_bp
+    app.register_blueprint(server_manage_bp, url_prefix='/server-manage')

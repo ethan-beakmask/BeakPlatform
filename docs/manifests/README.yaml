@@ -60,6 +60,9 @@ url_index:
   /admin/settings:               settings.yaml
   /hostconfig/:                  hostconfig.yaml
 
+  # === 主機管理 ===
+  /server-manage/redis-monitor:  server-manage.yaml
+
   # === 安全 ===
   /security/:                    security-center.yaml
 
@@ -112,6 +115,7 @@ manifest_files:
   - modules-mgmt.yaml            # 模組管理
   - settings.yaml                # 企業設定+系統設定
   - hostconfig.yaml              # 系統主機設定
+  - server-manage.yaml           # 主機管理（Redis 監看）
   - security-center.yaml         # 安全中心
   - work-schedules.yaml          # 班表設定
   - numbering.yaml               # 帳號編號規則
