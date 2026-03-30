@@ -547,10 +547,10 @@ def seed_default_roles(org):
     - SYSTEM: 系統級 (系統管理員)
     - ORG: 企業級 (企業管理員、表單流程管理者)
     - MODULE: 模組級 (模組管理員、模組作者、模組讀者)
-    - MEMBER: 成員級 (部門成員、群組成員、員工...)
+    - MEMBER: 成員級 (部門成員、群組成員、企業成員...)
 
     互斥群組說明：
-    - EMPLOYEE: 員工類角色，不能同時是 EXTERNAL
+    - EMPLOYEE: 企業成員類角色，不能同時是 EXTERNAL
     - EXTERNAL: 外部廠商類，不能同時是 EMPLOYEE
     """
     print("建立預設角色...")
@@ -673,8 +673,8 @@ def seed_default_roles(org):
         },
         {
             'code': 'EMPLOYEE',
-            'name': '一般員工',
-            'description': '基本員工角色',
+            'name': '企業成員',
+            'description': '基本企業成員角色',
             'role_type': RoleType.ROLE,
             'scope_type': ScopeType.GLOBAL,
             'role_level': RoleLevel.MEMBER,
@@ -684,7 +684,7 @@ def seed_default_roles(org):
         },
         {
             'code': 'RESTRICTED_EMPLOYEE',
-            'name': '受限制員工',
+            'name': '受限制企業成員',
             'description': '臨時雇員，權限受限',
             'role_type': RoleType.ROLE,
             'scope_type': ScopeType.GLOBAL,
@@ -896,7 +896,7 @@ def seed_role_permissions(roles, permissions):
         ],
 
         'EMPLOYEE': [
-            # 基本員工權限
+            # 基本企業成員權限
             'form_instance:create',
             'form_instance:read',
             {
@@ -912,7 +912,7 @@ def seed_role_permissions(roles, permissions):
         ],
 
         'RESTRICTED_EMPLOYEE': [
-            # 受限員工 - 只有最基本權限
+            # 受限企業成員 - 只有最基本權限
             'form_instance:read',
             'flow_instance:read',
         ],

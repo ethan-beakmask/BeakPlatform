@@ -67,7 +67,7 @@ COMMENT ON TABLE menu_permissions IS '選單權限交叉表 - 定義用戶類型
 COMMENT ON COLUMN menu_permissions.id IS '內部自增主鍵，僅供資料庫內部使用';
 COMMENT ON COLUMN menu_permissions.secure_code IS '外部識別碼 (32 字元)，對外暴露使用';
 COMMENT ON COLUMN menu_permissions.menu_secure_code IS '選單項目識別碼，指向 menu_items 表';
-COMMENT ON COLUMN menu_permissions.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=員工, EXTERNAL=外部廠商。平行權限，非繼承';
+COMMENT ON COLUMN menu_permissions.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=企業成員, EXTERNAL=外部廠商。平行權限，非繼承';
 COMMENT ON COLUMN menu_permissions.conditions IS '額外條件 (JSON 格式)，預留擴充，如特定角色、特定部門等細粒度控制';
 COMMENT ON COLUMN menu_permissions.is_deleted IS '軟刪除標記';
 COMMENT ON COLUMN menu_permissions.deleted_at IS '軟刪除時間戳';

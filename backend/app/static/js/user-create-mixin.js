@@ -1,5 +1,5 @@
 /**
- * user-create-mixin.js -- 新增員工表單共用邏輯
+ * user-create-mixin.js -- 新增企業成員表單共用邏輯
  *
  * 提供 userCreateMixin(config) 回傳 Alpine.js mixin 物件。
  * config:

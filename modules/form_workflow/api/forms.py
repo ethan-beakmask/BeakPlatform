@@ -663,7 +663,7 @@ _FORMIO_TEMPLATES = [
     {
         'id': 'leave_request',
         'name': '請假單',
-        'description': '員工請假申請表單',
+        'description': '企業成員請假申請表單',
         'category': 'hr',
         'version': '1.0',
         'schema': {

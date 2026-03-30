@@ -160,7 +160,7 @@ DEFAULT_APPROVAL_CATEGORIES = [
         'code': 'TRAINING',
         'name': '教育訓練',
         'name_en': 'Training',
-        'description': '員工訓練課程',
+        'description': '企業成員訓練課程',
         'sort_order': 40,
     },
     {

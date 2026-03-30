@@ -18,7 +18,7 @@ class UserType:
     """用戶類型"""
     SYSTEM_ADMIN = 'SYSTEM_ADMIN'  # 系統管理員
     ORG_ADMIN = 'ORG_ADMIN'        # 企業管理員
-    EMPLOYEE = 'EMPLOYEE'          # 員工
+    EMPLOYEE = 'EMPLOYEE'          # 企業成員
     EXTERNAL = 'EXTERNAL'          # 外部廠商
 
 
@@ -87,8 +87,8 @@ class User(TenantBaseModel, UserMixin):
     timezone = Column(String(50), nullable=True, comment='個人時區 IANA (覆蓋企業設定)')
     navbar_display = Column(String(20), nullable=True, comment='Navbar 顯示偏好 (空=跟隨企業, nickname, employee_id, employee_id_dept)')
 
-    # 員工編號 (組織內唯一)
-    employee_id = Column(String(50), nullable=True, comment='員工編號 (組織內唯一)')
+    # 企業成員編號 (組織內唯一)
+    employee_id = Column(String(50), nullable=True, comment='企業成員編號 (組織內唯一)')
 
     # 密碼變更相關
     must_change_password = Column(Boolean, default=False, nullable=False, comment='是否強制變更密碼')
@@ -105,23 +105,23 @@ class User(TenantBaseModel, UserMixin):
     # 備註（管理員可見）
     notes = Column(Text, nullable=True, comment='用戶備註（管理員可見）')
 
-    # 企業管理員綁定的員工帳號 (一對一)
-    # 非 admin@ 的企業管理員必須綁定一個有員工編號的員工帳號
-    # 當被綁定的員工帳號停用/刪除時，此管理員帳號也無法登入
+    # 企業管理員綁定的企業成員帳號 (一對一)
+    # 非 admin@ 的企業管理員必須綁定一個有企業成員編號的企業成員帳號
+    # 當被綁定的企業成員帳號停用/刪除時，此管理員帳號也無法登入
     # 使用 use_alter=True 讓 SQLAlchemy 先建立表格再添加外鍵（避免自引用問題）
     bound_employee_secure_code = Column(
         String(32),
         db.ForeignKey('users.secure_code', use_alter=True, name='fk_user_bound_employee'),
         nullable=True,
-        unique=True,  # 一對一：每個員工只能被一個管理員綁定
-        comment='企業管理員綁定的員工帳號'
+        unique=True,  # 一對一：每個企業成員只能被一個管理員綁定
+        comment='企業管理員綁定的企業成員帳號'
     )
 
     # 關聯
     organization = relationship('Organization', back_populates='users')
     primary_unit = relationship('OrganizationalUnit', foreign_keys=[primary_unit_secure_code])
 
-    # 綁定的員工帳號關聯 (自引用)
+    # 綁定的企業成員帳號關聯 (自引用)
     bound_employee = relationship(
         'User',
         foreign_keys=[bound_employee_secure_code],
@@ -163,7 +163,7 @@ class User(TenantBaseModel, UserMixin):
 
     @property
     def is_employee(self) -> bool:
-        """是否為員工"""
+        """是否為企業成員"""
         return self.user_type == UserType.EMPLOYEE
 
     @property
@@ -229,21 +229,21 @@ class User(TenantBaseModel, UserMixin):
         if self.is_original_admin:
             return True, None
 
-        # 企業管理員檢查綁定的員工帳號
+        # 企業管理員檢查綁定的企業成員帳號
         if self.user_type == UserType.ORG_ADMIN:
             if self.bound_employee_secure_code:
-                # 有綁定員工，檢查員工帳號狀態
+                # 有綁定企業成員，檢查企業成員帳號狀態
                 bound = self.bound_employee
                 if bound is None or bound.is_deleted:
                     logger.warning(
-                        f"企業管理員 {self.username}@{self.org_secure_code} 綁定的員工帳號已刪除"
+                        f"企業管理員 {self.username}@{self.org_secure_code} 綁定的企業成員帳號已刪除"
                     )
-                    return False, "綁定的員工帳號已刪除"
+                    return False, "綁定的企業成員帳號已刪除"
                 if not bound.is_active:
                     logger.warning(
-                        f"企業管理員 {self.username}@{self.org_secure_code} 綁定的員工帳號已停用"
+                        f"企業管理員 {self.username}@{self.org_secure_code} 綁定的企業成員帳號已停用"
                     )
-                    return False, "綁定的員工帳號已停用"
+                    return False, "綁定的企業成員帳號已停用"
 
         # 其他帳號檢查合約有效期
         if not self.organization.is_contract_valid():

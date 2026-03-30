@@ -26,7 +26,7 @@
 | ORG_ADMIN | 企業管理員 | GLOBAL | Yes |
 | DEPT_MANAGER | 部門主管 | DEPARTMENT | Yes |
 | GROUP_CONVENER | 群組召集人 | GROUP | Yes |
-| EMPLOYEE | 一般員工 | GLOBAL | No |
+| EMPLOYEE | 企業成員 | GLOBAL | No |
 
 ### 3. 管理員專用單位
 

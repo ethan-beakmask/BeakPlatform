@@ -193,7 +193,7 @@ def delete_rule(secure_code):
 
     if rule.default_for:
         default_labels = {
-            'EMPLOYEE': '員工預設',
+            'EMPLOYEE': '企業成員預設',
             'EXTERNAL': '外部預設',
             'FORM': '表單預設',
         }

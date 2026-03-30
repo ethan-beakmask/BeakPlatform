@@ -12,7 +12,7 @@
 
 <table class="info-table">
     <tr>
-        <th style="width: 150px;">員工</th>
+        <th style="width: 150px;">企業成員</th>
         <td>
             {% if position.user %}
             <a href="{{ url_for('users.view_user', secure_code=position.user.secure_code) }}">
@@ -65,7 +65,7 @@
     </tr>
     <tr>
         <th>部門主管</th>
-        <td>{% if position.is_unit_head %}是 (此員工為該部門主管){% else %}否{% endif %}</td>
+        <td>{% if position.is_unit_head %}是 (此企業成員為該部門主管){% else %}否{% endif %}</td>
     </tr>
     <tr>
         <th>直屬主管</th>

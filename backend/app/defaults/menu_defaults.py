@@ -407,7 +407,7 @@ CORE_MENUS = [
     },
     {
         'code': 'users',
-        'title': '員工帳號',
+        'title': '企業成員帳號',
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'users.list_users',
@@ -605,7 +605,7 @@ CORE_MENUS = [
     },
     {
         'code': 'platform_help.employee',
-        'title': '員工說明',
+        'title': '企業成員說明',
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',

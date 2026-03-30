@@ -118,7 +118,7 @@
    ----------------------------------------
    系統管理員: 紅底白字 / 紅底黃字(cross)
    企業管理員: 藍底白字 / 藍底黃字(cross)
-   企業員工:   黑底白字 / 黑底黃字(cross)
+   企業成員:   黑底白字 / 黑底黃字(cross)
    外部廠商:   黃底黑字
    固定項目:   黑底白字
    ======================================== */
@@ -135,7 +135,7 @@
 .menu-org-cross { background-color: #1d4ed8 !important; }
 .menu-org-cross .menu-link, .menu-org-cross.sidebar-link, .menu-org-cross .sidebar-link { color: #fde047 !important; }
 
-/* --- 企業員工: 黑底 --- */
+/* --- 企業成員: 黑底 --- */
 .menu-user-only { background-color: #111827 !important; }
 .menu-user-only .menu-link, .menu-user-only.sidebar-link, .menu-user-only .sidebar-link { color: white !important; }
 .menu-user-cross { background-color: #111827 !important; }

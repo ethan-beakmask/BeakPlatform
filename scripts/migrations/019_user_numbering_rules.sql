@@ -55,10 +55,10 @@ CREATE INDEX IF NOT EXISTS idx_numbering_rules_secure_code
 COMMENT ON TABLE user_numbering_rules IS '用戶編號規則';
 COMMENT ON COLUMN user_numbering_rules.secure_code IS '安全識別碼';
 COMMENT ON COLUMN user_numbering_rules.org_secure_code IS '企業識別碼';
-COMMENT ON COLUMN user_numbering_rules.name IS '規則名稱（如：員工編號、來賓編號）';
+COMMENT ON COLUMN user_numbering_rules.name IS '規則名稱（如：企業成員編號、來賓編號）';
 COMMENT ON COLUMN user_numbering_rules.description IS '規則描述';
 COMMENT ON COLUMN user_numbering_rules.elements IS '編號元素配置 (JSONB)';
-COMMENT ON COLUMN user_numbering_rules.default_for IS '預設用途: EMPLOYEE=員工預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設';
+COMMENT ON COLUMN user_numbering_rules.default_for IS '預設用途: EMPLOYEE=企業成員預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設';
 COMMENT ON COLUMN user_numbering_rules.is_active IS '是否啟用';
 
 -- ============================================================

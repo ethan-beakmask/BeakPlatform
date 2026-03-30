@@ -74,10 +74,10 @@ COMPANIES = [
         'contact_phone': '02-2700-0001',
         'description': '傳統製造業 -- 文化商品製造、品牌經營、通路管理',
         'user_limit': 50,
-        # 員工編號格式: GH + 4位序號
+        # 企業成員編號格式: GH + 4位序號
         'numbering': {
             'employee': {
-                'name': '員工編號',
+                'name': '企業成員編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['GH']},
@@ -175,7 +175,7 @@ COMPANIES = [
         'user_limit': 50,
         'numbering': {
             'employee': {
-                'name': '員工編號',
+                'name': '企業成員編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['BC']},
@@ -269,7 +269,7 @@ COMPANIES = [
         'user_limit': 50,
         'numbering': {
             'employee': {
-                'name': '員工編號',
+                'name': '企業成員編號',
                 'elements': {
                     'components': [
                         {'type': 'prefix', 'order': 1, 'values': ['SE']},
@@ -512,14 +512,14 @@ def create_numbering_rules(org_sc, numbering_config):
 
 
 def create_default_numbering_rule(org_sc, org_code=''):
-    """建立預設員工編號規則 + 表單編號規則
+    """建立預設企業成員編號規則 + 表單編號規則
 
     此規則模擬新企業建立時自動產生的預設編號規則。
     """
-    # 員工編號：4 位數序號 (0001, 0002, ...)
+    # 企業成員編號：4 位數序號 (0001, 0002, ...)
     rule = UserNumberingRule(
         org_secure_code=org_sc,
-        name='預設員工編號',
+        name='預設企業成員編號',
         description='4 位數序號 (新企業預設)',
         elements={
             'components': [
@@ -579,7 +579,7 @@ def create_departments(org_sc, dept_list):
 
 
 def generate_employee_id(rule, seq_num):
-    """根據編號規則產生員工編號"""
+    """根據編號規則產生企業成員編號"""
     parts = []
     for comp in sorted(rule.elements.get('components', []), key=lambda x: x.get('order', 0)):
         ctype = comp.get('type')
@@ -592,7 +592,7 @@ def generate_employee_id(rule, seq_num):
 
 
 def create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules):
-    """建立員工帳號 + 職位指派 + 員工編號 + EMPLOYEE 角色指派"""
+    """建立企業成員帳號 + 職位指派 + 企業成員編號 + EMPLOYEE 角色指派"""
     employee_rule = numbering_rules.get('employee')
     users = {}
 
@@ -844,9 +844,9 @@ def seed_one_company(company_def):
     print(f"  [7/{total_steps}] 部門 ({len(dept_list)} 個)...")
     depts = create_departments(org_sc, dept_list)
 
-    # 8. 員工帳號 + 職位 + EMPLOYEE 角色
+    # 8. 企業成員帳號 + 職位 + EMPLOYEE 角色
     emp_list = company_def['employees']
-    print(f"  [8/{total_steps}] 員工帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
+    print(f"  [8/{total_steps}] 企業成員帳號 ({len(emp_list)} 人) + 職位指派 + 角色...")
     users = create_employees(org, org_sc, domain, emp_list, depts, titles, numbering_rules)
 
     # 9. 群組
@@ -863,7 +863,7 @@ def seed_one_company(company_def):
 
     print(f"\n  完成! 企業 {name}:")
     print(f"    管理員: admin@{domain}")
-    print(f"    員工: {len(users)} 人")
+    print(f"    企業成員: {len(users)} 人")
     print(f"    外部廠商: {len(ext_users)} 人")
     print(f"    密碼: {TEST_PASSWORD}")
 
@@ -1008,14 +1008,14 @@ def dry_run():
         print(f"  職系: {len(STANDARD_JOB_FAMILIES) + len(company.get('extra_families', []))} 個")
         print(f"  職稱: {len(STANDARD_JOB_TITLES) + len(company.get('extra_titles', []))} 個")
         print(f"  部門: {len(company['departments'])} 個")
-        print(f"  員工: {len(company['employees'])} 人")
+        print(f"  企業成員: {len(company['employees'])} 人")
         print(f"  部門結構:")
         for name, code, parent in company['departments']:
             indent = '    '
             if parent:
                 indent = '      '
             print(f"{indent}{name} ({code})")
-        print(f"  員工列表:")
+        print(f"  企業成員列表:")
         for username, native, english, dept, title, head in company['employees']:
             head_mark = ' [主管]' if head else ''
             print(f"    {native} ({english}) - {dept}/{title}{head_mark}")
@@ -1039,7 +1039,7 @@ def main():
 
 前三家企業包含:
   - 1 個管理員 (admin)
-  - 20 個員工帳號 (含職位指派)
+  - 20 個企業成員帳號 (含職位指派)
   - 編號規則、職等、職系、職稱、部門
   - 密碼統一: Test1234!
         """,
@@ -1090,7 +1090,7 @@ def main():
             admin_only_companies = [c for c in COMPANIES if c.get('admin_only')]
             print(f"\n共建立 {len(COMPANIES)} 家企業")
             if full_companies:
-                print(f"  完整企業 {len(full_companies)} 家 (admin + 20 員工)")
+                print(f"  完整企業 {len(full_companies)} 家 (admin + 20 企業成員)")
             if admin_only_companies:
                 print(f"  僅管理員 {len(admin_only_companies)} 家")
             print(f"統一密碼: {TEST_PASSWORD}")

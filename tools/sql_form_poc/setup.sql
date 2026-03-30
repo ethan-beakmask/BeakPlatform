@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS fw_sql_form_layouts (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- 測試用員工資料表
+-- 測試用企業成員資料表
 CREATE TABLE IF NOT EXISTS fw_data_employee (
     id SERIAL PRIMARY KEY,
     emp_name VARCHAR(100) NOT NULL,

@@ -42,7 +42,7 @@ def run():
         children = [
             ('platform_help.system_admin', '系統管理員說明', 'SYSTEM_ADMIN', 1),
             ('platform_help.org_admin', '企業管理員說明', 'ORG_ADMIN', 2),
-            ('platform_help.employee', '員工說明', 'EMPLOYEE', 3),
+            ('platform_help.employee', '企業成員說明', 'EMPLOYEE', 3),
             ('platform_help.external', '外部廠商說明', 'EXTERNAL', 4),
         ]
 

@@ -133,7 +133,7 @@ function groupManager() {
         // ==================== 計算屬性 ====================
 
         get regularMembers() {
-            // 排序: 外人在前，員工在後
+            // 排序: 外人在前，企業成員在後
             var filtered = this.members.filter(function(m) {
                 return !['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(m.role_type);
             });
@@ -369,7 +369,7 @@ function groupManager() {
                         children: [],
                         data: { type: 'group', code: item.code, name: item.name, parent_id: item.parent_id || null, description: item.description || '', is_system_unit: item.is_system_unit || false }
                     };
-                    // 成員模式：加入人員節點 (排序: 團長→副團長→外人→員工)
+                    // 成員模式：加入人員節點 (排序: 團長→副團長→外人→企業成員)
                     if (self.showPeopleInTree && item._members) {
                         var sorted = self._sortMembers(item._members);
                         for (var i = 0; i < sorted.length; i++) {
@@ -442,7 +442,7 @@ function groupManager() {
             };
         },
 
-        // 成員排序: 團長→副團長→代理人→外人→員工
+        // 成員排序: 團長→副團長→代理人→外人→企業成員
         _sortMembers: function(members) {
             var order = { MANAGER: 0, DEPUTY: 1, PROXY1: 2, PROXY2: 3 };
             return members.slice().sort(function(a, b) {

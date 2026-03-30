@@ -450,7 +450,7 @@ def org_public(domain_name: str):
         if os.path.exists(full_path):
             logo_url = f'/static/{logo_path}'
 
-    # 公開區入口：同時傳入員工和外部的品牌設定（頁面有兩個入口連結）
+    # 公開區入口：同時傳入企業成員和外部的品牌設定（頁面有兩個入口連結）
     show_logo = org.get_setting('login_external_show_logo', True)
     show_org_name = org.get_setting('login_external_show_name', True)
 
@@ -475,9 +475,9 @@ def org_public(domain_name: str):
 )
 def org_public_login(domain_name: str):
     """
-    非員工（外部廠商）專屬登入端點。
+    非企業成員（外部廠商）專屬登入端點。
 
-    GET /auth/org/<domain_name>/public/login - 顯示非員工登入頁面
+    GET /auth/org/<domain_name>/public/login - 顯示非企業成員登入頁面
     POST /auth/org/<domain_name>/public/login - 處理登入請求
 
     帳號格式: 完整 Email (如 guest@gmail.com)

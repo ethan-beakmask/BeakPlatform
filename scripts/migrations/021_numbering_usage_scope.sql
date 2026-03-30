@@ -9,7 +9,7 @@ ADD COLUMN IF NOT EXISTS usage_scope VARCHAR(20) DEFAULT 'INTERNAL_ONLY' NOT NUL
 -- 欄位註解
 COMMENT ON COLUMN user_numbering_rules.usage_scope IS '使用範圍: INTERNAL_ONLY=內部專用, EXTERNAL_ONLY=外部專用, INTERNAL_UNIVERSAL=內部通用';
 
--- 更新現有規則為內部專用（員工編號預設值）
+-- 更新現有規則為內部專用（企業成員編號預設值）
 UPDATE user_numbering_rules
 SET usage_scope = 'INTERNAL_ONLY'
 WHERE usage_scope IS NULL;

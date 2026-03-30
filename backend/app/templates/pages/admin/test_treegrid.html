@@ -123,7 +123,7 @@
     .cross-tag { font-size: 10px; color: #7c3aed; font-weight: bold; }
     .cross-unit { color: #9ca3af; font-size: 10px; }
 
-    /* 下半：成員 左(主管+副主管) 右(員工) */
+    /* 下半：成員 左(主管+副主管) 右(企業成員) */
     .staff-layout {
         display: flex;
         gap: 8px;
@@ -326,14 +326,14 @@
                                     </template>
                                 </div>
                             </div>
-                            <!-- 右: 員工 -->
+                            <!-- 右: 企業成員 -->
                             <div class="staff-right">
                                 <div class="staff-column" style="height:100%;"
                                      :class="{'drag-over': dragOverZone==='employee'}"
                                      @dragover.prevent="onZoneDragOver($event,'employee')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToEmployee($event)">
-                                    <div class="column-label">員工</div>
+                                    <div class="column-label">企業成員</div>
                                     <template x-if="regularMembers.length > 0">
                                         <div>
                                             <template x-for="m in regularMembers" :key="m.id">
@@ -346,12 +346,12 @@
                                         </div>
                                     </template>
                                     <template x-if="regularMembers.length===0">
-                                        <div class="staff-empty">拖入成為員工</div>
+                                        <div class="staff-empty">拖入成為企業成員</div>
                                     </template>
                                 </div>
                             </div>
                         </div>
-                        <div class="drag-hint">拖入管理層/員工欄 | 拖到左側樹調職 | 拖到右側移出部門</div>
+                        <div class="drag-hint">拖入管理層/企業成員欄 | 拖到左側樹調職 | 拖到右側移出部門</div>
                     </div>
                 </div>
             </template>
@@ -364,7 +364,7 @@
          @dragleave="dragOverZone=null"
          @drop="dropToUnassigned($event)">
         <div class="panel-header">
-            未分配員工
+            未分配企業成員
             <span style="font-weight:normal;font-size:11px;" x-text="'('+unassignedUsers.length+')'"></span>
         </div>
         <div class="panel-body">
@@ -376,7 +376,7 @@
                 </div>
             </template>
             <template x-if="unassignedUsers.length===0">
-                <div class="staff-empty">所有員工皆已分配</div>
+                <div class="staff-empty">所有企業成員皆已分配</div>
             </template>
         </div>
     </div>

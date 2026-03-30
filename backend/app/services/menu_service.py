@@ -702,7 +702,7 @@ class MenuService:
     _USER_TYPE_LABELS = {
         'SYSTEM_ADMIN': '系統管理員',
         'ORG_ADMIN': '企業管理員',
-        'EMPLOYEE': '員工',
+        'EMPLOYEE': '企業成員',
         'EXTERNAL': '外部廠商',
     }
 

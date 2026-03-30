@@ -34,7 +34,7 @@ class NumberingResetPeriod:
 
 class NumberingUsageScope:
     """編號使用範圍"""
-    INTERNAL_ONLY = 'INTERNAL_ONLY'         # 內部專用（員工、公司資產）
+    INTERNAL_ONLY = 'INTERNAL_ONLY'         # 內部專用（企業成員、公司資產）
     EXTERNAL_ONLY = 'EXTERNAL_ONLY'         # 外部專用（廠商、訪客）
     INTERNAL_UNIVERSAL = 'INTERNAL_UNIVERSAL'  # 內部通用（門禁卡、跨公司資源）
 
@@ -42,7 +42,7 @@ class NumberingUsageScope:
 class NumberingDefaultFor:
     """預設用途"""
     NONE = None              # 非預設
-    EMPLOYEE = 'EMPLOYEE'    # 員工編號預設
+    EMPLOYEE = 'EMPLOYEE'    # 企業成員編號預設
     EXTERNAL = 'EXTERNAL'    # 外部廠商預設
     FORM = 'FORM'            # 表單編號預設
 
@@ -75,7 +75,7 @@ class UserNumberingRule(TenantBaseModel):
     default_for = Column(
         String(20),
         nullable=True,
-        comment='預設用途: EMPLOYEE=員工預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設'
+        comment='預設用途: EMPLOYEE=企業成員預設, EXTERNAL=外部廠商預設, FORM=表單編號預設, NULL=非預設'
     )
     is_active = Column(Boolean, default=True, nullable=False, comment='是否啟用')
 

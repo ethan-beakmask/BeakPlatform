@@ -320,14 +320,14 @@ class OrganizationService:
         db.session.add(form_editor_role)
         roles['form_editor'] = form_editor_role
 
-        # 一般員工角色
+        # 企業成員角色
         employee_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.ROLE,
             scope_type=ScopeType.GLOBAL,
             code='EMPLOYEE',
-            name='一般員工',
-            description='一般員工權限',
+            name='企業成員',
+            description='企業成員權限',
             is_manager=False,
             is_system_role=True,
             is_active=True
@@ -450,10 +450,10 @@ class OrganizationService:
         新企業建立時自動產生。格式刻意不完美，
         半強迫管理員進入 /admin/numbering 認真規劃自家編號系統。
         """
-        # 1. 預設員工編號 — 純 4 位序號
+        # 1. 預設企業成員編號 — 純 4 位序號
         employee_rule = UserNumberingRule(
             org_secure_code=org.secure_code,
-            name='預設員工編號',
+            name='預設企業成員編號',
             description='4 位數序號',
             elements={
                 'components': [
@@ -568,7 +568,7 @@ class OrganizationService:
             org_secure_code=org.secure_code,
             unit_type=UnitType.GROUP,
             code='EXTERNAL_VENDORS',
-            name='外部廠商',
+            name='外部廠商專用群組',
             description='外部廠商帳號預設歸屬群組',
             is_system_unit=True,
             is_active=True,

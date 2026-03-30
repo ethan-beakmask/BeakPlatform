@@ -10,7 +10,7 @@ BeakMask JobTitle Model
 - 業務代表 (Sales Representative) = L1 職員級 + 業務職
 
 職稱決定：
-1. 員工在組織中的正式頭銜
+1. 企業成員在組織中的正式頭銜
 2. 對應的職等（決定簽核權限）
 3. 對應的職系（決定職涯發展路線）
 """
@@ -91,7 +91,7 @@ class JobTitle(TenantBaseModel, I18nMixin):
     job_level = relationship('JobLevel', back_populates='job_titles')
     job_family = relationship('JobFamily', back_populates='job_titles')
 
-    # 擁有此職稱的員工
+    # 擁有此職稱的企業成員
     employees = relationship('EmployeePosition', back_populates='job_title')
 
     @property

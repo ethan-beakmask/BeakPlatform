@@ -22,7 +22,7 @@ RATE_LIMIT_CATEGORIES = {
         'default': '20 per 10 minutes',
     },
     'org_login': {
-        'label': '企業員工登入 (/auth/org/*/login)',
+        'label': '企業成員登入 (/auth/org/*/login)',
         'db_key': 'ratelimit_org_login',
         'env_key': 'RATELIMIT_LOGIN',
         'default': '20 per 10 minutes',

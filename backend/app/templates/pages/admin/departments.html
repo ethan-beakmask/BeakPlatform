@@ -116,7 +116,7 @@
         background: #e3f2fd; border-radius: 4px; margin-bottom: 6px; font-size: 11px;
     }
 
-    /* 下半：成員 - 主管+副主管(左) 員工(右) */
+    /* 下半：成員 - 主管+副主管(左) 企業成員(右) */
     .staff-section-header {
         font-size: 12px; font-weight: bold; color: #374151;
         margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;
@@ -205,7 +205,7 @@
         background: #ffebee !important;
     }
 
-    /* 新增員工表單 */
+    /* 新增企業成員表單 */
     .employee-create-form { padding: 4px 0; }
     .emp-form-info {
         padding: 6px 10px; margin-bottom: 8px; border-radius: 4px;
@@ -254,9 +254,9 @@ window.__DEPT_CONFIG = {
             </div>
             <div class="tree-header-right">
                 <button class="btn" :class="!showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDeptMode()">部門</button>
-                <button class="btn" :class="showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDetailMode()">員工</button>
+                <button class="btn" :class="showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDetailMode()">企業成員</button>
                 <button class="btn btn-success" @click="startCreate()">新增部門</button>
-                <button class="btn btn-primary" @click="startCreateEmployee()">新增員工</button>
+                <button class="btn btn-primary" @click="startCreateEmployee()">新增企業成員</button>
             </div>
         </div>
         <div class="tree-body" id="dept-tree"></div>
@@ -264,13 +264,13 @@ window.__DEPT_CONFIG = {
 
     <!-- 中間：詳情 -->
     <div class="dept-detail-panel">
-        <div class="panel-header-bar" x-text="isCreatingEmployee ? '新增員工' : (isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情'))"></div>
+        <div class="panel-header-bar" x-text="isCreatingEmployee ? '新增企業成員' : (isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情'))"></div>
         <div class="panel-body">
             <template x-if="!selectedDept && !isCreating && !isCreatingEmployee">
                 <div class="empty-message">請從左側選擇部門</div>
             </template>
 
-            <!-- 新增員工表單 -->
+            <!-- 新增企業成員表單 -->
             <template x-if="isCreatingEmployee">
                 <div>
                     {% include "pages/admin/_employee_create_form.html" %}
@@ -338,7 +338,7 @@ window.__DEPT_CONFIG = {
                                     從左側組織樹按住 Ctrl 拖曳人員至下方區域：<br>
                                     拖入主管欄 → 跨部門主管<br>
                                     拖入副主管欄 → 跨部門副主管<br>
-                                    拖入員工欄 → 跨部門成員<br>
+                                    拖入企業成員欄 → 跨部門成員<br>
                                     人員不會離開原部門。
                                 </div>
                             </div>
@@ -427,14 +427,14 @@ window.__DEPT_CONFIG = {
                                     </div>
                                 </div>
                             </div>
-                            <!-- 右: 員工 -->
+                            <!-- 右: 企業成員 -->
                             <div class="staff-right-col">
                                 <div class="staff-column employee-col" style="height:100%;"
                                      :class="{'drag-over': dragOverZone==='employee', 'ctrl-cross-mode': isCtrlCrossMode}"
                                      @dragover.prevent="onZoneDragOver($event,'employee')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToEmployee($event)">
-                                    <div class="column-label">員工</div>
+                                    <div class="column-label">企業成員</div>
                                     <template x-if="regularMembers.length > 0">
                                         <div>
                                             <template x-for="m in regularMembers" :key="m.id">
@@ -448,7 +448,7 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="regularMembers.length===0">
-                                        <div class="staff-empty" x-text="isCtrlCrossMode ? '[跨] 跨部門成員' : '從右側拖入員工'"></div>
+                                        <div class="staff-empty" x-text="isCtrlCrossMode ? '[跨] 跨部門成員' : '從右側拖入企業成員'"></div>
                                     </template>
                                 </div>
                             </div>
@@ -466,7 +466,7 @@ window.__DEPT_CONFIG = {
          @dragleave="dragOverZone=null"
          @drop="dropToUnassigned($event)">
         <div class="unassigned-header">
-            未分配員工
+            未分配企業成員
             <span style="font-weight:normal;font-size:11px;" x-text="'('+unassignedUsers.length+')'"></span>
         </div>
         <div class="unassigned-body">
@@ -481,7 +481,7 @@ window.__DEPT_CONFIG = {
                 </div>
             </template>
             <template x-if="unassignedUsers.length===0 && !draggedMember && !draggedLeader">
-                <div class="empty-message">所有員工皆已分配</div>
+                <div class="empty-message">所有企業成員皆已分配</div>
             </template>
         </div>
     </div>

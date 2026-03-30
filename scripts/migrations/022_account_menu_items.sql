@@ -1,9 +1,9 @@
 -- 022_account_menu_items.sql
 -- 新增帳號管理選單項目
 
--- 1. 將「用戶帳號」改為「員工帳號」
+-- 1. 將「用戶帳號」改為「企業成員帳號」
 UPDATE menu_items
-SET title = '員工帳號'
+SET title = '企業成員帳號'
 WHERE title = '用戶帳號'
   AND org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1);
 
@@ -33,10 +33,10 @@ INSERT INTO menu_items (
     false, false, NOW(), NOW()
 ) ON CONFLICT DO NOTHING;
 
--- 調整原本的「員工帳號」(原用戶帳號) display_order，讓三個帳號管理放一起
+-- 調整原本的「企業成員帳號」(原用戶帳號) display_order，讓三個帳號管理放一起
 UPDATE menu_items
 SET display_order = 58
-WHERE title = '員工帳號'
+WHERE title = '企業成員帳號'
   AND org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1);
 
 -- 完成訊息

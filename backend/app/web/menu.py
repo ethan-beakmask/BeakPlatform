@@ -24,7 +24,7 @@ menu_web_bp = Blueprint('menu', __name__)
 USER_TYPE_LABELS = {
     UserType.SYSTEM_ADMIN: '系統管理員',
     UserType.ORG_ADMIN: '企業管理員',
-    UserType.EMPLOYEE: '員工',
+    UserType.EMPLOYEE: '企業成員',
     UserType.EXTERNAL: '外部廠商',
 }
 

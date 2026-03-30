@@ -104,7 +104,7 @@ function departmentManager() {
         formData: { code: '', name: '', parent_id: '' },
         totalUsers: 0,
 
-        // 員工表單
+        // 企業成員表單
         empTargetDept: null,
         empDomainName: window.__DEPT_CONFIG?.domainName || '',
 
@@ -130,7 +130,7 @@ function departmentManager() {
 
         get regularMembers() {
             var base = this.members.filter(m => !this.leaderIds.includes(m.id));
-            // 跨部門 MEMBER 也顯示在員工欄，帶 _isCross 標記
+            // 跨部門 MEMBER 也顯示在企業成員欄，帶 _isCross 標記
             var crossEmployees = this.crossMembers
                 .filter(cm => cm.role_type === 'MEMBER' && cm.user)
                 .map(cm => ({ ...cm.user, _isCross: true, _crossId: cm.id }));
@@ -199,7 +199,7 @@ function departmentManager() {
             this.buildTree();
         },
 
-        // ==================== 新增員工 ====================
+        // ==================== 新增企業成員 ====================
 
         startCreateEmployee() {
             this.isCreating = false;
@@ -655,7 +655,7 @@ function departmentManager() {
         // ==================== 外部面板 DnD ====================
 
         dragStartMember(e, member) {
-            // 跨部門員工不可拖拉
+            // 跨部門企業成員不可拖拉
             if (member._isCross) {
                 e.preventDefault();
                 return;

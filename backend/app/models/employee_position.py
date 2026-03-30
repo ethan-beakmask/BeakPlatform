@@ -1,8 +1,8 @@
 """
 BeakMask EmployeePosition Model
-員工職位 Model - 紀錄員工的職位指派
+企業成員職位 Model - 紀錄企業成員的職位指派
 
-一個員工可以有多個職位：
+一個企業成員可以有多個職位：
 1. 主要職位 (Primary Position) - 正式職務
 2. 兼任職位 (Concurrent Position) - 在其他部門兼任
 3. 代理職位 (Acting Position) - 暫時代理
@@ -33,16 +33,16 @@ class PositionType:
 
 class EmployeePosition(TenantBaseModel):
     """
-    員工職位 Model
+    企業成員職位 Model
 
-    紀錄員工在組織中擔任的職位，支援：
+    紀錄企業成員在組織中擔任的職位，支援：
     - 一人多職（主要職位 + 兼任）
     - 有效期限（兼任、代理通常有期限）
     - 直屬主管關係
     """
     __tablename__ = 'employee_positions'
 
-    # 員工
+    # 企業成員
     user_secure_code = Column(
         String(32),
         ForeignKey('users.secure_code'),
@@ -77,7 +77,7 @@ class EmployeePosition(TenantBaseModel):
     # 是否為該部門主管
     is_unit_head = Column(Boolean, default=False, nullable=False)
 
-    # 直屬主管 (員工 secure_code)
+    # 直屬主管 (企業成員 secure_code)
     # 這是最重要的欄位！表單簽核會用到
     direct_manager_secure_code = Column(
         String(32),

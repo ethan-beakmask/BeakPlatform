@@ -15,10 +15,10 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="width: 150px;">員工 *</th>
+            <th style="width: 150px;">企業成員 *</th>
             <td>
                 <select name="user_secure_code" required style="width: 100%;">
-                    <option value="">-- 請選擇員工 --</option>
+                    <option value="">-- 請選擇企業成員 --</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
                             {% if request.form.get('user_secure_code') == user.secure_code %}selected{% endif %}>
@@ -76,7 +76,7 @@
                 <label>
                     <input type="checkbox" name="is_unit_head" value="true"
                            {% if request.form.get('is_unit_head') == 'true' %}checked{% endif %}>
-                    此員工為該部門主管
+                    此企業成員為該部門主管
                 </label>
             </td>
         </tr>

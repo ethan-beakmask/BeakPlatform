@@ -118,7 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_job_titles_family ON job_titles(job_family_secure
 CREATE UNIQUE INDEX IF NOT EXISTS idx_job_titles_org_code ON job_titles(org_secure_code, code) WHERE is_deleted = FALSE;
 
 -- ============================================================
--- 4. employee_positions 員工職位資料表
+-- 4. employee_positions 企業成員職位資料表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS employee_positions (
     id SERIAL PRIMARY KEY,
@@ -222,7 +222,7 @@ CREATE INDEX IF NOT EXISTS idx_delegations_effective ON delegations(effective_fr
 COMMENT ON TABLE job_levels IS '職等資料表 - 定義組織內的層級結構，使用等距跳號 L000-L900';
 COMMENT ON TABLE job_families IS '職系資料表 - 定義職涯發展軌道 (管理職 MANAGER / 專業職 PROFESSIONAL)';
 COMMENT ON TABLE job_titles IS '職稱資料表 - 職等與職系的具體組合，如「經理」= L500 + MGR';
-COMMENT ON TABLE employee_positions IS '員工職位資料表 - 紀錄員工的職位指派、部門歸屬與主管關係';
+COMMENT ON TABLE employee_positions IS '企業成員職位資料表 - 紀錄企業成員的職位指派、部門歸屬與主管關係';
 COMMENT ON TABLE delegations IS '代理授權資料表 - 職務代理機制，避免主管不在時流程卡住';
 
 -- ============================================================
@@ -296,9 +296,9 @@ COMMENT ON COLUMN job_titles.updated_at IS '最後更新時間';
 COMMENT ON COLUMN employee_positions.id IS '內部自增主鍵，僅供資料庫內部使用';
 COMMENT ON COLUMN employee_positions.secure_code IS '外部識別碼 (32 字元)，對外暴露使用';
 COMMENT ON COLUMN employee_positions.org_secure_code IS '所屬企業識別碼，多租戶隔離欄位';
-COMMENT ON COLUMN employee_positions.user_secure_code IS '員工識別碼，指向 users 表';
-COMMENT ON COLUMN employee_positions.job_title_secure_code IS '職稱識別碼，決定員工的正式頭銜';
-COMMENT ON COLUMN employee_positions.unit_secure_code IS '部門識別碼，員工所屬的組織單位';
+COMMENT ON COLUMN employee_positions.user_secure_code IS '企業成員識別碼，指向 users 表';
+COMMENT ON COLUMN employee_positions.job_title_secure_code IS '職稱識別碼，決定企業成員的正式頭銜';
+COMMENT ON COLUMN employee_positions.unit_secure_code IS '部門識別碼，企業成員所屬的組織單位';
 COMMENT ON COLUMN employee_positions.position_type IS '職位類型：PRIMARY 主要職位 / CONCURRENT 兼任 / ACTING 代理 / TEMPORARY 臨時';
 COMMENT ON COLUMN employee_positions.is_unit_head IS '是否為部門主管，TRUE 時為該部門負責人';
 COMMENT ON COLUMN employee_positions.direct_manager_secure_code IS '直屬主管識別碼 - 表單簽核流程最重要的欄位，決定第一關簽核人';

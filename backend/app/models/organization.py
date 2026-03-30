@@ -92,8 +92,8 @@ class Organization(BaseModel):
         'timezone': 'Asia/Taipei',    # 企業主要時區
         'name_connector': '.',        # 帳號姓名連接符號 (., _, -, 或空字串)
         'display_name_field': 'native_name',  # 顯示名稱欄位 (native_name|english_name|nickname|username|employee_id)
-        'login_employee_show_logo': True,   # 員工登入頁顯示企業 Logo
-        'login_employee_show_name': True,   # 員工登入頁顯示企業名稱
+        'login_employee_show_logo': True,   # 企業成員登入頁顯示企業 Logo
+        'login_employee_show_name': True,   # 企業成員登入頁顯示企業名稱
         'login_external_show_logo': True,   # 外部廠商登入頁顯示企業 Logo
         'login_external_show_name': True,   # 外部廠商登入頁顯示企業名稱
         'broadcast_poll_interval_minutes': 1,  # 廣播輪詢間隔（分鐘）

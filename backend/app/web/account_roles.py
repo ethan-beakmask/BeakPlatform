@@ -221,7 +221,7 @@ def index():
     # user_type 標籤對照
     user_type_labels = {
         UserType.ORG_ADMIN: '企業管理員',
-        UserType.EMPLOYEE: '員工',
+        UserType.EMPLOYEE: '企業成員',
         UserType.EXTERNAL: '外部廠商',
         UserType.SYSTEM_ADMIN: '系統管理員',
     }

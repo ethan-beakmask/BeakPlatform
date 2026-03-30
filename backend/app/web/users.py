@@ -263,7 +263,7 @@ def _check_employee_id_unique(org_secure_code: str, employee_id: str, exclude_us
 @users_bp.route('/create', methods=['GET', 'POST'])
 @admin_required
 def create_user():
-    """建立員工帳號頁面"""
+    """建立企業成員帳號頁面"""
     # 表單資料（用於錯誤時保留）
     form_data = {}
 
@@ -432,7 +432,7 @@ def _get_edit_context(user, is_self: bool) -> dict:
         can_edit = allow_self_edit
         can_edit_role = False  # 不能改自己的角色
         can_edit_status = False  # 不能改自己的啟用狀態
-        can_edit_org_info = False  # 不能改自己的員工編號、部門
+        can_edit_org_info = False  # 不能改自己的企業成員編號、部門
     else:
         # 一般用戶試圖編輯他人 - 不允許
         can_edit = False
@@ -524,7 +524,7 @@ def edit_user(secure_code: str):
         elif new_password and len(new_password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
         elif ctx['can_edit_org_info'] and not _check_employee_id_unique(user.org_secure_code, employee_id, exclude_user_id=user.id):
-            flash(f'員工編號 {employee_id} 已存在', 'error')
+            flash(f'企業成員編號 {employee_id} 已存在', 'error')
         else:
             # 查找部門（只有管理員可改）
             primary_unit = None
@@ -629,9 +629,9 @@ def delete_user(secure_code: str):
         flash('不能刪除自己的帳號', 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
-    # 不能刪除自己綁定的員工帳號 (刪除後管理員將無法登入)
+    # 不能刪除自己綁定的企業成員帳號 (刪除後管理員將無法登入)
     if current_user.bound_employee_secure_code == user.secure_code:
-        flash('不能刪除自己綁定的員工帳號', 'error')
+        flash('不能刪除自己綁定的企業成員帳號', 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
     # 不能刪除企業原始管理員
@@ -665,9 +665,9 @@ def toggle_status(secure_code: str):
         flash('不能停用自己的帳號', 'error')
         return redirect(url_for('users.list_users'))
 
-    # 不能停用自己綁定的員工帳號 (停用後管理員將無法登入)
+    # 不能停用自己綁定的企業成員帳號 (停用後管理員將無法登入)
     if current_user.bound_employee_secure_code == user.secure_code and user.is_active:
-        flash('不能停用自己綁定的員工帳號', 'error')
+        flash('不能停用自己綁定的企業成員帳號', 'error')
         return redirect(url_for('users.list_users'))
 
     try:
@@ -741,7 +741,7 @@ CSV_COLUMNS = [
     ('password', '密碼', True),
     ('display_name', '姓名', True),
     ('role', '角色', False),              # user / org_admin
-    ('employee_id', '員工編號', False),
+    ('employee_id', '企業成員編號', False),
     ('department_code', '部門代碼', False),
     ('english_name', '英文姓名', False),
     ('native_name', '本國姓名', False),
@@ -884,9 +884,9 @@ def _import_single_user(row: dict, org, row_num: int):
     employee_id = row.get('employee_id', '').strip() or None
     department_code = row.get('department_code', '').strip()
 
-    # 檢查員工編號唯一性
+    # 檢查企業成員編號唯一性
     if employee_id and not _check_employee_id_unique(org.secure_code, employee_id):
-        return f'第 {row_num} 列: 員工編號 {employee_id} 已存在'
+        return f'第 {row_num} 列: 企業成員編號 {employee_id} 已存在'
 
     # 查找部門
     primary_unit = None

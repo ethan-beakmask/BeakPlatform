@@ -374,11 +374,11 @@ def delete_job_title(secure_code: str):
         flash(msg, 'error')
         return redirect(url_for('job_titles.edit_job_title', secure_code=secure_code))
 
-    # 檢查是否有員工使用此職稱
+    # 檢查是否有企業成員使用此職稱
     if job_title.employees:
         active_employees = [e for e in job_title.employees if not e.is_deleted]
         if active_employees:
-            msg = f'此職稱有 {len(active_employees)} 位員工使用中，請先移除關聯'
+            msg = f'此職稱有 {len(active_employees)} 位企業成員使用中，請先移除關聯'
             if _wants_json():
                 return jsonify({'success': False, 'errors': [msg]}), 400
             flash(msg, 'error')

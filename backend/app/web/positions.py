@@ -1,9 +1,9 @@
 """
 BeakMask Employee Position Management Web Routes
-員工職位管理網頁路由
+企業成員職位管理網頁路由
 
-員工職位記錄：
-- 員工的職稱指派
+企業成員職位記錄：
+- 企業成員的職稱指派
 - 所屬部門
 - 直屬主管關係 (最重要！決定簽核流程)
 """
@@ -99,7 +99,7 @@ def create_position():
         errors = []
 
         if not user_secure_code:
-            errors.append('請選擇員工')
+            errors.append('請選擇企業成員')
         if not job_title_secure_code:
             errors.append('請選擇職稱')
         if not unit_secure_code:

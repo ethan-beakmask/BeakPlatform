@@ -15,7 +15,7 @@ from .. import db
 
 class RoleType:
     """角色類型"""
-    POSITION = 'POSITION'  # 職務 (用於部門，如: 主管、員工)
+    POSITION = 'POSITION'  # 職務 (用於部門，如: 主管、企業成員)
     ROLE = 'ROLE'          # 角色 (通用，可用於部門和群組)
 
 
@@ -35,7 +35,7 @@ class RoleLevel:
     SYSTEM = 'SYSTEM'    # 系統級 (系統管理員)
     ORG = 'ORG'          # 企業級 (企業管理員、表單流程管理者)
     MODULE = 'MODULE'    # 模組級 (模組管理員、模組作者、模組讀者)
-    MEMBER = 'MEMBER'    # 成員級 (部門成員、群組成員、員工...)
+    MEMBER = 'MEMBER'    # 成員級 (部門成員、群組成員、企業成員...)
 
 
 class ExclusiveGroup:
@@ -43,10 +43,10 @@ class ExclusiveGroup:
     互斥群組
 
     同一互斥群組的角色不能同時指派給同一用戶。
-    例如：EMPLOYEE 和 EXTERNAL 互斥，一個人不能同時是員工和外部廠商。
+    例如：EMPLOYEE 和 EXTERNAL 互斥，一個人不能同時是企業成員和外部廠商。
     """
     NONE = None              # 無互斥限制
-    EMPLOYEE = 'EMPLOYEE'    # 員工類 (一般員工、受限員工、部門成員...)
+    EMPLOYEE = 'EMPLOYEE'    # 企業成員類 (企業成員、受限企業成員、部門成員...)
     EXTERNAL = 'EXTERNAL'    # 外部類 (顧問、廠商...)
 
 
@@ -59,7 +59,7 @@ class Role(TenantBaseModel):
     - full_path: 完整路徑
 
     職務與角色的差異：
-    - 職務 (POSITION): 用於部門，如主管、副主管、員工
+    - 職務 (POSITION): 用於部門，如主管、副主管、企業成員
     - 角色 (ROLE): 通用，可同時用於部門和群組
 
     適用範圍：

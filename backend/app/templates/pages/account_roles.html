@@ -13,7 +13,7 @@
             style="padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; min-width: 140px;">
         <option value="">{{ _('全部類型') }}</option>
         <option value="ORG_ADMIN" {% if filter_user_type == 'ORG_ADMIN' %}selected{% endif %}>{{ _('企業管理員') }}</option>
-        <option value="EMPLOYEE" {% if filter_user_type == 'EMPLOYEE' %}selected{% endif %}>{{ _('員工') }}</option>
+        <option value="EMPLOYEE" {% if filter_user_type == 'EMPLOYEE' %}selected{% endif %}>{{ _('企業成員') }}</option>
         <option value="EXTERNAL" {% if filter_user_type == 'EXTERNAL' %}selected{% endif %}>{{ _('外部廠商') }}</option>
     </select>
     <input type="text" name="q" value="{{ filter_q }}" placeholder="{{ _('搜尋姓名/帳號/編號') }}"

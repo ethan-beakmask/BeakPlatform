@@ -108,12 +108,12 @@ msgid "建議步驟："
 msgstr "建议步骤："
 
 #: app/templates/pages/dashboard.html:17
-msgid "建立您的員工帳號（需設定員工編號）"
+msgid "建立您的企業成員帳號（需設定企業成員編號）"
 msgstr "创建您的员工账号（需设置员工编号）"
 
 #: app/templates/pages/dashboard.html:18
 #, python-format
-msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該員工帳號"
+msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
 msgstr "前往「%(link_start)s新增企业管理员%(link_end)s」，创建正式管理员并绑定该员工账号"
 
 #: app/templates/pages/dashboard.html:19
@@ -478,11 +478,11 @@ msgid "各企業內最高權限帳號，可管理該企業的所有設定"
 msgstr "各企业内最高权限账号，可管理该企业的所有设置"
 
 #: app/templates/pages/menu/list.html:180
-msgid "員工"
+msgid "企業成員"
 msgstr "员工"
 
 #: app/templates/pages/menu/list.html:181
-msgid "企業內部員工帳號"
+msgid "企業內部企業成員帳號"
 msgstr "企业内部员工账号"
 
 #: app/templates/pages/menu/list.html:184

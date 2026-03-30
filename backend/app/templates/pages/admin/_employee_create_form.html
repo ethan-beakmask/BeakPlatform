@@ -1,10 +1,10 @@
-{# 新增員工表單 -- 嵌入部門設定頁中間面板 #}
+{# 新增企業成員表單 -- 嵌入部門設定頁中間面板 #}
 <div class="employee-create-form">
     <div class="emp-form-info" x-show="empTargetDept">
         歸屬部門: <strong x-text="empTargetDept ? empTargetDept.name : ''"></strong>
     </div>
     <div class="emp-form-info emp-form-info-warn" x-show="!empTargetDept">
-        未選擇部門，建立後歸入「未分配員工」
+        未選擇部門，建立後歸入「未分配企業成員」
     </div>
 
     <form @submit.prevent="submitEmployee()">
@@ -148,7 +148,7 @@
 
         <div class="btn-group" style="margin-top: 10px;">
             <button type="submit" class="btn btn-primary" :disabled="uc_submitting"
-                    x-text="uc_submitting ? '建立中...' : '建立員工'"></button>
+                    x-text="uc_submitting ? '建立中...' : '建立企業成員'"></button>
             <button type="button" class="btn btn-secondary" @click="cancelCreateEmployee()">取消</button>
         </div>
     </form>

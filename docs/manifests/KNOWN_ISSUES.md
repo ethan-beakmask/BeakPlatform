@@ -35,7 +35,7 @@
 ### KI-002 新選單項目一般用戶看不到
 - **分類**: 安全
 - **頻率**: 高
-- **症狀**: 管理員能看到選單，一般員工看不到
+- **症狀**: 管理員能看到選單，企業成員看不到
 - **根因**: 只設了 MenuPermission（Key1），沒設 MenuRoleRequirement（Key2）
 - **解法**: 在 menu_role_requirements 表為該選單設定角色需求（含 org_secure_code）
 - **防雷**: SECURITY_PITFALLS.md #3

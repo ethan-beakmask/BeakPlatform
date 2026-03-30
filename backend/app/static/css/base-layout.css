@@ -117,7 +117,7 @@ input::placeholder, textarea::placeholder {
 .bk-menubar .bk-menu-trigger.menu-org-only { background: var(--menu-org-bg); color: var(--menu-org-text); }
 .bk-menubar a.menu-org-cross,
 .bk-menubar .bk-menu-trigger.menu-org-cross { background: var(--menu-org-bg); color: var(--menu-cross-text); }
-/* 企業員工 */
+/* 企業成員 */
 .bk-menubar a.menu-user-only,
 .bk-menubar .bk-menu-trigger.menu-user-only { background: var(--menu-user-bg); color: var(--menu-user-text); }
 .bk-menubar a.menu-user-cross,

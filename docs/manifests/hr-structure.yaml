@@ -1,12 +1,12 @@
 # 人資架構管理
-# 職等、職系、職稱、職等職稱矩陣、員工職位
+# 職等、職系、職稱、職等職稱矩陣、企業成員職位
 page:
   - /job-levels/
   - /job-levels/matrix
   - /job-families/
   - /job-titles/
   - /positions/
-description: 人資架構（職等、職系、職稱、矩陣、員工職位管理）
+description: 人資架構（職等、職系、職稱、矩陣、企業成員職位管理）
 
 files:
   route:
@@ -50,7 +50,7 @@ tables:
 table_relations: |
   job_families (職系) 1:N job_titles (職稱)
   job_levels (職等) 1:N job_titles (職稱)
-  job_titles (職稱) 1:N employee_positions (員工職位)
+  job_titles (職稱) 1:N employee_positions (企業成員職位)
   employee_positions -> users, organizational_units
 
 security:

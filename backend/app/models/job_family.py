@@ -13,7 +13,7 @@ BeakMask JobFamily Model
    - 工程技術職 (Technical)
 
 雙軌制：
-- 員工可選擇往「管理職」或「專業職」發展
+- 企業成員可選擇往「管理職」或「專業職」發展
 - 兩條軌道的職等是對等的（如：經理 = 專案經理）
 """
 from typing import Dict, Any, List

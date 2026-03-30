@@ -31,11 +31,11 @@
 
     <table class="info-table">
         <tr>
-            <th>綁定員工 *</th>
+            <th>綁定企業成員 *</th>
             <td>
                 <select name="bound_employee" required x-model="selectedEmployee" @change="onEmployeeChange()"
                         class="form-control">
-                    <option value="">-- 請選擇員工 --</option>
+                    <option value="">-- 請選擇企業成員 --</option>
                     {% for emp in available_employees %}
                     <option value="{{ emp.secure_code }}"
                             data-name="{{ emp.display_name }}"
@@ -46,7 +46,7 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div class="help-text">管理員帳號將綁定此員工，員工停用時管理員也無法登入</div>
+                <div class="help-text">管理員帳號將綁定此企業成員，企業成員停用時管理員也無法登入</div>
             </td>
         </tr>
         <tr>
@@ -54,7 +54,7 @@
             <td>
                 <input type="text" name="display_name" x-model="displayName"
                        required maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
-                <div class="help-text">自動帶入綁定員工姓名</div>
+                <div class="help-text">自動帶入綁定企業成員姓名</div>
             </td>
         </tr>
         <tr>
@@ -74,7 +74,7 @@
             <td>
                 <input type="text" name="notify_email" x-model="notifyEmail"
                        maxlength="100" class="form-control" style="background: #f3f4f6;" readonly>
-                <div class="help-text">自動帶入綁定員工通知信箱</div>
+                <div class="help-text">自動帶入綁定企業成員通知信箱</div>
             </td>
         </tr>
         <tr>
@@ -128,10 +128,10 @@ window.__ADMIN_CREATE_CONFIG = {
 <div class="alert alert-warning">
     <strong>無法建立管理員</strong>
     <p style="margin: 8px 0 0 0;">
-        目前沒有可綁定的員工帳號。請先建立至少一個具有員工編號的員工帳號。
+        目前沒有可綁定的企業成員帳號。請先建立至少一個具有企業成員編號的企業成員帳號。
     </p>
     <p style="margin: 12px 0 0 0;">
-        <a href="{{ url_for('users.create_user') }}">前往新增員工</a>
+        <a href="{{ url_for('users.create_user') }}">前往新增企業成員</a>
     </p>
 </div>
 {% endif %}

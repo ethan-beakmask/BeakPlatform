@@ -2120,7 +2120,7 @@ def get_org_tree():
         order_by='sort_order',
     )
 
-    # 取得所有啟用的員工帳號
+    # 取得所有啟用的企業成員帳號
     users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == org_sc,
         User.is_deleted == False,

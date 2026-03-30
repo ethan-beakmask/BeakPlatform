@@ -48,7 +48,7 @@ def get_users(
         include_inactive: 是否包含停用的用戶
         department_code: 過濾特定部門
         role_code: 過濾特定角色
-        search: 搜尋關鍵字（姓名、帳號、員工編號）
+        search: 搜尋關鍵字（姓名、帳號、企業成員編號）
         limit: 限制回傳數量
 
     Returns:
@@ -131,10 +131,10 @@ def get_user_by_code(secure_code: str) -> Optional[Dict[str, Any]]:
 
 def get_user_by_employee_id(employee_id: str) -> Optional[Dict[str, Any]]:
     """
-    依員工編號取得用戶
+    依企業成員編號取得用戶
 
     Args:
-        employee_id: 員工編號
+        employee_id: 企業成員編號
 
     Returns:
         用戶資料（字典格式），找不到時返回 None

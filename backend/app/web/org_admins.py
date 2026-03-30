@@ -6,7 +6,7 @@ BeakMask Enterprise Admin Management Web Routes
 1. 專門管理企業管理員帳號
 2. 至少保留一個管理員
 3. 可停用預設 admin 帳號
-4. 原始管理員初始設定（建立員工帳號並自動產生綁定管理員）
+4. 原始管理員初始設定（建立企業成員帳號並自動產生綁定管理員）
 """
 import logging
 from datetime import datetime
@@ -41,7 +41,7 @@ def initial_setup():
     """
     原始管理員初始設定頁面
 
-    原始管理員 (admin@domain) 首次登入後，強制在此頁建立員工帳號。
+    原始管理員 (admin@domain) 首次登入後，強制在此頁建立企業成員帳號。
     建立完成後自動產生綁定的管理員帳號 (admin-{username})，
     並停用原始管理員帳號。
 
@@ -133,7 +133,7 @@ def initial_setup():
             elif existing_adm:
                 flash(f'管理員帳號 {admin_username} 已存在', 'error')
             else:
-                # 檢查員工編號唯一性
+                # 檢查企業成員編號唯一性
                 emp_id_exists = User.query.filter_by(
                     org_secure_code=org.secure_code,
                     employee_id=employee_id,
@@ -157,7 +157,7 @@ def initial_setup():
                         if not backup_email_1:
                             backup_email_1 = employee_email
 
-                        # 1. 建立員工帳號
+                        # 1. 建立企業成員帳號
                         employee = User(
                             username=username,
                             email=employee_email,
@@ -233,7 +233,7 @@ def initial_setup():
                             )
                             db.session.add(role_assignment)
 
-                        # 員工帳號指派 EMPLOYEE 角色
+                        # 企業成員帳號指派 EMPLOYEE 角色
                         employee_role = Role.query.filter(
                             Role.org_secure_code == org.secure_code,
                             Role.code == 'EMPLOYEE',
@@ -262,7 +262,7 @@ def initial_setup():
                         logout_user()
 
                         flash(
-                            f'初始設定完成。已建立員工帳號 {username} 與管理員帳號 {admin_username}。'
+                            f'初始設定完成。已建立企業成員帳號 {username} 與管理員帳號 {admin_username}。'
                             f'原始管理員已停用。請使用新的管理員帳號登入。',
                             'success'
                         )
@@ -317,7 +317,7 @@ def create_admin():
     """新增企業管理員"""
     form_data = {}
 
-    # 先取得所有已被綁定的員工 secure_code
+    # 先取得所有已被綁定的企業成員 secure_code
     bound_employee_codes = db.session.query(User.bound_employee_secure_code).filter(
         User.org_secure_code == current_user.org_secure_code,
         User.bound_employee_secure_code.isnot(None),
@@ -325,7 +325,7 @@ def create_admin():
     ).all()
     bound_codes = {code[0] for code in bound_employee_codes}
 
-    # 取得可綁定的員工
+    # 取得可綁定的企業成員
     available_employees = User.query.filter(
         User.org_secure_code == current_user.org_secure_code,
         User.employee_id.isnot(None),
@@ -342,13 +342,13 @@ def create_admin():
 
         # 驗證必填欄位
         if not bound_employee_code:
-            flash('請選擇要綁定的員工帳號', 'error')
+            flash('請選擇要綁定的企業成員帳號', 'error')
         elif not password:
             flash('請輸入密碼', 'error')
         elif len(password) < 8:
             flash('密碼至少需要 8 個字元', 'error')
         else:
-            # 驗證綁定的員工
+            # 驗證綁定的企業成員
             bound_employee = User.query.filter(
                 User.secure_code == bound_employee_code,
                 User.org_secure_code == current_user.org_secure_code,
@@ -358,22 +358,22 @@ def create_admin():
             ).first()
 
             if not bound_employee:
-                flash('選擇的員工帳號無效', 'error')
+                flash('選擇的企業成員帳號無效', 'error')
             elif bound_employee.secure_code in bound_codes:
-                flash('此員工已被其他管理員綁定', 'error')
+                flash('此企業成員已被其他管理員綁定', 'error')
             else:
                 org = current_user.organization
                 if not org:
                     flash('找不到所屬企業', 'error')
                 else:
-                    # 從綁定員工帶入資料
+                    # 從綁定企業成員帶入資料
                     username = bound_employee.username
                     display_name = bound_employee.display_name
                     email = bound_employee.email
                     notify_email = bound_employee.backup_email_1 or email
 
                     # 檢查是否已存在同 email 的管理員帳號
-                    # 注意：員工帳號和管理員帳號 email 相同是允許的嗎？
+                    # 注意：企業成員帳號和管理員帳號 email 相同是允許的嗎？
                     # 不行，email 是 unique 的，所以管理員帳號需要不同的 email
                     # 方案：使用 admin-{username}@domain 作為管理員帳號
                     admin_username = f"admin-{username}"
@@ -427,7 +427,7 @@ def create_admin():
 
                             db.session.commit()
 
-                            flash(f'已建立管理員 {admin_username}（綁定員工：{bound_employee.display_name}）{disabled_msg}', 'success')
+                            flash(f'已建立管理員 {admin_username}（綁定企業成員：{bound_employee.display_name}）{disabled_msg}', 'success')
                             return redirect(url_for('org_admins.list_admins'))
                         except Exception as e:
                             db.session.rollback()

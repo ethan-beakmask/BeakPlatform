@@ -167,7 +167,7 @@
                     <tr><td>網域名稱</td><td><code>{{ selected_org.domain_name }}</code></td></tr>
                     {% if not selected_org.is_system_org %}
                     <tr>
-                        <td>員工登入 URL</td>
+                        <td>企業成員登入 URL</td>
                         <td>
                             {% set emp_url = url_for('auth.org_login', domain_name=selected_org.domain_name, _external=True) %}
                             <a href="{{ emp_url }}" target="_blank"><code>{{ emp_url }}</code></a>

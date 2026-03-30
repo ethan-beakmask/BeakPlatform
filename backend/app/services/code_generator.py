@@ -148,7 +148,7 @@ COMMON_TERMS_ZH = {
     '成員': 'MEMBER',
     '召集人': 'CONVENER',
     '代理人': 'PROXY',
-    '員工': 'EMPLOYEE',
+    '企業成員': 'EMPLOYEE',
     '外部': 'EXTERNAL',
     '訪客': 'GUEST',
 }

@@ -557,7 +557,7 @@ def get_unit_members(secure_code: str):
 
     from ..models.user import UserType
 
-    # 只顯示員工帳號 (與 /users/ 頁面一致)
+    # 只顯示企業成員帳號 (與 /users/ 頁面一致)
     members = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == secure_code,
@@ -593,7 +593,7 @@ def get_unassigned_users():
     """
     from ..models.user import User, UserType
 
-    # 只顯示員工帳號 (與 /users/ 頁面一致)
+    # 只顯示企業成員帳號 (與 /users/ 頁面一致)
     users = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         User.org_secure_code == current_user.org_secure_code,
         User.primary_unit_secure_code == None,

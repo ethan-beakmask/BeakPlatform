@@ -14,7 +14,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="width: 150px;">員工</th>
+            <th style="width: 150px;">企業成員</th>
             <td>
                 {% if position.user %}
                 <strong>{{ position.user.display_name }}</strong>
@@ -72,7 +72,7 @@
                 <label>
                     <input type="checkbox" name="is_unit_head" value="true"
                            {% if position.is_unit_head %}checked{% endif %}>
-                    此員工為該部門主管
+                    此企業成員為該部門主管
                 </label>
             </td>
         </tr>

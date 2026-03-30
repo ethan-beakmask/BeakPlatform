@@ -144,7 +144,7 @@
 
 .section-content { padding: 12px; }
 
-/* ===== 右側面板：未分配員工 (departments) ===== */
+/* ===== 右側面板：未分配企業成員 (departments) ===== */
 .unassigned-panel {
     width: 260px;
     min-width: 260px;
@@ -243,7 +243,7 @@
 .user-item.dragging { opacity: 0.5; }
 .user-item.is-member { background: #e8f5e9; border-color: #4caf50; }
 
-/* ===== 員工/帳號項目共用 ===== */
+/* ===== 企業成員/帳號項目共用 ===== */
 .emp-id {
     display: inline-block;
     background: #e9ecef;
@@ -257,7 +257,7 @@
 .emp-native { font-weight: 500; }
 .emp-english { color: #888; font-size: 11px; margin-left: 4px; }
 
-/* ===== 三欄佈局：主管/團長、副主管/副團長、員工/團員 ===== */
+/* ===== 三欄佈局：主管/團長、副主管/副團長、企業成員/團員 ===== */
 .staff-layout {
     display: grid;
     grid-template-columns: 1fr 1fr 2fr;

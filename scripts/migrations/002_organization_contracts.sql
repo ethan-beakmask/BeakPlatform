@@ -255,8 +255,8 @@ CREATE INDEX IF NOT EXISTS idx_user_role_unit ON user_role_assignments(unit_secu
 COMMENT ON TABLE contracts IS '企業合約表 - 記錄企業客戶的服務合約與計費資訊';
 COMMENT ON TABLE organizational_units IS '組織單位表 - 部門、群組等組織架構的樹狀結構';
 COMMENT ON TABLE roles IS '角色/職務表 - 定義權限角色與職務頭銜';
-COMMENT ON TABLE user_unit_assignments IS '用戶-組織單位關聯表 - 員工的部門歸屬';
-COMMENT ON TABLE user_role_assignments IS '用戶-角色關聯表 - 員工的角色指派';
+COMMENT ON TABLE user_unit_assignments IS '用戶-組織單位關聯表 - 企業成員的部門歸屬';
+COMMENT ON TABLE user_role_assignments IS '用戶-角色關聯表 - 企業成員的角色指派';
 
 -- ============================================
 -- organizations 新增欄位註解
@@ -293,8 +293,8 @@ COMMENT ON COLUMN contracts.updated_at IS '最後更新時間';
 -- users 新增欄位註解
 -- ============================================
 COMMENT ON COLUMN users.username IS '用戶名稱，同企業內唯一';
-COMMENT ON COLUMN users.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=員工, EXTERNAL=外部廠商';
-COMMENT ON COLUMN users.primary_unit_secure_code IS '主要部門識別碼，員工的主要歸屬單位';
+COMMENT ON COLUMN users.user_type IS '用戶類型: SYSTEM_ADMIN=系統管理員, ORG_ADMIN=企業管理員, EMPLOYEE=企業成員, EXTERNAL=外部廠商';
+COMMENT ON COLUMN users.primary_unit_secure_code IS '主要部門識別碼，企業成員的主要歸屬單位';
 
 -- ============================================
 -- organizational_units 欄位註解

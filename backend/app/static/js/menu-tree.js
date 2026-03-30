@@ -148,7 +148,7 @@ function menuTreeManager() {
                     },
                     {
                         id: 'perm_emp',
-                        label: '員工',
+                        label: '企業成員',
                         width: '36px',
                         sortable: false,
                         resizable: false,

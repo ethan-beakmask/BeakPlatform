@@ -47,7 +47,7 @@
             <label for="name" class="required">規則名稱</label>
             <div class="field">
                 <input type="text" id="name" name="name" value="{{ rule.name if rule else '' }}" required>
-                <div class="help-text">例如：員工編號、來賓編號、臨時編號</div>
+                <div class="help-text">例如：企業成員編號、來賓編號、臨時編號</div>
             </div>
         </div>
         <div class="form-row">
@@ -65,7 +65,7 @@
                     <option value="INTERNAL_UNIVERSAL" {% if rule and rule.usage_scope == 'INTERNAL_UNIVERSAL' %}selected{% endif %}>內外都通用編號</option>
                 </select>
                 <div class="help-text">
-                    內部專用：員工編號、公司資產 ／
+                    內部專用：企業成員編號、公司資產 ／
                     外部專用：廠商、訪客 ／
                     內外都通用編號：門禁卡、跨公司資源
                 </div>
@@ -85,12 +85,12 @@
             <div class="field">
                 <select id="default_for" name="default_for">
                     <option value="" {% if not rule or not rule.default_for %}selected{% endif %}>非預設</option>
-                    <option value="EMPLOYEE" {% if rule and rule.default_for == 'EMPLOYEE' %}selected{% endif %}>員工編號預設</option>
+                    <option value="EMPLOYEE" {% if rule and rule.default_for == 'EMPLOYEE' %}selected{% endif %}>企業成員編號預設</option>
                     <option value="EXTERNAL" {% if rule and rule.default_for == 'EXTERNAL' %}selected{% endif %}>外部廠商預設</option>
                     <option value="FORM" {% if rule and rule.default_for == 'FORM' %}selected{% endif %}>表單編號預設</option>
                 </select>
                 <div class="help-text">
-                    員工預設：新增員工帳號時自動使用 ／
+                    企業成員預設：新增企業成員帳號時自動使用 ／
                     外部預設：新增外部廠商時自動使用 ／
                     表單預設：表單送出時自動產生單號
                 </div>

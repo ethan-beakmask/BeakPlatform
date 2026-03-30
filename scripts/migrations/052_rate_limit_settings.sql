@@ -4,7 +4,7 @@
 --
 -- DB keys (system_settings 表):
 --   ratelimit_shared_login      通用登入        預設 20 per 10 minutes
---   ratelimit_org_login         企業員工登入    預設 20 per 10 minutes
+--   ratelimit_org_login         企業成員登入    預設 20 per 10 minutes
 --   ratelimit_vendor_login      廠商登入        預設 20 per 10 minutes
 --   ratelimit_forgot_password   忘記密碼        預設 10 per 10 minutes
 --   ratelimit_reset_password    密碼重設驗證    預設 10 per 10 minutes

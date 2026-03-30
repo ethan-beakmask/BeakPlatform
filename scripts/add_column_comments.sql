@@ -270,12 +270,12 @@ COMMENT ON COLUMN job_titles.updated_at IS '更新時間';
 COMMENT ON COLUMN job_titles.is_deleted IS '是否已刪除';
 COMMENT ON COLUMN job_titles.deleted_at IS '刪除時間';
 
--- employee_positions (員工職位)
-COMMENT ON TABLE employee_positions IS '員工職位 - 紀錄員工的職位指派';
+-- employee_positions (企業成員職位)
+COMMENT ON TABLE employee_positions IS '企業成員職位 - 紀錄企業成員的職位指派';
 COMMENT ON COLUMN employee_positions.id IS '內部自增 ID';
 COMMENT ON COLUMN employee_positions.secure_code IS '外部識別碼';
 COMMENT ON COLUMN employee_positions.org_secure_code IS '所屬企業';
-COMMENT ON COLUMN employee_positions.user_secure_code IS '員工';
+COMMENT ON COLUMN employee_positions.user_secure_code IS '企業成員';
 COMMENT ON COLUMN employee_positions.job_title_secure_code IS '職稱';
 COMMENT ON COLUMN employee_positions.unit_secure_code IS '所屬部門';
 COMMENT ON COLUMN employee_positions.position_type IS '職位類型: PRIMARY/CONCURRENT/ACTING/TEMPORARY';
