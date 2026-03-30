@@ -429,8 +429,8 @@ class CodeGenerator:
         # 移除首尾空白
         code = raw.strip()
 
-        # 轉大寫
-        code = code.upper()
+        # 轉小寫（與系統預設選單慣例一致）
+        code = code.lower()
 
         # 空格和連字號轉底線
         code = re.sub(r'[\s\-]+', '_', code)
@@ -501,7 +501,7 @@ class CodeGenerator:
 
         # 檢查保留字
         if base_code.upper() in RESERVED_CODES:
-            base_code = f'{base_code}_CUSTOM'
+            base_code = f'{base_code}_custom'
 
         # 如果沒有提供檢查函數，直接返回
         if exists_checker is None:
@@ -597,7 +597,7 @@ class CodeGenerator:
         # 額外建議：加上常見後綴
         if suggestions:
             base = suggestions[0].rstrip('0123456789_')
-            suffixes = ['01', '02', 'NEW', 'V2']
+            suffixes = ['01', '02', 'new', 'v2']
 
             for suffix in suffixes:
                 if len(suggestions) >= count:
