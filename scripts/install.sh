@@ -444,21 +444,10 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     # 更新 remote URL（token 可能已變更）
     git remote set-url origin "$GITHUB_CLONE_URL"
 
-    # 安全檢查：如果有未 push 的 commit，警告用戶
+    # 拉取最新版本並同步（force push 環境下本地 commit 必然脫離 remote 歷史，直接 reset）
     git fetch origin main 2>/dev/null
-    local_ahead=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo "0")
-    if [ "$local_ahead" -gt 0 ]; then
-        log_warn "偵測到 $local_ahead 個未 push 的 commit:"
-        git log --oneline origin/main..HEAD
-        read -p "繼續將會 reset 到 remote 版本，這些 commit 會遺失。繼續？(y/N): " CONFIRM_RESET
-        if [[ ! "$CONFIRM_RESET" =~ ^[yY]$ ]]; then
-            log_error "取消安裝"
-            exit 1
-        fi
-    fi
-
     git reset --hard origin/main
-    log_info "程式碼已更新: $(git log --oneline -1)"
+    log_info "程式碼已同步至最新版本"
 else
     if [ -d "$INSTALL_DIR" ]; then
         # 目錄存在但不是 git repo，備份後重新 clone
