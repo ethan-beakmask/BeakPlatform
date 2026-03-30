@@ -72,7 +72,7 @@ function rescueResetPasswordForm() {
                     if (data.success) {
                         this.password = data.data.password;
                         this.confirmPassword = data.data.password;
-                        this.showPassword = true;
+                        this.showPassword = false;
                         this.validatePassword();
                     }
                 }

@@ -3,8 +3,9 @@ BeakMask Access Logger
 HTTP 存取日誌 - 所有請求記錄到檔案
 
 記錄格式類似 Apache Combined Log Format，方便用 GoAccess 等工具分析。
-輸出位置: /opt/tmp/BeakPlatform-access.log
+輸出位置: /opt/tmp/BeakPlatform-access-{hash}.log（依專案路徑衍生，避免多實例衝突）
 """
+import hashlib
 import logging
 import os
 from logging.handlers import RotatingFileHandler
@@ -12,7 +13,10 @@ from datetime import datetime
 from flask import Flask, request
 
 
-LOG_PATH = '/opt/tmp/BeakPlatform-access.log'
+# 根據專案路徑產生唯一後綴，與 session 目錄同一策略
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_log_suffix = hashlib.md5(_project_root.encode()).hexdigest()[:8]
+LOG_PATH = f'/opt/tmp/BeakPlatform-access-{_log_suffix}.log'
 
 
 def register_access_logger(app: Flask) -> None:
