@@ -3,7 +3,7 @@ BeakMask Organization Model
 企業/組織 Model
 """
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, Any, Optional, Tuple
 
 from sqlalchemy import Column, String, Boolean, Text, Integer, ForeignKey
@@ -131,19 +131,21 @@ class Organization(BaseModel):
         settings.update(new_settings)
         self.settings = json.dumps(settings, ensure_ascii=False)
 
-    def get_contract_valid_range(self) -> Optional[Tuple[datetime, datetime]]:
+    def get_contract_valid_range(self) -> Optional[Tuple[date, date]]:
         """
         取得所有有效合約的日期範圍
 
         Returns:
-            Tuple[datetime, datetime]: (最早開始日期, 最晚結束日期的最後一秒)
+            Tuple[date, date]: (最早開始日期, 最晚結束日期)
             None: 如果沒有有效合約
+
+        合約日期為純日期（不涉及時區），比對時以企業時區的「今天」為準。
         """
         # 系統企業永久有效
         if self.is_system_org:
             return (
-                datetime(2000, 1, 1),
-                datetime(2099, 12, 31, 23, 59, 59)
+                date(2000, 1, 1),
+                date(2099, 12, 31)
             )
 
         # 避免循環導入
@@ -162,14 +164,7 @@ class Organization(BaseModel):
         start_dates = [c.start_date for c in active_contracts]
         end_dates = [c.end_date for c in active_contracts]
 
-        earliest_start = min(start_dates)
-        latest_end = max(end_dates)
-
-        # 將 date 轉換為 datetime，結束日期取當天最後一秒
-        start_datetime = datetime.combine(earliest_start, datetime.min.time())
-        end_datetime = datetime.combine(latest_end, datetime.max.time())
-
-        return (start_datetime, end_datetime)
+        return (min(start_dates), max(end_dates))
 
     def is_contract_valid(self) -> bool:
         """
@@ -177,14 +172,17 @@ class Organization(BaseModel):
 
         Returns:
             bool: True 如果在有效期內
+
+        純日期比較：以 Asia/Taipei 的「今天」為準，避免 UTC 凌晨死區。
         """
         contract_range = self.get_contract_valid_range()
         if not contract_range:
             return False
 
-        now = datetime.utcnow()
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo('Asia/Taipei')).date()
         start, end = contract_range
-        return start <= now <= end
+        return start <= today <= end
 
     def get_active_user_count(self) -> int:
         """取得目前啟用的帳號數量"""
