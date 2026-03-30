@@ -386,11 +386,29 @@ def create_template():
     db.session.add(template)
     db.session.commit()
 
+    # 背景生成縮圖
+    thumbnail_pending = False
+    if template.schema and template.schema.get('components'):
+        try:
+            from ..services.thumbnail_service import generate_form_thumbnails_async, is_available
+            if is_available():
+                from flask import current_app
+                generate_form_thumbnails_async(
+                    current_app._get_current_object(),
+                    template.id,
+                    template.schema,
+                    template.name
+                )
+                thumbnail_pending = True
+        except Exception as e:
+            pass
+
     result = template.to_dict(include_schema=True)
     result['secure_code'] = template.secure_code
     return jsonify({
         'success': True,
         'data': result,
+        'thumbnail_pending': thumbnail_pending,
         'message': '表單模板已建立'
     })
 

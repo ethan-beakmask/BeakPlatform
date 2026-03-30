@@ -31,6 +31,7 @@ DB_PASS="${DB_PASS:-postgres123}"
 APP_PORT="${APP_PORT:-8000}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
 SERVICE_NAME="beakplatform"
+SERVICE_USER="beakplatform"
 HEALTH_URL="http://localhost:${APP_PORT}/health"
 HEALTH_TIMEOUT=60
 
@@ -90,6 +91,32 @@ load_env() {
 
 activate_venv() {
     source "$INSTALL_DIR/venv/bin/activate"
+}
+
+ensure_service_user() {
+    if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
+        useradd --system --home-dir "$INSTALL_DIR" --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
+        log_info "系統帳號 $SERVICE_USER 已建立"
+    fi
+}
+
+fix_ownership() {
+    chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
+    # 確保 log 目錄可寫
+    mkdir -p /opt/tmp
+    chown "$SERVICE_USER:$SERVICE_USER" /opt/tmp
+    chmod 755 /opt/tmp
+}
+
+# 以應用帳號身分執行指令（載入 venv + .env）
+run_as_app() {
+    sudo -u "$SERVICE_USER" bash -c "
+        set -a; source '$INSTALL_DIR/.env'; set +a
+        export PATH='$INSTALL_DIR/venv/bin':\$PATH
+        export HOME='$INSTALL_DIR'
+        cd '$INSTALL_DIR'
+        $1
+    "
 }
 
 # === 參數處理 ===
@@ -244,6 +271,12 @@ if [ "$ACTION" = "uninstall" ]; then
     # 移除安裝目錄
     rm -rf "$INSTALL_DIR"
 
+    # 移除系統帳號
+    if id -u "$SERVICE_USER" >/dev/null 2>&1; then
+        userdel "$SERVICE_USER" 2>/dev/null || true
+        log_info "系統帳號 $SERVICE_USER 已移除"
+    fi
+
     log_info "移除完成"
     exit 0
 fi
@@ -298,32 +331,30 @@ if [ "$ACTION" = "update" ]; then
     git reset --hard origin/main
     log_info "更新至: $(git log --oneline -1)"
 
-    # [2] 更新 Python 依賴
+    # 確保服務帳號存在 + 修正檔案所有權
+    ensure_service_user
+    fix_ownership
+
+    # [2] 更新 Python 依賴（以應用帳號執行）
     log_step "2/6" "更新 Python 依賴..."
-    activate_venv
-    pip install --upgrade pip -q
-    pip install -r backend/requirements.txt -q
+    sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install --upgrade pip -q
+    sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt" -q
 
     # [3] 載入環境變數 + 執行 migrations
     log_step "3/6" "執行資料庫遷移..."
-    load_env
-    # 確保必要的 PostgreSQL extensions 存在
+    # PostgreSQL 管理操作仍以 root 執行
     sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;" 2>/dev/null || true
-    # 終止其他 DB 連線，避免 ALTER TABLE 被鎖住
     sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-    cd backend
-    EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run
+    run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run"
 
     # [4] 初始化選單與權限 (冪等)
     log_step "4/6" "同步選單與權限..."
-    cd "$INSTALL_DIR"
-    EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py || log_warn "選單初始化跳過"
-    EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py || log_warn "權限初始化跳過"
+    run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py" || log_warn "選單初始化跳過"
+    run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py" || log_warn "權限初始化跳過"
 
     # [5] 同步模組
     log_step "5/6" "同步模組..."
-    cd "$INSTALL_DIR/backend"
-    EXECUTOR_STANDALONE=1 FLASK_ENV=${FLASK_ENV:-production} flask module sync 2>/dev/null || log_warn "模組同步跳過"
+    run_as_app "cd backend && EXECUTOR_STANDALONE=1 FLASK_ENV=${FLASK_ENV:-production} flask module sync" 2>/dev/null || log_warn "模組同步跳過"
 
     # [6] 重啟服務
     log_step "6/6" "重啟服務..."
@@ -394,6 +425,9 @@ systemctl enable --now nginx 2>/dev/null || true
 
 log_info "系統依賴安裝完成"
 
+# 建立應用服務帳號
+ensure_service_user
+
 
 # === [2/9] PostgreSQL ===
 log_step "2/9" "設定 PostgreSQL..."
@@ -459,14 +493,16 @@ else
     log_info "程式碼 clone 完成: $(git log --oneline -1)"
 fi
 
+# 修正檔案所有權（git 以 root clone/reset，需轉移給應用帳號）
+fix_ownership
+
 
 # === [4/9] Python 虛擬環境 ===
 log_step "4/9" "建立 Python 虛擬環境..."
 cd "$INSTALL_DIR"
-python3 -m venv venv
-activate_venv
-pip install --upgrade pip -q
-pip install -r backend/requirements.txt -q
+sudo -u "$SERVICE_USER" python3 -m venv "$INSTALL_DIR/venv"
+sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install --upgrade pip -q
+sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt" -q
 log_info "Python 環境建立完成"
 
 
@@ -509,6 +545,8 @@ GUNICORN_THREADS=2
 SESSION_COOKIE_SECURE=false
 ENVEOF
 
+chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/.env"
+chmod 600 "$INSTALL_DIR/.env"
 log_info "環境變數設定完成 (SYSTEM_ORG_CODE=$SYS_ORG_CODE)"
 
 
@@ -547,10 +585,11 @@ load_env
 redis-cli FLUSHDB > /dev/null 2>&1 || log_warn "Redis FLUSHDB 失敗，請手動清除"
 rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
-# 建立資料表 + 初始資料
+# 建立資料表 + 初始資料（以應用帳號執行，避免產生 root 擁有的暫存檔）
 # EXECUTOR_STANDALONE=1 防止 workflow executor 背景線程啟動查詢尚未建立的表
 # SKIP_MODULE_SYNC=1 避免 create_app 在表建立前嘗試同步模組產生大量錯誤訊息
-SKIP_MODULE_SYNC=1 EXECUTOR_STANDALONE=1 ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" python3 << 'PYEOF'
+INIT_SCRIPT=$(mktemp)
+cat > "$INIT_SCRIPT" << 'PYEOF'
 import os, sys, bcrypt, importlib
 from pathlib import Path
 from app import create_app, db
@@ -625,23 +664,33 @@ with app.app_context():
         db.session.commit()
         print("  初始資料建立完成")
 PYEOF
+chmod 644 "$INIT_SCRIPT"
+sudo -u "$SERVICE_USER" env \
+    ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" \
+    SKIP_MODULE_SYNC=1 \
+    EXECUTOR_STANDALONE=1 \
+    HOME="$INSTALL_DIR" \
+    bash -c "
+        set -a; source '$INSTALL_DIR/.env'; set +a
+        cd '$INSTALL_DIR/backend'
+        '$INSTALL_DIR/venv/bin/python3' '$INIT_SCRIPT'
+    "
+rm -f "$INIT_SCRIPT"
 
 # 執行所有 migrations（冪等，db.create_all 已建的表會被 IF NOT EXISTS 跳過）
 # 確保非 ORM 管理的表（如 timeout_trackers、workflow_node_categories）也被建立
 # 先終止其他 DB 連線，避免 ALTER TABLE 被 idle in transaction 的連線鎖住
 sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-cd "$INSTALL_DIR"
-EXECUTOR_STANDALONE=1 python3 scripts/run_migrations.py --run
+run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --run"
 
 # 初始化選單
-EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force || log_warn "選單初始化跳過"
+run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_menus.py --force" || log_warn "選單初始化跳過"
 
 # 初始化權限
-EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py || log_warn "權限初始化跳過"
+run_as_app "EXECUTOR_STANDALONE=1 python3 scripts/init_permissions.py" || log_warn "權限初始化跳過"
 
 # 同步模組
-cd "$INSTALL_DIR/backend"
-EXECUTOR_STANDALONE=1 FLASK_ENV=production flask module sync 2>/dev/null || log_warn "模組同步跳過"
+run_as_app "cd backend && EXECUTOR_STANDALONE=1 FLASK_ENV=production flask module sync" 2>/dev/null || log_warn "模組同步跳過"
 
 log_info "資料庫初始化完成"
 
@@ -657,8 +706,8 @@ Requires=postgresql.service redis-server.service
 
 [Service]
 Type=notify
-User=root
-Group=root
+User=$SERVICE_USER
+Group=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR/backend
 EnvironmentFile=$INSTALL_DIR/.env
 ExecStart=$INSTALL_DIR/venv/bin/gunicorn -c gunicorn.conf.py wsgi:application

@@ -100,6 +100,7 @@ def generate_form_thumbnails(schema, form_name="表單"):
         with tempfile.TemporaryDirectory() as tmpdir:
             hti = Html2Image(
                 output_path=tmpdir,
+                temp_path=tmpdir,
                 size=(800, 800),
                 browser='chrome',
                 browser_executable='/usr/bin/google-chrome'
