@@ -1361,6 +1361,7 @@ def resolve_recipient_group(secure_code):
 # =============================================================================
 
 import re
+import subprocess
 import time
 import importlib.metadata
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1652,6 +1653,124 @@ def _scan_vendor_packages():
     return list(packages.values())
 
 
+# === 系統服務版本檢查 ===
+
+# 系統服務定義：(名稱, 本機版本取得函式, 線上版本取得函式)
+def _get_redis_installed_version():
+    """從 redis-server --version 取得安裝版本"""
+    try:
+        out = subprocess.run(
+            ['redis-server', '--version'],
+            capture_output=True, text=True, timeout=5
+        )
+        # "Redis server v=7.0.15 sha=..."
+        m = re.search(r'v=(\d+\.\d+\.\d+)', out.stdout)
+        return m.group(1) if m else None
+    except Exception:
+        return None
+
+
+def _get_postgres_installed_version():
+    """從 psql --version 取得安裝版本"""
+    try:
+        out = subprocess.run(
+            ['psql', '--version'],
+            capture_output=True, text=True, timeout=5
+        )
+        # "psql (PostgreSQL) 16.13 ..."
+        m = re.search(r'(\d+\.\d+)', out.stdout)
+        return m.group(1) if m else None
+    except Exception:
+        return None
+
+
+def _fetch_redis_latest():
+    """從 GitHub releases 取得 Redis 最新穩定版"""
+    try:
+        import urllib.request
+        import json as _json
+        url = 'https://api.github.com/repos/redis/redis/releases?per_page=10'
+        req = urllib.request.Request(url, headers={'User-Agent': 'BeakPlatform'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            releases = _json.loads(resp.read())
+        for rel in releases:
+            if rel.get('prerelease'):
+                continue
+            ver = rel['tag_name'].lstrip('v')
+            if re.match(r'^\d+\.\d+\.\d+$', ver):
+                return ver
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_postgres_latest():
+    """從 GitHub tags 取得 PostgreSQL 最新穩定版（REL_X_Y 格式）"""
+    try:
+        import urllib.request
+        import json as _json
+        url = 'https://api.github.com/repos/postgres/postgres/tags?per_page=30'
+        req = urllib.request.Request(url, headers={'User-Agent': 'BeakPlatform'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            tags = _json.loads(resp.read())
+        best = None
+        for tag in tags:
+            m = re.match(r'^REL_(\d+)_(\d+)$', tag['name'])
+            if m:
+                major, minor = int(m.group(1)), int(m.group(2))
+                if best is None or (major, minor) > best:
+                    best = (major, minor)
+        if best:
+            return f'{best[0]}.{best[1]}'
+    except Exception:
+        pass
+    return None
+
+
+def _check_system_services():
+    """檢查系統服務版本"""
+    services = [
+        ('Redis', _get_redis_installed_version, _fetch_redis_latest),
+        ('PostgreSQL', _get_postgres_installed_version, _fetch_postgres_latest),
+    ]
+
+    results = []
+    for name, get_installed, fetch_latest in services:
+        installed = get_installed()
+        entry = {
+            'name': name,
+            'installed_version': installed or '未安裝',
+            'latest_version': None,
+            'status': 'check_failed' if not installed else 'checking',
+        }
+        results.append(entry)
+
+    # 並行查詢線上版本
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_map = {}
+        for i, svc in enumerate(results):
+            if svc['installed_version'] != '未安裝':
+                future = executor.submit(services[i][2])
+                future_map[future] = i
+
+        for future in as_completed(future_map):
+            idx = future_map[future]
+            try:
+                latest = future.result()
+                results[idx]['latest_version'] = latest or '無法檢查'
+                if latest:
+                    results[idx]['status'] = _compare_versions(
+                        results[idx]['installed_version'], latest
+                    )
+                else:
+                    results[idx]['status'] = 'check_failed'
+            except Exception:
+                results[idx]['latest_version'] = '無法檢查'
+                results[idx]['status'] = 'check_failed'
+
+    return results
+
+
 def _check_package_versions():
     """執行完整套件版本檢查"""
     start_time = time.time()
@@ -1729,11 +1848,15 @@ def _check_package_versions():
         pkg.pop('_npm_name', None)
         pkg.pop('_is_custom', None)
 
+    # === 系統服務 ===
+    service_packages = _check_system_services()
+
     duration_ms = int((time.time() - start_time) * 1000)
 
     return {
         'python_packages': python_packages,
         'frontend_packages': frontend_packages,
+        'service_packages': service_packages,
         'check_duration_ms': duration_ms,
     }
 

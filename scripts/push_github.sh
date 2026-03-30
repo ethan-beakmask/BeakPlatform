@@ -54,6 +54,9 @@ EXCLUDE_FILES=(
     # backend - 開發工具
     "backend/app/web/dev.py"
     "backend/app/static/js/quick-login.js"
+    # 根目錄 - 開發工具
+    "reset_password.py"
+    "app-info.sh"
 )
 
 echo "=== 過濾推送到 GitHub ==="

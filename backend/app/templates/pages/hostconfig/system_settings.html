@@ -560,7 +560,7 @@
         <!-- ==================== 套件版本 ==================== -->
         <div id="section-packages" class="settings-section" :class="{ active: activeSection === 'packages' }">
             <h2>套件版本</h2>
-            <p>Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。</p>
+            <p>系統服務、Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。</p>
 
             <div x-show="message.packages" x-cloak
                  :class="'message ' + (message.packagesError ? 'message-error' : 'message-success')"
@@ -603,6 +603,38 @@
             <template x-if="loading.packages && packages.python.length === 0">
                 <div class="settings-card">
                     <div class="loading">正在查詢套件版本，可能需要數秒...</div>
+                </div>
+            </template>
+
+            <!-- 系統服務表格 -->
+            <template x-if="packages.services.length > 0">
+                <div class="settings-card">
+                    <h4>系統服務 (<span x-text="packages.services.length"></span>)</h4>
+                    <div style="overflow-x: auto;">
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th>服務名稱</th>
+                                    <th>安裝版本</th>
+                                    <th>最新版本</th>
+                                    <th>狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="pkg in packages.services" :key="pkg.name">
+                                    <tr>
+                                        <td x-text="pkg.name" style="font-weight: 500;"></td>
+                                        <td x-text="pkg.installed_version" style="font-family: monospace;"></td>
+                                        <td x-text="pkg.latest_version || '-'" style="font-family: monospace;"></td>
+                                        <td>
+                                            <span :class="getStatusBadgeClass(pkg.status)"
+                                                  x-text="getStatusLabel(pkg.status)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </template>
 
@@ -678,7 +710,7 @@
             <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
                 <h4 style="color: #0369a1;">說明</h4>
                 <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #0369a1;">
-                    <li>Python 套件版本從 PyPI 取得，前端套件從 npm Registry 取得</li>
+                    <li>系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得</li>
                     <li>查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新</li>
                     <li>封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作</li>
                     <li>此頁面僅供版本檢視，不提供線上升級功能</li>
@@ -814,6 +846,7 @@ function serverSettings() {
         packages: {
             python: [],
             frontend: [],
+            services: [],
             cached: false,
             cachedAt: '',
             durationMs: 0,

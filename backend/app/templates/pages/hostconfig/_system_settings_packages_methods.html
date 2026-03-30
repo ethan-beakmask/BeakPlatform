@@ -13,6 +13,7 @@
                 if (data.success) {
                     this.packages.python = data.data.python_packages || [];
                     this.packages.frontend = data.data.frontend_packages || [];
+                    this.packages.services = data.data.service_packages || [];
                     this.packages.cached = data.data.cached || false;
                     this.packages.cachedAt = data.data.cached_at || '';
                     this.packages.durationMs = data.data.check_duration_ms || 0;
@@ -27,7 +28,7 @@
         },
 
         _calcPackageStats() {
-            const all = [...this.packages.python, ...this.packages.frontend];
+            const all = [...this.packages.python, ...this.packages.frontend, ...this.packages.services];
             return {
                 total: all.length,
                 up_to_date: all.filter(p => p.status === 'up_to_date').length,
