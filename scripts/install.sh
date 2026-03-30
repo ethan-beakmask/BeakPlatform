@@ -675,6 +675,7 @@ sudo -u "$SERVICE_USER" env \
     ADMIN_INITIAL_PASSWORD="$ADMIN_PASS" \
     SKIP_MODULE_SYNC=1 \
     EXECUTOR_STANDALONE=1 \
+    PYTHONPATH="$INSTALL_DIR/backend" \
     HOME="$INSTALL_DIR" \
     bash -c "
         set -a; source '$INSTALL_DIR/.env'; set +a
