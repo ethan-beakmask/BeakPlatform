@@ -206,6 +206,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
     # 設定 session
     session['org_secure_code'] = org.secure_code
     session['org_domain'] = org.domain_name
+    session['_session_org'] = user.org_secure_code  # load_user 交叉驗證用
 
     logger.info(f"User logged in: {username}@{domain_name} from {request.remote_addr}")
 
@@ -594,6 +595,7 @@ def org_public_login(domain_name: str):
     login_user(user, remember=False)
     session['org_domain'] = domain_name
     session['login_type'] = 'external'
+    session['_session_org'] = user.org_secure_code  # load_user 交叉驗證用
     user.last_login_at = datetime.now()
     db.session.commit()
 

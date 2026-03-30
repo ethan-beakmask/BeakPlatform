@@ -553,7 +553,9 @@ log_step "7/9" "初始化資料庫..."
 cd "$INSTALL_DIR/backend"
 load_env
 
-# 清除舊 session
+# 清除舊 session（Redis + filesystem）
+# 必須清 Redis，否則舊 session 可跨安裝穿越，繼承前一套系統的登入狀態
+redis-cli FLUSHDB > /dev/null 2>&1 || log_warn "Redis FLUSHDB 失敗，請手動清除"
 rm -rf /tmp/beakplatform_sessions 2>/dev/null || true
 
 # 建立資料表 + 初始資料
@@ -608,6 +610,12 @@ with app.app_context():
         )
         db.session.add(system_org)
         db.session.flush()
+
+        # 建立系統企業的預設角色（鑰匙2 需要這些角色才能建立 MRR）
+        from app.services.organization_service import OrganizationService
+        OrganizationService._create_default_roles(system_org)
+        db.session.flush()
+        print("  預設角色建立完成")
 
         # 建立管理員
         password = admin_password.encode('utf-8')

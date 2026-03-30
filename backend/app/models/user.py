@@ -296,5 +296,19 @@ class User(TenantBaseModel, UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id: str):
-    """Flask-Login user loader"""
-    return User.query.get(int(user_id))
+    """Flask-Login user loader
+
+    安全校驗: 比對 session 中記錄的 org_secure_code 與 DB 中用戶的 org_secure_code。
+    防止 Redis session 跨安裝穿越（重裝系統後舊 session 指向新 DB 的同 id 用戶）。
+    """
+    from flask import session as flask_session
+    user = User.query.get(int(user_id))
+    if user is None:
+        return None
+
+    # session 中有 org_secure_code 時，必須與 DB 用戶一致
+    session_org = flask_session.get('_session_org')
+    if session_org and session_org != user.org_secure_code:
+        return None
+
+    return user

@@ -159,6 +159,8 @@ def quick_login():
 
         # 執行登入
         login_user(user, remember=True)
+        from flask import session as flask_session
+        flask_session['_session_org'] = user.org_secure_code  # load_user 交叉驗證用
 
         return jsonify({
             'success': True,
