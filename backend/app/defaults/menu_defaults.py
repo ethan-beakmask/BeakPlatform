@@ -39,10 +39,10 @@ def get_allowed_user_types(required_level, is_shared):
 # ============================================================================
 # 核心平台選單定義
 # 只包含平台級選單，模組選單由各模組 MODULE_INFO['menu_items'] 定義
-# display_order 為同層連續序號，2026-03-27 從 DB 匯出校正
+# display_order 為同層連續序號，2026-03-30 從 DB 匯出校正
 # ============================================================================
 CORE_MENUS = [
-    # ===== 深度 0 根選單 (order 0-17) =====
+    # ===== 深度 0 根選單 (order 0-18) =====
     {
         'code': 'dashboard',
         'title': '儀表板',
@@ -114,12 +114,23 @@ CORE_MENUS = [
         'is_shared': False,
     },
     {
+        'code': 'servsr_manage',
+        'title': '主機管理',
+        'icon': None,
+        'link_type': 'header',
+        'link_target': None,
+        'display_order': 9,
+        'depth': 0,
+        'required_level': 0,
+        'is_shared': False,
+    },
+    {
         'code': 'perm_mgmt',
         'title': '權限管理',
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 9,
+        'display_order': 10,
         'depth': 0,
         'required_level': 0,
         'is_shared': False,
@@ -131,7 +142,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 10,
+        'display_order': 11,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -143,7 +154,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 11,
+        'display_order': 12,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -154,7 +165,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 12,
+        'display_order': 13,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -165,7 +176,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'route',
         'link_target': 'departments.department_settings',
-        'display_order': 13,
+        'display_order': 14,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -176,18 +187,18 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'route',
         'link_target': 'groups.group_settings',
-        'display_order': 14,
+        'display_order': 15,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
     },
     {
-        'code': 'ROLES_CONTROL',
+        'code': 'roles_control',
         'title': '角色管控',
-        'icon': None,
+        'icon': 'ri-user-star-line',
         'link_type': 'header',
         'link_target': None,
-        'display_order': 15,
+        'display_order': 16,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -198,7 +209,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 16,
+        'display_order': 17,
         'depth': 0,
         'required_level': 30,
         'is_shared': False,
@@ -209,7 +220,7 @@ CORE_MENUS = [
         'icon': None,
         'link_type': 'header',
         'link_target': None,
-        'display_order': 17,
+        'display_order': 18,
         'depth': 0,
         'required_level': 2,
         'is_shared': True,
@@ -254,23 +265,37 @@ CORE_MENUS = [
         'is_shared': False,
     },
     {
-        'code': 'data_maintenance',
-        'title': '資料維護',
-        'parent_code': 'org_management',
-        'link_type': 'route',
-        'link_target': 'hostconfig.data_maintenance',
-        'display_order': 2,
-        'depth': 1,
-        'required_level': 0,
-        'is_shared': False,
-    },
-    {
         'code': 'cg_databases_overview',
         'title': '集團資料庫總覽',
         'parent_code': 'org_management',
         'link_type': 'route',
         'link_target': 'cg_databases.overview',
         'display_order': 3,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
+
+    # -- 主機管理 (servsr_manage) --
+    {
+        'code': 'redis_monitor',
+        'title': 'Redis 監看',
+        'parent_code': 'servsr_manage',
+        'icon': 'ri-database-2-line',
+        'link_type': 'url',
+        'link_target': '/server-manage/redis-monitor',
+        'display_order': 0,
+        'depth': 1,
+        'required_level': 0,
+        'is_shared': False,
+    },
+    {
+        'code': 'data_maintenance',
+        'title': '資料維護',
+        'parent_code': 'servsr_manage',
+        'link_type': 'route',
+        'link_target': 'hostconfig.data_maintenance',
+        'display_order': 1,
         'depth': 1,
         'required_level': 0,
         'is_shared': False,
@@ -290,7 +315,7 @@ CORE_MENUS = [
     },
     {
         'code': 'sys_accounts',
-        'title': '系統級帳號管理',
+        'title': '系統管理員帳號',
         'parent_code': 'perm_mgmt',
         'link_type': 'route',
         'link_target': 'sys_accounts.list_accounts',
@@ -471,11 +496,11 @@ CORE_MENUS = [
         'is_shared': False,
     },
 
-    # -- 角色管控 (ROLES_CONTROL) --
+    # -- 角色管控 (roles_control) --
     {
         'code': 'permission_central_org',
         'title': '權限中央管理',
-        'parent_code': 'ROLES_CONTROL',
+        'parent_code': 'roles_control',
         'link_type': 'url',
         'link_target': '/permissions/',
         'display_order': 0,
@@ -486,7 +511,7 @@ CORE_MENUS = [
     {
         'code': 'module_perm_mgmt',
         'title': '模組權限管理',
-        'parent_code': 'ROLES_CONTROL',
+        'parent_code': 'roles_control',
         'link_type': 'route',
         'link_target': 'admin.module_permissions',
         'display_order': 1,
@@ -498,7 +523,7 @@ CORE_MENUS = [
     {
         'code': 'module_users',
         'title': '模組用戶設定',
-        'parent_code': 'ROLES_CONTROL',
+        'parent_code': 'roles_control',
         'link_type': 'route',
         'link_target': 'admin.module_users',
         'display_order': 2,
@@ -509,7 +534,7 @@ CORE_MENUS = [
     {
         'code': 'account_roles',
         'title': '帳號角色權限表',
-        'parent_code': 'ROLES_CONTROL',
+        'parent_code': 'roles_control',
         'link_type': 'route',
         'link_target': 'account_roles.index',
         'display_order': 3,
@@ -609,7 +634,7 @@ CORE_MENUS = [
 # 選單角色需求預設值 (雙鑰匙 Key2)
 # menu_code → [role_codes]
 #
-# 從 system.local 的 menu_role_requirements 匯出 (2026-03-26)
+# 從 system.local 的 menu_role_requirements 匯出 (2026-03-30)
 # SYSTEM_ADMIN 專用選單不需要角色（程式 bypass），故不在此列
 # ============================================================================
 MENU_ROLE_DEFAULTS = {
@@ -659,7 +684,7 @@ MENU_ROLE_DEFAULTS = {
     'groups': ['ORG_ADMIN'],
 
     # 角色管控區（ORG_ADMIN only）
-    'ROLES_CONTROL': ['ORG_ADMIN'],
+    'roles_control': ['ORG_ADMIN'],
     'account_roles': ['ORG_ADMIN'],
     'module_perm_mgmt': ['ORG_ADMIN'],
     'module_users': ['ORG_ADMIN'],
