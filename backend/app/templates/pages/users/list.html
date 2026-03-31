@@ -1,11 +1,11 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ _('一般用戶管理') }} - BeakMask{% endblock %}
+{% block title %}{{ _('企業成員管理') }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <div class="page-header" style="margin-top:30px;">
-        <h1 class="page-title" style="margin: 0;">{{ _('一般用戶管理') }}</h1>
+        <h1 class="page-title" style="margin: 0;">{{ _('企業成員管理') }}</h1>
     </div>
     <div>
         <a href="{{ url_for('users.create_user') }}" class="btn btn-primary">
