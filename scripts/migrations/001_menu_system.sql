@@ -195,12 +195,16 @@ CREATE TRIGGER update_pages_updated_at
 -- =============================================================================
 -- 5. GRANT PERMISSIONS
 -- =============================================================================
-GRANT SELECT, INSERT, UPDATE, DELETE ON modules TO beakmask_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON menu_items TO beakmask_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON pages TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE modules_id_seq TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE menu_items_id_seq TO beakmask_app;
-GRANT USAGE, SELECT ON SEQUENCE pages_id_seq TO beakmask_app;
+DO $$
+BEGIN
+    -- 動態取得連線用戶名稱，相容不同部署環境
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON modules TO %I', current_user);
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON menu_items TO %I', current_user);
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON pages TO %I', current_user);
+    EXECUTE format('GRANT USAGE, SELECT ON SEQUENCE modules_id_seq TO %I', current_user);
+    EXECUTE format('GRANT USAGE, SELECT ON SEQUENCE menu_items_id_seq TO %I', current_user);
+    EXECUTE format('GRANT USAGE, SELECT ON SEQUENCE pages_id_seq TO %I', current_user);
+END $$;
 
 -- =============================================================================
 -- 6. SEED DATA

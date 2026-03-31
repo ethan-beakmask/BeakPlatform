@@ -11,13 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 2. CREATE APPLICATION ROLE
 -- =============================================================================
 -- This role will be used by the application, with RLS enforced
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'beakmask_app') THEN
-        CREATE ROLE beakmask_app WITH LOGIN PASSWORD 'app_password_change_me';
-    END IF;
-END
-$$;
+-- Application role 由 install.sh 建立 (DB_USER)，此處不再硬編碼 role 名稱
 
 -- =============================================================================
 -- 3. CREATE TABLES
@@ -136,11 +130,14 @@ CREATE TRIGGER update_users_updated_at
 -- 7. GRANT PERMISSIONS
 -- =============================================================================
 
--- Grant permissions to app role
-GRANT USAGE ON SCHEMA public TO beakmask_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO beakmask_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO beakmask_app;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO beakmask_app;
+-- Grant permissions to app role (動態取得連線用戶名稱)
+DO $$
+BEGIN
+    EXECUTE format('GRANT USAGE ON SCHEMA public TO %I', current_user);
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', current_user);
+    EXECUTE format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %I', current_user);
+    EXECUTE format('GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO %I', current_user);
+END $$;
 
 -- =============================================================================
 -- 8. SEED DATA

@@ -436,6 +436,7 @@ ensure_service_user
 log_step "2/9" "設定 PostgreSQL..."
 
 sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
+sudo -u postgres psql -c "ALTER USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || true
 
 # 全新安裝：先清除舊 DB 再建立（避免殘留資料衝突）
 # 斷開所有連線後再 DROP，並驗證結果
