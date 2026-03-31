@@ -31,9 +31,9 @@ def edit():
 def change_password():
     """變更密碼頁面"""
     if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
 
         if not current_password or not new_password or not confirm_password:
             flash('所有欄位為必填', 'error')

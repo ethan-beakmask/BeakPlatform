@@ -177,9 +177,9 @@ def personal_settings():
 def change_password():
     """變更密碼頁面"""
     if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
 
         # 驗證當前密碼
         if not current_user.check_password(current_password):

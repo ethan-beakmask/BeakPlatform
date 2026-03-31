@@ -278,7 +278,7 @@ def login():
     if is_json:
         data = request.get_json()
         account = data.get('account', '').strip() if data else ''
-        password = data.get('password', '') if data else ''
+        password = (data.get('password', '') if data else '').strip()
     else:
         account = request.form.get('account', '').strip()
         # 偽裝欄位: 真正的密碼從 OTP1 讀取
@@ -383,7 +383,7 @@ def org_login(domain_name: str):
     if is_json:
         data = request.get_json()
         username = data.get('username', '').strip() if data else ''
-        password = data.get('password', '') if data else ''
+        password = (data.get('password', '') if data else '').strip()
     else:
         username = request.form.get('username', '').strip()
         # 偽裝欄位: 真正的密碼從 OTP1 讀取
@@ -533,11 +533,11 @@ def org_public_login(domain_name: str):
     if is_json:
         data = request.get_json()
         email = data.get('email', '').strip().lower() if data else ''
-        password = data.get('password', '') if data else ''
+        password = (data.get('password', '') if data else '').strip()
     else:
         email = request.form.get('email', '').strip().lower()
         # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '')
+        password = request.form.get('OTP1', '').strip()
         # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
         _decoy_credential = request.form.get('auth_token', '')
         _decoy_otp2 = request.form.get('OTP2', '')
@@ -736,13 +736,13 @@ def change_password():
 
     if is_json:
         data = request.get_json()
-        current_password = data.get('current_password', '') if data else ''
-        new_password = data.get('new_password', '') if data else ''
-        confirm_password = data.get('confirm_password', '') if data else ''
+        current_password = (data.get('current_password', '') if data else '').strip()
+        new_password = (data.get('new_password', '') if data else '').strip()
+        confirm_password = (data.get('confirm_password', '') if data else '').strip()
     else:
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
 
     def error_response(message, status_code=400):
         if is_json:
