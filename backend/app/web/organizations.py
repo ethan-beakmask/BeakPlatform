@@ -201,7 +201,7 @@ def create_org():
         domain_name = request.form.get('domain_name', '').strip().lower()
         description = request.form.get('description', '').strip() or None
         admin_username = request.form.get('admin_username', 'admin').strip() or 'admin'
-        admin_password = request.form.get('admin_password', '').strip() or None
+        admin_password = request.form.get('admin_password', '').strip()
 
         # code 空白時自動產生
         if not code and name:
@@ -220,7 +220,9 @@ def create_org():
             flash('企業代碼、企業名稱、網域名稱為必填', 'error')
         elif not domain_name.replace('-', '').replace('.', '').isalnum():
             flash('網域名稱只能包含字母、數字、連字號和點', 'error')
-        elif admin_password and len(admin_password) < 12:
+        elif not admin_password:
+            flash('管理員密碼為必填', 'error')
+        elif len(admin_password) < 12:
             flash('管理員密碼長度至少 12 碼', 'error')
         else:
             try:

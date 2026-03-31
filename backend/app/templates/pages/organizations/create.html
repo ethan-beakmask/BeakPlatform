@@ -81,18 +81,17 @@
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: top;"><label for="admin_password">管理員密碼</label></td>
+            <td style="vertical-align: top;"><label for="admin_password">管理員密碼 *</label></td>
             <td>
                 <div class="password-field">
                     <input :type="showPassword ? 'text' : 'password'" id="admin_password" name="admin_password"
                            x-model="password" @input="validatePassword()"
-                           size="20" minlength="8">
+                           size="20" minlength="12" required>
                     <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
                             x-text="showPassword ? '隱藏' : '顯示'"></button>
                     <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
                 </div>
                 <small x-text="passwordRequirements"></small>
-                <br><small class="text-muted">如不填則使用預設密碼 (首次登入需變更)</small>
                 <div class="password-errors" x-show="password && passwordErrors.length > 0">
                     <template x-for="err in passwordErrors" :key="err">
                         <div x-text="'• ' + err"></div>

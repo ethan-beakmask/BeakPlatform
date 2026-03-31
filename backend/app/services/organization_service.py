@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # 密碼規則
 MIN_PASSWORD_LENGTH = 12
-DEFAULT_ADMIN_PASSWORD = 'ChangeMe123!'  # 預設密碼 (首次登入必須變更)
+DEFAULT_ADMIN_PASSWORD = None  # 已棄用：建立企業時密碼為必填
 
 
 class OrganizationService:
@@ -120,10 +120,12 @@ class OrganizationService:
 
         if create_admin:
             # 建立預設企業管理員（原始管理員）
+            if not admin_password:
+                raise ValueError('管理員密碼為必填')
             admin_user = OrganizationService._create_default_admin(
                 org=org,
                 username=admin_username,
-                password=admin_password or DEFAULT_ADMIN_PASSWORD,
+                password=admin_password,
                 created_by=created_by
             )
 

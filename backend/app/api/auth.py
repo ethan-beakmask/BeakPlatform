@@ -282,7 +282,7 @@ def login():
     else:
         account = request.form.get('account', '').strip()
         # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '')
+        password = request.form.get('OTP1', '').strip()
         # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
         _decoy_credential = request.form.get('auth_token', '')
         _decoy_otp2 = request.form.get('OTP2', '')
@@ -387,7 +387,7 @@ def org_login(domain_name: str):
     else:
         username = request.form.get('username', '').strip()
         # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '')
+        password = request.form.get('OTP1', '').strip()
         # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
         _decoy_credential = request.form.get('auth_token', '')
         _decoy_otp2 = request.form.get('OTP2', '')

@@ -118,7 +118,7 @@ def create_organization():
         "user_limit": 50,
         "contact_person": "張三",
         "contact_email": "contact@acme.com.tw",
-        "admin_password": "optional_password"
+        "admin_password": "required_password"
     }
     """
     data = request.get_json()
@@ -126,7 +126,7 @@ def create_organization():
     if not data:
         return jsonify({'error': '請提供企業資料'}), 400
 
-    required_fields = ['code', 'name', 'domain_name']
+    required_fields = ['code', 'name', 'domain_name', 'admin_password']
     for field in required_fields:
         if not data.get(field):
             return jsonify({'error': f'缺少必要欄位: {field}'}), 400
