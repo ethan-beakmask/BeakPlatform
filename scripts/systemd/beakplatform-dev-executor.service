@@ -1,0 +1,41 @@
+# =============================================================================
+# BeakPlatform-Dev Workflow Executor
+# =============================================================================
+# 開發環境專用的工作流執行器。
+#
+# ** 開發工具 -- 僅限本機開發環境使用 **
+# ** 禁止複製到正式環境或推送到 GitHub **
+#
+# 正式環境使用 beakplatform-executor.service（路徑 /opt/BeakPlatform/）
+# 開發環境使用本檔案（路徑 /opt/BeakPlatform-dev/）
+# 兩者連接不同 DB，互不干擾。
+#
+# 安裝：
+#   sudo cp scripts/systemd/beakplatform-dev-executor.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now beakplatform-dev-executor
+#
+# 檢查：
+#   sudo systemctl status beakplatform-dev-executor
+#   sudo journalctl -u beakplatform-dev-executor -f
+# =============================================================================
+
+[Unit]
+Description=BeakPlatform-Dev Workflow Executor (開發環境)
+After=network.target postgresql.service beakplatform-dev.service
+Wants=beakplatform-dev.service
+
+[Service]
+Type=simple
+User=ethan
+Group=ethan
+WorkingDirectory=/opt/BeakPlatform-dev/backend
+Environment=PATH=/opt/BeakPlatform-dev/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=EXECUTOR_STANDALONE=1
+EnvironmentFile=/opt/BeakPlatform-dev/.env
+ExecStart=/opt/BeakPlatform-dev/venv/bin/python /opt/BeakPlatform-dev/backend/workflow_executor_main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
