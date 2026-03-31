@@ -50,6 +50,7 @@ EXCLUDE_FILES=(
     "scripts/spec_check.py"
     "scripts/add_column_comments.sql"
     "scripts/init_db.sql"
+    "scripts/workflow_bundle.py"
     # scripts/verify_install.sh 已隨 install.sh 開放給用戶
     # backend - 開發工具
     "backend/app/web/dev.py"
