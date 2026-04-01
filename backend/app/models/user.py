@@ -38,13 +38,14 @@ class User(TenantBaseModel, UserMixin):
     # 組織內唯一約束
     __table_args__ = (
         UniqueConstraint('username', 'org_secure_code', name='unique_user_org'),
+        UniqueConstraint('email', 'org_secure_code', name='unique_email_org'),
     )
 
     # 用戶名 (組織內唯一，用於登入)
     username = Column(String(100), nullable=False, index=True)
 
-    # Email (全系統唯一)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    # Email (組織內唯一)
+    email = Column(String(255), nullable=False, index=True)
 
     # 密碼 hash
     password_hash = Column(String(255), nullable=False)

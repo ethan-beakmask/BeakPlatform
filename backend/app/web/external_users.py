@@ -219,8 +219,12 @@ def create_external_user():
             # 從 email 提取 username
             username = email.split('@')[0]
 
-            # 檢查帳號是否已存在
-            existing = User.query.filter_by(email=email, is_deleted=False).first()
+            # 檢查同企業內 email 是否已存在
+            existing = User.query.filter_by(
+                email=email,
+                org_secure_code=org.secure_code,
+                is_deleted=False
+            ).first()
             if existing:
                 flash(f'Email {email} 已存在', 'error')
             else:
@@ -395,9 +399,10 @@ def edit_external_user(secure_code: str):
         elif '@' not in new_email:
             flash('請輸入有效的 Email 格式', 'error')
         else:
-            # 檢查 email 是否與其他帳號重複
+            # 檢查同企業內 email 是否與其他帳號重複
             existing = User.query.filter(
                 User.email == new_email,
+                User.org_secure_code == org.secure_code,
                 User.secure_code != secure_code,
                 User.is_deleted == False
             ).first()
