@@ -306,13 +306,13 @@ class OrganizationService:
         db.session.add(group_convener_role)
         roles['group_convener'] = group_convener_role
 
-        # 表單編輯員角色
+        # 表單設計師角色
         form_editor_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.ROLE,
             scope_type=ScopeType.GLOBAL,
-            code='FORM_EDITOR',
-            name='表單編輯員',
+            code='FORM_DESIGNER',
+            name='表單設計師',
             description='管理表單範本、流程設計，並可試行未發行的設計稿',
             is_manager=False,
             is_system_role=True,
@@ -320,7 +320,55 @@ class OrganizationService:
         )
         form_editor_role.update_full_path()
         db.session.add(form_editor_role)
-        roles['form_editor'] = form_editor_role
+        roles['form_designer'] = form_editor_role
+
+        # 流程設計師角色
+        flow_designer_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='FLOW_DESIGNER',
+            name='流程設計師',
+            description='設計與管理簽核流程',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        flow_designer_role.update_full_path()
+        db.session.add(flow_designer_role)
+        roles['flow_designer'] = flow_designer_role
+
+        # 規格管理師角色
+        spec_designer_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='SPEC_DESIGNER',
+            name='規格管理師',
+            description='管理系統規格與參數定義',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        spec_designer_role.update_full_path()
+        db.session.add(spec_designer_role)
+        roles['spec_designer'] = spec_designer_role
+
+        # 子系統架構師角色
+        subsys_designer_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='SUBSYS_DESIGNER',
+            name='子系統架構師',
+            description='管理子系統架構與模組配置',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        subsys_designer_role.update_full_path()
+        db.session.add(subsys_designer_role)
+        roles['subsys_designer'] = subsys_designer_role
 
         # 企業成員角色
         employee_role = Role(
@@ -366,7 +414,7 @@ class OrganizationService:
 
         權限分配原則：
         - EMPLOYEE: 基本表單使用權限（填寫、檢視、簽核）
-        - FORM_EDITOR: 表單/流程管理 + 試行設計稿
+        - FORM_DESIGNER: 表單/流程管理 + 試行設計稿
         - ORG_ADMIN: 透過 module_access_required 直接放行，不需配 role_permissions
         """
         from ..models.permission import Permission
@@ -430,7 +478,7 @@ class OrganizationService:
         為新企業建立預設選單角色需求（雙鑰匙 Key2）。
 
         使用 MENU_ROLE_DEFAULTS 定義，為每個選單建立完整的角色需求，
-        包含 ORG_ADMIN、EMPLOYEE、EXTERNAL_USERS、FORM_EDITOR 等角色。
+        包含 ORG_ADMIN、EMPLOYEE、EXTERNAL_USERS、FORM_DESIGNER 等角色。
 
         委託給 MenuService.seed_org_role_requirements() 統一處理。
         """

@@ -638,13 +638,13 @@ MENU_ROLE_DEFAULTS = {
     'platform_help.employee': ['EMPLOYEE'],
     'platform_help.external': ['EXTERNAL_USERS'],
 
-    # 表單流程模組（ORG_ADMIN + FORM_EDITOR）
-    'form_workflow': ['ORG_ADMIN', 'FORM_EDITOR'],
-    'form_workflow.categories': ['ORG_ADMIN', 'FORM_EDITOR'],
-    'form_workflow.form_themes': ['ORG_ADMIN', 'FORM_EDITOR'],
-    'form_workflow.mappings': ['ORG_ADMIN', 'FORM_EDITOR'],
-    'form_workflow.templates': ['ORG_ADMIN', 'FORM_EDITOR'],
-    'form_workflow.workflows': ['ORG_ADMIN', 'FORM_EDITOR'],
+    # 表單流程模組（ORG_ADMIN + FORM_DESIGNER + FLOW_DESIGNER）
+    'form_workflow': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
+    'form_workflow.categories': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
+    'form_workflow.form_themes': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
+    'form_workflow.mappings': ['ORG_ADMIN', 'FORM_DESIGNER', 'FLOW_DESIGNER'],
+    'form_workflow.templates': ['ORG_ADMIN', 'FORM_DESIGNER'],
+    'form_workflow.workflows': ['ORG_ADMIN', 'FLOW_DESIGNER'],
 
     # 系統管理區（ORG_ADMIN only）
     'org_config_mgr': ['ORG_ADMIN'],
@@ -684,14 +684,16 @@ MENU_ROLE_DEFAULTS = {
     'org_rate_limits': ['ORG_ADMIN'],
     'alert_broadcasts_org': ['ORG_ADMIN'],
 
-    # 模組根選單（ORG_ADMIN only）
-    'spec_formulate': ['ORG_ADMIN'],
-    'spec_formulate.spec_multifaceted': ['ORG_ADMIN'],
-    'nocode_builder': ['ORG_ADMIN'],
-    'nocode_builder.sub_systems': ['ORG_ADMIN'],
-    'nocode_builder.lab': ['ORG_ADMIN'],
-    'nocode_builder.views': ['ORG_ADMIN'],
-    'nocode_builder.lookup': ['ORG_ADMIN'],
+    # 規格制定模組（ORG_ADMIN + SPEC_DESIGNER）
+    'spec_formulate': ['ORG_ADMIN', 'SPEC_DESIGNER'],
+    'spec_formulate.spec_multifaceted': ['ORG_ADMIN', 'SPEC_DESIGNER'],
+
+    # 無程式碼建構模組（ORG_ADMIN + SUBSYS_DESIGNER）
+    'nocode_builder': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
+    'nocode_builder.sub_systems': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
+    'nocode_builder.lab': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
+    'nocode_builder.views': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
+    'nocode_builder.lookup': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
 }
 
 
