@@ -2,11 +2,7 @@
 {#
     模組權限管理頁面 (/admin/module-permissions)
 
-    此頁面內容與 /modules/ 同步顯示模組權限資訊。
-    修改時請同步檢查:
-      - templates/pages/modules/list.html
-      - backend/app/web/modules.py list_modules()
-      - backend/app/web/admin.py module_permissions()
+    顯示企業已授權模組清單與合約到期資訊。
 #}
 
 {% block title %}模組權限管理 - BeakMask{% endblock %}
@@ -16,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="modulePermissions()">
+<div>
     <h2>模組權限管理</h2>
 
     <div class="mp-summary">
@@ -38,7 +34,8 @@
                 <th>模組代碼</th>
                 <th>模組名稱</th>
                 <th style="width: 100px;">授權狀態</th>
-                <th style="width: 140px;">使用權管理</th>
+                <th style="width: 140px;">合約到期日</th>
+                <th style="width: 140px;">剩餘時間</th>
             </tr>
         </thead>
         <tbody>
@@ -55,135 +52,22 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if mod.authorized %}
-                    <button class="mp-manage-btn"
-                            @click="toggleACL('{{ mod.code }}', '{{ mod.label }}')">
-                        <span x-text="expandedModule === '{{ mod.code }}' ? '收合' : '管理使用者'"></span>
-                    </button>
+                    {% if mod.end_date %}
+                    {{ mod.end_date.strftime('%Y-%m-%d') }}
                     {% else %}
-                    <span style="color: #999; font-size: 12px;">-</span>
+                    <span style="color: #999;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if mod.remaining %}
+                    {{ mod.remaining }}
+                    {% else %}
+                    <span style="color: #999;">-</span>
                     {% endif %}
                 </td>
             </tr>
-            {% if mod.authorized %}
-            <tr x-show="expandedModule === '{{ mod.code }}'" x-cloak>
-                <td colspan="5" class="mp-acl-cell">
-                    <div class="mp-acl-section">
-                        <div class="mp-acl-header">
-                            <h4 style="margin: 0;">使用權指派 - {{ mod.label }}</h4>
-                            <button class="mp-add-btn" @click="openAddModal('{{ mod.code }}')">新增指派</button>
-                        </div>
-                        <p class="mp-acl-hint">
-                            未設定任何指派時，所有人皆可使用此模組。設定後僅指派對象可使用。
-                        </p>
-                        <div x-show="aclLoading" style="padding: 8px; color: #666;">載入中...</div>
-                        <table x-show="!aclLoading && aclList.length > 0" class="mp-acl-table">
-                            <thead>
-                                <tr>
-                                    <th>類型</th>
-                                    <th>名稱</th>
-                                    <th style="width: 120px;">建立時間</th>
-                                    <th style="width: 80px;">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="acl in aclList" :key="acl.secure_code">
-                                    <tr>
-                                        <td><span class="mp-type-badge" x-text="typeLabels[acl.target_type] || acl.target_type"></span></td>
-                                        <td x-text="acl.target_name"></td>
-                                        <td x-text="acl.created_at ? acl.created_at.substring(0, 10) : '-'"></td>
-                                        <td>
-                                            <button class="mp-del-btn" @click="removeACL(acl.secure_code)">移除</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                        <div x-show="!aclLoading && aclList.length === 0" class="mp-acl-empty">
-                            尚未設定使用權指派（所有人皆可使用）
-                        </div>
-                    </div>
-                </td>
-            </tr>
-            {% endif %}
             {% endfor %}
         </tbody>
     </table>
-
-    {% if contracts %}
-    <div class="mp-contract-section">
-        <h3>相關合約</h3>
-        {% for item in contracts %}
-        {% set c = item.contract %}
-        <div class="mp-contract-card">
-            <div class="mp-contract-header">
-                <span class="mp-contract-name">{{ c.name or c.contract_number }}</span>
-                <span class="mp-contract-period">
-                    {{ c.start_date.strftime('%Y-%m-%d') }} ~ {{ c.end_date.strftime('%Y-%m-%d') }}
-                    {% if c.days_remaining is not none %}
-                    (剩餘 {{ c.days_remaining }} 天)
-                    {% endif %}
-                </span>
-            </div>
-            <div class="mp-contract-modules">
-                {% if item.modules %}
-                    授權模組:
-                    {% for m in item.modules %}
-                    <span class="mp-module-tag">{{ m }}</span>
-                    {% endfor %}
-                {% else %}
-                    <span style="color: #999;">無模組授權</span>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- 新增指派模態框 -->
-    <div x-show="showAddModal" x-cloak class="mp-modal-overlay">
-        <div class="mp-modal">
-            <div class="mp-modal-header">
-                <h3 style="margin: 0;">新增使用權指派</h3>
-                <button class="mp-modal-close" @click="showAddModal = false">X</button>
-            </div>
-            <div class="mp-modal-body">
-                <div class="mp-form-group">
-                    <label>指派類型</label>
-                    <select x-model="addTargetType" @change="loadTargets()">
-                        <option value="">-- 選擇類型 --</option>
-                        <option value="ROLE">角色</option>
-                        <option value="DEPARTMENT">部門</option>
-                        <option value="GROUP">群組</option>
-                        <option value="ACCOUNT">個人帳號</option>
-                    </select>
-                </div>
-                <div class="mp-form-group" x-show="addTargetType">
-                    <label>選擇對象</label>
-                    <input type="text" x-model="targetSearch" @input.debounce.300ms="loadTargets()"
-                           placeholder="搜尋...">
-                    <div class="mp-target-list">
-                        <template x-for="t in targetList" :key="t.secure_code">
-                            <div class="mp-target-item"
-                                 :class="{'mp-target-selected': addTargetSC === t.secure_code}"
-                                 @click="addTargetSC = t.secure_code">
-                                <span x-text="t.name"></span>
-                                <span class="mp-target-detail" x-text="t.detail"></span>
-                            </div>
-                        </template>
-                        <div x-show="targetList.length === 0 && addTargetType" style="padding: 8px; color: #999;">
-                            無符合項目
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="mp-modal-footer">
-                <button class="mp-cancel-btn" @click="showAddModal = false">取消</button>
-                <button class="mp-confirm-btn" @click="submitAdd()" :disabled="!addTargetSC">確定新增</button>
-            </div>
-        </div>
-    </div>
 </div>
-
-<script src="{{ url_for('static', filename='js/module-permissions.js') }}"></script>
 {% endblock %}

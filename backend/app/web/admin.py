@@ -19,6 +19,23 @@ from .. import db
 admin_bp = Blueprint('admin', __name__)
 
 
+def _format_remaining(total_days: int) -> str:
+    """將剩餘天數格式化為 X年Y月Z日"""
+    if total_days < 0:
+        return '已過期'
+    years = total_days // 365
+    remainder = total_days % 365
+    months = remainder // 30
+    days = remainder % 30
+    parts = []
+    if years > 0:
+        parts.append(f'{years} 年')
+    if months > 0:
+        parts.append(f'{months} 月')
+    parts.append(f'{days} 日')
+    return ' '.join(parts)
+
+
 @admin_bp.route('/')
 @admin_required
 def index():
@@ -101,39 +118,45 @@ def module_permissions():
         Contract.is_deleted == False
     ).order_by(Contract.end_date.desc()).all()
 
-    # 聯集所有已授權的模組代碼
+    # 聯集所有已授權的模組代碼 + 各模組最晚終止日
     authorized_codes = set()
-    contract_module_map = []
+    module_end_dates = {}  # module_code -> latest end_date
     for contract in contracts:
-        modules = []
         if contract.modules_config:
             try:
                 modules = json.loads(contract.modules_config)
                 if isinstance(modules, list):
                     authorized_codes.update(modules)
+                    for mc in modules:
+                        if contract.end_date:
+                            prev = module_end_dates.get(mc)
+                            if not prev or contract.end_date > prev:
+                                module_end_dates[mc] = contract.end_date
             except (json.JSONDecodeError, TypeError):
                 pass
-        contract_module_map.append({
-            'contract': contract,
-            'modules': modules,
-        })
 
     # 取得已安裝模組的詳細資訊
     installed_modules = LookupService.get_items('INSTALLED_MODULES')
 
-    # 合併：標記哪些已授權
+    # 合併：標記哪些已授權 + 計算剩餘時間
     module_list = []
     for mod in installed_modules:
+        end_date = module_end_dates.get(mod['code'])
+        remaining = None
+        if end_date:
+            delta = end_date - today
+            remaining = _format_remaining(delta.days)
         module_list.append({
             'code': mod['code'],
             'label': mod['label'],
             'authorized': mod['code'] in authorized_codes,
+            'end_date': end_date,
+            'remaining': remaining,
         })
 
     return render_template(
         'pages/admin/module_permissions.html',
         module_list=module_list,
-        contracts=contract_module_map,
         authorized_count=len(authorized_codes),
         total_count=len(installed_modules),
     )
