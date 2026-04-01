@@ -46,6 +46,113 @@ def _create_member_role(unit: OrganizationalUnit) -> Role:
     return role
 
 
+def _ensure_dept_membership(user, unit, operator_email: str):
+    """
+    確保部門成員關係與成員角色存在。
+
+    1. 建立或恢復 UserUnitMembership(SOLID)
+    2. 指派該部門的 _MEMBER 角色（若存在）
+    """
+    from ..models.associations import UserRoleAssignment
+
+    org_sc = unit.org_secure_code
+
+    # 1. SOLID 成員關係
+    existing = UserUnitMembership.query.filter(
+        UserUnitMembership.org_secure_code == org_sc,
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.unit_secure_code == unit.secure_code,
+        UserUnitMembership.membership_type == MembershipType.SOLID,
+    ).first()
+
+    if existing:
+        if existing.is_deleted:
+            existing.is_deleted = False
+            existing.deleted_at = None
+    else:
+        membership = UserUnitMembership(
+            org_secure_code=org_sc,
+            user_secure_code=user.secure_code,
+            unit_secure_code=unit.secure_code,
+            membership_type=MembershipType.SOLID,
+            role_type=MembershipRole.MEMBER,
+        )
+        db.session.add(membership)
+
+    # 2. _MEMBER 角色指派
+    if not unit.member_role_secure_code:
+        return
+
+    role_exists = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.user_secure_code == user.secure_code,
+        UserRoleAssignment.role_secure_code == unit.member_role_secure_code,
+        UserRoleAssignment.is_deleted == False,
+    ).first()
+
+    if not role_exists:
+        # 檢查是否有已刪除的可恢復
+        deleted = UserRoleAssignment.query.filter(
+            UserRoleAssignment.org_secure_code == org_sc,
+            UserRoleAssignment.user_secure_code == user.secure_code,
+            UserRoleAssignment.role_secure_code == unit.member_role_secure_code,
+            UserRoleAssignment.is_deleted == True,
+        ).first()
+
+        if deleted:
+            deleted.is_deleted = False
+            deleted.deleted_at = None
+        else:
+            assignment = UserRoleAssignment(
+                org_secure_code=org_sc,
+                user_secure_code=user.secure_code,
+                role_secure_code=unit.member_role_secure_code,
+                unit_secure_code=unit.secure_code,
+                assigned_by=operator_email,
+            )
+            db.session.add(assignment)
+
+
+def _remove_dept_membership(user, unit):
+    """
+    移除部門成員關係與成員角色。
+
+    1. 軟刪除 UserUnitMembership(SOLID)
+    2. 軟刪除該部門的 _MEMBER 角色指派
+    """
+    from ..models.associations import UserRoleAssignment
+
+    org_sc = unit.org_secure_code
+
+    # 1. 軟刪除 SOLID 成員關係
+    membership = UserUnitMembership.query.filter(
+        UserUnitMembership.org_secure_code == org_sc,
+        UserUnitMembership.user_secure_code == user.secure_code,
+        UserUnitMembership.unit_secure_code == unit.secure_code,
+        UserUnitMembership.membership_type == MembershipType.SOLID,
+        UserUnitMembership.is_deleted == False,
+    ).first()
+
+    if membership:
+        membership.is_deleted = True
+        membership.deleted_at = datetime.utcnow()
+
+    # 2. 軟刪除 _MEMBER 角色指派
+    if not unit.member_role_secure_code:
+        return
+
+    assignment = UserRoleAssignment.query.filter(
+        UserRoleAssignment.org_secure_code == org_sc,
+        UserRoleAssignment.user_secure_code == user.secure_code,
+        UserRoleAssignment.role_secure_code == unit.member_role_secure_code,
+        UserRoleAssignment.is_deleted == False,
+    ).first()
+
+    if assignment:
+        assignment.is_deleted = True
+        assignment.deleted_at = datetime.utcnow()
+
+
 def _is_admin(user) -> bool:
     """Check if user is system admin or org admin"""
     return (
@@ -654,6 +761,7 @@ def add_member_to_unit(secure_code: str):
 
     try:
         user.primary_unit_secure_code = secure_code
+        _ensure_dept_membership(user, unit, current_user.email)
         db.session.commit()
 
         logger.info(f"User {user.email} added to unit {unit.code} by {current_user.email}")
@@ -705,6 +813,7 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
 
     try:
         user.primary_unit_secure_code = None
+        _remove_dept_membership(user, unit)
         db.session.commit()
 
         logger.info(f"User {user.email} removed from unit {unit.code} by {current_user.email}")
@@ -769,8 +878,9 @@ def set_unit_manager(secure_code: str):
         return jsonify({'error': '部門主管角色不存在，請聯繫系統管理員'}), 500
 
     try:
-        # 1. 將用戶加入部門（設為主要部門）
+        # 1. 將用戶加入部門（設為主要部門）+ 成員關係與角色
         user.primary_unit_secure_code = secure_code
+        _ensure_dept_membership(user, unit, current_user.email)
 
         # 2. 移除此部門現有主管的角色（如果有）
         existing_manager_assignments = UserRoleAssignment.query.filter(

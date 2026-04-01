@@ -296,9 +296,10 @@ def get_available_rules():
     scope = request.args.get('scope')
     rules = NumberingService.get_active_rules(current_user.org_secure_code)
 
-    # 如果有指定 scope，過濾規則
+    # 如果有指定 scope，過濾規則（支援逗號分隔多值）
     if scope:
-        rules = [r for r in rules if r.usage_scope == scope]
+        scopes = [s.strip() for s in scope.split(',')]
+        rules = [r for r in rules if r.usage_scope in scopes]
 
     result = []
     for rule in rules:

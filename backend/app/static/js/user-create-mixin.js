@@ -298,10 +298,13 @@ function userCreateMixin(config) {
 
         uc_loadRules: async function() {
             try {
-                var response = await fetch('/api/numbering/rules?scope=INTERNAL_ONLY');
+                var response = await fetch('/api/numbering/rules?scope=INTERNAL_ONLY,INTERNAL_UNIVERSAL');
                 var data = await response.json();
                 if (data.success && data.data.length > 0) {
-                    this.uc_rules = data.data;
+                    // 只保留企業成員預設編號與非預設(自訂)編號
+                    this.uc_rules = data.data.filter(function(r) {
+                        return r.default_for === 'EMPLOYEE' || !r.default_for;
+                    });
                     var defaultRule = this.uc_rules.find(function(r) { return r.default_for === 'EMPLOYEE'; });
                     if (defaultRule) {
                         this.uc_selectedRule = defaultRule.secure_code;
