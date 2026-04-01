@@ -207,6 +207,8 @@ install.sh 安全機制:
   - --update: 不重跑已執行的 migration + SQL 有 IF NOT EXISTS 保護
 """,
     )
+    parser.add_argument('--all', action='store_true',
+                        help='匯出全部（選單 + RBAC）')
     parser.add_argument('--menu', action='store_true',
                         help='只匯出選單預設值')
     parser.add_argument('--rbac', action='store_true',
@@ -215,9 +217,13 @@ install.sh 安全機制:
                         help='預覽不寫檔')
     args = parser.parse_args()
 
-    # 預設兩個都匯出
-    do_menu = args.menu or (not args.menu and not args.rbac)
-    do_rbac = args.rbac or (not args.menu and not args.rbac)
+    # 無參數時顯示使用說明
+    if not args.all and not args.menu and not args.rbac:
+        parser.print_help()
+        return 0
+
+    do_menu = args.all or args.menu
+    do_rbac = args.all or args.rbac
 
     # 跳過模組同步（只需要 DB 連線）
     os.environ['SKIP_MODULE_SYNC'] = '1'
