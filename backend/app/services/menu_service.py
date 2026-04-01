@@ -1646,6 +1646,15 @@ class MenuService:
 
             code_to_item = {item.code: item for item in items}
 
+            # parent 查找用：含 user-created 項目
+            # （非 user-created 項目可能掛在 user-created 根項目下）
+            all_items = MenuItem.query.filter(
+                MenuItem.is_deleted == False,
+            ).all()
+            all_sc_to_code = {
+                i.secure_code: i.code for i in all_items
+            }
+
             # 2. 快照 menu_permissions (Key1)
             all_perms = MenuPermission.query.filter(
                 MenuPermission.is_deleted == False,
@@ -1696,14 +1705,10 @@ class MenuService:
                 role_codes = sorted(mrr_map.get(item.secure_code, []))
 
                 # parent_code: 從 parent_secure_code 反查 parent.code
-                parent_code = None
-                if item.parent_secure_code:
-                    parent = code_to_item.get(None)  # 先查 map
-                    # 用 secure_code 在 items 中找 parent
-                    for candidate in items:
-                        if candidate.secure_code == item.parent_secure_code:
-                            parent_code = candidate.code
-                            break
+                # 在所有項目中查找（含 user-created），確保跨類型父子關係正確
+                parent_code = all_sc_to_code.get(
+                    item.parent_secure_code
+                ) if item.parent_secure_code else None
 
                 default_row = MenuDefault(
                     code=item.code,
