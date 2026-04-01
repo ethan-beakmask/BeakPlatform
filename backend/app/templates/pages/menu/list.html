@@ -19,8 +19,33 @@
         <span class="trellis-hint">{{ _('拖曳調整位置') }}</span>
         <span style="margin-left:auto; display:flex; gap:6px;">
             <button type="button" @click="resetPositions()" :disabled="saving">{{ _('重置MENU項目位置') }}</button>
+            <button type="button" @click="showSaveFactoryModal = true" :disabled="saving">{{ _('設定目前組態成出廠值') }}</button>
             <button type="button" @click="showFactoryResetModal = true" :disabled="saving" style="color:#f87171;">{{ _('重置MENU所有設定成出廠值') }}</button>
         </span>
+    </div>
+
+    {# 儲存出廠值確認 Modal #}
+    <div x-show="showSaveFactoryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showSaveFactoryModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
+            <h3 style="margin-top:0;">{{ _('確認設定目前組態成出廠值') }}</h3>
+            <p style="color:#ccc; line-height:1.6;">
+                {{ _('此操作將把目前所有預設選單的設定儲存為出廠預設值，包含：') }}
+            </p>
+            <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
+                <li>{{ _('選單位置、排序、父子關係') }}</li>
+                <li>{{ _('標題、圖示、連結設定') }}</li>
+                <li>{{ _('用戶類型權限 (鑰匙1)') }}</li>
+                <li>{{ _('角色存取需求 (鑰匙2)') }}</li>
+            </ul>
+            <p style="color:#aaa; font-size:0.85em;">
+                {{ _('儲存後，「重置MENU所有設定成出廠值」將以此快照為準。') }}
+            </p>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showSaveFactoryModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="saveFactoryDefaults()" style="background:#2563eb; color:white; border:1px solid #3b82f6;">{{ _('確認儲存') }}</button>
+            </div>
+        </div>
     </div>
 
     {# 出廠值重置確認 Modal #}

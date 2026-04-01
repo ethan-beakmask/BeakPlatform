@@ -510,11 +510,13 @@ def reset_menu_factory():
     """
     重置選單所有設定成出廠值（完全覆蓋回預設值）
 
+    資料來源：優先 menu_defaults 表，fallback menu_defaults.py。
     覆蓋範圍：位置、標題、icon、連結、權限等所有屬性。
     用戶自建選單不受影響。
 
     Returns:
-        {success: true, updated: int, skipped: int, permissions_reset: int}
+        {success: true, updated: int, skipped: int, permissions_reset: int,
+         source: str}
     """
     try:
         result = MenuService.reset_menu_factory()
@@ -523,3 +525,50 @@ def reset_menu_factory():
         db.session.rollback()
         logger.error(f"Failed to reset menu factory: {e}")
         return jsonify({'error': '重置選單出廠值失敗'}), 500
+
+
+@menu_bp.route('/save-factory-defaults', methods=['POST'])
+@system_admin_required
+def save_menu_factory_defaults():
+    """
+    設定目前組態成出廠值（系統管理員專用）
+
+    將當前 menu_items + menu_permissions + menu_role_requirements
+    快照到 menu_defaults 表。
+
+    Returns:
+        {message: str, count: int}
+    """
+    try:
+        result = MenuService.save_menu_factory_defaults(
+            operator_username=current_user.username
+        )
+        if 'error' in result:
+            return jsonify({'error': result['error']}), 400
+        return jsonify(result), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to save menu factory defaults: {e}")
+        return jsonify({'error': '儲存選單出廠預設值失敗'}), 500
+
+
+@menu_bp.route('/export-factory-sql', methods=['POST'])
+@system_admin_required
+def export_factory_sql():
+    """
+    從 menu_defaults 表匯出安裝用 SQL（原廠專用）
+
+    生成 058_seed_menu_defaults.sql，供全新安裝時灌入預設值。
+    upgrade 不會覆蓋用戶已儲存的預設值。
+
+    Returns:
+        {message: str, count: int, sql_file: str}
+    """
+    try:
+        result = MenuService.export_factory_sql()
+        if 'error' in result:
+            return jsonify({'error': result['error']}), 400
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Failed to export factory SQL: {e}")
+        return jsonify({'error': '匯出 SQL 失敗'}), 500

@@ -94,6 +94,7 @@ function menuTreeManager() {
         message: '',
         messageType: '',
         showRootHeaderModal: false,
+        showSaveFactoryModal: false,
         showFactoryResetModal: false,
 
         init: function() {
@@ -323,6 +324,38 @@ function menuTreeManager() {
             }
 
             this.saving = false;
+        },
+
+        saveFactoryDefaults: async function() {
+            this.showSaveFactoryModal = false;
+            this.saving = true;
+            this.message = '';
+
+            try {
+                var resp = await fetch('/api/menu/save-factory-defaults', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': _menuTreeCsrfToken
+                    }
+                });
+                var data = await resp.json();
+                if (resp.ok) {
+                    this.message = data.message + ' (' + data.count + ' 項)';
+                    this.messageType = 'success';
+                } else {
+                    this.message = '儲存失敗: ' + (data.error || resp.status);
+                    this.messageType = 'error';
+                }
+            } catch (e) {
+                this.message = '儲存失敗: ' + e.message;
+                this.messageType = 'error';
+            }
+
+            this.saving = false;
+
+            var self = this;
+            setTimeout(function() { self.message = ''; }, 5000);
         }
     };
 }

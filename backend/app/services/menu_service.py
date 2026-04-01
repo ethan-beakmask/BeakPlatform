@@ -16,6 +16,7 @@ from flask import g, url_for
 
 from ..models.menu_item import MenuItem
 from ..models.menu_permission import MenuPermission
+from ..models.menu_default import MenuDefault
 from ..models.user import UserType
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
@@ -1317,6 +1318,10 @@ class MenuService:
         """
         重置選單所有設定成出廠值（完全覆蓋回預設值）
 
+        資料來源優先順序：
+        1. menu_defaults 表（系統管理員儲存的快照）
+        2. menu_defaults.py（程式碼內建，fallback）
+
         覆蓋範圍：位置、標題、icon、link_type、link_target、
         is_expanded、is_active、is_shared、required_permission、
         MenuPermission（鑰匙 1）、MenuRoleRequirement（鑰匙 2）。
@@ -1324,9 +1329,14 @@ class MenuService:
 
         Returns:
             {'updated': n, 'skipped': n, 'permissions_reset': n,
-             'role_requirements_reset': n}
+             'role_requirements_reset': n, 'source': str}
         """
-        defaults = cls._build_defaults_map()
+        # 優先從 DB 讀取
+        defaults = cls._load_defaults_from_db()
+        source = 'database'
+        if defaults is None:
+            defaults = cls._build_defaults_map()
+            source = 'builtin'
 
         items = MenuItem.query.filter_by(is_deleted=False).all()
         code_to_item = {item.code: item for item in items}
@@ -1373,11 +1383,17 @@ class MenuService:
             updated += 1
 
         # 角色需求重置（MenuRoleRequirement，鑰匙 2）
-        role_req_count = cls.seed_all_orgs_role_requirements(code_to_item)
+        if source == 'database':
+            # 從 DB 快照讀角色需求，全量重設
+            role_req_count = cls._reset_role_requirements_from_db(
+                defaults, code_to_item
+            )
+        else:
+            role_req_count = cls.seed_all_orgs_role_requirements(code_to_item)
 
         db.session.commit()
         logger.info(
-            f"Menu factory reset: {updated} updated, "
+            f"Menu factory reset ({source}): {updated} updated, "
             f"{skipped} skipped, {permissions_reset} permissions reset, "
             f"{role_req_count} role requirements reset"
         )
@@ -1386,7 +1402,82 @@ class MenuService:
             'skipped': skipped,
             'permissions_reset': permissions_reset,
             'role_requirements_reset': role_req_count,
+            'source': source,
         }
+
+    @classmethod
+    def _reset_role_requirements_from_db(
+        cls,
+        defaults: Dict[str, Dict[str, Any]],
+        code_to_item: Dict[str, MenuItem],
+    ) -> int:
+        """
+        從 menu_defaults 表的 role_codes 重設所有企業的角色需求
+
+        對每個企業，用 role code 找到該企業的 role secure_code，
+        全量替換 MenuRoleRequirement。
+
+        Args:
+            defaults: menu_defaults 表的快照 dict
+            code_to_item: 選單 code -> MenuItem 映射
+
+        Returns:
+            重設的 MRR 記錄總數
+        """
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        from ..models.organization import Organization
+        from ..models.role import Role
+        from sqlalchemy import text
+
+        db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+        orgs = Organization.query.filter(
+            Organization.is_deleted == False,
+        ).all()
+
+        total = 0
+        for org in orgs:
+            # 該企業的 role code -> secure_code
+            org_roles = Role.query.filter(
+                Role.org_secure_code == org.secure_code,
+                Role.is_deleted == False,
+            ).all()
+            role_code_to_sc = {r.code: r.secure_code for r in org_roles}
+
+            if not role_code_to_sc:
+                continue
+
+            # 刪除該企業現有的 MRR（hard delete，因為 unique constraint
+            # 不含 is_deleted，soft delete 會導致重複插入失敗）
+            MenuRoleRequirement.query.filter(
+                MenuRoleRequirement.org_secure_code == org.secure_code,
+            ).delete(synchronize_session=False)
+            db.session.flush()
+
+            # 重新建立
+            for menu_code, default in defaults.items():
+                role_codes = default.get('role_codes', [])
+                if not role_codes:
+                    continue
+
+                item = code_to_item.get(menu_code)
+                if not item:
+                    continue
+
+                for role_code in role_codes:
+                    role_sc = role_code_to_sc.get(role_code)
+                    if not role_sc:
+                        continue
+
+                    req = MenuRoleRequirement(
+                        menu_secure_code=item.secure_code,
+                        role_secure_code=role_sc,
+                        org_secure_code=org.secure_code,
+                    )
+                    db.session.add(req)
+                    total += 1
+
+        return total
 
     @classmethod
     def seed_org_role_requirements(
@@ -1515,3 +1606,275 @@ class MenuService:
             )
 
         return total
+
+    # ========================================
+    # 選單出廠預設值管理 (DB-based)
+    # ========================================
+
+    @classmethod
+    def save_menu_factory_defaults(
+        cls, operator_username: str
+    ) -> Dict[str, Any]:
+        """
+        設定目前組態成出廠值（系統管理員專用）
+
+        快照 menu_items + menu_permissions + menu_role_requirements
+        寫入 menu_defaults 表（全量替換）。
+
+        Args:
+            operator_username: 操作者帳號
+
+        Returns:
+            {'message': ..., 'count': n} or {'error': ...}
+        """
+        from datetime import datetime
+        from ..models.menu_role_requirement import MenuRoleRequirement
+        from ..models.role import Role
+        from sqlalchemy import text
+
+        try:
+            db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))
+
+            # 1. 快照 menu_items（排除已刪除、排除用戶自建）
+            items = MenuItem.query.filter(
+                MenuItem.is_deleted == False,
+                MenuItem.is_user_created == False,
+            ).all()
+
+            if not items:
+                return {'error': '沒有可儲存的預設選單項目'}
+
+            code_to_item = {item.code: item for item in items}
+
+            # 2. 快照 menu_permissions (Key1)
+            all_perms = MenuPermission.query.filter(
+                MenuPermission.is_deleted == False,
+            ).all()
+            # {menu_secure_code: [user_type, ...]}
+            perm_map = {}
+            for p in all_perms:
+                perm_map.setdefault(p.menu_secure_code, []).append(
+                    p.user_type if isinstance(p.user_type, str)
+                    else p.user_type.name if hasattr(p.user_type, 'name')
+                    else str(p.user_type)
+                )
+
+            # 3. 快照 menu_role_requirements (Key2)
+            #    以 system.local 企業的設定為基準，用 role code 紀錄
+            all_mrrs = MenuRoleRequirement.query.filter(
+                MenuRoleRequirement.org_secure_code == SYSTEM_ORG_CODE,
+                MenuRoleRequirement.is_deleted == False,
+            ).all()
+
+            # 需要反查 role code
+            role_scs = {m.role_secure_code for m in all_mrrs}
+            if role_scs:
+                roles = Role.query.filter(
+                    Role.secure_code.in_(role_scs),
+                    Role.is_deleted == False,
+                ).all()
+                role_sc_to_code = {r.secure_code: r.code for r in roles}
+            else:
+                role_sc_to_code = {}
+
+            # {menu_secure_code: [role_code, ...]}
+            mrr_map = {}
+            for m in all_mrrs:
+                role_code = role_sc_to_code.get(m.role_secure_code)
+                if role_code:
+                    mrr_map.setdefault(m.menu_secure_code, []).append(
+                        role_code
+                    )
+
+            # 4. 清空 menu_defaults 表，全量寫入
+            MenuDefault.query.delete()
+
+            now = datetime.utcnow()
+            count = 0
+            for item in items:
+                user_types = sorted(perm_map.get(item.secure_code, []))
+                role_codes = sorted(mrr_map.get(item.secure_code, []))
+
+                # parent_code: 從 parent_secure_code 反查 parent.code
+                parent_code = None
+                if item.parent_secure_code:
+                    parent = code_to_item.get(None)  # 先查 map
+                    # 用 secure_code 在 items 中找 parent
+                    for candidate in items:
+                        if candidate.secure_code == item.parent_secure_code:
+                            parent_code = candidate.code
+                            break
+
+                default_row = MenuDefault(
+                    code=item.code,
+                    title=item.title,
+                    title_i18n=item.title_i18n or {},
+                    icon=item.icon,
+                    link_type=item.link_type,
+                    link_target=item.link_target,
+                    display_order=item.display_order,
+                    depth=item.depth,
+                    parent_code=parent_code,
+                    is_expanded=item.is_expanded,
+                    is_shared=item.is_shared,
+                    required_permission=item.required_permission,
+                    user_types=user_types,
+                    role_codes=role_codes,
+                    saved_by=operator_username,
+                    saved_at=now,
+                )
+                db.session.add(default_row)
+                count += 1
+
+            db.session.commit()
+            logger.info(
+                f"Menu factory defaults saved: {count} items "
+                f"by {operator_username}"
+            )
+
+            return {
+                'message': '選單出廠預設值已儲存',
+                'count': count,
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to save menu factory defaults: {e}")
+            return {'error': f'儲存失敗: {str(e)}'}
+
+    @classmethod
+    def _load_defaults_from_db(cls) -> Optional[Dict[str, Dict[str, Any]]]:
+        """
+        從 menu_defaults 表載入預設值
+
+        Returns:
+            {code: {display_order, parent_code, depth, title, ...}, ...}
+            若表為空回傳 None（觸發 fallback）
+        """
+        rows = MenuDefault.query.all()
+        if not rows:
+            return None
+
+        defaults = {}
+        for row in rows:
+            defaults[row.code] = {
+                'display_order': row.display_order,
+                'parent_code': row.parent_code,
+                'depth': row.depth,
+                'title': row.title,
+                'title_i18n': row.title_i18n or {},
+                'icon': row.icon,
+                'link_type': row.link_type,
+                'link_target': row.link_target,
+                'is_expanded': row.is_expanded,
+                'is_shared': row.is_shared,
+                'required_permission': row.required_permission,
+                'user_types': row.user_types or [],
+                'role_codes': row.role_codes or [],
+            }
+        return defaults
+
+    @classmethod
+    def export_factory_sql(cls) -> Dict[str, Any]:
+        """
+        從 menu_defaults 表匯出安裝用 SQL（原廠專用）
+
+        生成冪等 SQL，只在 menu_defaults 表為空時才插入，
+        upgrade 不覆蓋用戶已儲存的預設值。
+
+        Returns:
+            {'sql': str, 'count': int} or {'error': ...}
+        """
+        import os
+        from datetime import datetime, timezone
+
+        rows = MenuDefault.query.order_by(
+            MenuDefault.depth, MenuDefault.display_order
+        ).all()
+
+        if not rows:
+            return {'error': 'menu_defaults 表為空，請先儲存出廠預設值'}
+
+        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        lines = [
+            '-- BeakPlatform Menu Factory Defaults (install-only)',
+            f'-- Generated: {now_str}',
+            '-- ',
+            '-- 安全機制: 只在 menu_defaults 表為空時才插入',
+            '-- (upgrade 不會覆蓋用戶已儲存的預設值)',
+            '',
+            '-- 條件: 僅當 menu_defaults 表為空時執行',
+            'DO $$',
+            'BEGIN',
+            '    IF NOT EXISTS (SELECT 1 FROM menu_defaults LIMIT 1) THEN',
+            '',
+        ]
+
+        for row in rows:
+            title_i18n = json.dumps(row.title_i18n or {}, ensure_ascii=False)
+            user_types = json.dumps(row.user_types or [], ensure_ascii=False)
+            role_codes = json.dumps(row.role_codes or [], ensure_ascii=False)
+
+            # 轉義單引號
+            title_esc = (row.title or '').replace("'", "''")
+            icon_val = f"'{row.icon}'" if row.icon else 'NULL'
+            link_target_val = (
+                f"'{(row.link_target or '').replace(chr(39), chr(39)*2)}'"
+                if row.link_target else 'NULL'
+            )
+            parent_code_val = (
+                f"'{row.parent_code}'" if row.parent_code else 'NULL'
+            )
+            req_perm_val = (
+                f"'{row.required_permission}'"
+                if row.required_permission else 'NULL'
+            )
+
+            sql = (
+                f"        INSERT INTO menu_defaults "
+                f"(code, title, title_i18n, icon, link_type, link_target, "
+                f"display_order, depth, parent_code, is_expanded, is_shared, "
+                f"required_permission, user_types, role_codes, "
+                f"saved_by, saved_at) VALUES ("
+                f"'{row.code}', '{title_esc}', "
+                f"'{title_i18n}'::jsonb, {icon_val}, "
+                f"'{row.link_type}', {link_target_val}, "
+                f"{row.display_order}, {row.depth}, {parent_code_val}, "
+                f"{'true' if row.is_expanded else 'false'}, "
+                f"{'true' if row.is_shared else 'false'}, "
+                f"{req_perm_val}, "
+                f"'{user_types}'::jsonb, '{role_codes}'::jsonb, "
+                f"'factory_install', NOW());"
+            )
+            lines.append(sql)
+
+        lines.extend([
+            '',
+            '    END IF;',
+            'END $$;',
+        ])
+
+        sql_content = '\n'.join(lines)
+
+        # 寫入 scripts/migrations/
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..', '..')
+        )
+        sql_path = os.path.join(
+            project_root, 'scripts', 'migrations',
+            '058_seed_menu_defaults.sql'
+        )
+        os.makedirs(os.path.dirname(sql_path), exist_ok=True)
+        with open(sql_path, 'w', encoding='utf-8') as f:
+            f.write(sql_content)
+
+        logger.info(
+            f"Menu factory SQL exported: {len(rows)} items "
+            f"→ 058_seed_menu_defaults.sql"
+        )
+
+        return {
+            'message': '安裝用 SQL 已產出',
+            'count': len(rows),
+            'sql_file': '058_seed_menu_defaults.sql',
+        }
