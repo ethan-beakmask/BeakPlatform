@@ -521,17 +521,6 @@ CORE_MENUS = [
         'required_permission': 'module:manage',
     },
     {
-        'code': 'module_users',
-        'title': '模組用戶設定',
-        'parent_code': 'roles_control',
-        'link_type': 'route',
-        'link_target': 'admin.module_users',
-        'display_order': 2,
-        'depth': 1,
-        'required_level': 30,
-        'is_shared': False,
-    },
-    {
         'code': 'account_roles',
         'title': '帳號角色權限表',
         'parent_code': 'roles_control',
@@ -687,7 +676,6 @@ MENU_ROLE_DEFAULTS = {
     'roles_control': ['ORG_ADMIN'],
     'account_roles': ['ORG_ADMIN'],
     'module_perm_mgmt': ['ORG_ADMIN'],
-    'module_users': ['ORG_ADMIN'],
     'permission_central_org': ['ORG_ADMIN'],
 
     # 系統安全區（ORG_ADMIN only）

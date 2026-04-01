@@ -31,6 +31,66 @@
         </div>
     </div>
 
+    <!-- RBAC 管理按鈕列 -->
+    <div class="perm-section" style="margin-bottom: 16px;" x-show="!isSystemAdmin || selectedOrgCode">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <template x-if="isSystemAdmin">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        @click="showSaveFactoryModal = true">設定目前組態成出廠值</button>
+            </template>
+            <button type="button" class="btn btn-secondary btn-sm"
+                    @click="doExportRbac()">匯出 RBAC 權限</button>
+            <button type="button" class="btn btn-secondary btn-sm"
+                    @click="$refs.importFile.click()">匯入 RBAC 權限</button>
+            <input type="file" accept=".json" x-ref="importFile" style="display:none;"
+                   @change="doImportRbac($event)">
+            <template x-if="!isSystemAdmin">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        style="color: #dc2626;"
+                        @click="showRestoreModal = true">恢復 RBAC 預設權限</button>
+            </template>
+        </div>
+    </div>
+
+    <!-- 設定出廠值確認 Modal -->
+    <div x-show="showSaveFactoryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showSaveFactoryModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
+            <h3 style="margin-top:0;">確認設定出廠值</h3>
+            <p style="color:#ccc; line-height:1.6;">
+                此操作將把目前所選企業的系統角色 RBAC 權限配置儲存為出廠預設值。
+            </p>
+            <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
+                <li>生成安裝用 SQL（新安裝的用戶將自動取得這些預設值）</li>
+                <li>僅在角色完全沒有權限時才套用（升級不會覆蓋既有設定）</li>
+                <li>企業可使用「恢復 RBAC 預設權限」手動套用</li>
+            </ul>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showSaveFactoryModal = false" style="margin-right:8px;">取消</button>
+                <button type="button" @click="doSaveFactoryDefaults()" style="background:#2563eb; color:white; border:1px solid #3b82f6;">確認儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 恢復預設權限確認 Modal -->
+    <div x-show="showRestoreModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
+         :style="showRestoreModal && 'display:flex'">
+        <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
+            <h3 style="margin-top:0; color:#dc2626;">確認恢復 RBAC 預設權限</h3>
+            <p style="color:#ef4444; font-weight:bold; line-height:1.6;">
+                RBAC 完全覆蓋：自行新增的權限配置不會保留，已刪除的預設權限會再出現。
+                請務必先使用「匯出 RBAC 權限」備份目前設定。
+            </p>
+            <p style="color:#ccc; line-height:1.6;">
+                此操作將以系統出廠預設值覆蓋本企業所有系統角色的 RBAC 權限。
+            </p>
+            <div style="text-align:right; margin-top:16px;">
+                <button type="button" @click="showRestoreModal = false" style="margin-right:8px;">取消</button>
+                <button type="button" @click="doRestoreDefaults()" style="background:#991b1b; color:white; border:1px solid #dc2626;">確認恢復</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 未選企業提示 (系統管理員) -->
     <template x-if="isSystemAdmin && !selectedOrgCode">
         <div class="alert alert-info">
@@ -146,14 +206,18 @@
                                     <div class="perm-editor-header">
                                         <label class="form-label">勾選要授予的權限</label>
                                         <div>
-                                            <button type="button" class="btn btn-secondary btn-sm"
-                                                    @click="filterPermLevel = ''">全部</button>
+                                            <template x-if="isSystemAdmin">
+                                                <button type="button" class="btn btn-secondary btn-sm"
+                                                        @click="filterPermLevel = ''">全部</button>
+                                            </template>
                                             <button type="button" class="btn btn-secondary btn-sm"
                                                     @click="filterPermLevel = 'ORG'">企業級</button>
                                             <button type="button" class="btn btn-secondary btn-sm"
                                                     @click="filterPermLevel = 'MODULE'">模組級</button>
-                                            <button type="button" class="btn btn-secondary btn-sm"
-                                                    @click="filterPermLevel = 'SYSTEM'">系統級</button>
+                                            <template x-if="isSystemAdmin">
+                                                <button type="button" class="btn btn-secondary btn-sm"
+                                                        @click="filterPermLevel = 'SYSTEM'">系統級</button>
+                                            </template>
                                         </div>
                                     </div>
                                     <table class="data-table bordered">

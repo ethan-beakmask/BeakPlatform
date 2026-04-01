@@ -42,6 +42,10 @@ function permissionCentral() {
         conflictsLoading: false,
         conflictCount: 0,
 
+        // RBAC 管理 modal 狀態
+        showSaveFactoryModal: false,
+        showRestoreModal: false,
+
         // 訊息提示
         toast: { show: false, message: '', type: '' },
 
@@ -330,6 +334,123 @@ function permissionCentral() {
                 return false;
             };
             expandPath(this.menuTreeRoots);
+        },
+
+        // ============================================================
+        // RBAC 出廠預設值管理
+        // ============================================================
+
+        async doSaveFactoryDefaults() {
+            this.showSaveFactoryModal = false;
+            try {
+                var res = await fetch('/api/permissions/save-factory-defaults' + this._orgQueryParam(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                var data = await res.json();
+                if (res.ok) {
+                    this.showToast(
+                        data.message + ' (' + data.roles_count + ' 角色, ' +
+                        data.permissions_count + ' 權限)', 'success'
+                    );
+                } else {
+                    this.showToast(data.error || '儲存失敗', 'error');
+                }
+            } catch (e) {
+                console.error('Failed to save factory defaults:', e);
+                this.showToast('儲存失敗', 'error');
+            }
+        },
+
+        async doExportRbac() {
+            try {
+                var url = '/api/permissions/export' + this._orgQueryParam();
+                var res = await fetch(url);
+                if (!res.ok) {
+                    var data = await res.json();
+                    this.showToast(data.error || '匯出失敗', 'error');
+                    return;
+                }
+                // 觸發瀏覽器下載
+                var blob = await res.blob();
+                var disposition = res.headers.get('Content-Disposition') || '';
+                var match = disposition.match(/filename="?([^"]+)"?/);
+                var filename = match ? match[1] : 'rbac_export.json';
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                this.showToast('匯出完成', 'success');
+            } catch (e) {
+                console.error('Failed to export RBAC:', e);
+                this.showToast('匯出失敗', 'error');
+            }
+        },
+
+        async doImportRbac(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+
+            // 重置 input，允許重複選同一檔案
+            event.target.value = '';
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                var url = '/api/permissions/import' + this._orgQueryParam();
+                var res = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                var data = await res.json();
+                if (res.ok) {
+                    this.showToast(data.message, 'success');
+                    // 重新載入資料
+                    if (this.selectedOrgCode || !this.isSystemAdmin) {
+                        await this._loadOrgData();
+                        if (this.selectedRoleCode) {
+                            await this.loadRoleView();
+                        }
+                    }
+                } else {
+                    this.showToast(data.error || '匯入失敗', 'error');
+                }
+            } catch (e) {
+                console.error('Failed to import RBAC:', e);
+                this.showToast('匯入失敗', 'error');
+            }
+        },
+
+        async doRestoreDefaults() {
+            this.showRestoreModal = false;
+            try {
+                var url = '/api/permissions/restore-defaults' + this._orgQueryParam();
+                var res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                var data = await res.json();
+                if (res.ok) {
+                    this.showToast(
+                        data.message + ' (' + data.roles_restored + ' 角色, +' +
+                        data.added + ' -' + data.removed + ')', 'success'
+                    );
+                    // 重新載入資料
+                    await this._loadOrgData();
+                    if (this.selectedRoleCode) {
+                        await this.loadRoleView();
+                    }
+                } else {
+                    this.showToast(data.error || '恢復失敗', 'error');
+                }
+            } catch (e) {
+                console.error('Failed to restore defaults:', e);
+                this.showToast('恢復失敗', 'error');
+            }
         },
 
         // ============================================================

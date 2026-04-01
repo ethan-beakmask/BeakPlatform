@@ -3,6 +3,7 @@ BeakPlatform Permission Central Service
 權限中央管理服務
 
 整合查詢五層權限設定，提供角色視角、功能視角、衝突偵測。
+RBAC 出廠預設值管理（儲存、匯出、匯入、恢復）。
 
 安全設計：
 - SYSTEM_ADMIN: 可看全部角色/選單/權限，可操作全部
@@ -10,7 +11,10 @@ BeakPlatform Permission Central Service
   只能看到授權給 ORG_ADMIN/EMPLOYEE/EXTERNAL 的選單，
   不能操作 SYSTEM 級權限
 """
+import json
 import logging
+import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from flask import g
@@ -683,3 +687,529 @@ class PermissionCentralService:
         if org:
             return org.display_name or org.name
         return org_secure_code
+
+    # ==================================================================
+    # RBAC 出廠預設值管理
+    # ==================================================================
+
+    # --- 路徑常數 ---
+    _PROJECT_ROOT = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..', '..')
+    )
+    _DEFAULTS_JSON = os.path.join(
+        _PROJECT_ROOT, 'backend', 'app', 'defaults', 'rbac_defaults.json'
+    )
+    _DEFAULTS_SQL = os.path.join(
+        _PROJECT_ROOT, 'scripts', 'migrations',
+        '057_default_role_permissions.sql'
+    )
+
+    @classmethod
+    def _read_defaults_json(cls) -> Optional[Dict]:
+        """讀取 rbac_defaults.json，不存在回傳 None"""
+        if not os.path.isfile(cls._DEFAULTS_JSON):
+            return None
+        try:
+            with open(cls._DEFAULTS_JSON, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return None
+
+    @classmethod
+    def _snapshot_system_roles(cls, org_secure_code: str) -> Dict[str, List[str]]:
+        """
+        快照指定企業的系統角色 RBAC 權限。
+
+        Returns:
+            { role_code: [perm_code, ...], ... }
+        """
+        roles = Role.query.filter_by(
+            org_secure_code=org_secure_code,
+            is_system_role=True,
+            is_deleted=False,
+            is_active=True
+        ).all()
+
+        snapshot = {}
+        for role in roles:
+            rps = RolePermission.query.filter_by(
+                role_secure_code=role.secure_code,
+                is_deleted=False,
+                is_active=True
+            ).all()
+            perm_codes = []
+            for rp in rps:
+                if rp.permission and not rp.permission.is_deleted:
+                    perm_codes.append(rp.permission.code)
+            if perm_codes:
+                snapshot[role.code] = sorted(perm_codes)
+        return snapshot
+
+    @classmethod
+    def _generate_sql(cls, snapshot: Dict[str, List[str]]) -> str:
+        """
+        從快照生成冪等 SQL（安裝/升級用）。
+
+        只在角色完全沒有 role_permissions 時才插入（NOT EXISTS），
+        既有用戶升級不會被覆蓋。
+        """
+        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        lines = [
+            '-- BeakPlatform RBAC Factory Defaults',
+            f'-- Generated: {now_str}',
+            '-- ',
+            '-- 安全機制: 只在角色完全沒有 role_permissions 時才插入',
+            '-- (upgrade 不會覆蓋既有企業的自訂設定)',
+            '',
+        ]
+
+        for role_code, perm_codes in sorted(snapshot.items()):
+            lines.append(f'-- Role: {role_code} ({len(perm_codes)} permissions)')
+            for perm_code in perm_codes:
+                # 每條用一個獨立 INSERT，方便閱讀和除錯
+                sql = (
+                    "INSERT INTO role_permissions "
+                    "(secure_code, role_secure_code, permission_secure_code, "
+                    "is_active, is_deleted, created_at, updated_at)\n"
+                    "SELECT \n"
+                    "    encode(gen_random_bytes(16), 'hex'),\n"
+                    "    r.secure_code,\n"
+                    "    p.secure_code,\n"
+                    "    true, false, NOW(), NOW()\n"
+                    "FROM roles r\n"
+                    "CROSS JOIN permissions p\n"
+                    f"WHERE r.code = '{role_code}'\n"
+                    "  AND r.is_system_role = true\n"
+                    "  AND r.is_deleted = false\n"
+                    f"  AND p.code = '{perm_code}'\n"
+                    "  AND p.is_deleted = false\n"
+                    "  AND NOT EXISTS (\n"
+                    "      SELECT 1 FROM role_permissions rp\n"
+                    "      WHERE rp.role_secure_code = r.secure_code\n"
+                    "        AND rp.is_deleted = false\n"
+                    "  )\n"
+                    "ON CONFLICT DO NOTHING;"
+                )
+                lines.append(sql)
+            lines.append('')
+
+        return '\n'.join(lines)
+
+    @classmethod
+    def save_factory_defaults(
+        cls, org_secure_code: str, operator_username: str
+    ) -> Dict[str, Any]:
+        """
+        設定目前組態成出廠值（系統管理員專用）。
+
+        1. 快照指定企業的系統角色 RBAC 權限
+        2. 寫入 rbac_defaults.json
+        3. 生成 057_default_role_permissions.sql
+        """
+        try:
+            snapshot = cls._snapshot_system_roles(org_secure_code)
+            if not snapshot:
+                return {'error': '該企業沒有系統角色或系統角色無權限配置'}
+
+            # 寫 JSON
+            defaults_data = {
+                'version': '1.0',
+                'generated_at': datetime.now(timezone.utc).isoformat(),
+                'generated_by': operator_username,
+                'source_org': org_secure_code,
+                'roles': snapshot,
+            }
+            os.makedirs(os.path.dirname(cls._DEFAULTS_JSON), exist_ok=True)
+            with open(cls._DEFAULTS_JSON, 'w', encoding='utf-8') as f:
+                json.dump(defaults_data, f, ensure_ascii=False, indent=2)
+
+            # 寫 SQL
+            sql_content = cls._generate_sql(snapshot)
+            os.makedirs(os.path.dirname(cls._DEFAULTS_SQL), exist_ok=True)
+            with open(cls._DEFAULTS_SQL, 'w', encoding='utf-8') as f:
+                f.write(sql_content)
+
+            total_perms = sum(len(v) for v in snapshot.values())
+            logger.info(
+                f"RBAC factory defaults saved: {len(snapshot)} roles, "
+                f"{total_perms} permissions by {operator_username}"
+            )
+
+            return {
+                'message': '出廠預設值已儲存',
+                'roles_count': len(snapshot),
+                'permissions_count': total_perms,
+                'sql_file': '057_default_role_permissions.sql',
+                'json_file': 'rbac_defaults.json',
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to save factory defaults: {e}")
+            return {'error': f'儲存失敗: {str(e)}'}
+
+    @classmethod
+    def export_rbac(
+        cls, org_secure_code: str, is_system_admin: bool
+    ) -> Dict[str, Any]:
+        """
+        匯出 RBAC 權限（JSON 格式）。
+
+        系統管理員: 匯出出廠預設值（rbac_defaults.json 的內容）
+        企業管理員: 匯出該企業所有角色的當前權限配置
+        """
+        if is_system_admin:
+            # 系統級: 匯出出廠預設值
+            defaults = cls._read_defaults_json()
+            if not defaults:
+                return {'error': '尚未設定出廠預設值，請先使用「設定目前組態成出廠值」'}
+
+            return {
+                'data': {
+                    'version': '1.0',
+                    'type': 'factory_defaults',
+                    'exported_at': datetime.now(timezone.utc).isoformat(),
+                    'source': 'system_factory_defaults',
+                    'roles': defaults.get('roles', {}),
+                },
+                'filename': 'rbac_factory_defaults.json',
+            }
+        else:
+            # 企業級: 匯出當前企業所有角色的權限
+            roles = Role.query.filter_by(
+                org_secure_code=org_secure_code,
+                is_deleted=False,
+                is_active=True
+            ).all()
+
+            export_roles = {}
+            for role in roles:
+                rps = RolePermission.query.filter_by(
+                    role_secure_code=role.secure_code,
+                    is_deleted=False,
+                    is_active=True
+                ).all()
+                perm_codes = []
+                for rp in rps:
+                    if rp.permission and not rp.permission.is_deleted:
+                        perm_codes.append(rp.permission.code)
+                export_roles[role.code] = sorted(perm_codes)
+
+            org_label = cls._get_org_label(org_secure_code)
+            return {
+                'data': {
+                    'version': '1.0',
+                    'type': 'org_export',
+                    'exported_at': datetime.now(timezone.utc).isoformat(),
+                    'source': org_label,
+                    'org_secure_code': org_secure_code,
+                    'roles': export_roles,
+                },
+                'filename': f'rbac_export_{org_secure_code[:8]}.json',
+            }
+
+    @classmethod
+    def import_rbac(
+        cls, org_secure_code: str, is_system_admin: bool,
+        import_data: Dict, operator_username: str
+    ) -> Dict[str, Any]:
+        """
+        匯入 RBAC 權限。
+
+        系統管理員: 匯入為新的出廠預設值（覆蓋 rbac_defaults.json + SQL）
+        企業管理員: 匯入覆蓋該企業的角色權限
+        """
+        if not import_data or 'roles' not in import_data:
+            return {'error': '匯入資料格式無效，缺少 roles 欄位'}
+
+        roles_data = import_data['roles']
+        if not isinstance(roles_data, dict):
+            return {'error': '匯入資料格式無效，roles 必須是物件'}
+
+        if is_system_admin:
+            # 系統級: 覆蓋出廠預設值
+            return cls._import_as_factory_defaults(roles_data, operator_username)
+        else:
+            # 企業級: 覆蓋企業設定
+            return cls._import_to_org(
+                org_secure_code, roles_data, operator_username
+            )
+
+    @classmethod
+    def _import_as_factory_defaults(
+        cls, roles_data: Dict, operator_username: str
+    ) -> Dict[str, Any]:
+        """匯入為出廠預設值"""
+        try:
+            # 驗證權限代碼存在
+            all_perm_codes = set()
+            for codes in roles_data.values():
+                if isinstance(codes, list):
+                    all_perm_codes.update(codes)
+
+            existing_perms = Permission.query.filter(
+                Permission.code.in_(list(all_perm_codes)),
+                Permission.is_deleted == False
+            ).all()
+            existing_codes = {p.code for p in existing_perms}
+            missing = all_perm_codes - existing_codes
+            if missing:
+                return {'error': f'以下權限代碼不存在: {", ".join(sorted(missing))}'}
+
+            # 寫 JSON + SQL
+            defaults_data = {
+                'version': '1.0',
+                'generated_at': datetime.now(timezone.utc).isoformat(),
+                'generated_by': operator_username,
+                'source': 'imported',
+                'roles': {k: sorted(v) for k, v in roles_data.items()
+                          if isinstance(v, list)},
+            }
+            os.makedirs(os.path.dirname(cls._DEFAULTS_JSON), exist_ok=True)
+            with open(cls._DEFAULTS_JSON, 'w', encoding='utf-8') as f:
+                json.dump(defaults_data, f, ensure_ascii=False, indent=2)
+
+            sql_content = cls._generate_sql(defaults_data['roles'])
+            with open(cls._DEFAULTS_SQL, 'w', encoding='utf-8') as f:
+                f.write(sql_content)
+
+            total_perms = sum(
+                len(v) for v in defaults_data['roles'].values()
+            )
+            logger.info(
+                f"RBAC factory defaults imported: "
+                f"{len(defaults_data['roles'])} roles, "
+                f"{total_perms} permissions by {operator_username}"
+            )
+
+            return {
+                'message': '出廠預設值已匯入',
+                'roles_count': len(defaults_data['roles']),
+                'permissions_count': total_perms,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to import factory defaults: {e}")
+            return {'error': f'匯入失敗: {str(e)}'}
+
+    @classmethod
+    def _import_to_org(
+        cls, org_secure_code: str, roles_data: Dict,
+        operator_username: str
+    ) -> Dict[str, Any]:
+        """匯入覆蓋企業的角色權限"""
+        try:
+            # 查詢企業角色
+            roles = Role.query.filter_by(
+                org_secure_code=org_secure_code,
+                is_deleted=False
+            ).all()
+            role_by_code = {r.code: r for r in roles}
+
+            # 查詢所有權限
+            all_perm_codes = set()
+            for codes in roles_data.values():
+                if isinstance(codes, list):
+                    all_perm_codes.update(codes)
+
+            perms = Permission.query.filter(
+                Permission.code.in_(list(all_perm_codes)),
+                Permission.is_deleted == False,
+                Permission.is_active == True
+            ).all()
+            perm_by_code = {p.code: p for p in perms}
+
+            missing_perms = all_perm_codes - set(perm_by_code.keys())
+            if missing_perms:
+                return {
+                    'error': f'以下權限代碼不存在: '
+                             f'{", ".join(sorted(missing_perms))}'
+                }
+
+            total_added = 0
+            total_removed = 0
+            roles_updated = 0
+
+            for role_code, perm_codes in roles_data.items():
+                if not isinstance(perm_codes, list):
+                    continue
+                role = role_by_code.get(role_code)
+                if not role:
+                    continue
+
+                # 取得現有權限
+                existing_rps = RolePermission.query.filter_by(
+                    role_secure_code=role.secure_code,
+                    is_deleted=False
+                ).all()
+                existing_perm_scs = {
+                    rp.permission_secure_code for rp in existing_rps
+                }
+
+                # 目標權限
+                target_perm_scs = set()
+                for pc in perm_codes:
+                    p = perm_by_code.get(pc)
+                    if p:
+                        target_perm_scs.add(p.secure_code)
+
+                to_add = target_perm_scs - existing_perm_scs
+                to_remove = existing_perm_scs - target_perm_scs
+
+                # 移除
+                for rp in existing_rps:
+                    if rp.permission_secure_code in to_remove:
+                        rp.is_deleted = True
+                        total_removed += 1
+
+                # 新增
+                for psc in to_add:
+                    deleted_rp = RolePermission.query.filter_by(
+                        role_secure_code=role.secure_code,
+                        permission_secure_code=psc,
+                        is_deleted=True
+                    ).first()
+                    if deleted_rp:
+                        deleted_rp.is_deleted = False
+                        deleted_rp.is_active = True
+                    else:
+                        new_rp = RolePermission(
+                            role_secure_code=role.secure_code,
+                            permission_secure_code=psc,
+                            is_active=True
+                        )
+                        db.session.add(new_rp)
+                    total_added += 1
+
+                if to_add or to_remove:
+                    roles_updated += 1
+
+            db.session.commit()
+
+            logger.info(
+                f"RBAC imported to org {org_secure_code}: "
+                f"+{total_added} -{total_removed} in {roles_updated} roles "
+                f"by {operator_username}"
+            )
+
+            return {
+                'message': 'RBAC 權限已匯入',
+                'roles_updated': roles_updated,
+                'added': total_added,
+                'removed': total_removed,
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to import RBAC to org: {e}")
+            return {'error': f'匯入失敗: {str(e)}'}
+
+    @classmethod
+    def restore_defaults(
+        cls, org_secure_code: str, operator_username: str
+    ) -> Dict[str, Any]:
+        """
+        恢復 RBAC 預設權限（企業管理員專用）。
+
+        讀取 rbac_defaults.json，將該企業的系統角色權限
+        完全覆蓋為出廠預設值。
+        """
+        defaults = cls._read_defaults_json()
+        if not defaults or 'roles' not in defaults:
+            return {'error': '尚未設定出廠預設值，無法恢復'}
+
+        roles_data = defaults['roles']
+
+        # 只處理系統角色
+        system_roles = Role.query.filter_by(
+            org_secure_code=org_secure_code,
+            is_system_role=True,
+            is_deleted=False
+        ).all()
+        role_by_code = {r.code: r for r in system_roles}
+
+        # 查詢所有需要的權限
+        all_perm_codes = set()
+        for codes in roles_data.values():
+            all_perm_codes.update(codes)
+
+        perms = Permission.query.filter(
+            Permission.code.in_(list(all_perm_codes)),
+            Permission.is_deleted == False,
+            Permission.is_active == True
+        ).all()
+        perm_by_code = {p.code: p for p in perms}
+
+        try:
+            total_added = 0
+            total_removed = 0
+            roles_restored = 0
+
+            for role_code, default_perm_codes in roles_data.items():
+                role = role_by_code.get(role_code)
+                if not role:
+                    continue
+
+                # 取得現有
+                existing_rps = RolePermission.query.filter_by(
+                    role_secure_code=role.secure_code,
+                    is_deleted=False
+                ).all()
+                existing_perm_scs = {
+                    rp.permission_secure_code for rp in existing_rps
+                }
+
+                # 目標
+                target_perm_scs = set()
+                for pc in default_perm_codes:
+                    p = perm_by_code.get(pc)
+                    if p:
+                        target_perm_scs.add(p.secure_code)
+
+                to_add = target_perm_scs - existing_perm_scs
+                to_remove = existing_perm_scs - target_perm_scs
+
+                for rp in existing_rps:
+                    if rp.permission_secure_code in to_remove:
+                        rp.is_deleted = True
+                        total_removed += 1
+
+                for psc in to_add:
+                    deleted_rp = RolePermission.query.filter_by(
+                        role_secure_code=role.secure_code,
+                        permission_secure_code=psc,
+                        is_deleted=True
+                    ).first()
+                    if deleted_rp:
+                        deleted_rp.is_deleted = False
+                        deleted_rp.is_active = True
+                    else:
+                        new_rp = RolePermission(
+                            role_secure_code=role.secure_code,
+                            permission_secure_code=psc,
+                            is_active=True
+                        )
+                        db.session.add(new_rp)
+                    total_added += 1
+
+                if to_add or to_remove:
+                    roles_restored += 1
+
+            db.session.commit()
+
+            logger.info(
+                f"RBAC defaults restored for org {org_secure_code}: "
+                f"+{total_added} -{total_removed} in {roles_restored} roles "
+                f"by {operator_username}"
+            )
+
+            return {
+                'message': 'RBAC 預設權限已恢復',
+                'roles_restored': roles_restored,
+                'added': total_added,
+                'removed': total_removed,
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to restore defaults: {e}")
+            return {'error': f'恢復失敗: {str(e)}'}

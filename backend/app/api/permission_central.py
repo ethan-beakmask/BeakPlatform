@@ -8,12 +8,13 @@ BeakPlatform Permission Central API
 - ORG_ADMIN 只能看到/操作自己企業的資料
 - SYSTEM_ADMIN 可透過 org_code 參數過濾指定企業
 """
+import json
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from flask_login import current_user
 
-from ..security.decorators import admin_required
+from ..security.decorators import admin_required, system_admin_required
 from ..services.permission_central_service import PermissionCentralService
 from .. import csrf
 
@@ -157,6 +158,133 @@ def update_role_permissions():
         org_secure_code=org_code,
         is_system_admin=_is_sys_admin(),
         operator_user=current_user
+    )
+
+    if 'error' in result:
+        return jsonify({'error': result['error']}), 400
+
+    return jsonify(result), 200
+
+
+# =============================================================================
+# RBAC 出廠預設值管理
+# =============================================================================
+
+@permission_central_bp.route('/save-factory-defaults', methods=['POST'])
+@csrf.exempt
+@system_admin_required
+def save_factory_defaults():
+    """
+    設定目前組態成出廠值（系統管理員專用）。
+
+    將指定企業的系統角色 RBAC 權限快照存為出廠預設值，
+    生成 rbac_defaults.json 和 migration SQL。
+    """
+    org_code = _resolve_org_code()
+    if not org_code:
+        return jsonify({'error': '請先選擇企業'}), 400
+
+    result = PermissionCentralService.save_factory_defaults(
+        org_secure_code=org_code,
+        operator_username=current_user.username
+    )
+
+    if 'error' in result:
+        return jsonify({'error': result['error']}), 400
+
+    return jsonify(result), 200
+
+
+@permission_central_bp.route('/export', methods=['GET'])
+@csrf.exempt
+@admin_required
+def export_rbac():
+    """
+    匯出 RBAC 權限（瀏覽器下載 JSON）。
+
+    系統管理員: 匯出出廠預設值
+    企業管理員: 匯出該企業的當前設定
+    """
+    org_code = _resolve_org_code()
+    result = PermissionCentralService.export_rbac(
+        org_secure_code=org_code,
+        is_system_admin=_is_sys_admin()
+    )
+
+    if 'error' in result:
+        return jsonify({'error': result['error']}), 400
+
+    # 回傳 JSON 檔案下載
+    json_str = json.dumps(result['data'], ensure_ascii=False, indent=2)
+    filename = result['filename']
+
+    return Response(
+        json_str,
+        mimetype='application/json',
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@permission_central_bp.route('/import', methods=['POST'])
+@csrf.exempt
+@admin_required
+def import_rbac():
+    """
+    匯入 RBAC 權限（上傳 JSON 檔案）。
+
+    系統管理員: 匯入為新的出廠預設值
+    企業管理員: 匯入覆蓋該企業的角色權限
+    """
+    # 支援 file upload 或 JSON body
+    import_data = None
+
+    if request.files and 'file' in request.files:
+        f = request.files['file']
+        if not f.filename:
+            return jsonify({'error': '未選擇檔案'}), 400
+        try:
+            content = f.read().decode('utf-8')
+            import_data = json.loads(content)
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            return jsonify({'error': f'檔案格式無效: {str(e)}'}), 400
+    else:
+        import_data = request.get_json()
+
+    if not import_data:
+        return jsonify({'error': '缺少匯入資料'}), 400
+
+    org_code = _resolve_org_code()
+    result = PermissionCentralService.import_rbac(
+        org_secure_code=org_code,
+        is_system_admin=_is_sys_admin(),
+        import_data=import_data,
+        operator_username=current_user.username
+    )
+
+    if 'error' in result:
+        return jsonify({'error': result['error']}), 400
+
+    return jsonify(result), 200
+
+
+@permission_central_bp.route('/restore-defaults', methods=['POST'])
+@csrf.exempt
+@admin_required
+def restore_defaults():
+    """
+    恢復 RBAC 預設權限（企業管理員專用）。
+
+    讀取出廠預設值，覆蓋該企業系統角色的權限配置。
+    """
+    org_code = _resolve_org_code()
+    if not org_code:
+        return jsonify({'error': '無法確定企業'}), 400
+
+    result = PermissionCentralService.restore_defaults(
+        org_secure_code=org_code,
+        operator_username=current_user.username
     )
 
     if 'error' in result:
