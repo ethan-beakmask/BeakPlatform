@@ -177,8 +177,7 @@ def save_factory_defaults():
     """
     設定目前組態成出廠值（系統管理員專用）。
 
-    將指定企業的系統角色 RBAC 權限快照存為出廠預設值，
-    生成 rbac_defaults.json 和 migration SQL。
+    將指定企業的系統角色 RBAC 權限快照存為 rbac_defaults 表。
     """
     org_code = _resolve_org_code()
     if not org_code:
@@ -193,6 +192,25 @@ def save_factory_defaults():
         return jsonify({'error': result['error']}), 400
 
     return jsonify(result), 200
+
+
+@permission_central_bp.route('/export-factory-sql', methods=['POST'])
+@csrf.exempt
+@system_admin_required
+def export_factory_sql():
+    """
+    從 rbac_defaults 表匯出安裝用 SQL（原廠專用）。
+
+    生成 060_seed_rbac_defaults.sql，供全新安裝時灌入預設值。
+    upgrade 不會覆蓋用戶已儲存的預設值。
+    """
+    try:
+        result = PermissionCentralService.export_factory_sql()
+        if 'error' in result:
+            return jsonify({'error': result['error']}), 400
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': f'匯出 SQL 失敗: {str(e)}'}), 500
 
 
 @permission_central_bp.route('/export', methods=['GET'])

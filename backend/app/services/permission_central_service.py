@@ -24,7 +24,7 @@ from sqlalchemy import func, or_
 from ..models import (
     MenuItem, MenuPermission, MenuRoleRequirement,
     Role, RolePermission, Permission, UserRoleAssignment,
-    User, UserType
+    User, UserType, RbacDefault
 )
 from ..constants import SYSTEM_ORG_CODE
 from .. import db
@@ -689,24 +689,20 @@ class PermissionCentralService:
         return org_secure_code
 
     # ==================================================================
-    # RBAC 出廠預設值管理
+    # RBAC 出廠預設值管理 (DB-based)
     # ==================================================================
 
-    # --- 路徑常數 ---
+    # --- 路徑常數（僅供 export_factory_sql 產出安裝用 SQL）---
     _PROJECT_ROOT = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', '..')
     )
     _DEFAULTS_JSON = os.path.join(
         _PROJECT_ROOT, 'backend', 'app', 'defaults', 'rbac_defaults.json'
     )
-    _DEFAULTS_SQL = os.path.join(
-        _PROJECT_ROOT, 'scripts', 'migrations',
-        '057_default_role_permissions.sql'
-    )
 
     @classmethod
     def _read_defaults_json(cls) -> Optional[Dict]:
-        """讀取 rbac_defaults.json，不存在回傳 None"""
+        """讀取 rbac_defaults.json（fallback 用），不存在回傳 None"""
         if not os.path.isfile(cls._DEFAULTS_JSON):
             return None
         try:
@@ -746,54 +742,25 @@ class PermissionCentralService:
         return snapshot
 
     @classmethod
-    def _generate_sql(cls, snapshot: Dict[str, List[str]]) -> str:
+    def _load_defaults_from_db(cls) -> Optional[Dict[str, List[str]]]:
         """
-        從快照生成冪等 SQL（安裝/升級用）。
+        從 rbac_defaults 表載入預設值。
 
-        只在角色完全沒有 role_permissions 時才插入（NOT EXISTS），
-        既有用戶升級不會被覆蓋。
+        Returns:
+            {role_code: [perm_code, ...], ...}
+            表為空回傳 None（觸發 fallback）
         """
-        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
-        lines = [
-            '-- BeakPlatform RBAC Factory Defaults',
-            f'-- Generated: {now_str}',
-            '-- ',
-            '-- 安全機制: 只在角色完全沒有 role_permissions 時才插入',
-            '-- (upgrade 不會覆蓋既有企業的自訂設定)',
-            '',
-        ]
+        rows = RbacDefault.query.all()
+        if not rows:
+            return None
 
-        for role_code, perm_codes in sorted(snapshot.items()):
-            lines.append(f'-- Role: {role_code} ({len(perm_codes)} permissions)')
-            for perm_code in perm_codes:
-                # 每條用一個獨立 INSERT，方便閱讀和除錯
-                sql = (
-                    "INSERT INTO role_permissions "
-                    "(secure_code, role_secure_code, permission_secure_code, "
-                    "is_active, is_deleted, created_at, updated_at)\n"
-                    "SELECT \n"
-                    "    encode(gen_random_bytes(16), 'hex'),\n"
-                    "    r.secure_code,\n"
-                    "    p.secure_code,\n"
-                    "    true, false, NOW(), NOW()\n"
-                    "FROM roles r\n"
-                    "CROSS JOIN permissions p\n"
-                    f"WHERE r.code = '{role_code}'\n"
-                    "  AND r.is_system_role = true\n"
-                    "  AND r.is_deleted = false\n"
-                    f"  AND p.code = '{perm_code}'\n"
-                    "  AND p.is_deleted = false\n"
-                    "  AND NOT EXISTS (\n"
-                    "      SELECT 1 FROM role_permissions rp\n"
-                    "      WHERE rp.role_secure_code = r.secure_code\n"
-                    "        AND rp.is_deleted = false\n"
-                    "  )\n"
-                    "ON CONFLICT DO NOTHING;"
-                )
-                lines.append(sql)
-            lines.append('')
-
-        return '\n'.join(lines)
+        snapshot = {}
+        for row in rows:
+            snapshot.setdefault(row.role_code, []).append(row.permission_code)
+        # 排序
+        for role_code in snapshot:
+            snapshot[role_code] = sorted(snapshot[role_code])
+        return snapshot
 
     @classmethod
     def save_factory_defaults(
@@ -802,36 +769,34 @@ class PermissionCentralService:
         """
         設定目前組態成出廠值（系統管理員專用）。
 
-        1. 快照指定企業的系統角色 RBAC 權限
-        2. 寫入 rbac_defaults.json
-        3. 生成 057_default_role_permissions.sql
+        快照指定企業的系統角色 RBAC 權限，寫入 rbac_defaults 表（全量替換）。
         """
         try:
             snapshot = cls._snapshot_system_roles(org_secure_code)
             if not snapshot:
                 return {'error': '該企業沒有系統角色或系統角色無權限配置'}
 
-            # 寫 JSON
-            defaults_data = {
-                'version': '1.0',
-                'generated_at': datetime.now(timezone.utc).isoformat(),
-                'generated_by': operator_username,
-                'source_org': org_secure_code,
-                'roles': snapshot,
-            }
-            os.makedirs(os.path.dirname(cls._DEFAULTS_JSON), exist_ok=True)
-            with open(cls._DEFAULTS_JSON, 'w', encoding='utf-8') as f:
-                json.dump(defaults_data, f, ensure_ascii=False, indent=2)
+            # 清空 rbac_defaults 表，全量寫入
+            RbacDefault.query.delete()
 
-            # 寫 SQL
-            sql_content = cls._generate_sql(snapshot)
-            os.makedirs(os.path.dirname(cls._DEFAULTS_SQL), exist_ok=True)
-            with open(cls._DEFAULTS_SQL, 'w', encoding='utf-8') as f:
-                f.write(sql_content)
+            now = datetime.utcnow()
+            count = 0
+            for role_code, perm_codes in snapshot.items():
+                for perm_code in perm_codes:
+                    row = RbacDefault(
+                        role_code=role_code,
+                        permission_code=perm_code,
+                        saved_by=operator_username,
+                        saved_at=now,
+                    )
+                    db.session.add(row)
+                    count += 1
+
+            db.session.commit()
 
             total_perms = sum(len(v) for v in snapshot.values())
             logger.info(
-                f"RBAC factory defaults saved: {len(snapshot)} roles, "
+                f"RBAC factory defaults saved to DB: {len(snapshot)} roles, "
                 f"{total_perms} permissions by {operator_username}"
             )
 
@@ -839,13 +804,82 @@ class PermissionCentralService:
                 'message': '出廠預設值已儲存',
                 'roles_count': len(snapshot),
                 'permissions_count': total_perms,
-                'sql_file': '057_default_role_permissions.sql',
-                'json_file': 'rbac_defaults.json',
             }
 
         except Exception as e:
+            db.session.rollback()
             logger.error(f"Failed to save factory defaults: {e}")
             return {'error': f'儲存失敗: {str(e)}'}
+
+    @classmethod
+    def export_factory_sql(cls) -> Dict[str, Any]:
+        """
+        從 rbac_defaults 表匯出安裝用 SQL（原廠專用）。
+
+        生成冪等 SQL，只在角色完全沒有 role_permissions 時才插入，
+        upgrade 不覆蓋用戶已儲存的設定。
+        """
+        snapshot = cls._load_defaults_from_db()
+        if not snapshot:
+            return {'error': 'rbac_defaults 表為空，請先儲存出廠預設值'}
+
+        now_str = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        lines = [
+            '-- BeakPlatform RBAC Factory Defaults (install-only)',
+            f'-- Generated: {now_str}',
+            '-- ',
+            '-- 安全機制: 只在 rbac_defaults 表為空時才插入',
+            '-- (upgrade 不會覆蓋用戶已儲存的預設值)',
+            '',
+            '-- 條件: 僅當 rbac_defaults 表為空時執行',
+            'DO $$',
+            'BEGIN',
+            '    IF NOT EXISTS (SELECT 1 FROM rbac_defaults LIMIT 1) THEN',
+            '',
+        ]
+
+        for role_code, perm_codes in sorted(snapshot.items()):
+            lines.append(
+                f'        -- Role: {role_code} '
+                f'({len(perm_codes)} permissions)'
+            )
+            for perm_code in perm_codes:
+                sql = (
+                    f"        INSERT INTO rbac_defaults "
+                    f"(role_code, permission_code, saved_by, saved_at) "
+                    f"VALUES ('{role_code}', '{perm_code}', "
+                    f"'factory_install', NOW());"
+                )
+                lines.append(sql)
+            lines.append('')
+
+        lines.extend([
+            '    END IF;',
+            'END $$;',
+        ])
+
+        sql_content = '\n'.join(lines)
+
+        sql_path = os.path.join(
+            cls._PROJECT_ROOT, 'scripts', 'migrations',
+            '060_seed_rbac_defaults.sql'
+        )
+        os.makedirs(os.path.dirname(sql_path), exist_ok=True)
+        with open(sql_path, 'w', encoding='utf-8') as f:
+            f.write(sql_content)
+
+        total_perms = sum(len(v) for v in snapshot.values())
+        logger.info(
+            f"RBAC factory SQL exported: {len(snapshot)} roles, "
+            f"{total_perms} permissions -> 060_seed_rbac_defaults.sql"
+        )
+
+        return {
+            'message': '安裝用 SQL 已產出',
+            'roles_count': len(snapshot),
+            'permissions_count': total_perms,
+            'sql_file': '060_seed_rbac_defaults.sql',
+        }
 
     @classmethod
     def export_rbac(
@@ -854,13 +888,17 @@ class PermissionCentralService:
         """
         匯出 RBAC 權限（JSON 格式）。
 
-        系統管理員: 匯出出廠預設值（rbac_defaults.json 的內容）
+        系統管理員: 匯出出廠預設值（rbac_defaults 表的內容）
         企業管理員: 匯出該企業所有角色的當前權限配置
         """
         if is_system_admin:
-            # 系統級: 匯出出廠預設值
-            defaults = cls._read_defaults_json()
-            if not defaults:
+            # 系統級: 匯出出廠預設值（優先 DB，fallback JSON）
+            snapshot = cls._load_defaults_from_db()
+            if not snapshot:
+                defaults = cls._read_defaults_json()
+                if defaults:
+                    snapshot = defaults.get('roles', {})
+            if not snapshot:
                 return {'error': '尚未設定出廠預設值，請先使用「設定目前組態成出廠值」'}
 
             return {
@@ -869,7 +907,7 @@ class PermissionCentralService:
                     'type': 'factory_defaults',
                     'exported_at': datetime.now(timezone.utc).isoformat(),
                     'source': 'system_factory_defaults',
-                    'roles': defaults.get('roles', {}),
+                    'roles': snapshot,
                 },
                 'filename': 'rbac_factory_defaults.json',
             }
@@ -938,7 +976,7 @@ class PermissionCentralService:
     def _import_as_factory_defaults(
         cls, roles_data: Dict, operator_username: str
     ) -> Dict[str, Any]:
-        """匯入為出廠預設值"""
+        """匯入為出廠預設值（寫入 rbac_defaults 表）"""
         try:
             # 驗證權限代碼存在
             all_perm_codes = set()
@@ -955,39 +993,43 @@ class PermissionCentralService:
             if missing:
                 return {'error': f'以下權限代碼不存在: {", ".join(sorted(missing))}'}
 
-            # 寫 JSON + SQL
-            defaults_data = {
-                'version': '1.0',
-                'generated_at': datetime.now(timezone.utc).isoformat(),
-                'generated_by': operator_username,
-                'source': 'imported',
-                'roles': {k: sorted(v) for k, v in roles_data.items()
-                          if isinstance(v, list)},
-            }
-            os.makedirs(os.path.dirname(cls._DEFAULTS_JSON), exist_ok=True)
-            with open(cls._DEFAULTS_JSON, 'w', encoding='utf-8') as f:
-                json.dump(defaults_data, f, ensure_ascii=False, indent=2)
+            # 寫入 DB（全量替換）
+            RbacDefault.query.delete()
+            now = datetime.utcnow()
+            count = 0
+            roles_count = 0
 
-            sql_content = cls._generate_sql(defaults_data['roles'])
-            with open(cls._DEFAULTS_SQL, 'w', encoding='utf-8') as f:
-                f.write(sql_content)
+            for role_code, perm_codes in roles_data.items():
+                if not isinstance(perm_codes, list):
+                    continue
+                roles_count += 1
+                for perm_code in sorted(perm_codes):
+                    if perm_code in existing_codes:
+                        row = RbacDefault(
+                            role_code=role_code,
+                            permission_code=perm_code,
+                            saved_by=operator_username,
+                            saved_at=now,
+                        )
+                        db.session.add(row)
+                        count += 1
 
-            total_perms = sum(
-                len(v) for v in defaults_data['roles'].values()
-            )
+            db.session.commit()
+
             logger.info(
-                f"RBAC factory defaults imported: "
-                f"{len(defaults_data['roles'])} roles, "
-                f"{total_perms} permissions by {operator_username}"
+                f"RBAC factory defaults imported to DB: "
+                f"{roles_count} roles, {count} permissions "
+                f"by {operator_username}"
             )
 
             return {
                 'message': '出廠預設值已匯入',
-                'roles_count': len(defaults_data['roles']),
-                'permissions_count': total_perms,
+                'roles_count': roles_count,
+                'permissions_count': count,
             }
 
         except Exception as e:
+            db.session.rollback()
             logger.error(f"Failed to import factory defaults: {e}")
             return {'error': f'匯入失敗: {str(e)}'}
 
@@ -1110,14 +1152,21 @@ class PermissionCentralService:
         """
         恢復 RBAC 預設權限（企業管理員專用）。
 
-        讀取 rbac_defaults.json，將該企業的系統角色權限
-        完全覆蓋為出廠預設值。
+        資料來源優先順序：
+        1. rbac_defaults 表（系統管理員儲存的快照）
+        2. rbac_defaults.json（fallback，向後相容）
         """
-        defaults = cls._read_defaults_json()
-        if not defaults or 'roles' not in defaults:
-            return {'error': '尚未設定出廠預設值，無法恢復'}
+        # 優先從 DB 讀
+        roles_data = cls._load_defaults_from_db()
 
-        roles_data = defaults['roles']
+        # fallback 到 JSON
+        if not roles_data:
+            defaults = cls._read_defaults_json()
+            if defaults and 'roles' in defaults:
+                roles_data = defaults['roles']
+
+        if not roles_data:
+            return {'error': '尚未設定出廠預設值，無法恢復'}
 
         # 只處理系統角色
         system_roles = Role.query.filter_by(

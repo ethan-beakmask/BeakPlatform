@@ -23,6 +23,7 @@ from .permission import (
     DEFAULT_PERMISSIONS
 )
 from .role_permission import RolePermission
+from .rbac_default import RbacDefault
 from .permission_condition import (
     PermissionCondition, ConditionType,
     DEFAULT_CONDITIONS
@@ -128,6 +129,7 @@ __all__ = [
     'PermissionLevel',
     'DEFAULT_PERMISSIONS',
     'RolePermission',
+    'RbacDefault',
     'PermissionCondition',
     'ConditionType',
     'DEFAULT_CONDITIONS',
