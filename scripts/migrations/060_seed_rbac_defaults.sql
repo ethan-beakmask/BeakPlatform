@@ -1,5 +1,5 @@
 -- BeakPlatform RBAC Factory Defaults (install-only)
--- Generated: 2026-04-01 09:05 UTC
+-- Generated: 2026-04-01 09:22 UTC
 -- 
 -- 安全機制: 只在 rbac_defaults 表為空時才插入
 -- (upgrade 不會覆蓋用戶已儲存的預設值)
