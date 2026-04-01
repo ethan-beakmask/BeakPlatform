@@ -218,6 +218,7 @@ class OrganizationService:
             code='ORG_ADMIN',
             name='企業管理員',
             description='管理整個企業的權限',
+            exclusive_group=ExclusiveGroup.IDENTITY_TYPE,
             is_manager=True,
             is_system_role=True,
             is_active=True
@@ -378,6 +379,7 @@ class OrganizationService:
             code='EMPLOYEE',
             name='企業成員',
             description='企業成員權限',
+            exclusive_group=ExclusiveGroup.IDENTITY_TYPE,
             is_manager=False,
             is_system_role=True,
             is_active=True
@@ -394,7 +396,7 @@ class OrganizationService:
             code='EXTERNAL_USERS',
             name='外部廠商',
             description='外部廠商帳號權限',
-            exclusive_group=ExclusiveGroup.EXTERNAL,
+            exclusive_group=ExclusiveGroup.IDENTITY_TYPE,
             is_manager=False,
             is_system_role=True,
             is_active=True

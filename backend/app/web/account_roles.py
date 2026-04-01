@@ -44,11 +44,12 @@ def index():
     filter_user_type = request.args.get('user_type', '')
     filter_q = request.args.get('q', '').strip()
 
-    # 查詢所有帳號（排除已刪除、已停用）
+    # 查詢所有帳號（排除已刪除、已停用、系統管理員）
     query = User.query.filter(
         User.org_secure_code == org_sc,
         User.is_deleted == False,
         User.is_active == True,
+        User.user_type != UserType.SYSTEM_ADMIN,
     )
 
     if filter_user_type:
@@ -294,6 +295,23 @@ def assign_role():
     ).first()
     if existing:
         return jsonify({'success': False, 'error': f'用戶已擁有「{role.name}」角色'}), 409
+
+    # 互斥群組檢查：同一 exclusive_group 的角色只能擇一
+    if role.exclusive_group:
+        conflict_role = db.session.query(Role).join(
+            UserRoleAssignment,
+            UserRoleAssignment.role_secure_code == Role.secure_code,
+        ).filter(
+            UserRoleAssignment.user_secure_code == user_sc,
+            UserRoleAssignment.is_deleted == False,
+            Role.exclusive_group == role.exclusive_group,
+            Role.is_deleted == False,
+        ).first()
+        if conflict_role:
+            return jsonify({
+                'success': False,
+                'error': f'無法指派「{role.name}」：與現有角色「{conflict_role.name}」互斥，請先移除後再指派',
+            }), 409
 
     assignment = UserRoleAssignment(
         org_secure_code=org_sc,

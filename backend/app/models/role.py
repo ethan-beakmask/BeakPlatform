@@ -43,11 +43,11 @@ class ExclusiveGroup:
     互斥群組
 
     同一互斥群組的角色不能同時指派給同一用戶。
-    例如：EMPLOYEE 和 EXTERNAL 互斥，一個人不能同時是企業成員和外部廠商。
+    例如：EMPLOYEE、ORG_ADMIN、EXTERNAL 三者互斥，
+    一個人只能擁有其中一種身份角色。
     """
-    NONE = None              # 無互斥限制
-    EMPLOYEE = 'EMPLOYEE'    # 企業成員類 (企業成員、受限企業成員、部門成員...)
-    EXTERNAL = 'EXTERNAL'    # 外部類 (顧問、廠商...)
+    NONE = None                        # 無互斥限制
+    IDENTITY_TYPE = 'IDENTITY_TYPE'    # 身份類型互斥 (企業成員/企業管理員/外部廠商)
 
 
 class Role(TenantBaseModel):
