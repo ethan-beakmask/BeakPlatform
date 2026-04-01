@@ -41,6 +41,11 @@ function permissionCentral() {
         conflictsData: null,
         conflictsLoading: false,
         conflictCount: 0,
+        conflictFilters: {
+            MISSING_PERMISSION_DEF: true,
+            MENU_PERM_NO_RBAC: true,
+            ROLE_REQ_NO_HOLDER: false
+        },
 
         // RBAC 管理 modal 狀態
         showSaveFactoryModal: false,
@@ -285,12 +290,35 @@ function permissionCentral() {
         // 衝突偵測
         // ============================================================
 
+        get filteredConflicts() {
+            if (!this.conflictsData || !this.conflictsData.conflicts) return [];
+            return this.conflictsData.conflicts.filter(c => this.conflictFilters[c.type]);
+        },
+
+        get filteredConflictSummary() {
+            const list = this.filteredConflicts;
+            return {
+                total: list.length,
+                errors: list.filter(c => c.severity === 'error').length,
+                warnings: list.filter(c => c.severity === 'warning').length
+            };
+        },
+
+        _updateConflictCount() {
+            if (!this.conflictsData) {
+                this.conflictCount = 0;
+                return;
+            }
+            this.conflictCount = this.conflictsData.conflicts
+                .filter(c => this.conflictFilters[c.type]).length;
+        },
+
         async loadConflicts() {
             this.conflictsLoading = true;
             try {
                 const res = await fetch('/api/permissions/conflicts' + this._orgQueryParam());
                 this.conflictsData = await res.json();
-                this.conflictCount = this.conflictsData.summary.total;
+                this._updateConflictCount();
             } catch (e) {
                 console.error('Failed to load conflicts:', e);
                 this.showToast('偵測失敗', 'error');
@@ -303,7 +331,8 @@ function permissionCentral() {
             try {
                 const res = await fetch('/api/permissions/conflicts' + this._orgQueryParam());
                 const data = await res.json();
-                this.conflictCount = data.summary.total;
+                this.conflictsData = data;
+                this._updateConflictCount();
             } catch (e) {
                 // 背景載入，靜默失敗
             }

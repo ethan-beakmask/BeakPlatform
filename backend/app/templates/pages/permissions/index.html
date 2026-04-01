@@ -511,26 +511,51 @@
 
         <template x-if="!conflictsLoading && conflictsData">
             <div>
+                <!-- 過濾條件 -->
+                <div class="perm-section" style="margin-bottom: 12px;">
+                    <label class="form-label" style="margin-bottom: 8px;">顯示類型</label>
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.MISSING_PERMISSION_DEF"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-error" style="font-size: 11px;">error</span>
+                            權限代碼不存在
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.MENU_PERM_NO_RBAC"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                            無角色持有所需權限
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.ROLE_REQ_NO_HOLDER"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                            角色無人持有
+                        </label>
+                    </div>
+                </div>
+
                 <div class="perm-section">
                     <h3 class="perm-section-title">
                         偵測結果
-                        <span class="perm-badge-info" x-text="'共 ' + conflictsData.summary.total + ' 項'"></span>
-                        <template x-if="conflictsData.summary.errors > 0">
-                            <span class="perm-badge-error" x-text="conflictsData.summary.errors + ' 錯誤'"></span>
+                        <span class="perm-badge-info" x-text="'共 ' + filteredConflictSummary.total + ' 項'"></span>
+                        <template x-if="filteredConflictSummary.errors > 0">
+                            <span class="perm-badge-error" x-text="filteredConflictSummary.errors + ' 錯誤'"></span>
                         </template>
-                        <template x-if="conflictsData.summary.warnings > 0">
-                            <span class="perm-badge-warn" x-text="conflictsData.summary.warnings + ' 警告'"></span>
+                        <template x-if="filteredConflictSummary.warnings > 0">
+                            <span class="perm-badge-warn" x-text="filteredConflictSummary.warnings + ' 警告'"></span>
                         </template>
                     </h3>
                 </div>
 
-                <template x-if="conflictsData.conflicts.length === 0">
+                <template x-if="filteredConflicts.length === 0">
                     <div class="perm-section">
-                        <p class="text-success">未偵測到權限衝突或缺失</p>
+                        <p class="text-success">未偵測到權限衝突或缺失（或所有類型已隱藏）</p>
                     </div>
                 </template>
 
-                <template x-if="conflictsData.conflicts.length > 0">
+                <template x-if="filteredConflicts.length > 0">
                     <table class="data-table bordered">
                         <thead>
                             <tr>
@@ -542,7 +567,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="(c, idx) in conflictsData.conflicts" :key="idx">
+                            <template x-for="(c, idx) in filteredConflicts" :key="idx">
                                 <tr>
                                     <td>
                                         <span :class="c.severity === 'error' ? 'perm-badge-error' : 'perm-badge-warn'"
