@@ -156,3 +156,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Server Manage - 主機管理 (系統管理員)
     from .server_manage import server_manage_bp
     app.register_blueprint(server_manage_bp, url_prefix='/server-manage')
+
+    # Vault Manage - BeakSeal 加密保險庫管理 (系統管理員)
+    from .vault_manage import vault_manage_bp
+    app.register_blueprint(vault_manage_bp, url_prefix='/vault')

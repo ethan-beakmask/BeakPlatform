@@ -101,3 +101,7 @@ def register_blueprints(app: Flask) -> None:
     # Broadcasts (廣播系統)
     from .broadcasts import broadcasts_bp
     app.register_blueprint(broadcasts_bp)
+
+    # Vault admin (BeakSeal 加密保險庫管理)
+    from .vault_admin import vault_admin_bp
+    app.register_blueprint(vault_admin_bp)
