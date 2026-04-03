@@ -27,6 +27,7 @@
     --menu-header-bg: #1e3a5f;
     --menu-header-text: #ffffff;
     --menubar-bg: #333333;
+    --menu-hover-accent: #22d3ee;
 }
 
 /* ------------------------------------------
@@ -101,8 +102,14 @@ input::placeholder, textarea::placeholder {
     text-decoration: none;
     padding: 8px 12px;
     display: inline-block;
+    border-bottom: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
 }
-.bk-menubar a:hover { color: white; background: #444; }
+.bk-menubar a:hover {
+    color: white;
+    border-bottom-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
+}
 
 /* ------------------------------------------
    Menubar 權限等級著色 (CSS 變數驅動)
@@ -155,8 +162,14 @@ input::placeholder, textarea::placeholder {
     padding: 8px 12px;
     display: inline-block;
     cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
 }
-.bk-menu-trigger:hover { color: white; background: #444; }
+.bk-menu-trigger:hover {
+    color: white;
+    border-bottom-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
+}
 .bk-menu-dropdown-content {
     display: none;
     position: absolute;
@@ -171,6 +184,12 @@ input::placeholder, textarea::placeholder {
 .bk-menu-dropdown-content a {
     display: block;
     padding: 8px 12px;
+    border-left: 3px solid transparent;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+.bk-menu-dropdown-content a:hover {
+    border-left-color: var(--menu-hover-accent);
+    filter: brightness(1.3);
 }
 
 /* ------------------------------------------
