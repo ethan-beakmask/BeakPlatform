@@ -319,8 +319,8 @@
                                 <input type="text" x-model="out.contextKey" placeholder="contextKey">
                                 <select x-model="out.sourceColumn">
                                     <option value="">--</option>
-                                    <template x-for="col in getViewColumns()" :key="col">
-                                        <option :value="col" x-text="col"></option>
+                                    <template x-for="col in getViewColumns()" :key="col.column">
+                                        <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
                                     </template>
                                 </select>
                                 <button class="stu-btn sm danger" @click="removeContextOutput(idx)">x</button>
@@ -335,8 +335,8 @@
                                 <input type="text" x-model="inp.contextKey" placeholder="contextKey">
                                 <select x-model="inp.filterColumn">
                                     <option value="">--</option>
-                                    <template x-for="col in getViewColumns()" :key="col">
-                                        <option :value="col" x-text="col"></option>
+                                    <template x-for="col in getViewColumns()" :key="col.column">
+                                        <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
                                     </template>
                                 </select>
                                 <button class="stu-btn sm danger" @click="removeContextInput(idx)">x</button>

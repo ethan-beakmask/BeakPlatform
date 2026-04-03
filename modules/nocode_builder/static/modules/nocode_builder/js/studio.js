@@ -582,6 +582,18 @@ function studioManager() {
 
             var self = this;
             this._gsGrid.on('change', function () { self.dirty = true; });
+
+            // 點擊 widget 時切換右側設定面板
+            var gsEl = this._gsGrid.el;
+            gsEl.addEventListener('click', function (e) {
+                var gsItem = e.target.closest('.grid-stack-item');
+                if (gsItem) {
+                    var wid = gsItem.getAttribute('gs-id');
+                    if (wid && self._gsWidgetConfigs[wid]) {
+                        self._gsSelectItem(wid);
+                    }
+                }
+            });
         },
 
         _gsAddWidget: function (type) {
@@ -754,12 +766,29 @@ function studioManager() {
             var vc = this.settingViewCode;
             var v = this.availableViews.find(function (v) { return v.secure_code === vc; });
             if (!v || !v.columns_config) return [];
-            return v.columns_config.filter(function (c) { return c.visible; }).map(function (c) { return c.column; });
+            return v.columns_config.filter(function (c) { return c.visible; }).map(function (c) {
+                return { column: c.column, label: c.label || c.column };
+            });
         },
 
         applyWidgetSettings: function () {
             // 先存回目前正在編輯的篩選角色
             this._saveFilterEntries();
+
+            // 過濾空白的 context 項目
+            var validOutputs = this.settingContextOutputs.filter(function (o) {
+                return o.contextKey && o.contextKey.trim() && o.sourceColumn && o.sourceColumn.trim();
+            });
+            var validInputs = this.settingContextInputs.filter(function (i) {
+                return i.contextKey && i.contextKey.trim() && i.filterColumn && i.filterColumn.trim();
+            });
+            var removedCount = (this.settingContextOutputs.length - validOutputs.length)
+                             + (this.settingContextInputs.length - validInputs.length);
+            if (removedCount > 0) {
+                this.settingContextOutputs = validOutputs;
+                this.settingContextInputs = validInputs;
+                this.showToast('已移除 ' + removedCount + ' 筆未填完的 Context 設定', 'success');
+            }
 
             var widgetConfig = {
                 dataSource: this.settingDataSource,
@@ -772,8 +801,8 @@ function studioManager() {
                 allowCreate: this.settingAllowCreate,
                 allowEdit: this.settingAllowEdit,
                 allowDelete: this.settingAllowDelete,
-                contextOutputs: this.settingContextOutputs,
-                contextInputs: this.settingContextInputs,
+                contextOutputs: JSON.parse(JSON.stringify(validOutputs)),
+                contextInputs: JSON.parse(JSON.stringify(validInputs)),
             };
 
             // Role permissions
