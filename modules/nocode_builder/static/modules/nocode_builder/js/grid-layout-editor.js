@@ -44,6 +44,9 @@ class GridLayoutEditor {
         // Widget storage: regionId -> widget config
         this.widgetMap = {};
 
+        // DataListWidget live instances: zoneKey -> DataListWidget
+        this._dlwInstances = {};
+
         // Callbacks
         this.onZoneSelect = null;
         this.onWidgetSelect = null;
@@ -567,6 +570,9 @@ class GridLayoutEditor {
     // ===== Render =====
 
     render() {
+        // Destroy all existing DataListWidget instances before re-rendering
+        this._destroyAllDlw();
+
         this._gridContainer.innerHTML = '';
         this._applyTemplate();
 
@@ -588,19 +594,55 @@ class GridLayoutEditor {
 
             if (widget) {
                 el.classList.add('has-widget');
-                // Widget preview
-                const wp = document.createElement('div');
-                wp.className = 'gle-widget-preview';
-                const typeLabel = document.createElement('div');
-                typeLabel.className = 'gle-wp-type';
-                typeLabel.textContent = widget.type || 'DATALIST';
-                wp.appendChild(typeLabel);
-                const detail = document.createElement('div');
-                detail.className = 'gle-wp-detail';
-                detail.textContent = widget.title || widget.viewCode || '(未設定資料來源)';
-                if (!widget.viewCode) detail.style.color = '#f59e0b';
-                wp.appendChild(detail);
-                el.appendChild(wp);
+
+                if (widget.viewCode && typeof DataListWidget !== 'undefined') {
+                    // Live preview: create DataListWidget instance
+                    const dlwContainer = document.createElement('div');
+                    dlwContainer.className = 'gle-dlw-container';
+                    el.appendChild(dlwContainer);
+
+                    // Allow interactions inside preview (pagination, sort)
+                    // without triggering zone drag selection
+                    dlwContainer.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        // Still select this zone
+                        this.selected.clear();
+                        this.selected.add(reg.id);
+                        this._updateSelUI();
+                        this._updateButtons();
+                        if (this.onWidgetSelect) {
+                            this.onWidgetSelect(wKey, this.widgetMap[wKey]);
+                        }
+                    });
+
+                    // Defer init to after DOM is attached
+                    setTimeout(() => {
+                        const dlw = new DataListWidget(dlwContainer, Object.assign({}, widget, {
+                            showSearch: false,
+                            showPagination: true,
+                            allowCreate: false,
+                            allowEdit: false,
+                            allowDelete: false,
+                            pageSize: 5,
+                        }));
+                        dlw.init();
+                        this._dlwInstances[wKey] = dlw;
+                    }, 0);
+                } else {
+                    // No viewCode: show static placeholder
+                    const wp = document.createElement('div');
+                    wp.className = 'gle-widget-preview';
+                    const typeLabel = document.createElement('div');
+                    typeLabel.className = 'gle-wp-type';
+                    typeLabel.textContent = widget.type || 'DATALIST';
+                    wp.appendChild(typeLabel);
+                    const detail = document.createElement('div');
+                    detail.className = 'gle-wp-detail';
+                    detail.textContent = '(未設定資料來源)';
+                    detail.style.color = '#f59e0b';
+                    wp.appendChild(detail);
+                    el.appendChild(wp);
+                }
             } else {
                 // Zone number label
                 const label = document.createElement('span');
@@ -913,6 +955,7 @@ class GridLayoutEditor {
 
     /** Cleanup: remove document-level event listeners */
     destroy() {
+        this._destroyAllDlw();
         if (this._onMouseUpBound) {
             document.removeEventListener('mouseup', this._onMouseUpBound);
             this._onMouseUpBound = null;
@@ -924,6 +967,22 @@ class GridLayoutEditor {
         this.onZoneSelect = null;
         this.onWidgetSelect = null;
         this.onChanged = null;
+    }
+
+    // ===== DataListWidget Instance Management =====
+
+    _destroyAllDlw() {
+        for (const key of Object.keys(this._dlwInstances)) {
+            this._dlwInstances[key].destroy();
+        }
+        this._dlwInstances = {};
+    }
+
+    _destroyDlw(zoneKey) {
+        if (this._dlwInstances[zoneKey]) {
+            this._dlwInstances[zoneKey].destroy();
+            delete this._dlwInstances[zoneKey];
+        }
     }
 
     // ===== Helpers =====
