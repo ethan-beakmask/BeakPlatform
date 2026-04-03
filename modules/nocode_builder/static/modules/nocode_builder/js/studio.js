@@ -696,6 +696,10 @@ function studioManager() {
         },
 
         _gsSelectItem: function (wid) {
+            // 同一 widget 已選取時，不重新載入設定（避免覆蓋未套用的修改）
+            if (this.selectedZoneId === wid && this.showProps && this.propsMode === 'widget') {
+                return;
+            }
             document.querySelectorAll('.grid-stack-item.stu-gs-selected').forEach(function (el) {
                 el.classList.remove('stu-gs-selected');
             });
@@ -756,9 +760,21 @@ function studioManager() {
             this.settingFilterEntries = [];
 
             if (this.settingDataSource) {
-                await this.onDataSourceChange();
-                this.settingTableName = widgetConfig.tableName || '';
-                this.settingViewCode = widgetConfig.viewCode || '';
+                // 直接載入表列表，不透過 onDataSourceChange()
+                // 避免暫時清空 settingViewCode 導致 select options 消失
+                this.loadingTables = true;
+                try {
+                    var res = await fetch(
+                        '/api/nocode-builder/sub-systems/' + this.subSystemSc +
+                        '/data-sources/' + this.settingDataSource + '/tables'
+                    );
+                    var data = await res.json();
+                    if (data.success) this.sourceTables = data.data || [];
+                } catch (e) {
+                    console.error('Load source tables failed:', e);
+                } finally {
+                    this.loadingTables = false;
+                }
             }
         },
 

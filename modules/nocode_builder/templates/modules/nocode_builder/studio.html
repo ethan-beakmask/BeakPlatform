@@ -184,6 +184,7 @@
                         <div class="stu-field" x-show="settingDataSource">
                             <label>資料表</label>
                             <select x-model="settingTableName" @change="onTableNameChange()"
+                                    x-effect="sourceTables.length; $nextTick(() => { if (settingTableName) $el.value = settingTableName })"
                                     :disabled="loadingTables">
                                 <option value="">-- 選擇資料表 --</option>
                                 <template x-for="t in sourceTables" :key="t.name">
@@ -317,7 +318,8 @@
                         <template x-for="(out, idx) in settingContextOutputs" :key="idx">
                             <div class="stu-ctx-row">
                                 <input type="text" x-model="out.contextKey" placeholder="contextKey">
-                                <select x-model="out.sourceColumn">
+                                <select x-model="out.sourceColumn"
+                                        x-effect="getViewColumns(); $nextTick(() => { if (out.sourceColumn) $el.value = out.sourceColumn })">
                                     <option value="">--</option>
                                     <template x-for="col in getViewColumns()" :key="col.column">
                                         <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
@@ -333,7 +335,8 @@
                         <template x-for="(inp, idx) in settingContextInputs" :key="idx">
                             <div class="stu-ctx-row">
                                 <input type="text" x-model="inp.contextKey" placeholder="contextKey">
-                                <select x-model="inp.filterColumn">
+                                <select x-model="inp.filterColumn"
+                                        x-effect="getViewColumns(); $nextTick(() => { if (inp.filterColumn) $el.value = inp.filterColumn })">
                                     <option value="">--</option>
                                     <template x-for="col in getViewColumns()" :key="col.column">
                                         <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
