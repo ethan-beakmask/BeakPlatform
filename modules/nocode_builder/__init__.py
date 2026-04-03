@@ -34,18 +34,6 @@ MODULE_INFO = {
                     'url': 'nocode_builder_web.lookup_manager',
                     'sort_order': 1
                 },
-                {
-                    'code': 'nocode_builder.views',
-                    'name': '視圖管理',
-                    'url': 'nocode_builder_web.index',
-                    'sort_order': 2
-                },
-                {
-                    'code': 'nocode_builder.lab',
-                    'name': '頁面管理',
-                    'url': 'nocode_builder_web.lab',
-                    'sort_order': 3
-                },
             ]
         }
     ],

@@ -45,6 +45,7 @@
                     </template>
                     <th style="width: 200px;">子系統名稱</th>
                     <th style="width: 160px;">申請單號</th>
+                    <th style="width: 140px;">開發者</th>
                     <th style="width: 140px;">綁定社群</th>
                     <th>說明</th>
                     <th style="width: 70px;">頁面數</th>
@@ -64,6 +65,7 @@
                             <span x-text="item.name"></span>
                         </td>
                         <td style="color: #666; font-size: 12px;" x-text="item.provision_serial_number || '-'"></td>
+                        <td style="color: #666; font-size: 12px;" x-text="(item.developer_names || []).join(', ') || '-'"></td>
                         <td style="color: #666; font-size: 12px;" x-text="item.group_name"></td>
                         <td style="color: #666;" x-text="truncate(item.description, 40)"></td>
                         <td x-text="item.page_count || 0"></td>

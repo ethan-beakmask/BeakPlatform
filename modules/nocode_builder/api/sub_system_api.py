@@ -55,6 +55,9 @@ def list_sub_systems():
         for org_row in Organization.query.filter_by(is_deleted=False).all():
             org_name_cache[org_row.secure_code] = org_row.name
 
+    # 預先查詢所有開發者名稱快取
+    developer_name_cache = _build_developer_name_cache(result)
+
     items = []
     for ss in result:
         d = ss.to_dict()
@@ -62,6 +65,11 @@ def list_sub_systems():
         d['group_name'] = _get_group_name(ss.group_unit_secure_code)
         # 附加頁面數
         d['page_count'] = _get_page_count(ss.secure_code, ss.org_secure_code)
+        # 附加開發者顯示名稱
+        d['developer_names'] = [
+            developer_name_cache.get(sc, sc)
+            for sc in (ss.developers or [])
+        ]
         # 系統管理員：附加企業名稱
         if current_user.is_system_admin:
             d['org_name'] = org_name_cache.get(ss.org_secure_code, '')
@@ -614,6 +622,25 @@ def resolve_view(secure_code):
 # =============================================================================
 # 內部輔助函式
 # =============================================================================
+
+def _build_developer_name_cache(sub_systems):
+    """批次查詢所有開發者的顯示名稱"""
+    from app.models.user import User
+
+    all_scs = set()
+    for ss in sub_systems:
+        for sc in (ss.developers or []):
+            all_scs.add(sc)
+
+    if not all_scs:
+        return {}
+
+    users = User.query.filter(
+        User.secure_code.in_(all_scs),
+        User.is_deleted == False,
+    ).all()
+    return {u.secure_code: u.display_name for u in users}
+
 
 def _get_group_name(group_unit_sc):
     """取得社群名稱"""

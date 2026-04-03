@@ -691,8 +691,6 @@ MENU_ROLE_DEFAULTS = {
     # 無程式碼建構模組（ORG_ADMIN + SUBSYS_DESIGNER）
     'nocode_builder': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
     'nocode_builder.sub_systems': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
-    'nocode_builder.lab': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
-    'nocode_builder.views': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
     'nocode_builder.lookup': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],
 }
 
