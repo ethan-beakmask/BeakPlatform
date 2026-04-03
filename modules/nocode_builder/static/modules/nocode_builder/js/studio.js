@@ -60,6 +60,7 @@ function studioManager() {
         // GridStack editor (自由模式)
         _gsGrid: null,
         _gsWidgetConfigs: {},  // id -> widget config
+        _gsWidgets: {},        // id -> DataListWidget instances (free mode)
 
         // Property panel
         showProps: false,
@@ -491,11 +492,15 @@ function studioManager() {
         },
 
         _clearCanvas: function () {
-            if (this.editMode === 'grid' && this._gridEditor) {
-                this._gridEditor.loadLayout(this._emptyGridLayout());
-            } else if (this._gsGrid) {
+            // 清理 free mode widgets（不論當前模式，確保模式切換時也能正確清理）
+            this._gsDestroyAllWidgets();
+            if (this._gsGrid) {
                 this._gsGrid.removeAll();
-                this._gsWidgetConfigs = {};
+            }
+            this._gsWidgetConfigs = {};
+            // 清理 grid mode
+            if (this._gridEditor) {
+                this._gridEditor.loadLayout(this._emptyGridLayout());
             }
         },
 
@@ -572,6 +577,7 @@ function studioManager() {
                 float: true,
                 removable: false,
                 acceptWidgets: true,
+                draggable: { handle: '.dlw-header' },
             }, el);
 
             var self = this;
@@ -597,14 +603,19 @@ function studioManager() {
             };
             this._gsWidgetConfigs[wid] = widgetConfig;
 
-            var label = '<div class="stu-gs-widget-label"><b>' + type
-                + '</b><span>(未設定)</span></div>';
-
-            this._gsGrid.addWidget({
+            var gsItem = this._gsGrid.addWidget({
                 x: 0, y: 0, w: 6, h: 4,
                 id: wid,
-                content: label,
+                content: '',
             });
+
+            var content = gsItem.querySelector('.grid-stack-item-content');
+            if (content) {
+                content.innerHTML = '';
+                var widget = new DataListWidget(content, widgetConfig);
+                widget.init();
+                this._gsWidgets[wid] = widget;
+            }
 
             this._gsSelectItem(wid);
             this.dirty = true;
@@ -620,6 +631,7 @@ function studioManager() {
                 return;
             }
 
+            this._gsDestroyAllWidgets();
             this._gsGrid.removeAll();
             this._gsWidgetConfigs = {};
 
@@ -628,20 +640,27 @@ function studioManager() {
                 var item = items[i];
                 var wConf = item.widget || {};
                 var wid = wConf.id || item.id || ('w_' + Math.random().toString(36).slice(2, 8));
-                this._gsWidgetConfigs[wid] = Object.assign({}, wConf, { id: wid });
+                var fullConfig = Object.assign({}, wConf, { id: wid });
+                if (!fullConfig.contextOutputs) fullConfig.contextOutputs = [];
+                if (!fullConfig.contextInputs) fullConfig.contextInputs = [];
+                this._gsWidgetConfigs[wid] = fullConfig;
 
-                var dispLabel = wConf.title || wConf.viewCode || '(未設定)';
-                var html = '<div class="stu-gs-widget-label"><b>'
-                    + (wConf.type || 'DATALIST') + '</b><span>' + dispLabel + '</span></div>';
-
-                this._gsGrid.addWidget({
+                var gsItem = this._gsGrid.addWidget({
                     x: item.x || 0,
                     y: item.y || 0,
                     w: item.w || 6,
                     h: item.h || 4,
                     id: wid,
-                    content: html,
+                    content: '',
                 });
+
+                var content = gsItem.querySelector('.grid-stack-item-content');
+                if (content) {
+                    content.innerHTML = '';
+                    var widget = new DataListWidget(content, fullConfig);
+                    widget.init();
+                    this._gsWidgets[wid] = widget;
+                }
             }
         },
 
@@ -794,7 +813,7 @@ function studioManager() {
                 var wid = this.selectedZoneId;
                 if (this._gsWidgetConfigs[wid]) {
                     Object.assign(this._gsWidgetConfigs[wid], widgetConfig);
-                    this._gsUpdateItemLabel(wid, widgetConfig);
+                    this._gsUpdateWidget(wid, this._gsWidgetConfigs[wid]);
                 }
                 this.dirty = true;
             }
@@ -802,20 +821,22 @@ function studioManager() {
             this.showToast('已套用', 'success');
         },
 
-        _gsUpdateItemLabel: function (wid, cfg) {
-            var items = this._gsGrid ? this._gsGrid.getGridItems() : [];
-            for (var i = 0; i < items.length; i++) {
-                var el = items[i];
-                if (el.getAttribute('gs-id') === wid) {
-                    var content = el.querySelector('.grid-stack-item-content');
-                    if (content) {
-                        var label = cfg.title || cfg.viewCode || '(未設定)';
-                        content.innerHTML = '<div class="stu-gs-widget-label"><b>'
-                            + (cfg.type || 'DATALIST') + '</b><span>' + label + '</span></div>';
-                    }
-                    break;
-                }
+        _gsUpdateWidget: function (wid, cfg) {
+            var widget = this._gsWidgets[wid];
+            if (widget) {
+                widget.updateConfig(cfg);
             }
+        },
+
+        _gsDestroyAllWidgets: function () {
+            if (typeof PageContext !== 'undefined') {
+                PageContext.reset();
+            }
+            var ids = Object.keys(this._gsWidgets);
+            for (var i = 0; i < ids.length; i++) {
+                this._gsWidgets[ids[i]].destroy();
+            }
+            this._gsWidgets = {};
         },
 
         removeSelectedWidget: function () {
@@ -825,14 +846,19 @@ function studioManager() {
                 delete this._gridEditor.widgetMap[this.selectedZoneId];
                 this._gridEditor.render();
             } else if (this.editMode === 'free' && this._gsGrid) {
+                var wid = this.selectedZoneId;
+                if (this._gsWidgets[wid]) {
+                    this._gsWidgets[wid].destroy();
+                    delete this._gsWidgets[wid];
+                }
                 var items = this._gsGrid.getGridItems();
                 for (var i = 0; i < items.length; i++) {
-                    if (items[i].getAttribute('gs-id') === this.selectedZoneId) {
+                    if (items[i].getAttribute('gs-id') === wid) {
                         this._gsGrid.removeWidget(items[i]);
                         break;
                     }
                 }
-                delete this._gsWidgetConfigs[this.selectedZoneId];
+                delete this._gsWidgetConfigs[wid];
             }
 
             this.selectedZoneId = null;

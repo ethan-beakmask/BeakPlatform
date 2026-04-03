@@ -381,6 +381,11 @@ class DataListWidget {
     _renderEmpty(msg) {
         this.container.innerHTML = '';
         this.container.classList.add('dlw-root');
+        // 保留 dlw-header 作為拖曳手柄（GridStack draggable handle）
+        const header = document.createElement('div');
+        header.className = 'dlw-header';
+        header.innerHTML = '<span class="dlw-title">DATALIST</span>';
+        this.container.appendChild(header);
         const el = document.createElement('div');
         el.className = 'dlw-empty';
         el.textContent = msg || '未設定資料來源';
