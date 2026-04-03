@@ -45,6 +45,7 @@ class SubSystemProvisionService:
         name: str,
         icon: str = '',
         developer_sc: str = '',
+        provision_serial_number: str = '',
     ) -> Dict[str, Any]:
         """
         建立子系統 + 選單 + 授予開發者權限
@@ -54,6 +55,7 @@ class SubSystemProvisionService:
             name: 子系統名稱 (Single Source of Truth)
             icon: 圖示 class (optional)
             developer_sc: 開發者 user secure_code
+            provision_serial_number: 來源申請單號 (optional)
 
         Returns:
             {'success': bool, 'error'?: str, 'data'?: dict}
@@ -91,6 +93,7 @@ class SubSystemProvisionService:
                     developers=[developer_sc],
                     layout_mode='grid',
                     is_active=True,
+                    provision_serial_number=provision_serial_number or None,
                 )
 
                 # Step 2: 嘗試建立選單項（父選單不存在時跳過）

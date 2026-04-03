@@ -30,6 +30,9 @@ class DcSubSystem(ModuleBaseModel):
     developers = Column(JSONB, default=list)
     layout_mode = Column(String(20), default='grid', nullable=False)
 
+    # 來源申請單號（由 SubSystemProvision 節點自動填入）
+    provision_serial_number = Column(String(100), nullable=True, index=True)
+
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
         data.update({
@@ -43,5 +46,6 @@ class DcSubSystem(ModuleBaseModel):
             'status': self.status,
             'developers': self.developers or [],
             'layout_mode': self.layout_mode,
+            'provision_serial_number': self.provision_serial_number,
         })
         return data

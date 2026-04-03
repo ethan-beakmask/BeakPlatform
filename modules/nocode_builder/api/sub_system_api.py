@@ -24,18 +24,36 @@ logger = logging.getLogger(__name__)
 @api_bp.route('/sub-systems')
 @module_access_required('nocode_builder')
 def list_sub_systems():
-    """列出子系統"""
+    """列出子系統（依用戶過濾：企業管理員看全部，其餘只看 developers 含自己的）"""
     from ..models import DcSubSystem
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    result = ResourceGateway.filter(
-        DcSubSystem,
-        is_deleted=False,
-        order_by='-updated_at'
-    )
+    user_sc = current_user.secure_code
+
+    if current_user.is_org_admin:
+        # 企業管理員：看自己企業全部子系統
+        result = ResourceGateway.filter(
+            DcSubSystem,
+            is_deleted=False,
+            order_by='-updated_at'
+        )
+    else:
+        # 一般用戶：只看 developers JSONB 陣列包含自己的
+        result = DcSubSystem.query.filter(
+            DcSubSystem.org_secure_code == current_user.org_secure_code,
+            DcSubSystem.is_deleted == False,
+            DcSubSystem.developers.op('?')(user_sc),
+        ).order_by(DcSubSystem.updated_at.desc()).all()
+
+    # 系統管理員需要企業名稱，預先查詢快取
+    org_name_cache = {}
+    if current_user.is_system_admin:
+        from app.models.organization import Organization
+        for org_row in Organization.query.filter_by(is_deleted=False).all():
+            org_name_cache[org_row.secure_code] = org_row.name
 
     items = []
     for ss in result:
@@ -44,9 +62,20 @@ def list_sub_systems():
         d['group_name'] = _get_group_name(ss.group_unit_secure_code)
         # 附加頁面數
         d['page_count'] = _get_page_count(ss.secure_code, ss.org_secure_code)
+        # 系統管理員：附加企業名稱
+        if current_user.is_system_admin:
+            d['org_name'] = org_name_cache.get(ss.org_secure_code, '')
         items.append(d)
 
-    return jsonify({'success': True, 'data': items})
+    return jsonify({
+        'success': True,
+        'data': items,
+        'meta': {
+            'is_system_admin': current_user.is_system_admin,
+            'is_org_admin': current_user.is_org_admin,
+            'can_manage': current_user.is_system_admin or current_user.is_org_admin,
+        },
+    })
 
 
 @api_bp.route('/sub-systems', methods=['POST'])

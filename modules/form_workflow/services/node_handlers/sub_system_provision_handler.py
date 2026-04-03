@@ -81,11 +81,17 @@ class SubSystemProvisionHandler(BaseNodeHandler):
         if not developer_sc:
             return {'status': 'error', 'message': '無法取得開發者資訊'}
 
+        # 取得來源申請單號
+        serial_number = ''
+        if self.form_instance:
+            serial_number = self.form_instance.serial_number or ''
+
         result = SubSystemProvisionService.create_sub_system(
             org_sc=org_sc,
             name=name,
             icon=icon,
             developer_sc=developer_sc,
+            provision_serial_number=serial_number,
         )
 
         if not result['success']:

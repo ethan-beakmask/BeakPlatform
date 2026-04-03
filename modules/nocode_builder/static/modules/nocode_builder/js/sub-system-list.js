@@ -7,6 +7,7 @@ function subSystemListManager() {
         items: [],
         groups: [],
         menuItems: [],
+        meta: { is_system_admin: false, is_org_admin: false, can_manage: false },
         loading: true,
         showCreateModal: false,
         showDeleteModal: false,
@@ -35,6 +36,9 @@ function subSystemListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.items = data.data || [];
+                    if (data.meta) {
+                        this.meta = data.meta;
+                    }
                 }
             } catch (e) {
                 console.error('Load sub-systems failed:', e);
