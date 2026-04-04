@@ -53,6 +53,7 @@ function formCenterManager() {
         subjectError: '',
         loadingFormSchema: false,
         submitting: false,
+        pendingFiles: [],       // 待上傳附件（submit 後才上傳）
 
         // 簽核
         showApprovalModal: false,
@@ -596,6 +597,49 @@ function formCenterManager() {
             this.formSchema = null;
             this.formSubject = '';
             this.subjectError = '';
+            this.pendingFiles = [];
+        },
+
+        // 附件：選取檔案（暫存在 pendingFiles，submit 後才上傳）
+        addPendingFiles(event) {
+            const files = event.target.files;
+            if (!files) return;
+            for (let i = 0; i < files.length; i++) {
+                if (this.pendingFiles.length >= 10) break;
+                this.pendingFiles.push(files[i]);
+            }
+            event.target.value = '';
+        },
+
+        removePendingFile(index) {
+            this.pendingFiles.splice(index, 1);
+        },
+
+        formatFileSize(bytes) {
+            if (!bytes) return '0 B';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        },
+
+        // 上傳暫存附件到 FileService
+        async _uploadPendingFiles(formInstanceSc) {
+            if (!this.pendingFiles.length) return;
+            let ok = 0, fail = 0;
+            for (const file of this.pendingFiles) {
+                try {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('context_type', 'form_attachment');
+                    fd.append('context_id', formInstanceSc);
+                    const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (data.success) ok++; else fail++;
+                } catch (e) { fail++; }
+            }
+            if (fail > 0) {
+                this.showToast(fail + ' 個附件上傳失敗', 'error');
+            }
         },
 
         async submitForm() {
@@ -635,6 +679,11 @@ function formCenterManager() {
                 const data = await res.json();
 
                 if (data.success) {
+                    // 表單建立成功後上傳附件
+                    const fiSc = data.data?.form_instance_secure_code;
+                    if (fiSc && this.pendingFiles.length > 0) {
+                        await this._uploadPendingFiles(fiSc);
+                    }
                     this.showToast(data.message || '表單已送出');
                     this.closeFillModal();
                     this.loadTracking();
@@ -668,6 +717,7 @@ function formCenterManager() {
                         form_subject: result.data.form_subject,
                         applicant_name: result.data.applicant_name,
                         approvals: result.data.approvals,
+                        form_instance_secure_code: result.data.form_instance_secure_code,
                     };
                     await this.$nextTick();
                     this.renderReadForm();
@@ -814,6 +864,18 @@ function formCenterManager() {
                 console.error('簽核表單渲染失敗:', e);
                 container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
             }
+
+            // 初始化附件（簽核者可上傳）
+            const fiSc = this.currentApproval?.form_instance_secure_code;
+            const attEl = document.getElementById('approval-form-attachments');
+            if (attEl && fiSc && typeof BkFileAttachment !== 'undefined') {
+                this._approvalAttachment = new BkFileAttachment(attEl, {
+                    contextType: 'form_attachment',
+                    contextId: fiSc,
+                    readonly: false,
+                });
+                this._approvalAttachment.init();
+            }
         },
 
         closeApprovalModal() {
@@ -836,6 +898,10 @@ function formCenterManager() {
             if (this.approvalFormInstance) {
                 this.approvalFormInstance.destroy();
                 this.approvalFormInstance = null;
+            }
+            if (this._approvalAttachment) {
+                this._approvalAttachment.destroy();
+                this._approvalAttachment = null;
             }
             this.cleanupFormBackground('approval-form-container');
             const container = document.getElementById('approval-form-container');
@@ -1788,12 +1854,29 @@ function formCenterManager() {
                 this.readFormData.form_data,
                 this.readFormData.builder_config
             );
+
+            // 初始化附件檢視（唯讀）
+            const fiSc = this.readFormData.form_instance_secure_code
+                || this.readFormData.secure_code;
+            const attEl = document.getElementById('read-form-attachments');
+            if (attEl && fiSc && typeof BkFileAttachment !== 'undefined') {
+                this._readFormAttachment = new BkFileAttachment(attEl, {
+                    contextType: 'form_attachment',
+                    contextId: fiSc,
+                    readonly: true,
+                });
+                this._readFormAttachment.init();
+            }
         },
 
         closeReadForm() {
             if (this.readFormInstance) {
                 this.readFormInstance.destroy();
                 this.readFormInstance = null;
+            }
+            if (this._readFormAttachment) {
+                this._readFormAttachment.destroy();
+                this._readFormAttachment = null;
             }
             this.cleanupFormBackground('read-form-container');
             const container = document.getElementById('read-form-container');

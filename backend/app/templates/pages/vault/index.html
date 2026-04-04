@@ -2,8 +2,12 @@
 
 {% block title %}BeakSeal 管理 - BeakPlatform{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/css/beakseal-manage.css">
+{% endblock %}
+
 {% block content %}
-<div x-data="vaultAdmin()" x-init="init()">
+<div x-data="beaksealManager()" x-init="init()">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">BeakSeal 加密保險庫</h4>
@@ -12,210 +16,244 @@
         </button>
     </div>
 
-    <!-- Vault Status -->
-    <div class="card mb-3">
-        <div class="card-header"><strong>Vault 狀態</strong></div>
-        <div class="card-body">
-            <template x-if="statusError">
-                <div class="alert alert-danger mb-0" x-text="statusError"></div>
-            </template>
-            <template x-if="status && !statusError">
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link" :class="tab === 'status' && 'active'" href="#" @click.prevent="tab = 'status'">服務狀態</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" :class="tab === 'config' && 'active'" href="#" @click.prevent="tab = 'config'; loadConfig()">設定檔</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" :class="tab === 'audit' && 'active'" href="#" @click.prevent="tab = 'audit'; loadAuditLogs()">稽核記錄</a>
+        </li>
+    </ul>
+
+    <!-- ====== Tab: Status ====== -->
+    <div x-show="tab === 'status'">
+
+        <!-- Service Status -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Systemd 服務</strong>
+                <div class="d-flex gap-2">
+                    <div x-show="serviceStatus.active === 'active'">
+                        <button class="btn btn-sm btn-outline-warning" @click="serviceAction('restart')">重啟</button>
+                        <button class="btn btn-sm btn-outline-danger" @click="serviceAction('stop')">停止</button>
+                    </div>
+                    <button x-show="serviceStatus.active !== 'active'" class="btn btn-sm btn-outline-success" @click="serviceAction('start')">啟動</button>
+                </div>
+            </div>
+            <div class="card-body">
                 <div class="row">
                     <div class="col-md-2">
-                        <small class="text-muted d-block">狀態</small>
-                        <span class="badge" :class="status.sealed ? 'bg-danger' : 'bg-success'"
-                              x-text="status.sealed ? 'SEALED' : 'UNSEALED'"></span>
+                        <small class="text-muted d-block">服務狀態</small>
+                        <span class="badge" :class="serviceStatus.active === 'active' ? 'bg-success' : 'bg-danger'"
+                              x-text="serviceStatus.active || '-'"></span>
                     </div>
                     <div class="col-md-2">
-                        <small class="text-muted d-block">已載入組織</small>
-                        <strong x-text="status.loaded_org_count"></strong>
+                        <small class="text-muted d-block">PID</small>
+                        <strong x-text="serviceStatus.main_pid || '-'"></strong>
                     </div>
                     <div class="col-md-2">
-                        <small class="text-muted d-block">已載入 KEK</small>
-                        <strong x-text="status.loaded_kek_count"></strong>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">運行時間</small>
-                        <span x-text="formatUptime(status.uptime_seconds)"></span>
+                        <small class="text-muted d-block">記憶體</small>
+                        <span x-text="formatBytes(serviceStatus.memory)"></span>
                     </div>
                     <div class="col-md-3">
                         <small class="text-muted d-block">啟動時間</small>
-                        <span x-text="formatTime(status.start_time)"></span>
+                        <span x-text="serviceStatus.start_time || '-'" style="font-size: 12px;"></span>
                     </div>
                 </div>
-            </template>
-        </div>
-    </div>
-
-    <!-- Audit Chain Verification -->
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>稽核鏈驗證</strong>
-            <button class="btn btn-sm btn-outline-primary" @click="verifyChain()" :disabled="verifying">
-                <span x-show="verifying" class="spinner-border spinner-border-sm"></span>
-                驗證 Hash Chain
-            </button>
-        </div>
-        <div class="card-body">
-            <template x-if="chainResult">
-                <div class="alert mb-0" :class="chainResult.valid ? 'alert-success' : 'alert-danger'">
-                    <template x-if="chainResult.valid">
-                        <span>Hash Chain 完整, 已驗證 <strong x-text="chainResult.checked"></strong> 筆記錄</span>
-                    </template>
-                    <template x-if="!chainResult.valid">
-                        <span>Hash Chain 斷裂! 斷點: ID <strong x-text="chainResult.break_point"></strong>
-                              (已驗證 <span x-text="chainResult.checked"></span> 筆)</span>
-                    </template>
-                </div>
-            </template>
-            <template x-if="!chainResult">
-                <p class="text-muted mb-0">按下「驗證 Hash Chain」檢查稽核記錄完整性</p>
-            </template>
-        </div>
-    </div>
-
-    <!-- Audit Logs -->
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>稽核記錄</strong>
-            <div class="d-flex gap-2">
-                <select class="form-select form-select-sm" style="width: auto;" x-model="auditFilter.action" @change="loadAuditLogs()">
-                    <option value="">全部動作</option>
-                    <option value="vault.unseal">vault.unseal</option>
-                    <option value="vault.seal">vault.seal</option>
-                    <option value="key.create">key.create</option>
-                    <option value="key.rotate">key.rotate</option>
-                    <option value="file.encrypt">file.encrypt</option>
-                    <option value="file.decrypt">file.decrypt</option>
-                    <option value="file.secure_delete">file.secure_delete</option>
-                </select>
-                <input type="number" class="form-control form-control-sm" style="width: 80px;"
-                       x-model="auditFilter.limit" placeholder="筆數" @change="loadAuditLogs()">
             </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+
+        <!-- Vault Status -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Vault 狀態</strong>
+                <div class="d-flex gap-2">
+                    <button x-show="vaultStatus && !vaultStatus.sealed" class="btn btn-sm btn-outline-warning" @click="sealVault()">Seal</button>
+                    <button x-show="vaultStatus && vaultStatus.sealed" class="btn btn-sm btn-outline-success" @click="showUnsealDialog = true">Unseal</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div x-show="vaultError" class="alert alert-danger mb-0" x-text="vaultError"></div>
+                <div x-show="vaultStatus && !vaultError" class="row">
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">封印狀態</small>
+                        <span class="badge" :class="vaultStatus?.sealed ? 'bg-danger' : 'bg-success'"
+                              x-text="vaultStatus?.sealed ? 'SEALED' : 'UNSEALED'"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">已載入組織</small>
+                        <strong x-text="vaultStatus?.loaded_org_count ?? '-'"></strong>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">已載入 KEK</small>
+                        <strong x-text="vaultStatus?.loaded_kek_count ?? '-'"></strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">運行時間</small>
+                        <span x-text="formatUptime(vaultStatus?.uptime_seconds)"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">啟動時間</small>
+                        <span x-text="formatTime(vaultStatus?.start_time)" style="font-size: 12px;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Stats -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>加密檔案統計</strong></div>
+            <div class="card-body" x-show="fileStats">
+                <div class="row mb-2">
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">總檔案數</small>
+                        <strong x-text="fileStats?.total_count ?? 0"></strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">總大小 (原始)</small>
+                        <strong x-text="formatBytes(fileStats?.total_size)"></strong>
+                    </div>
+                </div>
+                <table x-show="fileStats?.by_context?.length > 0" class="table table-sm table-bordered mt-2" style="font-size: 13px;">
                     <thead class="table-light">
-                        <tr>
-                            <th style="width: 50px;">ID</th>
-                            <th style="width: 160px;">時間</th>
-                            <th>組織</th>
-                            <th>使用者</th>
-                            <th>動作</th>
-                            <th>結果</th>
-                            <th>詳情</th>
-                            <th style="width: 60px;">UID</th>
-                        </tr>
+                        <tr><th>Context Type</th><th>數量</th><th>大小</th></tr>
                     </thead>
                     <tbody>
-                        <template x-for="log in auditLogs" :key="log.id">
+                        <template x-for="item in (fileStats?.by_context || [])" :key="item.context_type">
                             <tr>
-                                <td x-text="log.id" class="text-muted"></td>
-                                <td x-text="formatTime(log.timestamp)" style="font-size: 12px;"></td>
-                                <td x-text="log.org_id || '-'" style="font-size: 12px;"></td>
-                                <td x-text="log.user_id || '-'" style="font-size: 12px;"></td>
-                                <td><span class="badge bg-secondary" x-text="log.action"></span></td>
-                                <td>
-                                    <span class="badge" :class="log.result === 'success' ? 'bg-success' : 'bg-danger'"
-                                          x-text="log.result"></span>
-                                </td>
-                                <td x-text="log.detail || ''" style="font-size: 12px; max-width: 200px;" class="text-truncate"></td>
-                                <td x-text="log.peer_uid ?? '-'" class="text-muted" style="font-size: 12px;"></td>
+                                <td x-text="item.context_type"></td>
+                                <td x-text="item.count"></td>
+                                <td x-text="formatBytes(item.total_size)"></td>
                             </tr>
-                        </template>
-                        <template x-if="auditLogs.length === 0">
-                            <tr><td colspan="8" class="text-center text-muted py-3">無記錄</td></tr>
                         </template>
                     </tbody>
                 </table>
+                <p x-show="!fileStats?.by_context?.length" class="text-muted mb-0">尚無加密檔案</p>
+            </div>
+        </div>
+
+        <!-- Hash Chain Verification -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>稽核鏈驗證</strong>
+                <button class="btn btn-sm btn-outline-primary" @click="verifyChain()" :disabled="verifying">
+                    <span x-show="verifying" class="spinner-border spinner-border-sm"></span>
+                    驗證 Hash Chain
+                </button>
+            </div>
+            <div class="card-body">
+                <div x-show="chainResult && chainResult.valid" class="alert alert-success mb-0">
+                    Hash Chain 完整, 已驗證 <strong x-text="chainResult?.checked"></strong> 筆記錄
+                </div>
+                <div x-show="chainResult && !chainResult.valid" class="alert alert-danger mb-0">
+                    Hash Chain 斷裂! 斷點: ID <strong x-text="chainResult?.break_point"></strong>
+                </div>
+                <p x-show="!chainResult" class="text-muted mb-0">按下「驗證 Hash Chain」檢查稽核記錄完整性</p>
             </div>
         </div>
     </div>
 
+    <!-- ====== Tab: Config ====== -->
+    <div x-show="tab === 'config'">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>BeakSeal 設定檔</strong>
+                <small class="text-muted" x-text="configPath"></small>
+            </div>
+            <div class="card-body p-0">
+                <pre class="bsm-config-pre" x-text="configYaml"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Tab: Audit ====== -->
+    <div x-show="tab === 'audit'">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>稽核記錄</strong>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" style="width: auto;" x-model="auditFilter.action" @change="loadAuditLogs()">
+                        <option value="">全部動作</option>
+                        <option value="vault.unseal">vault.unseal</option>
+                        <option value="vault.seal">vault.seal</option>
+                        <option value="key.create">key.create</option>
+                        <option value="key.rotate">key.rotate</option>
+                        <option value="file.encrypt">file.encrypt</option>
+                        <option value="file.decrypt">file.decrypt</option>
+                        <option value="file.secure_delete">file.secure_delete</option>
+                    </select>
+                    <input type="number" class="form-control form-control-sm" style="width: 80px;"
+                           x-model="auditFilter.limit" placeholder="筆數" @change="loadAuditLogs()">
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:40px;">ID</th>
+                                <th style="width:150px;">時間</th>
+                                <th>組織</th>
+                                <th>使用者</th>
+                                <th>動作</th>
+                                <th>結果</th>
+                                <th>詳情</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="log in auditLogs" :key="log.id">
+                                <tr>
+                                    <td x-text="log.id" class="text-muted"></td>
+                                    <td x-text="formatTime(log.timestamp)"></td>
+                                    <td x-text="log.org_id || '-'"></td>
+                                    <td x-text="log.user_id || '-'"></td>
+                                    <td><span class="badge bg-secondary" x-text="log.action"></span></td>
+                                    <td>
+                                        <span class="badge" :class="log.result === 'success' ? 'bg-success' : 'bg-danger'" x-text="log.result"></span>
+                                    </td>
+                                    <td x-text="log.detail || ''" class="text-truncate" style="max-width: 250px;"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="auditLogs.length === 0">
+                                <td colspan="7" class="text-center text-muted py-3">無記錄</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unseal Dialog -->
+    <div x-show="showUnsealDialog" x-cloak class="bsm-overlay">
+        <div class="bsm-dialog">
+            <div class="bsm-dialog-header">
+                <strong>Unseal Vault</strong>
+                <button type="button" class="btn-close" @click="showUnsealDialog = false"></button>
+            </div>
+            <div class="bsm-dialog-body">
+                <label class="form-label">Vault Master Password</label>
+                <input type="password" class="form-control" x-model="unsealPassword" @keyup.enter="unsealVault()" autofocus>
+                <div x-show="unsealError" class="text-danger mt-2" style="font-size: 13px;" x-text="unsealError"></div>
+            </div>
+            <div class="bsm-dialog-footer">
+                <button class="btn btn-sm btn-secondary" @click="showUnsealDialog = false">取消</button>
+                <button class="btn btn-sm btn-primary" @click="unsealVault()" :disabled="unsealing">
+                    <span x-show="unsealing" class="spinner-border spinner-border-sm"></span>
+                    Unseal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div x-show="toast.show" x-cloak class="bsm-toast" :class="toast.error ? 'bsm-toast-error' : ''" x-text="toast.msg"></div>
+
 </div>
 
-<script>
-function vaultAdmin() {
-    return {
-        status: null,
-        statusError: null,
-        auditLogs: [],
-        chainResult: null,
-        verifying: false,
-        auditFilter: { action: '', limit: 50 },
-
-        async init() {
-            await this.refresh();
-        },
-
-        async refresh() {
-            await Promise.all([
-                this.loadStatus(),
-                this.loadAuditLogs()
-            ]);
-        },
-
-        async loadStatus() {
-            try {
-                const resp = await fetch('/api/vault/status');
-                const data = await resp.json();
-                if (data.success) {
-                    this.status = data.data;
-                    this.statusError = null;
-                } else {
-                    this.statusError = data.error || 'Unknown error';
-                }
-            } catch (e) {
-                this.statusError = 'BeakSeal 服務無法連線';
-            }
-        },
-
-        async loadAuditLogs() {
-            try {
-                let params = new URLSearchParams();
-                if (this.auditFilter.action) params.set('action', this.auditFilter.action);
-                if (this.auditFilter.limit) params.set('limit', this.auditFilter.limit);
-                const resp = await fetch('/api/vault/audit?' + params.toString());
-                const data = await resp.json();
-                if (data.success) {
-                    this.auditLogs = data.data || [];
-                }
-            } catch (e) {
-                console.error('Load audit logs failed:', e);
-            }
-        },
-
-        async verifyChain() {
-            this.verifying = true;
-            try {
-                const resp = await fetch('/api/vault/audit/verify');
-                const data = await resp.json();
-                if (data.success) {
-                    this.chainResult = data.data;
-                }
-            } catch (e) {
-                console.error('Verify chain failed:', e);
-            } finally {
-                this.verifying = false;
-            }
-        },
-
-        formatTime(ts) {
-            if (!ts) return '-';
-            return BkTime.format(ts, 'full');
-        },
-
-        formatUptime(sec) {
-            if (!sec) return '-';
-            const h = Math.floor(sec / 3600);
-            const m = Math.floor((sec % 3600) / 60);
-            const s = sec % 60;
-            if (h > 0) return h + ' 時 ' + m + ' 分';
-            if (m > 0) return m + ' 分 ' + s + ' 秒';
-            return s + ' 秒';
-        }
-    };
-}
-</script>
+<script src="/static/js/beakseal-manage.js"></script>
 {% endblock %}

@@ -1,0 +1,17 @@
+{#
+  通用附件元件 partial
+  引入 CSS + JS，各頁面 include 後用 JS 初始化即可。
+
+  用法:
+    {% include "partials/_file_attachment.html" %}
+    <div id="my-attachments"></div>
+    <script>
+    const att = new BkFileAttachment('#my-attachments', {
+        contextType: 'form_attachment',
+        contextId: 'xxx',
+    });
+    att.init();
+    </script>
+#}
+<link rel="stylesheet" href="/static/css/bk-file-attachment.css">
+<script src="/static/js/bk-file-attachment.js"></script>

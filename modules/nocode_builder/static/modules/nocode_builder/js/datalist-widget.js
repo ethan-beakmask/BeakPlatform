@@ -482,7 +482,16 @@ class DataListWidget {
 
             for (const col of cols) {
                 const td = document.createElement('td');
-                td.textContent = this._formatCell(row[col.column], col.column);
+                if (col.widget_type === 'file' && row[col.column]) {
+                    const link = document.createElement('a');
+                    link.href = '/api/files/' + row[col.column] + '/download';
+                    link.textContent = '附件';
+                    link.title = '下載附件';
+                    link.style.fontSize = '12px';
+                    td.appendChild(link);
+                } else {
+                    td.textContent = this._formatCell(row[col.column], col.column);
+                }
                 tr.appendChild(td);
             }
             if (hasActions) {
@@ -877,6 +886,108 @@ class DataListWidget {
                     input.step = 'any';
                 }
                 field.appendChild(input);
+
+            } else if (col.widget_type === 'file') {
+                // File attachment → BkFileAttachment
+                const fileWrap = document.createElement('div');
+                fileWrap.className = 'dlw-file-widget';
+                fileWrap.setAttribute('data-column', colName);
+
+                if (disabled) {
+                    // 唯讀：只顯示下載連結
+                    if (value) {
+                        const link = document.createElement('a');
+                        link.href = '/api/files/' + value + '/download';
+                        link.className = 'dlw-btn sm';
+                        link.textContent = '下載附件';
+                        link.style.textDecoration = 'none';
+                        fileWrap.appendChild(link);
+                    } else {
+                        fileWrap.textContent = '無附件';
+                        fileWrap.style.color = '#9ca3af';
+                        fileWrap.style.fontSize = '12px';
+                    }
+                } else {
+                    // 可編輯：上傳 / 替換 / 下載
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = colName;
+                    hiddenInput.value = value || '';
+                    fileWrap.appendChild(hiddenInput);
+
+                    const statusSpan = document.createElement('span');
+                    statusSpan.style.fontSize = '12px';
+                    statusSpan.style.marginLeft = '8px';
+
+                    // 現有檔案：顯示下載 + 清除
+                    const existingWrap = document.createElement('span');
+                    existingWrap.className = 'dlw-file-existing';
+                    if (value) {
+                        const dlLink = document.createElement('a');
+                        dlLink.href = '/api/files/' + value + '/download';
+                        dlLink.textContent = '下載現有附件';
+                        dlLink.style.fontSize = '12px';
+                        dlLink.style.marginRight = '8px';
+                        existingWrap.appendChild(dlLink);
+
+                        const clearBtn = document.createElement('button');
+                        clearBtn.type = 'button';
+                        clearBtn.className = 'dlw-btn sm danger';
+                        clearBtn.textContent = '清除';
+                        clearBtn.style.fontSize = '11px';
+                        clearBtn.addEventListener('click', () => {
+                            hiddenInput.value = '';
+                            existingWrap.innerHTML = '';
+                            statusSpan.textContent = '已清除';
+                            statusSpan.style.color = '#dc2626';
+                        });
+                        existingWrap.appendChild(clearBtn);
+                    }
+                    fileWrap.appendChild(existingWrap);
+
+                    // 上傳按鈕
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.style.display = 'none';
+                    fileInput.addEventListener('change', async () => {
+                        if (!fileInput.files || !fileInput.files[0]) return;
+                        statusSpan.textContent = '上傳中...';
+                        statusSpan.style.color = '#6b7280';
+                        try {
+                            const fd = new FormData();
+                            fd.append('file', fileInput.files[0]);
+                            fd.append('context_type', 'subsystem_file');
+                            fd.append('context_id', this.config.viewCode || '');
+                            const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
+                            const result = await res.json();
+                            if (result.success) {
+                                hiddenInput.value = result.data.secure_code;
+                                statusSpan.textContent = fileInput.files[0].name + ' (已上傳)';
+                                statusSpan.style.color = '#059669';
+                            } else {
+                                statusSpan.textContent = result.message || '上傳失敗';
+                                statusSpan.style.color = '#dc2626';
+                            }
+                        } catch (e) {
+                            statusSpan.textContent = '上傳失敗';
+                            statusSpan.style.color = '#dc2626';
+                        }
+                        fileInput.value = '';
+                    });
+
+                    const uploadBtn = document.createElement('button');
+                    uploadBtn.type = 'button';
+                    uploadBtn.className = 'dlw-btn sm';
+                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> 上傳';
+                    uploadBtn.style.marginTop = '4px';
+                    uploadBtn.addEventListener('click', () => fileInput.click());
+
+                    fileWrap.appendChild(document.createElement('br'));
+                    fileWrap.appendChild(fileInput);
+                    fileWrap.appendChild(uploadBtn);
+                    fileWrap.appendChild(statusSpan);
+                }
+                field.appendChild(fileWrap);
 
             } else if (dbType === 'TEXT') {
                 // TEXT → textarea（較長文字）

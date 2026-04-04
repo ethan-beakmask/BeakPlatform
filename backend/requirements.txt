@@ -37,6 +37,7 @@ Flask-Babel==4.0.0
 python-dateutil==2.9.0
 pytz==2026.1.post1
 packaging==26.0
+PyYAML==6.0.2
 
 # Transliteration (Asian name romanization)
 pypinyin==0.55.0

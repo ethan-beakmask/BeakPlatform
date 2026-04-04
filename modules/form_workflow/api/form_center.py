@@ -1092,6 +1092,7 @@ def get_pending_task(secure_code):
             'serial_number': form_instance.serial_number if form_instance else None,
             'applicant_name': form_instance.applicant_name if form_instance else None,
             'builder_config': form_instance.builder_config if form_instance else None,
+            'form_instance_secure_code': form_instance.secure_code if form_instance else None,
             'available_paths': available_paths,
             'selection_mode': selection_mode,
             'allow_comment': allow_comment,

@@ -35,12 +35,22 @@ CONTEXT_STORAGE_MAP = {
 CONTEXT_ALLOWED_EXT = {
     'org_logo': {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'},
     'wf_background': {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'},
+    'form_attachment': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+                        'odt', 'ods', 'csv', 'txt', 'rtf',
+                        'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
+                        'zip', '7z', 'rar'},
+    'subsystem_file': {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+                       'odt', 'ods', 'csv', 'txt', 'rtf',
+                       'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
+                       'zip', '7z', 'rar'},
 }
 
 # context_type → 檔案大小上限 (bytes)
 CONTEXT_MAX_SIZE = {
     'org_logo': 2 * 1024 * 1024,       # 2MB
     'wf_background': 5 * 1024 * 1024,   # 5MB
+    'form_attachment': 50 * 1024 * 1024, # 50MB
+    'subsystem_file': 50 * 1024 * 1024,  # 50MB
 }
 
 # 預設上限
@@ -180,7 +190,7 @@ def _store_local(file_data: bytes, ext: str) -> str:
 def _store_beakseal(org_sc: str, user_sc: str, file_data: bytes,
                     filename: str) -> str:
     """加密存到 BeakSeal，回傳 file_id"""
-    from .vault_service import get_vault_client
+    from .vault_service import get_client as get_vault_client
 
     client = get_vault_client()
     result = client.encrypt_file(org_sc, user_sc or 'system',
@@ -208,7 +218,7 @@ def serve_file(record: PlatformFile) -> tuple:
         return data, record.mime_type, record.original_name
 
     elif record.storage_type == 'beakseal':
-        from .vault_service import get_vault_client
+        from .vault_service import get_client as get_vault_client
 
         client = get_vault_client()
         data = client.decrypt_file(record.storage_ref,
@@ -239,7 +249,7 @@ def delete_file(record: PlatformFile, hard_delete_local: bool = True):
 
     elif record.storage_type == 'beakseal':
         try:
-            from .vault_service import get_vault_client
+            from .vault_service import get_client as get_vault_client
             client = get_vault_client()
             client.delete_file(record.storage_ref,
                                org_id=record.org_secure_code)
