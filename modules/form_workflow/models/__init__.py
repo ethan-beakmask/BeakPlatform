@@ -27,6 +27,10 @@ from .form_theme import FwFormTheme
 from .column_display_config import FwColumnDisplayConfig
 from .mapping_permission import FwMappingPermission
 from .canned_message import FwApprovalCannedMessage
+from .workstation import FwWorkstation
+from .workstation_permission import FwWorkstationPermission
+from .form_tag import FwFormTag
+from .form_template_tag import FwFormTemplateTag
 
 __all__ = [
     'ModuleBaseModel',
@@ -52,4 +56,8 @@ __all__ = [
     'FwColumnDisplayConfig',
     'FwMappingPermission',
     'FwApprovalCannedMessage',
+    'FwWorkstation',
+    'FwWorkstationPermission',
+    'FwFormTag',
+    'FwFormTemplateTag',
 ]

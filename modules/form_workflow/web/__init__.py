@@ -137,9 +137,10 @@ def mappings():
 # =============================================================================
 
 @web_bp.route('/center')
+@web_bp.route('/center/<workstation_code>')
 @module_access_required('form_workflow', False)
-def center():
-    """表單中心頁面"""
+def center(workstation_code=None):
+    """表單中心頁面（含工作站模式）"""
     # 取得用戶有效時區：個人設定 > 企業設定 > Asia/Taipei
     user_tz = getattr(current_user, 'timezone', None)
     if not user_tz and hasattr(current_user, 'organization') and current_user.organization:
@@ -160,13 +161,29 @@ def center():
     from flask import g
     user_locale = getattr(g, 'locale', 'zh-TW') or 'zh-TW'
 
+    # 工作站設定
+    workstation_config = None
+    if workstation_code:
+        from modules.form_workflow.models import FwWorkstation
+        org = get_current_org()
+        if org:
+            ws = FwWorkstation.query.filter_by(
+                code=workstation_code.upper(),
+                org_secure_code=org.secure_code,
+                is_active=True,
+                is_deleted=False
+            ).first()
+            if ws:
+                workstation_config = ws.to_dict()
+
     return render_template(
         'modules/form_workflow/form_center.html',
         user_timezone=user_tz,
         is_admin=is_admin,
         is_system_admin=is_system_admin,
         user_role_codes=user_role_codes,
-        user_locale=user_locale
+        user_locale=user_locale,
+        workstation_config=workstation_config
     )
 
 
@@ -219,3 +236,15 @@ def form_themes():
 def categories():
     """分類管理頁面"""
     return render_template('modules/form_workflow/category_list.html')
+
+
+# =============================================================================
+# 工作站管理（需要管理權限）
+# =============================================================================
+
+@web_bp.route('/workstations')
+@module_access_required('form_workflow', False)
+@require_permission('form_workflow.admin')
+def workstations():
+    """工作站管理頁面"""
+    return render_template('modules/form_workflow/workstation_list.html')

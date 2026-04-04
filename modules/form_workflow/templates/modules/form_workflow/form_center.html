@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}表單中心 - BeakPlatform{% endblock %}
+{% block title %}{% if workstation_config %}{{ workstation_config.name }}{% else %}表單中心{% endif %} - BeakPlatform{% endblock %}
 
 {% block head %}
 <!-- Window Bridge: Jinja2 → JS -->
@@ -10,6 +10,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 window.__IS_SYSTEM_ADMIN = {{ 'true' if is_system_admin else 'false' }};
 window.__USER_ROLE_CODES = {{ user_role_codes|tojson }};
 window.__USER_LOCALE = '{{ user_locale }}';
+window.__WORKSTATION_CONFIG = {{ workstation_config|tojson if workstation_config else 'null' }};
 </script>
 <!-- Bootstrap CSS -->
 <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
@@ -25,6 +26,17 @@ window.__USER_LOCALE = '{{ user_locale }}';
 
 {% block content %}
 <div class="fc-container" x-data="formCenterManager()" :style="viewMode === 'list' ? 'display: block; padding: 16px;' : ''">
+
+    <!-- 工作站標題列 -->
+    <template x-if="wsTitle">
+        <div style="padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px;">
+            <template x-if="workstationConfig && workstationConfig.icon">
+                <i :class="workstationConfig.icon" style="font-size: 16px; color: #475569;"></i>
+            </template>
+            <span style="font-size: 14px; font-weight: 500; color: #1e293b;" x-text="wsTitle"></span>
+            <a href="/forms/center" style="font-size: 12px; color: #64748b; margin-left: auto;">返回表單中心</a>
+        </div>
+    </template>
 
     <!-- 左側邊欄：表單分類導航 -->
     <div class="fc-sidebar" x-show="viewMode === 'dashboard'">

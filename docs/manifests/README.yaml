@@ -87,6 +87,8 @@ url_index:
 
   # === 模組 ===
   /form-workflow/:               mod-form-workflow.yaml
+  /forms/center/*:               mod-form-workflow.yaml
+  /forms/workstations:           mod-form-workflow.yaml
   /nocode/:                      mod-nocode-builder.yaml
   /spec-formulate/:              mod-spec-formulate.yaml
 

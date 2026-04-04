@@ -148,6 +148,9 @@ function formCenterManager() {
         isSystemAdmin: window.__IS_SYSTEM_ADMIN || false,
         userRoleCodes: window.__USER_ROLE_CODES || [],
 
+        // 工作站模式
+        workstationConfig: window.__WORKSTATION_CONFIG || null,
+
         // 權限 computed：可查看執行詳情（系統管理員/企業管理員/流程設計師）
         get canViewExecution() {
             return this.isSystemAdmin || this.isAdmin || this.userRoleCodes.includes('FLOW_DESIGNER');
@@ -207,7 +210,33 @@ function formCenterManager() {
             return this.historyList.filter(i => (i.serial_number || '').startsWith('TEST-')).length;
         },
 
+        // ���作站 query string helper
+        _wsParam(prefix) {
+            if (!this.workstationConfig) return '';
+            const sep = prefix.includes('?') ? '&' : '?';
+            return `${sep}workstation=${encodeURIComponent(this.workstationConfig.code)}`;
+        },
+
+        // 工作站 UI 配置 helper
+        _wsSection(name) {
+            if (!this.workstationConfig) return { visible: true, label: null, expanded: false };
+            const sections = (this.workstationConfig.ui_config || {}).sections || {};
+            return sections[name] || { visible: true, label: null, expanded: false };
+        },
+
+        get wsTitle() {
+            return this.workstationConfig ? this.workstationConfig.name : null;
+        },
+
         init() {
+            // 工作站 UI 配置：套用預設展開區塊
+            if (this.workstationConfig) {
+                const uiCfg = this.workstationConfig.ui_config || {};
+                if (uiCfg.auto_refresh_interval) {
+                    this._refreshBaseDelay = uiCfg.auto_refresh_interval * 1000;
+                }
+            }
+
             this.loadColumnConfig();
             this.loadAvailableForms();
             this.loadCategories();
@@ -487,7 +516,7 @@ function formCenterManager() {
         async loadAvailableForms() {
             this.loadingForms = true;
             try {
-                const res = await fetch('/api/form-center/available-forms');
+                const res = await fetch('/api/form-center/available-forms' + this._wsParam('/api/form-center/available-forms'));
                 const data = await res.json();
                 if (data.success) this.availableForms = data.data || [];
             } catch (e) { console.error('載入可填寫表單失敗:', e); }
@@ -514,7 +543,7 @@ function formCenterManager() {
             this.loadingPending = true;
             try {
                 const {field, order} = this.pendingSort;
-                const res = await fetch(`/api/form-center/pending-tasks?sort=${field}&order=${order}`);
+                const res = await fetch(`/api/form-center/pending-tasks?sort=${field}&order=${order}` + this._wsParam('?'));
                 const data = await res.json();
                 if (data.success) {
                     this.pendingApprovals = data.data || [];
@@ -531,7 +560,7 @@ function formCenterManager() {
             this.loadingTracking = true;
             try {
                 const {field, order} = this.trackingSort;
-                const res = await fetch(`/api/form-center/my-forms?status=RUNNING&sort=${field}&order=${order}`);
+                const res = await fetch(`/api/form-center/my-forms?status=RUNNING&sort=${field}&order=${order}` + this._wsParam('?'));
                 const data = await res.json();
                 if (data.success) this.trackingList = data.data || [];
             } catch (e) { console.error('載入追蹤失敗:', e); }
@@ -542,7 +571,7 @@ function formCenterManager() {
             this.loadingSigned = true;
             try {
                 const {field, order} = this.trackingSignedSort;
-                const res = await fetch(`/api/form-center/my-forms?signed=1&status=RUNNING&sort=${field}&order=${order}`);
+                const res = await fetch(`/api/form-center/my-forms?signed=1&status=RUNNING&sort=${field}&order=${order}` + this._wsParam('?'));
                 const data = await res.json();
                 if (data.success) this.signedList = data.data || [];
             } catch (e) { console.error('載入簽核追蹤失敗:', e); }
@@ -553,7 +582,7 @@ function formCenterManager() {
             this.loadingHistory = true;
             try {
                 const {field, order} = this.historySort;
-                const res = await fetch(`/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
+                const res = await fetch(`/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}` + this._wsParam('?'));
                 const data = await res.json();
                 if (data.success) this.historyList = data.data || [];
             } catch (e) { console.error('載入歷史失敗:', e); }
@@ -564,7 +593,7 @@ function formCenterManager() {
             this.loadingSignedHistory = true;
             try {
                 const {field, order} = this.historySignedSort;
-                const res = await fetch(`/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
+                const res = await fetch(`/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}` + this._wsParam('?'));
                 const data = await res.json();
                 if (data.success) this.signedHistoryList = data.data || [];
             } catch (e) { console.error('載入簽核歷史失敗:', e); }
