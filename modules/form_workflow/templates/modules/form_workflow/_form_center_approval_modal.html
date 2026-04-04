@@ -135,7 +135,7 @@
                 </div>
 
                 <!-- 簽核意見 -->
-                <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;">
+                <div x-show="currentApproval?.allow_comment" style="margin-bottom: 16px;" data-canned-target="approvalComment">
                     <label style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; display: block;">
                         簽核意見 <span x-show="(currentApproval?.min_comment_length || 0) > 0" style="color: #dc2626;">*</span>
                     </label>
@@ -144,6 +144,7 @@
                               :style="approvalLockRemaining <= 60 ? 'background: #fef2f2; color: #dc2626;' : 'background: #f0fdf4; color: #16a34a;'"
                               x-text="approvalCountdownText"></span>
                     </div>
+                    {% include "modules/form_workflow/_canned_messages_bar.html" %}
                     <textarea x-model="approvalComment" rows="3" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 16px; resize: vertical; box-sizing: border-box;"
                               placeholder="輸入簽核意見..."></textarea>
                     <div x-show="(currentApproval?.min_comment_length || 0) > 0" style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 13px; color: #6b7280;">

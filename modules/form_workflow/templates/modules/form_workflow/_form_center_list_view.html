@@ -48,9 +48,17 @@
                     我簽過的表單(<span x-text="listTab === 'tracking' ? signedList.length : signedHistoryList.length"></span>)
                 </button>
             </div>
-            <span x-show="listTab === 'pending'" style="font-size: 12px; color: #6b7280;">
-                共 <span x-text="pendingApprovals.length"></span> 筆
-            </span>
+            <div x-show="listTab === 'pending'" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #6b7280;">
+                    共 <span x-text="pendingApprovals.length"></span> 筆
+                </span>
+                <div x-show="batchSelectedCount > 0" style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px;">
+                    <span>已選 <strong x-text="batchSelectedCount"></strong> 筆</span>
+                    <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">反選</button>
+                    <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">清除</button>
+                    <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">批次簽核</button>
+                </div>
+            </div>
         </div>
         <!-- 右側：分頁控制 -->
         <div x-show="listTotalPages > 1" class="fc-list-pager-compact">
@@ -72,6 +80,10 @@
                     <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-dense fc-table-pending">
                         <thead>
                             <tr>
+                                <th style="width: 36px; text-align: center;">
+                                    <input type="checkbox" @change="batchSelectAll()" :checked="batchAllChecked"
+                                           title="全選/取消全選（限同表單同節點同版本）">
+                                </th>
                                 <th class="fc-sortable" :style="colW('serial_number')" x-show="colV('serial_number')" @click="toggleSort('pending', 'serial_number')">單號<span x-text="sortIcon('pending', 'serial_number')"></span></th>
                                 <th :style="colW('form_name')" x-show="colV('form_name')">表單名稱</th>
                                 <th x-show="colV('subject')">主旨</th>
@@ -84,7 +96,13 @@
                         </thead>
                         <tbody>
                             <template x-for="item in pagedListData" :key="item.queue_secure_code">
-                                <tr>
+                                <tr :class="isBatchChecked(item) ? 'fc-row-selected' : ''">
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" :checked="isBatchChecked(item)"
+                                               :disabled="(item.is_locked && !item.locked_by_self) || !isBatchCompatible(item)"
+                                               @change="batchToggle(item)"
+                                               :title="!isBatchCompatible(item) ? '不同表單/節點/版本，無法一起批次簽核' : ''">
+                                    </td>
                                     <td x-show="colV('serial_number')">
                                         <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
                                         <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>

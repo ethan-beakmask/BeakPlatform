@@ -26,6 +26,7 @@ from .node_definition import WorkflowNodeDefinition
 from .form_theme import FwFormTheme
 from .column_display_config import FwColumnDisplayConfig
 from .mapping_permission import FwMappingPermission
+from .canned_message import FwApprovalCannedMessage
 
 __all__ = [
     'ModuleBaseModel',
@@ -50,4 +51,5 @@ __all__ = [
     'FwFormTheme',
     'FwColumnDisplayConfig',
     'FwMappingPermission',
+    'FwApprovalCannedMessage',
 ]

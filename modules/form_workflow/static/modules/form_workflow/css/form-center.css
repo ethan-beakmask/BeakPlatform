@@ -233,3 +233,7 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+/* 批次選取 row 高亮 */
+.fc-row-selected { background: #eef2ff; }
+.fc-table-pending input[type="checkbox"]:disabled { opacity: 0.35; cursor: not-allowed; }
