@@ -147,6 +147,13 @@ def center():
     # 判斷是否為企業管理員（用於前端顯示管理功能，SYSTEM_ADMIN 不適用模組管理）
     is_admin = getattr(current_user, 'is_org_admin', False)
 
+    # 判斷是否為系統管理員
+    is_system_admin = str(getattr(current_user, 'user_type', '')) == 'SYSTEM_ADMIN'
+
+    # 取得用戶角色碼列表（用於前端按鈕權限控制）
+    from app.platform.auth import get_user_roles
+    user_role_codes = [r['code'] for r in get_user_roles(current_user)]
+
     # 用戶語系
     from flask import g
     user_locale = getattr(g, 'locale', 'zh-TW') or 'zh-TW'
@@ -155,6 +162,8 @@ def center():
         'modules/form_workflow/form_center.html',
         user_timezone=user_tz,
         is_admin=is_admin,
+        is_system_admin=is_system_admin,
+        user_role_codes=user_role_codes,
         user_locale=user_locale
     )
 

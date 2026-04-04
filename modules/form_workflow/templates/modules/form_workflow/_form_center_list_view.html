@@ -142,10 +142,10 @@
                                     <td x-show="colV('current_node')" style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td x-show="colV('submit_time')" style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
                                     <td x-show="colV('actions')" style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -191,10 +191,10 @@
                                     <td x-show="colV('current_node')" style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
                                     <td x-show="colV('signed_elapsed')" style="color: #6b7280;" x-text="formatWaitTime(item.my_acted_at)"></td>
                                     <td x-show="colV('actions')" style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -240,10 +240,10 @@
                                     <td x-show="colV('end_time')" style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td x-show="colV('duration')" style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td x-show="colV('actions')" style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -291,10 +291,10 @@
                                     <td x-show="colV('end_time')" style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td x-show="colV('duration')" style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td x-show="colV('actions')" style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">

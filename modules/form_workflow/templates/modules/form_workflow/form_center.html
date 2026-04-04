@@ -7,6 +7,8 @@
 <script>
 window.__USER_TIMEZONE = '{{ user_timezone }}';
 window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+window.__IS_SYSTEM_ADMIN = {{ 'true' if is_system_admin else 'false' }};
+window.__USER_ROLE_CODES = {{ user_role_codes|tojson }};
 window.__USER_LOCALE = '{{ user_locale }}';
 </script>
 <!-- Bootstrap CSS -->
@@ -182,10 +184,10 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -228,10 +230,10 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
                                     <td style="color: #6b7280;" x-text="formatWaitTime(item.my_acted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -297,10 +299,10 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -345,10 +347,10 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程大圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
                                         <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
@@ -445,6 +447,44 @@ window.__USER_LOCALE = '{{ user_locale }}';
     {% include "modules/form_workflow/_monitor_modal.html" %}
 
     {% include "modules/form_workflow/_read_form_modal.html" %}
+
+    <!-- 流程總圖 (獨立全螢幕對話窗) -->
+    <div x-show="showFlowOverviewModal" x-cloak class="fc-flowchart-modal">
+        <div class="fc-flowchart-modal-content">
+            <!-- 標題列 -->
+            <div class="fc-flowchart-modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 600;">流程總圖</h3>
+                    <span x-show="flowOverviewInfo.executionCode" style="font-size: 12px; font-family: monospace; background: #e5e7eb; padding: 2px 6px; border-radius: 3px; color: #374151;" x-text="flowOverviewInfo.executionCode"></span>
+                    <span x-show="flowOverviewInfo.workflowName" style="font-size: 12px; color: #6b7280;" x-text="flowOverviewInfo.workflowName"></span>
+                    <span x-show="flowOverviewInfo.flowStatus" style="font-size: 11px; padding: 2px 8px; border-radius: 3px;"
+                          :style="{
+                              'background': flowOverviewInfo.flowStatus === 'RUNNING' ? '#fef3c7' : (['COMPLETED','SUCCESS'].includes(flowOverviewInfo.flowStatus) ? '#d1fae5' : '#fee2e2'),
+                              'color': flowOverviewInfo.flowStatus === 'RUNNING' ? '#92400e' : (['COMPLETED','SUCCESS'].includes(flowOverviewInfo.flowStatus) ? '#065f46' : '#991b1b')
+                          }"
+                          x-text="flowOverviewInfo.flowStatus"></span>
+                </div>
+                <button @click="closeFlowOverviewModal()" class="fc-close-btn">&times;</button>
+            </div>
+            <!-- 流程圖區域 -->
+            <div style="flex: 1; position: relative; overflow: hidden;">
+                <div x-show="flowOverviewLoading" class="fc-loading" style="padding: 60px;">載入流程圖中...</div>
+                <div x-show="flowOverviewError" class="fc-loading" style="padding: 60px; color: #ef4444;" x-text="flowOverviewError"></div>
+                <div id="cy-flow-overview" x-show="!flowOverviewLoading && !flowOverviewError" style="width: 100%; height: 100%;"></div>
+                <div x-show="!flowOverviewLoading && !flowOverviewError" class="fc-flowchart-legend">
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #22c55e;"></div> Start</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #ef4444;"></div> End</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast -->
     <div x-show="toast.show" x-cloak class="fc-toast" :class="'fc-toast-' + toast.type" x-text="toast.message"></div>

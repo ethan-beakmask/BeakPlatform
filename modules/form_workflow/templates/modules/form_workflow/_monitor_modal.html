@@ -59,6 +59,11 @@
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
                 流程總覽
             </button>
+            <button @click="switchToMonitorFlowChart()"
+                    :style="monitorPage === 'flowChart' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
+                    style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
+                流程總圖
+            </button>
             <button @click="monitorPage = 'detail'"
                     :style="monitorPage === 'detail' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
@@ -335,6 +340,22 @@
                         </template>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- 第五頁：流程總圖 -->
+        <div x-show="monitorPage === 'flowChart'" style="flex: 1; position: relative; min-height: 0; overflow: hidden;">
+            <div id="cy-monitor-flowchart" style="position: absolute; inset: 0;"></div>
+            <div class="fc-flowchart-legend">
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #22c55e;"></div> Start</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #ef4444;"></div> End</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
             </div>
         </div>
     </div>

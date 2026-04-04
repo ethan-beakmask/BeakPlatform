@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}流程大圖 - BeakPlatform{% endblock %}
+{% block title %}流程總圖 - BeakPlatform{% endblock %}
 
 {% block head %}
 <script>
@@ -28,7 +28,7 @@ window.__INSTANCE_ID = '{{ instance_id }}';
 <div x-data="flowOverview()" x-init="init()">
 
 <div class="fo-toolbar">
-    <h2>流程大圖</h2>
+    <h2>流程總圖</h2>
     <span class="sep">|</span>
     <span class="meta" x-text="executionCode || '-'"></span>
     <span class="meta" x-text="workflowName || ''"></span>
