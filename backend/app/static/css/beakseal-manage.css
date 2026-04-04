@@ -1,15 +1,13 @@
 /* BeakSeal 管理頁樣式 */
 
-/* 覆蓋 themes.css，讓 card 有明確的框線與底色 */
+/* 覆蓋 themes.css 全域 .card 的 padding，還原 Bootstrap card 標準結構 */
 .bsm-status .card {
-    padding: 0 !important;
-    border: 2px solid #5b9bd5 !important;
-    background-color: #f0f4f8 !important;
+    padding: 0;
 }
 .bsm-status .card-header {
     padding: 0.75rem 1rem;
-    background-color: #dce6f1 !important;
-    border-bottom: 1px solid #5b9bd5;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--card-border);
 }
 .bsm-status .card-body {
     padding: 1rem;

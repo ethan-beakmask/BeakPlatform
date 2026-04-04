@@ -87,16 +87,16 @@
 :root[data-theme="light"] {
     --bg-primary: #f6f8fa;
     --bg-secondary: #ffffff;
-    --bg-tertiary: #f0f3f6;
-    --bg-hover: #e8ebed;
+    --bg-tertiary: #edf0f4;
+    --bg-hover: #e2e6ea;
 
     --text-primary: #24292f;
     --text-secondary: #57606a;
-    --text-tertiary: #8b949e;
+    --text-tertiary: #6e7781;
     --text-inverse: #ffffff;
 
-    --border-primary: #d0d7de;
-    --border-secondary: #e8ebed;
+    --border-primary: #afb8c1;
+    --border-secondary: #d0d7de;
     --border-focus: #0969da;
 
     --accent-primary: #e34c26;
@@ -112,19 +112,19 @@
     --chart-line-2: #e34c26;
     --chart-line-3: #1a7f37;
     --chart-line-4: #bf8700;
-    --chart-grid: #e8ebed;
+    --chart-grid: #d0d7de;
 
     --card-bg: #ffffff;
-    --card-border: #d0d7de;
+    --card-border: #afb8c1;
 
     --input-bg: #ffffff;
-    --input-border: #d0d7de;
+    --input-border: #afb8c1;
     --input-focus-border: #0969da;
 
     --btn-primary-bg: #e34c26;
     --btn-primary-hover: #ff6b35;
-    --btn-secondary-bg: #f0f3f6;
-    --btn-secondary-hover: #e8ebed;
+    --btn-secondary-bg: #edf0f4;
+    --btn-secondary-hover: #e2e6ea;
 }
 
 /* ============================================
