@@ -11,7 +11,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 # Default BeakSeal socket path
-DEFAULT_SOCKET = '/opt/beakseal/beakseal.sock'
+DEFAULT_SOCKET = '/opt/BeakSeal/beakseal.sock'
 
 
 class UnixSocketHTTPConnection(HTTPConnection):

@@ -191,18 +191,7 @@ def validate_password():
 
 # ==================== 企業 Logo 設定 ====================
 
-import os
-from werkzeug.utils import secure_filename
-from flask import current_app
-
-ALLOWED_LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
-MAX_LOGO_SIZE = 2 * 1024 * 1024  # 2MB
-
-
-def allowed_logo_file(filename):
-    """檢查檔案副檔名是否允許"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_LOGO_EXTENSIONS
+from ..services import file_service
 
 
 @api_enterprise_settings.route('/logo', methods=['GET'])
@@ -213,24 +202,13 @@ def get_logo_info():
     if not org:
         return jsonify({'success': False, 'message': '找不到企業'}), 404
 
-    logo_path = org.get_setting('logo_path')
-    logo_url = None
-
-    if logo_path:
-        # 檢查檔案是否存在
-        full_path = os.path.join(current_app.static_folder, logo_path)
-        if os.path.exists(full_path):
-            logo_url = f'/static/{logo_path}'
-        else:
-            # 檔案不存在，清除設定
-            org.set_setting('logo_path', None)
-            db.session.commit()
-            logo_path = None
+    record = file_service.get_context_file(org.secure_code, 'org_logo')
+    logo_url = record.serve_url if record else None
 
     return jsonify({
         'success': True,
         'data': {
-            'has_logo': logo_path is not None,
+            'has_logo': record is not None,
             'logo_url': logo_url
         }
     })
@@ -253,55 +231,34 @@ def upload_logo():
         return jsonify({'success': False, 'message': '請選擇圖片檔案'}), 400
 
     file = request.files['logo']
-    if file.filename == '':
-        return jsonify({'success': False, 'message': '請選擇圖片檔案'}), 400
-
-    if not allowed_logo_file(file.filename):
-        return jsonify({
-            'success': False,
-            'message': f'不支援的檔案格式，允許: {", ".join(ALLOWED_LOGO_EXTENSIONS)}'
-        }), 400
-
-    # 檢查檔案大小
-    file.seek(0, 2)  # 移到檔案結尾
-    size = file.tell()
-    file.seek(0)  # 移回開頭
-
-    if size > MAX_LOGO_SIZE:
-        return jsonify({
-            'success': False,
-            'message': f'檔案過大，上限 {MAX_LOGO_SIZE // 1024 // 1024}MB'
-        }), 400
-
-    # 刪除舊 Logo（如果有）
-    old_logo_path = org.get_setting('logo_path')
-    if old_logo_path:
-        old_full_path = os.path.join(current_app.static_folder, old_logo_path)
-        if os.path.exists(old_full_path):
-            try:
-                os.remove(old_full_path)
-            except OSError:
-                pass
-
-    # 儲存新 Logo
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    filename = f'{org.secure_code}.{ext}'
-    relative_path = f'uploads/logos/{filename}'
-    full_path = os.path.join(current_app.static_folder, relative_path)
 
     try:
-        file.save(full_path)
-        org.set_setting('logo_path', relative_path)
+        # 刪除舊 Logo（如果有）
+        old_record = file_service.get_context_file(org.secure_code, 'org_logo')
+        if old_record:
+            file_service.delete_file(old_record)
+
+        # 上傳新 Logo
+        record = file_service.upload_file(
+            org_sc=org.secure_code,
+            file=file,
+            context_type='org_logo',
+            uploader_sc=current_user.secure_code,
+        )
         db.session.commit()
 
         return jsonify({
             'success': True,
             'message': 'Logo 上傳成功',
             'data': {
-                'logo_url': f'/static/{relative_path}'
+                'logo_url': record.serve_url
             }
         })
+
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
 
 
@@ -313,26 +270,17 @@ def delete_logo():
     if not org:
         return jsonify({'success': False, 'message': '找不到企業'}), 404
 
-    logo_path = org.get_setting('logo_path')
-    if not logo_path:
+    record = file_service.get_context_file(org.secure_code, 'org_logo')
+    if not record:
         return jsonify({'success': False, 'message': '尚未上傳 Logo'}), 400
 
-    # 刪除檔案
-    full_path = os.path.join(current_app.static_folder, logo_path)
-    if os.path.exists(full_path):
-        try:
-            os.remove(full_path)
-        except OSError:
-            pass
-
-    # 清除設定
-    org.set_setting('logo_path', None)
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'message': 'Logo 已刪除'
-    })
+    try:
+        file_service.delete_file(record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Logo 已刪除'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
 
 
 # ==================== SMTP 設定 ====================

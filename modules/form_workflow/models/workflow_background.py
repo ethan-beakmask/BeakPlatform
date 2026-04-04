@@ -33,12 +33,20 @@ class FwWorkflowBackground(BaseModel):
     # 描述
     description = Column(String(500))
 
+    # FileService 關聯
+    platform_file_sc = Column(String(32), nullable=True)
+
     def __repr__(self):
         return f'<FwWorkflowBackground {self.original_filename}>'
 
     def to_dict(self):
         """轉換為字典"""
         data = super().to_dict()
+        # URL 優先走 FileService proxy，向下相容舊資料走 static
+        if self.platform_file_sc:
+            url = f'/api/files/{self.platform_file_sc}/serve'
+        else:
+            url = f'/static/uploads/backgrounds/{self.filename}'
         data.update({
             'filename': self.filename,
             'original_filename': self.original_filename,
@@ -47,7 +55,7 @@ class FwWorkflowBackground(BaseModel):
             'width': self.width,
             'height': self.height,
             'description': self.description,
-            'url': f'/static/uploads/backgrounds/{self.filename}',
+            'url': url,
         })
         return data
 

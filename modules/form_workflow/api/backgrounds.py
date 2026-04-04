@@ -2,14 +2,18 @@
 FormWorkflow Module - Workflow Backgrounds API
 流程設計器底圖管理 API
 """
-import os
-import uuid
-from flask import Blueprint, jsonify, request, current_app
-from werkzeug.utils import secure_filename
+import io
+import logging
+
+from flask import Blueprint, jsonify, request
+from flask_login import current_user
 
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
+from app.services import file_service
 from app import db, csrf
+
+logger = logging.getLogger(__name__)
 
 # 建立 API Blueprint
 backgrounds_bp = Blueprint(
@@ -17,24 +21,6 @@ backgrounds_bp = Blueprint(
     __name__,
     url_prefix='/api/workflows/backgrounds'
 )
-
-# 允許的圖片格式
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-
-
-def allowed_file(filename):
-    """檢查檔案是否允許"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def get_upload_dir():
-    """取得上傳目錄"""
-    # 使用 backend/app/static/uploads/backgrounds 目錄
-    _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-    upload_dir = os.path.join(_project_root, 'backend', 'app', 'static', 'uploads', 'backgrounds')
-    os.makedirs(upload_dir, exist_ok=True)
-    return upload_dir
 
 
 @backgrounds_bp.route('', methods=['GET'])
@@ -69,59 +55,43 @@ def upload_background():
     if not org:
         return jsonify({'success': False, 'message': 'Organization not found'}), 400
 
-    # 檢查是否有檔案
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': '未提供檔案'}), 400
 
     file = request.files['file']
 
-    if file.filename == '':
-        return jsonify({'success': False, 'message': '未選擇檔案'}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({'success': False, 'message': '不支援的檔案格式（支援: png, jpg, jpeg, gif, bmp, webp）'}), 400
-
-    filepath = None
     try:
-        # 讀取檔案內容
-        file_content = file.read()
-        file_size = len(file_content)
-
-        # 檢查檔案大小
-        if file_size > MAX_FILE_SIZE:
-            return jsonify({'success': False, 'message': '檔案太大（最大 5MB）'}), 400
-
-        # 生成唯一檔名
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4().hex}.{ext}"
-
-        # 儲存檔案
-        upload_dir = get_upload_dir()
-        filepath = os.path.join(upload_dir, unique_filename)
-        with open(filepath, 'wb') as f:
-            f.write(file_content)
+        # 透過 FileService 上傳（驗證 + 存檔一次完成）
+        pf_record = file_service.upload_file(
+            org_sc=org.secure_code,
+            file=file,
+            context_type='wf_background',
+            uploader_sc=getattr(current_user, 'secure_code', None),
+        )
 
         # 取得圖片尺寸
         width, height = None, None
         try:
             from PIL import Image
-            img = Image.open(filepath)
+            file.seek(0)
+            img = Image.open(file)
             width, height = img.size
             img.close()
         except Exception:
             pass
 
-        # 儲存到資料庫
+        # 建立 FwWorkflowBackground 記錄（保留既有欄位相容性）
         background = FwWorkflowBackground(
             org_secure_code=org.secure_code,
-            filename=unique_filename,
-            original_filename=secure_filename(file.filename) or file.filename,
-            filepath=filepath,
-            filesize=file_size,
-            mimetype=file.mimetype,
+            filename=pf_record.secure_code,
+            original_filename=file.filename,
+            filepath=pf_record.storage_ref,
+            filesize=pf_record.file_size,
+            mimetype=pf_record.mime_type,
             width=width,
             height=height,
             description=request.form.get('description', ''),
+            platform_file_sc=pf_record.secure_code,
         )
 
         db.session.add(background)
@@ -133,11 +103,11 @@ def upload_background():
             'data': background.to_dict()
         }), 201
 
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        # 如果已經儲存檔案，刪除它
-        if filepath and os.path.exists(filepath):
-            os.remove(filepath)
+        logger.exception("底圖上傳失敗")
         return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
 
 
@@ -200,11 +170,14 @@ def delete_background(secure_code):
         return jsonify({'success': False, 'message': '底圖不存在'}), 404
 
     try:
-        # 刪除檔案
-        if background.filepath and os.path.exists(background.filepath):
-            os.remove(background.filepath)
+        # 透過 FileService 刪除實體檔案
+        if background.platform_file_sc:
+            pf = file_service.get_file_by_sc(background.platform_file_sc,
+                                              org_sc=org.secure_code)
+            if pf:
+                file_service.delete_file(pf)
 
-        # 軟刪除
+        # 軟刪除 background 記錄
         background.is_deleted = True
         db.session.commit()
 

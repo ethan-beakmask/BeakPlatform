@@ -93,6 +93,9 @@ yarn-error.log
 # Semgrep
 .semgrep_logs/
 
+# Uploaded files (managed by FileService, not in static/)
+backend/uploads/
+
 # =============================================================================
 # E-MailRelay (系統郵件服務)
 # =============================================================================

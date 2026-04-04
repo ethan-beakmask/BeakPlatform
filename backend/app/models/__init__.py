@@ -80,6 +80,9 @@ from .password_history import PasswordHistory
 # 稽核日誌
 from .audit_log import AuditLog
 
+# 檔案管理
+from .platform_file import PlatformFile
+
 # 用戶編號規則
 from .user_numbering_rule import (
     UserNumberingRule,
@@ -180,6 +183,8 @@ __all__ = [
     'PasswordHistory',
     # 稽核日誌
     'AuditLog',
+    # 檔案管理
+    'PlatformFile',
     # 用戶編號規則
     'UserNumberingRule',
     'UserNumberingCounter',

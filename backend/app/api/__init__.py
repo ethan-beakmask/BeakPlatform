@@ -105,3 +105,7 @@ def register_blueprints(app: Flask) -> None:
     # Vault admin (BeakSeal 加密保險庫管理)
     from .vault_admin import vault_admin_bp
     app.register_blueprint(vault_admin_bp)
+
+    # 統一檔案管理
+    from .files import files_bp
+    app.register_blueprint(files_bp)

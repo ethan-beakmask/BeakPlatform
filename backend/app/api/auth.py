@@ -9,15 +9,15 @@ BeakMask Authentication API
    - 格式: username (自動帶入 domain_name)
 """
 import logging
-import os
 from datetime import datetime
-from flask import Blueprint, request, jsonify, redirect, url_for, render_template, session, current_app, flash
+from flask import Blueprint, request, jsonify, redirect, url_for, render_template, session, flash
 
 from flask_login import login_user, logout_user, current_user
 
 from ..security.decorators import public_route, login_required
 from ..security.resource_gateway import ResourceGateway
 from ..services.auth_service import AuthService
+from ..services import file_service
 from ..services.password_policy_service import PasswordPolicyService
 from ..models import Organization, User
 from .. import limiter, csrf, db
@@ -27,6 +27,12 @@ def _org_limit(category: str):
     """取得企業級速率限制（從 URL domain_name 查企業設定）"""
     domain_name = request.view_args.get('domain_name', '') if request.view_args else ''
     return RateLimitService.get_org_limit(category, domain_name)
+
+
+def _get_org_logo_url(org):
+    """取得企業 Logo 的 serve URL（經 FileService）"""
+    record = file_service.get_context_file(org.secure_code, 'org_logo')
+    return record.serve_url if record else None
 
 logger = logging.getLogger(__name__)
 
@@ -351,12 +357,7 @@ def org_login(domain_name: str):
             return redirect(url_for('auth.login'))
 
         # 取得企業 Logo URL
-        logo_url = None
-        logo_path = org.get_setting('logo_path')
-        if logo_path:
-            full_path = os.path.join(current_app.static_folder, logo_path)
-            if os.path.exists(full_path):
-                logo_url = f'/static/{logo_path}'
+        logo_url = _get_org_logo_url(org)
 
         # 登入頁面品牌設定
         show_logo = org.get_setting('login_employee_show_logo', True)
@@ -443,12 +444,7 @@ def org_public(domain_name: str):
         return redirect(url_for('auth.login'))
 
     # 取得企業 Logo URL
-    logo_url = None
-    logo_path = org.get_setting('logo_path')
-    if logo_path:
-        full_path = os.path.join(current_app.static_folder, logo_path)
-        if os.path.exists(full_path):
-            logo_url = f'/static/{logo_path}'
+    logo_url = _get_org_logo_url(org)
 
     # 公開區入口：同時傳入企業成員和外部的品牌設定（頁面有兩個入口連結）
     show_logo = org.get_setting('login_external_show_logo', True)
@@ -502,12 +498,7 @@ def org_public_login(domain_name: str):
             return redirect(url_for('auth.login'))
 
         # 取得企業 Logo URL
-        logo_url = None
-        logo_path = org.get_setting('logo_path')
-        if logo_path:
-            full_path = os.path.join(current_app.static_folder, logo_path)
-            if os.path.exists(full_path):
-                logo_url = f'/static/{logo_path}'
+        logo_url = _get_org_logo_url(org)
 
         # 登入頁面品牌設定
         show_logo = org.get_setting('login_external_show_logo', True)
@@ -551,12 +542,7 @@ def org_public_login(domain_name: str):
         if is_json:
             return jsonify({'error': msg}), status_code
         flash(msg, 'error')
-        logo_url = None
-        logo_path = org.get_setting('logo_path')
-        if logo_path:
-            full_path = os.path.join(current_app.static_folder, logo_path)
-            if os.path.exists(full_path):
-                logo_url = f'/static/{logo_path}'
+        logo_url = _get_org_logo_url(org)
         return render_template(
             'auth/org_public_login.html',
             org=org,

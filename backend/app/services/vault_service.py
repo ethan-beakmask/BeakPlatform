@@ -19,7 +19,7 @@ def get_client() -> VaultClient:
     global _client
     if _client is None:
         socket_path = os.getenv('BEAKSEAL_SOCKET',
-                                '/opt/beakseal/beakseal.sock')
+                                '/opt/BeakSeal/beakseal.sock')
         _client = VaultClient(socket_path=socket_path)
     return _client
 
