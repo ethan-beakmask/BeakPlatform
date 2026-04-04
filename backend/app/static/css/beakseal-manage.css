@@ -1,5 +1,20 @@
 /* BeakSeal 管理頁樣式 */
 
+/* 覆蓋 themes.css，讓 card 有明確的框線與底色 */
+.bsm-status .card {
+    padding: 0 !important;
+    border: 2px solid #5b9bd5 !important;
+    background-color: #f0f4f8 !important;
+}
+.bsm-status .card-header {
+    padding: 0.75rem 1rem;
+    background-color: #dce6f1 !important;
+    border-bottom: 1px solid #5b9bd5;
+}
+.bsm-status .card-body {
+    padding: 1rem;
+}
+
 .bsm-config-pre {
     margin: 0;
     padding: 16px;

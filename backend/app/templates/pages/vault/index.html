@@ -30,113 +30,127 @@
     </ul>
 
     <!-- ====== Tab: Status ====== -->
-    <div x-show="tab === 'status'">
+    <div x-show="tab === 'status'" class="bsm-status">
 
-        <!-- Service Status -->
+        <!-- Systemd 服務 -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Systemd 服務</strong>
-                <div class="d-flex gap-2">
-                    <div x-show="serviceStatus.active === 'active'">
+                <div>
+                    <div x-show="serviceStatus.active === 'active'" class="d-inline-flex gap-1">
                         <button class="btn btn-sm btn-outline-warning" @click="serviceAction('restart')">重啟</button>
                         <button class="btn btn-sm btn-outline-danger" @click="serviceAction('stop')">停止</button>
                     </div>
                     <button x-show="serviceStatus.active !== 'active'" class="btn btn-sm btn-outline-success" @click="serviceAction('start')">啟動</button>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">服務狀態</small>
-                        <span class="badge" :class="serviceStatus.active === 'active' ? 'bg-success' : 'bg-danger'"
-                              x-text="serviceStatus.active || '-'"></span>
-                    </div>
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">PID</small>
-                        <strong x-text="serviceStatus.main_pid || '-'"></strong>
-                    </div>
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">記憶體</small>
-                        <span x-text="formatBytes(serviceStatus.memory)"></span>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">啟動時間</small>
-                        <span x-text="serviceStatus.start_time || '-'" style="font-size: 12px;"></span>
-                    </div>
-                </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" style="font-size: 13px;">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 140px;">服務狀態</td>
+                            <td>
+                                <span class="badge" :class="serviceStatus.active === 'active' ? 'bg-success' : 'bg-danger'"
+                                      x-text="serviceStatus.active || '-'"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">PID</td>
+                            <td x-text="serviceStatus.main_pid || '-'"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">記憶體</td>
+                            <td x-text="formatBytes(serviceStatus.memory)"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">啟動時間</td>
+                            <td x-text="serviceStatus.start_time || '-'"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Vault Status -->
+        <!-- Vault 狀態 -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Vault 狀態</strong>
-                <div class="d-flex gap-2">
+                <div>
                     <button x-show="vaultStatus && !vaultStatus.sealed" class="btn btn-sm btn-outline-warning" @click="sealVault()">Seal</button>
                     <button x-show="vaultStatus && vaultStatus.sealed" class="btn btn-sm btn-outline-success" @click="showUnsealDialog = true">Unseal</button>
                 </div>
             </div>
-            <div class="card-body">
-                <div x-show="vaultError" class="alert alert-danger mb-0" x-text="vaultError"></div>
-                <div x-show="vaultStatus && !vaultError" class="row">
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">封印狀態</small>
-                        <span class="badge" :class="vaultStatus?.sealed ? 'bg-danger' : 'bg-success'"
-                              x-text="vaultStatus?.sealed ? 'SEALED' : 'UNSEALED'"></span>
-                    </div>
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">已載入組織</small>
-                        <strong x-text="vaultStatus?.loaded_org_count ?? '-'"></strong>
-                    </div>
-                    <div class="col-md-2">
-                        <small class="text-muted d-block">已載入 KEK</small>
-                        <strong x-text="vaultStatus?.loaded_kek_count ?? '-'"></strong>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">運行時間</small>
-                        <span x-text="formatUptime(vaultStatus?.uptime_seconds)"></span>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">啟動時間</small>
-                        <span x-text="formatTime(vaultStatus?.start_time)" style="font-size: 12px;"></span>
-                    </div>
+            <div class="card-body p-0">
+                <div x-show="vaultError" class="p-3">
+                    <div class="alert alert-danger mb-0" x-text="vaultError"></div>
                 </div>
-            </div>
-        </div>
-
-        <!-- File Stats -->
-        <div class="card mb-3">
-            <div class="card-header"><strong>加密檔案統計</strong></div>
-            <div class="card-body" x-show="fileStats">
-                <div class="row mb-2">
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">總檔案數</small>
-                        <strong x-text="fileStats?.total_count ?? 0"></strong>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block">總大小 (原始)</small>
-                        <strong x-text="formatBytes(fileStats?.total_size)"></strong>
-                    </div>
-                </div>
-                <table x-show="fileStats?.by_context?.length > 0" class="table table-sm table-bordered mt-2" style="font-size: 13px;">
-                    <thead class="table-light">
-                        <tr><th>Context Type</th><th>數量</th><th>大小</th></tr>
-                    </thead>
+                <table x-show="vaultStatus && !vaultError" class="table table-sm mb-0" style="font-size: 13px;">
                     <tbody>
-                        <template x-for="item in (fileStats?.by_context || [])" :key="item.context_type">
-                            <tr>
-                                <td x-text="item.context_type"></td>
-                                <td x-text="item.count"></td>
-                                <td x-text="formatBytes(item.total_size)"></td>
-                            </tr>
-                        </template>
+                        <tr>
+                            <td class="text-muted" style="width: 140px;">封印狀態</td>
+                            <td>
+                                <span class="badge" :class="vaultStatus?.sealed ? 'bg-danger' : 'bg-success'"
+                                      x-text="vaultStatus?.sealed ? 'SEALED' : 'UNSEALED'"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">已載入組織</td>
+                            <td x-text="vaultStatus?.loaded_org_count ?? '-'"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">已載入 KEK</td>
+                            <td x-text="vaultStatus?.loaded_kek_count ?? '-'"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">運行時間</td>
+                            <td x-text="formatUptime(vaultStatus?.uptime_seconds)"></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">啟動時間</td>
+                            <td x-text="formatTime(vaultStatus?.start_time)"></td>
+                        </tr>
                     </tbody>
                 </table>
-                <p x-show="!fileStats?.by_context?.length" class="text-muted mb-0">尚無加密檔案</p>
             </div>
         </div>
 
-        <!-- Hash Chain Verification -->
+        <!-- 加密檔案統計 -->
+        <div class="card mb-3">
+            <div class="card-header"><strong>加密檔案統計</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" style="font-size: 13px;">
+                    <tbody>
+                        <tr x-show="fileStats">
+                            <td class="text-muted" style="width: 140px;">總檔案數</td>
+                            <td x-text="fileStats?.total_count ?? 0"></td>
+                        </tr>
+                        <tr x-show="fileStats">
+                            <td class="text-muted">總大小 (原始)</td>
+                            <td x-text="formatBytes(fileStats?.total_size)"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <template x-if="fileStats?.by_context?.length > 0">
+                    <table class="table table-sm table-bordered mb-0" style="font-size: 13px;">
+                        <thead class="table-light">
+                            <tr><th>Context Type</th><th>數量</th><th>大小</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in (fileStats?.by_context || [])" :key="item.context_type">
+                                <tr>
+                                    <td x-text="item.context_type"></td>
+                                    <td x-text="item.count"></td>
+                                    <td x-text="formatBytes(item.total_size)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+                <p x-show="fileStats && !fileStats?.by_context?.length" class="text-muted mb-0 p-3">尚無加密檔案</p>
+            </div>
+        </div>
+
+        <!-- 稽核鏈驗證 -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>稽核鏈驗證</strong>
@@ -145,7 +159,7 @@
                     驗證 Hash Chain
                 </button>
             </div>
-            <div class="card-body">
+            <div class="card-body p-3">
                 <div x-show="chainResult && chainResult.valid" class="alert alert-success mb-0">
                     Hash Chain 完整, 已驗證 <strong x-text="chainResult?.checked"></strong> 筆記錄
                 </div>
@@ -155,10 +169,11 @@
                 <p x-show="!chainResult" class="text-muted mb-0">按下「驗證 Hash Chain」檢查稽核記錄完整性</p>
             </div>
         </div>
+
     </div>
 
     <!-- ====== Tab: Config ====== -->
-    <div x-show="tab === 'config'">
+    <div x-show="tab === 'config'" class="bsm-status">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>BeakSeal 設定檔</strong>
@@ -171,7 +186,7 @@
     </div>
 
     <!-- ====== Tab: Audit ====== -->
-    <div x-show="tab === 'audit'">
+    <div x-show="tab === 'audit'" class="bsm-status">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>稽核記錄</strong>
