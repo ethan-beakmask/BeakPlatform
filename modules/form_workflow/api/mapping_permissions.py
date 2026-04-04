@@ -104,7 +104,7 @@ def create_permission(mapping_secure_code):
     if existing:
         return jsonify({'success': False, 'message': '此規則已存在'}), 400
 
-    include_children = bool(data.get('include_children', False)) if grant_type == 'department' else False
+    include_children = bool(data.get('include_children', False)) if grant_type in ('department', 'group') else False
     user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
 
     perm = FwMappingPermission(

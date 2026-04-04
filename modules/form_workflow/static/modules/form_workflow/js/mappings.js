@@ -465,29 +465,59 @@ function mappingsManager() {
         async _loadPermTargets(grantType) {
             this.permTargetOptions = [];
             const container = document.getElementById('perm-tree-container');
+            const orgName = (window.__MAPPING_CONFIG || {}).orgName || '企業';
 
             if (grantType === 'department' || grantType === 'group') {
                 this.permTreeLoading = true;
                 if (container) container.innerHTML = '';
                 try {
-                    let treeData = null;
+                    let treeRoots = [];
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
                             const res = await fetch('/api/units/departments?tree=true');
                             const data = await res.json();
                             this._permCache.departments = data.units || [];
                         }
-                        treeData = this._permCache.departments;
+                        // 虛擬企業根 — 選擇此節點 + 包含所有子部門 = 全企業
+                        treeRoots = [{
+                            secure_code: '__ORG_ROOT__',
+                            name: orgName,
+                            full_path: orgName,
+                            children: this._permCache.departments,
+                            _isVirtualRoot: true,
+                        }];
                     } else {
                         if (!this._permCache.groups) {
                             const res = await fetch('/api/units/groups?tree=true');
                             const data = await res.json();
                             this._permCache.groups = data.units || [];
                         }
-                        treeData = this._permCache.groups;
+                        // 分離外部廠商群組
+                        var intGroups = [];
+                        var extGroups = [];
+                        for (var i = 0; i < this._permCache.groups.length; i++) {
+                            var g = this._permCache.groups[i];
+                            if (g.code === 'EXTERNAL_VENDORS' || g.code === 'external_vendors') {
+                                extGroups.push(g);
+                            } else {
+                                intGroups.push(g);
+                            }
+                        }
+                        // 企業內部群組根
+                        treeRoots.push({
+                            secure_code: '__ORG_ROOT__',
+                            name: orgName,
+                            full_path: orgName,
+                            children: intGroups,
+                            _isVirtualRoot: true,
+                        });
+                        // 外部廠商根（使用實際 DB 節點，展開其子群組）
+                        for (var j = 0; j < extGroups.length; j++) {
+                            treeRoots.push(extGroups[j]);
+                        }
                     }
                     if (container) {
-                        this._renderTree(container, treeData, 0);
+                        this._renderTree(container, treeRoots, 0);
                     }
                 } catch (e) {
                     console.error('載入樹狀資料失敗:', e);
@@ -513,19 +543,21 @@ function mappingsManager() {
             const self = this;
             for (const node of nodes) {
                 const hasChildren = node.children && node.children.length > 0;
+                const isRoot = (depth === 0);
                 const nodeEl = document.createElement('div');
                 nodeEl.className = 'fw-perm-tree-node';
 
                 // 行
                 const row = document.createElement('div');
                 row.className = 'fw-perm-tree-row';
+                if (isRoot) row.classList.add('fw-perm-tree-root');
                 row.style.paddingLeft = (8 + depth * 16) + 'px';
 
                 // 展開/收合
                 const toggle = document.createElement('span');
                 toggle.className = 'fw-perm-tree-toggle';
                 if (hasChildren) {
-                    toggle.textContent = '\u25B6';  // ▶
+                    toggle.textContent = '\u25BC';  // 預設全部展開
                     toggle.style.cursor = 'pointer';
                 }
                 row.appendChild(toggle);
@@ -543,7 +575,7 @@ function mappingsManager() {
                 if (hasChildren) {
                     childContainer = document.createElement('div');
                     childContainer.className = 'fw-perm-tree-children';
-                    childContainer.style.display = 'none';
+                    childContainer.style.display = 'block';  // 預設全部展開
                     this._renderTree(childContainer, node.children, depth + 1);
                     nodeEl.appendChild(childContainer);
                 }

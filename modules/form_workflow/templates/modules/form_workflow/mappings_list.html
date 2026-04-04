@@ -312,6 +312,7 @@
                                   x-text="rule.grant_type === 'department' ? '部門' : (rule.grant_type === 'group' ? '社群' : '個人')"></span>
                             <span class="fw-perm-name" x-text="rule.grant_target_name"></span>
                             <span class="fw-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">（含子部門）</span>
+                            <span class="fw-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">（含下層群組）</span>
                             <button class="fw-perm-del" @click="deletePermRule(rule.secure_code)" title="刪除此規則">&times;</button>
                         </div>
                     </template>
@@ -319,8 +320,8 @@
 
                 <!-- 新增規則 -->
                 <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555;">+ 新增規則</div>
-                <div class="fw-perm-add" style="flex-direction: column; gap: 10px;">
-                    <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <div class="fw-perm-field">
                             <label>類型</label>
                             <select x-model="newPerm.grant_type" @change="onPermTypeChange()" style="width: 100px;">
@@ -329,12 +330,16 @@
                                 <option value="user">個人</option>
                             </select>
                         </div>
-                        <div class="fw-perm-field" x-show="newPerm.grant_type === 'department'" style="margin-top: 14px;">
-                            <label style="white-space: nowrap;">
+                        <div x-show="newPerm.grant_type === 'department'" style="margin-top: 14px;">
+                            <label style="white-space: nowrap; font-size: 12px;">
                                 <input type="checkbox" x-model="newPerm.include_children" style="margin-right: 4px;">包含所有子部門
                             </label>
                         </div>
-                        <div style="flex: 1;"></div>
+                        <div x-show="newPerm.grant_type === 'group'" style="margin-top: 14px;">
+                            <label style="white-space: nowrap; font-size: 12px;">
+                                <input type="checkbox" x-model="newPerm.include_children" style="margin-right: 4px;">包含下層群組
+                            </label>
+                        </div>
                         <button class="fw-btn primary" @click="addPermRule()" :disabled="!newPerm.grant_target || permSaving" style="white-space: nowrap; margin-top: 14px;">新增</button>
                     </div>
 
@@ -422,5 +427,10 @@
 
 </div>
 
+<script>
+window.__MAPPING_CONFIG = {
+    orgName: {{ (org_name or '企業') | tojson }}
+};
+</script>
 <script src="{{ url_for('static', filename='modules/form_workflow/js/mappings.js') }}"></script>
 {% endblock %}

@@ -112,3 +112,4 @@
 .fw-perm-tree-toggle { display: inline-block; width: 16px; text-align: center; color: #999; font-size: 10px; flex-shrink: 0; }
 .fw-perm-tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fw-perm-tree-children { padding-left: 16px; }
+.fw-perm-tree-root { font-weight: 600; color: #333; }

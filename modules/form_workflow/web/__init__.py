@@ -127,7 +127,9 @@ def instance_detail(secure_code):
 @require_permission('form_workflow.workflow.manage')
 def mappings():
     """配對管理頁面"""
-    return render_template('modules/form_workflow/mappings_list.html')
+    org = get_current_org()
+    org_name = org.name if org else ''
+    return render_template('modules/form_workflow/mappings_list.html', org_name=org_name)
 
 
 # =============================================================================

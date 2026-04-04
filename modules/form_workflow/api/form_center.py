@@ -81,6 +81,7 @@ def list_available_forms():
     user_dept_sc = None
     user_dept_ancestors = set()  # 用戶部門所在的祖先鏈
     user_group_scs = set()
+    user_group_ancestors = set()  # 用戶群組的祖先鏈（含自身）
 
     if not is_hardcoded_allowed:
         # 載入所有配對權限
@@ -115,6 +116,10 @@ def list_available_forms():
             from app.models import OrganizationalUnit
             _build_dept_ancestors(user_dept_sc, user_dept_ancestors, org.secure_code)
 
+        # 建立群組祖先鏈（用於群組 include_children 判斷）
+        for gsc in user_group_scs:
+            _build_group_ancestors(gsc, user_group_ancestors, org.secure_code)
+
     def _check_mapping_permission(mapping_sc):
         """檢查當前用戶是否有權填寫此配對的表單"""
         if is_hardcoded_allowed:
@@ -145,8 +150,18 @@ def list_available_forms():
                         return True
 
             elif p.grant_type == 'group':
-                if p.grant_target in user_group_scs:
-                    return True
+                if not user_group_scs:
+                    continue
+                if p.include_children:
+                    # grant_target 是用戶群組的祖先之一（含 __ORG_ROOT__）
+                    if p.grant_target in user_group_ancestors:
+                        return True
+                else:
+                    if p.grant_target == '__ORG_ROOT__':
+                        # 虛擬企業根（不含下層）— 有任一群組成員身份即匹配
+                        return True
+                    elif p.grant_target in user_group_scs:
+                        return True
 
         return False
 
@@ -325,6 +340,31 @@ def _build_dept_ancestors(dept_sc, ancestors, org_sc):
     # 加入最終的根部門
     if current and current not in ancestors:
         ancestors.add(current)
+    # 虛擬企業根 — 讓 grant_target='__ORG_ROOT__' + include_children 匹配所有部門
+    ancestors.add('__ORG_ROOT__')
+
+
+def _build_group_ancestors(group_sc, ancestors, org_sc):
+    """遞迴建立群組祖先鏈（含自身），用於群組 include_children 判斷"""
+    from app.models import OrganizationalUnit
+
+    visited = set()
+    current = group_sc
+    while current and current not in visited:
+        visited.add(current)
+        ancestors.add(current)
+        unit = OrganizationalUnit.query.filter_by(
+            secure_code=current,
+            org_secure_code=org_sc,
+            is_deleted=False
+        ).first()
+        if not unit or not unit.parent_secure_code:
+            break
+        current = unit.parent_secure_code
+    if current and current not in ancestors:
+        ancestors.add(current)
+    # 虛擬企業根 — 讓 grant_target='__ORG_ROOT__' + include_children 匹配所有群組
+    ancestors.add('__ORG_ROOT__')
 
 
 @form_center_bp.route('/forms/<secure_code>')
