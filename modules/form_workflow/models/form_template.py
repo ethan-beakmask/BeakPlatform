@@ -49,6 +49,12 @@ class FwFormTemplate(ModuleBaseModel):
     owner_secure_code = Column(String(50), nullable=True, index=True)
     allowed_editors = Column(JSON, nullable=True)
 
+    # 建立者/編輯者
+    created_by_secure_code = Column(String(32), nullable=True)
+    created_by_name = Column(String(100), nullable=True)
+    updated_by_secure_code = Column(String(32), nullable=True)
+    updated_by_name = Column(String(100), nullable=True)
+
     def __repr__(self):
         return f'<FwFormTemplate {self.code}: {self.name}>'
 
@@ -68,6 +74,10 @@ class FwFormTemplate(ModuleBaseModel):
             'is_active': self.is_active,
             'is_protected': self.is_protected,
             'owner_secure_code': self.owner_secure_code,
+            'created_by_secure_code': self.created_by_secure_code,
+            'created_by_name': self.created_by_name,
+            'updated_by_secure_code': self.updated_by_secure_code,
+            'updated_by_name': self.updated_by_name,
         })
 
         if include_schema:

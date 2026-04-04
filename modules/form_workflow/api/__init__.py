@@ -1931,6 +1931,9 @@ from .backgrounds import backgrounds_bp
 # 導入 form_themes API Blueprint
 from .form_themes import form_themes_bp
 
+# 導入 mapping_permissions API Blueprint
+from .mapping_permissions import mapping_permissions_bp
+
 # 導出所有 Blueprint（供模組載入器使用）
 # field_specs_bp 已移至 spec_formulate 模組
-additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp]
+additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp, mapping_permissions_bp]

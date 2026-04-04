@@ -244,6 +244,8 @@ def create_template():
     if existing:
         return jsonify({'success': False, 'error': f'Code {code} already exists'}), 400
 
+    user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
+
     template = FwWorkflowTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
@@ -254,7 +256,11 @@ def create_template():
         cytoscape_config=data.get('cytoscape_config') or _get_default_graph(),
         is_active=data.get('is_active', True),
         is_subprocess=data.get('is_subprocess', False),
-        owner_secure_code=current_user.secure_code
+        owner_secure_code=current_user.secure_code,
+        created_by_secure_code=current_user.secure_code,
+        created_by_name=user_name,
+        updated_by_secure_code=current_user.secure_code,
+        updated_by_name=user_name,
     )
 
     db.session.add(template)
@@ -328,6 +334,11 @@ def update_template(secure_code):
     if data.get('graph') or data.get('cytoscape_config'):
         template.revision = (template.revision or 0) + 1
 
+    # 更新最後編輯者
+    user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
+    template.updated_by_secure_code = current_user.secure_code
+    template.updated_by_name = user_name
+
     template.updated_at = datetime.utcnow()
 
     # =========================================================================
@@ -374,7 +385,11 @@ def update_template(secure_code):
                 },
                 is_active=True,
                 is_published=False,
-                owner_secure_code=current_user.secure_code
+                owner_secure_code=current_user.secure_code,
+                created_by_secure_code=current_user.secure_code,
+                created_by_name=user_name,
+                updated_by_secure_code=current_user.secure_code,
+                updated_by_name=user_name,
             )
             db.session.add(form_template)
             db.session.flush()  # 取得 form_template.id

@@ -372,6 +372,8 @@ def create_template():
 
     schema = _apply_placeholder_as_label(data.get('schema')) or _get_default_schema()
 
+    user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
+
     template = FwFormTemplate(
         secure_code=secrets.token_urlsafe(16),
         org_secure_code=org.secure_code,
@@ -380,7 +382,11 @@ def create_template():
         description=data.get('description', ''),
         schema=schema,
         is_active=data.get('is_active', True),
-        owner_secure_code=current_user.secure_code
+        owner_secure_code=current_user.secure_code,
+        created_by_secure_code=current_user.secure_code,
+        created_by_name=user_name,
+        updated_by_secure_code=current_user.secure_code,
+        updated_by_name=user_name,
     )
 
     db.session.add(template)
@@ -472,6 +478,11 @@ def update_template(secure_code):
     # 有實質內容變更時遞增 revision
     if 'schema' in data or 'builder_config' in data:
         template.revision = (template.revision or 0) + 1
+
+    # 更新最後編輯者
+    user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
+    template.updated_by_secure_code = current_user.secure_code
+    template.updated_by_name = user_name
 
     template.updated_at = datetime.utcnow()
     db.session.commit()

@@ -41,7 +41,7 @@
                     <th style="width: 180px;">表單編號</th>
                     <th style="width: 80px; text-align: center;">運作版本</th>
                     <th style="width: 140px;">更新時間</th>
-                    <th style="width: 260px;" class="actions">操作</th>
+                    <th style="width: 310px;" class="actions">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -86,6 +86,9 @@
                             <div class="fw-action-group">
                                 <button class="fw-btn success" @click="publishMapping(m)">新發行</button>
                                 <button class="fw-btn" @click="viewPublished(m)">版本</button>
+                                <button class="fw-btn" @click="openPermModal(m)">
+                                    權限<span x-show="m._perm_count > 0" class="fw-perm-badge count" x-text="m._perm_count"></span><span x-show="!m._perm_count || m._perm_count === 0" class="fw-perm-badge default">預設</span>
+                                </button>
                                 <button class="fw-btn" @click="archiveMapping(m)"
                                         :disabled="!m.all_versions_archived || m.total_versions === 0"
                                         :title="(!m.all_versions_archived && m.total_versions > 0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')">封存</button>
@@ -274,6 +277,91 @@
             <div class="fw-modal-footer">
                 <button class="fw-btn" @click="showDeleteModal = false">取消</button>
                 <button class="fw-btn danger" @click="deleteMapping()">確認解除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 權限 Modal -->
+    <div x-show="showPermModal" x-cloak class="fw-modal">
+        <div class="fw-modal-content" style="width: 680px;">
+            <div class="fw-modal-header">
+                <h3>填寫權限設定 - <span x-text="permMapping?.form_template_name || ''"></span></h3>
+                <button @click="showPermModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="fw-modal-body">
+                <!-- 預設規則 -->
+                <div class="fw-perm-defaults">
+                    <div class="fw-perm-title">預設規則（不可修改）</div>
+                    <ul>
+                        <li>系統管理員</li>
+                        <li>流程設計師 (FLOW_DESIGNER) 角色</li>
+                        <li>表單設計師 (FORM_DESIGNER) 角色</li>
+                    </ul>
+                </div>
+
+                <!-- 自訂規則列表 -->
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555;">自訂規則</div>
+                <div class="fw-perm-list">
+                    <template x-if="permRules.length === 0">
+                        <div class="fw-perm-empty">尚無自訂規則，僅預設角色可填寫此表單</div>
+                    </template>
+                    <template x-for="rule in permRules" :key="rule.secure_code">
+                        <div class="fw-perm-row">
+                            <span class="fw-perm-type-tag"
+                                  :class="rule.grant_type === 'department' ? 'dept' : (rule.grant_type === 'group' ? 'group' : 'user')"
+                                  x-text="rule.grant_type === 'department' ? '部門' : (rule.grant_type === 'group' ? '社群' : '個人')"></span>
+                            <span class="fw-perm-name" x-text="rule.grant_target_name"></span>
+                            <span class="fw-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">（含子部門）</span>
+                            <button class="fw-perm-del" @click="deletePermRule(rule.secure_code)" title="刪除此規則">&times;</button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 新增規則 -->
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555;">+ 新增規則</div>
+                <div class="fw-perm-add" style="flex-direction: column; gap: 10px;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div class="fw-perm-field">
+                            <label>類型</label>
+                            <select x-model="newPerm.grant_type" @change="onPermTypeChange()" style="width: 100px;">
+                                <option value="department">部門</option>
+                                <option value="group">社群</option>
+                                <option value="user">個人</option>
+                            </select>
+                        </div>
+                        <div class="fw-perm-field" x-show="newPerm.grant_type === 'department'" style="margin-top: 14px;">
+                            <label style="white-space: nowrap;">
+                                <input type="checkbox" x-model="newPerm.include_children" style="margin-right: 4px;">包含所有子部門
+                            </label>
+                        </div>
+                        <div style="flex: 1;"></div>
+                        <button class="fw-btn primary" @click="addPermRule()" :disabled="!newPerm.grant_target || permSaving" style="white-space: nowrap; margin-top: 14px;">新增</button>
+                    </div>
+
+                    <!-- 樹狀選擇器（部門/社群） -->
+                    <div x-show="newPerm.grant_type === 'department' || newPerm.grant_type === 'group'" class="fw-perm-tree-box">
+                        <div x-show="permTreeLoading" style="text-align: center; padding: 12px; color: #999; font-size: 12px;">載入中...</div>
+                        <div x-show="!permTreeLoading" id="perm-tree-container"></div>
+                    </div>
+
+                    <!-- 下拉選單（個人） -->
+                    <div x-show="newPerm.grant_type === 'user'" class="fw-perm-field" style="width: 100%;">
+                        <label>選擇成員</label>
+                        <select x-model="newPerm.grant_target" style="width: 100%;">
+                            <option value="">-- 請選擇 --</option>
+                            <template x-for="opt in permTargetOptions" :key="opt.value">
+                                <option :value="opt.value" x-text="opt.label"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div x-show="newPerm.grant_target" style="font-size: 12px; color: #0066cc;">
+                        已選擇: <strong x-text="newPerm._selectedName || ''"></strong>
+                    </div>
+                </div>
+            </div>
+            <div class="fw-modal-footer">
+                <button class="fw-btn" @click="showPermModal = false">關閉</button>
             </div>
         </div>
     </div>

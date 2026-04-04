@@ -834,6 +834,26 @@ async function loadFormData() {
                 versionBadge.style.display = 'inline-block';
             }
 
+            // 顯示建立者/最後編輯者
+            const authorInfo = document.getElementById('form-author-info');
+            if (authorInfo) {
+                const parts = [];
+                if (formData.created_by_name) {
+                    parts.push('建立: ' + formData.created_by_name);
+                }
+                if (formData.updated_by_name) {
+                    let updatedText = '編輯: ' + formData.updated_by_name;
+                    if (formData.updated_at) {
+                        updatedText += ' (' + BkTime.format(formData.updated_at, 'short') + ')';
+                    }
+                    parts.push(updatedText);
+                }
+                if (parts.length > 0) {
+                    authorInfo.textContent = parts.join(' | ');
+                    authorInfo.style.display = 'inline';
+                }
+            }
+
             // 恢復 builder_config（表單寬度等）
             if (formData.builder_config) {
                 // 恢復表單寬度設定

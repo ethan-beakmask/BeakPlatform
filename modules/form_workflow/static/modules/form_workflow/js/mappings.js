@@ -22,6 +22,20 @@ function mappingsManager() {
         deletingMapping: null,
         showArchivedList: false,
 
+        // 權限 Modal
+        showPermModal: false,
+        permMapping: null,
+        permRules: [],
+        permTargetOptions: [],
+        permTreeLoading: false,
+        permSaving: false,
+        newPerm: { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' },
+        _permCache: {
+            departments: null,
+            groups: null,
+            users: null,
+        },
+
         toast: { show: false, message: '', type: 'success' },
 
         async init() {
@@ -45,8 +59,11 @@ function mappingsManager() {
                     const defaultCode = defaultRule ? defaultRule.secure_code : '';
                     this.mappings = (data.data || []).map(m => ({
                         ...m,
-                        numbering_rule_secure_code: m.numbering_rule_secure_code || defaultCode
+                        numbering_rule_secure_code: m.numbering_rule_secure_code || defaultCode,
+                        _perm_count: 0,
                     }));
+                    // 非同步載入每個配對的權限數量
+                    this._loadPermCounts();
                 }
             } catch (e) {
                 console.error('載入配對失敗:', e);
@@ -395,6 +412,223 @@ function mappingsManager() {
                 }
             } catch (e) {
                 this.showToast('更新失敗: ' + e.message, 'error');
+            }
+        },
+
+        // =====================================================================
+        // 權限管理
+        // =====================================================================
+
+        async _loadPermCounts() {
+            for (const m of this.mappings) {
+                try {
+                    const res = await fetch(`/api/mapping-permissions/${m.secure_code}`);
+                    const data = await res.json();
+                    if (data.success) {
+                        m._perm_count = (data.data || []).length;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+        },
+
+        async openPermModal(m) {
+            this.permMapping = m;
+            this.permRules = [];
+            this.newPerm = { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' };
+            this.showPermModal = true;
+            await this._loadPermRules(m.secure_code);
+            await this._loadPermTargets('department');
+        },
+
+        async _loadPermRules(mappingSc) {
+            try {
+                const res = await fetch(`/api/mapping-permissions/${mappingSc}`);
+                const data = await res.json();
+                if (data.success) {
+                    this.permRules = data.data || [];
+                    // 同步更新清單中的計數
+                    const m = this.mappings.find(x => x.secure_code === mappingSc);
+                    if (m) m._perm_count = this.permRules.length;
+                }
+            } catch (e) {
+                console.error('載入權限規則失敗:', e);
+            }
+        },
+
+        async onPermTypeChange() {
+            this.newPerm.grant_target = '';
+            this.newPerm.include_children = false;
+            this.newPerm._selectedName = '';
+            await this._loadPermTargets(this.newPerm.grant_type);
+        },
+
+        async _loadPermTargets(grantType) {
+            this.permTargetOptions = [];
+            const container = document.getElementById('perm-tree-container');
+
+            if (grantType === 'department' || grantType === 'group') {
+                this.permTreeLoading = true;
+                if (container) container.innerHTML = '';
+                try {
+                    let treeData = null;
+                    if (grantType === 'department') {
+                        if (!this._permCache.departments) {
+                            const res = await fetch('/api/units/departments?tree=true');
+                            const data = await res.json();
+                            this._permCache.departments = data.units || [];
+                        }
+                        treeData = this._permCache.departments;
+                    } else {
+                        if (!this._permCache.groups) {
+                            const res = await fetch('/api/units/groups?tree=true');
+                            const data = await res.json();
+                            this._permCache.groups = data.units || [];
+                        }
+                        treeData = this._permCache.groups;
+                    }
+                    if (container) {
+                        this._renderTree(container, treeData, 0);
+                    }
+                } catch (e) {
+                    console.error('載入樹狀資料失敗:', e);
+                } finally {
+                    this.permTreeLoading = false;
+                }
+            } else if (grantType === 'user') {
+                if (!this._permCache.users) {
+                    const res = await fetch('/api/users?per_page=100');
+                    const data = await res.json();
+                    if (data.users) {
+                        this._permCache.users = data.users;
+                    }
+                }
+                this.permTargetOptions = (this._permCache.users || []).map(u => ({
+                    value: u.secure_code || u.id,
+                    label: (u.display_name || u.native_name || u.employee_id || u.id),
+                }));
+            }
+        },
+
+        _renderTree(container, nodes, depth) {
+            const self = this;
+            for (const node of nodes) {
+                const hasChildren = node.children && node.children.length > 0;
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'fw-perm-tree-node';
+
+                // 行
+                const row = document.createElement('div');
+                row.className = 'fw-perm-tree-row';
+                row.style.paddingLeft = (8 + depth * 16) + 'px';
+
+                // 展開/收合
+                const toggle = document.createElement('span');
+                toggle.className = 'fw-perm-tree-toggle';
+                if (hasChildren) {
+                    toggle.textContent = '\u25B6';  // ▶
+                    toggle.style.cursor = 'pointer';
+                }
+                row.appendChild(toggle);
+
+                // 標籤
+                const label = document.createElement('span');
+                label.className = 'fw-perm-tree-label';
+                label.textContent = node.name;
+                row.appendChild(label);
+
+                nodeEl.appendChild(row);
+
+                // 子節點容器
+                let childContainer = null;
+                if (hasChildren) {
+                    childContainer = document.createElement('div');
+                    childContainer.className = 'fw-perm-tree-children';
+                    childContainer.style.display = 'none';
+                    this._renderTree(childContainer, node.children, depth + 1);
+                    nodeEl.appendChild(childContainer);
+                }
+
+                // 展開/收合事件
+                if (hasChildren) {
+                    toggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const isOpen = childContainer.style.display !== 'none';
+                        childContainer.style.display = isOpen ? 'none' : 'block';
+                        toggle.textContent = isOpen ? '\u25B6' : '\u25BC';  // ▶ / ▼
+                    });
+                }
+
+                // 選擇事件
+                const sc = node.secure_code || node.id;
+                const nodeName = node.full_path || node.name;
+                row.addEventListener('click', function() {
+                    // 清除所有選中
+                    container.closest('.fw-perm-tree-box').querySelectorAll('.fw-perm-tree-row.selected').forEach(el => el.classList.remove('selected'));
+                    row.classList.add('selected');
+                    self.newPerm.grant_target = sc;
+                    self.newPerm._selectedName = nodeName;
+                });
+
+                container.appendChild(nodeEl);
+            }
+        },
+
+        async addPermRule() {
+            if (!this.newPerm.grant_target || !this.permMapping) return;
+            this.permSaving = true;
+
+            // 找到目標名稱（樹狀用 _selectedName，下拉用 options 查找）
+            let targetName = this.newPerm._selectedName;
+            if (!targetName) {
+                const opt = this.permTargetOptions.find(o => o.value === this.newPerm.grant_target);
+                targetName = opt ? opt.label : this.newPerm.grant_target;
+            }
+
+            try {
+                const res = await fetch(`/api/mapping-permissions/${this.permMapping.secure_code}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        grant_type: this.newPerm.grant_type,
+                        grant_target: this.newPerm.grant_target,
+                        grant_target_name: targetName,
+                        include_children: this.newPerm.include_children,
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this._loadPermRules(this.permMapping.secure_code);
+                    this.newPerm.grant_target = '';
+                    this.newPerm._selectedName = '';
+                    // 清除樹狀選中
+                    const treeBox = document.querySelector('.fw-perm-tree-box');
+                    if (treeBox) treeBox.querySelectorAll('.fw-perm-tree-row.selected').forEach(el => el.classList.remove('selected'));
+                    this.showToast('權限規則已新增');
+                } else {
+                    this.showToast(data.message || '新增失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('新增失敗: ' + e.message, 'error');
+            } finally {
+                this.permSaving = false;
+            }
+        },
+
+        async deletePermRule(secureCcode) {
+            if (!confirm('確定要刪除此權限規則？')) return;
+            try {
+                const res = await fetch(`/api/mapping-permissions/rule/${secureCcode}`, {
+                    method: 'DELETE',
+                });
+                const data = await res.json();
+                if (data.success) {
+                    await this._loadPermRules(this.permMapping.secure_code);
+                    this.showToast('權限規則已刪除');
+                } else {
+                    this.showToast(data.message || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗: ' + e.message, 'error');
             }
         },
 

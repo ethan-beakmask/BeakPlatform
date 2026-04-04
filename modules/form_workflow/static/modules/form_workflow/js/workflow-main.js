@@ -3504,6 +3504,28 @@
                 // 解鎖界面並顯示流程資訊
                 unlockInterface(workflow.name, (workflow.version || 'AA') + (workflow.revision || ''), workflow.description || '', workflow.category_secure_code || '');
 
+                // 顯示建立者/最後編輯者
+                const wfAuthorInfo = document.getElementById('wf-author-info');
+                if (wfAuthorInfo) {
+                    const infoParts = [];
+                    if (workflow.created_by_name) {
+                        infoParts.push('建立: ' + workflow.created_by_name);
+                    }
+                    if (workflow.updated_by_name) {
+                        let updText = '編輯: ' + workflow.updated_by_name;
+                        if (workflow.updated_at && typeof BkTime !== 'undefined') {
+                            updText += ' (' + BkTime.format(workflow.updated_at, 'short') + ')';
+                        }
+                        infoParts.push(updText);
+                    }
+                    if (infoParts.length > 0) {
+                        wfAuthorInfo.textContent = infoParts.join(' | ');
+                        wfAuthorInfo.style.display = 'inline';
+                    } else {
+                        wfAuthorInfo.style.display = 'none';
+                    }
+                }
+
                 // 通用子流程唯讀 UI（必須在 unlockInterface 之後，否則會被覆蓋）
                 if (isReadOnly) {
                     // 禁用儲存按鈕
