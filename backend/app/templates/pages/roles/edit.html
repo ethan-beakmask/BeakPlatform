@@ -59,7 +59,8 @@
                 <td>
                     {% if role.scope_type == 'GLOBAL' %}全企業
                     {% elif role.scope_type == 'DEPARTMENT' %}部門
-                    {% elif role.scope_type == 'GROUP' %}群組
+                    {% elif role.scope_type == 'GROUP' %}社群
+                    {% elif role.scope_type == 'EXTERNAL' %}外部人員
                     {% else %}{{ role.scope_type }}{% endif %}
                 </td>
             </tr>

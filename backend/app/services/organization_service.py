@@ -227,14 +227,31 @@ class OrganizationService:
         db.session.add(org_admin_role)
         roles['org_admin'] = org_admin_role
 
-        # 部門主管角色 (通用，可套用到任何部門)
+        # 部門成員角色 (基底，部門內所有人都有)
+        dept_member_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.DEPARTMENT,
+            code='DEPT_MEMBER',
+            name='部門成員',
+            description='部門通用成員角色，部門內所有人(主管+員工)皆擁有',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        dept_member_role.update_full_path()
+        db.session.add(dept_member_role)
+        roles['dept_member'] = dept_member_role
+
+        # 部門主管角色 (與 DEPT_EMPLOYEE 互斥，per-unit)
         dept_manager_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.POSITION,
             scope_type=ScopeType.DEPARTMENT,
             code='DEPT_MANAGER',
             name='部門主管',
-            description='部門管理者',
+            description='部門管理者，與部門員工互斥(同一部門下擇一)',
+            exclusive_group=ExclusiveGroup.DEPT_POSITION,
             is_manager=True,
             is_system_role=True,
             is_active=True
@@ -242,6 +259,23 @@ class OrganizationService:
         dept_manager_role.update_full_path()
         db.session.add(dept_manager_role)
         roles['dept_manager'] = dept_manager_role
+
+        # 部門員工角色 (與 DEPT_MANAGER 互斥，per-unit)
+        dept_employee_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.DEPARTMENT,
+            code='DEPT_EMPLOYEE',
+            name='部門員工',
+            description='部門一般員工，與部門主管互斥(同一部門下擇一)',
+            exclusive_group=ExclusiveGroup.DEPT_POSITION,
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        dept_employee_role.update_full_path()
+        db.session.add(dept_employee_role)
+        roles['dept_employee'] = dept_employee_role
 
         # 部門副主管角色
         dept_deputy_role = Role(
@@ -291,21 +325,55 @@ class OrganizationService:
         db.session.add(dept_proxy2_role)
         roles['dept_proxy2'] = dept_proxy2_role
 
-        # 社群召集人角色
-        group_convener_role = Role(
+        # 社群成員角色 (基底，社群內所有人都有)
+        group_member_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.ROLE,
             scope_type=ScopeType.GROUP,
-            code='COMMUNITY',
-            name='社群召集人',
-            description='社群管理者',
+            code='GROUP_MEMBER',
+            name='社群成員',
+            description='社群通用成員角色，社群內所有人(團長+團員)皆擁有',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        group_member_role.update_full_path()
+        db.session.add(group_member_role)
+        roles['group_member'] = group_member_role
+
+        # 社群團長角色 (與 GROUP_EMPLOYEE 互斥，per-unit)
+        group_manager_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GROUP,
+            code='GROUP_MANAGER',
+            name='社群團長',
+            description='社群管理者，與社群團員互斥(同一社群下擇一)',
+            exclusive_group=ExclusiveGroup.GROUP_POSITION,
             is_manager=True,
             is_system_role=True,
             is_active=True
         )
-        group_convener_role.update_full_path()
-        db.session.add(group_convener_role)
-        roles['group_convener'] = group_convener_role
+        group_manager_role.update_full_path()
+        db.session.add(group_manager_role)
+        roles['group_manager'] = group_manager_role
+
+        # 社群團員角色 (與 GROUP_MANAGER 互斥，per-unit)
+        group_employee_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GROUP,
+            code='GROUP_EMPLOYEE',
+            name='社群團員',
+            description='社群一般團員，與社群團長互斥(同一社群下擇一)',
+            exclusive_group=ExclusiveGroup.GROUP_POSITION,
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        group_employee_role.update_full_path()
+        db.session.add(group_employee_role)
+        roles['group_employee'] = group_employee_role
 
         # 表單設計師角色
         form_editor_role = Role(
@@ -388,14 +456,14 @@ class OrganizationService:
         db.session.add(employee_role)
         roles['employee'] = employee_role
 
-        # 外部廠商角色
+        # 外部廠商角色（非雇傭關係，受限存取）
         external_users_role = Role(
             org_secure_code=org.secure_code,
             role_type=RoleType.ROLE,
-            scope_type=ScopeType.GLOBAL,
+            scope_type=ScopeType.EXTERNAL,
             code='EXTERNAL_USERS',
             name='外部廠商',
-            description='外部廠商帳號權限',
+            description='外部廠商帳號權限（非雇傭關係，受限存取）',
             exclusive_group=ExclusiveGroup.IDENTITY_TYPE,
             is_manager=False,
             is_system_role=True,

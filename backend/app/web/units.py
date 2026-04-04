@@ -7,7 +7,7 @@ from flask_login import current_user
 
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
-from ..models import OrganizationalUnit, UnitType, Role, RoleType, ScopeType
+from ..models import OrganizationalUnit, UnitType
 from .. import db
 
 units_bp = Blueprint('units', __name__)
@@ -124,26 +124,6 @@ def create_unit():
                     )
                     unit.update_full_path()
                     db.session.add(unit)
-
-                    # 建立成員角色
-                    role_code = f'{code}_MEMBER'
-                    scope = ScopeType.DEPARTMENT if unit_type == UnitType.DEPARTMENT else ScopeType.GROUP
-                    member_role = Role(
-                        org_secure_code=current_user.org_secure_code,
-                        role_type=RoleType.ROLE,
-                        scope_type=scope,
-                        code=role_code,
-                        name=f'{name} 成員',
-                        description=f'{name} 的成員角色',
-                        is_manager=False,
-                        is_system_role=False,
-                        is_active=True
-                    )
-                    member_role.update_full_path()
-                    db.session.add(member_role)
-                    db.session.flush()
-
-                    unit.member_role_secure_code = member_role.secure_code
                     db.session.commit()
 
                     flash(f'已建立 {name}', 'success')

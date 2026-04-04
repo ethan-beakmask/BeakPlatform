@@ -80,9 +80,6 @@ class OrganizationalUnit(TenantBaseModel):
         foreign_keys=[parent_secure_code]
     )
 
-    # 成員角色 secure_code (自動建立)
-    member_role_secure_code = Column(String(32), nullable=True)
-
     # 跨部門/社群成員關係
     user_memberships = relationship('UserUnitMembership', back_populates='unit')
 

@@ -16,7 +16,7 @@ from ..models.user import User, UserType
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.organizational_unit import OrganizationalUnit
 from ..models.associations import UserRoleAssignment
-from ..models.role import Role
+from ..models.role import Role, ExclusiveGroup
 from .. import db, csrf
 
 logger = logging.getLogger(__name__)
@@ -227,12 +227,12 @@ def index():
         UserType.SYSTEM_ADMIN: '系統管理員',
     }
 
-    # 查詢可指派角色（非部門/社群專屬的 GLOBAL scope 角色）
+    # 查詢可指派角色（GLOBAL + EXTERNAL scope，排除部門/社群專屬）
     assignable_roles = Role.query.filter(
         Role.org_secure_code == org_sc,
         Role.is_deleted == False,
         Role.is_active == True,
-        Role.scope_type == 'GLOBAL',
+        Role.scope_type.in_(['GLOBAL', 'EXTERNAL']),
     ).order_by(Role.is_system_role.desc(), Role.name).all()
 
     return render_template(
@@ -287,18 +287,24 @@ def assign_role():
     if not role:
         return jsonify({'success': False, 'error': '角色不存在'}), 404
 
-    # 檢查重複
-    existing = UserRoleAssignment.query.filter(
+    # 檢查重複（per-unit 角色需考慮 unit_secure_code）
+    dup_query = UserRoleAssignment.query.filter(
         UserRoleAssignment.user_secure_code == user_sc,
         UserRoleAssignment.role_secure_code == role_sc,
         UserRoleAssignment.is_deleted == False,
-    ).first()
+    )
+    req_unit_sc = data.get('unit_secure_code')
+    if req_unit_sc:
+        dup_query = dup_query.filter(
+            UserRoleAssignment.unit_secure_code == req_unit_sc
+        )
+    existing = dup_query.first()
     if existing:
         return jsonify({'success': False, 'error': f'用戶已擁有「{role.name}」角色'}), 409
 
     # 互斥群組檢查：同一 exclusive_group 的角色只能擇一
     if role.exclusive_group:
-        conflict_role = db.session.query(Role).join(
+        conflict_query = db.session.query(Role).join(
             UserRoleAssignment,
             UserRoleAssignment.role_secure_code == Role.secure_code,
         ).filter(
@@ -306,17 +312,34 @@ def assign_role():
             UserRoleAssignment.is_deleted == False,
             Role.exclusive_group == role.exclusive_group,
             Role.is_deleted == False,
-        ).first()
+        )
+
+        # per-unit 範圍互斥：僅在同一 unit_secure_code 下檢查
+        unit_sc = data.get('unit_secure_code')
+        if role.exclusive_group in ExclusiveGroup.UNIT_SCOPED:
+            if unit_sc:
+                conflict_query = conflict_query.filter(
+                    UserRoleAssignment.unit_secure_code == unit_sc
+                )
+            else:
+                # DEPT_POSITION 等 per-unit 互斥群組必須提供 unit_secure_code
+                conflict_query = conflict_query.filter(
+                    UserRoleAssignment.unit_secure_code.is_(None)
+                )
+
+        conflict_role = conflict_query.first()
         if conflict_role:
             return jsonify({
                 'success': False,
                 'error': f'無法指派「{role.name}」：與現有角色「{conflict_role.name}」互斥，請先移除後再指派',
             }), 409
 
+    unit_sc = data.get('unit_secure_code')
     assignment = UserRoleAssignment(
         org_secure_code=org_sc,
         user_secure_code=user_sc,
         role_secure_code=role_sc,
+        unit_secure_code=unit_sc,
         assigned_by=current_user.secure_code,
     )
     db.session.add(assignment)

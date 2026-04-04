@@ -21,9 +21,10 @@ class RoleType:
 
 class ScopeType:
     """適用範圍"""
-    GLOBAL = 'GLOBAL'          # 全企業
+    GLOBAL = 'GLOBAL'          # 全企業（內部員工）
     DEPARTMENT = 'DEPARTMENT'  # 部門
     GROUP = 'GROUP'            # 群組
+    EXTERNAL = 'EXTERNAL'      # 外部人員（非雇傭關係，受限存取）
 
 
 class RoleLevel:
@@ -43,11 +44,23 @@ class ExclusiveGroup:
     互斥群組
 
     同一互斥群組的角色不能同時指派給同一用戶。
-    例如：EMPLOYEE、ORG_ADMIN、EXTERNAL 三者互斥，
-    一個人只能擁有其中一種身份角色。
+
+    全域互斥 (IDENTITY_TYPE):
+        EMPLOYEE、ORG_ADMIN、EXTERNAL 三者互斥，一個人只能擁有其中一種身份角色。
+        檢查範圍：使用者的所有角色指派。
+
+    部門範圍互斥 (DEPT_POSITION):
+        DEPT_MANAGER 與 DEPT_EMPLOYEE 互斥，同一部門下只能擇一。
+        檢查範圍：同一 unit_secure_code 下的角色指派。
+        跨部門不互斥（A 部門主管可同時為 B 部門員工）。
     """
     NONE = None                        # 無互斥限制
     IDENTITY_TYPE = 'IDENTITY_TYPE'    # 身份類型互斥 (企業成員/企業管理員/外部廠商)
+    DEPT_POSITION = 'DEPT_POSITION'      # 部門職務互斥 (部門主管 vs 部門員工，per-unit)
+    GROUP_POSITION = 'GROUP_POSITION'    # 社群職務互斥 (社群團長 vs 社群團員，per-unit)
+
+    # 需要 per-unit 範圍檢查的互斥群組
+    UNIT_SCOPED = frozenset({'DEPT_POSITION', 'GROUP_POSITION'})
 
 
 class Role(TenantBaseModel):

@@ -108,7 +108,8 @@
                     <select x-model="formData.scope_type" required style="width: 100%;">
                         <option value="GLOBAL">全企業</option>
                         <option value="DEPARTMENT">部門</option>
-                        <option value="GROUP">群組</option>
+                        <option value="GROUP">社群</option>
+                        <option value="EXTERNAL">外部人員</option>
                     </select>
                     <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">
                         <template x-if="formData.scope_type === 'GLOBAL'">
@@ -118,7 +119,10 @@
                             <span>此角色只能在部門內指派（如：部門主管、部門秘書）</span>
                         </template>
                         <template x-if="formData.scope_type === 'GROUP'">
-                            <span>此角色只能在群組內指派（如：社團團長、專案召集人）</span>
+                            <span>此角色只能在社群內指派（如：社群團長、專案召集人）</span>
+                        </template>
+                        <template x-if="formData.scope_type === 'EXTERNAL'">
+                            <span>此角色僅限外部人員（非雇傭關係，受限存取）</span>
                         </template>
                     </div>
                     <div class="text-muted" style="font-size: 0.75em; margin-top: 2px;">
