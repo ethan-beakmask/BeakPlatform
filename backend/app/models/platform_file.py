@@ -44,6 +44,9 @@ class PlatformFile(TenantBaseModel):
     # 狀態: active, pending_delete, deleted
     status = Column(String(20), nullable=False, default='active')
 
+    # 完整性驗證 (SHA-256 of plaintext)
+    file_hash = Column(String(64))
+
     # 加密 metadata (僅 storage_type='encrypted' 使用)
     wrapped_dek = Column(Text)
     dek_nonce = Column(String(64))
@@ -72,6 +75,6 @@ class PlatformFile(TenantBaseModel):
         return f'/api/files/{self.secure_code}/serve'
 
     @property
-    def download_url(self):
-        """產生前端可用的 download URL"""
-        return f'/api/files/{self.secure_code}/download'
+    def download_token_url(self):
+        """產生前端取得一次性下載 token 的 API URL (POST)"""
+        return f'/api/files/{self.secure_code}/download-token'

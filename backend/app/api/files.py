@@ -3,36 +3,61 @@ BeakPlatform Files API
 統一檔案上傳/下載/管理 API
 
 所有檔案存取都經過此 blueprint，不再直接暴露 /static/uploads/ 路徑。
+下載採一次性 token 機制：前端 POST 取 token（權限檢查 + 稽核），
+再導向 /api/files/dl/<token> 取得檔案。token 60 秒過期、用後即銷。
 """
+import json
 import logging
+import os
+import secrets
+from urllib.parse import quote
 
+import redis
 from flask import Blueprint, jsonify, request, Response, g
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
 from .. import db, csrf
 from ..services import file_service
+from ..services.file_service import FileTamperError
 from ..models.file_access_log import FileAccessLog
 
 logger = logging.getLogger(__name__)
 
 files_bp = Blueprint('files', __name__, url_prefix='/api/files')
 
+# ── Download token Redis ─────────────────────────────────────
+_DOWNLOAD_TOKEN_TTL = 60  # 秒
+_DOWNLOAD_TOKEN_PREFIX = 'file_dl:'
 
-def _log_file_access(record, action):
+_redis_pool = None
+
+
+def _get_dl_redis():
+    """取得下載 token 專用的 Redis 連線"""
+    global _redis_pool
+    if _redis_pool is None:
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
+        _redis_pool = redis.ConnectionPool.from_url(redis_url)
+    return redis.Redis(connection_pool=_redis_pool)
+
+
+# ── Helpers ──────────────────────────────────────────────────
+
+def _log_file_access(record, action, user_sc=None, username=None,
+                     ip_addr=None, org_sc=None):
     """寫入檔案存取稽核記錄（best-effort，不影響主流程）"""
     try:
-        org = current_user.organization
         log = FileAccessLog(
-            org_secure_code=org.secure_code,
+            org_secure_code=org_sc or current_user.organization.secure_code,
             file_secure_code=record.secure_code,
             original_name=record.original_name,
             context_type=record.context_type,
             context_id=record.context_id,
             action=action,
-            user_secure_code=current_user.secure_code,
-            username=current_user.display_name or current_user.username,
-            ip_address=request.remote_addr,
+            user_secure_code=user_sc or current_user.secure_code,
+            username=username or current_user.display_name or current_user.username,
+            ip_address=ip_addr or request.remote_addr,
         )
         db.session.add(log)
         db.session.commit()
@@ -43,6 +68,49 @@ def _log_file_access(record, action):
         except Exception:
             pass
 
+
+def _make_cd_header(original_name):
+    """產生 Content-Disposition header（RFC 5987 非 ASCII 編碼）"""
+    try:
+        original_name.encode('ascii')
+        return f'attachment; filename="{original_name}"'
+    except UnicodeEncodeError:
+        ascii_fallback = original_name.encode('ascii', 'ignore').decode() or 'download'
+        return (
+            f"attachment; filename=\"{ascii_fallback}\"; "
+            f"filename*=UTF-8''{quote(original_name)}"
+        )
+
+
+def _get_disk_size(record):
+    """取得磁碟檔案大小（log 用，best-effort）"""
+    try:
+        if record.storage_type == 'encrypted':
+            path = file_service._resolve_encrypted_path(record.storage_ref)
+        else:
+            path = file_service._resolve_local_path(record.storage_ref)
+        return os.path.getsize(path) if os.path.exists(path) else 'MISSING'
+    except Exception:
+        return '?'
+
+
+def _warn_page(status_code):
+    """產生檔案下載違規警告 HTML 頁面"""
+    html = """<!DOCTYPE html>
+<html lang="zh-TW">
+<head><meta charset="UTF-8"><title>""" + str(status_code) + """</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       max-width: 600px; margin: 80px auto; padding: 20px; }
+</style></head>
+<body>
+<h1 style="color: #dc2626; font-size: 28px;">警告</h1>
+<p>違規下載！檔案下載連結只限一次性且限時下載</p>
+</body></html>"""
+    return html, status_code, {'Content-Type': 'text/html; charset=utf-8'}
+
+
+# ── Upload ───────────────────────────────────────────────────
 
 @files_bp.route('/upload', methods=['POST'])
 @csrf.exempt
@@ -91,7 +159,6 @@ def upload():
             'data': {
                 'secure_code': record.secure_code,
                 'serve_url': record.serve_url,
-                'download_url': record.download_url,
                 'original_name': record.original_name,
                 'file_size': record.file_size,
                 'mime_type': record.mime_type,
@@ -105,6 +172,8 @@ def upload():
         logger.exception("檔案上傳失敗")
         return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
 
+
+# ── Serve (public) ───────────────────────────────────────────
 
 @files_bp.route('/<secure_code>/serve', methods=['GET'])
 @public_route
@@ -137,14 +206,17 @@ def serve(secure_code):
     )
 
 
-@files_bp.route('/<secure_code>/download', methods=['GET'])
-@login_required
-def download(secure_code):
-    """
-    下載機敏檔案（加密檔案自動解密）。
+# ── Download: token 申請 ─────────────────────────────────────
 
-    需登入 + 租戶隔離。
-    下載成功後立即寫入稽核記錄。
+@files_bp.route('/<secure_code>/download-token', methods=['POST'])
+@csrf.exempt
+@login_required
+def request_download_token(secure_code):
+    """
+    申請一次性下載 token。
+
+    權限檢查 + 稽核記錄在此完成。
+    回傳暫時 URL，60 秒過期、用後即銷。
     """
     org = current_user.organization
     if not org:
@@ -154,25 +226,148 @@ def download(secure_code):
     if not record:
         return jsonify({'success': False, 'message': '檔案不存在'}), 404
 
+    # 前置檢查：檔案存在 + 大小合理（微秒級，不讀檔）
+    preflight = file_service.preflight_check(record)
+    if preflight:
+        logger.critical(
+            "[SEC] 下載前置檢查失敗: file_sc=%s org=%s reason=%s "
+            "user=%s ip=%s",
+            secure_code, org.secure_code, preflight,
+            current_user.username, request.remote_addr,
+        )
+        return jsonify({
+            'success': False,
+            'message': '檔案異常！疑似竄改',
+        }), 403
+
+    # 產生 token 並���入 Redis
+    token = secrets.token_urlsafe(32)
+    payload = json.dumps({
+        'file_sc': record.secure_code,
+        'org_sc': org.secure_code,
+        'user_sc': current_user.secure_code,
+        'username': current_user.display_name or current_user.username,
+        'ip': request.remote_addr,
+    })
+
+    try:
+        r = _get_dl_redis()
+        r.setex(f'{_DOWNLOAD_TOKEN_PREFIX}{token}', _DOWNLOAD_TOKEN_TTL, payload)
+    except Exception as e:
+        logger.exception("Redis 寫入下載 token 失敗")
+        return jsonify({'success': False, 'message': '系統暫時無法處理下載'}), 503
+
+    # 稽核記錄在 token 申請時寫入（有完整身份資訊）
+    _log_file_access(record, 'download')
+
+    return jsonify({
+        'success': True,
+        'url': f'/api/files/dl/{token}',
+    })
+
+
+# ── Download: token 兌換 ─────────────────────────────────────
+
+@files_bp.route('/dl/<token>', methods=['GET'])
+@public_route
+def token_download(token):
+    """
+    憑一次性 token 下載檔案。
+
+    Token 由 download-token endpoint 產生，60 秒過期。
+    GET+DEL 原子操作確保只能使用一次。
+    不需 session 認證（token 本身即授權憑證）。
+    """
+    # 原子性取出並刪除 token（Lua script 確保一次性）
+    lua_get_del = """
+    local val = redis.call('GET', KEYS[1])
+    if val then
+        redis.call('DEL', KEYS[1])
+    end
+    return val
+    """
+    try:
+        r = _get_dl_redis()
+        raw = r.eval(lua_get_del, 1, f'{_DOWNLOAD_TOKEN_PREFIX}{token}')
+    except Exception as e:
+        logger.exception("Redis 讀取下載 token 失敗")
+        return jsonify({'success': False, 'message': '系統暫時無法處理下載'}), 503
+
+    if not raw:
+        return _warn_page(410)
+
+    payload = json.loads(raw)
+    file_sc = payload['file_sc']
+    org_sc = payload['org_sc']
+
+    record = file_service.get_file_by_sc(file_sc, org_sc=org_sc)
+    if not record:
+        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+
     try:
         data, mime_type, original_name = file_service.serve_file(record)
     except FileNotFoundError:
+        logger.warning(
+            "[SEC] 加密檔案遺失: file_sc=%s org=%s ref=%s user=%s ip=%s",
+            file_sc, org_sc, record.storage_ref,
+            payload.get('username', '?'), payload.get('ip', '?'),
+        )
         return jsonify({'success': False, 'message': '檔案不存在'}), 404
+    except FileTamperError as e:
+        logger.critical(
+            "[SEC] 檔案大小異常！疑似竄改: file_sc=%s org=%s ref=%s "
+            "db_size=%s disk_size=%s user=%s ip=%s",
+            file_sc, org_sc, record.storage_ref, record.file_size,
+            _get_disk_size(record), payload.get('username', '?'),
+            payload.get('ip', '?'),
+        )
+        return jsonify({'success': False, 'message': '檔案完整性驗證失敗，已通報管理員'}), 500
     except Exception as e:
-        logger.exception("下載檔案失敗: %s", secure_code)
-        return jsonify({'success': False, 'message': '下載失敗'}), 500
+        logger.error(
+            "[SEC] 檔案解密失敗（可能被竄改）: file_sc=%s org=%s ref=%s "
+            "db_size=%s user=%s ip=%s error=%s",
+            file_sc, org_sc, record.storage_ref, record.file_size,
+            payload.get('username', '?'), payload.get('ip', '?'), e,
+        )
+        return jsonify({'success': False, 'message': '下載失敗，檔案異常'}), 500
 
-    _log_file_access(record, 'download')
+    # 完整性驗證：比對 SHA-256
+    if not file_service.verify_file_integrity(record, data):
+        logger.critical(
+            "[SEC] 檔案完整性驗證失敗！疑似竄改: file_sc=%s org=%s "
+            "original_name=%s db_hash=%s user=%s ip=%s",
+            file_sc, org_sc, original_name, record.file_hash,
+            payload.get('username', '?'), payload.get('ip', '?'),
+        )
+        return jsonify({'success': False, 'message': '檔案完整性驗證失敗，已通報管理員'}), 500
 
     return Response(
         data,
         mimetype=mime_type or 'application/octet-stream',
         headers={
-            'Content-Disposition': f'attachment; filename="{original_name}"',
+            'Content-Disposition': _make_cd_header(original_name),
             'X-Content-Type-Options': 'nosniff',
+            'Cache-Control': 'no-store',
         }
     )
 
+
+# ── 舊 download endpoint: 封鎖直接存取 ──────────────────────
+
+@files_bp.route('/<secure_code>/download', methods=['GET'])
+@login_required
+def download_blocked(secure_code):
+    """舊的直接下載路徑已停用，必須透過 download-token 取得一次性連結。"""
+    logger.warning(
+        "[SEC] 直接下載嘗試被阻擋: file_sc=%s user=%s ip=%s",
+        secure_code,
+        current_user.username if current_user else 'unknown',
+        request.remote_addr,
+    )
+    return _warn_page(403)
+
+
+# ── Metadata ─────────────────────────────────────────────────
 
 @files_bp.route('/<secure_code>/meta', methods=['GET'])
 @login_required
@@ -191,6 +386,8 @@ def meta(secure_code):
         'data': record.to_dict()
     })
 
+
+# ── Delete ───────────────────────────────────────────────────
 
 @files_bp.route('/<secure_code>', methods=['DELETE'])
 @csrf.exempt
@@ -225,6 +422,8 @@ def delete(secure_code):
         return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
 
 
+# ── Revert deletes ───────────────────────────────────────────
+
 @files_bp.route('/revert-deletes', methods=['POST'])
 @csrf.exempt
 @login_required
@@ -251,6 +450,8 @@ def revert_deletes():
         logger.exception("回復刪除失敗")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+# ── List ─────────────────────────────────────────────────────
 
 @files_bp.route('/list', methods=['GET'])
 @login_required

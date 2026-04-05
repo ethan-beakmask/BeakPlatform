@@ -225,11 +225,12 @@ class BkFileAttachment {
             tdActions.style.textAlign = 'center';
 
             if (!isPending) {
-                const dlBtn = document.createElement('a');
-                dlBtn.href = '/api/files/' + f.secure_code + '/download';
+                const dlBtn = document.createElement('button');
+                dlBtn.type = 'button';
                 dlBtn.className = 'bkfa-action-btn';
                 dlBtn.title = '下載';
                 dlBtn.innerHTML = '<i class="ri-download-2-line"></i>';
+                dlBtn.addEventListener('click', () => this._downloadFile(f.secure_code));
                 tdActions.appendChild(dlBtn);
             }
 
@@ -375,6 +376,24 @@ class BkFileAttachment {
         }
         if (lastError) {
             this._showModal('上傳失敗', this._escHtml(lastError));
+        }
+    }
+
+    // ===== Download (one-time token) =====
+
+    async _downloadFile(fileSc) {
+        try {
+            const res = await fetch('/api/files/' + fileSc + '/download-token', {
+                method: 'POST',
+            });
+            const data = await res.json();
+            if (data.success && data.url) {
+                window.location.href = data.url;
+            } else {
+                this._showModal('下載失敗', this._escHtml(data.message || '無法取得下載連結'));
+            }
+        } catch (e) {
+            this._showModal('下載失敗', this._escHtml(e.message || '網路錯誤'));
         }
     }
 

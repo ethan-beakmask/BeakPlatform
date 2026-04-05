@@ -4,6 +4,7 @@ FileService - 統一檔案管理服務
 所有檔案上傳/下載都經過這裡，依 storage_type 決定走 local 或 encrypted。
 加密檔案使用內建 AES-256-GCM 加密，不依賴外部服務。
 """
+import hashlib
 import logging
 import os
 import uuid
@@ -169,6 +170,9 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
     file_data = file.read()
     file.seek(0)
 
+    # 明文 SHA-256（加密前計算，用於完整性驗證）
+    file_hash = hashlib.sha256(file_data).hexdigest()
+
     # 加密相關欄位（僅 encrypted 類型使用）
     wrapped_dek = None
     dek_nonce = None
@@ -201,6 +205,7 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
         uploader_sc=uploader_sc,
         uploader_node_id=uploader_node_id,
         status='active',
+        file_hash=file_hash,
         wrapped_dek=wrapped_dek,
         dek_nonce=dek_nonce,
         file_nonce=file_nonce,
@@ -284,6 +289,11 @@ def serve_file(record: PlatformFile) -> tuple:
         raise RuntimeError(f'不支援的 storage_type: {record.storage_type}')
 
 
+class FileTamperError(Exception):
+    """檔案完整性異常（大小不符或 hash 不符）"""
+    pass
+
+
 def _read_encrypted(record: PlatformFile) -> tuple:
     """讀取並解密加密檔案"""
     from ..crypto.key_manager import KeyManager
@@ -292,6 +302,15 @@ def _read_encrypted(record: PlatformFile) -> tuple:
     full_path = _resolve_encrypted_path(record.storage_ref)
     if not os.path.exists(full_path):
         raise FileNotFoundError(f'加密檔案不存在: {record.secure_code}')
+
+    # 前置檢查：磁碟大小 vs DB 記錄
+    # AES-256-GCM 密文 = 明文 + 16 bytes (auth tag)，不應超過明文的 2 倍
+    disk_size = os.path.getsize(full_path)
+    if record.file_size > 0 and disk_size > record.file_size * 2:
+        raise FileTamperError(
+            f'檔案大小異常: file_sc={record.secure_code} '
+            f'db_size={record.file_size} disk_size={disk_size}'
+        )
 
     with open(full_path, 'rb') as f:
         ciphertext = f.read()
@@ -309,6 +328,43 @@ def _read_encrypted(record: PlatformFile) -> tuple:
     )
 
     return plaintext, record.mime_type, record.original_name
+
+
+def preflight_check(record: PlatformFile) -> Optional[str]:
+    """
+    下載前置檢查（不讀檔、不解密，微秒級）。
+
+    Returns:
+        None = 通過
+        str  = 錯誤訊息（檔案異常）
+    """
+    if record.storage_type == 'encrypted':
+        path = _resolve_encrypted_path(record.storage_ref)
+    else:
+        path = _resolve_local_path(record.storage_ref)
+
+    if not os.path.exists(path):
+        return 'file_missing'
+
+    disk_size = os.path.getsize(path)
+    # AES-256-GCM: 密文 = 明文 + 16 bytes tag，不應超過 2 倍
+    if record.file_size > 0 and disk_size > record.file_size * 2:
+        return f'size_mismatch:db={record.file_size},disk={disk_size}'
+
+    return None
+
+
+def verify_file_integrity(record: PlatformFile, plaintext: bytes) -> bool:
+    """
+    驗證檔案完整性：比對明文 SHA-256 與 DB 記錄的 file_hash。
+
+    Returns:
+        True = 驗證通過（或無 hash 可比對）
+        False = hash 不符，檔案可能被竄改
+    """
+    if not record.file_hash:
+        return True  # 舊檔案尚無 hash，跳過驗證
+    return hashlib.sha256(plaintext).hexdigest() == record.file_hash
 
 
 def delete_file(record: PlatformFile, hard_delete_local: bool = True):

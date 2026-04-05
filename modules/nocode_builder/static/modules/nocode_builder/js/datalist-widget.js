@@ -484,10 +484,16 @@ class DataListWidget {
                 const td = document.createElement('td');
                 if (col.widget_type === 'file' && row[col.column]) {
                     const link = document.createElement('a');
-                    link.href = '/api/files/' + row[col.column] + '/download';
+                    link.href = '#';
                     link.textContent = '附件';
                     link.title = '下載附件';
                     link.style.fontSize = '12px';
+                    const _fileSc = row[col.column];
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._tokenDownload(_fileSc);
+                    });
                     td.appendChild(link);
                 } else {
                     td.textContent = this._formatCell(row[col.column], col.column);
@@ -553,6 +559,22 @@ class DataListWidget {
         pager.querySelector('.dlw-next')?.addEventListener('click', () => {
             if (this.pagination.page < this.pagination.pages) this._loadRows(this.pagination.page + 1);
         });
+    }
+
+    async _tokenDownload(fileSc) {
+        try {
+            const res = await fetch('/api/files/' + fileSc + '/download-token', {
+                method: 'POST',
+            });
+            const data = await res.json();
+            if (data.success && data.url) {
+                window.location.href = data.url;
+            } else {
+                alert(data.message || '無法取得下載連結');
+            }
+        } catch (e) {
+            alert(e.message || '下載失敗');
+        }
     }
 
     _formatCell(value, columnName) {
@@ -897,10 +919,15 @@ class DataListWidget {
                     // 唯讀：只顯示下載連結
                     if (value) {
                         const link = document.createElement('a');
-                        link.href = '/api/files/' + value + '/download';
+                        link.href = '#';
                         link.className = 'dlw-btn sm';
                         link.textContent = '下載附件';
                         link.style.textDecoration = 'none';
+                        const _dlSc = value;
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this._tokenDownload(_dlSc);
+                        });
                         fileWrap.appendChild(link);
                     } else {
                         fileWrap.textContent = '無附件';
@@ -924,10 +951,15 @@ class DataListWidget {
                     existingWrap.className = 'dlw-file-existing';
                     if (value) {
                         const dlLink = document.createElement('a');
-                        dlLink.href = '/api/files/' + value + '/download';
+                        dlLink.href = '#';
                         dlLink.textContent = '下載現有附件';
                         dlLink.style.fontSize = '12px';
                         dlLink.style.marginRight = '8px';
+                        const _dlSc2 = value;
+                        dlLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this._tokenDownload(_dlSc2);
+                        });
                         existingWrap.appendChild(dlLink);
 
                         const clearBtn = document.createElement('button');
