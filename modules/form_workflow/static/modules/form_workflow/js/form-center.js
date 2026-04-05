@@ -699,7 +699,8 @@ function formCenterManager() {
         // 上傳暫存附件到 FileService
         async _uploadPendingFiles(formInstanceSc) {
             if (!this.pendingFiles.length) return;
-            let ok = 0, fail = 0;
+            let ok = 0;
+            const errors = [];
             for (const file of this.pendingFiles) {
                 try {
                     const fd = new FormData();
@@ -708,11 +709,17 @@ function formCenterManager() {
                     fd.append('context_id', formInstanceSc);
                     const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
                     const data = await res.json();
-                    if (data.success) ok++; else fail++;
-                } catch (e) { fail++; }
+                    if (data.success) {
+                        ok++;
+                    } else {
+                        errors.push(file.name + ': ' + (data.message || '上傳失敗'));
+                    }
+                } catch (e) {
+                    errors.push(file.name + ': 上傳失敗');
+                }
             }
-            if (fail > 0) {
-                this.showToast(fail + ' 個附件上傳失敗', 'error');
+            if (errors.length > 0) {
+                this.showToast(errors.join('\n'), 'error');
             }
         },
 

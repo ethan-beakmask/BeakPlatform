@@ -426,7 +426,7 @@ window.__USER_LOCALE = '{{ user_locale }}';
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;" x-show="pendingFiles.length < 10">
                             <label style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #ced4da; border-radius: 3px; cursor: pointer; color: #495057;">
                                 <i class="fas fa-plus" style="margin-right: 4px;"></i>選擇檔案
-                                <input type="file" multiple style="display:none;" @change="addPendingFiles($event)">
+                                <input type="file" multiple style="display:none;" @change="addPendingFiles($event)" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.csv,.txt,.rtf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.zip,.7z,.rar">
                             </label>
                             <span style="font-size: 11px; color: #6b7280;">支援 PDF、Office、圖片、壓縮檔，單檔 50MB</span>
                         </div>
