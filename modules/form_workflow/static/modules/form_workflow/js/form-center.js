@@ -69,7 +69,7 @@ function formCenterManager() {
         subjectError: '',
         loadingFormSchema: false,
         submitting: false,
-        pendingFiles: [],       // 待上傳附件（submit 後才上傳）
+        _fillAttachment: null,  // 填表附件（deferred BkFileAttachment）
 
         // 簽核
         showApprovalModal: false,
@@ -625,11 +625,32 @@ function formCenterManager() {
 
                     await this.$nextTick();
                     this.renderFillForm();
+                    this._initFillAttachment();
                 }
             } catch (e) {
                 console.error('載入表單結構失敗:', e);
             } finally {
                 this.loadingFormSchema = false;
+            }
+        },
+
+        _initFillAttachment() {
+            if (this._fillAttachment) {
+                this._fillAttachment.destroy();
+                this._fillAttachment = null;
+            }
+            const attEl = document.getElementById('fill-form-attachments');
+            if (attEl && typeof BkFileAttachment !== 'undefined') {
+                this._fillAttachment = new BkFileAttachment(attEl, {
+                    contextType: 'form_attachment',
+                    deferred: true,
+                    allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx',
+                                  'odt','ods','csv','txt','rtf',
+                                  'png','jpg','jpeg','gif','webp','bmp',
+                                  'zip','7z','rar'],
+                    maxFileSize: 50 * 1024 * 1024,
+                });
+                this._fillAttachment.init();
             }
         },
 
@@ -676,55 +697,9 @@ function formCenterManager() {
             this.formSchema = null;
             this.formSubject = '';
             this.subjectError = '';
-            this.pendingFiles = [];
-        },
-
-        // 附件：選取檔案（暫存在 pendingFiles，submit 後才上傳）
-        addPendingFiles(event) {
-            const files = event.target.files;
-            if (!files) return;
-            for (let i = 0; i < files.length; i++) {
-                if (this.pendingFiles.length >= 10) break;
-                this.pendingFiles.push(files[i]);
-            }
-            event.target.value = '';
-        },
-
-        removePendingFile(index) {
-            this.pendingFiles.splice(index, 1);
-        },
-
-        formatFileSize(bytes) {
-            if (!bytes) return '0 B';
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-        },
-
-        // 上傳暫存附件到 FileService
-        async _uploadPendingFiles(formInstanceSc) {
-            if (!this.pendingFiles.length) return;
-            let ok = 0;
-            const errors = [];
-            for (const file of this.pendingFiles) {
-                try {
-                    const fd = new FormData();
-                    fd.append('file', file);
-                    fd.append('context_type', 'form_attachment');
-                    fd.append('context_id', formInstanceSc);
-                    const res = await fetch('/api/files/upload', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.success) {
-                        ok++;
-                    } else {
-                        errors.push(file.name + ': ' + (data.message || '上傳失敗'));
-                    }
-                } catch (e) {
-                    errors.push(file.name + ': 上傳失敗');
-                }
-            }
-            if (errors.length > 0) {
-                this.showToast(errors.join('\n'), 'error');
+            if (this._fillAttachment) {
+                this._fillAttachment.destroy();
+                this._fillAttachment = null;
             }
         },
 
@@ -765,10 +740,13 @@ function formCenterManager() {
                 const data = await res.json();
 
                 if (data.success) {
-                    // 表單建立成功後上傳附件
+                    // 表單建立成功後上傳暫存附件
                     const fiSc = data.data?.form_instance_secure_code;
-                    if (fiSc && this.pendingFiles.length > 0) {
-                        await this._uploadPendingFiles(fiSc);
+                    if (fiSc && this._fillAttachment && this._fillAttachment.getPendingCount() > 0) {
+                        const result = await this._fillAttachment.flush(fiSc);
+                        if (result.errors.length > 0) {
+                            this.showToast(result.errors.join('\n'), 'error');
+                        }
                     }
                     this.showToast(data.message || '表單已送出');
                     this.closeFillModal();
@@ -954,14 +932,14 @@ function formCenterManager() {
                 container.innerHTML = '<p style="color: #dc2626; text-align: center;">表單載入失敗</p>';
             }
 
-            // 初始化附件（簽核者可上傳）
+            // 初始化附件（deferred 模式，簽核成功後才上傳）
             const fiSc = this.currentApproval?.form_instance_secure_code;
             const attEl = document.getElementById('approval-form-attachments');
             if (attEl && fiSc && typeof BkFileAttachment !== 'undefined') {
                 this._approvalAttachment = new BkFileAttachment(attEl, {
                     contextType: 'form_attachment',
                     contextId: fiSc,
-                    readonly: false,
+                    deferred: true,
                     allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx',
                                   'odt','ods','csv','txt','rtf',
                                   'png','jpg','jpeg','gif','webp','bmp',
@@ -975,15 +953,7 @@ function formCenterManager() {
         },
 
         closeApprovalModal() {
-            // 回復偽刪除的附件（best-effort）
-            const fiSc = this.currentApproval?.form_instance_secure_code;
-            if (fiSc) {
-                fetch('/api/files/revert-deletes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ context_id: fiSc }),
-                }).catch(() => {});
-            }
+            // deferred 模式不需 revert-deletes，暫存檔案未上傳直接丟棄
 
             // 釋放鎖定（best-effort）
             if (this.currentApproval?.queue_secure_code) {
@@ -1117,6 +1087,16 @@ function formCenterManager() {
 
                 if (data.success) {
                     this._clearApprovalCountdown();  // 成功送出，停止倒數
+
+                    // 簽核成功後上傳暫存附件
+                    const approvalFiSc = this.currentApproval?.form_instance_secure_code;
+                    if (approvalFiSc && this._approvalAttachment && this._approvalAttachment.getPendingCount() > 0) {
+                        const flushResult = await this._approvalAttachment.flush(approvalFiSc);
+                        if (flushResult.errors.length > 0) {
+                            this.showToast(flushResult.errors.join('\n'), 'error');
+                        }
+                    }
+
                     this.showToast('簽核完成');
                     // 不走 closeApprovalModal（避免重複 DELETE lock），直接清理 UI
                     if (this._beforeUnloadHandler) {
@@ -1127,6 +1107,10 @@ function formCenterManager() {
                         this.approvalFormInstance.destroy();
                         this.approvalFormInstance = null;
                     }
+                    if (this._approvalAttachment) {
+                        this._approvalAttachment.destroy();
+                        this._approvalAttachment = null;
+                    }
                     this.cleanupFormBackground('approval-form-container');
                     const container = document.getElementById('approval-form-container');
                     if (container) container.innerHTML = '';
@@ -1135,7 +1119,7 @@ function formCenterManager() {
                     this.selectedEdges = [];
                     this.approvalComment = '';
                     this.selectedOptionValue = null;
-            this.selectedOptionId = null;
+                    this.selectedOptionId = null;
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {

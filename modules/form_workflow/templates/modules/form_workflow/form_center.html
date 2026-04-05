@@ -422,27 +422,7 @@ window.__USER_SC = '{{ user_secure_code }}';
                         <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">
                             <i class="fas fa-paperclip" style="margin-right: 4px;"></i> 附件
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;" x-show="pendingFiles.length < 10">
-                            <label style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #ced4da; border-radius: 3px; cursor: pointer; color: #495057;">
-                                <i class="fas fa-plus" style="margin-right: 4px;"></i>選擇檔案
-                                <input type="file" multiple style="display:none;" @change="addPendingFiles($event)" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.csv,.txt,.rtf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.zip,.7z,.rar">
-                            </label>
-                            <span style="font-size: 11px; color: #6b7280;">支援 PDF、Office、圖片、壓縮檔，單檔 50MB</span>
-                        </div>
-                        <template x-if="pendingFiles.length > 0">
-                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
-                                <template x-for="(f, idx) in pendingFiles" :key="idx">
-                                    <tr style="border-bottom: 1px solid #f3f4f6;">
-                                        <td style="padding:4px 8px;" x-text="f.name"></td>
-                                        <td style="padding:4px 8px; text-align:right; width:70px; color:#6b7280;" x-text="formatFileSize(f.size)"></td>
-                                        <td style="padding:4px 0; width:30px; text-align:center;">
-                                            <button type="button" @click="removePendingFile(idx)" style="border:none; background:transparent; color:#dc2626; cursor:pointer; font-size:14px;" title="移除">&times;</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </table>
-                        </template>
-                        <div x-show="pendingFiles.length === 0" style="font-size: 12px; color: #9ca3af;">尚未選擇附件</div>
+                        <div id="fill-form-attachments"></div>
                     </div>
                 </div>
                 <div x-show="!loadingFormSchema && !formSchema" class="fc-empty">

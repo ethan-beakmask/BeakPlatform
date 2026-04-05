@@ -38,6 +38,7 @@ class BkFileAttachment {
             maxFileSize: 0,
             currentUserSc: '',
             nodeId: '',
+            deferred: false,        // true = 暫存模式，flush() 才上傳
             onUpload: null,
             onDelete: null,
         }, config);
@@ -49,7 +50,8 @@ class BkFileAttachment {
             );
         }
 
-        this.files = [];
+        this.files = [];            // 伺服器已存在的檔案
+        this._pendingFiles = [];    // deferred 模式暫存的 File 物件
         this.uploading = false;
         this._els = {};
         this._modalId = 'bkfa-modal-' + Math.random().toString(36).slice(2, 8);
@@ -96,10 +98,69 @@ class BkFileAttachment {
         this._renderList();
     }
 
+    /** deferred 模式：取得暫存檔案數量 */
+    getPendingCount() {
+        return this._pendingFiles.length;
+    }
+
+    /** deferred 模式：取得暫存檔案清單（唯讀複本） */
+    getPendingFiles() {
+        return this._pendingFiles.slice();
+    }
+
+    /**
+     * deferred 模式：批次上傳所有暫存檔案
+     * @param {string} contextId - 上傳目標 contextId（可覆蓋建構時的設定）
+     * @returns {Promise<{success: number, errors: string[]}>}
+     */
+    async flush(contextId) {
+        const cid = contextId || this.config.contextId;
+        if (!cid) {
+            return { success: 0, errors: ['flush: 缺少 contextId'] };
+        }
+        if (this._pendingFiles.length === 0) {
+            return { success: 0, errors: [] };
+        }
+
+        let successCount = 0;
+        const errors = [];
+
+        for (const file of this._pendingFiles) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('context_type', this.config.contextType);
+                formData.append('context_id', cid);
+                if (this.config.nodeId) {
+                    formData.append('node_id', this.config.nodeId);
+                }
+
+                const res = await fetch('/api/files/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    successCount++;
+                } else {
+                    errors.push(file.name + ': ' + (data.message || '上傳失敗'));
+                }
+            } catch (e) {
+                errors.push(file.name + ': ' + (e.message || '上傳失敗'));
+            }
+        }
+
+        this._pendingFiles = [];
+        this._renderList();
+        return { success: successCount, errors };
+    }
+
     destroy() {
         if (this.container) {
             this.container.innerHTML = '';
         }
+        this._pendingFiles = [];
         this._els = {};
         // 移除 modal
         const modal = document.getElementById(this._modalId);
@@ -219,7 +280,8 @@ class BkFileAttachment {
 
     _updateUploadVisibility() {
         if (!this._els.uploadArea) return;
-        const hide = this.config.readonly || this.files.length >= this.config.maxFiles;
+        const totalCount = this.files.length + this._pendingFiles.length;
+        const hide = this.config.readonly || totalCount >= this.config.maxFiles;
         this._els.uploadArea.style.display = hide ? 'none' : '';
     }
 
@@ -228,8 +290,18 @@ class BkFileAttachment {
         if (!list) return;
         list.innerHTML = '';
 
-        if (this.files.length === 0) {
-            // 不顯示任何空白提示
+        // 合併：伺服器檔案 + deferred 暫存檔案
+        const allFiles = this.files.slice();
+        const pendingEntries = this._pendingFiles.map((file, idx) => ({
+            _pending: true,
+            _pendingIdx: idx,
+            original_name: file.name,
+            file_size: file.size,
+            file_ext: file.name.includes('.') ? file.name.split('.').pop() : '',
+        }));
+        const combined = allFiles.concat(pendingEntries);
+
+        if (combined.length === 0) {
             this._updateUploadVisibility();
             return;
         }
@@ -248,17 +320,18 @@ class BkFileAttachment {
 
         // tbody
         const tbody = document.createElement('tbody');
-        for (const f of this.files) {
+        for (const f of combined) {
             const tr = document.createElement('tr');
 
-            const isPending = f.status === 'pending_delete';
+            const isPendingDelete = f.status === 'pending_delete';
+            const isPendingUpload = f._pending === true;
 
             // 名稱
             const tdName = document.createElement('td');
             tdName.className = 'bkfa-filename';
             const icon = this._fileIcon(f.file_ext);
             tdName.innerHTML = icon + ' ' + this._escHtml(f.original_name);
-            if (isPending) {
+            if (isPendingDelete) {
                 tdName.style.textDecoration = 'line-through';
                 tdName.style.opacity = '0.5';
             }
@@ -268,7 +341,7 @@ class BkFileAttachment {
             const tdSize = document.createElement('td');
             tdSize.style.textAlign = 'right';
             tdSize.textContent = this._formatSize(f.file_size);
-            if (isPending) {
+            if (isPendingDelete) {
                 tdSize.style.textDecoration = 'line-through';
                 tdSize.style.opacity = '0.5';
             }
@@ -278,7 +351,28 @@ class BkFileAttachment {
             const tdActions = document.createElement('td');
             tdActions.style.textAlign = 'center';
 
-            if (!isPending) {
+            if (isPendingUpload) {
+                // 暫存檔案：顯示「待上傳」標籤 + 移除按鈕
+                const tag = document.createElement('span');
+                tag.textContent = '待上傳';
+                tag.style.cssText = 'font-size:10px;color:#3b82f6;margin-right:4px;';
+                tdActions.appendChild(tag);
+
+                if (!this.config.readonly) {
+                    const rmBtn = document.createElement('button');
+                    rmBtn.type = 'button';
+                    rmBtn.className = 'bkfa-action-btn bkfa-del-btn';
+                    rmBtn.title = '移除';
+                    rmBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+                    rmBtn.addEventListener('click', () => this._removePending(f._pendingIdx));
+                    tdActions.appendChild(rmBtn);
+                }
+            } else if (isPendingDelete) {
+                const tag = document.createElement('span');
+                tag.textContent = '待確認刪除';
+                tag.style.cssText = 'font-size:10px;color:#9ca3af;';
+                tdActions.appendChild(tag);
+            } else {
                 const dlBtn = document.createElement('button');
                 dlBtn.type = 'button';
                 dlBtn.className = 'bkfa-action-btn';
@@ -286,28 +380,20 @@ class BkFileAttachment {
                 dlBtn.innerHTML = '<i class="ri-download-2-line"></i>';
                 dlBtn.addEventListener('click', () => this._downloadFile(f.secure_code));
                 tdActions.appendChild(dlBtn);
-            }
 
-            if (!this.config.readonly && !isPending) {
-                // 只有上傳者本人可刪除
-                const canDelete = !this.config.currentUserSc || !f.uploader_sc
-                    || f.uploader_sc === this.config.currentUserSc;
-                if (canDelete) {
-                    const delBtn = document.createElement('button');
-                    delBtn.type = 'button';
-                    delBtn.className = 'bkfa-action-btn bkfa-del-btn';
-                    delBtn.title = '刪除';
-                    delBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
-                    delBtn.addEventListener('click', () => this._deleteFile(f.secure_code));
-                    tdActions.appendChild(delBtn);
+                if (!this.config.readonly) {
+                    const canDelete = !this.config.currentUserSc || !f.uploader_sc
+                        || f.uploader_sc === this.config.currentUserSc;
+                    if (canDelete) {
+                        const delBtn = document.createElement('button');
+                        delBtn.type = 'button';
+                        delBtn.className = 'bkfa-action-btn bkfa-del-btn';
+                        delBtn.title = '刪除';
+                        delBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+                        delBtn.addEventListener('click', () => this._deleteFile(f.secure_code));
+                        tdActions.appendChild(delBtn);
+                    }
                 }
-            }
-
-            if (isPending) {
-                const tag = document.createElement('span');
-                tag.textContent = '待確認刪除';
-                tag.style.cssText = 'font-size:10px;color:#9ca3af;';
-                tdActions.appendChild(tag);
             }
 
             tr.appendChild(tdActions);
@@ -317,6 +403,12 @@ class BkFileAttachment {
         list.appendChild(table);
 
         this._updateUploadVisibility();
+    }
+
+    /** 移除 deferred 暫存檔案 */
+    _removePending(idx) {
+        this._pendingFiles.splice(idx, 1);
+        this._renderList();
     }
 
     // ===== Validation =====
@@ -352,16 +444,17 @@ class BkFileAttachment {
         if (!fileList || fileList.length === 0) return;
         if (this.uploading) return;
 
-        const remaining = this.config.maxFiles - this.files.length;
+        const totalCount = this.files.length + this._pendingFiles.length;
+        const remaining = this.config.maxFiles - totalCount;
         if (remaining <= 0) {
             this._showModal('上傳限制', '已達檔案數量上限 (' + this.config.maxFiles + ' 個)');
             return;
         }
 
-        const toUpload = Array.from(fileList).slice(0, remaining);
+        const toProcess = Array.from(fileList).slice(0, remaining);
 
         // 前端驗證：副檔名 + 檔案大小
-        const valErrors = this._validateFiles(toUpload);
+        const valErrors = this._validateFiles(toProcess);
         if (valErrors.length > 0) {
             const lines = valErrors.map(
                 e => '<li><strong>' + this._escHtml(e.name) + '</strong>: ' + this._escHtml(e.reason) + '</li>'
@@ -382,6 +475,18 @@ class BkFileAttachment {
             return;
         }
 
+        // === deferred 模式：暫存到記憶體 ===
+        if (this.config.deferred) {
+            for (const file of toProcess) {
+                this._pendingFiles.push(file);
+            }
+            this._els.fileInput.value = '';
+            this._renderList();
+            this._showStatus(toProcess.length + ' 個檔案已加入', false);
+            return;
+        }
+
+        // === 即時上傳模式 ===
         this.uploading = true;
         this._els.uploadBtn.disabled = true;
         this._showStatus('上傳中...', false);
@@ -389,7 +494,7 @@ class BkFileAttachment {
         let successCount = 0;
         let lastError = '';
 
-        for (const file of toUpload) {
+        for (const file of toProcess) {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
