@@ -2,10 +2,11 @@
 # 主機設定首頁、資料維護、硬刪除、清除已刪除
 page:
   - /hostconfig/
+  - /hostconfig/server-settings
   - /hostconfig/data-maintenance
   - /hostconfig/hard-delete/
   - /hostconfig/purge-deleted/
-description: 系統主機設定（資料維護、硬刪除、清除軟刪除資料）
+description: 系統主機設定（伺服器設定、檔案儲存、資料維護）
 
 files:
   route:    backend/app/web/hostconfig.py

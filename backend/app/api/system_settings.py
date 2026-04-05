@@ -50,6 +50,10 @@ Telegram 設定 (系統級):
 稽核設定:
 - GET    /api/system-settings/audit                   取得稽核設定
 - PUT    /api/system-settings/audit                   更新稽核設定
+
+檔案儲存:
+- GET    /api/system-settings/file-storage            取得檔案儲存設定
+- PUT    /api/system-settings/file-storage            更新檔案儲存設定
 """
 import os
 import base64
@@ -1971,6 +1975,80 @@ def update_audit_settings():
     return jsonify({
         'success': True,
         'message': f'稽核設定已更新: {", ".join(updated)}'
+    })
+
+
+# =============================================================================
+# 檔案儲存設定
+# =============================================================================
+
+DEFAULT_DIR_FILE_LIMIT = 100000
+
+
+@api_system_settings.route('/file-storage', methods=['GET'])
+@system_admin_required
+def get_file_storage_settings():
+    """
+    取得檔案��存設定
+
+    Returns:
+        encrypted_storage_dir: 加密檔案儲存路徑（唯讀，來自環境變數）
+        dir_file_limit: 單一目錄檔案數上限
+    """
+    from ..services.file_service import ENCRYPTED_STORAGE_DIR
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'encrypted_storage_dir': ENCRYPTED_STORAGE_DIR,
+            'dir_file_limit': int(SystemSetting.get(
+                'encrypted_dir_file_limit', DEFAULT_DIR_FILE_LIMIT
+            )),
+        }
+    })
+
+
+@api_system_settings.route('/file-storage', methods=['PUT'])
+@system_admin_required
+def update_file_storage_settings():
+    """
+    更新檔案儲存設定
+
+    Body: {
+        "dir_file_limit": 100000
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '缺少 request body'}), 400
+
+    updated = []
+
+    if 'dir_file_limit' in data:
+        limit = data['dir_file_limit']
+        if not isinstance(limit, int) or limit < 1000:
+            return jsonify({
+                'success': False,
+                'error': '目錄檔案上限至少 1,000'
+            }), 400
+        if limit > 1000000:
+            return jsonify({
+                'success': False,
+                'error': '���錄檔案上限不可超過 1,000,000'
+            }), 400
+        SystemSetting.set(
+            key='encrypted_dir_file_limit',
+            value=limit,
+            value_type='integer',
+            category='file_storage',
+            description='加密儲存單一目錄檔案數上限',
+            updated_by=current_user.email
+        )
+        updated.append(f'dir_file_limit={limit}')
+
+    return jsonify({
+        'success': True,
+        'message': f'檔案儲存設定已更新: {", ".join(updated)}'
     })
 
 

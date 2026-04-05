@@ -74,11 +74,50 @@ def _get_upload_dir():
     return UPLOAD_BASE_DIR
 
 
+def _get_dir_file_limit() -> int:
+    """取得單一目錄檔案數上限（runtime 從 DB 讀取）"""
+    from ..models.system_setting import SystemSetting
+    return int(SystemSetting.get('encrypted_dir_file_limit', 100000))
+
+
 def _get_encrypted_dir(org_sc: str) -> str:
-    """取得加密檔案儲存的絕對路徑（按企業隔離）"""
-    org_dir = os.path.join(ENCRYPTED_STORAGE_DIR, org_sc)
-    os.makedirs(org_dir, exist_ok=True)
-    return org_dir
+    """
+    取得加密檔案儲存的目標目錄（按企業 + 月份隔離）。
+
+    目錄結構: {base}/{org_sc}/{YYYYMM}/
+    當月份目錄檔案數達上限時: {base}/{org_sc}/{YYYYMM}_2/, _3/ ...
+    """
+    year_month = datetime.utcnow().strftime('%Y%m')
+    limit = _get_dir_file_limit()
+
+    # 嘗試當月基本目錄
+    candidate = os.path.join(ENCRYPTED_STORAGE_DIR, org_sc, year_month)
+    os.makedirs(candidate, exist_ok=True)
+
+    # 計算檔案數（僅數檔案，不含子目錄）
+    try:
+        file_count = sum(1 for e in os.scandir(candidate) if e.is_file())
+    except OSError:
+        file_count = 0
+
+    if file_count < limit:
+        return candidate
+
+    # 超過上限，嘗試 _2, _3 ...
+    suffix = 2
+    while True:
+        candidate = os.path.join(
+            ENCRYPTED_STORAGE_DIR, org_sc, f'{year_month}_{suffix}'
+        )
+        os.makedirs(candidate, exist_ok=True)
+        try:
+            file_count = sum(1 for e in os.scandir(candidate) if e.is_file())
+        except OSError:
+            file_count = 0
+
+        if file_count < limit:
+            return candidate
+        suffix += 1
 
 
 def _resolve_local_path(storage_ref: str) -> str:
@@ -235,7 +274,8 @@ def _store_encrypted(org_sc: str, file_data: bytes) -> tuple[str, dict]:
 
     Returns:
         (storage_ref, encryption_metadata)
-        storage_ref: 相對路徑 "{org_sc}/{uuid}.enc"
+        storage_ref: 相對路徑 "{org_sc}/{YYYYMM}/{uuid}.enc"
+                     （舊格式 "{org_sc}/{uuid}.enc" 仍由 _resolve_encrypted_path 相容）
     """
     import base64
     from ..crypto.key_manager import KeyManager
@@ -243,7 +283,7 @@ def _store_encrypted(org_sc: str, file_data: bytes) -> tuple[str, dict]:
     # 加密
     result = KeyManager.encrypt_file(org_sc, file_data)
 
-    # 寫入密文
+    # 寫入密文（目標目錄含月份子目錄）
     enc_dir = _get_encrypted_dir(org_sc)
     filename = f'{uuid.uuid4().hex}.enc'
     full_path = os.path.join(enc_dir, filename)
@@ -251,7 +291,8 @@ def _store_encrypted(org_sc: str, file_data: bytes) -> tuple[str, dict]:
     with open(full_path, 'wb') as f:
         f.write(result['ciphertext'])
 
-    storage_ref = f'{org_sc}/{filename}'
+    # storage_ref 使用相對於 ENCRYPTED_STORAGE_DIR 的路徑
+    storage_ref = os.path.relpath(full_path, ENCRYPTED_STORAGE_DIR)
 
     enc_meta = {
         'wrapped_dek': result['wrapped_dek'],
