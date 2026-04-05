@@ -644,6 +644,9 @@ function formCenterManager() {
                     this.formInstance = null;
                 }
 
+                // 補丁 file component storage
+                if (window.BkFileProvider) BkFileProvider.patchSchema(this.formSchema);
+
                 // 渲染 Form.io 到子容器
                 this.formInstance = await Formio.createForm(formioTarget, this.formSchema, {
                     readOnly: false
@@ -928,6 +931,9 @@ function formCenterManager() {
                 const formOptions = hasEditable
                     ? { noDefaultSubmitButton: true }
                     : { readOnly: true, viewAsHtml: false };
+
+                // 補丁 file component storage
+                if (window.BkFileProvider) BkFileProvider.patchSchema(schema);
 
                 this.approvalFormInstance = await Formio.createForm(container, schema, formOptions);
 
@@ -2210,10 +2216,13 @@ function formCenterManager() {
             }
         },
 
-        // 共用：渲染唯讀表單
+        // 共用：渲染唯讀表��
         async _renderFormReadOnly(containerId, schema, formData, builderConfig) {
             const container = document.getElementById(containerId);
             if (!container) return null;
+
+            // 補丁 file component storage
+            if (window.BkFileProvider) BkFileProvider.patchSchema(schema);
 
             try {
                 const form = await Formio.createForm(container, schema, {

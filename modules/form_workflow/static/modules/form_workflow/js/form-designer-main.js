@@ -726,7 +726,7 @@ function buildBuilderGroups() {
             title: '進階元件',
             weight: 10,
             components: {
-                file: _themed('file'),
+                file: _themed('file', { ..._bi('file'), schema: { ..._bi('file').schema, storage: 'bkfile' } }),
                 datetime: _themed('datetime'),
                 day: _themed('day'),
                 time: _themed('time', { ..._bi('time'), icon: 'far fa-clock' }),
@@ -1233,6 +1233,9 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
     // 顯示模態框
     previewModal.classList.add('show');
 
+    // 補丁 file component storage
+    if (window.BkFileProvider) BkFileProvider.patchSchema(schema);
+
     // 創建預覽表單
     try {
         previewFormInstance = await Formio.createForm(previewFormContainer, schema, {
@@ -1337,6 +1340,9 @@ document.getElementById('btn-print-preview').addEventListener('click', async () 
     const formContainer = document.createElement('div');
     formContainer.id = 'print-form';
     printPreviewContainer.appendChild(formContainer);
+
+    // 補丁 file component storage
+    if (window.BkFileProvider) BkFileProvider.patchSchema(schema);
 
     // 創建列印預覽表單（唯讀模式）
     try {

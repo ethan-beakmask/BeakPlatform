@@ -514,6 +514,10 @@ window.__USER_SC = '{{ user_secure_code }}';
 <!-- Vendor JS -->
 <script src="/static/vendor/formio.full.min.js"></script>
 <script>Formio.icons = 'fontawesome';</script>
+
+<!-- FormIO 自訂 Storage Provider (上傳走 file_service 加密) -->
+<script src="/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
+
 <script src="/static/vendor/cytoscape.min.js"></script>
 
 <!-- BaekTree (UserPicker 依賴) -->

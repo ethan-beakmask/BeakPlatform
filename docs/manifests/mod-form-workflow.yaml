@@ -26,6 +26,7 @@ files:
     - modules/form_workflow/static/modules/form_workflow/js/workflow-list.js
     - modules/form_workflow/static/modules/form_workflow/js/var-picker.js
     - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
+    - modules/form_workflow/static/modules/form_workflow/js/formio-bkfile-provider.js
   css:
     - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
     - modules/form_workflow/static/modules/form_workflow/css/form-center.css
