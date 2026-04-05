@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS lookup_items (
     value_date DATE,
     value_time TIME WITHOUT TIME ZONE,
     value_datetime TIMESTAMP WITHOUT TIME ZONE,
+    user_secure_code VARCHAR(32),
     parent_code VARCHAR(100),
     sort_order INTEGER NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -133,11 +134,12 @@ def _row_to_item_dict(row) -> dict:
         'value_date': row[10].isoformat() if row[10] else None,
         'value_time': row[11].strftime('%H:%M') if row[11] else None,
         'value_datetime': row[12].isoformat() if row[12] else None,
-        'parent_code': row[13],
-        'sort_order': row[14],
-        'is_active': row[15],
-        'created_at': row[16].isoformat() if row[16] else None,
-        'updated_at': row[17].isoformat() if row[17] else None,
+        'user_secure_code': row[13],
+        'parent_code': row[14],
+        'sort_order': row[15],
+        'is_active': row[16],
+        'created_at': row[17].isoformat() if row[17] else None,
+        'updated_at': row[18].isoformat() if row[18] else None,
     }
 
 
@@ -151,7 +153,7 @@ _CAT_COLS = (
 _ITEM_COLS = (
     'id, secure_code, category_code, code, label, label_i18n, '
     'value, value_str, value_int, value_decimal, value_date, value_time, value_datetime, '
-    'parent_code, sort_order, is_active, created_at, updated_at'
+    'user_secure_code, parent_code, sort_order, is_active, created_at, updated_at'
 )
 
 
@@ -243,6 +245,28 @@ class LookupOrgService:
                     logger.info(
                         f'[LookupOrg] 已為企業 {org_secure_code} '
                         f'lookup_items 補上多型別值欄位'
+                    )
+            conn.commit()
+
+            # 遷移: 為既有 lookup_items 表補上 user_secure_code 欄位
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'lookup_items' AND column_name = 'user_secure_code'
+                """)
+                if not cur.fetchone():
+                    cur.execute(
+                        "ALTER TABLE lookup_items "
+                        "ADD COLUMN user_secure_code VARCHAR(32)"
+                    )
+                    cur.execute(
+                        "CREATE INDEX IF NOT EXISTS ix_org_lkitem_user_sc "
+                        "ON lookup_items (user_secure_code) "
+                        "WHERE user_secure_code IS NOT NULL"
+                    )
+                    logger.info(
+                        f'[LookupOrg] 已為企業 {org_secure_code} '
+                        f'lookup_items 補上 user_secure_code 欄位'
                     )
             conn.commit()
 
@@ -469,6 +493,27 @@ class LookupOrgService:
         return [_row_to_item_dict(r) for r in rows]
 
     @classmethod
+    def get_items_by_user(cls, org_secure_code: str, category_code: str,
+                          user_secure_code: str) -> List[dict]:
+        """取得特定用戶在某類別下的 active items (sync 角色讀)"""
+        if not _has_org_db(org_secure_code):
+            return []
+
+        cls.ensure_tables(org_secure_code)
+        get_org_conn = _get_org_conn()
+        with get_org_conn(org_secure_code, role='sync') as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"SELECT {_ITEM_COLS} FROM lookup_items "
+                    "WHERE category_code = %s AND user_secure_code = %s "
+                    "AND is_active = TRUE AND is_deleted = FALSE "
+                    "ORDER BY sort_order, code",
+                    (category_code, user_secure_code)
+                )
+                rows = cur.fetchall()
+        return [_row_to_item_dict(r) for r in rows]
+
+    @classmethod
     def get_item_by_secure_code(cls, org_secure_code: str, sc: str) -> Optional[dict]:
         """用 secure_code 取單一 item (sync 角色讀)"""
         if not _has_org_db(org_secure_code):
@@ -501,6 +546,7 @@ class LookupOrgService:
         value_date: Optional[str] = None,
         value_time: Optional[str] = None,
         value_datetime: Optional[str] = None,
+        user_secure_code: Optional[str] = None,
         parent_code: Optional[str] = None,
         sort_order: int = 0,
     ) -> dict:
@@ -518,14 +564,15 @@ class LookupOrgService:
                     "(secure_code, category_code, code, label, label_i18n, "
                     " value, value_str, value_int, value_decimal, "
                     " value_date, value_time, value_datetime, "
-                    " parent_code, sort_order, created_at, updated_at) "
+                    " user_secure_code, parent_code, sort_order, "
+                    " created_at, updated_at) "
                     "VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, "
-                    " %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                    " %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                     "RETURNING id",
                     (sc, category_code, code, label, _json_str(label_i18n),
                      _json_str(value), value_str, value_int, value_decimal,
                      value_date, value_time, value_datetime,
-                     parent_code, sort_order, now, now)
+                     user_secure_code, parent_code, sort_order, now, now)
                 )
             conn.commit()
 
@@ -543,6 +590,7 @@ class LookupOrgService:
             'value_date': value_date,
             'value_time': value_time,
             'value_datetime': value_datetime,
+            'user_secure_code': user_secure_code,
             'parent_code': parent_code,
             'sort_order': sort_order,
             'is_active': True,

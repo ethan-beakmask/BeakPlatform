@@ -1,77 +1,94 @@
-{# 罐頭訊息列 (partial, 注入到 formCenterManager x-data 範圍內)
+{# 簽核片語列 (partial, 注入到 formCenterManager x-data 範圍內)
    caller 需設定 data-canned-target 屬性指定追加目標（approvalComment 或 batchApprovalComment）
    使用方式：直接 include，外層用 div[data-canned-target] 包裝
 #}
 
 <div style="margin-bottom: 6px;">
-    <!-- 罐頭訊息按鈕列 -->
-    <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
-        <template x-for="msg in cannedMessages" :key="msg.secure_code">
-            <button type="button"
-                    class="fc-btn fc-btn-sm"
-                    style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 2px 8px; font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-                    @click="applyCannedMessage(msg.text, $event.currentTarget.closest('[data-canned-target]')?.dataset?.cannedTarget)"
-                    :title="msg.text"
-                    x-text="msg.text.length > 20 ? msg.text.substring(0, 20) + '...' : msg.text">
-            </button>
-        </template>
+    <div style="display: flex; align-items: center; gap: 6px;">
+        <!-- 簽核片語下拉選單 -->
+        <select style="flex: 1; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 12px; color: #374151; background: white;"
+                @change="if ($event.target.value) { applyCannedMessage($event.target.value, $event.target.closest('[data-canned-target]')?.dataset?.cannedTarget); $event.target.value = ''; }"
+                :disabled="cannedMessages.length === 0">
+            <option value="">-- 選擇簽核片語 --</option>
+            <template x-for="msg in cannedMessages" :key="msg.secure_code">
+                <option :value="msg.text" x-text="msg.text.length > 40 ? msg.text.substring(0, 40) + '...' : msg.text"></option>
+            </template>
+        </select>
+        <!-- 管理簽核片語按鈕 -->
         <button type="button"
                 class="fc-btn fc-btn-sm"
-                style="background: #f3f4f6; color: #6b7280; padding: 2px 6px; font-size: 11px;"
-                @click="showCannedManager = !showCannedManager"
-                :title="showCannedManager ? '收起管理' : '管理罐頭訊息'">
+                style="background: #f3f4f6; color: #6b7280; padding: 4px 8px; font-size: 11px; white-space: nowrap;"
+                @click="showPhraseManager = true"
+                title="管理簽核片語">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span style="margin-left: 2px;">管理</span>
         </button>
-        <span x-show="cannedMessages.length === 0 && !showCannedManager" style="font-size: 11px; color: #9ca3af;">
-            尚無罐頭訊息，點齒輪新增
-        </span>
     </div>
+</div>
 
-    <!-- 罐頭訊息管理區（展開） -->
-    <div x-show="showCannedManager" x-cloak
-         style="margin-top: 6px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 12px;">
-        <div style="font-weight: 600; margin-bottom: 6px; color: #374151;">管理罐頭訊息</div>
-
-        <!-- 現有訊息列表 -->
-        <div style="max-height: 150px; overflow-y: auto; margin-bottom: 8px;">
-            <template x-for="msg in cannedMessages" :key="msg.secure_code">
-                <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f3f4f6;">
-                    <template x-if="cannedEditId !== msg.secure_code">
-                        <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
-                            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="msg.text" :title="msg.text"></span>
-                            <button type="button" @click="startEditCanned(msg)"
-                                    style="border: none; background: transparent; color: #3b82f6; cursor: pointer; font-size: 12px; padding: 2px 4px; flex-shrink: 0;"
-                                    title="編輯">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            </button>
-                            <button type="button" @click="deleteCannedMessage(msg.secure_code)"
-                                    style="border: none; background: transparent; color: #dc2626; cursor: pointer; font-size: 14px; padding: 2px 4px; flex-shrink: 0;"
-                                    title="刪除">&times;</button>
-                        </div>
-                    </template>
-                    <template x-if="cannedEditId === msg.secure_code">
-                        <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-                            <input type="text" x-model="cannedEditText"
-                                   style="flex: 1; padding: 3px 6px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 12px;"
-                                   @keydown.enter="saveEditCanned(msg.secure_code)"
-                                   @keydown.escape="cancelEditCanned()">
-                            <button type="button" @click="saveEditCanned(msg.secure_code)"
-                                    style="padding: 2px 8px; background: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">存</button>
-                            <button type="button" @click="cancelEditCanned()"
-                                    style="padding: 2px 8px; background: #e5e7eb; color: #374151; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">取消</button>
+<!-- 簽核片語管理模態框 -->
+<div x-show="showPhraseManager" x-cloak class="fc-modal" style="z-index: 1060;">
+    <div class="fc-modal-content" style="width: 500px; max-height: 80vh;">
+        <div class="fc-modal-header">
+            <h3 style="font-size: 16px;">管理簽核片語</h3>
+            <button class="fc-close-btn" @click="showPhraseManager = false">&times;</button>
+        </div>
+        <div class="fc-modal-body" style="padding: 16px;">
+            <!-- 現有片語列表 -->
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">
+                    已儲存片語 (<span x-text="cannedMessages.length"></span>)
+                </div>
+                <div x-show="cannedMessages.length === 0" style="font-size: 12px; color: #9ca3af; padding: 12px; text-align: center; background: #f9fafb; border-radius: 4px;">
+                    尚無簽核片語
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <template x-for="msg in cannedMessages" :key="msg.secure_code">
+                        <div style="display: flex; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid #f3f4f6;">
+                            <template x-if="cannedEditId !== msg.secure_code">
+                                <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+                                    <span style="flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="msg.text" :title="msg.text"></span>
+                                    <button type="button" @click="startEditCanned(msg)"
+                                            style="border: none; background: transparent; color: #3b82f6; cursor: pointer; font-size: 12px; padding: 2px 6px; flex-shrink: 0;"
+                                            title="編輯">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </button>
+                                    <button type="button" @click="deleteCannedMessage(msg.secure_code)"
+                                            style="border: none; background: transparent; color: #dc2626; cursor: pointer; font-size: 14px; padding: 2px 6px; flex-shrink: 0;"
+                                            title="刪除">&times;</button>
+                                </div>
+                            </template>
+                            <template x-if="cannedEditId === msg.secure_code">
+                                <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+                                    <input type="text" x-model="cannedEditText"
+                                           style="flex: 1; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 12px;"
+                                           @keydown.enter="saveEditCanned(msg.secure_code)"
+                                           @keydown.escape="cancelEditCanned()">
+                                    <button type="button" @click="saveEditCanned(msg.secure_code)"
+                                            style="padding: 3px 10px; background: #3b82f6; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">存</button>
+                                    <button type="button" @click="cancelEditCanned()"
+                                            style="padding: 3px 10px; background: #e5e7eb; color: #374151; border: none; border-radius: 3px; cursor: pointer; font-size: 11px;">取消</button>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
-            </template>
-        </div>
+            </div>
 
-        <!-- 新增 -->
-        <div style="display: flex; align-items: center; gap: 4px;">
-            <input type="text" x-model="cannedNewText" placeholder="輸入新的罐頭訊息..."
-                   style="flex: 1; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 12px;"
-                   @keydown.enter="addCannedMessage()">
-            <button type="button" @click="addCannedMessage()"
-                    style="padding: 3px 10px; background: #16a34a; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">新增</button>
+            <!-- 新增片語 -->
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 12px;">
+                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">新增片語</div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <input type="text" x-model="cannedNewText" placeholder="輸入新的簽核片語..."
+                           style="flex: 1; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 3px; font-size: 13px;"
+                           @keydown.enter="addCannedMessage()">
+                    <button type="button" @click="addCannedMessage()"
+                            style="padding: 5px 14px; background: #16a34a; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 13px;">新增</button>
+                </div>
+            </div>
+        </div>
+        <div class="fc-modal-footer">
+            <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="showPhraseManager = false">關閉</button>
         </div>
     </div>
 </div>

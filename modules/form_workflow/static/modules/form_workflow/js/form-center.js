@@ -184,10 +184,10 @@ function formCenterManager() {
         batchApprovalInfo: null,    // 批次簽核的節點資訊（從第一筆取得）
         loadingBatchInfo: false,
 
-        // 罐頭訊息
+        // 簽核片語
         cannedMessages: [],
         loadingCanned: false,
-        showCannedManager: false,
+        showPhraseManager: false,
         cannedNewText: '',
         cannedEditId: null,
         cannedEditText: '',
@@ -1363,7 +1363,7 @@ function formCenterManager() {
         },
 
         // =================================================================
-        // 罐頭訊息
+        // 簽核片語
         // =================================================================
 
         async loadCannedMessages() {
@@ -1371,11 +1371,11 @@ function formCenterManager() {
                 const res = await fetch('/api/form-center/canned-messages');
                 const data = await res.json();
                 if (data.success) this.cannedMessages = data.data || [];
-            } catch (e) { console.error('載入罐頭訊息失敗:', e); }
+            } catch (e) { console.error('載入簽核片語失敗:', e); }
         },
 
         /**
-         * 追加罐頭訊息到指定 model（approvalComment 或 batchApprovalComment）
+         * 追加簽核片語到指定 model（approvalComment 或 batchApprovalComment）
          */
         applyCannedMessage(text, target) {
             const prop = target || 'approvalComment';
@@ -1436,7 +1436,7 @@ function formCenterManager() {
         },
 
         async deleteCannedMessage(sc) {
-            if (!confirm('確定刪除此罐頭訊息？')) return;
+            if (!confirm('確定刪除此簽核片語？')) return;
             try {
                 const res = await fetch(`/api/form-center/canned-messages/${sc}`, { method: 'DELETE' });
                 const data = await res.json();

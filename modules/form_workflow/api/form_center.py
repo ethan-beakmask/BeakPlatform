@@ -2712,28 +2712,68 @@ def save_column_config():
 
 
 # =============================================================================
-# 罐頭訊息 (Canned Messages)
+# 簽核片語 (Approval Phrases)
 # =============================================================================
+
+_PHRASE_CATEGORY_CODE = 'APPROVAL_PHRASES'
+_PHRASE_CATEGORY_NAME = '簽核片語'
+
+
+def _has_org_db(org_sc):
+    """檢查企業是否有專屬 DB"""
+    from modules.form_workflow.models.org_database import FwOrgDatabase
+    return FwOrgDatabase.query.filter_by(
+        org_secure_code=org_sc, is_ready=True, is_deleted=False
+    ).first() is not None
+
+
+def _ensure_phrase_category(org_sc):
+    """確保企業 DB 有 APPROVAL_PHRASES 類別，沒有則自動建立。
+    回傳 True 表示 org DB 可用，False 表示無 org DB。
+    """
+    if not _has_org_db(org_sc):
+        return False
+    from app.services.lookup_org_service import LookupOrgService
+    cat = LookupOrgService.get_category_by_code(org_sc, _PHRASE_CATEGORY_CODE)
+    if not cat:
+        LookupOrgService.create_category(
+            org_sc,
+            code=_PHRASE_CATEGORY_CODE,
+            name=_PHRASE_CATEGORY_NAME,
+            description='個人簽核片語庫',
+        )
+    return True
+
+
+def _phrase_to_dict(item):
+    """將 lookup_item dict 轉為前端需要的簽核片語格式"""
+    return {
+        'secure_code': item['secure_code'],
+        'text': item['label'],
+        'sort_order': item['sort_order'],
+    }
+
 
 @form_center_bp.route('/canned-messages')
 @module_access_required('form_workflow', False)
 def list_canned_messages():
-    """取得當前用戶的罐頭訊息列表"""
-    from ..models import FwApprovalCannedMessage
+    """取得當前用戶的簽核片語列表"""
+    from app.services.lookup_org_service import LookupOrgService
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    messages = FwApprovalCannedMessage.query.filter_by(
-        org_secure_code=org.secure_code,
-        user_secure_code=current_user.secure_code,
-        is_deleted=False
-    ).order_by(FwApprovalCannedMessage.sort_order.asc(), FwApprovalCannedMessage.id.asc()).all()
+    if not _ensure_phrase_category(org.secure_code):
+        return jsonify({'success': True, 'data': []})
+
+    items = LookupOrgService.get_items_by_user(
+        org.secure_code, _PHRASE_CATEGORY_CODE, current_user.secure_code
+    )
 
     return jsonify({
         'success': True,
-        'data': [m.to_dict() for m in messages]
+        'data': [_phrase_to_dict(it) for it in items]
     })
 
 
@@ -2741,8 +2781,8 @@ def list_canned_messages():
 @csrf.exempt
 @module_access_required('form_workflow', False)
 def create_canned_message():
-    """新增罐頭訊息"""
-    from ..models import FwApprovalCannedMessage
+    """新增簽核片語"""
+    from app.services.lookup_org_service import LookupOrgService
 
     org = get_current_org()
     if not org:
@@ -2751,88 +2791,87 @@ def create_canned_message():
     data = request.get_json() or {}
     text = (data.get('text') or '').strip()
     if not text:
-        return jsonify({'success': False, 'error': '訊息內容不可為空'}), 400
-    if len(text) > 500:
-        return jsonify({'success': False, 'error': '訊息內容不可超過 500 字'}), 400
+        return jsonify({'success': False, 'error': '片語內容不可為空'}), 400
+    if len(text) > 200:
+        return jsonify({'success': False, 'error': '片語內容不可超過 200 字'}), 400
+
+    if not _ensure_phrase_category(org.secure_code):
+        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
 
     # 取得目前最大 sort_order
-    max_sort = db.session.query(db.func.coalesce(
-        db.func.max(FwApprovalCannedMessage.sort_order), 0
-    )).filter_by(
-        org_secure_code=org.secure_code,
-        user_secure_code=current_user.secure_code,
-        is_deleted=False
-    ).scalar()
-
-    msg = FwApprovalCannedMessage(
-        secure_code=secrets.token_urlsafe(16),
-        org_secure_code=org.secure_code,
-        user_secure_code=current_user.secure_code,
-        text=text,
-        sort_order=max_sort + 1
+    existing = LookupOrgService.get_items_by_user(
+        org.secure_code, _PHRASE_CATEGORY_CODE, current_user.secure_code
     )
-    db.session.add(msg)
-    db.session.commit()
+    max_sort = max((it['sort_order'] for it in existing), default=0)
 
-    return jsonify({'success': True, 'data': msg.to_dict()})
+    item = LookupOrgService.create_item(
+        org_secure_code=org.secure_code,
+        category_code=_PHRASE_CATEGORY_CODE,
+        code=secrets.token_urlsafe(12),
+        label=text,
+        user_secure_code=current_user.secure_code,
+        sort_order=max_sort + 1,
+    )
+
+    return jsonify({'success': True, 'data': _phrase_to_dict(item)})
 
 
 @form_center_bp.route('/canned-messages/<secure_code>', methods=['PUT'])
 @csrf.exempt
 @module_access_required('form_workflow', False)
 def update_canned_message(secure_code):
-    """修改罐頭訊息"""
-    from ..models import FwApprovalCannedMessage
+    """修改簽核片語"""
+    from app.services.lookup_org_service import LookupOrgService
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    msg = FwApprovalCannedMessage.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        user_secure_code=current_user.secure_code,
-        is_deleted=False
-    ).first()
-    if not msg:
-        return jsonify({'success': False, 'error': '找不到此訊息'}), 404
+    if not _has_org_db(org.secure_code):
+        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
+
+    # 驗證此片語屬於當前用戶
+    item = LookupOrgService.get_item_by_secure_code(org.secure_code, secure_code)
+    if not item or item.get('user_secure_code') != current_user.secure_code:
+        return jsonify({'success': False, 'error': '找不到此片語'}), 404
 
     data = request.get_json() or {}
     text = (data.get('text') or '').strip()
     if not text:
-        return jsonify({'success': False, 'error': '訊息內容不可為空'}), 400
-    if len(text) > 500:
-        return jsonify({'success': False, 'error': '訊息內容不可超過 500 字'}), 400
+        return jsonify({'success': False, 'error': '片語內容不可為空'}), 400
+    if len(text) > 200:
+        return jsonify({'success': False, 'error': '片語內容不可超過 200 字'}), 400
 
-    msg.text = text
-    if 'sort_order' in data:
-        msg.sort_order = int(data['sort_order'])
-    db.session.commit()
+    updated = LookupOrgService.update_item(
+        org.secure_code, secure_code, label=text
+    )
+    if not updated:
+        return jsonify({'success': False, 'error': '更新失敗'}), 500
 
-    return jsonify({'success': True, 'data': msg.to_dict()})
+    return jsonify({'success': True, 'data': _phrase_to_dict(updated)})
 
 
 @form_center_bp.route('/canned-messages/<secure_code>', methods=['DELETE'])
 @csrf.exempt
 @module_access_required('form_workflow', False)
 def delete_canned_message(secure_code):
-    """刪除罐頭訊息（軟刪除）"""
-    from ..models import FwApprovalCannedMessage
+    """刪除簽核片語（軟刪除）"""
+    from app.services.lookup_org_service import LookupOrgService
 
     org = get_current_org()
     if not org:
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
-    msg = FwApprovalCannedMessage.query.filter_by(
-        secure_code=secure_code,
-        org_secure_code=org.secure_code,
-        user_secure_code=current_user.secure_code,
-        is_deleted=False
-    ).first()
-    if not msg:
-        return jsonify({'success': False, 'error': '找不到此訊息'}), 404
+    if not _has_org_db(org.secure_code):
+        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
 
-    msg.is_deleted = True
-    db.session.commit()
+    # 驗證此片語屬於當前用戶
+    item = LookupOrgService.get_item_by_secure_code(org.secure_code, secure_code)
+    if not item or item.get('user_secure_code') != current_user.secure_code:
+        return jsonify({'success': False, 'error': '找不到此片語'}), 404
+
+    ok = LookupOrgService.delete_item(org.secure_code, secure_code)
+    if not ok:
+        return jsonify({'success': False, 'error': '刪除失敗'}), 500
 
     return jsonify({'success': True, 'message': '已刪除'})
