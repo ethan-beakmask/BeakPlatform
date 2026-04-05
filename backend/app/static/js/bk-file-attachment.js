@@ -370,8 +370,18 @@ class BkFileAttachment {
             } else if (isPendingDelete) {
                 const tag = document.createElement('span');
                 tag.textContent = '待確認刪除';
-                tag.style.cssText = 'font-size:10px;color:#9ca3af;';
+                tag.style.cssText = 'font-size:10px;color:#9ca3af;margin-right:4px;';
                 tdActions.appendChild(tag);
+
+                if (!this.config.readonly) {
+                    const undoBtn = document.createElement('button');
+                    undoBtn.type = 'button';
+                    undoBtn.className = 'bkfa-action-btn';
+                    undoBtn.title = '撤銷刪除';
+                    undoBtn.innerHTML = '<i class="ri-arrow-go-back-line"></i>';
+                    undoBtn.addEventListener('click', () => this._revertDelete(f.secure_code));
+                    tdActions.appendChild(undoBtn);
+                }
             } else {
                 const dlBtn = document.createElement('button');
                 dlBtn.type = 'button';
@@ -574,6 +584,23 @@ class BkFileAttachment {
             }
         } catch (e) {
             this._showStatus(e.message || '刪除失敗', true);
+        }
+    }
+
+    async _revertDelete(fileSc) {
+        try {
+            const res = await fetch('/api/files/' + fileSc + '/revert-delete', {
+                method: 'POST',
+            });
+            const data = await res.json();
+            if (data.success) {
+                await this.refresh();
+                this._showStatus('已撤銷刪除', false);
+            } else {
+                this._showStatus(data.message || '撤銷失敗', true);
+            }
+        } catch (e) {
+            this._showStatus(e.message || '撤銷失敗', true);
         }
     }
 

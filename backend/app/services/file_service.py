@@ -408,6 +408,15 @@ def mark_pending_delete(record: PlatformFile):
     record.status = 'pending_delete'
 
 
+def revert_single_pending_delete(record: PlatformFile):
+    """
+    將單一 pending_delete 檔案回復為 active。
+    """
+    if record.status != 'pending_delete':
+        raise ValueError('檔案狀態不是 pending_delete')
+    record.status = 'active'
+
+
 def confirm_pending_deletes(org_sc: str, context_id: str):
     """
     簽核確認後，將所有 pending_delete 檔案正式刪除。

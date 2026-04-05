@@ -422,6 +422,39 @@ def delete(secure_code):
         return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
 
 
+# ── Revert single delete ──────────────────────────────────────
+
+@files_bp.route('/<secure_code>/revert-delete', methods=['POST'])
+@csrf.exempt
+@login_required
+def revert_single_delete(secure_code):
+    """
+    撤銷單一檔案的待刪除標記，回復為 active。
+    只有上傳者本人可以撤銷。
+    """
+    org = current_user.organization
+    if not org:
+        return jsonify({'success': False, 'message': '找不到企業'}), 404
+
+    record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
+    if not record:
+        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+
+    if record.uploader_sc and record.uploader_sc != current_user.secure_code:
+        return jsonify({'success': False, 'message': '只能撤銷自己標記刪除的檔案'}), 403
+
+    try:
+        file_service.revert_single_pending_delete(record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': '已撤銷刪除'})
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.exception("撤銷刪除失敗: %s", secure_code)
+        return jsonify({'success': False, 'message': f'撤銷失敗: {str(e)}'}), 500
+
+
 # ── Revert deletes ───────────────────────────────────────────
 
 @files_bp.route('/revert-deletes', methods=['POST'])
