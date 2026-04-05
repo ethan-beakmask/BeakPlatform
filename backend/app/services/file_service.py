@@ -1,7 +1,8 @@
 """
 FileService - 統一檔案管理服務
 
-所有檔案上傳/下載都經過這裡，依 storage_type 決定走 local 或 BeakSeal。
+所有檔案上傳/下載都經過這裡，依 storage_type 決定走 local 或 encrypted。
+加密檔案使用內建 AES-256-GCM 加密，不依賴外部服務。
 """
 import logging
 import os
@@ -23,12 +24,21 @@ UPLOAD_BASE_DIR = os.path.join(
     'uploads'
 )
 
+# 加密檔案儲存目錄（可透過環境變數設定）
+ENCRYPTED_STORAGE_DIR = os.getenv(
+    'ENCRYPTED_STORAGE_DIR',
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        'encrypted_storage'
+    )
+)
+
 # context_type → storage_type 預設對應
 CONTEXT_STORAGE_MAP = {
     'org_logo': 'local',
     'wf_background': 'local',
-    'form_attachment': 'beakseal',
-    'subsystem_file': 'beakseal',
+    'form_attachment': 'encrypted',
+    'subsystem_file': 'encrypted',
 }
 
 # context_type → 允許的副檔名
@@ -63,6 +73,13 @@ def _get_upload_dir():
     return UPLOAD_BASE_DIR
 
 
+def _get_encrypted_dir(org_sc: str) -> str:
+    """取得加密檔案儲存的絕對路徑（按企業隔離）"""
+    org_dir = os.path.join(ENCRYPTED_STORAGE_DIR, org_sc)
+    os.makedirs(org_dir, exist_ok=True)
+    return org_dir
+
+
 def _resolve_local_path(storage_ref: str) -> str:
     """
     解析 storage_ref 為絕對路徑。
@@ -73,6 +90,11 @@ def _resolve_local_path(storage_ref: str) -> str:
     if storage_ref.startswith('uploads/'):
         storage_ref = storage_ref[len('uploads/'):]
     return os.path.join(UPLOAD_BASE_DIR, storage_ref)
+
+
+def _resolve_encrypted_path(storage_ref: str) -> str:
+    """解析加密檔案的絕對路徑"""
+    return os.path.join(ENCRYPTED_STORAGE_DIR, storage_ref)
 
 
 def _validate_file(file: FileStorage, context_type: str) -> Optional[str]:
@@ -146,11 +168,20 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
     file_data = file.read()
     file.seek(0)
 
+    # 加密相關欄位（僅 encrypted 類型使用）
+    wrapped_dek = None
+    dek_nonce = None
+    file_nonce = None
+    encryption_key_sc = None
+
     if storage_type == 'local':
         storage_ref = _store_local(file_data, ext)
-    elif storage_type == 'beakseal':
-        storage_ref = _store_beakseal(org_sc, uploader_sc, file_data,
-                                       file.filename)
+    elif storage_type == 'encrypted':
+        storage_ref, enc_meta = _store_encrypted(org_sc, file_data)
+        wrapped_dek = enc_meta['wrapped_dek']
+        dek_nonce = enc_meta['dek_nonce']
+        file_nonce = enc_meta['file_nonce']
+        encryption_key_sc = enc_meta['encryption_key_sc']
     else:
         raise ValueError(f'不支援的 storage_type: {storage_type}')
 
@@ -168,6 +199,10 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
         context_id=context_id,
         uploader_sc=uploader_sc,
         status='active',
+        wrapped_dek=wrapped_dek,
+        dek_nonce=dek_nonce,
+        file_nonce=file_nonce,
+        encryption_key_sc=encryption_key_sc,
     )
 
     db.session.add(record)
@@ -187,15 +222,38 @@ def _store_local(file_data: bytes, ext: str) -> str:
     return filename
 
 
-def _store_beakseal(org_sc: str, user_sc: str, file_data: bytes,
-                    filename: str) -> str:
-    """加密存到 BeakSeal，回傳 file_id"""
-    from .vault_service import get_client as get_vault_client
+def _store_encrypted(org_sc: str, file_data: bytes) -> tuple[str, dict]:
+    """
+    加密後存到磁碟。
 
-    client = get_vault_client()
-    result = client.encrypt_file(org_sc, user_sc or 'system',
-                                 file_data, filename)
-    return result.get('file_id', '')
+    Returns:
+        (storage_ref, encryption_metadata)
+        storage_ref: 相對路徑 "{org_sc}/{uuid}.enc"
+    """
+    import base64
+    from ..crypto.key_manager import KeyManager
+
+    # 加密
+    result = KeyManager.encrypt_file(org_sc, file_data)
+
+    # 寫入密文
+    enc_dir = _get_encrypted_dir(org_sc)
+    filename = f'{uuid.uuid4().hex}.enc'
+    full_path = os.path.join(enc_dir, filename)
+
+    with open(full_path, 'wb') as f:
+        f.write(result['ciphertext'])
+
+    storage_ref = f'{org_sc}/{filename}'
+
+    enc_meta = {
+        'wrapped_dek': result['wrapped_dek'],
+        'dek_nonce': result['dek_nonce'],
+        'file_nonce': base64.urlsafe_b64encode(result['file_nonce']).decode(),
+        'encryption_key_sc': result['encryption_key_sc'],
+    }
+
+    return storage_ref, enc_meta
 
 
 def serve_file(record: PlatformFile) -> tuple:
@@ -207,7 +265,7 @@ def serve_file(record: PlatformFile) -> tuple:
 
     Raises:
         FileNotFoundError: 檔案不存在
-        RuntimeError: BeakSeal 解密失敗
+        RuntimeError: 解密失敗
     """
     if record.storage_type == 'local':
         full_path = _resolve_local_path(record.storage_ref)
@@ -217,16 +275,38 @@ def serve_file(record: PlatformFile) -> tuple:
             data = f.read()
         return data, record.mime_type, record.original_name
 
-    elif record.storage_type == 'beakseal':
-        from .vault_service import get_client as get_vault_client
-
-        client = get_vault_client()
-        data = client.decrypt_file(record.storage_ref,
-                                   org_id=record.org_secure_code)
-        return data, record.mime_type, record.original_name
+    elif record.storage_type == 'encrypted':
+        return _read_encrypted(record)
 
     else:
         raise RuntimeError(f'不支援的 storage_type: {record.storage_type}')
+
+
+def _read_encrypted(record: PlatformFile) -> tuple:
+    """讀取並解密加密檔案"""
+    from ..crypto.key_manager import KeyManager
+    import base64
+
+    full_path = _resolve_encrypted_path(record.storage_ref)
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f'加密檔案不存在: {record.secure_code}')
+
+    with open(full_path, 'rb') as f:
+        ciphertext = f.read()
+
+    # file_nonce 在 DB 中是 base64 字串
+    file_nonce = base64.urlsafe_b64decode(record.file_nonce)
+
+    plaintext = KeyManager.decrypt_file(
+        org_sc=record.org_secure_code,
+        ciphertext=ciphertext,
+        file_nonce=file_nonce,
+        wrapped_dek_b64=record.wrapped_dek,
+        dek_nonce_b64=record.dek_nonce,
+        encryption_key_sc=record.encryption_key_sc,
+    )
+
+    return plaintext, record.mime_type, record.original_name
 
 
 def delete_file(record: PlatformFile, hard_delete_local: bool = True):
@@ -247,15 +327,14 @@ def delete_file(record: PlatformFile, hard_delete_local: bool = True):
                 logger.warning("刪除 local 檔案失敗: %s - %s",
                                full_path, e)
 
-    elif record.storage_type == 'beakseal':
-        try:
-            from .vault_service import get_client as get_vault_client
-            client = get_vault_client()
-            client.delete_file(record.storage_ref,
-                               org_id=record.org_secure_code)
-        except Exception as e:
-            logger.warning("刪除 BeakSeal 檔案失敗: %s - %s",
-                           record.storage_ref, e)
+    elif record.storage_type == 'encrypted':
+        full_path = _resolve_encrypted_path(record.storage_ref)
+        if os.path.exists(full_path):
+            try:
+                os.remove(full_path)
+            except OSError as e:
+                logger.warning("刪除加密檔案失敗: %s - %s",
+                               full_path, e)
 
     # 軟刪除 DB 記錄
     record.is_deleted = True

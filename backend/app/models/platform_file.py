@@ -2,7 +2,7 @@
 PlatformFile Model
 統一管理平台所有檔案的 metadata
 """
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import Column, String, BigInteger, Text
 
 from .base import TenantBaseModel
 
@@ -13,13 +13,13 @@ class PlatformFile(TenantBaseModel):
 
     storage_type:
         - 'local': 存於磁碟 uploads/ 目錄，storage_ref = 相對路徑
-        - 'beakseal': 加密存於 BeakSeal，storage_ref = beakseal file_id
+        - 'encrypted': 加密存於 encrypted_storage/ 目錄，storage_ref = 相對路徑
 
     context_type:
         - 'org_logo': 企業 Logo
         - 'wf_background': 工作流設計器底圖
-        - 'form_attachment': 表單簽核附件 (未來)
-        - 'subsystem_file': 子系統業務附件 (未來)
+        - 'form_attachment': 表單簽核附件
+        - 'subsystem_file': 子系統業務附件
     """
     __tablename__ = 'platform_files'
 
@@ -42,6 +42,12 @@ class PlatformFile(TenantBaseModel):
 
     # 狀態
     status = Column(String(20), nullable=False, default='active')
+
+    # 加密 metadata (僅 storage_type='encrypted' 使用)
+    wrapped_dek = Column(Text)
+    dek_nonce = Column(String(64))
+    file_nonce = Column(String(64))
+    encryption_key_sc = Column(String(32))
 
     def to_dict(self):
         base = super().to_dict()

@@ -110,7 +110,7 @@ def serve(secure_code):
 @login_required
 def download(secure_code):
     """
-    下載機敏檔案（經 BeakSeal 解密）。
+    下載機敏檔案（加密檔案自動解密）。
 
     需登入 + 租戶隔離。
     """

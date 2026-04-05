@@ -2,7 +2,7 @@
  * BkFileAttachment - 通用附件上傳/下載/刪除元件
  *
  * 統一呼叫 /api/files/ 系列 API，傳入 contextType + contextId 即可使用。
- * 所有 BeakSeal 加密/解密在後端自動處理，前端不需關心 storage_type。
+ * 加密/解密在後端自動處理，前端不需關心 storage_type。
  *
  * 用法:
  *   const att = new BkFileAttachment(containerEl, {

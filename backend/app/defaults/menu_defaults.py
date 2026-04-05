@@ -300,19 +300,6 @@ CORE_MENUS = [
         'required_level': 0,
         'is_shared': False,
     },
-    {
-        'code': 'beakseal_manage',
-        'title': 'BeakSeal管理',
-        'parent_code': 'servsr_manage',
-        'icon': 'ri-shield-keyhole-line',
-        'link_type': 'url',
-        'link_target': '/vault/',
-        'display_order': 2,
-        'depth': 1,
-        'required_level': 2,
-        'is_shared': False,
-    },
-
     # -- 權限管理 (perm_mgmt) --
     {
         'code': 'menu_manage',
