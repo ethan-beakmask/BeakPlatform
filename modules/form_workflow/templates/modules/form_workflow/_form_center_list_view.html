@@ -14,12 +14,19 @@
     </div>
 
     <!-- 三個主頁籤 -->
-    <div class="fc-list-tabs">
+    <div style="display: flex; align-items: center; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 8px;">
         <button class="fc-list-tab" :class="{ active: listTab === 'pending' }"
                 @click="listTab = 'pending'; listSubTab = 'mine'; listPage = 1;">
             待簽核
             <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" style="margin-left: 4px;" x-text="pendingApprovals.length"></span>
         </button>
+        <!-- 批次工具列（緊接待簽核頁籤後方） -->
+        <div x-show="listTab === 'pending' && batchSelectedCount > 0" style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px; margin-left: 100px;">
+            <span>已選 <strong x-text="batchSelectedCount"></strong> 筆</span>
+            <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">反選</button>
+            <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">清除</button>
+            <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">批次簽核</button>
+        </div>
         <button class="fc-list-tab" :class="{ active: listTab === 'tracking' }"
                 @click="listTab = 'tracking'; listSubTab = 'mine'; listPage = 1;">
             追蹤中
@@ -52,12 +59,6 @@
                 <span style="font-size: 12px; color: #6b7280;">
                     共 <span x-text="pendingApprovals.length"></span> 筆
                 </span>
-                <div x-show="batchSelectedCount > 0" style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px;">
-                    <span>已選 <strong x-text="batchSelectedCount"></strong> 筆</span>
-                    <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">反選</button>
-                    <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">清除</button>
-                    <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">批次簽核</button>
-                </div>
             </div>
         </div>
         <!-- 右側：分頁控制 -->
@@ -80,7 +81,7 @@
                     <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-dense fc-table-pending">
                         <thead>
                             <tr>
-                                <th style="width: 36px; text-align: center;">
+                                <th style="width: 36px; text-align: center; overflow: visible; text-overflow: clip;">
                                     <input type="checkbox" @change="batchSelectAll()" :checked="batchAllChecked"
                                            title="全選/取消全選（限同表單同節點同版本）">
                                 </th>
@@ -97,7 +98,7 @@
                         <tbody>
                             <template x-for="item in pagedListData" :key="item.queue_secure_code">
                                 <tr :class="isBatchChecked(item) ? 'fc-row-selected' : ''">
-                                    <td style="text-align: center;">
+                                    <td style="text-align: center; overflow: visible; text-overflow: clip;">
                                         <input type="checkbox" :checked="isBatchChecked(item)"
                                                :disabled="(item.is_locked && !item.locked_by_self) || !isBatchCompatible(item)"
                                                @change="batchToggle(item)"
