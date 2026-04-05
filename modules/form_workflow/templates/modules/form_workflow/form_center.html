@@ -512,6 +512,17 @@ window.__USER_SC = '{{ user_secure_code }}';
 
 <!-- File Attachment JS -->
 <script src="/static/js/bk-file-attachment.js"></script>
-<!-- Form Center JS -->
+<!-- Form Center JS (mixin 先載入，主檔最後) -->
+<script src="/static/modules/form_workflow/js/fc-flow-overview.js"></script>
+<script src="/static/modules/form_workflow/js/fc-utils.js"></script>
+<script src="/static/modules/form_workflow/js/fc-data-loader.js"></script>
+<script src="/static/modules/form_workflow/js/fc-form-render.js"></script>
+<script src="/static/modules/form_workflow/js/fc-form-fill.js"></script>
+<script src="/static/modules/form_workflow/js/fc-approval.js"></script>
+<script src="/static/modules/form_workflow/js/fc-batch-approval.js"></script>
+<script src="/static/modules/form_workflow/js/fc-canned-messages.js"></script>
+<script src="/static/modules/form_workflow/js/fc-monitor.js"></script>
+<script src="/static/modules/form_workflow/js/fc-read-form.js"></script>
+<script src="/static/modules/form_workflow/js/fc-column-config.js"></script>
 <script src="/static/modules/form_workflow/js/form-center.js"></script>
 {% endblock %}
