@@ -313,13 +313,6 @@ def list_available_forms():
             _enrich_category(item, form_template.category_secure_code)
             result.append(item)
 
-    # 工作站篩選
-    from ..services.workstation_filter import get_active_workstation, load_tag_map, filter_available_forms
-    ws = get_active_workstation(org.secure_code)
-    if ws:
-        tag_map = load_tag_map(org.secure_code)
-        result = filter_available_forms(result, ws, tag_map)
-
     return jsonify({
         'success': True,
         'data': result,
@@ -898,13 +891,6 @@ def list_my_forms():
 
     rows = base_query.limit(limit).all()
 
-    # 工作站篩選（在 rows 層級過濾）
-    from ..services.workstation_filter import get_active_workstation, load_tag_map, filter_my_forms
-    ws = get_active_workstation(org.secure_code)
-    if ws:
-        tag_map = load_tag_map(org.secure_code)
-        rows = filter_my_forms(rows, ws, tag_map)
-
     # 取得所有流程的當前等待節點（用於顯示「待簽關卡」）
     from ..models import FwNodeExecutionQueue
     workflow_secure_codes = [w.secure_code for f, w, _, _, _ in rows]
@@ -1164,13 +1150,6 @@ def list_pending_tasks():
             'published_secure_code': fi.published_secure_code if fi else None,
             **lock_info,
         })
-
-    # 工作站篩選
-    from ..services.workstation_filter import get_active_workstation, load_tag_map, filter_pending_tasks
-    ws = get_active_workstation(org.secure_code)
-    if ws:
-        tag_map = load_tag_map(org.secure_code)
-        result = filter_pending_tasks(result, ws, tag_map, fi_map=fi_map)
 
     # 排序
     sort_field = request.args.get('sort', 'scheduled_at')

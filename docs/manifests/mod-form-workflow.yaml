@@ -3,14 +3,12 @@
 page:
   - /form-workflow/dashboard
   - /form-workflow/form-center
-  - /form-workflow/form-center/<workstation_code>
   - /form-workflow/form-designer
   - /form-workflow/workflow-designer
   - /form-workflow/workflow-list
   - /form-workflow/templates
   - /form-workflow/form-themes
-  - /form-workflow/workstations
-description: 表單工作流模組（表單設計器、工作流設計器、表單中心、工作站、審核流程）
+description: 表單工作流模組（表單設計器、工作流設計器、表單中心、審核流程）
 
 files:
   module_root: modules/form_workflow/
@@ -28,7 +26,6 @@ files:
     - modules/form_workflow/static/modules/form_workflow/js/workflow-list.js
     - modules/form_workflow/static/modules/form_workflow/js/var-picker.js
     - modules/form_workflow/static/modules/form_workflow/js/formadapter-decisions.js
-    - modules/form_workflow/static/modules/form_workflow/js/workstation-manager.js
   css:
     - modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css
     - modules/form_workflow/static/modules/form_workflow/css/form-center.css

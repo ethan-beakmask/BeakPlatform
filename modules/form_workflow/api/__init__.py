@@ -1934,12 +1934,6 @@ from .form_themes import form_themes_bp
 # 導入 mapping_permissions API Blueprint
 from .mapping_permissions import mapping_permissions_bp
 
-# 導入 workstations API Blueprint
-from .workstations import workstations_bp
-
-# 導入 form_tags API Blueprint
-from .form_tags import form_tags_bp
-
 # 導出所有 Blueprint（供模組載入器使用）
 # field_specs_bp 已移至 spec_formulate 模組
-additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp, mapping_permissions_bp, workstations_bp, form_tags_bp]
+additional_blueprints = [workflows_bp, forms_bp, mappings_bp, form_center_bp, categories_bp, backgrounds_bp, form_themes_bp, mapping_permissions_bp]
