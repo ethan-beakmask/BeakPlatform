@@ -417,8 +417,8 @@ window.__USER_SC = '{{ user_secure_code }}';
                         <div id="form-fill-formio"></div>
                     </div>
 
-                    <!-- 附件區塊 -->
-                    <div x-show="!loadingFormSchema && formSchema" style="margin-top: 16px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
+                    <!-- 附件區塊（builder_config.fileUploadEnabled 預設啟用） -->
+                    <div x-show="!loadingFormSchema && formSchema && selectedForm?.builder_config?.fileUploadEnabled !== false" style="margin-top: 16px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
                         <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">
                             <i class="fas fa-paperclip" style="margin-right: 4px;"></i> 附件
                         </div>

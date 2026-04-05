@@ -8,18 +8,49 @@
 }
 
 .bkfa-upload-area {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px;
     margin-bottom: 8px;
+}
+
+/* 拖拉區 */
+.bkfa-dropzone {
+    border: 2px dashed #d1d5db;
+    border-radius: 6px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color 0.15s, background-color 0.15s;
+    cursor: pointer;
+}
+.bkfa-dropzone:hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+}
+.bkfa-dropzone-active {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.bkfa-dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.bkfa-dropzone-icon {
+    font-size: 28px;
+    color: #9ca3af;
+}
+.bkfa-dropzone-active .bkfa-dropzone-icon {
+    color: #3b82f6;
+}
+.bkfa-dropzone-text {
+    font-size: 13px;
+    color: #6b7280;
 }
 
 .bkfa-hint {
     font-size: 11px;
     color: #9ca3af;
-    flex-basis: 100%;
-    margin-top: -4px;
+    margin-top: 4px;
 }
 
 .bkfa-upload-btn {

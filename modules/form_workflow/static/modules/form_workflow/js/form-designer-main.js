@@ -884,6 +884,11 @@ async function loadFormData() {
                 if (formData.builder_config.placeholderToLabel) {
                     document.getElementById('chk-placeholder-to-label').checked = true;
                 }
+                // 恢復附件上傳開關（預設啟用，僅明確 false 才關閉）
+                const chkFile = document.getElementById('chk-file-upload');
+                if (chkFile) {
+                    chkFile.checked = formData.builder_config.fileUploadEnabled !== false;
+                }
                 // 恢復風格主題（剛建立的表單若無已儲存主題，套用新表單預設主題）
                 const savedTheme = formData.builder_config.formTheme;
                 setFormTheme(savedTheme || (wasJustCreated ? DEFAULT_THEME_FOR_NEW_FORM : 'default'));
@@ -1446,7 +1451,8 @@ document.getElementById('btn-save').addEventListener('click', async () => {
         formWidth: currentFormWidth,
         formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
         background: BackgroundManager.getConfig(),
-        placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
+        placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked,
+        fileUploadEnabled: document.getElementById('chk-file-upload').checked
     };
 
     try {
@@ -1565,7 +1571,8 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
         formWidth: currentFormWidth,
         formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
         background: BackgroundManager.getConfig(),
-        placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked
+        placeholderToLabel: document.getElementById('chk-placeholder-to-label').checked,
+        fileUploadEnabled: document.getElementById('chk-file-upload').checked
     };
 
     try {
@@ -1677,7 +1684,8 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
         const builderConfig = {
             formWidth: currentFormWidth,
             formTheme: currentFormTheme !== 'default' ? currentFormTheme : undefined,
-            background: BackgroundManager.getConfig()
+            background: BackgroundManager.getConfig(),
+            fileUploadEnabled: document.getElementById('chk-file-upload').checked
         };
 
         await fetch(`/api/forms/data/templates/${currentFormId}`, {

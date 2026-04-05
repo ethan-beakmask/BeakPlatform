@@ -113,9 +113,12 @@ class BkFileAttachment {
         const root = document.createElement('div');
         root.className = 'bkfa-root';
 
-        // 上傳區
+        // 上傳區（含拖拉）
         const uploadArea = document.createElement('div');
         uploadArea.className = 'bkfa-upload-area';
+
+        const dropZone = document.createElement('div');
+        dropZone.className = 'bkfa-dropzone';
 
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -123,20 +126,24 @@ class BkFileAttachment {
         fileInput.style.display = 'none';
         fileInput.addEventListener('change', (e) => this._handleFiles(e.target.files));
 
+        // 拖拉區內容（圖示用 Font Awesome，確保各頁面皆可顯示）
+        const dropContent = document.createElement('div');
+        dropContent.className = 'bkfa-dropzone-content';
+        dropContent.innerHTML =
+            '<i class="fas fa-cloud-upload-alt bkfa-dropzone-icon"></i>'
+            + '<span class="bkfa-dropzone-text">拖拉檔案至此，或</span>';
+
         const uploadBtn = document.createElement('button');
         uploadBtn.type = 'button';
         uploadBtn.className = 'bkfa-upload-btn';
-        uploadBtn.innerHTML = '<i class="ri-attachment-2"></i> 上傳附件';
-        uploadBtn.addEventListener('click', () => fileInput.click());
+        uploadBtn.innerHTML = '<i class="fas fa-paperclip"></i> 選擇檔案';
+        uploadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        dropContent.appendChild(uploadBtn);
 
-        const status = document.createElement('span');
-        status.className = 'bkfa-status';
-
-        uploadArea.appendChild(fileInput);
-        uploadArea.appendChild(uploadBtn);
-        uploadArea.appendChild(status);
-
-        // 副檔名與大小提示（靜態顯示在上傳鈕旁）
+        // 副檔名與大小提示
         if (this.config.allowedExts.length > 0 || this.config.maxFileSize > 0) {
             const hint = document.createElement('div');
             hint.className = 'bkfa-hint';
@@ -148,8 +155,55 @@ class BkFileAttachment {
                 parts.push('上限 ' + this._formatSize(this.config.maxFileSize));
             }
             hint.textContent = parts.join(' | ');
-            uploadArea.appendChild(hint);
+            dropContent.appendChild(hint);
         }
+
+        dropZone.appendChild(fileInput);
+        dropZone.appendChild(dropContent);
+
+        // 點擊整個 dropzone 也觸發選擇檔案
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== uploadBtn && !uploadBtn.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        const status = document.createElement('span');
+        status.className = 'bkfa-status';
+
+        uploadArea.appendChild(dropZone);
+        uploadArea.appendChild(status);
+
+        // 拖拉事件（用 counter 避免子元素 dragleave 誤觸）
+        let dragCounter = 0;
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter++;
+            dropZone.classList.add('bkfa-dropzone-active');
+        });
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                dropZone.classList.remove('bkfa-dropzone-active');
+            }
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter = 0;
+            dropZone.classList.remove('bkfa-dropzone-active');
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                this._handleFiles(e.dataTransfer.files);
+            }
+        });
 
         // 列表區
         const listArea = document.createElement('div');
@@ -159,7 +213,7 @@ class BkFileAttachment {
         root.appendChild(listArea);
         this.container.appendChild(root);
 
-        this._els = { root, uploadArea, uploadBtn, fileInput, status, listArea };
+        this._els = { root, uploadArea, dropZone, uploadBtn, fileInput, status, listArea };
         this._updateUploadVisibility();
     }
 
