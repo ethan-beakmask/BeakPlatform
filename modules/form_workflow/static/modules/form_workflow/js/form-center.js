@@ -147,6 +147,7 @@ function formCenterManager() {
         isAdmin: window.__IS_ADMIN || false,
         isSystemAdmin: window.__IS_SYSTEM_ADMIN || false,
         userRoleCodes: window.__USER_ROLE_CODES || [],
+        currentUserSc: window.__USER_SC || '',
 
         // 權限 computed：可查看執行詳情（系統管理員/企業管理員/流程設計師）
         get canViewExecution() {
@@ -277,7 +278,7 @@ function formCenterManager() {
         },
 
         async refreshAll() {
-            const safeFetch = (url) => fetch(url).then(r => r.json()).catch(() => null);
+            const safeFetch = (url) => fetch(url).then(r => r.ok ? r.json() : null).catch(() => null);
             const ps = this.pendingSort;
             const ts = this.trackingSort;
             const tss = this.trackingSignedSort;
@@ -291,15 +292,16 @@ function formCenterManager() {
                 safeFetch(`/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hs.field}&order=${hs.order}`),
                 safeFetch(`/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hss.field}&order=${hss.order}`)
             ]);
-            // 全部 null 代表所有請求都失敗（連線中斷）
-            const allFailed = [forms, approvals, tracking, signed, history, signedHist].every(r => r === null);
+            // 任一請求失敗即視為失敗（觸發退避）
+            const results = [forms, approvals, tracking, signed, history, signedHist];
+            const anyFailed = results.some(r => r === null);
             if (forms?.success) this.availableForms = forms.data || [];
             if (approvals?.success) this.pendingApprovals = approvals.data || [];
             if (tracking?.success) this.trackingList = tracking.data || [];
             if (signed?.success) this.signedList = signed.data || [];
             if (history?.success) this.historyList = history.data || [];
             if (signedHist?.success) this.signedHistoryList = signedHist.data || [];
-            return !allFailed;
+            return !anyFailed;
         },
 
         // 計算屬性
@@ -441,7 +443,7 @@ function formCenterManager() {
             const changes = [];
 
             for (const log of logs) {
-                const time = log.timestamp?.split(' ')[1] || '';
+                const time = typeof BkTime !== 'undefined' ? BkTime.format(log.timestamp, 'time') : (log.timestamp?.split(' ')[1] || '');
                 const node = log.node_id?.replace('node-', '') || '';
                 const displayName = log.display_name || node;
                 const workflowName = log.workflow_name || '';
@@ -954,12 +956,29 @@ function formCenterManager() {
                     contextType: 'form_attachment',
                     contextId: fiSc,
                     readonly: false,
+                    allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx',
+                                  'odt','ods','csv','txt','rtf',
+                                  'png','jpg','jpeg','gif','webp','bmp',
+                                  'zip','7z','rar'],
+                    maxFileSize: 50 * 1024 * 1024,
+                    currentUserSc: this.currentUserSc || '',
+                    nodeId: this.currentApproval?.node_id || '',
                 });
                 this._approvalAttachment.init();
             }
         },
 
         closeApprovalModal() {
+            // 回復偽刪除的附件（best-effort）
+            const fiSc = this.currentApproval?.form_instance_secure_code;
+            if (fiSc) {
+                fetch('/api/files/revert-deletes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ context_id: fiSc }),
+                }).catch(() => {});
+            }
+
             // 釋放鎖定（best-effort）
             if (this.currentApproval?.queue_secure_code) {
                 fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/lock`, {

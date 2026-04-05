@@ -166,7 +166,8 @@ def center():
         is_admin=is_admin,
         is_system_admin=is_system_admin,
         user_role_codes=user_role_codes,
-        user_locale=user_locale
+        user_locale=user_locale,
+        user_secure_code=current_user.secure_code,
     )
 
 

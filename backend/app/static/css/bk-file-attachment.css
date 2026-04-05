@@ -9,9 +9,17 @@
 
 .bkfa-upload-area {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 8px;
+}
+
+.bkfa-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    flex-basis: 100%;
+    margin-top: -4px;
 }
 
 .bkfa-upload-btn {
@@ -97,4 +105,92 @@
 .bkfa-del-btn:hover {
     background: #fee2e2;
     color: #dc2626;
+}
+
+/* ===== 自建 Modal（不依賴 Bootstrap JS） ===== */
+.bkfa-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1055;
+}
+.bkfa-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1056;
+    align-items: center;
+    justify-content: center;
+}
+.bkfa-modal-dialog {
+    width: 90%;
+    max-width: 480px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+.bkfa-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.bkfa-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.bkfa-modal-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+}
+.bkfa-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0 4px;
+}
+.bkfa-modal-close:hover {
+    color: #111827;
+}
+.bkfa-modal-body {
+    padding: 16px;
+    font-size: 13px;
+    color: #374151;
+    overflow-y: auto;
+}
+.bkfa-modal-body ul {
+    padding-left: 20px;
+    margin: 0;
+}
+.bkfa-modal-body li {
+    margin-bottom: 4px;
+}
+.bkfa-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 16px;
+    border-top: 1px solid #e5e7eb;
+}
+.bkfa-modal-btn {
+    padding: 5px 16px;
+    font-size: 13px;
+    background: #6b7280;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.bkfa-modal-btn:hover {
+    background: #4b5563;
 }

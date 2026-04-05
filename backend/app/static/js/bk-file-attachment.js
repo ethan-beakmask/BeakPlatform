@@ -10,6 +10,8 @@
  *       contextId: 'FORM_SC_xxx',
  *       readonly: false,
  *       maxFiles: 10,
+ *       allowedExts: ['pdf','doc','docx','xlsx'],  // 前端副檔名白名單
+ *       maxFileSize: 50 * 1024 * 1024,             // 前端檔案大小上限 (bytes)
  *       onUpload: (file) => {},   // 上傳完成回呼
  *       onDelete: (fileSc) => {}, // 刪除完成回呼
  *   });
@@ -32,13 +34,25 @@ class BkFileAttachment {
             contextId: '',
             readonly: false,
             maxFiles: 10,
+            allowedExts: [],
+            maxFileSize: 0,
+            currentUserSc: '',
+            nodeId: '',
             onUpload: null,
             onDelete: null,
         }, config);
 
+        // 正規化副檔名：全小寫、去點
+        if (this.config.allowedExts.length > 0) {
+            this.config.allowedExts = this.config.allowedExts.map(
+                e => e.replace(/^\./, '').toLowerCase()
+            );
+        }
+
         this.files = [];
         this.uploading = false;
         this._els = {};
+        this._modalId = 'bkfa-modal-' + Math.random().toString(36).slice(2, 8);
     }
 
     // ===== Public API =====
@@ -87,6 +101,9 @@ class BkFileAttachment {
             this.container.innerHTML = '';
         }
         this._els = {};
+        // 移除 modal
+        const modal = document.getElementById(this._modalId);
+        if (modal) modal.remove();
     }
 
     // ===== Render =====
@@ -109,7 +126,7 @@ class BkFileAttachment {
         const uploadBtn = document.createElement('button');
         uploadBtn.type = 'button';
         uploadBtn.className = 'bkfa-upload-btn';
-        uploadBtn.innerHTML = '<i class="fas fa-paperclip"></i> 上傳附件';
+        uploadBtn.innerHTML = '<i class="ri-attachment-2"></i> 上傳附件';
         uploadBtn.addEventListener('click', () => fileInput.click());
 
         const status = document.createElement('span');
@@ -118,6 +135,21 @@ class BkFileAttachment {
         uploadArea.appendChild(fileInput);
         uploadArea.appendChild(uploadBtn);
         uploadArea.appendChild(status);
+
+        // 副檔名與大小提示（靜態顯示在上傳鈕旁）
+        if (this.config.allowedExts.length > 0 || this.config.maxFileSize > 0) {
+            const hint = document.createElement('div');
+            hint.className = 'bkfa-hint';
+            const parts = [];
+            if (this.config.allowedExts.length > 0) {
+                parts.push(this.config.allowedExts.map(e => '.' + e).join(', '));
+            }
+            if (this.config.maxFileSize > 0) {
+                parts.push('上限 ' + this._formatSize(this.config.maxFileSize));
+            }
+            hint.textContent = parts.join(' | ');
+            uploadArea.appendChild(hint);
+        }
 
         // 列表區
         const listArea = document.createElement('div');
@@ -165,38 +197,62 @@ class BkFileAttachment {
         for (const f of this.files) {
             const tr = document.createElement('tr');
 
+            const isPending = f.status === 'pending_delete';
+
             // 名稱
             const tdName = document.createElement('td');
             tdName.className = 'bkfa-filename';
             const icon = this._fileIcon(f.file_ext);
             tdName.innerHTML = icon + ' ' + this._escHtml(f.original_name);
+            if (isPending) {
+                tdName.style.textDecoration = 'line-through';
+                tdName.style.opacity = '0.5';
+            }
             tr.appendChild(tdName);
 
             // 大小
             const tdSize = document.createElement('td');
             tdSize.style.textAlign = 'right';
             tdSize.textContent = this._formatSize(f.file_size);
+            if (isPending) {
+                tdSize.style.textDecoration = 'line-through';
+                tdSize.style.opacity = '0.5';
+            }
             tr.appendChild(tdSize);
 
             // 操作
             const tdActions = document.createElement('td');
             tdActions.style.textAlign = 'center';
 
-            const dlBtn = document.createElement('a');
-            dlBtn.href = '/api/files/' + f.secure_code + '/download';
-            dlBtn.className = 'bkfa-action-btn';
-            dlBtn.title = '下載';
-            dlBtn.innerHTML = '<i class="fas fa-download"></i>';
-            tdActions.appendChild(dlBtn);
+            if (!isPending) {
+                const dlBtn = document.createElement('a');
+                dlBtn.href = '/api/files/' + f.secure_code + '/download';
+                dlBtn.className = 'bkfa-action-btn';
+                dlBtn.title = '下載';
+                dlBtn.innerHTML = '<i class="ri-download-2-line"></i>';
+                tdActions.appendChild(dlBtn);
+            }
 
-            if (!this.config.readonly) {
-                const delBtn = document.createElement('button');
-                delBtn.type = 'button';
-                delBtn.className = 'bkfa-action-btn bkfa-del-btn';
-                delBtn.title = '刪除';
-                delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-                delBtn.addEventListener('click', () => this._deleteFile(f.secure_code));
-                tdActions.appendChild(delBtn);
+            if (!this.config.readonly && !isPending) {
+                // 只有上傳者本人可刪除
+                const canDelete = !this.config.currentUserSc || !f.uploader_sc
+                    || f.uploader_sc === this.config.currentUserSc;
+                if (canDelete) {
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'bkfa-action-btn bkfa-del-btn';
+                    delBtn.title = '刪除';
+                    delBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+                    delBtn.addEventListener('click', () => this._deleteFile(f.secure_code));
+                    tdActions.appendChild(delBtn);
+                }
+            }
+
+            if (isPending) {
+                const tag = document.createElement('span');
+                tag.textContent = '待確認刪除';
+                tag.style.cssText = 'font-size:10px;color:#9ca3af;';
+                tdActions.appendChild(tag);
             }
 
             tr.appendChild(tdActions);
@@ -208,6 +264,33 @@ class BkFileAttachment {
         this._updateUploadVisibility();
     }
 
+    // ===== Validation =====
+
+    _validateFiles(fileList) {
+        const errors = [];
+        const allowed = this.config.allowedExts;
+        const maxSize = this.config.maxFileSize;
+
+        for (const file of fileList) {
+            const name = file.name || '';
+            const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+
+            if (allowed.length > 0 && !allowed.includes(ext)) {
+                errors.push({
+                    name: name,
+                    reason: '不支援的檔案格式 (.' + (ext || '無副檔名') + ')',
+                });
+            } else if (maxSize > 0 && file.size > maxSize) {
+                errors.push({
+                    name: name,
+                    reason: '檔案過大 (' + this._formatSize(file.size) + ')，上限 ' + this._formatSize(maxSize),
+                });
+            }
+        }
+
+        return errors;
+    }
+
     // ===== Upload =====
 
     async _handleFiles(fileList) {
@@ -216,11 +299,34 @@ class BkFileAttachment {
 
         const remaining = this.config.maxFiles - this.files.length;
         if (remaining <= 0) {
-            this._showStatus('已達檔案數量上限', true);
+            this._showModal('上傳限制', '已達檔案數量上限 (' + this.config.maxFiles + ' 個)');
             return;
         }
 
         const toUpload = Array.from(fileList).slice(0, remaining);
+
+        // 前端驗證：副檔名 + 檔案大小
+        const valErrors = this._validateFiles(toUpload);
+        if (valErrors.length > 0) {
+            const lines = valErrors.map(
+                e => '<li><strong>' + this._escHtml(e.name) + '</strong>: ' + this._escHtml(e.reason) + '</li>'
+            ).join('');
+
+            let detail = '';
+            const allowed = this.config.allowedExts;
+            const maxSize = this.config.maxFileSize;
+            if (allowed.length > 0) {
+                detail += '<div style="margin-top:8px;font-size:12px;color:#6b7280;">允許格式: ' + allowed.map(e => '.' + e).join(', ') + '</div>';
+            }
+            if (maxSize > 0) {
+                detail += '<div style="font-size:12px;color:#6b7280;">大小上限: ' + this._formatSize(maxSize) + '</div>';
+            }
+
+            this._showModal('附件上傳失敗', '<ul style="margin-bottom:0;">' + lines + '</ul>' + detail);
+            this._els.fileInput.value = '';
+            return;
+        }
+
         this.uploading = true;
         this._els.uploadBtn.disabled = true;
         this._showStatus('上傳中...', false);
@@ -235,6 +341,9 @@ class BkFileAttachment {
                 formData.append('context_type', this.config.contextType);
                 if (this.config.contextId) {
                     formData.append('context_id', this.config.contextId);
+                }
+                if (this.config.nodeId) {
+                    formData.append('node_id', this.config.nodeId);
                 }
 
                 const res = await fetch('/api/files/upload', {
@@ -265,7 +374,7 @@ class BkFileAttachment {
             this._showStatus(successCount + ' 個檔案上傳成功', false);
         }
         if (lastError) {
-            this._showStatus(lastError, true);
+            this._showModal('上傳失敗', this._escHtml(lastError));
         }
     }
 
@@ -288,6 +397,55 @@ class BkFileAttachment {
         } catch (e) {
             this._showStatus(e.message || '刪除失敗', true);
         }
+    }
+
+    // ===== Modal =====
+
+    _showModal(title, bodyHtml) {
+        // 複用或建立 backdrop + dialog
+        let backdrop = document.getElementById(this._modalId + '-backdrop');
+        let dialog = document.getElementById(this._modalId);
+
+        if (!dialog) {
+            // backdrop
+            backdrop = document.createElement('div');
+            backdrop.id = this._modalId + '-backdrop';
+            backdrop.className = 'bkfa-modal-backdrop';
+
+            // dialog
+            dialog = document.createElement('div');
+            dialog.id = this._modalId;
+            dialog.className = 'bkfa-modal';
+            dialog.innerHTML =
+                '<div class="bkfa-modal-dialog">'
+                + '<div class="bkfa-modal-content">'
+                +   '<div class="bkfa-modal-header">'
+                +     '<h5 class="bkfa-modal-title"></h5>'
+                +     '<button type="button" class="bkfa-modal-close">&times;</button>'
+                +   '</div>'
+                +   '<div class="bkfa-modal-body"></div>'
+                +   '<div class="bkfa-modal-footer">'
+                +     '<button type="button" class="bkfa-modal-btn">關閉</button>'
+                +   '</div>'
+                + '</div>'
+                + '</div>';
+
+            document.body.appendChild(backdrop);
+            document.body.appendChild(dialog);
+
+            // 關閉事件
+            const close = () => {
+                dialog.style.display = 'none';
+                backdrop.style.display = 'none';
+            };
+            dialog.querySelector('.bkfa-modal-close').addEventListener('click', close);
+            dialog.querySelector('.bkfa-modal-btn').addEventListener('click', close);
+        }
+
+        dialog.querySelector('.bkfa-modal-title').textContent = title;
+        dialog.querySelector('.bkfa-modal-body').innerHTML = bodyHtml;
+        backdrop.style.display = 'block';
+        dialog.style.display = 'flex';
     }
 
     // ===== Helpers =====
@@ -313,16 +471,16 @@ class BkFileAttachment {
     _fileIcon(ext) {
         const e = (ext || '').toLowerCase();
         const map = {
-            pdf: 'fa-file-pdf', doc: 'fa-file-word', docx: 'fa-file-word',
-            xls: 'fa-file-excel', xlsx: 'fa-file-excel', csv: 'fa-file-csv',
-            ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
-            png: 'fa-file-image', jpg: 'fa-file-image', jpeg: 'fa-file-image',
-            gif: 'fa-file-image', webp: 'fa-file-image', bmp: 'fa-file-image',
-            zip: 'fa-file-archive', '7z': 'fa-file-archive', rar: 'fa-file-archive',
-            txt: 'fa-file-alt', rtf: 'fa-file-alt',
+            pdf: 'ri-file-pdf-2-line', doc: 'ri-file-word-line', docx: 'ri-file-word-line',
+            xls: 'ri-file-excel-line', xlsx: 'ri-file-excel-line', csv: 'ri-file-list-2-line',
+            ppt: 'ri-file-ppt-line', pptx: 'ri-file-ppt-line',
+            png: 'ri-file-image-line', jpg: 'ri-file-image-line', jpeg: 'ri-file-image-line',
+            gif: 'ri-file-image-line', webp: 'ri-file-image-line', bmp: 'ri-file-image-line',
+            zip: 'ri-file-zip-line', '7z': 'ri-file-zip-line', rar: 'ri-file-zip-line',
+            txt: 'ri-file-text-line', rtf: 'ri-file-text-line',
         };
-        const cls = map[e] || 'fa-file';
-        return '<i class="fas ' + cls + '"></i>';
+        const cls = map[e] || 'ri-file-line';
+        return '<i class="' + cls + '"></i>';
     }
 
     _escHtml(s) {

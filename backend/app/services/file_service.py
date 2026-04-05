@@ -128,7 +128,7 @@ def _validate_file(file: FileStorage, context_type: str) -> Optional[str]:
 
 def upload_file(org_sc: str, file: FileStorage, context_type: str,
                 context_id: str = None, uploader_sc: str = None,
-                storage_type: str = None) -> PlatformFile:
+                storage_type: str = None, uploader_node_id: str = None) -> PlatformFile:
     """
     上傳檔案並建立 platform_files 記錄。
 
@@ -139,6 +139,7 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
         context_id: 關聯的業務記錄 SC
         uploader_sc: 上傳者 SC
         storage_type: 強制指定儲存類型，None 則依 context_type 自動判斷
+        uploader_node_id: 上傳時的簽核關卡 node_id
 
     Returns:
         PlatformFile 記錄
@@ -198,6 +199,7 @@ def upload_file(org_sc: str, file: FileStorage, context_type: str,
         context_type=context_type,
         context_id=context_id,
         uploader_sc=uploader_sc,
+        uploader_node_id=uploader_node_id,
         status='active',
         wrapped_dek=wrapped_dek,
         dek_nonce=dek_nonce,
@@ -342,6 +344,42 @@ def delete_file(record: PlatformFile, hard_delete_local: bool = True):
     record.deleted_at = datetime.utcnow()
 
 
+def mark_pending_delete(record: PlatformFile):
+    """
+    標記檔案為待刪除（偽刪除）。
+    實體檔案不動，等簽核確認後才真正刪除。
+    """
+    record.status = 'pending_delete'
+
+
+def confirm_pending_deletes(org_sc: str, context_id: str):
+    """
+    簽核確認後，將所有 pending_delete 檔案正式刪除。
+    """
+    records = PlatformFile.query.filter_by(
+        org_secure_code=org_sc,
+        context_id=context_id,
+        status='pending_delete',
+        is_deleted=False,
+    ).all()
+    for record in records:
+        delete_file(record)
+
+
+def revert_pending_deletes(org_sc: str, context_id: str):
+    """
+    未簽核關閉時，將所有 pending_delete 回復為 active。
+    """
+    records = PlatformFile.query.filter_by(
+        org_secure_code=org_sc,
+        context_id=context_id,
+        status='pending_delete',
+        is_deleted=False,
+    ).all()
+    for record in records:
+        record.status = 'active'
+
+
 def get_file_by_sc(secure_code: str, org_sc: str = None) -> Optional[PlatformFile]:
     """
     依 secure_code 取得檔案記錄。
@@ -361,10 +399,11 @@ def get_file_by_sc(secure_code: str, org_sc: str = None) -> Optional[PlatformFil
 
 def list_files(org_sc: str, context_type: str = None,
                context_id: str = None) -> list:
-    """列出檔案記錄"""
-    query = PlatformFile.query.filter_by(
-        org_secure_code=org_sc,
-        is_deleted=False,
+    """列出檔案記錄（含 active 和 pending_delete）"""
+    query = PlatformFile.query.filter(
+        PlatformFile.org_secure_code == org_sc,
+        PlatformFile.is_deleted == False,
+        PlatformFile.status.in_(['active', 'pending_delete']),
     )
     if context_type:
         query = query.filter_by(context_type=context_type)

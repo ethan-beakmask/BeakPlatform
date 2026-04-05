@@ -1555,6 +1555,10 @@ def approve_task(secure_code):
         }
         task.release_lock()
 
+        # 簽核確認：將 pending_delete 的附件正式刪除
+        from app.services import file_service as _fs
+        _fs.confirm_pending_deletes(org.secure_code, task.form_instance_secure_code)
+
         db.session.commit()
 
         # 觸發工作流推進
@@ -2388,6 +2392,32 @@ def get_execution_logs(instance_id):
             'message': log.log_message or '',
             'data': log.log_data if log.log_data else None
         })
+
+    # 查詢檔案存取記錄（upload/download/delete），合併至日誌
+    from app.models.file_access_log import FileAccessLog
+    form_instance_sc = instance.form_instance_secure_code
+    if form_instance_sc:
+        file_logs = FileAccessLog.query.filter(
+            FileAccessLog.org_secure_code == org.secure_code,
+            FileAccessLog.context_id == form_instance_sc,
+            FileAccessLog.is_deleted == False,
+        ).order_by(FileAccessLog.created_at.asc()).all()
+
+        action_label = {'upload': '上傳', 'download': '下載', 'delete': '刪除'}
+        for fl in file_logs:
+            logs.append({
+                'timestamp': fl.created_at.strftime('%Y-%m-%d %H:%M:%S') if fl.created_at else '',
+                'level': 'FILE',
+                'node_id': '',
+                'workflow_instance_id': None,
+                'workflow_name': '附件',
+                'display_name': action_label.get(fl.action, fl.action),
+                'message': f'{fl.username} {action_label.get(fl.action, fl.action)} {fl.original_name}',
+                'data': {'ip': fl.ip_address} if fl.ip_address else None,
+            })
+
+    # 依時間重新排序（合併後）
+    logs.sort(key=lambda x: x.get('timestamp', ''))
 
     # 查詢所有相關流程的變數值（只取 GLOBAL 範圍）
     # 注意：資料庫實際欄位是 workflow_instance_secure_code 和 var_type

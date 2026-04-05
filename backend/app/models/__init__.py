@@ -82,6 +82,7 @@ from .audit_log import AuditLog
 
 # 檔案管理
 from .platform_file import PlatformFile
+from .file_access_log import FileAccessLog
 
 # 用戶編號規則
 from .user_numbering_rule import (
@@ -185,6 +186,7 @@ __all__ = [
     'AuditLog',
     # 檔案管理
     'PlatformFile',
+    'FileAccessLog',
     # 用戶編號規則
     'UserNumberingRule',
     'UserNumberingCounter',

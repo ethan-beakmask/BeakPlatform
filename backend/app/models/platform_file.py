@@ -39,8 +39,9 @@ class PlatformFile(TenantBaseModel):
 
     # 上傳者
     uploader_sc = Column(String(32))
+    uploader_node_id = Column(String(100))
 
-    # 狀態
+    # 狀態: active, pending_delete, deleted
     status = Column(String(20), nullable=False, default='active')
 
     # 加密 metadata (僅 storage_type='encrypted' 使用)
@@ -60,6 +61,8 @@ class PlatformFile(TenantBaseModel):
             'context_id': self.context_id,
             'storage_type': self.storage_type,
             'status': self.status,
+            'uploader_sc': self.uploader_sc,
+            'uploader_node_id': self.uploader_node_id,
         })
         return base
 

@@ -10,6 +10,7 @@ window.__IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 window.__IS_SYSTEM_ADMIN = {{ 'true' if is_system_admin else 'false' }};
 window.__USER_ROLE_CODES = {{ user_role_codes|tojson }};
 window.__USER_LOCALE = '{{ user_locale }}';
+window.__USER_SC = '{{ user_secure_code }}';
 </script>
 <!-- Bootstrap CSS -->
 <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
@@ -203,7 +204,7 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
                                         <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
@@ -249,7 +250,7 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
                                     <td style="color: #6b7280;" x-text="formatWaitTime(item.my_acted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
                                         <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
@@ -318,7 +319,7 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
                                         <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
@@ -366,7 +367,7 @@ window.__USER_LOCALE = '{{ user_locale }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="查看執行詳情">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
                                         <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">

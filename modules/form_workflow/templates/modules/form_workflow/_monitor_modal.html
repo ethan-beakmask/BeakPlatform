@@ -1,4 +1,4 @@
-{# 執行詳情 - 監控模態框 (partial) #}
+{# 除錯 - 監控模態框 (partial) #}
 
 <!-- 監控模態框 -->
 <div x-show="showMonitorModal" x-cloak class="fc-monitor-modal">
@@ -67,7 +67,7 @@
             <button @click="monitorPage = 'detail'"
                     :style="monitorPage === 'detail' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                執行詳情
+                執行日誌
                 <span x-show="(monitorData?.logs || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #e5e7eb; border-radius: 10px; font-size: 10px;" x-text="(monitorData?.logs || []).length"></span>
             </button>
             <button @click="switchToFormContent()"
@@ -181,7 +181,7 @@
             </div>
         </div>
 
-        <!-- 第二頁：執行詳情 -->
+        <!-- 第二頁：執行日誌 -->
         <div x-show="monitorPage === 'detail'" class="fc-monitor-body">
             <!-- 左側：執行日誌 -->
             <div style="flex: 1; display: flex; flex-direction: column; background: #f9fafb; border-radius: 8px; padding: 12px; overflow: hidden;">
@@ -206,10 +206,10 @@
                     <template x-for="(log, idx) in filteredLogs" :key="idx">
                         <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid;"
                              :style="{
-                                 'border-left-color': log.level === 'ERROR' ? '#ef4444' : (log.level === 'WARNING' ? '#f59e0b' : '#3b82f6'),
-                                 'background': log.level === 'ERROR' ? '#fef2f2' : (log.level === 'WARNING' ? '#fffbeb' : 'white')
+                                 'border-left-color': log.level === 'ERROR' ? '#ef4444' : (log.level === 'WARNING' ? '#f59e0b' : (log.level === 'FILE' ? '#8b5cf6' : '#3b82f6')),
+                                 'background': log.level === 'ERROR' ? '#fef2f2' : (log.level === 'WARNING' ? '#fffbeb' : (log.level === 'FILE' ? '#f5f3ff' : 'white'))
                              }">
-                            <div style="font-size: 10px; color: #9ca3af; font-family: monospace; white-space: nowrap;" x-text="log.timestamp?.split(' ')[1] || ''"></div>
+                            <div style="font-size: 10px; color: #9ca3af; font-family: monospace; white-space: nowrap;" x-text="BkTime.format(log.timestamp, 'time')"></div>
                             <div style="font-size: 10px; white-space: nowrap;">
                                 <span style="color: #6b7280;" x-text="log.workflow_name || ''"></span>
                                 <span x-show="log.display_name || log.node_id" style="color: #9ca3af;"> &gt; </span>
