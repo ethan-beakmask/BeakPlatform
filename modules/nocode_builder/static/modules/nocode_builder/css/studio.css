@@ -403,6 +403,13 @@ html, body {
     flex-direction: column;
     overflow: hidden;
 }
+.stu-props > div {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    flex: 1;
+}
 
 .stu-props-hidden {
     display: none;
