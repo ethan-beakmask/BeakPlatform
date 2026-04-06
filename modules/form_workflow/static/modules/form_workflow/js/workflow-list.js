@@ -192,9 +192,10 @@ function workflowListManager() {
             const CARD_MID = 85;  // card vertical center from top of row
 
             const renderCard = (node, isRoot) => {
-                const href = '/api/workflows/designer/standalone?id=' + node.secure_code +
-                    (isRoot ? '' : '&from=tree&root=' + rootCode) +
-                    (node.is_unused ? '&editable=1' : '');
+                const qp = [];
+                if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
+                if (node.is_unused) { qp.push('editable=1'); }
+                const href = '/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
                 const thumb = node.thumbnail_2x1
                     ? '<img src="' + node.thumbnail_2x1 + '" style="width:210px;height:120px;object-fit:contain;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;">'
                     : '<div style="width:210px;height:120px;display:flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;"><i class="ri-flow-chart" style="font-size:32px;color:#9ca3af;"></i></div>';
@@ -476,7 +477,7 @@ function workflowListManager() {
         },
 
         editUnusedSubflow(sf) {
-            window.location.href = '/api/workflows/designer/standalone?id=' + sf.secure_code + '&editable=1';
+            window.location.href = '/forms/workflows/' + sf.secure_code + '?editable=1';
         },
 
         async deleteUnusedSubflow(sf) {

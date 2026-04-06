@@ -138,9 +138,10 @@ function workflowTreePage() {
             var CARD_MID = 85;
 
             var renderCard = function(node, isRoot) {
-                var href = '/api/workflows/designer/standalone?id=' + node.secure_code +
-                    (isRoot ? '' : '&from=tree&root=' + rootCode) +
-                    (node.is_unused ? '&editable=1' : '');
+                var qp = [];
+                if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
+                if (node.is_unused) { qp.push('editable=1'); }
+                var href = '/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
                 var thumb = node.thumbnail_2x1
                     ? '<img src="' + node.thumbnail_2x1 + '" style="width:210px;height:120px;object-fit:contain;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;">'
                     : '<div style="width:210px;height:120px;display:flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;"><i class="ri-flow-chart" style="font-size:32px;color:#9ca3af;"></i></div>';

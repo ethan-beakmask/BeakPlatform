@@ -55,9 +55,26 @@ def template_new():
 @module_access_required('form_workflow', False)
 @require_permission('form_workflow.template.view')
 def template_detail(secure_code):
-    """表單設計器（重定向到查詢參數格式）"""
-    created = request.args.get('created', '')
-    return redirect(f'/api/forms/designer/standalone?id={secure_code}{"&created=1" if created else ""}')
+    """表單設計器"""
+    from ..models import FwFormTemplate
+
+    org = get_current_org()
+    if not org:
+        return redirect(url_for('form_workflow_web.templates'))
+
+    template = FwFormTemplate.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    return render_template(
+        'modules/form_workflow/form_designer.html',
+        org_secure_code=org.secure_code,
+        form_secure_code=secure_code,
+        form=template.to_dict(include_schema=True) if template else None,
+        user_type=current_user.user_type
+    )
 
 
 # =============================================================================
@@ -85,9 +102,25 @@ def workflow_new():
 @module_access_required('form_workflow', False)
 @require_permission('form_workflow.workflow.view')
 def workflow_detail(secure_code):
-    """工作流設計器（重定向到查詢參數格式）"""
-    created = request.args.get('created', '')
-    return redirect(f'/api/workflows/designer/standalone?id={secure_code}&editable=1{"&created=1" if created else ""}')
+    """工作流設計器"""
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return redirect(url_for('form_workflow_web.workflows'))
+
+    template = FwWorkflowTemplate.query.filter_by(
+        secure_code=secure_code,
+        org_secure_code=org.secure_code,
+        is_deleted=False
+    ).first()
+
+    return render_template(
+        'modules/form_workflow/workflow_designer.html',
+        org_secure_code=org.secure_code,
+        workflow_secure_code=secure_code,
+        workflow=template.to_dict(include_graph=True) if template else None
+    )
 
 
 @web_bp.route('/workflows/<secure_code>/tree')

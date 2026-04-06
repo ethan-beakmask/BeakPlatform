@@ -163,11 +163,15 @@
     <script src="/static/js/formio-user-picker.js"></script>
     <script src="/static/js/formio-form-title.js"></script>
 
+    <!-- 設計器 ID 注入 -->
+    <script>
+    window.__DESIGNER_ID = '{{ form_secure_code or "" }}';
+    </script>
+
     <!-- 欄位規格跳轉（查找或自動建立關聯的 spec） -->
     <script>
     function openFieldSpecEditor() {
-        var params = new URLSearchParams(window.location.search);
-        var ftSc = params.get('id');
+        var ftSc = window.__DESIGNER_ID;
         if (!ftSc) return;
         var csrfInput = document.querySelector('input[name="csrf_token"]');
         var csrfToken = csrfInput ? csrfInput.value : '';

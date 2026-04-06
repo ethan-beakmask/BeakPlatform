@@ -355,9 +355,11 @@
 
             // 更新 URL 並載入新流程（移除 editable，讓通用子流程的唯讀檢查能生效）
             const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('id', secureCode);
+            newUrl.pathname = '/forms/workflows/' + secureCode;
+            newUrl.searchParams.delete('id');
             newUrl.searchParams.delete('new');
             newUrl.searchParams.delete('editable');
+            window.__DESIGNER_ID = secureCode;
             window.history.pushState(null, '', newUrl);
 
             // 重置節點設定面板

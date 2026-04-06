@@ -107,34 +107,6 @@ def designer(secure_code=None):
     )
 
 
-@workflows_bp.route('/designer/standalone')
-@module_access_required('form_workflow')
-def designer_standalone():
-    """流程設計器獨立頁面（用於 iframe 嵌入）"""
-    from ..models import FwWorkflowTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    secure_code = request.args.get('id')
-    template = None
-
-    if secure_code:
-        template = FwWorkflowTemplate.query.filter_by(
-            secure_code=secure_code,
-            org_secure_code=org.secure_code,
-            is_deleted=False
-        ).first()
-
-    return render_template(
-        'modules/form_workflow/workflow_designer.html',
-        org_secure_code=org.secure_code,
-        workflow_secure_code=secure_code,
-        workflow=template.to_dict(include_graph=True) if template else None
-    )
-
-
 # =============================================================================
 # 數據 API
 # =============================================================================

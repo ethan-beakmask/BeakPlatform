@@ -26,7 +26,7 @@ const PageManager = {
 
 // 從 URL 取得參數
 const urlParams = new URLSearchParams(window.location.search);
-const formId = urlParams.get('id');
+const formId = window.__DESIGNER_ID || urlParams.get('id');
 const isNewForm = urlParams.get('new') === '1';
 const wasJustCreated = urlParams.get('created') === '1';
 const formName = urlParams.get('name') || '';

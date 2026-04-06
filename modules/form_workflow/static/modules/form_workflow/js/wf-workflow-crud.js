@@ -523,11 +523,13 @@
 
                 // 建立成功後，立即將 URL 改為編輯模式，防止重新整理時重複建立
                 const newUrl = new URL(window.location.href);
+                newUrl.pathname = '/forms/workflows/' + workflowData.secure_code;
                 newUrl.searchParams.delete('new');
                 newUrl.searchParams.delete('name');
                 newUrl.searchParams.delete('category');
                 newUrl.searchParams.delete('description');
-                newUrl.searchParams.set('id', workflowData.secure_code);
+                newUrl.searchParams.delete('id');
+                window.__DESIGNER_ID = workflowData.secure_code;
                 window.history.replaceState(null, '', newUrl);
                 console.log('🔄 已更新 URL 為編輯模式:', newUrl.href);
 

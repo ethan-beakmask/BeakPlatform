@@ -153,35 +153,6 @@ def designer(secure_code=None):
     )
 
 
-@forms_bp.route('/designer/standalone')
-@module_access_required('form_workflow')
-def designer_standalone():
-    """表單設計器獨立頁面（用於 iframe 嵌入或直接訪問）"""
-    from ..models import FwFormTemplate
-
-    org = get_current_org()
-    if not org:
-        return jsonify({'success': False, 'error': 'Organization not found'}), 400
-
-    secure_code = request.args.get('id')
-    template = None
-
-    if secure_code:
-        template = FwFormTemplate.query.filter_by(
-            secure_code=secure_code,
-            org_secure_code=org.secure_code,
-            is_deleted=False
-        ).first()
-
-    return render_template(
-        'modules/form_workflow/form_designer.html',
-        org_secure_code=org.secure_code,
-        form_secure_code=secure_code,
-        form=template.to_dict(include_schema=True) if template else None,
-        user_type=current_user.user_type
-    )
-
-
 # =============================================================================
 # 分類 API
 # =============================================================================

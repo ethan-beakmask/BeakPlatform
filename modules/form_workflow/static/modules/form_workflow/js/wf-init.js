@@ -264,7 +264,7 @@
 
             // 從 URL 取得參數
             const urlParams = new URLSearchParams(window.location.search);
-            const workflowId = urlParams.get('id');
+            const workflowId = window.__DESIGNER_ID || urlParams.get('id');
             const isNewWorkflow = urlParams.get('new') === '1';
             const workflowName = urlParams.get('name') || '';
             const workflowCategory = urlParams.get('category') || '';
