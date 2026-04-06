@@ -310,6 +310,29 @@
                                      : '顯示指定網頁的子網頁 (多個項目，各含子樹)'"></div>
                         </div>
 
+                        <div class="stu-section-divider">節點圖示</div>
+                        <div style="max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:4px;padding:4px;">
+                            <template x-for="n in flattenTree(tree, 0)" :key="'nicon-'+n.secure_code">
+                                <div style="display:flex;align-items:center;gap:4px;padding:3px 4px;font-size:12px;border-bottom:1px solid #f3f4f6;"
+                                     :style="'padding-left:' + (n._depth * 14 + 4) + 'px'">
+                                    <span style="width:20px;min-width:20px;text-align:center;font-size:14px;">
+                                        <i x-show="n.icon" :class="n.icon"></i>
+                                        <span x-show="!n.icon" style="color:#ddd;font-size:11px;">--</span>
+                                    </span>
+                                    <span x-text="n.name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                                    <button class="stu-btn sm" @click="openItemIconPicker(n.secure_code)"
+                                            style="padding:1px 6px;font-size:10px;line-height:1.4;" title="選擇圖示">
+                                        <i class="fas fa-palette" style="font-size:10px;"></i>
+                                    </button>
+                                    <button class="stu-btn sm" x-show="n.icon" @click="clearItemIcon(n.secure_code)"
+                                            style="padding:1px 5px;font-size:10px;line-height:1.4;" title="清除圖示">X</button>
+                                </div>
+                            </template>
+                            <div x-show="tree.length === 0" style="padding:8px;text-align:center;color:#999;font-size:11px;">
+                                尚無節點
+                            </div>
+                        </div>
+
                         <div class="stu-section-divider">外觀</div>
                         <div class="stu-field">
                             <label>標題</label>

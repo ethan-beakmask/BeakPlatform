@@ -136,7 +136,8 @@ function studioManager() {
         _ip_activeCategory: 'business',
         _ip_search: '',
         _ip_selectedIcon: '',
-        _iconTarget: 'node',   // 'node' | 'add'
+        _iconTarget: 'node',   // 'node' | 'add' | 'item'
+        _iconEditNodeSc: '',   // 'item' target 時追蹤的節點 SC
 
         // Access Roles (准入設定)
         editAccessRoles: [],
@@ -904,7 +905,7 @@ function studioManager() {
             if (!nodes) return result;
             for (var i = 0; i < nodes.length; i++) {
                 var n = nodes[i];
-                result.push({ secure_code: n.secure_code, name: n.name, _depth: depth });
+                result.push({ secure_code: n.secure_code, name: n.name, icon: n.icon || '', _depth: depth });
                 if (n.children && n.children.length > 0) {
                     result = result.concat(this.flattenTree(n.children, depth + 1));
                 }
@@ -1801,6 +1802,8 @@ function studioManager() {
             this._ip_selectedIcon = iconClass;
             if (this._iconTarget === 'add') {
                 this.addNodeForm.icon = iconClass;
+            } else if (this._iconTarget === 'item') {
+                this._saveItemNodeIcon(this._iconEditNodeSc, iconClass);
             } else if (this.selectedNode) {
                 this.selectedNode.icon = iconClass;
                 this._saveNodeIcon(iconClass);
@@ -1812,6 +1815,8 @@ function studioManager() {
             this._ip_selectedIcon = '';
             if (this._iconTarget === 'add') {
                 this.addNodeForm.icon = '';
+            } else if (this._iconTarget === 'item') {
+                this._saveItemNodeIcon(this._iconEditNodeSc, '');
             } else if (this.selectedNode) {
                 this.selectedNode.icon = '';
                 this._saveNodeIcon('');
@@ -1840,6 +1845,69 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this._initSiteMapTree();
+                } else {
+                    this.showToast(data.error || '圖示儲存失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('圖示儲存失敗: ' + e.message, 'error');
+            }
+        },
+
+        // ================================================================
+        // Icon Picker (SITEMENU 節點圖示 - 設定面板用)
+        // ================================================================
+
+        /** 遞迴搜尋 tree 中的節點 */
+        _findTreeNode: function (nodes, sc) {
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].secure_code === sc) return nodes[i];
+                if (nodes[i].children && nodes[i].children.length > 0) {
+                    var found = this._findTreeNode(nodes[i].children, sc);
+                    if (found) return found;
+                }
+            }
+            return null;
+        },
+
+        /** 從 SITEMENU 設定面板打開 icon picker */
+        openItemIconPicker: function (nodeSc) {
+            var node = this._findTreeNode(this.tree, nodeSc);
+            if (!node) return;
+            this._iconTarget = 'item';
+            this._iconEditNodeSc = nodeSc;
+            this._ip_selectedIcon = node.icon || '';
+            this._ip_activeCategory = 'business';
+            this._ip_search = '';
+            this._ip_show = true;
+        },
+
+        /** 從 SITEMENU 設定面板清除節點圖示 */
+        clearItemIcon: function (nodeSc) {
+            this._saveItemNodeIcon(nodeSc, '');
+        },
+
+        /** 儲存節點圖示 (SITEMENU 設定面板用) */
+        _saveItemNodeIcon: async function (nodeSc, iconClass) {
+            if (!nodeSc) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + nodeSc,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ icon: iconClass || null }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    // 同步更新 selectedNode (若正在編輯同一節點)
+                    if (this.selectedNode && this.selectedNode.secure_code === nodeSc) {
+                        this.selectedNode.icon = iconClass;
+                    }
+                    await this._loadTree();
+                    this._initSiteMapTree();
+                    this.showToast('圖示已更新', 'success');
                 } else {
                     this.showToast(data.error || '圖示儲存失敗', 'error');
                 }
