@@ -7,6 +7,7 @@
     <title>NoCode Builder - BeakPlatform</title>
     <link rel="stylesheet" href="/static/css/themes.css">
     <link rel="stylesheet" href="/static/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/static/fonts/remixicon/remixicon.css">
     <link rel="stylesheet" href="/static/vendor/beak-trellis/beak-tree.css">
     <link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
     <link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
@@ -90,6 +91,17 @@
                         <button class="stu-btn sm" @click="openAddNode()"><i class="fas fa-plus"></i> 網頁</button>
                         <button class="stu-btn sm" @click="openAccessRoles()" :disabled="!selectedNode">准入</button>
                         <button class="stu-btn sm danger" @click="deleteNode()" :disabled="!selectedNode">刪除</button>
+                    </div>
+                    <!-- 選中節點: 圖示設定 -->
+                    <div x-show="selectedNode" class="stu-node-icon-bar">
+                        <span style="font-size:11px;color:#888;margin-right:4px;">圖示</span>
+                        <span x-show="selectedNode && selectedNode.icon" style="font-size:16px;width:22px;text-align:center;">
+                            <i :class="selectedNode ? selectedNode.icon : ''"></i>
+                        </span>
+                        <span x-show="selectedNode && !selectedNode.icon" style="font-size:11px;color:#bbb;">無</span>
+                        <button class="stu-btn sm" @click="openNodeIconPicker()" style="margin-left:auto;padding:2px 8px;font-size:11px;">選擇</button>
+                        <button class="stu-btn sm" x-show="selectedNode && selectedNode.icon"
+                                @click="clearNodeIcon()" style="padding:2px 6px;font-size:11px;">X</button>
                     </div>
                     <div class="stu-tree-wrap">
                         <div id="stu-tree"></div>
@@ -347,6 +359,10 @@
                                 <tr>
                                     <td>Hover 字色</td>
                                     <td><input type="color" x-model="smItemHoverTextColor"> <code x-text="smItemHoverTextColor"></code></td>
+                                </tr>
+                                <tr>
+                                    <td>強調色</td>
+                                    <td><input type="color" x-model="smAccentColor"> <code x-text="smAccentColor"></code></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -628,6 +644,15 @@
                     <label>名稱 *</label>
                     <input type="text" x-model="addNodeForm.name">
                 </div>
+                <div class="stu-field">
+                    <label>圖示</label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span x-show="addNodeForm.icon" style="font-size:20px;width:28px;text-align:center;"><i :class="addNodeForm.icon"></i></span>
+                        <button type="button" class="stu-btn sm" @click="openAddNodeIconPicker()">選擇圖示</button>
+                        <span x-show="addNodeForm.icon" x-text="addNodeForm.icon" style="font-size:11px;color:#999;"></span>
+                        <button type="button" x-show="addNodeForm.icon" class="stu-btn sm" @click="addNodeForm.icon=''" style="padding:2px 6px;">X</button>
+                    </div>
+                </div>
                 <!-- 父節點資訊 -->
                 <div x-show="tree.length > 0" class="stu-field">
                     <span style="color:#666; font-size:13px;"
@@ -703,6 +728,9 @@
     <div x-show="toast.show" x-cloak class="stu-toast" :class="toast.type"
          x-text="toast.message" x-transition></div>
 
+    <!-- Icon Picker Modal -->
+    {% include "partials/_icon_picker.html" %}
+
 </div><!-- stu-app -->
 
 <script>
@@ -710,6 +738,7 @@ window.__STUDIO_CONFIG = {
     subSystemSc: '{{ sub_system_sc }}',
 };
 </script>
+<script src="/static/js/icon-picker.js"></script>
 <script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
 <script src="/static/vendor/beak-trellis/beak-tree.js"></script>
 <script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>

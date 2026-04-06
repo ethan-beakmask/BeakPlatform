@@ -101,6 +101,7 @@ function studioManager() {
         smItemTextColor: '#333333',
         smItemHoverBgColor: '#e9ecef',
         smItemHoverTextColor: '#333333',
+        smAccentColor: '#e67e22',
         smItemGap: 6,
         smHoverExpand: true,
         smHoverExpandDelay: 300,
@@ -128,7 +129,14 @@ function studioManager() {
 
         // Node form
         showAddNodeModal: false,
-        addNodeForm: { name: '', parent_sc: '' },
+        addNodeForm: { name: '', icon: '', parent_sc: '' },
+
+        // Icon picker state
+        _ip_show: false,
+        _ip_activeCategory: 'business',
+        _ip_search: '',
+        _ip_selectedIcon: '',
+        _iconTarget: 'node',   // 'node' | 'add'
 
         // Access Roles (准入設定)
         editAccessRoles: [],
@@ -408,7 +416,6 @@ function studioManager() {
          */
         _buildNodeLabel: function (n) {
             var parts = [];
-            if (n.icon) parts.push(n.icon);
             parts.push(n.name);
             parts.push(this._accessBadgeText(n.access_roles));
             return parts.join(' ');
@@ -681,6 +688,7 @@ function studioManager() {
                     orientation: 'vertical',
                     bgColor: '#ffffff', itemBgColor: '#ffffff', itemTextColor: '#333333',
                     itemHoverBgColor: '#e9ecef', itemHoverTextColor: '#333333',
+                    accentColor: '#e67e22',
                     itemGap: 6, hoverExpand: true, hoverExpandDelay: 300,
                     contextOutputs: [], contextInputs: [],
                 };
@@ -844,6 +852,7 @@ function studioManager() {
                 this.smItemTextColor = widgetConfig.itemTextColor || '#333333';
                 this.smItemHoverBgColor = widgetConfig.itemHoverBgColor || '#e9ecef';
                 this.smItemHoverTextColor = widgetConfig.itemHoverTextColor || '#333333';
+                this.smAccentColor = widgetConfig.accentColor || '#e67e22';
                 this.smItemGap = widgetConfig.itemGap != null ? widgetConfig.itemGap : 6;
                 this.smHoverExpand = widgetConfig.hoverExpand !== false;
                 this.smHoverExpandDelay = widgetConfig.hoverExpandDelay || 300;
@@ -1015,6 +1024,7 @@ function studioManager() {
                 itemTextColor: this.smItemTextColor,
                 itemHoverBgColor: this.smItemHoverBgColor,
                 itemHoverTextColor: this.smItemHoverTextColor,
+                accentColor: this.smAccentColor,
                 itemGap: parseInt(this.smItemGap, 10) || 6,
                 hoverExpand: this.smHoverExpand,
                 hoverExpandDelay: parseInt(this.smHoverExpandDelay, 10) || 300,
@@ -1227,12 +1237,14 @@ function studioManager() {
                 // 第一個節點必須是根頁面 welcome
                 this.addNodeForm = {
                     name: 'welcome',
+                    icon: '',
                     parent_sc: '',
                 };
             } else {
                 // 已有根節點，新網頁掛在選取節點下
                 this.addNodeForm = {
                     name: '',
+                    icon: '',
                     parent_sc: this.selectedNode
                         ? this.selectedNode.secure_code
                         : this.tree[0].secure_code,
@@ -1249,6 +1261,7 @@ function studioManager() {
                 var body = {
                     name: name,
                     node_type: 'page',
+                    icon: this.addNodeForm.icon || null,
                     parent_secure_code: this.addNodeForm.parent_sc || null,
                 };
 
@@ -1752,6 +1765,108 @@ function studioManager() {
             this.toast = { show: true, message: message, type: type };
             var self = this;
             setTimeout(function () { self.toast.show = false; }, 3000);
+        },
+
+        // ================================================================
+        // Icon Picker (Site Map 節點圖示)
+        // ================================================================
+
+        openNodeIconPicker: function () {
+            if (!this.selectedNode) return;
+            this._iconTarget = 'node';
+            this._ip_selectedIcon = this.selectedNode.icon || '';
+            this._ip_activeCategory = 'business';
+            this._ip_search = '';
+            this._ip_show = true;
+        },
+
+        openAddNodeIconPicker: function () {
+            this._iconTarget = 'add';
+            this._ip_selectedIcon = this.addNodeForm.icon || '';
+            this._ip_activeCategory = 'business';
+            this._ip_search = '';
+            this._ip_show = true;
+        },
+
+        ipOpen: function () {
+            this._ip_show = true;
+            this._ip_search = '';
+        },
+
+        ipClose: function () {
+            this._ip_show = false;
+        },
+
+        ipSelect: function (iconClass) {
+            this._ip_selectedIcon = iconClass;
+            if (this._iconTarget === 'add') {
+                this.addNodeForm.icon = iconClass;
+            } else if (this.selectedNode) {
+                this.selectedNode.icon = iconClass;
+                this._saveNodeIcon(iconClass);
+            }
+            this.ipClose();
+        },
+
+        ipClear: function () {
+            this._ip_selectedIcon = '';
+            if (this._iconTarget === 'add') {
+                this.addNodeForm.icon = '';
+            } else if (this.selectedNode) {
+                this.selectedNode.icon = '';
+                this._saveNodeIcon('');
+            }
+            this.ipClose();
+        },
+
+        clearNodeIcon: function () {
+            if (!this.selectedNode) return;
+            this.selectedNode.icon = '';
+            this._saveNodeIcon('');
+        },
+
+        _saveNodeIcon: async function (iconClass) {
+            if (!this.selectedNode) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + this.selectedNode.secure_code,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ icon: iconClass || null }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this._initSiteMapTree();
+                } else {
+                    this.showToast(data.error || '圖示儲存失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('圖示儲存失敗: ' + e.message, 'error');
+            }
+        },
+
+        ipGetCategories: function () {
+            return typeof ICON_CATEGORIES !== 'undefined' ? ICON_CATEGORIES : [];
+        },
+
+        ipGetIcons: function () {
+            var cats = this.ipGetCategories();
+            var active = this._ip_activeCategory;
+            var cat = null;
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].name === active) { cat = cats[i]; break; }
+            }
+            var icons = cat ? cat.icons : [];
+            var search = (this._ip_search || '').trim().toLowerCase();
+            if (!search) return icons;
+            return icons.filter(function (ic) { return ic.toLowerCase().indexOf(search) >= 0; });
+        },
+
+        ipSetCategory: function (name) {
+            this._ip_activeCategory = name;
         },
     };
 }

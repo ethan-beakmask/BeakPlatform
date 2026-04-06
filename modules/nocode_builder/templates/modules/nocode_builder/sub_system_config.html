@@ -277,7 +277,12 @@ window.__SSC_CONFIG = {
                                 </div>
                                 <div class="ssc-field">
                                     <label>圖示</label>
-                                    <input type="text" x-model="nodeForm.icon" style="width: 150px;" placeholder="bi bi-xxx">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span x-show="nodeForm.icon" style="font-size:20px;width:28px;text-align:center;"><i :class="nodeForm.icon"></i></span>
+                                        <button type="button" @click="openIconPicker('node')" class="dc-btn sm">選擇圖示</button>
+                                        <span x-show="nodeForm.icon" x-text="nodeForm.icon" style="font-size:11px;color:#999;"></span>
+                                        <button type="button" x-show="nodeForm.icon" @click="nodeForm.icon=''; _ip_selectedIcon=''" class="dc-btn sm danger" style="padding:2px 6px;">X</button>
+                                    </div>
                                 </div>
                                 <div class="ssc-field">
                                     <label>連結頁面</label>
@@ -378,7 +383,12 @@ window.__SSC_CONFIG = {
                             </div>
                             <div class="ssc-field">
                                 <label>圖示</label>
-                                <input type="text" x-model="addForm.icon" placeholder="bi bi-xxx" style="width: 200px; padding: 6px 8px; border: 1px solid #ddd;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <span x-show="addForm.icon" style="font-size:20px;width:28px;text-align:center;"><i :class="addForm.icon"></i></span>
+                                    <button type="button" @click="openIconPicker('add')" class="dc-btn sm">選擇圖示</button>
+                                    <span x-show="addForm.icon" x-text="addForm.icon" style="font-size:11px;color:#999;"></span>
+                                    <button type="button" x-show="addForm.icon" @click="addForm.icon=''; _ip_selectedIcon=''" class="dc-btn sm danger" style="padding:2px 6px;">X</button>
+                                </div>
                             </div>
                             <div class="ssc-field">
                                 <label>連結既有頁面 (留空自動建立)</label>
@@ -400,6 +410,9 @@ window.__SSC_CONFIG = {
                 <!-- Toast (site map) -->
                 <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
                      x-text="toast.message" x-transition></div>
+
+                <!-- Icon Picker Modal -->
+                {% include "partials/_icon_picker.html" %}
             </div>
 
             <!-- Tab: 准入矩陣 -->
@@ -564,6 +577,7 @@ window.__SSC_CONFIG = {
 <script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
 <script src="/static/vendor/beak-trellis/beak-trellis.js"></script>
 <script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="/static/js/icon-picker.js"></script>
 <script src="/static/modules/nocode_builder/js/site-map-editor.js"></script>
 <script src="/static/modules/nocode_builder/js/access-matrix.js"></script>
 <script src="/static/modules/nocode_builder/js/sub-system-config.js"></script>

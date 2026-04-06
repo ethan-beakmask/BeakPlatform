@@ -1,5 +1,6 @@
 /* =================================================================
-   SITEMENU Widget -- 導航選單元件
+   SITEMENU Widget -- 導航選單元件 (Mega Menu Style)
+   參考: responsive-mega-menu-css-only
    ================================================================= */
 
 /* -- Root -- */
@@ -72,12 +73,15 @@
     padding: 4px 0;
 }
 
-/* Horizontal */
+/* Horizontal: Mega Menu 風格列 */
 .smw-root.smw-horizontal .smw-menu {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
     align-items: stretch;
+    height: 100px;
+    border-radius: 2px;
+    background: inherit;
 }
 
 /* ----- Item ----- */
@@ -85,6 +89,8 @@
 .smw-item {
     position: relative;
 }
+
+/* ----- Link (base) ----- */
 
 .smw-link {
     display: flex;
@@ -107,32 +113,52 @@
 }
 .smw-root.smw-vertical .smw-link:hover,
 .smw-root.smw-vertical .smw-link.smw-active {
-    border-left-color: var(--smw-accent, #3b82f6);
+    border-left-color: var(--smw-accent, #e67e22);
 }
 
-/* Horizontal: 底部 accent 線 */
+/* ===== Horizontal Mega Menu Style ===== */
+
+/* 橫式一級項目: 置中直向排列 icon/title/subtitle */
 .smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link {
-    border-bottom: 3px solid transparent;
-    padding: 12px 20px;
+    padding: 8px 20px;
     text-align: center;
     flex-direction: column;
-    gap: 2px;
-}
-.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link:hover,
-.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link.smw-active {
-    border-bottom-color: var(--smw-accent, #3b82f6);
+    gap: 0;
+    height: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* 預留 active 上下邊框空間 (透明) */
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    /* 項目間分隔線 */
+    border-right: 1px solid #e7e7e7;
 }
 
-/* 橫式每個一級項目之間的分隔線 */
-.smw-root.smw-horizontal > .smw-menu > .smw-item + .smw-item > .smw-link {
-    border-left: 1px solid #e5e7eb;
+/* Horizontal active: 上下 accent 邊框 + 陰影 + 三角指示器 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link.smw-active {
+    border-top-color: var(--smw-accent, #e67e22);
+    border-bottom-color: var(--smw-accent, #e67e22);
+    border-right-color: transparent;
+    box-shadow: 0 0 5px #ddd;
+}
+
+/* Active 三角指示器 (頂部中央) */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link.smw-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(50% - 5px);
+    border-top: 5px solid var(--smw-accent, #e67e22);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
 }
 
 /* -- Icon -- */
 .smw-link i {
     font-size: 16px;
     flex-shrink: 0;
-    transition: transform 0.25s ease, opacity 0.25s ease;
+    transition: all 300ms linear;
 }
 
 /* Vertical: icon 在文字左邊 */
@@ -144,14 +170,23 @@
 
 /* Horizontal 一級: icon 大，在文字上方 */
 .smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link > i {
-    font-size: 22px;
+    font-size: 28px;
     margin-right: 0;
-    margin-bottom: 2px;
+    margin-bottom: 8px;
+    display: block;
 }
 
 /* -- Icon hover animation -- */
-.smw-link:hover i {
+
+/* Vertical: 微微上移 */
+.smw-root.smw-vertical .smw-link:hover i {
     transform: translateY(-2px);
+}
+
+/* Horizontal: icon 從下方彈入 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item:hover > .smw-link > i {
+    opacity: 1;
+    animation: smw-moveFromBottom 300ms ease-in-out;
 }
 
 /* -- Text -- */
@@ -159,16 +194,76 @@
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: transform 0.2s ease;
+    transition: all 300ms linear;
 }
 
-.smw-link:hover .smw-link-text {
+/* Vertical: hover 微移 */
+.smw-root.smw-vertical .smw-link:hover .smw-link-text {
     transform: translateX(2px);
 }
 
-/* Horizontal 一級不需要 text shift */
-.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link:hover .smw-link-text {
-    transform: none;
+/* Horizontal 一級: 大寫粗體 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link > .smw-link-text {
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 13px;
+    flex: none;
+}
+
+/* Horizontal text hover: 從右滑入 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item:hover > .smw-link > .smw-link-text {
+    opacity: 1;
+    animation: smw-moveFromLeft 300ms ease-in-out;
+}
+
+/* -- Subtitle -- */
+.smw-link-sub {
+    font-size: 10px;
+    display: block;
+    opacity: 0.6;
+    transition: all 300ms linear;
+    flex: none;
+}
+
+/* Horizontal subtitle hover: 從左滑入 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item:hover > .smw-link > .smw-link-sub {
+    opacity: 1;
+    animation: smw-moveFromRight 300ms ease-in-out;
+}
+
+/* ----- Mega Menu Hover Animations ----- */
+
+@keyframes smw-moveFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(200%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes smw-moveFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(200%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes smw-moveFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(-200%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* ----- Arrow indicator ----- */
@@ -183,7 +278,7 @@
     transition: transform 0.2s ease;
 }
 
-/* Vertical: arrow points right → down when open */
+/* Vertical: arrow points right -> down when open */
 .smw-root.smw-vertical .smw-arrow {
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
@@ -252,13 +347,13 @@
 /* ----- Floating panel (橫式 submenu，掛在 body) ----- */
 
 .smw-floating-panel {
-    animation: smw-fade-in 0.15s ease-out;
-    border-top: 3px solid var(--smw-accent, #3b82f6) !important;
+    animation: smw-fade-in 0.2s ease-out;
+    border-top: 4px solid var(--smw-accent, #e67e22) !important;
     border-radius: 0 0 6px 6px !important;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08) !important;
 }
 
-/* Floating panel 三角箭頭 */
+/* Floating panel 三角箭頭 (頂部) */
 .smw-floating-panel::before {
     content: '';
     position: absolute;
@@ -266,7 +361,23 @@
     left: 20px;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-bottom: 5px solid var(--smw-accent, #3b82f6);
+    border-bottom: 5px solid var(--smw-accent, #e67e22);
+}
+
+/* 巢狀 floating panel: 左側 accent 邊框 + 左箭頭 */
+.smw-floating-panel.smw-nested-panel {
+    border-top: 0 !important;
+    border-left: 4px solid var(--smw-accent, #e67e22) !important;
+    border-radius: 0 6px 6px 0 !important;
+}
+
+.smw-floating-panel.smw-nested-panel::before {
+    top: 15px;
+    left: -9px;
+    border-right: 5px solid var(--smw-accent, #e67e22);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: none;
 }
 
 @keyframes smw-fade-in {
@@ -283,21 +394,27 @@
 }
 
 .smw-floating-panel .smw-link {
-    padding: 8px 16px;
+    padding: 10px 16px;
     font-size: 13px;
     border-left: 3px solid transparent;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .smw-floating-panel .smw-link:hover {
-    border-left-color: var(--smw-accent, #3b82f6);
+    border-left-color: var(--smw-accent, #e67e22);
 }
 
 .smw-floating-panel .smw-link i {
-    margin-right: 8px;
+    margin-right: 10px;
     width: 18px;
     text-align: center;
-    font-size: 14px;
+    font-size: 16px;
+    display: inline-block;
+}
+
+/* Floating panel 子項分隔線 */
+.smw-floating-panel .smw-item + .smw-item .smw-link {
+    border-top: 1px solid #eee;
 }
 
 /* ----- Design-time placeholder ----- */

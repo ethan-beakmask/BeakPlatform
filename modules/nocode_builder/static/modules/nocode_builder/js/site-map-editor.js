@@ -30,6 +30,13 @@ function siteMapEditor(subSystemSc) {
 
         toast: { show: false, message: '', type: 'success' },
 
+        // Icon picker state
+        _ip_show: false,
+        _ip_activeCategory: 'business',
+        _ip_search: '',
+        _ip_selectedIcon: '',
+        _iconTarget: 'node',   // 'node' | 'add'
+
         async init() {
             await Promise.all([
                 this.loadTree(),
@@ -70,7 +77,7 @@ function siteMapEditor(subSystemSc) {
         _treeToSource(nodes) {
             var self = this;
             return nodes.map(function(n) {
-                var icon = 'bi bi-file-earmark';
+                var icon = n.icon || 'ri-file-text-line';
                 var node = {
                     title: n.name,
                     key: n.secure_code,
@@ -147,6 +154,7 @@ function siteMapEditor(subSystemSc) {
                 crud_overrides: JSON.parse(JSON.stringify(d.crud_overrides || {})),
                 data_filters: JSON.parse(JSON.stringify(d.data_filters || {})),
             };
+            this._ip_selectedIcon = this.nodeForm.icon;
         },
 
         // ===== 准入控制 (access_roles) =====
@@ -381,6 +389,67 @@ function siteMapEditor(subSystemSc) {
             this.toast = { show: true, message: message, type: type };
             var self = this;
             setTimeout(function() { self.toast.show = false; }, 3000);
+        },
+
+        // ===== Icon Picker =====
+
+        openIconPicker(target) {
+            this._iconTarget = target;
+            var currentIcon = target === 'add' ? this.addForm.icon : this.nodeForm.icon;
+            this._ip_selectedIcon = currentIcon || '';
+            this._ip_activeCategory = 'business';
+            this._ip_search = '';
+            this._ip_show = true;
+        },
+
+        ipOpen() {
+            this._ip_show = true;
+            this._ip_search = '';
+        },
+
+        ipClose() {
+            this._ip_show = false;
+        },
+
+        ipSelect(iconClass) {
+            this._ip_selectedIcon = iconClass;
+            if (this._iconTarget === 'add') {
+                this.addForm.icon = iconClass;
+            } else {
+                this.nodeForm.icon = iconClass;
+            }
+            this.ipClose();
+        },
+
+        ipClear() {
+            this._ip_selectedIcon = '';
+            if (this._iconTarget === 'add') {
+                this.addForm.icon = '';
+            } else {
+                this.nodeForm.icon = '';
+            }
+            this.ipClose();
+        },
+
+        ipGetCategories() {
+            return typeof ICON_CATEGORIES !== 'undefined' ? ICON_CATEGORIES : [];
+        },
+
+        ipGetIcons() {
+            var cats = this.ipGetCategories();
+            var active = this._ip_activeCategory;
+            var cat = null;
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].name === active) { cat = cats[i]; break; }
+            }
+            var icons = cat ? cat.icons : [];
+            var search = (this._ip_search || '').trim().toLowerCase();
+            if (!search) return icons;
+            return icons.filter(function(ic) { return ic.toLowerCase().indexOf(search) >= 0; });
+        },
+
+        ipSetCategory(name) {
+            this._ip_activeCategory = name;
         },
     };
 }

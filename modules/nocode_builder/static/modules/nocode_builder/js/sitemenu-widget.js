@@ -22,6 +22,7 @@ class SiteMenuWidget {
             itemTextColor: '#333333',
             itemHoverBgColor: '#e9ecef',
             itemHoverTextColor: '#333333',
+            accentColor: '#e67e22',     // accent 強調色 (邊框/active/hover)
             itemGap: 6,
             hoverExpand: true,
             hoverExpandDelay: 300,
@@ -128,6 +129,7 @@ class SiteMenuWidget {
         var root = document.createElement('div');
         root.className = 'smw-root smw-' + this.config.orientation;
         root.style.backgroundColor = this.config.bgColor;
+        root.style.setProperty('--smw-accent', this.config.accentColor || '#e67e22');
 
         if (this.config.title) {
             var header = document.createElement('div');
@@ -167,14 +169,14 @@ class SiteMenuWidget {
         root.classList.add('smw-mock');
 
         var mockNodes = [
-            { secure_code: '_m1', name: '首頁', icon: 'fas fa-home', children: [] },
-            { secure_code: '_m2', name: '功能', icon: 'fas fa-th-large', children: [
+            { secure_code: '_m1', name: '首頁', subtitle: '主控台', icon: 'fas fa-home', children: [] },
+            { secure_code: '_m2', name: '功能', subtitle: '管理中心', icon: 'fas fa-th-large', children: [
                 { secure_code: '_m2a', name: '項目 A', icon: 'fas fa-file-alt', children: [] },
-                { secure_code: '_m2b', name: '項目 B', icon: 'fas fa-file-alt', children: [] },
-                { secure_code: '_m2c', name: '項目 C', icon: 'fas fa-file-alt', children: [] },
+                { secure_code: '_m2b', name: '項目 B', icon: 'fas fa-chart-line', children: [] },
+                { secure_code: '_m2c', name: '項目 C', icon: 'fas fa-database', children: [] },
             ]},
-            { secure_code: '_m3', name: '報表', icon: 'fas fa-chart-bar', children: [] },
-            { secure_code: '_m4', name: '設定', icon: 'fas fa-cog', children: [] },
+            { secure_code: '_m3', name: '報表', subtitle: '數據分析', icon: 'fas fa-chart-bar', children: [] },
+            { secure_code: '_m4', name: '設定', subtitle: '系統管理', icon: 'fas fa-cog', children: [] },
         ];
 
         var ul = this._buildMenuLevel(mockNodes, 0);
@@ -295,19 +297,31 @@ class SiteMenuWidget {
         text.textContent = node.name;
         a.appendChild(text);
 
+        // 橫式一級: 顯示副標題
+        var isHoriz = this.config.orientation === 'horizontal';
+        if (isHoriz && node.subtitle) {
+            var sub = document.createElement('small');
+            sub.className = 'smw-link-sub';
+            sub.textContent = node.subtitle;
+            a.appendChild(sub);
+        }
+
         // 樣式
         a.style.backgroundColor = this.config.itemBgColor;
         a.style.color = this.config.itemTextColor;
 
-        // Hover
+        // Hover: 橫式用 accent 色，直式用 config 色
         var cfg = this.config;
+        var accentColor = cfg.accentColor || '#e67e22';
         a.addEventListener('mouseenter', function () {
             a.style.backgroundColor = cfg.itemHoverBgColor;
-            a.style.color = cfg.itemHoverTextColor;
+            a.style.color = isHoriz ? accentColor : cfg.itemHoverTextColor;
         });
         a.addEventListener('mouseleave', function () {
-            a.style.backgroundColor = cfg.itemBgColor;
-            a.style.color = cfg.itemTextColor;
+            if (!a.classList.contains('smw-active')) {
+                a.style.backgroundColor = cfg.itemBgColor;
+                a.style.color = cfg.itemTextColor;
+            }
         });
 
         // Click - emit context
@@ -322,7 +336,7 @@ class SiteMenuWidget {
         if (this._activeNodeSc && node.secure_code === this._activeNodeSc) {
             a.classList.add('smw-active');
             a.style.backgroundColor = cfg.itemHoverBgColor;
-            a.style.color = cfg.itemHoverTextColor;
+            a.style.color = isHoriz ? accentColor : cfg.itemHoverTextColor;
         }
 
         return a;
@@ -452,11 +466,15 @@ class SiteMenuWidget {
     _createFloatingPanel(nodes, depth) {
         var panel = document.createElement('div');
         panel.className = 'smw-floating-panel';
+        if (depth > 1) {
+            panel.classList.add('smw-nested-panel');
+        }
         panel.setAttribute('data-smw-floating', '1');
         panel.style.position = 'fixed';
         panel.style.zIndex = '10000';
         panel.style.background = this.config.bgColor || '#fff';
-        panel.style.minWidth = '180px';
+        panel.style.minWidth = '200px';
+        panel.style.setProperty('--smw-accent', this.config.accentColor || '#e67e22');
 
         var ul = document.createElement('ul');
         ul.className = 'smw-menu smw-floating-menu';

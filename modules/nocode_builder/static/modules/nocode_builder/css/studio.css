@@ -154,6 +154,18 @@ html, body {
     border-bottom: none;
 }
 
+/* 節點圖示編輯列 */
+.stu-node-icon-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+    background: #fafbfc;
+    font-size: 12px;
+    min-height: 28px;
+}
+
 .stu-panel-title {
     padding: 8px 12px;
     font-size: 11px;
