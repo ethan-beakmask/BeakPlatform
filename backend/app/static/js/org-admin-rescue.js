@@ -1,7 +1,8 @@
-/* org-admin-rescue.js — 系統管理員管理企業管理員（重設密碼） */
+/* org-admin-rescue.js -- 系統管理員管理企業管理員（重設密碼） */
 
 function rescueResetPasswordForm() {
     const config = window.__RESCUE_CONFIG || {};
+    const orgCode = config.orgCode || '';
 
     return {
         resetTarget: null,
@@ -30,18 +31,19 @@ function rescueResetPasswordForm() {
         openModal(secureCode, displayName) {
             this.resetTarget = secureCode;
             this.resetName = displayName;
-            this.formAction = '/organizations/' + config.orgCode + '/admins/' + secureCode + '/reset-password';
+            this.formAction = '/organizations/' + orgCode + '/admins/' + secureCode + '/reset-password';
             this.generatePassword();
         },
 
         async loadPasswordRequirements() {
             try {
-                const response = await fetch('/auth/password-policy');
+                const url = '/auth/password-policy' + (orgCode ? '?org_code=' + encodeURIComponent(orgCode) : '');
+                const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.data.policy.enabled) {
                         const p = data.data.policy;
-                        let reqs = [`長度至少 ${p.min_length} 個字元`];
+                        let reqs = ['長度至少 ' + p.min_length + ' 個字元'];
                         if (p.require_uppercase) reqs.push('包含大寫字母');
                         if (p.require_lowercase) reqs.push('包含小寫字母');
                         if (p.require_digit) reqs.push('包含數字');
@@ -60,12 +62,15 @@ function rescueResetPasswordForm() {
             try {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value
                                 || document.querySelector('meta[name="csrf-token"]')?.content;
+                const body = {};
+                if (orgCode) body.org_code = orgCode;
                 const response = await fetch('/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
-                    }
+                    },
+                    body: JSON.stringify(body)
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -96,13 +101,15 @@ function rescueResetPasswordForm() {
             try {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value
                                 || document.querySelector('meta[name="csrf-token"]')?.content;
+                const body = { password: this.password };
+                if (orgCode) body.org_code = orgCode;
                 const response = await fetch('/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ password: this.password })
+                    body: JSON.stringify(body)
                 });
                 if (response.ok) {
                     const data = await response.json();

@@ -1,5 +1,5 @@
         <!-- 收件人群組設定 -->
-        <section id="recipients" class="settings-section" x-data="recipientGroupManager()" x-init="init()">
+        <section id="recipients" class="settings-section" x-show="activeSection === 'recipients'" x-data="recipientGroupManager()" x-init="init()">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h2 style="margin: 0; border: none; padding: 0;">收件人群組設定</h2>
                 <button @click="openCreateModal()"

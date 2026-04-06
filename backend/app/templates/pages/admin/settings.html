@@ -8,29 +8,51 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">系統設定</h1>
-</div>
-<p>企業級系統設定</p>
-
-<div class="settings-layout">
+<div class="settings-layout" x-data="{ activeSection: 'basic' }">
     <!-- 左側選單 -->
-    <nav class="settings-nav">
-        <ul>
-            <li><a href="#basic">企業資訊</a></li>
-            <li><a href="#login-branding">登入頁面顯示</a></li>
-            <li><a href="#general">一般設定</a></li>
-            <li><a href="#password-policy">密碼政策</a></li>
-            <li><a href="#recipients">收件人群組</a></li>
-            <li><a href="#smtp">SMTP 郵件</a></li>
-            <li><a href="#telegram">Telegram</a></li>
-        </ul>
-    </nav>
+    <div class="settings-sidebar">
+        <h3>設定分類</h3>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'basic' }"
+             @click="activeSection = 'basic'">
+            <span class="settings-menu-icon">[B]</span>
+            <span>企業資訊</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'login-branding' }"
+             @click="activeSection = 'login-branding'">
+            <span class="settings-menu-icon">[L]</span>
+            <span>登入頁面顯示</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'general' }"
+             @click="activeSection = 'general'">
+            <span class="settings-menu-icon">[G]</span>
+            <span>一般設定</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'password-policy' }"
+             @click="activeSection = 'password-policy'">
+            <span class="settings-menu-icon">[P]</span>
+            <span>密碼政策</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
+             @click="activeSection = 'recipients'">
+            <span class="settings-menu-icon">[R]</span>
+            <span>收件人群組</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'smtp' }"
+             @click="activeSection = 'smtp'">
+            <span class="settings-menu-icon">[S]</span>
+            <span>SMTP 郵件</span>
+        </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
+             @click="activeSection = 'telegram'">
+            <span class="settings-menu-icon">[T]</span>
+            <span>Telegram</span>
+        </div>
+    </div>
 
     <!-- 右側內容 -->
     <div class="settings-content">
         <!-- 企業資訊 -->
-        <section id="basic" class="settings-section" x-data="logoSettings()" x-init="init()">
+        <section id="basic" class="settings-section" x-show="activeSection === 'basic'" x-data="logoSettings()" x-init="init()">
             <h2>企業資訊</h2>
             <table border="1" cellpadding="10" cellspacing="0">
                 <tr>
@@ -43,7 +65,7 @@
                 </tr>
                 <tr>
                     <th style="text-align: left;">帳號上限</th>
-                    <td>{{ current_user.organization.user_limit if current_user.organization else '-' }} -- 開源的沒打算商業化，大家盡量用吧^_^</td>
+                    <td>&infin; -- 開源的沒打算商業化，大家盡量用吧^_^</td>
                 </tr>
                 <tr>
                     <th style="text-align: left; vertical-align: top;">企業 Logo</th>
@@ -92,7 +114,7 @@
         </section>
 
         <!-- 登入頁面品牌設定 -->
-        <section id="login-branding" class="settings-section" x-data="loginBrandingSettings()" x-init="init()">
+        <section id="login-branding" class="settings-section" x-show="activeSection === 'login-branding'" x-data="loginBrandingSettings()" x-init="init()">
             <h2>登入頁面顯示</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
                 隱藏可避免透過登入頁辨識企業身份
@@ -148,7 +170,7 @@
         </section>
 
         <!-- 一般設定 -->
-        <section id="general" class="settings-section" x-data="generalSettings()" x-init="init()">
+        <section id="general" class="settings-section" x-show="activeSection === 'general'" x-data="generalSettings()" x-init="init()">
             <h2>一般設定</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
                 控制企業的一般行為設定
@@ -207,10 +229,10 @@
                     <td>
                         <select x-model="settings.name_connector" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
-                            <option value=".">. (點) — first.last</option>
-                            <option value="_">_ (底線) — first_last</option>
-                            <option value="-">- (連字號) — first-last</option>
-                            <option value="">(無符號) — firstlast</option>
+                            <option value=".">. (點) -- first.last</option>
+                            <option value="_">_ (底線) -- first_last</option>
+                            <option value="-">- (連字號) -- first-last</option>
+                            <option value="">(無符號) -- firstlast</option>
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
                             建立帳號時，姓名之間使用的連接符號（帳號統一小寫）
@@ -243,7 +265,7 @@
         </section>
 
         <!-- 密碼政策 -->
-        <section id="password-policy" class="settings-section" x-data="passwordPolicySettings()" x-init="init()">
+        <section id="password-policy" class="settings-section" x-show="activeSection === 'password-policy'" x-data="passwordPolicySettings()" x-init="init()">
             <h2>密碼政策</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
                 設定密碼複雜度要求、歷史限制和登入失敗鎖定
@@ -267,7 +289,7 @@
                 <strong style="color: #92400e;">注意</strong>
                 <span style="color: #78350f;">
                     尚未設定 SMTP，忘記密碼功能無法使用。
-                    <a href="#smtp" style="color: #1e40af;">前往設定 SMTP</a>
+                    請切換到「SMTP 郵件」分頁進行設定。
                 </span>
             </div>
 
@@ -342,14 +364,14 @@
                                            @change="savePolicy()"
                                            min="1" max="60"
                                            style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <span>分鐘，每次鎖定時間 ×</span>
+                                    <span>分鐘，每次鎖定時間 x</span>
                                     <input type="number" x-model.number="policy.lockout_multiplier"
                                            @change="savePolicy()"
                                            min="1" max="3"
                                            style="width: 50px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                                 <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                                    例：基礎 15 分鐘 × 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）
+                                    例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）
                                 </div>
                             </td>
                         </tr>
@@ -366,10 +388,6 @@
 {% include "pages/admin/_settings_smtp_section.html" %}
 {% include "pages/admin/_settings_telegram_section.html" %}
     </div>
-</div>
-
-<div style="margin-top:40px; margin-bottom:12px;">
-    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">&larr; 返回企業管理</a>
 </div>
 
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>

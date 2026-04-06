@@ -21,6 +21,7 @@ from ..models.user_numbering_rule import UsedUserNumber
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.work_schedule import WorkSchedule
 from ..utils.timezone import get_timezone_choices
+from ..services.password_policy_service import PasswordPolicyService
 from .. import db
 
 users_bp = Blueprint('users', __name__)
@@ -305,12 +306,20 @@ def create_user():
         interface_language = form_data['interface_language'] or None
         user_timezone = form_data['timezone'] or None
 
+        # 密碼政策驗證
+        from ..services.password_policy_service import PasswordPolicyService
+        pw_valid, pw_errors = (True, [])
+        if password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                password, current_user.org_secure_code)
+
         if not english_name or not native_name or not username:
             flash('英文姓名、本國姓名、帳號為必填', 'error')
         elif not employee_id:
             flash('用戶編號為必填', 'error')
-        elif password and len(password) < 8:
-            flash('密碼至少需要 8 個字元', 'error')
+        elif password and not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         else:
             org = current_user.organization
             if not org:
@@ -518,11 +527,19 @@ def edit_user(secure_code: str):
         mobile_phone_1 = request.form.get('mobile_phone_1', '').strip() or None
         mobile_phone_2 = request.form.get('mobile_phone_2', '').strip() or None
 
+        # 密碼政策驗證
+        pw_valid, pw_errors = (True, [])
+        if new_password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                new_password, user.org_secure_code,
+                user_secure_code=user.secure_code)
+
         # 驗證
         if not native_name or not english_name:
             flash('本國姓名、英文姓名為必填', 'error')
-        elif new_password and len(new_password) < 8:
-            flash('密碼至少需要 8 個字元', 'error')
+        elif new_password and not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         elif ctx['can_edit_org_info'] and not _check_employee_id_unique(user.org_secure_code, employee_id, exclude_user_id=user.id):
             flash(f'企業成員編號 {employee_id} 已存在', 'error')
         else:
@@ -710,11 +727,19 @@ def reset_password(secure_code: str):
     new_password = request.form.get('new_password', '').strip()
     confirm_password = request.form.get('confirm_password', '').strip()
 
+    # 密碼政策驗證
+    pw_valid, pw_errors = (True, [])
+    if new_password:
+        pw_valid, pw_errors = PasswordPolicyService.validate_password(
+            new_password, user.org_secure_code,
+            user_secure_code=user.secure_code)
+
     # 驗證
     if not new_password:
         flash('請輸入新密碼', 'error')
-    elif len(new_password) < 8:
-        flash('密碼至少需要 8 個字元', 'error')
+    elif not pw_valid:
+        for err in pw_errors:
+            flash(err, 'error')
     elif new_password != confirm_password:
         flash('兩次輸入的密碼不一致', 'error')
     else:
@@ -867,8 +892,10 @@ def _import_single_user(row: dict, org, row_num: int):
         return f'第 {row_num} 列: 密碼為必填'
     if not display_name:
         return f'第 {row_num} 列: 姓名為必填'
-    if len(password) < 8:
-        return f'第 {row_num} 列: 密碼至少需要 8 個字元'
+    pw_valid, pw_errors = PasswordPolicyService.validate_password(
+        password, org.secure_code)
+    if not pw_valid:
+        return f'第 {row_num} 列: ' + '、'.join(pw_errors)
 
     email = f"{username}@{org.domain_name}"
 

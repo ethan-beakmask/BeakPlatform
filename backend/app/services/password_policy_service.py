@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # 預設密碼政策
 DEFAULT_PASSWORD_POLICY = {
-    'enabled': False,
+    'enabled': True,
     'min_length': 12,
     'require_uppercase': True,
     'require_lowercase': True,

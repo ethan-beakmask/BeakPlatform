@@ -1097,20 +1097,45 @@ def verify_reset(token: str):
 
 # ==================== 密碼政策 API（一般用戶可存取）====================
 
+
+def _resolve_policy_org():
+    """
+    解析密碼政策的目標企業。
+    系統管理員可透過 ?org_code=xxx 查詢其他企業的政策，
+    一般用戶只能查自己企業。
+    Returns: (org, error_response)
+    """
+    org_code = request.args.get('org_code') or (
+        request.get_json() or {}).get('org_code')
+
+    if org_code and current_user.is_system_admin:
+        org = Organization.query.filter_by(
+            secure_code=org_code, is_deleted=False).first()
+        if not org:
+            return None, (jsonify({'success': False, 'message': '找不到目標企業'}), 404)
+        return org, None
+
+    org = current_user.organization
+    if not org:
+        return None, (jsonify({'success': False, 'message': '找不到企業'}), 404)
+    return org, None
+
+
 @auth_bp.route('/password-policy', methods=['GET'])
 @login_required
 def get_user_password_policy():
     """
-    取得當前用戶企業的密碼政策（供前端顯示）
+    取得企業的密碼政策（供前端顯示）
 
     GET /auth/password-policy
+    GET /auth/password-policy?org_code=xxx  (系統管理員查詢其他企業)
 
     Returns:
         密碼要求資訊（不含敏感設定如鎖定時間）
     """
-    org = current_user.organization
-    if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+    org, err = _resolve_policy_org()
+    if err:
+        return err
 
     policy = PasswordPolicyService.get_policy(org.secure_code)
 
@@ -1119,12 +1144,12 @@ def get_user_password_policy():
         'success': True,
         'data': {
             'policy': {
-                'enabled': policy.get('enabled', False),
-                'min_length': policy.get('min_length', 8),
-                'require_uppercase': policy.get('require_uppercase', False),
-                'require_lowercase': policy.get('require_lowercase', False),
-                'require_digit': policy.get('require_digit', False),
-                'require_special': policy.get('require_special', False),
+                'enabled': policy.get('enabled', True),
+                'min_length': policy.get('min_length', 12),
+                'require_uppercase': policy.get('require_uppercase', True),
+                'require_lowercase': policy.get('require_lowercase', True),
+                'require_digit': policy.get('require_digit', True),
+                'require_special': policy.get('require_special', True),
             }
         }
     })
@@ -1137,10 +1162,11 @@ def generate_user_password():
     生成符合政策的密碼
 
     POST /auth/password-policy/generate
+    Body: {"org_code": "xxx"}  (選填，系統管理員用)
     """
-    org = current_user.organization
-    if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+    org, err = _resolve_policy_org()
+    if err:
+        return err
 
     password = PasswordPolicyService.generate_password(org.secure_code)
 
@@ -1159,11 +1185,11 @@ def validate_user_password():
     驗證密碼是否符合政策
 
     POST /auth/password-policy/validate
-    Body: {"password": "..."}
+    Body: {"password": "...", "org_code": "xxx"}  (org_code 選填，系統管理員用)
     """
-    org = current_user.organization
-    if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+    org, err = _resolve_policy_org()
+    if err:
+        return err
 
     data = request.get_json()
     if not data or 'password' not in data:
@@ -1174,7 +1200,7 @@ def validate_user_password():
     is_valid, errors = PasswordPolicyService.validate_password(
         password,
         org.secure_code,
-        check_history=False  # 一般用戶驗證不檢查歷史
+        check_history=False  # 前端即時驗證不檢查歷史
     )
 
     return jsonify({

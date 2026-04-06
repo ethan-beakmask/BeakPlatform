@@ -18,6 +18,7 @@ from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.user_numbering_rule import UsedUserNumber
 from ..services.numbering_service import NumberingService
+from ..services.password_policy_service import PasswordPolicyService
 from .. import db
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,12 @@ def initial_setup():
                 except ValueError:
                     pass
 
+        # 密碼政策驗證（先計算，後面 elif 使用）
+        pw_valid, pw_errors = (True, [])
+        if password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                password, org.secure_code)
+
         # 驗證必填欄位
         if not native_name or not english_name or not username:
             flash('本國姓名、英文姓名、帳號為必填', 'error')
@@ -115,8 +122,9 @@ def initial_setup():
             flash('用戶編號為必填，且無可用的預設編號規則', 'error')
         elif not password:
             flash('密碼為必填', 'error')
-        elif len(password) < 8:
-            flash('密碼至少需要 8 個字元', 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         elif password != confirm_password:
             flash('兩次輸入的密碼不一致', 'error')
         else:
@@ -340,13 +348,20 @@ def create_admin():
         bound_employee_code = request.form.get('bound_employee', '').strip()
         password = request.form.get('password', '').strip()
 
+        # 密碼政策驗證
+        pw_valid, pw_errors = (True, [])
+        if password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                password, current_user.org_secure_code)
+
         # 驗證必填欄位
         if not bound_employee_code:
             flash('請選擇要綁定的企業成員帳號', 'error')
         elif not password:
             flash('請輸入密碼', 'error')
-        elif len(password) < 8:
-            flash('密碼至少需要 8 個字元', 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         else:
             # 驗證綁定的企業成員
             bound_employee = User.query.filter(
@@ -549,11 +564,19 @@ def reset_password(secure_code: str):
     new_password = request.form.get('new_password', '').strip()
     confirm_password = request.form.get('confirm_password', '').strip()
 
+    # 密碼政策驗證
+    pw_valid, pw_errors = (True, [])
+    if new_password:
+        pw_valid, pw_errors = PasswordPolicyService.validate_password(
+            new_password, current_user.org_secure_code,
+            user_secure_code=admin.secure_code)
+
     # 驗證
     if not new_password:
         flash('請輸入新密碼', 'error')
-    elif len(new_password) < 8:
-        flash('密碼至少需要 8 個字元', 'error')
+    elif not pw_valid:
+        for err in pw_errors:
+            flash(err, 'error')
     elif new_password != confirm_password:
         flash('兩次輸入的密碼不一致', 'error')
     else:

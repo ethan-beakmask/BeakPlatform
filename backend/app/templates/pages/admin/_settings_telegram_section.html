@@ -1,5 +1,5 @@
         <!-- Telegram 設定 -->
-        <section id="telegram" class="settings-section" x-data="telegramManager()" x-init="init()">
+        <section id="telegram" class="settings-section" x-show="activeSection === 'telegram'" x-data="telegramManager()" x-init="init()">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h2 style="margin: 0; border: none; padding: 0;">Telegram 通知設定</h2>
                 <button @click="openCreateModal()"

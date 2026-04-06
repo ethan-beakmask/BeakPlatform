@@ -21,6 +21,7 @@ from ..models.user_numbering_rule import UsedUserNumber
 from ..models.user_unit_membership import UserUnitMembership, MembershipType, MembershipRole
 from ..models.audit_log import AuditLog
 from ..services.numbering_service import NumberingService
+from ..services.password_policy_service import PasswordPolicyService
 from .. import db
 
 external_users_bp = Blueprint('external_users', __name__)
@@ -206,13 +207,20 @@ def create_external_user():
         group_code = form_data['group_code']
         notes = form_data['notes']
 
+        # 密碼政策驗證
+        pw_valid, pw_errors = (True, [])
+        if password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                password, org.secure_code)
+
         # 驗證必填欄位
         if not display_name or not email or not password:
             flash('姓名、Email、密碼為必填', 'error')
         elif '@' not in email:
             flash('請輸入有效的 Email 格式', 'error')
-        elif len(password) < 8:
-            flash('密碼至少需要 8 個字元', 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         elif not group_code:
             flash('必須選擇歸屬群組', 'error')
         else:
@@ -666,8 +674,12 @@ def change_password(secure_code: str):
         flash('請輸入新密碼', 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
-    if len(new_password) < 8:
-        flash('密碼至少需要 8 個字元', 'error')
+    pw_valid, pw_errors = PasswordPolicyService.validate_password(
+        new_password, user.org_secure_code,
+        user_secure_code=user.secure_code)
+    if not pw_valid:
+        for err in pw_errors:
+            flash(err, 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     try:

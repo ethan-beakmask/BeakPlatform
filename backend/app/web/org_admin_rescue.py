@@ -123,10 +123,19 @@ def reset_password(org_code: str, admin_code: str):
     new_password = request.form.get('new_password', '').strip()
     confirm_password = request.form.get('confirm_password', '').strip()
 
+    # 密碼政策驗證（用目標企業的政策）
+    from ..services.password_policy_service import PasswordPolicyService
+    pw_valid, pw_errors = (True, [])
+    if new_password:
+        pw_valid, pw_errors = PasswordPolicyService.validate_password(
+            new_password, org.secure_code,
+            user_secure_code=admin.secure_code)
+
     if not new_password:
         flash('請輸入新密碼', 'error')
-    elif len(new_password) < 8:
-        flash('密碼至少需要 8 個字元', 'error')
+    elif not pw_valid:
+        for err in pw_errors:
+            flash(err, 'error')
     elif new_password != confirm_password:
         flash('兩次輸入的密碼不一致', 'error')
     else:

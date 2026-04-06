@@ -5,9 +5,12 @@ BeakMask Profile Web Routes
 注意：個人資料編輯功能已整合到 /users/me/edit
 此模組保留基本路由並重導到整合後的頁面
 """
-from flask import Blueprint, redirect, url_for
+from flask import Blueprint, redirect, url_for, request, flash, render_template
+from flask_login import current_user
 
 from ..security.decorators import login_required
+from ..services.password_policy_service import PasswordPolicyService
+from .. import db
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -35,12 +38,20 @@ def change_password():
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
 
+        # 密碼政策驗證
+        pw_valid, pw_errors = (True, [])
+        if new_password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                new_password, current_user.org_secure_code,
+                user_secure_code=current_user.secure_code)
+
         if not current_password or not new_password or not confirm_password:
             flash('所有欄位為必填', 'error')
         elif new_password != confirm_password:
             flash('新密碼與確認密碼不符', 'error')
-        elif len(new_password) < 8:
-            flash('新密碼至少需要 8 個字元', 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         elif not current_user.check_password(current_password):
             flash('目前密碼錯誤', 'error')
         else:

@@ -1,5 +1,5 @@
         <!-- SMTP 設定 -->
-        <section id="smtp" class="settings-section" x-data="smtpManager()" x-init="init()">
+        <section id="smtp" class="settings-section" x-show="activeSection === 'smtp'" x-data="smtpManager()" x-init="init()">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <h2 style="margin: 0; border: none; padding: 0;">SMTP 郵件設定</h2>
                 <button @click="openCreateModal()"

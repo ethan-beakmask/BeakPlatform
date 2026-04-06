@@ -1,9 +1,9 @@
-/* password-form.js — 共用密碼表單元件 (Mode A)
+/* password-form.js -- 共用密碼表單元件 (Mode A)
  *
  * 使用方式:
- *   x-data="passwordForm()"              — 基本密碼表單
- *   x-data="passwordForm({autoGenerate: true})"  — 自動產生密碼
- *   x-data="passwordForm({autoGenerate: true, confirmPassword: true})" — 含確認欄位
+ *   x-data="passwordForm()"              -- 基本密碼表單
+ *   x-data="passwordForm({autoGenerate: true})"  -- 自動產生密碼
+ *   x-data="passwordForm({orgCode: 'xxx'})"      -- 指定目標企業（系統管理員用）
  */
 
 function passwordForm(config) {
@@ -24,9 +24,17 @@ function passwordForm(config) {
             }
         },
 
+        _buildUrl(path) {
+            var url = path;
+            if (config.orgCode) {
+                url += (url.indexOf('?') >= 0 ? '&' : '?') + 'org_code=' + encodeURIComponent(config.orgCode);
+            }
+            return url;
+        },
+
         async loadRequirements() {
             try {
-                var response = await fetch('/auth/password-policy');
+                var response = await fetch(this._buildUrl('/auth/password-policy'));
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -50,12 +58,17 @@ function passwordForm(config) {
             try {
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                 document.querySelector('input[name="csrf_token"]')?.value;
+                var body = {};
+                if (config.orgCode) {
+                    body.org_code = config.orgCode;
+                }
                 var response = await fetch('/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
-                    }
+                    },
+                    body: JSON.stringify(body)
                 });
                 if (response.ok) {
                     var data = await response.json();
@@ -87,13 +100,17 @@ function passwordForm(config) {
             try {
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                 document.querySelector('input[name="csrf_token"]')?.value;
+                var body = { password: this.password };
+                if (config.orgCode) {
+                    body.org_code = config.orgCode;
+                }
                 var response = await fetch('/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': csrfToken
                     },
-                    body: JSON.stringify({ password: this.password })
+                    body: JSON.stringify(body)
                 });
                 if (response.ok) {
                     var data = await response.json();

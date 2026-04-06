@@ -181,11 +181,22 @@ def change_password():
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
 
+        # 密碼政策驗證
+        from ..services.password_policy_service import PasswordPolicyService
+        pw_valid, pw_errors = (True, [])
+        if new_password:
+            pw_valid, pw_errors = PasswordPolicyService.validate_password(
+                new_password, current_user.org_secure_code,
+                user_secure_code=current_user.secure_code)
+
         # 驗證當前密碼
         if not current_user.check_password(current_password):
             flash('目前密碼不正確', 'error')
         elif not new_password:
             flash('請輸入新密碼', 'error')
+        elif not pw_valid:
+            for err in pw_errors:
+                flash(err, 'error')
         elif new_password != confirm_password:
             flash('新密碼與確認密碼不一致', 'error')
         else:
