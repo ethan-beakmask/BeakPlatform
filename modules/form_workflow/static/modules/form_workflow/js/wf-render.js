@@ -692,6 +692,8 @@
                 'navbar_broadcast': 'NavbarBroadcast',
                 'alertbroadcast': 'AlertBroadcast',
                 'alert_broadcast': 'AlertBroadcast',
+                'subsystemprovision': 'SubSystemProvision',
+                'sub_system_provision': 'SubSystemProvision',
             };
             return typeMap[type.toLowerCase()] || type;
         }
