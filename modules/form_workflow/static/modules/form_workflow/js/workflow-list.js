@@ -10,6 +10,7 @@ function workflowListManager() {
         totalCounts: { main: 0, subflow: 0 },
         treeView: { active: false, tab: 'tree', name: '', code: '', workflowSecureCode: '', treeLoaded: false, _zoom: { scale: 1, panX: 0, panY: 0 }, _panState: null, _handlers: null },
         unusedView: { subflows: [], loading: false, loaded: false },
+        overviewView: { loading: false, error: null, loaded: false, cy: null },
         viewMode: localStorage.getItem('workflows_view_mode') || 'list',
         selectedCategory: null,
         selectedItems: [],
@@ -177,6 +178,9 @@ function workflowListManager() {
             this.treeView._panState = null;
             this.unusedView.loaded = false;
             this.unusedView.subflows = [];
+            if (this.overviewView.cy) { this.overviewView.cy.destroy(); this.overviewView.cy = null; }
+            this.overviewView.loaded = false;
+            this.overviewView.error = null;
             this.treeView.active = true;
             await this._loadTreeData(rootCode);
         },
@@ -252,6 +256,12 @@ function workflowListManager() {
             this.treeView.treeLoaded = false;
             this.unusedView.loaded = false;
             this.unusedView.subflows = [];
+            if (this.overviewView.cy) {
+                this.overviewView.cy.destroy();
+                this.overviewView.cy = null;
+            }
+            this.overviewView.loaded = false;
+            this.overviewView.error = null;
             const container = document.getElementById('tree-container');
             if (container) container.innerHTML = '';
         },
@@ -292,10 +302,70 @@ function workflowListManager() {
             }
         },
 
+        async _loadFlowOverview(rootCode) {
+            this.overviewView.loading = true;
+            this.overviewView.error = null;
+            try {
+                const res = await fetch(`/api/form-workflow/workflows/${rootCode}/flow-overview`);
+                const result = await res.json();
+                if (!result.success) {
+                    this.overviewView.error = result.error || '載入失敗';
+                    this.overviewView.loading = false;
+                    return;
+                }
+
+                const data = result.data;
+                const tabs = data.workflow_tabs || [];
+                const mainTab = tabs.find(t => t.is_main) || tabs[0];
+
+                if (!mainTab) {
+                    this.overviewView.error = '找不到流程圖資料';
+                    this.overviewView.loading = false;
+                    return;
+                }
+
+                // 使用 fc-flow-overview.js 的渲染方法
+                const helper = fcFlowOverview();
+                const codeToTab = {};
+                tabs.forEach(t => { if (t.workflow_code) codeToTab[t.workflow_code] = t; });
+
+                const flatResult = helper._fcFlattenGraph(mainTab.graph, codeToTab, 0, '', null);
+                // 開發者視圖：顯示所有節點原始類型，不做 Mode B 替換
+                const finalResult = {
+                    nodes: flatResult.nodes.map(n => ({ ...n, isSystem: false })),
+                    edges: flatResult.edges.map((e, i) => ({
+                        id: e.id || `e-${i}`, source: e.source, target: e.target,
+                        label: e.label || '', isSystem: false
+                    })),
+                    groups: flatResult.groups
+                };
+
+                this.overviewView.loading = false;
+                this.overviewView.loaded = true;
+
+                await this.$nextTick();
+
+                if (this.overviewView.cy) this.overviewView.cy.destroy();
+                this.overviewView.cy = helper._fcRenderCytoscape('cy-wf-overview', finalResult);
+            } catch (e) {
+                this.overviewView.error = '載入錯誤: ' + e.message;
+                this.overviewView.loading = false;
+            }
+        },
+
+        overviewFit() {
+            if (this.overviewView.cy) {
+                this.overviewView.cy.fit(null, 50);
+            }
+        },
+
         async switchTreeTab(tab) {
             this.treeView.tab = tab;
             if (tab === 'tree' && !this.treeView.treeLoaded) {
                 await this._loadTreeData(this.treeView.workflowSecureCode);
+            }
+            if (tab === 'overview' && !this.overviewView.loaded) {
+                await this._loadFlowOverview(this.treeView.workflowSecureCode);
             }
             if (tab === 'unused' && !this.unusedView.loaded) {
                 await this._loadUnusedData(this.treeView.workflowSecureCode);
@@ -398,6 +468,9 @@ function workflowListManager() {
             this.treeView._panState = null;
             this.unusedView.loaded = false;
             this.unusedView.subflows = [];
+            if (this.overviewView.cy) { this.overviewView.cy.destroy(); this.overviewView.cy = null; }
+            this.overviewView.loaded = false;
+            this.overviewView.error = null;
             this.treeView.active = true;
             await this._loadUnusedData(rootCode);
         },

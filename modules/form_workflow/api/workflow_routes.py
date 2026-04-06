@@ -502,6 +502,84 @@ def get_unused_subflows(secure_code):
     })
 
 
+@api_bp.route('/workflows/<secure_code>/flow-overview')
+@module_access_required('form_workflow')
+@require_permission('form_workflow.workflow.view')
+def get_workflow_flow_overview(secure_code):
+    """取得工作流模板的流程總圖資料（主流程 graph + 所有子流程 graph，供 Cytoscape 渲染）"""
+    from ..models import FwWorkflowTemplate
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    org_code = org.secure_code
+
+    target = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org_code,
+        secure_code=secure_code,
+        is_deleted=False
+    ).first()
+
+    if not target:
+        return jsonify({'success': False, 'error': '找不到此工作流'}), 404
+
+    # 收集所有可用的子流程（同企業）
+    all_subflows = FwWorkflowTemplate.query.filter_by(
+        org_secure_code=org_code,
+        is_subprocess=True,
+        is_deleted=False
+    ).all()
+    code_to_wf = {wf.code: wf for wf in all_subflows}
+
+    # 遞迴收集所有被引用的子流程 code
+    def collect_referenced_codes(graph, visited=None):
+        if visited is None:
+            visited = set()
+        if not graph:
+            return visited
+        for node in graph.get('nodes', []):
+            node_type = (node.get('type') or '').lower()
+            if node_type == 'subflow':
+                config = node.get('config') or {}
+                child_id = config.get('childFlowId')
+                if child_id and child_id not in visited:
+                    visited.add(child_id)
+                    child_wf = code_to_wf.get(child_id)
+                    if child_wf and child_wf.graph:
+                        collect_referenced_codes(child_wf.graph, visited)
+        return visited
+
+    referenced_codes = collect_referenced_codes(target.graph)
+
+    # 組裝 workflow_tabs（與 fc_monitor 的 execution path 格式相容）
+    workflow_tabs = [{
+        'workflow_code': target.code,
+        'name': target.name,
+        'is_main': True,
+        'graph': target.graph or {}
+    }]
+
+    for code in referenced_codes:
+        wf = code_to_wf.get(code)
+        if wf:
+            workflow_tabs.append({
+                'workflow_code': wf.code,
+                'name': wf.name,
+                'is_main': False,
+                'graph': wf.graph or {}
+            })
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'workflow_tabs': workflow_tabs,
+            'workflow_name': target.name,
+            'workflow_code': target.code
+        }
+    })
+
+
 @api_bp.route('/workflows/flow-trees/<secure_code>')
 @module_access_required('form_workflow')
 @require_permission('form_workflow.workflow.view')
