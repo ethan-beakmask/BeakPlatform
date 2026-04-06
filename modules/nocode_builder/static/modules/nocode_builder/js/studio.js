@@ -43,6 +43,7 @@ function studioManager() {
         // Component library (易擴充，新增元件只需加入此陣列)
         componentTypes: [
             { type: 'DATALIST', label: '資料清單', icon: 'fa-table', desc: '展示與操作資料表' },
+            { type: 'SITEMENU', label: '選單', icon: 'fa-bars', desc: 'Site Map 導航選單' },
         ],
 
         // Site Map
@@ -80,6 +81,20 @@ function studioManager() {
         settingAllowDelete: false,
         settingContextOutputs: [],
         settingContextInputs: [],
+
+        // SITEMENU settings
+        settingWidgetType: 'DATALIST',     // 目前選中的 widget type
+        smStartNodeSc: '',
+        smStartLevel: 'children',
+        smOrientation: 'vertical',
+        smBgColor: '#ffffff',
+        smItemBgColor: '#ffffff',
+        smItemTextColor: '#333333',
+        smItemHoverBgColor: '#e9ecef',
+        smItemHoverTextColor: '#333333',
+        smItemGap: 6,
+        smHoverExpand: true,
+        smHoverExpandDelay: 300,
 
         // Role permissions & filters
         settingUseRolePerms: false,
@@ -399,14 +414,52 @@ function studioManager() {
         /**
          * BeakTree 節點點擊 → 選取節點並載入頁面
          */
+        // 未儲存切換 modal 暫存
+        _pendingNodeSwitch: null,
+        showUnsavedModal: false,
+
         _onBeakTreeNodeClick: function (nodeId, bkNode) {
             var nodeData = (bkNode && bkNode.data) ? bkNode.data : {};
 
-            // 未儲存變更提示
+            // 未儲存變更提示：顯示三選一 modal
             if (this.dirty && this.currentPageSc) {
-                if (!confirm('目前頁面有未儲存的變更，確定要切換嗎?')) return;
+                this._pendingNodeSwitch = { nodeId: nodeId, nodeData: nodeData };
+                this.showUnsavedModal = true;
+                return;
             }
 
+            this._doNodeSwitch(nodeId, nodeData);
+        },
+
+        /** 三選一：儲存並切換 */
+        async unsavedSaveAndSwitch() {
+            this.showUnsavedModal = false;
+            await this.savePage();
+            if (this._pendingNodeSwitch) {
+                var p = this._pendingNodeSwitch;
+                this._pendingNodeSwitch = null;
+                this._doNodeSwitch(p.nodeId, p.nodeData);
+            }
+        },
+
+        /** 三選一：不儲存切換 */
+        unsavedDiscardAndSwitch() {
+            this.showUnsavedModal = false;
+            this.dirty = false;
+            if (this._pendingNodeSwitch) {
+                var p = this._pendingNodeSwitch;
+                this._pendingNodeSwitch = null;
+                this._doNodeSwitch(p.nodeId, p.nodeData);
+            }
+        },
+
+        /** 三選一：取消 */
+        unsavedCancel() {
+            this.showUnsavedModal = false;
+            this._pendingNodeSwitch = null;
+        },
+
+        _doNodeSwitch: function (nodeId, nodeData) {
             // 高亮選取的列
             if (this._bkTree && this._bkTree._tbodyEl) {
                 var old = this._bkTree._tbodyEl.querySelector('.stu-tree-selected');
@@ -594,20 +647,26 @@ function studioManager() {
         _gsAddWidget: function (type) {
             if (!this._gsGrid) return;
             var wid = 'w_' + Math.random().toString(36).slice(2, 8);
-            var widgetConfig = {
-                id: wid,
-                type: type,
-                viewCode: '',
-                title: '',
-                pageSize: 10,
-                showSearch: true,
-                showPagination: true,
-                allowCreate: false,
-                allowEdit: false,
-                allowDelete: false,
-                contextOutputs: [],
-                contextInputs: [],
-            };
+            var widgetConfig;
+
+            if (type === 'SITEMENU') {
+                widgetConfig = {
+                    id: wid, type: 'SITEMENU', title: '',
+                    startNodeSc: '', startLevel: 'children',
+                    orientation: 'vertical',
+                    bgColor: '#ffffff', itemBgColor: '#ffffff', itemTextColor: '#333333',
+                    itemHoverBgColor: '#e9ecef', itemHoverTextColor: '#333333',
+                    itemGap: 6, hoverExpand: true, hoverExpandDelay: 300,
+                    contextOutputs: [], contextInputs: [],
+                };
+            } else {
+                widgetConfig = {
+                    id: wid, type: type, viewCode: '', title: '',
+                    pageSize: 10, showSearch: true, showPagination: true,
+                    allowCreate: false, allowEdit: false, allowDelete: false,
+                    contextOutputs: [], contextInputs: [],
+                };
+            }
             this._gsWidgetConfigs[wid] = widgetConfig;
 
             var gsItem = this._gsGrid.addWidget({
@@ -619,13 +678,26 @@ function studioManager() {
             var content = gsItem.querySelector('.grid-stack-item-content');
             if (content) {
                 content.innerHTML = '';
-                var widget = new DataListWidget(content, widgetConfig);
-                widget.init();
-                this._gsWidgets[wid] = widget;
+                var widget = this._createWidgetInstance(content, widgetConfig);
+                if (widget) {
+                    widget.init();
+                    this._gsWidgets[wid] = widget;
+                }
             }
 
             this._gsSelectItem(wid);
             this.dirty = true;
+        },
+
+        /** 依 type 建立對應 widget instance */
+        _createWidgetInstance: function (container, config) {
+            if (config.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                return new SiteMenuWidget(container, config);
+            }
+            if (typeof DataListWidget !== 'undefined') {
+                return new DataListWidget(container, config);
+            }
+            return null;
         },
 
         _loadGridStackLayout: function (layout) {
@@ -664,9 +736,11 @@ function studioManager() {
                 var content = gsItem.querySelector('.grid-stack-item-content');
                 if (content) {
                     content.innerHTML = '';
-                    var widget = new DataListWidget(content, fullConfig);
-                    widget.init();
-                    this._gsWidgets[wid] = widget;
+                    var widget = this._createWidgetInstance(content, fullConfig);
+                    if (widget) {
+                        widget.init();
+                        this._gsWidgets[wid] = widget;
+                    }
                 }
             }
         },
@@ -730,18 +804,37 @@ function studioManager() {
         // ================================================================
 
         _populateWidgetSettings: async function (widgetConfig) {
+            this.settingWidgetType = widgetConfig.type || 'DATALIST';
+            this.settingTitle = widgetConfig.title || '';
+            this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
+            this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
+
+            if (this.settingWidgetType === 'SITEMENU') {
+                // SITEMENU 專用欄位
+                this.smStartNodeSc = widgetConfig.startNodeSc || '';
+                this.smStartLevel = widgetConfig.startLevel || 'children';
+                this.smOrientation = widgetConfig.orientation || 'vertical';
+                this.smBgColor = widgetConfig.bgColor || '#ffffff';
+                this.smItemBgColor = widgetConfig.itemBgColor || '#ffffff';
+                this.smItemTextColor = widgetConfig.itemTextColor || '#333333';
+                this.smItemHoverBgColor = widgetConfig.itemHoverBgColor || '#e9ecef';
+                this.smItemHoverTextColor = widgetConfig.itemHoverTextColor || '#333333';
+                this.smItemGap = widgetConfig.itemGap != null ? widgetConfig.itemGap : 6;
+                this.smHoverExpand = widgetConfig.hoverExpand !== false;
+                this.smHoverExpandDelay = widgetConfig.hoverExpandDelay || 300;
+                return;
+            }
+
+            // DATALIST 專用欄位
             this.settingDataSource = widgetConfig.dataSource || '';
             this.settingTableName = widgetConfig.tableName || '';
             this.settingViewCode = widgetConfig.viewCode || '';
-            this.settingTitle = widgetConfig.title || '';
             this.settingPageSize = widgetConfig.pageSize || 10;
             this.settingShowSearch = widgetConfig.showSearch !== false;
             this.settingShowPagination = widgetConfig.showPagination !== false;
             this.settingAllowCreate = widgetConfig.allowCreate || false;
             this.settingAllowEdit = widgetConfig.allowEdit || false;
             this.settingAllowDelete = widgetConfig.allowDelete || false;
-            this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
-            this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
 
             // Role permissions
             var rp = widgetConfig.rolePermissions;
@@ -755,8 +848,6 @@ function studioManager() {
             this.settingFilterEntries = [];
 
             if (this.settingDataSource) {
-                // 直接載入表列表，不透過 onDataSourceChange()
-                // 避免暫時清空 settingViewCode 導致 select options 消失
                 this.loadingTables = true;
                 try {
                     var res = await fetch(
@@ -773,6 +864,20 @@ function studioManager() {
             }
         },
 
+        /** 將巢狀 tree 攤平為帶 _depth 的陣列，供 select option 使用 */
+        flattenTree: function (nodes, depth) {
+            var result = [];
+            if (!nodes) return result;
+            for (var i = 0; i < nodes.length; i++) {
+                var n = nodes[i];
+                result.push({ secure_code: n.secure_code, name: n.name, _depth: depth });
+                if (n.children && n.children.length > 0) {
+                    result = result.concat(this.flattenTree(n.children, depth + 1));
+                }
+            }
+            return result;
+        },
+
         getViewColumns: function () {
             var vc = this.settingViewCode;
             var v = this.availableViews.find(function (v) { return v.secure_code === vc; });
@@ -783,7 +888,12 @@ function studioManager() {
         },
 
         applyWidgetSettings: function () {
-            // 先存回目前正在編輯的篩選角色
+            if (this.settingWidgetType === 'SITEMENU') {
+                this._applySiteMenuSettings();
+                return;
+            }
+
+            // DATALIST: 先存回目前正在編輯的篩選角色
             this._saveFilterEntries();
 
             // 過濾空白的 context 項目
@@ -847,6 +957,46 @@ function studioManager() {
             }
 
             // 套用設定
+            if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
+                this._gridEditor.updateWidget(this.selectedZoneId, widgetConfig);
+            } else if (this.editMode === 'free' && this.selectedZoneId) {
+                var wid = this.selectedZoneId;
+                if (this._gsWidgetConfigs[wid]) {
+                    Object.assign(this._gsWidgetConfigs[wid], widgetConfig);
+                    this._gsUpdateWidget(wid, this._gsWidgetConfigs[wid]);
+                }
+                this.dirty = true;
+            }
+
+            this.showToast('已套用', 'success');
+        },
+
+        _applySiteMenuSettings: function () {
+            // 過濾空白的 context 項目 (SITEMENU 用 sourceField 而非 sourceColumn)
+            var validOutputs = this.settingContextOutputs.filter(function (o) {
+                return o.contextKey && o.contextKey.trim() && o.sourceField && o.sourceField.trim();
+            });
+            var validInputs = this.settingContextInputs.filter(function (i) {
+                return i.contextKey && i.contextKey.trim();
+            });
+
+            var widgetConfig = {
+                title: this.settingTitle,
+                startNodeSc: this.smStartNodeSc,
+                startLevel: this.smStartLevel,
+                orientation: this.smOrientation,
+                bgColor: this.smBgColor,
+                itemBgColor: this.smItemBgColor,
+                itemTextColor: this.smItemTextColor,
+                itemHoverBgColor: this.smItemHoverBgColor,
+                itemHoverTextColor: this.smItemHoverTextColor,
+                itemGap: parseInt(this.smItemGap, 10) || 6,
+                hoverExpand: this.smHoverExpand,
+                hoverExpandDelay: parseInt(this.smHoverExpandDelay, 10) || 300,
+                contextOutputs: JSON.parse(JSON.stringify(validOutputs)),
+                contextInputs: JSON.parse(JSON.stringify(validInputs)),
+            };
+
             if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
                 this._gridEditor.updateWidget(this.selectedZoneId, widgetConfig);
             } else if (this.editMode === 'free' && this.selectedZoneId) {
@@ -1223,10 +1373,13 @@ function studioManager() {
             }
         },
 
-        previewPage: function () {
+        previewPage: async function () {
             if (!this.subSystemSc) return;
+            // 自動儲存後再預覽
+            if (this.dirty && this.currentPageSc) {
+                await this.savePage();
+            }
             var url = '/nocode-builder/sub-systems/' + this.subSystemSc + '/portal';
-            // 優先預覽當前設計頁，否則到 welcome
             if (this.selectedNode) {
                 url += '?page=' + this.selectedNode.secure_code;
             }

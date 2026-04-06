@@ -478,6 +478,122 @@ class SiteMapService:
         return True
 
     # ==========================================================================
+    # SITEMENU Widget 用
+    # ==========================================================================
+
+    @staticmethod
+    def get_menu_tree(user, sub_system) -> Dict[str, Any]:
+        """
+        SITEMENU Widget 用: 取得用戶可見的 menu tree
+
+        過濾邏輯 (dc_site_map_permissions 白名單模式):
+          - 節點無任何 permission 記錄 → 所有人可見
+          - 節點有 permission 記錄 → 只有 target 匹配的用戶可見
+
+        同時檢查 access_roles 准入 + dc_site_map_permissions 白名單。
+
+        Returns:
+            { role_type, is_admin, tree: [...] }
+        """
+        from app.services.module_access_service import ModuleAccessService
+
+        role_type = SubSystemService.get_user_role_type(user, sub_system)
+        is_admin = False
+
+        if role_type is None:
+            role_type = 'GUEST'
+        else:
+            is_admin = SubSystemService.is_admin_role(role_type)
+
+        org_sc = sub_system.org_secure_code
+        ss_sc = sub_system.secure_code
+
+        # 取得所有啟用節點
+        nodes = DcSiteMapNode.query.filter(
+            DcSiteMapNode.sub_system_secure_code == ss_sc,
+            DcSiteMapNode.org_secure_code == org_sc,
+            DcSiteMapNode.is_deleted == False,
+            DcSiteMapNode.is_active == True,
+        ).order_by(DcSiteMapNode.display_order).all()
+
+        if not nodes:
+            return {'role_type': role_type, 'is_admin': is_admin, 'tree': []}
+
+        # 管理層: access_roles 不過濾，但仍受 permissions 白名單限制
+        # 取得用戶身份標識
+        user_ids = ModuleAccessService._get_user_identifiers(user)
+
+        # 取得此子系統所有節點的 permissions
+        node_scs = [n.secure_code for n in nodes]
+        all_perms = DcSiteMapPermission.query.filter(
+            DcSiteMapPermission.node_secure_code.in_(node_scs),
+            DcSiteMapPermission.org_secure_code == org_sc,
+            DcSiteMapPermission.is_deleted == False,
+        ).all()
+
+        # 按 node_sc 分組
+        perms_by_node = {}
+        for p in all_perms:
+            perms_by_node.setdefault(p.node_secure_code, []).append(p)
+
+        # 過濾可見節點
+        visible_scs = set()
+        for n in nodes:
+            # access_roles 准入檢查 (管理層跳過)
+            if not is_admin:
+                access_roles = n.access_roles or []
+                if not access_roles:
+                    continue  # NONE: 不可見
+                if 'GUEST' not in access_roles:
+                    if role_type == 'GUEST' or role_type not in access_roles:
+                        continue
+
+            # permissions 白名單檢查
+            node_perms = perms_by_node.get(n.secure_code, [])
+            if not node_perms:
+                # 無 permission 記錄 → 所有人可見
+                visible_scs.add(n.secure_code)
+            else:
+                # 有記錄 → 檢查用戶是否匹配任一 target
+                for p in node_perms:
+                    if (p.target_type, p.target_secure_code) in user_ids:
+                        visible_scs.add(n.secure_code)
+                        break
+
+        # 補充 page_layout 名稱
+        layout_scs = {n.page_layout_secure_code for n in nodes if n.page_layout_secure_code}
+        layout_names = {}
+        if layout_scs:
+            layouts = DcPageLayout.query.filter(
+                DcPageLayout.secure_code.in_(layout_scs),
+                DcPageLayout.is_deleted == False,
+            ).all()
+            layout_names = {l.secure_code: l.name for l in layouts}
+
+        # 組裝樹 (僅可見節點)
+        node_map = {}
+        for n in nodes:
+            if n.secure_code not in visible_scs:
+                continue
+            d = n.to_dict()
+            d['children'] = []
+            d['page_layout_name'] = layout_names.get(n.page_layout_secure_code, '')
+            node_map[n.secure_code] = d
+
+        roots = []
+        for n in nodes:
+            if n.secure_code not in visible_scs:
+                continue
+            d = node_map[n.secure_code]
+            parent_sc = n.parent_secure_code
+            if parent_sc and parent_sc in node_map:
+                node_map[parent_sc]['children'].append(d)
+            else:
+                roots.append(d)
+
+        return {'role_type': role_type, 'is_admin': is_admin, 'tree': roots}
+
+    # ==========================================================================
     # 內部方法
     # ==========================================================================
 

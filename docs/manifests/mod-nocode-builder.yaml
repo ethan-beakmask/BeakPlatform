@@ -18,12 +18,14 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/lab-designer.js
     - modules/nocode_builder/static/modules/nocode_builder/js/lookup-manager.js
     - modules/nocode_builder/static/modules/nocode_builder/js/site-map-editor.js
+    - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
     - modules/nocode_builder/static/modules/nocode_builder/js/access-matrix.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css
     - modules/nocode_builder/static/modules/nocode_builder/css/datalist-widget.css
+    - modules/nocode_builder/static/modules/nocode_builder/css/sitemenu-widget.css
   vendor_deps:
     - backend/app/static/vendor/gridstack/            # 柵欄佈局
     - backend/app/static/vendor/beak-trellis/         # 樹狀元件

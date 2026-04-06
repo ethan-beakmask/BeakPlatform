@@ -69,7 +69,16 @@ function labViewer() {
                 });
 
                 const widgetConfig = item.widget;
-                if (widgetConfig && widgetConfig.viewCode) {
+                if (widgetConfig && widgetConfig.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                    widgetConfig.id = id;
+                    const content = gsItem.querySelector('.grid-stack-item-content');
+                    if (content) {
+                        content.innerHTML = '';
+                        const smw = new SiteMenuWidget(content, widgetConfig);
+                        smw.init();
+                        this.widgets[id] = smw;
+                    }
+                } else if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
 
                     // 子系統 context: 套用 CRUD 覆蓋和資料篩選

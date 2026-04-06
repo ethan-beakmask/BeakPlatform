@@ -346,6 +346,25 @@ def get_user_site_map_tree(ss_sc):
     return jsonify({'success': True, 'data': result})
 
 
+@api_bp.route('/sub-systems/<ss_sc>/site-map/menu-tree')
+@module_access_required('nocode_builder', False)
+def get_site_map_menu_tree(ss_sc):
+    """SITEMENU Widget 用: 取得權限過濾後的 menu tree"""
+    from ..models import DcSubSystem
+    from ..services.site_map_service import SiteMapService
+
+    ss = ResourceGateway.get(
+        DcSubSystem, ss_sc,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not ss or ss.is_deleted or not ss.is_active:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    result = SiteMapService.get_menu_tree(current_user, ss)
+    return jsonify({'success': True, 'data': result})
+
+
 @api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/context')
 @module_access_required('nocode_builder', False)
 def get_site_map_node_context(ss_sc, node_sc):

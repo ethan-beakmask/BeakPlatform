@@ -247,11 +247,22 @@ function siteMapPortal() {
                 });
 
                 var widgetConfig = item.widget;
-                if (widgetConfig && widgetConfig.viewCode) {
+                var content = gsItem.querySelector('.grid-stack-item-content');
+
+                if (widgetConfig && widgetConfig.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                    widgetConfig.id = id;
+                    widgetConfig._subSystemSc = self.subSystemSc;
+                    widgetConfig._siteMapNodeSc = (self.currentNode && self.currentNode.secure_code) || '';
+                    widgetConfig._onNavigate = function (nodeData) { self.loadPage(nodeData); };
+                    if (content) {
+                        content.innerHTML = '';
+                        var smw = new SiteMenuWidget(content, widgetConfig);
+                        smw.init();
+                        self._widgets[id] = smw;
+                    }
+                } else if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
                     self._applyWidgetPermissions(widgetConfig, ctx);
-
-                    var content = gsItem.querySelector('.grid-stack-item-content');
                     if (content) {
                         content.innerHTML = '';
                         var widget = new DataListWidget(content, widgetConfig);
@@ -259,9 +270,8 @@ function siteMapPortal() {
                         self._widgets[id] = widget;
                     }
                 } else {
-                    var content2 = gsItem.querySelector('.grid-stack-item-content');
-                    if (content2) {
-                        content2.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
+                    if (content) {
+                        content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
                     }
                 }
             }
@@ -307,11 +317,19 @@ function siteMapPortal() {
                 cell.style.gridColumn = zone.col + ' / span ' + zone.colSpan;
 
                 var widgetConfig = widgetByZone[zone.id];
-                if (widgetConfig && widgetConfig.viewCode) {
+                if (widgetConfig && widgetConfig.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                    var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
+                    widgetConfig.id = wid;
+                    widgetConfig._subSystemSc = self.subSystemSc;
+                    widgetConfig._siteMapNodeSc = (self.currentNode && self.currentNode.secure_code) || '';
+                    widgetConfig._onNavigate = function (nodeData) { self.loadPage(nodeData); };
+                    var smw = new SiteMenuWidget(cell, widgetConfig);
+                    smw.init();
+                    self._widgets[wid] = smw;
+                } else if (widgetConfig && widgetConfig.viewCode) {
                     var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
                     widgetConfig.id = wid;
                     self._applyWidgetPermissions(widgetConfig, ctx);
-
                     var widget = new DataListWidget(cell, widgetConfig);
                     widget.init();
                     self._widgets[wid] = widget;

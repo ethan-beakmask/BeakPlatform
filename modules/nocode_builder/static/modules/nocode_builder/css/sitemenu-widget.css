@@ -1,0 +1,190 @@
+/* =================================================================
+   SITEMENU Widget
+   ================================================================= */
+
+.smw-root {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 直式：佔滿高度，內容可捲動 */
+.smw-root.smw-vertical {
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 橫式：不限高，允許 dropdown 溢出 */
+.smw-root.smw-horizontal {
+    height: auto;
+    overflow: visible;
+}
+
+.smw-header {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+}
+
+.smw-loading,
+.smw-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #999;
+    font-size: 13px;
+}
+
+/* ----- Menu list ----- */
+
+.smw-menu,
+.smw-submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.smw-root.smw-vertical .smw-menu {
+    flex-direction: column;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.smw-root.smw-horizontal .smw-menu {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+/* ----- Item ----- */
+
+.smw-item {
+    position: relative;
+}
+
+.smw-link {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    white-space: nowrap;
+    user-select: none;
+    border: none;
+    outline: none;
+    font-size: 13px;
+}
+
+.smw-link-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ----- Arrow indicator ----- */
+
+.smw-arrow {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+/* Vertical: arrow points right */
+.smw-root.smw-vertical .smw-arrow {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 5px solid currentColor;
+}
+
+.smw-root.smw-vertical .smw-open > .smw-link .smw-arrow {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    border-bottom: none;
+}
+
+/* Horizontal: arrow points down */
+.smw-root.smw-horizontal .smw-menu > .smw-item > .smw-link .smw-arrow {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
+.smw-root.smw-horizontal .smw-submenu .smw-arrow {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 5px solid currentColor;
+}
+
+/* ----- Submenu ----- */
+
+.smw-submenu {
+    display: none;
+    flex-direction: column;
+}
+
+/* Vertical submenu: indent */
+.smw-root.smw-vertical .smw-submenu {
+    padding-left: 16px;
+}
+
+/* 橫式子選單由 JS floating panel 處理 (掛在 body)，此處不需 CSS 定位 */
+
+/* Open state */
+.smw-open > .smw-submenu {
+    display: flex;
+}
+
+/* ----- Active ----- */
+
+.smw-link.smw-active {
+    font-weight: 600;
+}
+
+/* ----- Floating panel (橫式 submenu，掛在 body) ----- */
+
+.smw-floating-panel {
+    animation: smw-fade-in 0.1s ease-out;
+}
+
+@keyframes smw-fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.smw-floating-panel .smw-link {
+    padding: 6px 16px;
+}
+
+/* ----- Design-time placeholder ----- */
+
+.smw-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 60px;
+    color: #666;
+    font-size: 13px;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.smw-placeholder-icon {
+    margin-right: 8px;
+    font-size: 16px;
+    color: #999;
+}

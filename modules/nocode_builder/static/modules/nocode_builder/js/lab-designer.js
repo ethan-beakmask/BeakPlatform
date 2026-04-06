@@ -532,7 +532,12 @@ function labDesigner() {
                     const content = gsItem.querySelector('.grid-stack-item-content');
                     if (content) {
                         content.innerHTML = '';
-                        const widget = new DataListWidget(content, item.widget);
+                        let widget;
+                        if (item.widget.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                            widget = new SiteMenuWidget(content, item.widget);
+                        } else {
+                            widget = new DataListWidget(content, item.widget);
+                        }
                         widget.init();
                         this.widgets[id] = widget;
                     }

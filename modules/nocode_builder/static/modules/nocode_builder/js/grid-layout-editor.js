@@ -595,29 +595,33 @@ class GridLayoutEditor {
             if (widget) {
                 el.classList.add('has-widget');
 
-                if (widget.viewCode && typeof DataListWidget !== 'undefined') {
-                    // Live preview: create DataListWidget instance
-                    const dlwContainer = document.createElement('div');
-                    dlwContainer.className = 'gle-dlw-container';
-                    el.appendChild(dlwContainer);
+                // 共用: 建立 container + mousedown 攔截
+                const wContainer = document.createElement('div');
+                wContainer.className = 'gle-dlw-container';
+                el.appendChild(wContainer);
 
-                    // Allow interactions inside preview (pagination, sort)
-                    // without triggering zone drag selection
-                    dlwContainer.addEventListener('mousedown', (e) => {
-                        e.stopPropagation();
-                        // Still select this zone
-                        this.selected.clear();
-                        this.selected.add(reg.id);
-                        this._updateSelUI();
-                        this._updateButtons();
-                        if (this.onWidgetSelect) {
-                            this.onWidgetSelect(wKey, this.widgetMap[wKey]);
-                        }
-                    });
+                wContainer.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    this.selected.clear();
+                    this.selected.add(reg.id);
+                    this._updateSelUI();
+                    this._updateButtons();
+                    if (this.onWidgetSelect) {
+                        this.onWidgetSelect(wKey, this.widgetMap[wKey]);
+                    }
+                });
 
-                    // Defer init to after DOM is attached
+                if (widget.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
+                    // SITEMENU live preview
                     setTimeout(() => {
-                        const dlw = new DataListWidget(dlwContainer, Object.assign({}, widget, {
+                        const smw = new SiteMenuWidget(wContainer, Object.assign({}, widget));
+                        smw.init();
+                        this._dlwInstances[wKey] = smw;
+                    }, 0);
+                } else if (widget.viewCode && typeof DataListWidget !== 'undefined') {
+                    // DATALIST live preview
+                    setTimeout(() => {
+                        const dlw = new DataListWidget(wContainer, Object.assign({}, widget, {
                             showSearch: false,
                             showPagination: true,
                             allowCreate: false,
@@ -629,7 +633,7 @@ class GridLayoutEditor {
                         this._dlwInstances[wKey] = dlw;
                     }, 0);
                 } else {
-                    // No viewCode: show static placeholder
+                    // Static placeholder
                     const wp = document.createElement('div');
                     wp.className = 'gle-widget-preview';
                     const typeLabel = document.createElement('div');
@@ -638,10 +642,10 @@ class GridLayoutEditor {
                     wp.appendChild(typeLabel);
                     const detail = document.createElement('div');
                     detail.className = 'gle-wp-detail';
-                    detail.textContent = '(未設定資料來源)';
+                    detail.textContent = widget.type === 'SITEMENU' ? 'SITEMENU' : '(未設定資料來源)';
                     detail.style.color = '#f59e0b';
                     wp.appendChild(detail);
-                    el.appendChild(wp);
+                    wContainer.appendChild(wp);
                 }
             } else {
                 // Zone number label
@@ -796,20 +800,27 @@ class GridLayoutEditor {
         const key = 'r' + regionId;
         if (this.widgetMap[key]) return;
 
-        this.widgetMap[key] = {
-            id: 'w_' + Math.random().toString(36).slice(2, 8),
-            type: type,
-            viewCode: '',
-            title: '',
-            pageSize: 10,
-            showSearch: true,
-            showPagination: true,
-            allowCreate: false,
-            allowEdit: false,
-            allowDelete: false,
-            contextOutputs: [],
-            contextInputs: [],
-        };
+        if (type === 'SITEMENU') {
+            this.widgetMap[key] = {
+                id: 'w_' + Math.random().toString(36).slice(2, 8),
+                type: 'SITEMENU', title: '',
+                startNodeSc: '', startLevel: 'children',
+                orientation: 'vertical',
+                bgColor: '#ffffff', itemBgColor: '#ffffff', itemTextColor: '#333333',
+                itemHoverBgColor: '#e9ecef', itemHoverTextColor: '#333333',
+                itemGap: 6, hoverExpand: true, hoverExpandDelay: 300,
+                contextOutputs: [], contextInputs: [],
+            };
+        } else {
+            this.widgetMap[key] = {
+                id: 'w_' + Math.random().toString(36).slice(2, 8),
+                type: type,
+                viewCode: '', title: '',
+                pageSize: 10, showSearch: true, showPagination: true,
+                allowCreate: false, allowEdit: false, allowDelete: false,
+                contextOutputs: [], contextInputs: [],
+            };
+        }
 
         this.selected.clear();
         this.selected.add(regionId);

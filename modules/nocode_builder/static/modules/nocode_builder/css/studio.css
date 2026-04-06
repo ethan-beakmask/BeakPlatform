@@ -470,6 +470,36 @@ html, body {
     gap: 8px;
 }
 
+/* SITEMENU Color Table */
+.stu-color-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.stu-color-table td {
+    padding: 4px 2px;
+    vertical-align: middle;
+}
+.stu-color-table td:first-child {
+    white-space: nowrap;
+    width: 80px;
+    color: #555;
+}
+.stu-color-table input[type="color"] {
+    width: 28px;
+    height: 22px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.stu-color-table code {
+    font-size: 11px;
+    color: #888;
+    margin-left: 4px;
+}
+
 /* Permissions */
 .stu-perm-row {
     display: flex;
