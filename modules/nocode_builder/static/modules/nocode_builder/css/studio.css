@@ -420,7 +420,7 @@ html, body {
     color: #374151;
 }
 
-.stu-field input,
+.stu-field input:not([type="radio"]):not([type="checkbox"]),
 .stu-field select,
 .stu-field textarea {
     width: 100%;

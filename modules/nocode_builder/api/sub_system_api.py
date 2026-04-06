@@ -116,6 +116,19 @@ def create_sub_system():
         menu_item_secure_code=data.get('menu_item_secure_code'),
         is_active=data.get('is_active', True),
     )
+    db.session.flush()
+
+    # 自動建立 welcome 根頁面
+    from ..services.site_map_service import SiteMapService
+    SiteMapService.create_node(
+        sub_system_sc=ss.secure_code,
+        org_sc=org.secure_code,
+        name='welcome',
+        node_type='page',
+        parent_sc=None,
+        display_order=0,
+    )
+
     ResourceGateway.commit()
 
     # 自動更新選單 link_target

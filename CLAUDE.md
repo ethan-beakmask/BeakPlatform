@@ -390,6 +390,34 @@ function pageManager() {
 
 ---
 
+### FRONT-05: 對話窗 (Modal) 表單元素規範
+
+**CSS 全寬規則必須排除 radio 和 checkbox：**
+
+```css
+/* 正確 — 排除 radio/checkbox */
+.stu-field input:not([type="radio"]):not([type="checkbox"]),
+.stu-field select,
+.stu-field textarea {
+    width: 100%;
+}
+
+/* 錯誤 — radio/checkbox 會被撐到 100% 寬，擠壓同列文字成直排 */
+.stu-field input { width: 100%; }
+```
+
+**Modal 尺寸設定：**
+- 使用 inline style 覆蓋 CSS 預設寬度（如 `style="width:500px;"`）
+- 若 CSS class 定義了 `width`，inline style 優先級更高，正常情況可覆蓋
+- 內含表單的 Modal 建議最小寬度 450px，避免欄位過窄
+
+**常見踩坑：**
+- `input { width: 100% }` 會影響所有 input 類型，包括 radio、checkbox
+- Radio/checkbox 被撐寬後，同列的 label 文字會被擠成直排或換行
+- 解法：CSS selector 加 `:not([type="radio"]):not([type="checkbox"])` 排除
+
+---
+
 ## 時區處理規範 (TZ-01)
 
 ### 儲存層

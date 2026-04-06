@@ -114,6 +114,9 @@ function siteMapPortal() {
                         }
                     },
                 });
+
+                // 樹建立完成後自動導航
+                self._autoNavigate();
             });
         },
 
@@ -400,6 +403,51 @@ function siteMapPortal() {
                 }
             }
             return result;
+        },
+
+        // ===== 自動導航 =====
+
+        /**
+         * 自動導航: 優先到 ?page= 指定的頁面，否則到 welcome (根頁面)
+         */
+        _autoNavigate: function () {
+            if (!this._wbTree || this.tree.length === 0) return;
+
+            var self = this;
+            var params = new URLSearchParams(window.location.search);
+            var targetSc = params.get('page');
+
+            // 嘗試導航到指定頁面
+            if (targetSc) {
+                var wbNode = self._wbTree.findFirst(function (n) {
+                    return n.key === targetSc;
+                });
+                if (wbNode) {
+                    wbNode.setActive(true);
+                    return;
+                }
+            }
+
+            // 預設: 導航到 welcome (第一個根 page 節點)
+            var welcomeSc = self._findWelcomeSc(self.tree);
+            if (welcomeSc) {
+                var wbWelcome = self._wbTree.findFirst(function (n) {
+                    return n.key === welcomeSc;
+                });
+                if (wbWelcome) {
+                    wbWelcome.setActive(true);
+                }
+            }
+        },
+
+        /**
+         * 找到根頁面 (welcome) 的 secure_code
+         */
+        _findWelcomeSc: function (nodes) {
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].node_type === 'page') return nodes[i].secure_code;
+            }
+            return nodes.length > 0 ? nodes[0].secure_code : null;
         },
 
         /**

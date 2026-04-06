@@ -353,6 +353,9 @@ function studioManager() {
                     self._saveReorder();
                 },
             });
+
+            // 預設展開所有節點
+            this._bkTree.expandAll();
         },
 
         /**
@@ -1051,11 +1054,26 @@ function studioManager() {
         // ================================================================
 
         openAddNode: function () {
-            this.addNodeForm = {
-                name: '',
-                node_type: 'page',
-                parent_sc: this.selectedNode ? this.selectedNode.secure_code : '',
-            };
+            var isFirstNode = this.tree.length === 0;
+
+            if (isFirstNode) {
+                // 第一個節點必須是根頁面 welcome
+                this.addNodeForm = {
+                    name: 'welcome',
+                    node_type: 'page',
+                    parent_sc: '',
+                };
+            } else {
+                // 已有根節點，新節點掛在選取節點或根節點下
+                var rootSc = (this.tree[0] && this.tree[0].secure_code) || '';
+                this.addNodeForm = {
+                    name: '',
+                    node_type: 'page',
+                    parent_sc: this.selectedNode
+                        ? this.selectedNode.secure_code
+                        : rootSc,
+                };
+            }
             this.showAddNodeModal = true;
         },
 
@@ -1110,6 +1128,11 @@ function studioManager() {
 
         async deleteNode() {
             if (!this.selectedNode) return;
+            // 根頁面不可刪除
+            if (!this.selectedNode.parent_secure_code) {
+                this.showToast('根頁面 (welcome) 不可刪除', 'error');
+                return;
+            }
             if (!confirm('確定要刪除節點「' + this.selectedNode.name + '」嗎?')) return;
 
             try {
@@ -1215,7 +1238,12 @@ function studioManager() {
 
         previewPage: function () {
             if (!this.subSystemSc) return;
-            window.open('/nocode-builder/sub-systems/' + this.subSystemSc + '/portal', '_blank');
+            var url = '/nocode-builder/sub-systems/' + this.subSystemSc + '/portal';
+            // 優先預覽當前設計頁，否則到 welcome
+            if (this.selectedNode && this.selectedNode.node_type === 'page') {
+                url += '?page=' + this.selectedNode.secure_code;
+            }
+            window.open(url, '_blank');
         },
 
         async togglePublish() {

@@ -360,17 +360,24 @@
 
     <!-- ===== Add Node Modal ===== -->
     <div x-show="showAddNodeModal" x-cloak class="dc-modal">
-        <div class="dc-modal-content" style="width:400px;">
+        <div class="dc-modal-content" style="width:500px;">
             <div class="dc-modal-header">
                 <h3>新增節點</h3>
                 <button class="dc-close-btn" @click="showAddNodeModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
+                <!-- 根頁面提示 (tree empty) -->
+                <div x-show="tree.length === 0" class="stu-field">
+                    <div style="padding:8px; background:#f0f4ff; border:1px solid #cce; border-radius:4px; font-size:13px;">
+                        Site Map 的第一個節點為根頁面 (welcome)，所有其他頁面將建立在其下方
+                    </div>
+                </div>
                 <div class="stu-field">
                     <label>名稱 *</label>
                     <input type="text" x-model="addNodeForm.name">
                 </div>
-                <div class="stu-field">
+                <!-- 類型選擇: 僅在已有根節點時顯示 -->
+                <div class="stu-field" x-show="tree.length > 0">
                     <label>類型</label>
                     <div style="display:flex; gap:16px;">
                         <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
@@ -381,14 +388,20 @@
                         </label>
                     </div>
                 </div>
-                <div x-show="selectedNode" class="stu-field">
+                <!-- 父節點: 選取了非根節點時，可選擇掛在該節點或根頁面下 -->
+                <div x-show="tree.length > 0 && selectedNode && selectedNode.parent_secure_code" class="stu-field">
                     <label style="display:flex; align-items:center; gap:4px;">
                         <input type="checkbox"
-                               :checked="addNodeForm.parent_sc !== ''"
+                               :checked="addNodeForm.parent_sc === (selectedNode ? selectedNode.secure_code : '')"
                                @change="addNodeForm.parent_sc = $event.target.checked
-                                   ? (selectedNode ? selectedNode.secure_code : '') : ''">
+                                   ? (selectedNode ? selectedNode.secure_code : tree[0].secure_code)
+                                   : tree[0].secure_code">
                         建立為「<span x-text="selectedNode ? selectedNode.name : ''"></span>」的子節點
                     </label>
+                </div>
+                <!-- 父節點資訊: 選取了根節點或未選取節點 -->
+                <div x-show="tree.length > 0 && (!selectedNode || !selectedNode.parent_secure_code)" class="stu-field">
+                    <span style="color:#666; font-size:13px;">將建立在根頁面 (welcome) 下</span>
                 </div>
             </div>
             <div class="dc-modal-footer">

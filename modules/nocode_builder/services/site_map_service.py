@@ -161,6 +161,16 @@ class SiteMapService:
         ).first()
 
     @staticmethod
+    def get_root_node(sub_system_sc: str, org_sc: str) -> Optional[DcSiteMapNode]:
+        """取得 site map 的根節點 (welcome)"""
+        return DcSiteMapNode.query.filter(
+            DcSiteMapNode.sub_system_secure_code == sub_system_sc,
+            DcSiteMapNode.org_secure_code == org_sc,
+            DcSiteMapNode.parent_secure_code == None,
+            DcSiteMapNode.is_deleted == False,
+        ).first()
+
+    @staticmethod
     def get_node_context(node: DcSiteMapNode, role_type: str) -> Dict[str, Any]:
         """
         取得節點的權限 context (CRUD + data_filters)
@@ -234,6 +244,20 @@ class SiteMapService:
         if node_type not in ('folder', 'page'):
             raise ValueError(f'Invalid node_type: {node_type}')
 
+        # 限制只能有一個根節點
+        if not parent_sc:
+            existing_root = DcSiteMapNode.query.filter(
+                DcSiteMapNode.sub_system_secure_code == sub_system_sc,
+                DcSiteMapNode.org_secure_code == org_sc,
+                DcSiteMapNode.parent_secure_code == None,
+                DcSiteMapNode.is_deleted == False,
+            ).first()
+            if existing_root:
+                raise ValueError(
+                    'Site Map 只能有一個根頁面 (welcome)，'
+                    '請將新節點建立在根頁面下'
+                )
+
         # page 類型自動建立空白佈局
         if node_type == 'page' and not page_layout_sc:
             layout = DcPageLayout(
@@ -287,6 +311,16 @@ class SiteMapService:
         Returns:
             刪除的節點數
         """
+        # 根節點不可刪除
+        root_check = DcSiteMapNode.query.filter(
+            DcSiteMapNode.secure_code == node_sc,
+            DcSiteMapNode.org_secure_code == org_sc,
+            DcSiteMapNode.parent_secure_code == None,
+            DcSiteMapNode.is_deleted == False,
+        ).first()
+        if root_check:
+            raise ValueError('根頁面 (welcome) 不可刪除')
+
         now = datetime.utcnow()
         count = 0
 

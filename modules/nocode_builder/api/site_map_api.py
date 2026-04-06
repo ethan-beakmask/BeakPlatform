@@ -152,6 +152,8 @@ def delete_site_map_node(ss_sc, node_sc):
             'success': True,
             'message': f'已刪除 {count} 個節點'
         })
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.exception('[SiteMap] delete_node error')
