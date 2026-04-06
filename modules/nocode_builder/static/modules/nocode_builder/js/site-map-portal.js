@@ -138,6 +138,9 @@ function siteMapPortal() {
             this.pageLoading = true;
             this.pageError = '';
 
+            // 更新瀏覽器標籤標題
+            document.title = this.subSystemName + ' - ' + (nodeData.name || '');
+
             var pageSc = nodeData.page_layout_secure_code;
             if (!pageSc) {
                 this.pageError = '此節點未連結頁面';
