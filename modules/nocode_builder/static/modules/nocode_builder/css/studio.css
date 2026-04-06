@@ -381,11 +381,11 @@ html, body {
     box-shadow: 0 0 0 1px #2563eb;
 }
 
-/* -- Right Properties Panel -- */
+/* -- Middle Properties Panel (between sidebar and canvas) -- */
 .stu-props {
     width: 300px;
     min-width: 300px;
-    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
     background: #fff;
     display: flex;
     flex-direction: column;

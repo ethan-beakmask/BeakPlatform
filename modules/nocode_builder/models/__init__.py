@@ -7,8 +7,9 @@ from .sub_system import DcSubSystem
 from .sub_system_page import DcSubSystemPage
 from .site_map_node import DcSiteMapNode
 from .site_map_permission import DcSiteMapPermission
+from .background import DcBackground
 
 __all__ = [
     'DcCrudView', 'DcPageLayout', 'DcSubSystem', 'DcSubSystemPage',
-    'DcSiteMapNode', 'DcSiteMapPermission',
+    'DcSiteMapNode', 'DcSiteMapPermission', 'DcBackground',
 ]

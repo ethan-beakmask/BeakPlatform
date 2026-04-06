@@ -40,6 +40,7 @@ CONTEXT_STORAGE_MAP = {
     'wf_background': 'local',
     'form_attachment': 'encrypted',
     'subsystem_file': 'encrypted',
+    'nc_background': 'local',
 }
 
 # context_type → 允許的副檔名
@@ -54,6 +55,7 @@ CONTEXT_ALLOWED_EXT = {
                        'odt', 'ods', 'csv', 'txt', 'rtf',
                        'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp',
                        'zip', '7z', 'rar'},
+    'nc_background': {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'},
 }
 
 # context_type → 檔案大小上限 (bytes)
@@ -62,6 +64,7 @@ CONTEXT_MAX_SIZE = {
     'wf_background': 5 * 1024 * 1024,   # 5MB
     'form_attachment': 50 * 1024 * 1024, # 50MB
     'subsystem_file': 50 * 1024 * 1024,  # 50MB
+    'nc_background': 5 * 1024 * 1024,    # 5MB
 }
 
 # 預設上限

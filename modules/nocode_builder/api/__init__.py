@@ -861,7 +861,7 @@ def update_page(secure_code):
         data = request.get_json() or {}
 
         update_fields = {}
-        for field in ('name', 'description', 'layout_json', 'is_active'):
+        for field in ('name', 'description', 'layout_json', 'style_config', 'is_active'):
             if field in data:
                 update_fields[field] = data[field]
 
@@ -1140,6 +1140,207 @@ def _get_widget_role_crud(page_layout_sc, widget_id, role_type, is_admin):
     if is_admin:
         return {'create': True, 'edit': True, 'delete': True}
     return {'create': False, 'edit': False, 'delete': False}
+
+
+# =============================================================================
+# 子系統樣式 API
+# =============================================================================
+
+@api_bp.route('/sub-systems/<ss_sc>/style')
+@module_access_required('nocode_builder')
+def get_subsystem_style(ss_sc):
+    """取得子系統預設樣式"""
+    try:
+        from ..models import DcSubSystem
+        ss = ResourceGateway.get(DcSubSystem, ss_sc, raise_on_not_found=False, check_permission=False)
+        if not ss or ss.is_deleted:
+            return jsonify({'success': False, 'error': 'SubSystem not found'}), 404
+        return jsonify({'success': True, 'data': ss.style_config or {}})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Style] get_subsystem_style error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<ss_sc>/style', methods=['PUT'])
+@csrf.exempt
+@admin_required
+def update_subsystem_style(ss_sc):
+    """更新子系統預設樣式（成為子系統預設）"""
+    try:
+        from ..models import DcSubSystem
+        ss = ResourceGateway.get(DcSubSystem, ss_sc, raise_on_not_found=False, check_permission=False)
+        if not ss or ss.is_deleted:
+            return jsonify({'success': False, 'error': 'SubSystem not found'}), 404
+
+        data = request.get_json() or {}
+        style = data.get('style_config', {})
+        ResourceGateway.update(ss, check_permission=False, style_config=style)
+        ResourceGateway.commit()
+        return jsonify({'success': True, 'data': ss.style_config or {}, 'message': '子系統預設樣式已更新'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Style] update_subsystem_style error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<ss_sc>/style/apply-all', methods=['POST'])
+@csrf.exempt
+@admin_required
+def apply_style_to_all_pages(ss_sc):
+    """全域覆蓋：將樣式套用到子系統下所有頁面"""
+    try:
+        from ..models import DcSubSystem, DcSiteMapNode, DcPageLayout
+        ss = ResourceGateway.get(DcSubSystem, ss_sc, raise_on_not_found=False, check_permission=False)
+        if not ss or ss.is_deleted:
+            return jsonify({'success': False, 'error': 'SubSystem not found'}), 404
+
+        data = request.get_json() or {}
+        style = data.get('style_config', {})
+
+        # 取得此子系統下所有 site map node 關聯的 page layout
+        nodes = ResourceGateway.filter(
+            DcSiteMapNode,
+            sub_system_secure_code=ss_sc,
+            is_deleted=False
+        )
+        page_scs = set()
+        for n in nodes:
+            if n.page_layout_secure_code:
+                page_scs.add(n.page_layout_secure_code)
+
+        count = 0
+        for psc in page_scs:
+            page = ResourceGateway.get(DcPageLayout, psc, raise_on_not_found=False, check_permission=False)
+            if page and not page.is_deleted:
+                ResourceGateway.update(page, check_permission=False, style_config=style)
+                count += 1
+
+        ResourceGateway.commit()
+        return jsonify({
+            'success': True,
+            'message': f'已套用到 {count} 個頁面',
+            'count': count
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Style] apply_style_to_all_pages error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# 底圖圖庫 API
+# =============================================================================
+
+@api_bp.route('/backgrounds')
+@module_access_required('nocode_builder')
+def list_backgrounds():
+    """列出底圖圖庫"""
+    try:
+        from ..models import DcBackground
+        result = ResourceGateway.filter(
+            DcBackground,
+            is_deleted=False,
+            order_by='-created_at'
+        )
+        return jsonify({'success': True, 'data': [b.to_dict() for b in result]})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Background] list error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/backgrounds/upload', methods=['POST'])
+@csrf.exempt
+@admin_required
+def upload_background():
+    """上傳底圖"""
+    try:
+        from ..models import DcBackground
+        from app.services import file_service
+
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if not file.filename:
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+        org = get_current_org()
+        record = file_service.upload_file(
+            org_sc=org.secure_code,
+            file=file,
+            context_type='nc_background',
+            uploader_sc=current_user.secure_code,
+        )
+        db.session.flush()
+
+        # 取得圖片尺寸
+        width, height = None, None
+        try:
+            from PIL import Image
+            import io
+            file.stream.seek(0)
+            img = Image.open(io.BytesIO(file.stream.read()))
+            width, height = img.size
+            file.stream.seek(0)
+        except Exception:
+            pass
+
+        bg = DcBackground(
+            org_secure_code=org.secure_code,
+            filename=record.storage_ref,
+            original_filename=record.original_name,
+            filepath=record.storage_ref or '',
+            filesize=record.file_size,
+            mimetype=record.mime_type,
+            width=width,
+            height=height,
+            platform_file_sc=record.secure_code,
+        )
+        db.session.add(bg)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'data': bg.to_dict(),
+            'message': '底圖上傳成功'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Background] upload error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/backgrounds/<secure_code>', methods=['DELETE'])
+@csrf.exempt
+@admin_required
+def delete_background(secure_code):
+    """刪除底圖"""
+    try:
+        from ..models import DcBackground
+        from app.services import file_service
+
+        bg = ResourceGateway.get(DcBackground, secure_code, raise_on_not_found=False, check_permission=False)
+        if not bg or bg.is_deleted:
+            return jsonify({'success': False, 'error': 'Background not found'}), 404
+
+        # 刪除 FileService 記錄
+        if bg.platform_file_sc:
+            try:
+                pf = file_service.get_file_by_sc(bg.platform_file_sc, org_sc=bg.org_secure_code)
+                if pf:
+                    file_service.delete_file(pf)
+            except Exception:
+                logger.warning(f'[Background] Failed to delete platform file {bg.platform_file_sc}')
+
+        ResourceGateway.delete(bg, check_permission=False, soft=True)
+        ResourceGateway.commit()
+        return jsonify({'success': True, 'message': '底圖已刪除'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[Background] delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # =============================================================================

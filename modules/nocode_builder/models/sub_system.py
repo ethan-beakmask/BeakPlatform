@@ -33,6 +33,9 @@ class DcSubSystem(ModuleBaseModel):
     # 來源申請單號（由 SubSystemProvision 節點自動填入）
     provision_serial_number = Column(String(100), nullable=True, index=True)
 
+    # 子系統預設樣式
+    style_config = Column(JSONB, default=dict)
+
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
         data.update({
@@ -47,5 +50,6 @@ class DcSubSystem(ModuleBaseModel):
             'developers': self.developers or [],
             'layout_mode': self.layout_mode,
             'provision_serial_number': self.provision_serial_number,
+            'style_config': self.style_config or {},
         })
         return data

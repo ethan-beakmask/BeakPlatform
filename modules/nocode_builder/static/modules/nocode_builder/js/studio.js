@@ -1,7 +1,7 @@
 /**
  * Studio 設計器 - 統一設計器 Alpine.js Manager
  *
- * 佈局: 左側(元件庫+Site Map樹) + 中央(設計區) + 右側(屬性面板)
+ * 佈局: 左側(元件庫+Site Map樹) + 中間(設定面板) + 右側(設計區)
  *
  * 支援兩種佈局模式 (可在同頁面切換):
  *   - grid: 框架模式 (GridLayoutEditor, 16宮格矩陣)
@@ -65,8 +65,17 @@ function studioManager() {
 
         // Property panel
         showProps: false,
-        propsMode: 'widget',    // 'widget' | 'perm'
+        showStylePanel: false,
+        propsMode: 'style',     // 'style' | 'widget' | 'perm'
         selectedZoneId: null,
+
+        // Page/SubSystem style config
+        styleConfig: { bgColor: '', bgImage: { url: '', opacity: 30, fit: 'contain', position: 'center center' }, textColor: '', fontFamily: '', fontSize: null },
+        _subSystemStyleConfig: {},  // 子系統預設樣式(快取)
+
+        // Background gallery
+        showBgGallery: false,
+        bgGallery: [],
 
         // Widget settings
         settingDataSource: '',
@@ -175,7 +184,10 @@ function studioManager() {
             try {
                 var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc);
                 var data = await res.json();
-                if (data.success) this.subSystem = data.data;
+                if (data.success) {
+                    this.subSystem = data.data;
+                    this._subSystemStyleConfig = data.data.style_config || {};
+                }
             } catch (e) {
                 console.error('Load sub system failed:', e);
             }
@@ -482,7 +494,10 @@ function studioManager() {
                 this._setupEmptyCanvas();
             }
 
+            // 顯示頁面樣式面板(選了頁面時)
             this.showProps = false;
+            this.propsMode = 'style';
+            this.showStylePanel = !!pageSc;
             this.selectedZoneId = null;
         },
 
@@ -496,8 +511,15 @@ function studioManager() {
                 var layout = data.data.layout_json || {};
                 var detectedMode = this._detectMode(layout);
 
+                // 載入頁面樣式(有值用頁面的，否則 fallback 到子系統預設)
+                this._loadStyleConfig(data.data.style_config || {});
+
                 this.editMode = detectedMode;
                 this.dirty = false;
+
+                // 套用樣式到 canvas (需等 DOM 更新)
+                var self2 = this;
+                this.$nextTick(function () { self2._applyStyleToCanvas(); });
 
                 var self = this;
                 this.$nextTick(function () {
@@ -584,7 +606,7 @@ function studioManager() {
             this._gridEditor.onZoneSelect = function (zoneId) {
                 self.selectedZoneId = zoneId;
                 self.showProps = false;
-                self.propsMode = 'widget';
+                self.propsMode = 'style';
             };
 
             this._gridEditor.onWidgetSelect = function (zoneId, widgetConfig) {
@@ -631,7 +653,7 @@ function studioManager() {
             var self = this;
             this._gsGrid.on('change', function () { self.dirty = true; });
 
-            // 點擊 widget 時切換右側設定面板
+            // 點擊 widget 時切換設定面板; 點空白處回到頁面樣式
             var gsEl = this._gsGrid.el;
             gsEl.addEventListener('click', function (e) {
                 var gsItem = e.target.closest('.grid-stack-item');
@@ -640,6 +662,9 @@ function studioManager() {
                     if (wid && self._gsWidgetConfigs[wid]) {
                         self._gsSelectItem(wid);
                     }
+                } else {
+                    // 點擊空白區域 -> 回到頁面樣式面板
+                    self.closeWidgetProps();
                 }
             });
         },
@@ -1359,7 +1384,10 @@ function studioManager() {
                 var res = await fetch('/api/nocode-builder/pages/' + this.currentPageSc, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ layout_json: layoutJson }),
+                    body: JSON.stringify({
+                        layout_json: layoutJson,
+                        style_config: this._buildStyleConfigForSave(),
+                    }),
                 });
                 var data = await res.json();
                 if (data.success) {
@@ -1418,6 +1446,7 @@ function studioManager() {
             this.editAccessRoles = (this.selectedNode.access_roles || []).slice();
             this.propsMode = 'perm';
             this.showProps = true;
+            this.showStylePanel = false;
         },
 
         toggleAccessRole: function (role, checked) {
@@ -1471,6 +1500,247 @@ function studioManager() {
                 }
             } catch (e) {
                 this.showToast('儲存失敗: ' + e.message, 'error');
+            }
+        },
+
+        // ================================================================
+        // Style Settings (頁面/子系統樣式)
+        // ================================================================
+
+        _emptyBgImage: function () {
+            return { url: '', opacity: 30, fit: 'contain', position: 'center center' };
+        },
+
+        _loadStyleConfig: function (pageStyle) {
+            var def = this._subSystemStyleConfig || {};
+            var s = pageStyle || {};
+            var srcBg = s.bgImage || def.bgImage || null;
+            var bg = this._emptyBgImage();
+            if (srcBg) {
+                bg.url = srcBg.url || '';
+                bg.opacity = srcBg.opacity != null ? srcBg.opacity : 30;
+                bg.fit = srcBg.fit || 'contain';
+                bg.position = srcBg.position || 'center center';
+            }
+            this.styleConfig = {
+                bgColor: s.bgColor || def.bgColor || '',
+                bgImage: bg,
+                textColor: s.textColor || def.textColor || '',
+                fontFamily: s.fontFamily || def.fontFamily || '',
+                fontSize: s.fontSize || def.fontSize || null,
+            };
+        },
+
+        _buildStyleConfigForSave: function () {
+            var sc = this.styleConfig;
+            var result = {};
+            if (sc.bgColor) result.bgColor = sc.bgColor;
+            if (sc.bgImage && sc.bgImage.url) {
+                result.bgImage = {
+                    url: sc.bgImage.url,
+                    opacity: sc.bgImage.opacity != null ? sc.bgImage.opacity : 30,
+                    fit: sc.bgImage.fit || 'contain',
+                    position: sc.bgImage.position || 'center center',
+                };
+            }
+            if (sc.textColor) result.textColor = sc.textColor;
+            if (sc.fontFamily) result.fontFamily = sc.fontFamily;
+            if (sc.fontSize) result.fontSize = sc.fontSize;
+            return result;
+        },
+
+        onStyleChanged: function () {
+            this.dirty = true;
+            this._applyStyleToCanvas();
+        },
+
+        _applyStyleToCanvas: function () {
+            // 即時套用樣式到 Canvas 設計區
+            var gridCanvas = document.getElementById('stu-grid-canvas');
+            var freeCanvas = document.getElementById('stu-gridstack');
+            var targets = [gridCanvas, freeCanvas].filter(Boolean);
+            var sc = this.styleConfig;
+
+            targets.forEach(function (el) {
+                // 底色
+                el.style.backgroundColor = sc.bgColor || '';
+                // 字色
+                el.style.color = sc.textColor || '';
+                // 字型
+                el.style.fontFamily = sc.fontFamily || '';
+                // 字型大小
+                el.style.fontSize = sc.fontSize ? (sc.fontSize + 'px') : '';
+            });
+
+            // 底圖 (透過動態 style 注入)
+            var styleId = 'stu-page-bg-style';
+            var existing = document.getElementById(styleId);
+            if (existing) existing.remove();
+
+            if (sc.bgImage && sc.bgImage.url) {
+                var opacity = (sc.bgImage.opacity != null ? sc.bgImage.opacity : 30) / 100;
+                var fit = sc.bgImage.fit || 'contain';
+                var pos = sc.bgImage.position || 'center center';
+                var bgSize = fit;
+                var bgRepeat = 'no-repeat';
+                if (fit === 'tile') {
+                    bgSize = 'auto';
+                    bgRepeat = 'repeat';
+                }
+
+                var css = '#stu-grid-canvas, #stu-gridstack { position: relative; }\n'
+                    + '#stu-grid-canvas::before, #stu-gridstack::before {\n'
+                    + '  content: "";\n'
+                    + '  position: absolute; top:0; left:0; right:0; bottom:0;\n'
+                    + '  background-image: url(' + sc.bgImage.url + ');\n'
+                    + '  background-size: ' + bgSize + ';\n'
+                    + '  background-position: ' + pos + ';\n'
+                    + '  background-repeat: ' + bgRepeat + ';\n'
+                    + '  opacity: ' + opacity + ';\n'
+                    + '  pointer-events: none;\n'
+                    + '  z-index: 0;\n'
+                    + '}\n';
+                var styleEl = document.createElement('style');
+                styleEl.id = styleId;
+                styleEl.textContent = css;
+                document.head.appendChild(styleEl);
+            }
+        },
+
+        closeWidgetProps: function () {
+            this.showProps = false;
+            this.propsMode = 'style';
+            this.showStylePanel = !!this.currentPageSc;
+        },
+
+        // --- 底圖操作 ---
+
+        openBgGallery: async function () {
+            await this._loadBgGallery();
+            this.showBgGallery = true;
+        },
+
+        async _loadBgGallery() {
+            try {
+                var res = await fetch('/api/nocode-builder/backgrounds');
+                var data = await res.json();
+                if (data.success) this.bgGallery = data.data || [];
+            } catch (e) {
+                console.error('Load bg gallery failed:', e);
+            }
+        },
+
+        selectBgFromGallery: function (bg) {
+            this.styleConfig.bgImage.url = bg.url;
+            this.showBgGallery = false;
+            this.dirty = true;
+        },
+
+        async deleteBgFromGallery(sc) {
+            if (!confirm('確定刪除此底圖?')) return;
+            try {
+                var res = await fetch('/api/nocode-builder/backgrounds/' + sc, { method: 'DELETE' });
+                var data = await res.json();
+                if (data.success) {
+                    this.bgGallery = this.bgGallery.filter(function (b) { return b.secure_code !== sc; });
+                    this.showToast('底圖已刪除', 'success');
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗', 'error');
+            }
+        },
+
+        async uploadBgImage(evt) {
+            var file = evt.target.files && evt.target.files[0];
+            if (!file) return;
+            evt.target.value = '';
+            await this._doUploadBg(file);
+        },
+
+        async uploadBgFromGallery(evt) {
+            var file = evt.target.files && evt.target.files[0];
+            if (!file) return;
+            evt.target.value = '';
+            var bg = await this._doUploadBg(file);
+            if (bg) {
+                this.bgGallery.unshift(bg);
+            }
+        },
+
+        async _doUploadBg(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+            try {
+                var res = await fetch('/api/nocode-builder/backgrounds/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                var data = await res.json();
+                if (data.success) {
+                    var bg = data.data;
+                    // 自動套用到目前頁面
+                    this.styleConfig.bgImage.url = bg.url;
+                    this.dirty = true;
+                    this.showToast('底圖上傳成功', 'success');
+                    return bg;
+                } else {
+                    this.showToast(data.error || '上傳失敗', 'error');
+                    return null;
+                }
+            } catch (e) {
+                this.showToast('上傳失敗', 'error');
+                return null;
+            }
+        },
+
+        clearBgImage: function () {
+            this.styleConfig.bgImage = this._emptyBgImage();
+            this.dirty = true;
+            this._applyStyleToCanvas();
+        },
+
+        // --- 子系統操作 ---
+
+        async setAsSubSystemDefault() {
+            var style = this._buildStyleConfigForSave();
+            if (!confirm('將目前頁面樣式設為子系統預設?')) return;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ style_config: style }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this._subSystemStyleConfig = style;
+                    this.showToast('已設為子系統預設', 'success');
+                } else {
+                    this.showToast(data.error || '操作失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('操作失敗', 'error');
+            }
+        },
+
+        async applyStyleToAllPages() {
+            var style = this._buildStyleConfigForSave();
+            if (!confirm('將目前頁面樣式覆蓋到此子系統的所有頁面? 此操作不可復原。')) return;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style/apply-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ style_config: style }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this.showToast(data.message || '已套用', 'success');
+                } else {
+                    this.showToast(data.error || '操作失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('操作失敗', 'error');
             }
         },
 

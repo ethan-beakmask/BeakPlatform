@@ -100,49 +100,143 @@
                 </div>
             </div>
 
-            <!-- Center Panel (Canvas) -->
-            <div class="stu-canvas">
-                <!-- Canvas toolbar: mode toggle + node info -->
-                <div class="stu-canvas-toolbar" x-show="selectedNode && selectedNode.node_type === 'page'">
-                    <div class="stu-mode-toggle">
-                        <button :class="{ active: editMode === 'grid' }" @click="switchMode('grid')">
-                            <i class="fas fa-th"></i> 框架模式
-                        </button>
-                        <button :class="{ active: editMode === 'free' }" @click="switchMode('free')">
-                            <i class="fas fa-arrows-alt"></i> 自由模式
-                        </button>
+            <!-- Middle Panel (Properties / Style) -->
+            <div class="stu-props" :class="{ 'stu-props-hidden': !showProps && !showStylePanel }">
+
+                <!-- ===== Page Style Settings ===== -->
+                <div x-show="showStylePanel && propsMode !== 'perm' && propsMode !== 'widget'">
+                    <div class="stu-panel-title">
+                        <i class="fas fa-palette"></i> 頁面樣式
                     </div>
-                    <div class="stu-canvas-info">
-                        <span x-text="selectedNode ? selectedNode.name : ''"></span>
+                    <div class="stu-props-body">
+                        <div class="stu-section-divider">底色</div>
+                        <div class="stu-field">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="color" x-model="styleConfig.bgColor"
+                                       @input="onStyleChanged()"
+                                       style="width:36px; height:28px; border:1px solid #ccc; border-radius:3px; cursor:pointer;">
+                                <code x-text="styleConfig.bgColor" style="font-size:11px; color:#666;"></code>
+                                <button class="stu-btn sm" @click="styleConfig.bgColor = ''; onStyleChanged();"
+                                        title="清除" style="margin-left:auto;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="stu-section-divider">底圖</div>
+                        <div class="stu-field">
+                            <!-- 目前底圖預覽 -->
+                            <div x-show="styleConfig.bgImage.url"
+                                 style="margin-bottom:6px; border:1px solid #ddd; border-radius:4px; overflow:hidden; background:#f9f9f9;">
+                                <img :src="styleConfig.bgImage.url"
+                                     style="max-width:100%; max-height:100px; display:block; margin:0 auto;">
+                            </div>
+                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                <button class="stu-btn sm" @click="openBgGallery()">
+                                    <i class="fas fa-images"></i> 圖庫
+                                </button>
+                                <label class="stu-btn sm" style="cursor:pointer;">
+                                    <i class="fas fa-upload"></i> 上傳
+                                    <input type="file" accept="image/*" style="display:none;"
+                                           @change="uploadBgImage($event)">
+                                </label>
+                                <button class="stu-btn sm" @click="clearBgImage()"
+                                        x-show="styleConfig.bgImage.url">
+                                    <i class="fas fa-times"></i> 清除
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 底圖選項 -->
+                        <div x-show="styleConfig.bgImage.url">
+                            <div class="stu-field">
+                                <label>透明度</label>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <input type="range" min="0" max="100"
+                                           x-model.number="styleConfig.bgImage.opacity"
+                                           @input="onStyleChanged()"
+                                           style="flex:1;">
+                                    <span style="font-size:11px; width:30px;" x-text="styleConfig.bgImage.opacity + '%'"></span>
+                                </div>
+                            </div>
+                            <div class="stu-field">
+                                <label>縮放</label>
+                                <select x-model="styleConfig.bgImage.fit" @change="onStyleChanged()">
+                                    <option value="contain">contain</option>
+                                    <option value="cover">cover</option>
+                                    <option value="100% 100%">stretch</option>
+                                    <option value="auto">original</option>
+                                    <option value="tile">tile</option>
+                                </select>
+                            </div>
+                            <div class="stu-field">
+                                <label>位置</label>
+                                <select x-model="styleConfig.bgImage.position" @change="onStyleChanged()">
+                                    <option value="center center">center</option>
+                                    <option value="top center">top</option>
+                                    <option value="bottom center">bottom</option>
+                                    <option value="center left">left</option>
+                                    <option value="center right">right</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="stu-section-divider">字色</div>
+                        <div class="stu-field">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="color" x-model="styleConfig.textColor"
+                                       @input="onStyleChanged()"
+                                       style="width:36px; height:28px; border:1px solid #ccc; border-radius:3px; cursor:pointer;">
+                                <code x-text="styleConfig.textColor" style="font-size:11px; color:#666;"></code>
+                                <button class="stu-btn sm" @click="styleConfig.textColor = ''; onStyleChanged();"
+                                        title="清除" style="margin-left:auto;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="stu-section-divider">字型</div>
+                        <div class="stu-field">
+                            <select x-model="styleConfig.fontFamily" @change="onStyleChanged()">
+                                <option value="">-- 預設 --</option>
+                                <option value="system-ui">system-ui</option>
+                                <option value="'Noto Sans TC', sans-serif">Noto Sans TC</option>
+                                <option value="'Microsoft JhengHei', sans-serif">微軟正黑體</option>
+                                <option value="'PingFang TC', sans-serif">蘋方</option>
+                                <option value="Arial, sans-serif">Arial</option>
+                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                            </select>
+                        </div>
+                        <div class="stu-field">
+                            <label>字型大小 (px)</label>
+                            <input type="number" x-model.number="styleConfig.fontSize"
+                                   @input="onStyleChanged()"
+                                   min="10" max="36" placeholder="14">
+                        </div>
+
+                        <div class="stu-section-divider" style="margin-top:16px;">子系統操作</div>
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <button class="stu-btn primary" style="width:100%;"
+                                    @click="setAsSubSystemDefault()">
+                                <i class="fas fa-arrow-up"></i> 成為子系統預設
+                            </button>
+                            <button class="stu-btn" style="width:100%; border-color:#dc3545; color:#dc3545;"
+                                    @click="applyStyleToAllPages()">
+                                <i class="fas fa-copy"></i> 全域覆蓋
+                            </button>
+                            <p class="stu-hint" style="margin-top:2px;">
+                                子系統預設: 新頁面自動套用 / 全域覆蓋: 覆蓋所有頁面
+                            </p>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Empty state -->
-                <div x-show="!selectedNode || selectedNode.node_type !== 'page'" class="stu-canvas-empty">
-                    <i class="fas fa-mouse-pointer"></i>
-                    <span>點擊左側 Site Map 的頁面節點開始設計</span>
-                </div>
-
-                <!-- Grid mode canvas -->
-                <div x-show="selectedNode && selectedNode.node_type === 'page' && editMode === 'grid'"
-                     id="stu-grid-canvas" class="stu-editor-area"></div>
-
-                <!-- Free mode canvas -->
-                <div x-show="selectedNode && selectedNode.node_type === 'page' && editMode === 'free'"
-                     class="stu-editor-area stu-free-area">
-                    <div class="grid-stack" id="stu-gridstack"></div>
-                </div>
-            </div>
-
-            <!-- Right Panel (Properties) -->
-            <div class="stu-props" :class="{ 'stu-props-hidden': !showProps }">
 
                 <!-- Access Roles mode -->
                 <template x-if="propsMode === 'perm'">
                     <div>
                         <div class="stu-panel-title">
                             准入設定
-                            <button class="stu-btn sm" @click="showProps = false" style="float:right;">
+                            <button class="stu-btn sm" @click="showProps = false; propsMode = 'style';" style="float:right;">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -172,7 +266,12 @@
 
                 <!-- Widget settings mode -->
                 <div x-show="propsMode === 'widget'">
-                    <div class="stu-panel-title" x-text="settingWidgetType === 'SITEMENU' ? '選單設定' : '元件設定'"></div>
+                    <div class="stu-panel-title">
+                        <span x-text="settingWidgetType === 'SITEMENU' ? '選單設定' : '元件設定'"></span>
+                        <button class="stu-btn sm" @click="closeWidgetProps()" style="float:right;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
 
                     <!-- ===== SITEMENU Settings ===== -->
                     <div class="stu-props-body" x-show="settingWidgetType === 'SITEMENU'">
@@ -474,6 +573,40 @@
                 </div>
             </div>
 
+            <!-- Right Panel (Canvas) -->
+            <div class="stu-canvas">
+                <!-- Canvas toolbar: mode toggle + node info -->
+                <div class="stu-canvas-toolbar" x-show="selectedNode && selectedNode.node_type === 'page'">
+                    <div class="stu-mode-toggle">
+                        <button :class="{ active: editMode === 'grid' }" @click="switchMode('grid')">
+                            <i class="fas fa-th"></i> 框架模式
+                        </button>
+                        <button :class="{ active: editMode === 'free' }" @click="switchMode('free')">
+                            <i class="fas fa-arrows-alt"></i> 自由模式
+                        </button>
+                    </div>
+                    <div class="stu-canvas-info">
+                        <span x-text="selectedNode ? selectedNode.name : ''"></span>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div x-show="!selectedNode || selectedNode.node_type !== 'page'" class="stu-canvas-empty">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <span>點擊左側 Site Map 的頁面節點開始設計</span>
+                </div>
+
+                <!-- Grid mode canvas -->
+                <div x-show="selectedNode && selectedNode.node_type === 'page' && editMode === 'grid'"
+                     id="stu-grid-canvas" class="stu-editor-area"></div>
+
+                <!-- Free mode canvas -->
+                <div x-show="selectedNode && selectedNode.node_type === 'page' && editMode === 'free'"
+                     class="stu-editor-area stu-free-area">
+                    <div class="grid-stack" id="stu-gridstack"></div>
+                </div>
+            </div>
+
         </div><!-- stu-body -->
     </div><!-- stu-layout -->
 
@@ -524,6 +657,44 @@
                 <button class="dc-btn primary" @click="unsavedSaveAndSwitch()">儲存並切換</button>
                 <button class="dc-btn" @click="unsavedDiscardAndSwitch()">不儲存切換</button>
                 <button class="dc-btn" @click="unsavedCancel()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Background Gallery Modal ===== -->
+    <div x-show="showBgGallery" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width:600px;">
+            <div class="dc-modal-header">
+                <h3>底圖圖庫</h3>
+                <button class="dc-close-btn" @click="showBgGallery = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <div x-show="bgGallery.length === 0" style="text-align:center; color:#999; padding:20px;">
+                    尚無底圖，請先上傳
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+                    <template x-for="bg in bgGallery" :key="bg.secure_code">
+                        <div style="border:1px solid #ddd; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;"
+                             @click="selectBgFromGallery(bg)">
+                            <img :src="bg.url" style="width:100%; height:100px; object-fit:cover; display:block;">
+                            <div style="padding:4px; font-size:11px; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+                                 x-text="bg.original_filename"></div>
+                            <button class="stu-btn sm danger"
+                                    style="position:absolute; top:2px; right:2px; font-size:10px; padding:1px 4px;"
+                                    @click.stop="deleteBgFromGallery(bg.secure_code)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="dc-modal-footer">
+                <label class="dc-btn primary" style="cursor:pointer;">
+                    <i class="fas fa-upload"></i> 上傳底圖
+                    <input type="file" accept="image/*" style="display:none;"
+                           @change="uploadBgFromGallery($event)">
+                </label>
+                <button class="dc-btn" @click="showBgGallery = false">關閉</button>
             </div>
         </div>
     </div>

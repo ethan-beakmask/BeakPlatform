@@ -177,6 +177,9 @@ function siteMapPortal() {
                 var ctx = ctxData.data;
                 var layout = layoutData.data.layout_json || {};
 
+                // 套用頁面樣式
+                this._applyPageStyle(layoutData.data.style_config || {});
+
                 // v3 Grid 模式 or v2 GridStack 模式
                 if (layout.version === 3 && layout.mode === 'grid') {
                     this._renderGridLayout(layout, ctx);
@@ -533,6 +536,50 @@ function siteMapPortal() {
             delete layout.bindings;
             layout.version = 2;
             return layout;
+        },
+
+        _applyPageStyle: function (styleConfig) {
+            var sc = styleConfig || {};
+            var content = document.querySelector('.sp2-content');
+            if (!content) return;
+
+            content.style.backgroundColor = sc.bgColor || '';
+            content.style.color = sc.textColor || '';
+            content.style.fontFamily = sc.fontFamily || '';
+            content.style.fontSize = sc.fontSize ? (sc.fontSize + 'px') : '';
+
+            // 底圖
+            var styleId = 'sp2-page-bg-style';
+            var existing = document.getElementById(styleId);
+            if (existing) existing.remove();
+
+            if (sc.bgImage && sc.bgImage.url) {
+                var opacity = (sc.bgImage.opacity != null ? sc.bgImage.opacity : 30) / 100;
+                var fit = sc.bgImage.fit || 'contain';
+                var pos = sc.bgImage.position || 'center center';
+                var bgSize = fit;
+                var bgRepeat = 'no-repeat';
+                if (fit === 'tile') {
+                    bgSize = 'auto';
+                    bgRepeat = 'repeat';
+                }
+                var css = '.sp2-content { position: relative; }\n'
+                    + '.sp2-content::before {\n'
+                    + '  content: "";\n'
+                    + '  position: absolute; top:0; left:0; right:0; bottom:0;\n'
+                    + '  background-image: url(' + sc.bgImage.url + ');\n'
+                    + '  background-size: ' + bgSize + ';\n'
+                    + '  background-position: ' + pos + ';\n'
+                    + '  background-repeat: ' + bgRepeat + ';\n'
+                    + '  opacity: ' + opacity + ';\n'
+                    + '  pointer-events: none;\n'
+                    + '  z-index: 0;\n'
+                    + '}\n';
+                var styleEl = document.createElement('style');
+                styleEl.id = styleId;
+                styleEl.textContent = css;
+                document.head.appendChild(styleEl);
+            }
         }
     };
 }
