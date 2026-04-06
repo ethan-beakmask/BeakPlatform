@@ -84,7 +84,7 @@
                 <div class="stu-panel-section stu-panel-flex">
                     <div class="stu-panel-title"><i class="fas fa-sitemap"></i> Site Map</div>
                     <div class="stu-tree-toolbar">
-                        <button class="stu-btn sm" @click="openAddNode()"><i class="fas fa-plus"></i> 節點</button>
+                        <button class="stu-btn sm" @click="openAddNode()"><i class="fas fa-plus"></i> 網頁</button>
                         <button class="stu-btn sm" @click="openAccessRoles()" :disabled="!selectedNode">准入</button>
                         <button class="stu-btn sm danger" @click="deleteNode()" :disabled="!selectedNode">刪除</button>
                     </div>
@@ -362,7 +362,7 @@
     <div x-show="showAddNodeModal" x-cloak class="dc-modal">
         <div class="dc-modal-content" style="width:500px;">
             <div class="dc-modal-header">
-                <h3>新增節點</h3>
+                <h3>新增網頁</h3>
                 <button class="dc-close-btn" @click="showAddNodeModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
@@ -376,32 +376,12 @@
                     <label>名稱 *</label>
                     <input type="text" x-model="addNodeForm.name">
                 </div>
-                <!-- 類型選擇: 僅在已有根節點時顯示 -->
-                <div class="stu-field" x-show="tree.length > 0">
-                    <label>類型</label>
-                    <div style="display:flex; gap:16px;">
-                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                            <input type="radio" value="page" x-model="addNodeForm.node_type"> 頁面
-                        </label>
-                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                            <input type="radio" value="folder" x-model="addNodeForm.node_type"> 資料夾
-                        </label>
-                    </div>
-                </div>
-                <!-- 父節點: 選取了非根節點時，可選擇掛在該節點或根頁面下 -->
-                <div x-show="tree.length > 0 && selectedNode && selectedNode.parent_secure_code" class="stu-field">
-                    <label style="display:flex; align-items:center; gap:4px;">
-                        <input type="checkbox"
-                               :checked="addNodeForm.parent_sc === (selectedNode ? selectedNode.secure_code : '')"
-                               @change="addNodeForm.parent_sc = $event.target.checked
-                                   ? (selectedNode ? selectedNode.secure_code : tree[0].secure_code)
-                                   : tree[0].secure_code">
-                        建立為「<span x-text="selectedNode ? selectedNode.name : ''"></span>」的子節點
-                    </label>
-                </div>
-                <!-- 父節點資訊: 選取了根節點或未選取節點 -->
-                <div x-show="tree.length > 0 && (!selectedNode || !selectedNode.parent_secure_code)" class="stu-field">
-                    <span style="color:#666; font-size:13px;">將建立在根頁面 (welcome) 下</span>
+                <!-- 父節點資訊 -->
+                <div x-show="tree.length > 0" class="stu-field">
+                    <span style="color:#666; font-size:13px;"
+                          x-text="selectedNode
+                              ? '將建立在「' + selectedNode.name + '」下'
+                              : '將建立在根頁面 (welcome) 下'"></span>
                 </div>
             </div>
             <div class="dc-modal-footer">

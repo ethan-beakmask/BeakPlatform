@@ -90,8 +90,8 @@ def list_sub_systems():
 @csrf.exempt
 @admin_required
 def create_sub_system():
-    """建立子系統"""
-    from ..models import DcSubSystem
+    """建立子系統（統一使用 SubSystemProvisionService）"""
+    from ..services.provision_service import SubSystemProvisionService
 
     org = get_current_org()
     if not org:
@@ -106,37 +106,21 @@ def create_sub_system():
     if not group_sc:
         return jsonify({'success': False, 'error': 'Group unit is required'}), 400
 
-    ss = ResourceGateway.create(
-        DcSubSystem,
-        check_permission=False,
-        name=name,
-        description=data.get('description', ''),
-        icon=data.get('icon', ''),
-        group_unit_secure_code=group_sc,
-        menu_item_secure_code=data.get('menu_item_secure_code'),
-        is_active=data.get('is_active', True),
-    )
-    db.session.flush()
-
-    # 自動建立 welcome 根頁面
-    from ..services.site_map_service import SiteMapService
-    SiteMapService.create_node(
-        sub_system_sc=ss.secure_code,
+    result = SubSystemProvisionService.create_sub_system(
         org_sc=org.secure_code,
-        name='welcome',
-        node_type='page',
-        parent_sc=None,
-        display_order=0,
+        name=name,
+        icon=data.get('icon', ''),
+        description=data.get('description', ''),
+        group_unit_secure_code=group_sc,
+        menu_item_secure_code=data.get('menu_item_secure_code', ''),
     )
 
-    ResourceGateway.commit()
-
-    # 自動更新選單 link_target
-    _update_menu_link(ss)
+    if not result['success']:
+        return jsonify({'success': False, 'error': result['error']}), 400
 
     return jsonify({
         'success': True,
-        'data': ss.to_dict(),
+        'data': result['data'],
         'message': '子系統已建立'
     })
 

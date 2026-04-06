@@ -82,7 +82,7 @@ def create_site_map_node(ss_sc):
         return jsonify({
             'success': True,
             'data': node.to_dict(),
-            'message': '節點已建立'
+            'message': '網頁已建立'
         })
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400

@@ -46,16 +46,25 @@ class SubSystemProvisionService:
         icon: str = '',
         developer_sc: str = '',
         provision_serial_number: str = '',
+        description: str = '',
+        group_unit_secure_code: str = '',
+        menu_item_secure_code: str = '',
     ) -> Dict[str, Any]:
         """
-        建立子系統 + 選單 + 授予開發者權限
+        建立子系統（統一入口）
+
+        同時處理：建子系統 + welcome 根頁面 + 選單 + 開發者權限。
+        API 手動建立與工作流自動建立皆呼叫此方法。
 
         Args:
             org_sc: 企業 secure_code
-            name: 子系統名稱 (Single Source of Truth)
+            name: 子系統名稱
             icon: 圖示 class (optional)
-            developer_sc: 開發者 user secure_code
+            developer_sc: 開發者 user secure_code (工作流必填，API 可不填)
             provision_serial_number: 來源申請單號 (optional)
+            description: 子系統描述 (optional, API 用)
+            group_unit_secure_code: 群組 secure_code (optional, API 用)
+            menu_item_secure_code: 手動指定選單 SC (optional, API 用)
 
         Returns:
             {'success': bool, 'error'?: str, 'data'?: dict}
@@ -63,67 +72,92 @@ class SubSystemProvisionService:
         try:
             if not name:
                 return {'success': False, 'error': '子系統名稱為空'}
-            if not developer_sc:
-                return {'success': False, 'error': '開發者未指定'}
 
             with TenantContext(org_sc):
-                # 驗證開發者帳號
-                developer = User.query.filter_by(
-                    secure_code=developer_sc,
-                    is_deleted=False,
-                    is_active=True,
-                ).first()
-                if not developer:
-                    return {'success': False, 'error': '開發者帳號不存在或已停用'}
+                # 驗證開發者帳號（有指定時才驗證）
+                if developer_sc:
+                    developer = User.query.filter_by(
+                        secure_code=developer_sc,
+                        is_deleted=False,
+                        is_active=True,
+                    ).first()
+                    if not developer:
+                        return {'success': False, 'error': '開發者帳號不存在或已停用'}
 
-                # 產生 code（冪等：同名不同 code）
+                # 產生 code
                 ss_code = cls._generate_code(org_sc, name)
 
                 # 產生選單 code
                 menu_code = f'{_WEB_BUILDER_MODULE}.{ss_code}'
 
                 # Step 1: 建立子系統
-                ss = ResourceGateway.create(
-                    DcSubSystem,
+                create_kwargs = dict(
                     check_permission=False,
                     code=ss_code,
                     name=name,
                     icon=icon,
                     status='draft',
-                    developers=[developer_sc],
                     layout_mode='grid',
                     is_active=True,
-                    provision_serial_number=provision_serial_number or None,
                 )
+                if developer_sc:
+                    create_kwargs['developers'] = [developer_sc]
+                if description:
+                    create_kwargs['description'] = description
+                if group_unit_secure_code:
+                    create_kwargs['group_unit_secure_code'] = group_unit_secure_code
+                if provision_serial_number:
+                    create_kwargs['provision_serial_number'] = provision_serial_number
 
-                # Step 2: 嘗試建立選單項（父選單不存在時跳過）
-                menu_item_sc = None
-                menu_result = cls._create_menu_item(
-                    org_sc=org_sc,
-                    code=menu_code,
-                    title=name,
-                    icon=icon,
-                    sub_system_sc=ss.secure_code,
-                )
-                if menu_result.get('success'):
-                    menu_item = menu_result['menu_item']
-                    ss.menu_item_secure_code = menu_item.secure_code
-                    menu_item_sc = menu_item.secure_code
-                    db.session.flush()
+                ss = ResourceGateway.create(DcSubSystem, **create_kwargs)
+
+                # Step 2: 選單處理
+                final_menu_item_sc = None
+                if menu_item_secure_code:
+                    # API 手動指定選單
+                    ss.menu_item_secure_code = menu_item_secure_code
+                    final_menu_item_sc = menu_item_secure_code
                 else:
-                    logger.warning(
-                        'SubSystem menu skipped: %s (sub_system=%s)',
-                        menu_result.get('error'), ss_code,
+                    # 自動建立選單（父選單不存在時跳過）
+                    menu_result = cls._create_menu_item(
+                        org_sc=org_sc,
+                        code=menu_code,
+                        title=name,
+                        icon=icon,
+                        sub_system_sc=ss.secure_code,
                     )
+                    if menu_result.get('success'):
+                        menu_item = menu_result['menu_item']
+                        ss.menu_item_secure_code = menu_item.secure_code
+                        final_menu_item_sc = menu_item.secure_code
+                    else:
+                        logger.warning(
+                            'SubSystem menu skipped: %s (sub_system=%s)',
+                            menu_result.get('error'), ss_code,
+                        )
 
-                # Step 3: 授予開發者 nocode_builder 模組使用權
-                cls._grant_module_access(org_sc, developer_sc)
+                db.session.flush()
+
+                # Step 3: 建立 welcome 根頁面
+                from .site_map_service import SiteMapService
+                SiteMapService.create_node(
+                    sub_system_sc=ss.secure_code,
+                    org_sc=org_sc,
+                    name='welcome',
+                    node_type='page',
+                    parent_sc=None,
+                    display_order=0,
+                )
+
+                # Step 4: 授予開發者模組使用權（有指定時）
+                if developer_sc:
+                    cls._grant_module_access(org_sc, developer_sc)
 
                 db.session.commit()
 
             logger.info(
                 'SubSystem created: code=%s, name=%s, developer=%s',
-                ss_code, name, developer_sc,
+                ss_code, name, developer_sc or '(none)',
             )
 
             return {
@@ -132,7 +166,7 @@ class SubSystemProvisionService:
                     'sub_system_secure_code': ss.secure_code,
                     'sub_system_code': ss_code,
                     'menu_code': menu_code,
-                    'menu_item_secure_code': menu_item_sc,
+                    'menu_item_secure_code': final_menu_item_sc,
                 },
             }
 

@@ -251,11 +251,7 @@ window.__SSC_CONFIG = {
                     <!-- 左側: 樹 -->
                     <div class="sm-tree-panel">
                         <div class="sm-tree-toolbar">
-                            <button class="dc-btn sm" @click="openAddModal(null)">+ 根資料夾</button>
-                            <button class="dc-btn sm" @click="addForm.node_type='page'; openAddModal(null)">+ 根頁面</button>
-                            <template x-if="selectedNode">
-                                <button class="dc-btn sm" @click="openAddModal(selectedNode.secure_code)">+ 子節點</button>
-                            </template>
+                            <button class="dc-btn sm" @click="openAddModal(selectedNode ? selectedNode.secure_code : null)">+ 網頁</button>
                         </div>
                         <div class="sm-tree-body" id="sm-tree"></div>
                     </div>
@@ -263,12 +259,12 @@ window.__SSC_CONFIG = {
                     <!-- 右側: 屬性面板 -->
                     <div class="sm-props-panel">
                         <div class="sm-props-empty" x-show="!selectedNode">
-                            選擇左側節點以編輯屬性
+                            選擇左側網頁以編輯屬性
                         </div>
                         <div x-show="selectedNode" style="padding: 0;">
-                            <!-- 節點屬性 -->
+                            <!-- 網頁屬性 -->
                             <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>節點屬性</span>
+                                <span>網頁屬性</span>
                                 <div style="display: flex; gap: 4px;">
                                     <button class="dc-btn sm primary" @click="saveNode()">儲存</button>
                                     <button class="dc-btn sm danger" @click="deleteNode()">刪除</button>
@@ -280,14 +276,10 @@ window.__SSC_CONFIG = {
                                     <input type="text" x-model="nodeForm.name">
                                 </div>
                                 <div class="ssc-field">
-                                    <label>類型</label>
-                                    <span style="font-size: 13px;" x-text="nodeForm.node_type === 'folder' ? '資料夾' : '頁面'"></span>
-                                </div>
-                                <div class="ssc-field">
                                     <label>圖示</label>
                                     <input type="text" x-model="nodeForm.icon" style="width: 150px;" placeholder="bi bi-xxx">
                                 </div>
-                                <div class="ssc-field" x-show="nodeForm.node_type === 'page'">
+                                <div class="ssc-field">
                                     <label>連結頁面</label>
                                     <select x-model="nodeForm.page_layout_secure_code">
                                         <option value="">-- 自動建立 --</option>
@@ -376,7 +368,7 @@ window.__SSC_CONFIG = {
                 <div x-show="showAddModal" x-cloak class="dc-modal">
                     <div class="dc-modal-content" style="width: 480px;">
                         <div class="dc-modal-header">
-                            <h3>新增節點</h3>
+                            <h3>新增網頁</h3>
                             <button class="dc-close-btn" @click="showAddModal = false">&times;</button>
                         </div>
                         <div class="dc-modal-body">
@@ -385,17 +377,10 @@ window.__SSC_CONFIG = {
                                 <input type="text" x-model="addForm.name" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
                             </div>
                             <div class="ssc-field">
-                                <label>類型</label>
-                                <select x-model="addForm.node_type" style="width: 200px; padding: 6px 8px; border: 1px solid #ddd;">
-                                    <option value="folder">資料夾</option>
-                                    <option value="page">頁面</option>
-                                </select>
-                            </div>
-                            <div class="ssc-field">
                                 <label>圖示</label>
                                 <input type="text" x-model="addForm.icon" placeholder="bi bi-xxx" style="width: 200px; padding: 6px 8px; border: 1px solid #ddd;">
                             </div>
-                            <div class="ssc-field" x-show="addForm.node_type === 'page'">
+                            <div class="ssc-field">
                                 <label>連結既有頁面 (留空自動建立)</label>
                                 <select x-model="addForm.page_layout_secure_code" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
                                     <option value="">-- 自動建立空白頁面 --</option>

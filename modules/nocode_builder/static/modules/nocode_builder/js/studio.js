@@ -104,7 +104,7 @@ function studioManager() {
 
         // Node form
         showAddNodeModal: false,
-        addNodeForm: { name: '', node_type: 'page', parent_sc: '' },
+        addNodeForm: { name: '', parent_sc: '' },
 
         // Access Roles (准入設定)
         editAccessRoles: [],
@@ -275,7 +275,7 @@ function studioManager() {
 
         switchMode: function (mode) {
             if (mode === this.editMode) return;
-            if (!this.selectedNode || this.selectedNode.node_type !== 'page') return;
+            if (!this.selectedNode) return;
 
             var hasContent = false;
             if (this.editMode === 'grid' && this._gridEditor) {
@@ -383,10 +383,7 @@ function studioManager() {
             var parts = [];
             if (n.icon) parts.push(n.icon);
             parts.push(n.name);
-            // 准入 badge（僅 page 節點）
-            if (n.node_type === 'page') {
-                parts.push(this._accessBadgeText(n.access_roles));
-            }
+            parts.push(this._accessBadgeText(n.access_roles));
             return parts.join(' ');
         },
 
@@ -424,17 +421,12 @@ function studioManager() {
         _onTreeNodeSelect: function (nodeData) {
             this.selectedNode = nodeData;
 
-            if (nodeData.node_type === 'page') {
-                var pageSc = nodeData.page_layout_secure_code;
-                if (pageSc) {
-                    this._loadPageLayout(pageSc);
-                } else {
-                    this.currentPageSc = null;
-                    this._setupEmptyCanvas();
-                }
+            var pageSc = nodeData.page_layout_secure_code;
+            if (pageSc) {
+                this._loadPageLayout(pageSc);
             } else {
                 this.currentPageSc = null;
-                this._clearCanvas();
+                this._setupEmptyCanvas();
             }
 
             this.showProps = false;
@@ -1060,18 +1052,15 @@ function studioManager() {
                 // 第一個節點必須是根頁面 welcome
                 this.addNodeForm = {
                     name: 'welcome',
-                    node_type: 'page',
                     parent_sc: '',
                 };
             } else {
-                // 已有根節點，新節點掛在選取節點或根節點下
-                var rootSc = (this.tree[0] && this.tree[0].secure_code) || '';
+                // 已有根節點，新網頁掛在選取節點下
                 this.addNodeForm = {
                     name: '',
-                    node_type: 'page',
                     parent_sc: this.selectedNode
                         ? this.selectedNode.secure_code
-                        : rootSc,
+                        : this.tree[0].secure_code,
                 };
             }
             this.showAddNodeModal = true;
@@ -1084,27 +1073,25 @@ function studioManager() {
             try {
                 var body = {
                     name: name,
-                    node_type: this.addNodeForm.node_type,
+                    node_type: 'page',
                     parent_secure_code: this.addNodeForm.parent_sc || null,
                 };
 
-                if (this.addNodeForm.node_type === 'page') {
-                    var emptyLayout = this.editMode === 'grid'
-                        ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
-                        : { version: 2, widgets: [] };
+                var emptyLayout = this.editMode === 'grid'
+                    ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
+                    : { version: 2, widgets: [] };
 
-                    var pageRes = await fetch('/api/nocode-builder/pages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: name, layout_json: emptyLayout }),
-                    });
-                    var pageData = await pageRes.json();
-                    if (pageData.success) {
-                        body.page_layout_secure_code = pageData.data.secure_code;
-                    } else {
-                        this.showToast(pageData.error || '建立頁面佈局失敗', 'error');
-                        return;
-                    }
+                var pageRes = await fetch('/api/nocode-builder/pages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, layout_json: emptyLayout }),
+                });
+                var pageData = await pageRes.json();
+                if (pageData.success) {
+                    body.page_layout_secure_code = pageData.data.secure_code;
+                } else {
+                    this.showToast(pageData.error || '建立頁面佈局失敗', 'error');
+                    return;
                 }
 
                 var res = await fetch(
@@ -1114,7 +1101,7 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.showAddNodeModal = false;
-                    this.showToast('節點已建立', 'success');
+                    this.showToast('網頁已建立', 'success');
                     await this._loadTree();
                     await this._loadPages();
                     this._initSiteMapTree();
@@ -1133,7 +1120,7 @@ function studioManager() {
                 this.showToast('根頁面 (welcome) 不可刪除', 'error');
                 return;
             }
-            if (!confirm('確定要刪除節點「' + this.selectedNode.name + '」嗎?')) return;
+            if (!confirm('確定要刪除網頁「' + this.selectedNode.name + '」嗎?')) return;
 
             try {
                 var res = await fetch(
@@ -1146,7 +1133,7 @@ function studioManager() {
                     this.selectedNode = null;
                     this.currentPageSc = null;
                     this._clearCanvas();
-                    this.showToast('節點已刪除', 'success');
+                    this.showToast('網頁已刪除', 'success');
                     await this._loadTree();
                     this._initSiteMapTree();
                 } else {
@@ -1240,7 +1227,7 @@ function studioManager() {
             if (!this.subSystemSc) return;
             var url = '/nocode-builder/sub-systems/' + this.subSystemSc + '/portal';
             // 優先預覽當前設計頁，否則到 welcome
-            if (this.selectedNode && this.selectedNode.node_type === 'page') {
+            if (this.selectedNode) {
                 url += '?page=' + this.selectedNode.secure_code;
             }
             window.open(url, '_blank');

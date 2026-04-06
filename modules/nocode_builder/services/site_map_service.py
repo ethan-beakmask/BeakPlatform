@@ -241,10 +241,10 @@ class SiteMapService:
 
         page 類型若未指定 page_layout_sc，自動建立空白 DcPageLayout。
         """
-        if node_type not in ('folder', 'page'):
-            raise ValueError(f'Invalid node_type: {node_type}')
+        if node_type != 'page':
+            raise ValueError(f'Invalid node_type: {node_type}，僅支援 page')
 
-        # 限制只能有一個根節點
+        # 限制只能有一個根頁面，且名稱必須為 welcome
         if not parent_sc:
             existing_root = DcSiteMapNode.query.filter(
                 DcSiteMapNode.sub_system_secure_code == sub_system_sc,
@@ -255,7 +255,11 @@ class SiteMapService:
             if existing_root:
                 raise ValueError(
                     'Site Map 只能有一個根頁面 (welcome)，'
-                    '請將新節點建立在根頁面下'
+                    '請將新網頁建立在根頁面下'
+                )
+            if name.lower() != 'welcome':
+                raise ValueError(
+                    '根頁面名稱必須為 welcome'
                 )
 
         # page 類型自動建立空白佈局
@@ -485,8 +489,7 @@ class SiteMapService:
         """
         access_roles 過濾演算法
 
-        page 節點: 檢查 access_roles 是否允許此角色
-        folder 節點: 子節點全不可見時，folder 也隱藏
+        檢查每個節點的 access_roles 是否允許此角色。
 
         Args:
             nodes: 所有啟用節點
@@ -500,12 +503,6 @@ class SiteMapService:
         for n in nodes:
             access_roles = n.access_roles or []
 
-            if n.node_type == 'folder':
-                # folder 先暫時標記可見，後面再檢查子節點
-                visible.add(n.secure_code)
-                continue
-
-            # page 節點: 檢查准入
             if not access_roles:
                 continue  # NONE: 不可見
 
@@ -513,23 +510,5 @@ class SiteMapService:
                 visible.add(n.secure_code)
             elif role_type != 'GUEST' and role_type in access_roles:
                 visible.add(n.secure_code)
-
-        # folder: 若子節點全不可見則隱藏（反覆迭代直到穩定）
-        changed = True
-        while changed:
-            changed = False
-            for n in nodes:
-                if n.secure_code not in visible:
-                    continue
-                if n.node_type != 'folder':
-                    continue
-                has_visible_child = any(
-                    other.parent_secure_code == n.secure_code
-                    and other.secure_code in visible
-                    for other in nodes
-                )
-                if not has_visible_child:
-                    visible.discard(n.secure_code)
-                    changed = True
 
         return visible
