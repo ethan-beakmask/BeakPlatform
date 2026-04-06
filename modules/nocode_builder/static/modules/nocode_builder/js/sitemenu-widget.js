@@ -78,9 +78,8 @@ class SiteMenuWidget {
 
     updateConfig(newConfig) {
         Object.assign(this.config, newConfig);
-        if (this.tree.length > 0) {
-            this._renderMenu();
-        }
+        // 有資料或設計模式 (mock) 都需要重新渲染
+        this._renderMenu();
     }
 
     destroy() {
@@ -141,10 +140,15 @@ class SiteMenuWidget {
         var displayNodes = this._resolveDisplayNodes();
 
         if (displayNodes.length === 0) {
-            var empty = document.createElement('div');
-            empty.className = 'smw-empty';
-            empty.textContent = '無可用選單項目';
-            root.appendChild(empty);
+            // 設計模式 (無 _subSystemSc) → 顯示 mock 預覽
+            if (!this.config._subSystemSc) {
+                this._renderMockMenu(root);
+            } else {
+                var empty = document.createElement('div');
+                empty.className = 'smw-empty';
+                empty.innerHTML = '<i class="bi bi-menu-button-wide smw-empty-icon"></i><span>無可用選單項目</span>';
+                root.appendChild(empty);
+            }
             this.container.innerHTML = '';
             this.container.appendChild(root);
             return;
@@ -154,6 +158,33 @@ class SiteMenuWidget {
         root.appendChild(ul);
         this.container.innerHTML = '';
         this.container.appendChild(root);
+    }
+
+    /**
+     * 設計模式 mock 選單：讓用戶在 Studio 中預覽元件外觀
+     */
+    _renderMockMenu(root) {
+        root.classList.add('smw-mock');
+
+        var mockNodes = [
+            { secure_code: '_m1', name: '首頁', icon: 'fas fa-home', children: [] },
+            { secure_code: '_m2', name: '功能', icon: 'fas fa-th-large', children: [
+                { secure_code: '_m2a', name: '項目 A', icon: 'fas fa-file-alt', children: [] },
+                { secure_code: '_m2b', name: '項目 B', icon: 'fas fa-file-alt', children: [] },
+                { secure_code: '_m2c', name: '項目 C', icon: 'fas fa-file-alt', children: [] },
+            ]},
+            { secure_code: '_m3', name: '報表', icon: 'fas fa-chart-bar', children: [] },
+            { secure_code: '_m4', name: '設定', icon: 'fas fa-cog', children: [] },
+        ];
+
+        var ul = this._buildMenuLevel(mockNodes, 0);
+        root.appendChild(ul);
+
+        // Mock 浮水印
+        var badge = document.createElement('div');
+        badge.className = 'smw-mock-badge';
+        badge.textContent = 'PREVIEW';
+        root.appendChild(badge);
     }
 
     /**
@@ -256,7 +287,6 @@ class SiteMenuWidget {
         if (node.icon) {
             var icon = document.createElement('i');
             icon.className = node.icon;
-            icon.style.marginRight = '6px';
             a.appendChild(icon);
         }
 
@@ -426,18 +456,10 @@ class SiteMenuWidget {
         panel.style.position = 'fixed';
         panel.style.zIndex = '10000';
         panel.style.background = this.config.bgColor || '#fff';
-        panel.style.border = '1px solid #ddd';
-        panel.style.borderRadius = '4px';
-        panel.style.boxShadow = '0 2px 12px rgba(0,0,0,0.15)';
-        panel.style.minWidth = '160px';
+        panel.style.minWidth = '180px';
 
         var ul = document.createElement('ul');
         ul.className = 'smw-menu smw-floating-menu';
-        ul.style.listStyle = 'none';
-        ul.style.margin = '0';
-        ul.style.padding = '4px 0';
-        ul.style.display = 'flex';
-        ul.style.flexDirection = 'column';
         var gap = (this.config.itemGap != null ? this.config.itemGap : 6);
         ul.style.gap = gap + 'px';
 

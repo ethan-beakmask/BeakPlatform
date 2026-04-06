@@ -1,15 +1,16 @@
 /* =================================================================
-   SITEMENU Widget
+   SITEMENU Widget -- 導航選單元件
    ================================================================= */
 
+/* -- Root -- */
 .smw-root {
-    font-family: inherit;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 14px;
-    line-height: 1.4;
-    border: 1px solid #ddd;
+    line-height: 1.5;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 /* 直式：佔滿高度，內容可捲動 */
@@ -24,22 +25,32 @@
     overflow: visible;
 }
 
+/* -- Header -- */
 .smw-header {
-    padding: 8px 12px;
+    padding: 10px 14px;
     font-weight: 600;
     font-size: 13px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 2px solid #e5e7eb;
     flex-shrink: 0;
+    letter-spacing: 0.3px;
 }
 
+/* -- Loading & Empty -- */
 .smw-loading,
 .smw-empty {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    color: #999;
+    padding: 32px 16px;
+    color: #9ca3af;
     font-size: 13px;
+    gap: 8px;
+}
+
+.smw-empty-icon {
+    font-size: 28px;
+    opacity: 0.5;
 }
 
 /* ----- Menu list ----- */
@@ -53,16 +64,20 @@
     flex-direction: column;
 }
 
+/* Vertical */
 .smw-root.smw-vertical .smw-menu {
     flex-direction: column;
     overflow-y: auto;
     flex: 1;
+    padding: 4px 0;
 }
 
+/* Horizontal */
 .smw-root.smw-horizontal .smw-menu {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
+    align-items: stretch;
 }
 
 /* ----- Item ----- */
@@ -74,21 +89,86 @@
 .smw-link {
     display: flex;
     align-items: center;
-    padding: 6px 12px;
+    padding: 8px 14px;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
     user-select: none;
     border: none;
     outline: none;
     font-size: 13px;
+    position: relative;
 }
 
+/* Vertical: 左側 accent 線 */
+.smw-root.smw-vertical .smw-link {
+    border-left: 3px solid transparent;
+}
+.smw-root.smw-vertical .smw-link:hover,
+.smw-root.smw-vertical .smw-link.smw-active {
+    border-left-color: var(--smw-accent, #3b82f6);
+}
+
+/* Horizontal: 底部 accent 線 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link {
+    border-bottom: 3px solid transparent;
+    padding: 12px 20px;
+    text-align: center;
+    flex-direction: column;
+    gap: 2px;
+}
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link:hover,
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link.smw-active {
+    border-bottom-color: var(--smw-accent, #3b82f6);
+}
+
+/* 橫式每個一級項目之間的分隔線 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item + .smw-item > .smw-link {
+    border-left: 1px solid #e5e7eb;
+}
+
+/* -- Icon -- */
+.smw-link i {
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Vertical: icon 在文字左邊 */
+.smw-root.smw-vertical .smw-link i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Horizontal 一級: icon 大，在文字上方 */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link > i {
+    font-size: 22px;
+    margin-right: 0;
+    margin-bottom: 2px;
+}
+
+/* -- Icon hover animation -- */
+.smw-link:hover i {
+    transform: translateY(-2px);
+}
+
+/* -- Text -- */
 .smw-link-text {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: transform 0.2s ease;
+}
+
+.smw-link:hover .smw-link-text {
+    transform: translateX(2px);
+}
+
+/* Horizontal 一級不需要 text shift */
+.smw-root.smw-horizontal > .smw-menu > .smw-item > .smw-link:hover .smw-link-text {
+    transform: none;
 }
 
 /* ----- Arrow indicator ----- */
@@ -97,15 +177,18 @@
     display: inline-block;
     width: 0;
     height: 0;
-    margin-left: 6px;
+    margin-left: auto;
+    padding-left: 8px;
     flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
-/* Vertical: arrow points right */
+/* Vertical: arrow points right → down when open */
 .smw-root.smw-vertical .smw-arrow {
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
     border-left: 5px solid currentColor;
+    opacity: 0.5;
 }
 
 .smw-root.smw-vertical .smw-open > .smw-link .smw-arrow {
@@ -113,19 +196,26 @@
     border-right: 4px solid transparent;
     border-top: 5px solid currentColor;
     border-bottom: none;
+    opacity: 0.8;
+    transform: none;
 }
 
-/* Horizontal: arrow points down */
+/* Horizontal 一級: arrow points down */
 .smw-root.smw-horizontal .smw-menu > .smw-item > .smw-link .smw-arrow {
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
     border-top: 5px solid currentColor;
+    opacity: 0.5;
+    margin-left: 4px;
+    padding-left: 0;
 }
 
+/* Horizontal 子選單: arrow points right */
 .smw-root.smw-horizontal .smw-submenu .smw-arrow {
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
     border-left: 5px solid currentColor;
+    opacity: 0.5;
 }
 
 /* ----- Submenu ----- */
@@ -135,16 +225,22 @@
     flex-direction: column;
 }
 
-/* Vertical submenu: indent */
+/* Vertical submenu: indent + 左側細線 */
 .smw-root.smw-vertical .smw-submenu {
-    padding-left: 16px;
+    padding-left: 12px;
+    margin-left: 14px;
+    border-left: 1px solid #e5e7eb;
 }
-
-/* 橫式子選單由 JS floating panel 處理 (掛在 body)，此處不需 CSS 定位 */
 
 /* Open state */
 .smw-open > .smw-submenu {
     display: flex;
+    animation: smw-slide-down 0.2s ease-out;
+}
+
+@keyframes smw-slide-down {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ----- Active ----- */
@@ -156,16 +252,52 @@
 /* ----- Floating panel (橫式 submenu，掛在 body) ----- */
 
 .smw-floating-panel {
-    animation: smw-fade-in 0.1s ease-out;
+    animation: smw-fade-in 0.15s ease-out;
+    border-top: 3px solid var(--smw-accent, #3b82f6) !important;
+    border-radius: 0 0 6px 6px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08) !important;
+}
+
+/* Floating panel 三角箭頭 */
+.smw-floating-panel::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 5px solid var(--smw-accent, #3b82f6);
 }
 
 @keyframes smw-fade-in {
-    from { opacity: 0; transform: translateY(-4px); }
+    from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
+.smw-floating-menu {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .smw-floating-panel .smw-link {
-    padding: 6px 16px;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.smw-floating-panel .smw-link:hover {
+    border-left-color: var(--smw-accent, #3b82f6);
+}
+
+.smw-floating-panel .smw-link i {
+    margin-right: 8px;
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
 }
 
 /* ----- Design-time placeholder ----- */
@@ -187,4 +319,34 @@
     margin-right: 8px;
     font-size: 16px;
     color: #999;
+}
+
+/* ----- Mock 預覽 (設計模式) ----- */
+
+.smw-mock {
+    border: 1px dashed #c7d2fe;
+    background-color: #fafbff;
+}
+
+.smw-mock .smw-link {
+    opacity: 0.85;
+}
+
+.smw-mock-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #a5b4fc;
+    pointer-events: none;
+    text-transform: uppercase;
+}
+
+/* Mock 橫式時 badge 位置微調 */
+.smw-mock.smw-horizontal .smw-mock-badge {
+    bottom: auto;
+    top: 2px;
+    right: 8px;
 }
