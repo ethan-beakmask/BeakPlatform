@@ -1,0 +1,70 @@
+<!-- ==================== 稽核設定 ==================== -->
+<div id="section-audit" class="settings-section" :class="{ active: activeSection === 'audit' }">
+    <h2>稽核設定</h2>
+    <p>控制操作記錄的細粒度，記錄越詳細資料量越大。</p>
+
+    <div x-show="message.audit" x-cloak
+         :class="'message ' + (message.auditError ? 'message-error' : 'message-success')"
+         x-text="message.audit"
+         x-transition></div>
+
+    <div class="settings-card">
+        <h4>記錄等級</h4>
+        <div style="margin-bottom: 16px;">
+            <template x-for="level in audit.levels" :key="level.value">
+                <label style="display: block; padding: 8px 0; cursor: pointer;">
+                    <input type="radio" name="audit_level"
+                           :value="level.value"
+                           :checked="audit.level === level.value"
+                           @change="audit.level = level.value">
+                    <strong x-text="level.value"></strong>
+                    <span style="color: #666;" x-text="' -- ' + level.label"></span>
+                </label>
+            </template>
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <h4>資料保留</h4>
+        <div class="form-group">
+            <label>保留天數（超過自動清理）</label>
+            <input type="number" x-model.number="audit.retentionDays"
+                   min="7" max="3650" style="width: 120px;">
+            <div class="form-hint">最少 7 天，建議 90 天</div>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-primary" @click="saveAuditSettings()">儲存稽核設定</button>
+    </div>
+
+    <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd; margin-top: 16px;">
+        <h4 style="color: #0369a1;">等級說明</h4>
+        <table class="config-table" style="font-size: 13px;">
+            <thead>
+                <tr>
+                    <th>等級</th>
+                    <th>記錄內容</th>
+                    <th>資料量</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>MINIMAL</strong></td>
+                    <td>登入/登出 + 登入失敗嘗試</td>
+                    <td>極少</td>
+                </tr>
+                <tr>
+                    <td><strong>STANDARD</strong></td>
+                    <td>MINIMAL + 所有寫入操作（新增/修改/刪除）</td>
+                    <td>適中</td>
+                </tr>
+                <tr>
+                    <td><strong>VERBOSE</strong></td>
+                    <td>STANDARD + 所有讀取操作（頁面瀏覽/API 查詢）</td>
+                    <td>大量</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

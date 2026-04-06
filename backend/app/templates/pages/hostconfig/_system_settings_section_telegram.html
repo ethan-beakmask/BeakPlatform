@@ -1,0 +1,60 @@
+<!-- ==================== Telegram 設定 ==================== -->
+<div id="section-telegram" class="settings-section" :class="{ active: activeSection === 'telegram' }">
+    <h2>Telegram 通知設定</h2>
+    <p>系統級 Telegram Bot 設定，供流程節點發送通知使用。</p>
+
+    <div x-show="message.telegram" x-cloak
+         :class="'message ' + (message.telegramError ? 'message-error' : 'message-success')"
+         x-text="message.telegram"
+         x-transition></div>
+
+    <div class="settings-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0;">Telegram 設定列表</h4>
+            <button class="btn btn-primary" @click="openTelegramModal()">+ 新增設定</button>
+        </div>
+
+        <template x-if="loading.telegram">
+            <div class="loading">載入中...</div>
+        </template>
+
+        <template x-if="!loading.telegram && telegram.configs.length === 0">
+            <div class="empty-state">
+                <p>尚無 Telegram 設定</p>
+                <p style="font-size: 13px;">點擊「新增設定」開始建立</p>
+            </div>
+        </template>
+
+        <template x-if="!loading.telegram && telegram.configs.length > 0">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>名稱</th>
+                        <th>Bot Token</th>
+                        <th>頻道數</th>
+                        <th>狀態</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="config in telegram.configs" :key="config.id">
+                        <tr>
+                            <td x-text="config.name"></td>
+                            <td x-text="config.bot_token"></td>
+                            <td x-text="Object.keys(config.channels || {}).length"></td>
+                            <td>
+                                <span :class="'badge ' + (config.is_active ? 'badge-success' : 'badge-danger')"
+                                      x-text="config.is_active ? '啟用' : '停用'"></span>
+                            </td>
+                            <td class="actions">
+                                <button class="btn btn-secondary" @click="editTelegramConfig(config)">編輯</button>
+                                <button class="btn btn-success" @click="testTelegramConfig(config.id)">測試</button>
+                                <button class="btn btn-danger" @click="deleteTelegramConfig(config.id)">刪除</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </template>
+    </div>
+</div>
