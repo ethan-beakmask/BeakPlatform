@@ -5,7 +5,11 @@
  *   wf-undo.js,
  *   wf-core.js (索引), wf-cy-init.js, wf-events.js, wf-relay.js,
  *     wf-dnd-nodes.js, wf-workflow-ui.js, wf-workflow-crud.js, wf-render.js,
- *   wf-accordion.js, wf-node-configs.js,
+ *   wf-accordion.js, wf-node-configs.js (索引),
+ *     wf-node-parallel-join.js, wf-node-field-write.js, wf-node-opset.js,
+ *     wf-node-sql-executor.js, wf-node-telegram.js, wf-node-email-relay.js,
+ *     wf-node-navbar-broadcast.js, wf-node-alert-broadcast.js,
+ *     wf-node-email-adapter.js, wf-node-branch.js, wf-node-form-adapter.js,
  *   wf-form-adapter.js, wf-save.js, wf-canvas.js, wf-polyline.js,
  *   wf-edge-props.js, wf-ui-controls.js, wf-node-group.js,
  *   wf-tree.js, wf-variables.js, wf-init.js (必須最後)
