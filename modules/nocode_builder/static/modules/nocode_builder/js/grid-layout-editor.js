@@ -47,6 +47,9 @@ class GridLayoutEditor {
         // DataListWidget live instances: zoneKey -> DataListWidget
         this._dlwInstances = {};
 
+        // 框線顏色狀態 (由 setBorderColor 設定，render 後自動重新套用)
+        this._borderColor = '';
+
         // Callbacks
         this.onZoneSelect = null;
         this.onWidgetSelect = null;
@@ -691,11 +694,65 @@ class GridLayoutEditor {
         this._initHandles();
         this._updateButtons();
         this._updateStatus();
+
+        // render 重建 DOM 後，重新套用框線顏色
+        if (this._borderColor) {
+            this._applyBorderColor();
+        }
     }
 
     _applyTemplate() {
         this._gridContainer.style.gridTemplateColumns = this.colWidths.map(w => w + 'fr').join(' ');
         this._gridContainer.style.gridTemplateRows = this.rowHeights.map(h => h + 'fr').join(' ');
+    }
+
+    /**
+     * 設定框線顏色，讓框線與底色一致（或接近）以消除視覺切割感
+     * @param {string} bgColor - 頁面底色 (hex/rgb)，空值時回復預設
+     */
+    setBorderColor(bgColor) {
+        this._borderColor = bgColor || '';
+        this._applyBorderColor();
+    }
+
+    _applyBorderColor() {
+        if (!this._borderColor) {
+            // 無底色: 回復預設淡灰框線
+            this._gridWrapper.style.borderColor = '#ccc';
+            this._gridContainer.querySelectorAll('.gle-cell').forEach(el => {
+                el.style.borderColor = '';
+            });
+            return;
+        }
+        // 將底色微調暗一點作為框線色，讓格線隱約可見但不突兀
+        var borderColor = this._darkenColor(this._borderColor, 0.08);
+        this._gridWrapper.style.borderColor = borderColor;
+        this._gridContainer.querySelectorAll('.gle-cell').forEach(el => {
+            el.style.borderColor = borderColor;
+        });
+    }
+
+    /**
+     * 將顏色加深指定比例 (0~1)
+     */
+    _darkenColor(color, amount) {
+        // 解析 hex 或 rgb
+        var r, g, b;
+        if (color.charAt(0) === '#') {
+            var hex = color.replace('#', '');
+            if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+            r = parseInt(hex.substring(0, 2), 16);
+            g = parseInt(hex.substring(2, 4), 16);
+            b = parseInt(hex.substring(4, 6), 16);
+        } else {
+            var m = color.match(/(\d+)/g);
+            if (!m || m.length < 3) return color;
+            r = parseInt(m[0]); g = parseInt(m[1]); b = parseInt(m[2]);
+        }
+        r = Math.max(0, Math.round(r * (1 - amount)));
+        g = Math.max(0, Math.round(g * (1 - amount)));
+        b = Math.max(0, Math.round(b * (1 - amount)));
+        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }
 
     // ===== Context Menu =====

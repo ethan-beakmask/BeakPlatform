@@ -689,8 +689,8 @@ html, body {
     position: relative;
     flex: 1;
     min-height: 0;
-    background: #fff;
-    border: 2px solid #888;
+    background: transparent;
+    border: 1px solid #ccc;
     overflow: hidden;
 }
 .gle-grid {
@@ -701,7 +701,7 @@ html, body {
 
 /* GLE Cells */
 .gle-cell {
-    border: 1px solid #bbb;
+    border: 0.5px solid rgba(0,0,0,0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -712,7 +712,7 @@ html, body {
     min-width: 0;
     min-height: 0;
     transition: background 0.08s;
-    background: #fff;
+    background: transparent;
 }
 .gle-cell:hover { background: #f0f4ff; }
 .gle-cell.selected {
@@ -721,9 +721,9 @@ html, body {
     outline-offset: -2px;
     z-index: 1;
 }
-.gle-cell.merged { background: #f0fdf4; }
+.gle-cell.merged { background: transparent; }
 .gle-cell.has-widget {
-    background: #fff;
+    background: transparent;
     cursor: default;
     align-items: stretch;
     justify-content: stretch;
@@ -889,12 +889,13 @@ html, body {
 /* Portal v3 Grid Rendering */
 .portal-grid {
     display: grid;
-    gap: 4px;
+    gap: 0;
     min-height: 400px;
+    background: #fff;
 }
 
 .portal-grid-cell {
-    background: #fff;
+    background: transparent;
     overflow: hidden;
     display: flex;
     flex-direction: column;

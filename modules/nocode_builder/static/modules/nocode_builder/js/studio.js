@@ -541,6 +541,8 @@ function studioManager() {
                                 self._gridEditor.loadLayout(
                                     layout.version === 3 ? layout : self._emptyGridLayout()
                                 );
+                                // 載入 layout 後同步框線色與頁面底色
+                                self._gridEditor.setBorderColor(self.styleConfig.bgColor || '');
                             }
                         });
                     } else {
@@ -582,6 +584,7 @@ function studioManager() {
             // 清理 grid mode
             if (this._gridEditor) {
                 this._gridEditor.loadLayout(this._emptyGridLayout());
+                this._gridEditor.setBorderColor(this.styleConfig.bgColor || '');
             }
         },
 
@@ -1600,6 +1603,11 @@ function studioManager() {
                 // 字型大小
                 el.style.fontSize = sc.fontSize ? (sc.fontSize + 'px') : '';
             });
+
+            // 同步框線顏色到 GridLayoutEditor，使框線與底色一致
+            if (this._gridEditor && typeof this._gridEditor.setBorderColor === 'function') {
+                this._gridEditor.setBorderColor(sc.bgColor || '');
+            }
 
             // 底圖 (透過動態 style 注入)
             var styleId = 'stu-page-bg-style';
