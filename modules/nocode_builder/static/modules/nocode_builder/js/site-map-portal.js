@@ -316,9 +316,9 @@ function siteMapPortal() {
                 container.style.gridTemplateColumns = 'repeat(' + gridSize[1] + ', 1fr)';
             }
             if (layout.rowHeights && layout.rowHeights.length > 0) {
-                container.style.gridTemplateRows = layout.rowHeights.map(function(h) { return 'minmax(120px, ' + h + 'fr)'; }).join(' ');
+                container.style.gridTemplateRows = layout.rowHeights.map(function(h) { return h + 'fr'; }).join(' ');
             } else {
-                container.style.gridTemplateRows = 'repeat(' + gridSize[0] + ', minmax(120px, 1fr))';
+                container.style.gridTemplateRows = 'repeat(' + gridSize[0] + ', 1fr)';
             }
 
             for (var j = 0; j < zones.length; j++) {
