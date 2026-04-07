@@ -44,6 +44,9 @@
                 <button class="stu-btn" @click="savePage()" :disabled="!currentPageSc">
                     <i class="fas fa-save"></i> 儲存
                 </button>
+                <button class="stu-btn" @click="openSaveTemplate()" :disabled="!currentPageSc">
+                    <i class="fas fa-bookmark"></i> 儲存成模板
+                </button>
                 <button class="stu-btn" @click="previewPage()">
                     <i class="fas fa-eye"></i> 預覽
                 </button>
@@ -676,14 +679,15 @@
     </div><!-- stu-layout -->
 
     <!-- ===== Add Node Modal ===== -->
+    <!-- ===== Add Node Modal (含模板選擇) ===== -->
     <div x-show="showAddNodeModal" x-cloak class="dc-modal">
-        <div class="dc-modal-content" style="width:500px;">
+        <div class="dc-modal-content" style="width:900px;">
             <div class="dc-modal-header">
                 <h3>新增網頁</h3>
                 <button class="dc-close-btn" @click="showAddNodeModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
-                <!-- 根頁面提示 (tree empty) -->
+                <!-- 根頁面提示 -->
                 <div x-show="tree.length === 0" class="stu-field">
                     <div style="padding:8px; background:#f0f4ff; border:1px solid #cce; border-radius:4px; font-size:13px;">
                         Site Map 的第一個節點為根頁面 (welcome)，所有其他頁面將建立在其下方
@@ -709,10 +713,79 @@
                               ? '將建立在「' + selectedNode.name + '」下'
                               : '將建立在根頁面 (welcome) 下'"></span>
                 </div>
+
+                <!-- 模板選擇區 -->
+                <div class="stu-field" style="margin-top:12px;">
+                    <label>選擇模板 <span style="font-weight:normal;color:#999;font-size:12px;">(可選，不選則建立空白頁)</span></label>
+                    <div x-show="loadingTemplates" style="color:#999;font-size:13px;padding:8px 0;">載入模板中...</div>
+                    <div x-show="!loadingTemplates"
+                         style="display:inline-flex; flex-wrap:wrap; gap:8px; margin-top:6px; max-height:280px; overflow-y:auto; padding:2px; width:100%;">
+                        <!-- 空白頁選項 -->
+                        <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': !selectedTemplateSc }"
+                             @click="selectedTemplateSc = null"
+                             style="cursor:pointer;">
+                            <div class="stu-tpl-thumb">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" style="width:100%;height:100%;display:block;">
+                                    <rect width="160" height="100" rx="4" fill="#ffffff"/>
+                                    <rect width="160" height="100" rx="4" fill="none" stroke="#ddd" stroke-width="1"/>
+                                    <text x="80" y="54" text-anchor="middle" font-size="12" fill="#bbb" font-family="sans-serif">空白</text>
+                                </svg>
+                            </div>
+                            <div class="stu-tpl-name">空白頁面</div>
+                        </div>
+                        <!-- 模板列表 -->
+                        <template x-for="tpl in templateList" :key="tpl.secure_code">
+                            <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': selectedTemplateSc === tpl.secure_code }"
+                                 @click="selectTemplate(tpl.secure_code)"
+                                 style="cursor:pointer; position:relative;">
+                                <div class="stu-tpl-thumb" x-html="tpl.thumbnail_svg || ''"></div>
+                                <div class="stu-tpl-name" x-text="tpl.name"></div>
+                                <button class="stu-btn sm danger" @click.stop="deleteTemplate(tpl.secure_code)"
+                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;font-size:10px;"
+                                        title="刪除模板">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="!loadingTemplates && templateList.length === 0"
+                         style="color:#999;font-size:12px;padding:4px 0;">
+                        尚無模板，可在設計頁面後點擊 [儲存成模板] 建立
+                    </div>
+                </div>
             </div>
             <div class="dc-modal-footer">
                 <button class="dc-btn" @click="showAddNodeModal = false">取消</button>
                 <button class="dc-btn primary" @click="doAddNode()">建立</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Save as Template Modal ===== -->
+    <div x-show="showSaveTemplateModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width:450px;">
+            <div class="dc-modal-header">
+                <h3>儲存成模板</h3>
+                <button class="dc-close-btn" @click="showSaveTemplateModal = false">&times;</button>
+            </div>
+            <div class="dc-modal-body">
+                <div class="stu-field">
+                    <label>模板名稱 *</label>
+                    <input type="text" x-model="saveTemplateForm.name" placeholder="例如: 左右分欄報表">
+                </div>
+                <div class="stu-field">
+                    <label>說明</label>
+                    <textarea x-model="saveTemplateForm.description" rows="3"
+                              placeholder="模板用途描述 (選填)" style="width:100%;resize:vertical;"></textarea>
+                </div>
+                <div style="padding:8px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:4px;font-size:12px;color:#666;">
+                    將儲存當前頁面的完整佈局設計 (含格線配置、元件設定、樣式) 為可重複使用的模板。
+                </div>
+            </div>
+            <div class="dc-modal-footer">
+                <button class="dc-btn" @click="showSaveTemplateModal = false">取消</button>
+                <button class="dc-btn primary" @click="doSaveTemplate()" :disabled="savingTemplate"
+                        x-text="savingTemplate ? '儲存中...' : '儲存模板'"></button>
             </div>
         </div>
     </div>

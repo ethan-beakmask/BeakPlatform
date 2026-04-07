@@ -151,6 +151,14 @@ function studioManager() {
         // Pages list
         pageList: [],
 
+        // Templates
+        showSaveTemplateModal: false,
+        saveTemplateForm: { name: '', description: '' },
+        savingTemplate: false,
+        templateList: [],
+        loadingTemplates: false,
+        selectedTemplateSc: null,
+
         // Toast
         toast: { show: false, message: '', type: 'success' },
 
@@ -1253,14 +1261,12 @@ function studioManager() {
             var isFirstNode = this.tree.length === 0;
 
             if (isFirstNode) {
-                // 第一個節點必須是根頁面 welcome
                 this.addNodeForm = {
                     name: 'welcome',
                     icon: '',
                     parent_sc: '',
                 };
             } else {
-                // 已有根節點，新網頁掛在選取節點下
                 this.addNodeForm = {
                     name: '',
                     icon: '',
@@ -1269,6 +1275,8 @@ function studioManager() {
                         : this.tree[0].secure_code,
                 };
             }
+            this.selectedTemplateSc = null;
+            this._loadTemplates();
             this.showAddNodeModal = true;
         },
 
@@ -1284,14 +1292,36 @@ function studioManager() {
                     parent_secure_code: this.addNodeForm.parent_sc || null,
                 };
 
-                var emptyLayout = this.editMode === 'grid'
-                    ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
-                    : { version: 2, widgets: [] };
+                // 判斷是否使用模板
+                var layoutJson, styleConfig;
+                var tpl = null;
+                if (this.selectedTemplateSc) {
+                    for (var i = 0; i < this.templateList.length; i++) {
+                        if (this.templateList[i].secure_code === this.selectedTemplateSc) {
+                            tpl = this.templateList[i];
+                            break;
+                        }
+                    }
+                }
+                if (tpl) {
+                    layoutJson = tpl.layout_json;
+                    styleConfig = tpl.style_config || {};
+                } else {
+                    layoutJson = this.editMode === 'grid'
+                        ? { version: 3, mode: 'grid', gridSize: [4, 4], zones: [], widgets: [] }
+                        : { version: 2, widgets: [] };
+                    styleConfig = {};
+                }
+
+                var pagePayload = { name: name, layout_json: layoutJson };
+                if (tpl) {
+                    pagePayload.style_config = styleConfig;
+                }
 
                 var pageRes = await fetch('/api/nocode-builder/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name, layout_json: emptyLayout }),
+                    body: JSON.stringify(pagePayload),
                 });
                 var pageData = await pageRes.json();
                 if (pageData.success) {
@@ -1308,7 +1338,7 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.showAddNodeModal = false;
-                    this.showToast('網頁已建立', 'success');
+                    this.showToast(tpl ? '網頁已從模板建立' : '網頁已建立', 'success');
                     await this._loadTree();
                     await this._loadPages();
                     this._initSiteMapTree();
@@ -1779,6 +1809,154 @@ function studioManager() {
             } catch (e) {
                 this.showToast('操作失敗', 'error');
             }
+        },
+
+        // ================================================================
+        // Template (模板)
+        // ================================================================
+
+        openSaveTemplate: function () {
+            if (!this.currentPageSc) {
+                this.showToast('請先選擇一個頁面', 'error');
+                return;
+            }
+            this.saveTemplateForm = { name: '', description: '' };
+            this.showSaveTemplateModal = true;
+        },
+
+        async doSaveTemplate() {
+            var name = this.saveTemplateForm.name.trim();
+            if (!name) { this.showToast('模板名稱為必填', 'error'); return; }
+
+            this.savingTemplate = true;
+            try {
+                var layoutJson;
+                if (this.editMode === 'grid') {
+                    layoutJson = this._gridEditor ? this._gridEditor.toLayoutJson() : this._emptyGridLayout();
+                } else {
+                    layoutJson = this._buildGridStackLayoutJson();
+                }
+                var styleConfig = this._buildStyleConfigForSave();
+                var thumbnailSvg = this._generateThumbnailSvg(layoutJson, styleConfig);
+
+                var res = await fetch('/api/nocode-builder/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        description: this.saveTemplateForm.description.trim(),
+                        layout_json: layoutJson,
+                        style_config: styleConfig,
+                        thumbnail_svg: thumbnailSvg,
+                    }),
+                });
+                var data = await res.json();
+                if (data.success) {
+                    this.showSaveTemplateModal = false;
+                    this.showToast('模板已儲存', 'success');
+                } else {
+                    this.showToast(data.error || '儲存模板失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('儲存模板失敗: ' + e.message, 'error');
+            } finally {
+                this.savingTemplate = false;
+            }
+        },
+
+        async _loadTemplates() {
+            this.loadingTemplates = true;
+            try {
+                var res = await fetch('/api/nocode-builder/templates');
+                var data = await res.json();
+                if (data.success) {
+                    this.templateList = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load templates failed:', e);
+            } finally {
+                this.loadingTemplates = false;
+            }
+        },
+
+        async deleteTemplate(sc) {
+            if (!confirm('確定要刪除此模板?')) return;
+            try {
+                var res = await fetch('/api/nocode-builder/templates/' + sc, { method: 'DELETE' });
+                var data = await res.json();
+                if (data.success) {
+                    this.templateList = this.templateList.filter(function (t) { return t.secure_code !== sc; });
+                    this.showToast('模板已刪除', 'success');
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗', 'error');
+            }
+        },
+
+        selectTemplate: function (sc) {
+            this.selectedTemplateSc = this.selectedTemplateSc === sc ? null : sc;
+        },
+
+        /**
+         * 根據 layout_json + style_config 產生 SVG 縮圖
+         */
+        _generateThumbnailSvg: function (layoutJson, styleConfig) {
+            var W = 160, H = 100;
+            var bgColor = (styleConfig && styleConfig.bgColor) || '#ffffff';
+            var rects = '';
+
+            if (layoutJson.mode === 'grid' && layoutJson.zones && layoutJson.zones.length > 0) {
+                // Grid mode: 依照 zones 繪製區塊
+                var gs = layoutJson.gridSize || [4, 4];
+                var rows = gs[0] || 4, cols = gs[1] || 4;
+                var pad = 3, cellW = (W - pad * 2) / cols, cellH = (H - pad * 2) / rows;
+                var colors = ['#4a90d9', '#50b86c', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c'];
+                for (var i = 0; i < layoutJson.zones.length; i++) {
+                    var z = layoutJson.zones[i];
+                    var x = pad + (z.col - 1) * cellW + 1;
+                    var y = pad + (z.row - 1) * cellH + 1;
+                    var w = z.colSpan * cellW - 2;
+                    var h = z.rowSpan * cellH - 2;
+                    var hasWidget = false;
+                    if (layoutJson.widgets) {
+                        for (var j = 0; j < layoutJson.widgets.length; j++) {
+                            if (layoutJson.widgets[j].zoneId === z.id) { hasWidget = true; break; }
+                        }
+                    }
+                    var fill = hasWidget ? colors[i % colors.length] : '#dde4ed';
+                    rects += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h +
+                             '" rx="2" fill="' + fill + '" opacity="0.7"/>';
+                }
+            } else if (layoutJson.widgets && layoutJson.widgets.length > 0 && layoutJson.version === 2) {
+                // Free mode: 依照 widget 位置繪製
+                var maxX = 12, maxY = 1;
+                for (var i = 0; i < layoutJson.widgets.length; i++) {
+                    var wy = (layoutJson.widgets[i].y || 0) + (layoutJson.widgets[i].h || 1);
+                    if (wy > maxY) maxY = wy;
+                }
+                var pad = 3, cellW = (W - pad * 2) / maxX, cellH = (H - pad * 2) / maxY;
+                var colors = ['#4a90d9', '#50b86c', '#e67e22', '#9b59b6', '#e74c3c', '#1abc9c'];
+                for (var i = 0; i < layoutJson.widgets.length; i++) {
+                    var wi = layoutJson.widgets[i];
+                    var x = pad + (wi.x || 0) * cellW + 1;
+                    var y = pad + (wi.y || 0) * cellH + 1;
+                    var w = (wi.w || 1) * cellW - 2;
+                    var h = (wi.h || 1) * cellH - 2;
+                    rects += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h +
+                             '" rx="2" fill="' + colors[i % colors.length] + '" opacity="0.7"/>';
+                }
+            } else {
+                // 空白頁面
+                rects = '<text x="' + (W / 2) + '" y="' + (H / 2 + 4) + '" text-anchor="middle" ' +
+                        'font-size="12" fill="#bbb" font-family="sans-serif">空白</text>';
+            }
+
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '">' +
+                   '<rect width="' + W + '" height="' + H + '" rx="4" fill="' + bgColor + '"/>' +
+                   '<rect width="' + W + '" height="' + H + '" rx="4" fill="none" stroke="#ddd" stroke-width="1"/>' +
+                   rects + '</svg>';
         },
 
         // ================================================================

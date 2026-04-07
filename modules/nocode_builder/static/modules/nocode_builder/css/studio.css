@@ -900,3 +900,44 @@ html, body {
     display: flex;
     flex-direction: column;
 }
+
+/* -- Template Cards (模板縮圖卡片) -- */
+.stu-tpl-card {
+    width: 96px;
+    flex-shrink: 0;
+    border: 2px solid #e5e7eb;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.stu-tpl-card:hover {
+    border-color: #93c5fd;
+}
+.stu-tpl-card.stu-tpl-selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+.stu-tpl-thumb {
+    height: 60px;
+    overflow: hidden;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.stu-tpl-thumb svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.stu-tpl-name {
+    padding: 3px 4px;
+    font-size: 10px;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    border-top: 1px solid #f3f4f6;
+}

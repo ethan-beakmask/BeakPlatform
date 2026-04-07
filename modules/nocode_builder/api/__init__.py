@@ -799,13 +799,19 @@ def create_page():
         if not name:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
 
-        page = ResourceGateway.create(
-            DcPageLayout,
-            check_permission=False,
+        create_kwargs = dict(
             name=name,
             description=data.get('description', ''),
             layout_json=data.get('layout_json', {'version': 2, 'widgets': []}),
             is_active=data.get('is_active', True),
+        )
+        if 'style_config' in data:
+            create_kwargs['style_config'] = data['style_config']
+
+        page = ResourceGateway.create(
+            DcPageLayout,
+            check_permission=False,
+            **create_kwargs,
         )
         ResourceGateway.commit()
 
@@ -1349,3 +1355,4 @@ def delete_background(secure_code):
 from . import sub_system_api  # noqa: E402, F401
 from . import site_map_api  # noqa: E402, F401
 from . import project_api  # noqa: E402, F401
+from . import template_api  # noqa: E402, F401
