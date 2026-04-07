@@ -127,7 +127,6 @@ CREATE TABLE IF NOT EXISTS organizational_units (
     sort_order INTEGER NOT NULL DEFAULT 0,
 
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    member_role_secure_code VARCHAR(32),
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP,
@@ -311,7 +310,6 @@ COMMENT ON COLUMN organizational_units.full_path IS '完整路徑，如「總公
 COMMENT ON COLUMN organizational_units.level IS '組織層級，1 為最高層';
 COMMENT ON COLUMN organizational_units.sort_order IS '同層級內的排序順序';
 COMMENT ON COLUMN organizational_units.is_active IS '是否啟用';
-COMMENT ON COLUMN organizational_units.member_role_secure_code IS '預設成員角色識別碼';
 COMMENT ON COLUMN organizational_units.is_deleted IS '軟刪除標記';
 COMMENT ON COLUMN organizational_units.deleted_at IS '軟刪除時間戳';
 COMMENT ON COLUMN organizational_units.created_at IS '建立時間';
