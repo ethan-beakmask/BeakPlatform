@@ -96,6 +96,9 @@ function studioManager() {
         smStartNodeSc: '',
         smStartLevel: 'children',
         smOrientation: 'vertical',
+        smShowWelcome: true,               // 顯示首頁連結
+        smIconLayout: 'top',               // 'top' | 'inline'
+        smMenuHeight: 'auto',              // 'auto' | 數字(px)
         smBgColor: '#ffffff',
         smItemBgColor: '#ffffff',
         smItemTextColor: '#333333',
@@ -848,6 +851,9 @@ function studioManager() {
                 this.smStartNodeSc = widgetConfig.startNodeSc || '';
                 this.smStartLevel = widgetConfig.startLevel || 'children';
                 this.smOrientation = widgetConfig.orientation || 'vertical';
+                this.smShowWelcome = widgetConfig.showWelcome !== false;
+                this.smIconLayout = widgetConfig.iconLayout || 'top';
+                this.smMenuHeight = widgetConfig.menuHeight || 'auto';
                 this.smBgColor = widgetConfig.bgColor || '#ffffff';
                 this.smItemBgColor = widgetConfig.itemBgColor || '#ffffff';
                 this.smItemTextColor = widgetConfig.itemTextColor || '#333333';
@@ -1015,11 +1021,20 @@ function studioManager() {
                 return i.contextKey && i.contextKey.trim();
             });
 
+            var menuHeight = this.smMenuHeight;
+            if (menuHeight !== 'auto') {
+                var parsed = parseInt(menuHeight, 10);
+                menuHeight = (parsed > 0) ? parsed : 'auto';
+            }
+
             var widgetConfig = {
                 title: this.settingTitle,
                 startNodeSc: this.smStartNodeSc,
                 startLevel: this.smStartLevel,
                 orientation: this.smOrientation,
+                showWelcome: this.smShowWelcome,
+                iconLayout: this.smIconLayout,
+                menuHeight: menuHeight,
                 bgColor: this.smBgColor,
                 itemBgColor: this.smItemBgColor,
                 itemTextColor: this.smItemTextColor,

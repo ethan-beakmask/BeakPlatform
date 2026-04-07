@@ -310,6 +310,14 @@
                                      : '顯示指定網頁的子網頁 (多個項目，各含子樹)'"></div>
                         </div>
 
+                        <div class="stu-field-check" style="margin-top:8px;">
+                            <input type="checkbox" x-model="smShowWelcome" id="sm-show-welcome">
+                            <label for="sm-show-welcome">顯示首頁連結 (回到 Welcome)</label>
+                        </div>
+                        <div class="stu-hint" style="margin:2px 0 6px 22px;" x-show="smShowWelcome">
+                            啟用後選單第一項固定為「首頁」，點擊回到 Welcome 頁面
+                        </div>
+
                         <div class="stu-section-divider">節點圖示</div>
                         <div style="max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:4px;padding:4px;">
                             <template x-for="n in flattenTree(tree, 0)" :key="'nicon-'+n.secure_code">
@@ -344,6 +352,24 @@
                                 <option value="vertical">直式</option>
                                 <option value="horizontal">橫式</option>
                             </select>
+                        </div>
+                        <div class="stu-field" x-show="smOrientation === 'horizontal'">
+                            <label>圖示位置</label>
+                            <select x-model="smIconLayout">
+                                <option value="top">文字上方 (Mega Menu 風格)</option>
+                                <option value="inline">文字前方 (Main Menu 風格)</option>
+                            </select>
+                        </div>
+                        <div class="stu-field" x-show="smOrientation === 'horizontal'">
+                            <label>選單高度</label>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <input type="text" x-model="smMenuHeight" placeholder="auto"
+                                       style="width:80px;text-align:center;">
+                                <span style="font-size:11px;color:#999;">auto 或 px 數值</span>
+                            </div>
+                            <div class="stu-hint" style="margin-top:4px;">
+                                auto = 圖示在上方時較高，inline 或無圖示時自動壓縮
+                            </div>
                         </div>
                         <div class="stu-field">
                             <label>項目間隔 (px)</label>

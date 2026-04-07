@@ -467,3 +467,66 @@
     top: 2px;
     right: 8px;
 }
+
+/* ===== Icon Inline Mode (smw-icon-inline) ===== */
+
+/* 橫式 inline: 一級項目改為水平排列 (icon 在文字前方) */
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item > .smw-link {
+    flex-direction: row;
+    gap: 6px;
+    text-align: left;
+    padding: 6px 16px;
+}
+
+/* 橫式 inline: icon 不放大，與文字同級 */
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item > .smw-link > i {
+    font-size: 14px;
+    margin-bottom: 0;
+    margin-right: 0;
+    display: inline-block;
+}
+
+/* 橫式 inline: 文字不需大寫粗體 */
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item > .smw-link > .smw-link-text {
+    text-transform: none;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+/* 橫式 inline: 隱藏 subtitle (空間不夠) */
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item > .smw-link > .smw-link-sub {
+    display: none;
+}
+
+/* 橫式 inline: hover 動畫改為微移而非大幅滑入 */
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item:hover > .smw-link > i {
+    animation: none;
+    transform: translateY(-1px);
+}
+.smw-root.smw-horizontal.smw-icon-inline > .smw-menu > .smw-item:hover > .smw-link > .smw-link-text {
+    animation: none;
+    transform: translateX(1px);
+}
+
+/* ===== Compact Mode (smw-compact) ===== */
+
+/* 橫式 compact: 選單高度自適應，僅比文字略大 */
+.smw-root.smw-horizontal.smw-compact .smw-menu {
+    height: auto;
+    min-height: 0;
+}
+
+/* 橫式 compact: 項目 padding 壓縮 */
+.smw-root.smw-horizontal.smw-compact > .smw-menu > .smw-item > .smw-link {
+    padding: 8px 16px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+}
+
+/* 橫式 compact: active 三角指示器縮小 */
+.smw-root.smw-horizontal.smw-compact > .smw-menu > .smw-item > .smw-link.smw-active::before {
+    border-top-width: 4px;
+    left: calc(50% - 4px);
+    border-left-width: 4px;
+    border-right-width: 4px;
+}

@@ -133,6 +133,12 @@ function siteMapPortal() {
         // ===== 頁面載入 =====
 
         async loadPage(nodeData) {
+            // Welcome 首頁: 透過 _autoNavigate 導航回根頁面
+            if (nodeData._isWelcome) {
+                this._autoNavigate();
+                return;
+            }
+
             this._destroyCurrentPage();
             this.currentNode = nodeData;
             this.pageLoading = true;
@@ -472,6 +478,18 @@ function siteMapPortal() {
                 if (nodes[i].node_type === 'page') return nodes[i].secure_code;
             }
             return nodes.length > 0 ? nodes[0].secure_code : null;
+        },
+
+        /** 遞迴搜尋節點資料 by secure_code */
+        _findNodeData: function (nodes, sc) {
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].secure_code === sc) return nodes[i];
+                if (nodes[i].children && nodes[i].children.length > 0) {
+                    var found = this._findNodeData(nodes[i].children, sc);
+                    if (found) return found;
+                }
+            }
+            return null;
         },
 
         /**

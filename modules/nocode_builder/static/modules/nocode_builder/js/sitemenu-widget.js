@@ -17,6 +17,9 @@ class SiteMenuWidget {
             orientation: 'vertical',    // 'vertical' | 'horizontal'
             startNodeSc: '',            // 起始節點 SC (空 = 整棵樹)
             startLevel: 'children',     // 'self' = 本級 | 'children' = 下一級
+            showWelcome: true,          // 首頁項目 (第一項固定為「首頁」指向 welcome)
+            iconLayout: 'top',          // 'top' = 圖示在文字上方(大) | 'inline' = 圖示在文字前(同文字大小)
+            menuHeight: 'auto',         // 'auto' | 數字(px)：橫式選單高度
             bgColor: '#ffffff',
             itemBgColor: '#ffffff',
             itemTextColor: '#333333',
@@ -131,6 +134,11 @@ class SiteMenuWidget {
         root.style.backgroundColor = this.config.bgColor;
         root.style.setProperty('--smw-accent', this.config.accentColor || '#e67e22');
 
+        // Icon layout class
+        if (this.config.iconLayout === 'inline') {
+            root.classList.add('smw-icon-inline');
+        }
+
         if (this.config.title) {
             var header = document.createElement('div');
             header.className = 'smw-header';
@@ -140,6 +148,18 @@ class SiteMenuWidget {
         }
 
         var displayNodes = this._resolveDisplayNodes();
+
+        // showWelcome: 在最前面插入「首頁」項目
+        if (this.config.showWelcome) {
+            var welcomeNode = {
+                secure_code: '_welcome',
+                name: '\u9996\u9801',       // 首頁
+                icon: 'fas fa-home',
+                children: [],
+                _isWelcome: true
+            };
+            displayNodes = [welcomeNode].concat(displayNodes);
+        }
 
         if (displayNodes.length === 0) {
             // 設計模式 (無 _subSystemSc) → 顯示 mock 預覽
@@ -156,7 +176,27 @@ class SiteMenuWidget {
             return;
         }
 
+        // 高度控制 (橫式)
+        if (this.config.orientation === 'horizontal') {
+            var isCompact = this._shouldCompact(displayNodes);
+            if (isCompact) {
+                root.classList.add('smw-compact');
+            }
+        }
+
         var ul = this._buildMenuLevel(displayNodes, 0);
+
+        // 橫式自訂高度
+        if (this.config.orientation === 'horizontal') {
+            var h = this.config.menuHeight;
+            if (h && h !== 'auto') {
+                var hPx = parseInt(h, 10);
+                if (hPx > 0) {
+                    ul.style.height = hPx + 'px';
+                }
+            }
+        }
+
         root.appendChild(ul);
         this.container.innerHTML = '';
         this.container.appendChild(root);
@@ -168,18 +208,41 @@ class SiteMenuWidget {
     _renderMockMenu(root) {
         root.classList.add('smw-mock');
 
-        var mockNodes = [
-            { secure_code: '_m1', name: '首頁', subtitle: '主控台', icon: 'fas fa-home', children: [] },
-            { secure_code: '_m2', name: '功能', subtitle: '管理中心', icon: 'fas fa-th-large', children: [
-                { secure_code: '_m2a', name: '項目 A', icon: 'fas fa-file-alt', children: [] },
-                { secure_code: '_m2b', name: '項目 B', icon: 'fas fa-chart-line', children: [] },
-                { secure_code: '_m2c', name: '項目 C', icon: 'fas fa-database', children: [] },
+        var mockNodes = [];
+
+        // Mock 也支援 welcome
+        if (this.config.showWelcome) {
+            mockNodes.push({ secure_code: '_mw', name: '\u9996\u9801', icon: 'fas fa-home', children: [], _isWelcome: true });
+        }
+
+        mockNodes.push(
+            { secure_code: '_m2', name: '\u529f\u80fd', subtitle: '\u7ba1\u7406\u4e2d\u5fc3', icon: 'fas fa-th-large', children: [
+                { secure_code: '_m2a', name: '\u9805\u76ee A', icon: 'fas fa-file-alt', children: [] },
+                { secure_code: '_m2b', name: '\u9805\u76ee B', icon: 'fas fa-chart-line', children: [] },
+                { secure_code: '_m2c', name: '\u9805\u76ee C', icon: 'fas fa-database', children: [] },
             ]},
-            { secure_code: '_m3', name: '報表', subtitle: '數據分析', icon: 'fas fa-chart-bar', children: [] },
-            { secure_code: '_m4', name: '設定', subtitle: '系統管理', icon: 'fas fa-cog', children: [] },
-        ];
+            { secure_code: '_m3', name: '\u5831\u8868', subtitle: '\u6578\u64da\u5206\u6790', icon: 'fas fa-chart-bar', children: [] },
+            { secure_code: '_m4', name: '\u8a2d\u5b9a', subtitle: '\u7cfb\u7d71\u7ba1\u7406', icon: 'fas fa-cog', children: [] }
+        );
+
+        // Mock compact 偵測
+        if (this.config.orientation === 'horizontal' && this._shouldCompact(mockNodes)) {
+            root.classList.add('smw-compact');
+        }
 
         var ul = this._buildMenuLevel(mockNodes, 0);
+
+        // 橫式自訂高度 (mock)
+        if (this.config.orientation === 'horizontal') {
+            var h = this.config.menuHeight;
+            if (h && h !== 'auto') {
+                var hPx = parseInt(h, 10);
+                if (hPx > 0) {
+                    ul.style.height = hPx + 'px';
+                }
+            }
+        }
+
         root.appendChild(ul);
 
         // Mock 浮水印
@@ -223,6 +286,24 @@ class SiteMenuWidget {
             }
         }
         return null;
+    }
+
+    /**
+     * 判斷橫式選單是否應採用 compact 模式
+     * 條件: menuHeight='auto' 且 (iconLayout='inline' 或 一級節點全部無圖示)
+     */
+    _shouldCompact(nodes) {
+        if (this.config.menuHeight && this.config.menuHeight !== 'auto') {
+            return false;  // 使用者有指定高度，不自動 compact
+        }
+        if (this.config.iconLayout === 'inline') {
+            return true;   // inline 模式一律 compact
+        }
+        // 檢查一級節點是否全部無圖示
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].icon) return false;
+        }
+        return true;  // 全無圖示 → compact
     }
 
     _buildMenuLevel(nodes, depth) {
@@ -544,6 +625,12 @@ class SiteMenuWidget {
             active.classList.add('smw-active');
             active.style.backgroundColor = cfg.itemHoverBgColor;
             active.style.color = cfg.itemHoverTextColor;
+        }
+
+        // Welcome 項目：導航到首頁 (根頁面)
+        if (node._isWelcome && typeof this.config._onNavigate === 'function') {
+            this.config._onNavigate({ _isWelcome: true });
+            return;
         }
 
         // 導航：切換頁面（portal 注入的 callback）
