@@ -214,23 +214,20 @@ window.__SSC_CONFIG = {
 
                 <!-- 快速導覽 -->
                 <div class="ssc-section">
-                    <div class="ssc-section-title">角色類型說明</div>
+                    <div class="ssc-section-title">准入規則說明</div>
                     <div class="ssc-section-body" style="font-size: 13px; color: #666;">
-                        <p style="margin: 0 0 8px 0; font-weight: 500;">准入角色:</p>
+                        <p style="margin: 0 0 8px 0; font-weight: 500;">准入類型:</p>
                         <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr><td style="padding: 4px 0; font-weight: 500;">GUEST</td><td>任何人 (含非成員)</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500;">MANAGER</td><td>團長 (管理層)</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500;">DEPUTY</td><td>副團長 (管理層)</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500;">PROXY1</td><td>代理人一 (管理層)</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500;">PROXY2</td><td>代理人二 (管理層)</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500;">MEMBER</td><td>一般團員</td></tr>
+                            <tr><td style="padding: 4px 0; font-weight: 500; color: #1e40af;">部門</td><td>指定部門的成員（可含子部門）</td></tr>
+                            <tr><td style="padding: 4px 0; font-weight: 500; color: #92400e;">社群</td><td>指定社群的成員（可含下層群組）</td></tr>
+                            <tr><td style="padding: 4px 0; font-weight: 500; color: #166534;">個人</td><td>指定特定帳號</td></tr>
                         </table>
                         <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
-                        <p style="margin: 0; font-weight: 500;">准入規則:</p>
-                        <p style="margin: 4px 0 0 0;">空 (NONE) = 任何人都無法進入 (安全防呆)</p>
-                        <p style="margin: 2px 0 0 0;">GUEST = 任何人都能進入</p>
-                        <p style="margin: 2px 0 0 0;">角色清單 = 只有符合角色的成員能進入</p>
-                        <p style="margin: 2px 0 0 0;">管理層自動有所有網頁的存取權</p>
+                        <p style="margin: 0; font-weight: 500;">准入邏輯:</p>
+                        <p style="margin: 4px 0 0 0;">無規則 = 所有社群成員可進入</p>
+                        <p style="margin: 2px 0 0 0;">有規則 = 僅匹配的部門/社群/個人可進入</p>
+                        <p style="margin: 2px 0 0 0;">管理層（團長/副團長/代理）自動擁有所有網頁存取權</p>
+                        <p style="margin: 2px 0 0 0;">可在同一節點設定多條規則（OR 邏輯）</p>
                     </div>
                 </div>
             </div>
@@ -341,22 +338,79 @@ window.__SSC_CONFIG = {
                                 </div>
                             </template>
 
-                            <!-- 准入控制 (access_roles) -->
+                            <!-- 准入控制 (grant-based permissions) -->
                             <div class="ssc-section-title">准入控制</div>
                             <div class="ssc-section-body">
-                                <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">
-                                    目前: <strong x-text="getAccessLabel()"></strong>
+                                <p style="font-size: 11px; color: #888; margin: 0 0 8px 0;">
+                                    無規則 = 開放給所有社群成員 | 有規則 = 僅匹配的部門/社群/個人可進入
                                 </p>
 
-                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                    <template x-for="role in ['GUEST','MANAGER','DEPUTY','PROXY1','PROXY2','MEMBER']" :key="'ar_' + role">
-                                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
-                                            <input type="checkbox"
-                                                   :checked="hasAccessRole(role)"
-                                                   @change="toggleAccessRole(role)">
-                                            <span x-text="role"></span>
-                                        </label>
+                                <!-- 已設定的規則列表 -->
+                                <div class="dc-perm-list">
+                                    <div x-show="nodePermLoading" class="dc-perm-empty">載入中...</div>
+                                    <template x-if="!nodePermLoading && nodePermissions.length === 0">
+                                        <div class="dc-perm-empty">尚無准入規則（所有社群成員皆可進入）</div>
                                     </template>
+                                    <template x-for="rule in nodePermissions" :key="rule.secure_code">
+                                        <div class="dc-perm-row">
+                                            <span class="dc-perm-type-tag"
+                                                  :class="getPermTypeCss(rule.grant_type)"
+                                                  x-text="getPermTypeLabel(rule.grant_type)"></span>
+                                            <span class="dc-perm-name" x-text="rule.grant_target_name"></span>
+                                            <span class="dc-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">（含子部門）</span>
+                                            <span class="dc-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">（含下層群組）</span>
+                                            <button class="dc-perm-del" @click="deleteNodePermRule(rule.secure_code)" title="刪除">&times;</button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- 新增規則 -->
+                                <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #555;">+ 新增規則</div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                        <div class="dc-perm-field">
+                                            <label>類型</label>
+                                            <select x-model="newNodePerm.grant_type" @change="onPermTypeChange()" style="width: 90px;">
+                                                <option value="department">部門</option>
+                                                <option value="group">社群</option>
+                                                <option value="user">個人</option>
+                                            </select>
+                                        </div>
+                                        <div x-show="newNodePerm.grant_type === 'department'" style="margin-top: 12px;">
+                                            <label style="white-space: nowrap; font-size: 11px;">
+                                                <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right: 3px;">含子部門
+                                            </label>
+                                        </div>
+                                        <div x-show="newNodePerm.grant_type === 'group'" style="margin-top: 12px;">
+                                            <label style="white-space: nowrap; font-size: 11px;">
+                                                <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right: 3px;">含下層群組
+                                            </label>
+                                        </div>
+                                        <button class="dc-btn sm primary" @click="addNodePermRule()"
+                                                :disabled="!newNodePerm.grant_target || permSaving"
+                                                style="white-space: nowrap; margin-top: 12px;">新增</button>
+                                    </div>
+
+                                    <!-- 樹狀選擇器（部門/社群） -->
+                                    <div x-show="newNodePerm.grant_type === 'department' || newNodePerm.grant_type === 'group'" class="dc-perm-tree-box">
+                                        <div x-show="permTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">載入中...</div>
+                                        <div x-show="!permTreeLoading" id="sm-perm-tree-container"></div>
+                                    </div>
+
+                                    <!-- 下拉選單（個人） -->
+                                    <div x-show="newNodePerm.grant_type === 'user'" class="dc-perm-field" style="width: 100%;">
+                                        <label>選擇成員</label>
+                                        <select x-model="newNodePerm.grant_target" style="width: 100%;">
+                                            <option value="">-- 請選擇 --</option>
+                                            <template x-for="opt in permTargetOptions" :key="opt.value">
+                                                <option :value="opt.value" x-text="opt.label"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    <div x-show="newNodePerm.grant_target" style="font-size: 11px; color: #0066cc;">
+                                        已選擇: <strong x-text="newNodePerm._selectedName || ''"></strong>
+                                    </div>
                                 </div>
 
                                 <div class="ssc-field" style="margin-top: 12px;" x-show="nodeForm.node_type === 'page'">

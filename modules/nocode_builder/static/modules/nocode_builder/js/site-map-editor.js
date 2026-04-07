@@ -28,6 +28,15 @@ function siteMapEditor(subSystemSc) {
             page_layout_secure_code: '', parent_secure_code: null,
         },
 
+        // 准入權限（grant-based）
+        nodePermissions: [],
+        nodePermLoading: false,
+        newNodePerm: { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' },
+        permTargetOptions: [],
+        permTreeLoading: false,
+        permSaving: false,
+        _permCache: {},
+
         toast: { show: false, message: '', type: 'success' },
 
         // Icon picker state
@@ -155,46 +164,252 @@ function siteMapEditor(subSystemSc) {
                 data_filters: JSON.parse(JSON.stringify(d.data_filters || {})),
             };
             this._ip_selectedIcon = this.nodeForm.icon;
+            // 載入准入權限
+            this.loadNodePermissions(d.secure_code);
         },
 
-        // ===== 准入控制 (access_roles) =====
+        // ===== 准入控制 (grant-based permissions) =====
 
-        hasAccessRole(role) {
-            return (this.nodeForm.access_roles || []).indexOf(role) >= 0;
-        },
-
-        toggleAccessRole(role) {
-            var roles = this.nodeForm.access_roles || [];
-            var idx = roles.indexOf(role);
-
-            if (role === 'GUEST') {
-                if (idx >= 0) {
-                    // 取消 GUEST → 變成 NONE
-                    this.nodeForm.access_roles = [];
-                } else {
-                    // 勾選 GUEST → 清除其他角色
-                    this.nodeForm.access_roles = ['GUEST'];
+        async loadNodePermissions(nodeSc) {
+            this.nodePermLoading = true;
+            this.nodePermissions = [];
+            this.newNodePerm = { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' };
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions');
+                var data = await res.json();
+                if (data.success) {
+                    // 只取 grant-based 記錄
+                    this.nodePermissions = (data.data || []).filter(function(p) { return p.grant_type; });
                 }
-                return;
+            } catch (e) {
+                console.error('loadNodePermissions:', e);
+            } finally {
+                this.nodePermLoading = false;
             }
-
-            // 非 GUEST 角色
-            // 先移除 GUEST（角色限制和任何人互斥）
-            roles = roles.filter(function(r) { return r !== 'GUEST'; });
-
-            if (idx >= 0) {
-                roles = roles.filter(function(r) { return r !== role; });
-            } else {
-                roles.push(role);
-            }
-            this.nodeForm.access_roles = roles;
+            // 預載部門樹
+            await this._loadPermTargets('department');
         },
 
-        getAccessLabel() {
-            var roles = this.nodeForm.access_roles || [];
-            if (roles.length === 0) return 'NONE (任何人都無法進入)';
-            if (roles.indexOf('GUEST') >= 0) return 'GUEST (任何人都能進入)';
-            return roles.join(', ');
+        async onPermTypeChange() {
+            this.newNodePerm.grant_target = '';
+            this.newNodePerm.include_children = false;
+            this.newNodePerm._selectedName = '';
+            await this._loadPermTargets(this.newNodePerm.grant_type);
+        },
+
+        async _loadPermTargets(grantType) {
+            this.permTargetOptions = [];
+            var container = document.getElementById('sm-perm-tree-container');
+
+            if (grantType === 'department' || grantType === 'group') {
+                this.permTreeLoading = true;
+                if (container) container.innerHTML = '';
+                try {
+                    var treeRoots = [];
+                    var orgName = '企業';
+                    if (grantType === 'department') {
+                        if (!this._permCache.departments) {
+                            var res = await fetch('/api/units/departments?tree=true');
+                            var data = await res.json();
+                            this._permCache.departments = data.units || [];
+                        }
+                        treeRoots = [{
+                            secure_code: '__ORG_ROOT__',
+                            name: orgName,
+                            full_path: orgName,
+                            children: this._permCache.departments,
+                            _isVirtualRoot: true,
+                        }];
+                    } else {
+                        if (!this._permCache.groups) {
+                            var res2 = await fetch('/api/units/groups?tree=true');
+                            var data2 = await res2.json();
+                            this._permCache.groups = data2.units || [];
+                        }
+                        var intGroups = [];
+                        var extGroups = [];
+                        for (var i = 0; i < this._permCache.groups.length; i++) {
+                            var g = this._permCache.groups[i];
+                            if (g.code === 'EXTERNAL_VENDORS' || g.code === 'external_vendors') {
+                                extGroups.push(g);
+                            } else {
+                                intGroups.push(g);
+                            }
+                        }
+                        treeRoots.push({
+                            secure_code: '__ORG_ROOT__',
+                            name: orgName,
+                            full_path: orgName,
+                            children: intGroups,
+                            _isVirtualRoot: true,
+                        });
+                        for (var j = 0; j < extGroups.length; j++) {
+                            treeRoots.push(extGroups[j]);
+                        }
+                    }
+                    if (container) {
+                        this._renderPermTree(container, treeRoots, 0);
+                    }
+                } catch (e) {
+                    console.error('_loadPermTargets tree:', e);
+                } finally {
+                    this.permTreeLoading = false;
+                }
+            } else if (grantType === 'user') {
+                if (!this._permCache.users) {
+                    var res3 = await fetch('/api/users?per_page=100');
+                    var data3 = await res3.json();
+                    if (data3.users) {
+                        this._permCache.users = data3.users;
+                    }
+                }
+                this.permTargetOptions = (this._permCache.users || []).map(function(u) {
+                    return {
+                        value: u.secure_code || u.id,
+                        label: u.display_name || u.native_name || u.employee_id || u.id,
+                    };
+                });
+            }
+        },
+
+        _renderPermTree(container, nodes, depth) {
+            var self = this;
+            for (var ni = 0; ni < nodes.length; ni++) {
+                var node = nodes[ni];
+                var hasChildren = node.children && node.children.length > 0;
+                var isRoot = (depth === 0);
+                var nodeEl = document.createElement('div');
+                nodeEl.className = 'dc-perm-tree-node';
+
+                var row = document.createElement('div');
+                row.className = 'dc-perm-tree-row';
+                if (isRoot) row.classList.add('dc-perm-tree-root');
+                row.style.paddingLeft = (8 + depth * 16) + 'px';
+
+                var toggle = document.createElement('span');
+                toggle.className = 'dc-perm-tree-toggle';
+                if (hasChildren) {
+                    toggle.textContent = '\u25BC';
+                    toggle.style.cursor = 'pointer';
+                }
+                row.appendChild(toggle);
+
+                var label = document.createElement('span');
+                label.className = 'dc-perm-tree-label';
+                label.textContent = node.name;
+                row.appendChild(label);
+
+                nodeEl.appendChild(row);
+
+                var childContainer = null;
+                if (hasChildren) {
+                    childContainer = document.createElement('div');
+                    childContainer.className = 'dc-perm-tree-children';
+                    childContainer.style.display = 'block';
+                    this._renderPermTree(childContainer, node.children, depth + 1);
+                    nodeEl.appendChild(childContainer);
+                }
+
+                if (hasChildren) {
+                    (function(t, cc) {
+                        t.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            var isOpen = cc.style.display !== 'none';
+                            cc.style.display = isOpen ? 'none' : 'block';
+                            t.textContent = isOpen ? '\u25B6' : '\u25BC';
+                        });
+                    })(toggle, childContainer);
+                }
+
+                var sc = node.secure_code || node.id;
+                var nodeName = node.full_path || node.name;
+                (function(r, s, n) {
+                    r.addEventListener('click', function() {
+                        var box = container.closest('.dc-perm-tree-box');
+                        if (box) box.querySelectorAll('.dc-perm-tree-row.selected').forEach(function(el) { el.classList.remove('selected'); });
+                        r.classList.add('selected');
+                        self.newNodePerm.grant_target = s;
+                        self.newNodePerm._selectedName = n;
+                    });
+                })(row, sc, nodeName);
+
+                container.appendChild(nodeEl);
+            }
+        },
+
+        async addNodePermRule() {
+            if (!this.newNodePerm.grant_target || !this.selectedNode) return;
+            this.permSaving = true;
+
+            var targetName = this.newNodePerm._selectedName;
+            if (!targetName) {
+                var opt = this.permTargetOptions.find(function(o) { return o.value === this.newNodePerm.grant_target; }.bind(this));
+                targetName = opt ? opt.label : this.newNodePerm.grant_target;
+            }
+
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            grant_type: this.newNodePerm.grant_type,
+                            grant_target: this.newNodePerm.grant_target,
+                            grant_target_name: targetName,
+                            include_children: this.newNodePerm.include_children,
+                        }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    await this.loadNodePermissions(this.selectedNode.secure_code);
+                    this.newNodePerm.grant_target = '';
+                    this.newNodePerm._selectedName = '';
+                    var treeBox = document.querySelector('.dc-perm-tree-box');
+                    if (treeBox) treeBox.querySelectorAll('.dc-perm-tree-row.selected').forEach(function(el) { el.classList.remove('selected'); });
+                    this.showToast('准入規則已新增');
+                } else {
+                    this.showToast(data.error || data.message || '新增失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('新增失敗: ' + e.message, 'error');
+            } finally {
+                this.permSaving = false;
+            }
+        },
+
+        async deleteNodePermRule(permSc) {
+            if (!confirm('確定要刪除此准入規則?')) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/permissions/' + permSc,
+                    { method: 'DELETE' }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    await this.loadNodePermissions(this.selectedNode.secure_code);
+                    this.showToast('准入規則已刪除');
+                } else {
+                    this.showToast(data.message || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗: ' + e.message, 'error');
+            }
+        },
+
+        getPermTypeLabel(type) {
+            if (type === 'department') return '部門';
+            if (type === 'group') return '社群';
+            if (type === 'user') return '個人';
+            return type;
+        },
+
+        getPermTypeCss(type) {
+            if (type === 'department') return 'dept';
+            if (type === 'group') return 'group';
+            if (type === 'user') return 'user';
+            return '';
         },
 
         // ===== 節點 CRUD =====

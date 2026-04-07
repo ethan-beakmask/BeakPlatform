@@ -30,3 +30,7 @@ files:
     - backend/app/static/vendor/gridstack/            # 柵欄佈局
     - backend/app/static/vendor/beak-trellis/         # 樹狀元件
     - backend/app/static/vendor/wunderbaum/           # 高效樹
+
+note: |
+  准入控制使用 grant-based permission 模式（部門/社群/個人多重選擇）。
+  模式規範見 docs/GRANT_PERMISSION_PATTERN.md。

@@ -237,7 +237,19 @@ def get_site_map_node_permissions(ss_sc, node_sc):
 @csrf.exempt
 @module_access_required('nocode_builder')
 def add_site_map_node_permission(ss_sc, node_sc):
-    """新增節點權限（開發者+管理員）"""
+    """
+    新增節點准入權限（開發者+管理員）
+
+    Body (grant-based，推薦):
+        grant_type: department / group / user
+        grant_target: 目標 secure_code
+        grant_target_name: 顯示名稱
+        include_children: boolean (僅 department/group 有效)
+
+    Body (舊格式，相容):
+        target_type: ROLE / DEPARTMENT / GROUP / ACCOUNT
+        target_secure_code: 目標 secure_code
+    """
     from ..services.site_map_service import SiteMapService
 
     ss, err = _check_developer(ss_sc)
@@ -249,11 +261,48 @@ def add_site_map_node_permission(ss_sc, node_sc):
         return jsonify({'success': False, 'error': 'Node not found'}), 404
 
     data = request.get_json() or {}
+
+    # 新格式 (grant-based)
+    grant_type = data.get('grant_type', '').strip()
+    grant_target = data.get('grant_target', '').strip()
+
+    if grant_type and grant_target:
+        if grant_type not in ('department', 'group', 'user'):
+            return jsonify({'success': False, 'error': 'grant_type 必須為 department / group / user'}), 400
+
+        grant_target_name = data.get('grant_target_name', '').strip()
+        include_children = bool(data.get('include_children', False)) if grant_type in ('department', 'group') else False
+
+        try:
+            perm = SiteMapService.add_grant_permission(
+                node_sc=node_sc,
+                org_sc=ss.org_secure_code,
+                grant_type=grant_type,
+                grant_target=grant_target,
+                grant_target_name=grant_target_name,
+                include_children=include_children,
+            )
+            db.session.commit()
+            if not perm:
+                return jsonify({'success': False, 'error': '此規則已存在'}), 400
+            return jsonify({
+                'success': True,
+                'data': perm.to_dict(),
+                'message': '准入規則已新增'
+            })
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+        except Exception as e:
+            db.session.rollback()
+            logger.exception('[SiteMap] add_grant_permission error')
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # 舊格式 (相容)
     target_type = data.get('target_type', '').strip()
     target_sc = data.get('target_secure_code', '').strip()
 
     if not target_type or not target_sc:
-        return jsonify({'success': False, 'error': 'target_type and target_secure_code are required'}), 400
+        return jsonify({'success': False, 'error': 'grant_type+grant_target 或 target_type+target_secure_code 為必填'}), 400
 
     try:
         perm = SiteMapService.add_permission(node_sc, ss.org_secure_code, target_type, target_sc)
@@ -392,7 +441,7 @@ def get_site_map_node_context(ss_sc, node_sc):
         return jsonify({'success': False, 'error': 'Node not found'}), 404
 
     # 准入檢查（管理層跳過）
-    if not is_admin and not SiteMapService.check_page_access(role_type, node):
+    if not is_admin and not SiteMapService.check_page_access(role_type, node, user=current_user):
         redirect_to = node.redirect_to or '/dashboard'
         return jsonify({
             'success': False,

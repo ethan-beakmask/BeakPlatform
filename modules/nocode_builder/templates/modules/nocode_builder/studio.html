@@ -246,7 +246,7 @@
                     </div>
                 </div>
 
-                <!-- Access Roles mode -->
+                <!-- 准入設定 (grant-based permissions) -->
                 <template x-if="propsMode === 'perm'">
                     <div>
                         <div class="stu-panel-title">
@@ -256,24 +256,76 @@
                             </button>
                         </div>
                         <div class="stu-props-body">
-                            <p class="stu-hint">勾選可進入此頁面的角色。未勾選任何角色 = 禁止所有人進入。</p>
-                            <div class="stu-section-divider">准入角色</div>
-                            <template x-for="role in accessRoleOptions" :key="role.value">
-                                <div class="stu-field-check">
-                                    <input type="checkbox"
-                                           :id="'ar-' + role.value"
-                                           :checked="editAccessRoles.indexOf(role.value) >= 0"
-                                           @change="toggleAccessRole(role.value, $event.target.checked)">
-                                    <label :for="'ar-' + role.value">
-                                        <span x-text="role.label"></span>
-                                        <span class="stu-hint" x-show="role.hint" x-text="role.hint" style="margin-left:4px;"></span>
+                            <p class="stu-hint" style="margin-bottom:8px;">無規則 = 開放給所有社群成員 | 有規則 = 僅匹配的部門/社群/個人可進入</p>
+
+                            <div class="stu-section-divider">已設定規則</div>
+
+                            <!-- 規則列表 -->
+                            <div class="dc-perm-list" style="margin-bottom:10px;">
+                                <div x-show="nodePermLoading" class="dc-perm-empty">載入中...</div>
+                                <template x-if="!nodePermLoading && nodePermissions.length === 0">
+                                    <div class="dc-perm-empty">尚無准入規則（所有社群成員皆可進入）</div>
+                                </template>
+                                <template x-for="rule in nodePermissions" :key="rule.secure_code">
+                                    <div class="dc-perm-row">
+                                        <span class="dc-perm-type-tag"
+                                              :class="getPermTypeCss(rule.grant_type)"
+                                              x-text="getPermTypeLabel(rule.grant_type)"></span>
+                                        <span class="dc-perm-name" x-text="rule.grant_target_name"></span>
+                                        <span class="dc-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">（含子部門）</span>
+                                        <span class="dc-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">（含下層群組）</span>
+                                        <button class="dc-perm-del" @click="deleteNodePermRule(rule.secure_code)" title="刪除">&times;</button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="stu-section-divider">新增規則</div>
+
+                            <!-- 類型 + 選項 + 新增按鈕 -->
+                            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                                <div class="dc-perm-field">
+                                    <label>類型</label>
+                                    <select x-model="newNodePerm.grant_type" @change="onPermTypeChange()" style="width:85px;">
+                                        <option value="department">部門</option>
+                                        <option value="group">社群</option>
+                                        <option value="user">個人</option>
+                                    </select>
+                                </div>
+                                <div x-show="newNodePerm.grant_type === 'department'" style="margin-top:12px;">
+                                    <label style="white-space:nowrap;font-size:11px;">
+                                        <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right:2px;">含子部門
                                     </label>
                                 </div>
-                            </template>
-                            <div class="stu-section-divider">目前狀態</div>
-                            <div class="stu-hint" x-text="accessRolesStatus()"></div>
-                            <div style="margin-top:12px;">
-                                <button class="stu-btn primary" @click="saveAccessRoles()">儲存</button>
+                                <div x-show="newNodePerm.grant_type === 'group'" style="margin-top:12px;">
+                                    <label style="white-space:nowrap;font-size:11px;">
+                                        <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right:2px;">含下層
+                                    </label>
+                                </div>
+                                <button class="dc-btn sm primary" @click="addNodePermRule()"
+                                        :disabled="!newNodePerm.grant_target || permSaving"
+                                        style="white-space:nowrap;margin-top:12px;">新增</button>
+                            </div>
+
+                            <!-- 樹狀選擇器（部門/社群） -->
+                            <div x-show="newNodePerm.grant_type === 'department' || newNodePerm.grant_type === 'group'"
+                                 class="dc-perm-tree-box">
+                                <div x-show="permTreeLoading" style="text-align:center;padding:8px;color:#999;font-size:11px;">載入中...</div>
+                                <div x-show="!permTreeLoading" id="stu-perm-tree-container"></div>
+                            </div>
+
+                            <!-- 下拉選單（個人） -->
+                            <div x-show="newNodePerm.grant_type === 'user'" class="dc-perm-field" style="width:100%;">
+                                <label>選擇成員</label>
+                                <select x-model="newNodePerm.grant_target" style="width:100%;">
+                                    <option value="">-- 請選擇 --</option>
+                                    <template x-for="opt in permTargetOptions" :key="opt.value">
+                                        <option :value="opt.value" x-text="opt.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div x-show="newNodePerm.grant_target" style="font-size:11px;color:#0066cc;margin-top:4px;">
+                                已選擇: <strong x-text="newNodePerm._selectedName || ''"></strong>
                             </div>
                         </div>
                     </div>

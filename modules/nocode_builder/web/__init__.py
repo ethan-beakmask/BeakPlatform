@@ -303,7 +303,9 @@ def _check_site_map_node_access(sub_system_sc, page_layout_sc, user):
             return True
 
         role_type = SubSystemService.get_user_role_type(user, ss)
-        return SiteMapService.check_page_access(role_type, node)
+        if SubSystemService.is_admin_role(role_type or ''):
+            return True  # 管理層全通
+        return SiteMapService.check_page_access(role_type, node, user=user)
 
     except Exception as e:
         logger.warning('SiteMap node access check failed: %s', e)
