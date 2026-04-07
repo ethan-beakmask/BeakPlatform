@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, abort, redirect
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
+from app.platform.data import get_current_org
 
 logger = logging.getLogger(__name__)
 
@@ -162,9 +163,12 @@ def sub_system_list():
 @module_access_required('nocode_builder')
 def sub_system_config(secure_code):
     """子系統配置"""
+    org = get_current_org()
+    org_name = org.name if org else ''
     return render_template(
         'modules/nocode_builder/sub_system_config.html',
         secure_code=secure_code,
+        org_name=org_name,
     )
 
 

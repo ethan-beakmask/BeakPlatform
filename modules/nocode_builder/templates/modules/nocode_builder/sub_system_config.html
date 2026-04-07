@@ -4,8 +4,6 @@
 
 {% block head %}
 <link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
-<link rel="stylesheet" href="/static/vendor/wunderbaum/bootstrap-icons.css">
-<link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
 <style>
     .ssc-section {
         background: #fff;
@@ -48,7 +46,6 @@
     }
 
     /* 政策組列表 */
-    .pp-list { }
     .pp-item {
         border: 1px solid #e0e0e0;
         margin-bottom: 8px;
@@ -123,13 +120,6 @@
         margin-bottom: 8px;
         color: #555;
     }
-    .pp-tree-box {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #eee;
-        padding: 4px;
-        margin-top: 6px;
-    }
     .pp-empty {
         padding: 24px;
         text-align: center;
@@ -142,7 +132,8 @@
 {% block content %}
 <script>
 window.__SSC_CONFIG = {
-    secureCode: {{ secure_code | tojson }}
+    secureCode: {{ secure_code | tojson }},
+    orgName: {{ org_name | tojson }}
 };
 </script>
 
@@ -206,15 +197,15 @@ window.__SSC_CONFIG = {
             <div class="ssc-section">
                 <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
                     <span>權限政策組</span>
-                    <button class="dc-btn sm primary" @click="openAddPolicy()">+ 新增政策組</button>
+                    <button class="dc-btn sm primary" @click="quickAddPolicy()">+ 新增政策組</button>
                 </div>
                 <div class="ssc-section-body" style="padding: 0;">
                     <div x-show="policyGroups.length === 0" class="pp-empty">
                         尚未建立任何權限政策組。<br>
-                        <span style="font-size: 12px;">建立政策組後，可在設計器的網頁屬性中選擇套用。</span>
+                        <span style="font-size: 12px;">點擊「+ 新增政策組」一鍵建立，可立即新增規則。</span>
                     </div>
 
-                    <div class="pp-list" x-show="policyGroups.length > 0" style="padding: 12px;">
+                    <div x-show="policyGroups.length > 0" style="padding: 12px;">
                         <template x-for="pg in policyGroups" :key="pg.secure_code">
                             <div class="pp-item">
                                 <div class="pp-item-header" @click="toggleRulePanel(pg)">
@@ -223,7 +214,7 @@ window.__SSC_CONFIG = {
                                     <span class="pp-item-usage"
                                           x-text="pg.usage_count + ' 個網頁使用'"></span>
                                     <div class="pp-item-actions" @click.stop>
-                                        <button class="dc-btn sm" @click="openEditPolicy(pg)">編輯</button>
+                                        <button class="dc-btn sm" @click="openEditPolicy(pg)">重新命名</button>
                                         <button class="dc-btn sm danger" @click="deletePolicy(pg)">刪除</button>
                                     </div>
                                 </div>
@@ -265,14 +256,11 @@ window.__SSC_CONFIG = {
                                                     <option value="user">個人</option>
                                                 </select>
                                             </div>
-                                            <div x-show="newRule.grant_type === 'department'" style="margin-top: 14px;">
+                                            <div x-show="newRule.grant_type === 'department' || newRule.grant_type === 'group'"
+                                                 style="margin-top: 14px;">
                                                 <label style="font-size: 11px; white-space: nowrap;">
-                                                    <input type="checkbox" x-model="newRule.include_children"> 含子部門
-                                                </label>
-                                            </div>
-                                            <div x-show="newRule.grant_type === 'group'" style="margin-top: 14px;">
-                                                <label style="font-size: 11px; white-space: nowrap;">
-                                                    <input type="checkbox" x-model="newRule.include_children"> 含下層群組
+                                                    <input type="checkbox" x-model="newRule.include_children">
+                                                    <span x-text="newRule.grant_type === 'department' ? '含子部門' : '含下層群組'"></span>
                                                 </label>
                                             </div>
                                             <button class="dc-btn sm primary"
@@ -284,8 +272,8 @@ window.__SSC_CONFIG = {
                                         <!-- 樹狀選擇器 (部門/社群) -->
                                         <div x-show="newRule.grant_type === 'department' || newRule.grant_type === 'group'">
                                             <div x-show="ruleTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">載入中...</div>
-                                            <div class="pp-tree-box" x-show="!ruleTreeLoading">
-                                                <div id="pp-rule-tree-container"></div>
+                                            <div class="dc-perm-tree-box" x-show="!ruleTreeLoading" style="margin-top: 6px;">
+                                                <div :id="'pp-rule-tree-' + pg.secure_code"></div>
                                             </div>
                                         </div>
 
@@ -343,11 +331,11 @@ window.__SSC_CONFIG = {
         </div>
     </template>
 
-    <!-- 政策組 新增/編輯 Modal -->
+    <!-- 政策組 重新命名 Modal -->
     <div x-show="showPolicyModal" x-cloak class="dc-modal">
         <div class="dc-modal-content" style="width: 450px;">
             <div class="dc-modal-header">
-                <h3 x-text="editingPolicy ? '編輯政策組' : '新增政策組'"></h3>
+                <h3>重新命名政策組</h3>
                 <button class="dc-close-btn" @click="showPolicyModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
@@ -364,8 +352,7 @@ window.__SSC_CONFIG = {
             </div>
             <div class="dc-modal-footer">
                 <button class="dc-btn" @click="showPolicyModal = false">取消</button>
-                <button class="dc-btn primary" @click="savePolicy()"
-                        x-text="editingPolicy ? '更新' : '建立'"></button>
+                <button class="dc-btn primary" @click="savePolicy()">更新</button>
             </div>
         </div>
     </div>
@@ -375,6 +362,5 @@ window.__SSC_CONFIG = {
          x-text="toast.message" x-transition></div>
 </div>
 
-<script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
 <script src="/static/modules/nocode_builder/js/sub-system-config.js"></script>
 {% endblock %}

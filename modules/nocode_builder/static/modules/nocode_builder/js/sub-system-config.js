@@ -1,11 +1,19 @@
 /**
  * sub_system_config.html - Alpine.js Manager
  * 子系統設定：基本資訊 + 權限政策組管理
+ *
+ * 權限政策組規則選擇器參考 form_workflow/mappings.js 的做法：
+ * - 自建 DOM tree（非 Wunderbaum）
+ * - 部門：虛擬企業根 __ORG_ROOT__ + 部門樹
+ * - 社群：雙根（企業內部群組 + 外部廠商群組）
+ * - 個人：下拉選單
+ * - 資料快取避免重複載入
  */
 function subSystemConfigManager() {
     return {
         loading: true,
         secureCode: '',
+        orgName: '',
         form: {
             name: '',
             description: '',
@@ -30,13 +38,20 @@ function subSystemConfigManager() {
         },
         ruleTargetOptions: [],
         ruleTreeLoading: false,
-        _ruleTreeInstance: null,
+
+        // 樹狀資料快取
+        _permCache: {
+            departments: null,
+            groups: null,
+            users: null,
+        },
 
         toast: { show: false, message: '', type: 'success' },
 
         async init() {
             const config = window.__SSC_CONFIG || {};
             this.secureCode = config.secureCode || '';
+            this.orgName = config.orgName || '企業';
 
             await Promise.all([
                 this.loadSubSystem(),
@@ -105,10 +120,36 @@ function subSystemConfigManager() {
             }
         },
 
-        openAddPolicy() {
-            this.editingPolicy = null;
-            this.policyForm = { name: '', description: '' };
-            this.showPolicyModal = true;
+        async quickAddPolicy() {
+            // 一鍵建立：自動命名，建立後直接展開規則面板
+            const idx = this.policyGroups.length + 1;
+            const autoName = '政策組 ' + idx;
+            try {
+                const res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: autoName, description: '' }),
+                    }
+                );
+                const data = await res.json();
+                if (data.success) {
+                    await this.loadPolicies();
+                    // 自動展開新建的政策組規則面板
+                    const newSc = data.data?.secure_code;
+                    if (newSc) {
+                        this.showRulePanel = newSc;
+                        this.resetNewRule();
+                        this.$nextTick(() => this._loadPermTargets(this.newRule.grant_type));
+                    }
+                    this.showToast('政策組已建立，可直接新增規則', 'success');
+                } else {
+                    this.showToast(data.error || '建立失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('建立失敗: ' + e.message, 'error');
+            }
         },
 
         openEditPolicy(pg) {
@@ -123,37 +164,29 @@ function subSystemConfigManager() {
                 return;
             }
             try {
-                let url, method;
-                if (this.editingPolicy) {
-                    url = '/api/nocode-builder/sub-systems/' + this.secureCode
-                        + '/permission-policies/' + this.editingPolicy.secure_code;
-                    method = 'PUT';
-                } else {
-                    url = '/api/nocode-builder/sub-systems/' + this.secureCode
-                        + '/permission-policies';
-                    method = 'POST';
-                }
+                const url = '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/permission-policies/' + this.editingPolicy.secure_code;
                 const res = await fetch(url, {
-                    method,
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.policyForm),
                 });
                 const data = await res.json();
                 if (data.success) {
                     this.showPolicyModal = false;
-                    this.showToast(this.editingPolicy ? '政策組已更新' : '政策組已建立', 'success');
+                    this.showToast('政策組已更新', 'success');
                     await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || '更新失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗: ' + e.message, 'error');
+                this.showToast('更新失敗: ' + e.message, 'error');
             }
         },
 
         async deletePolicy(pg) {
             const msg = pg.usage_count > 0
-                ? `此政策組有 ${pg.usage_count} 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?`
+                ? '此政策組有 ' + pg.usage_count + ' 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?'
                 : '確定刪除此政策組?';
             if (!confirm(msg)) return;
 
@@ -188,6 +221,8 @@ function subSystemConfigManager() {
             } else {
                 this.showRulePanel = pg.secure_code;
                 this.resetNewRule();
+                // 自動載入預設類型的樹（解決原本要手動切換才載入的問題）
+                this.$nextTick(() => this._loadPermTargets(this.newRule.grant_type));
             }
         },
 
@@ -200,7 +235,6 @@ function subSystemConfigManager() {
                 _selectedName: '',
             };
             this.ruleTargetOptions = [];
-            this._destroyRuleTree();
         },
 
         getPolicyRules(pgSc) {
@@ -212,94 +246,163 @@ function subSystemConfigManager() {
             this.newRule.grant_target = '';
             this.newRule.grant_target_name = '';
             this.newRule._selectedName = '';
+            this.newRule.include_children = false;
             this.ruleTargetOptions = [];
-            this._destroyRuleTree();
-
-            if (this.newRule.grant_type === 'user') {
-                await this._loadUserTargets();
-            } else {
-                await this._loadTreeTargets();
-            }
+            await this._loadPermTargets(this.newRule.grant_type);
         },
 
-        async _loadUserTargets() {
-            try {
-                const type = 'ACCOUNT';
-                const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode
-                    + '/site-map/targets?type=' + type
-                );
-                const data = await res.json();
-                if (data.success) {
-                    this.ruleTargetOptions = (data.data || []).map(t => ({
-                        value: t.secure_code || t.value,
-                        label: t.display_name || t.name || t.label || t.value,
-                    }));
+        // =================================================================
+        // 樹狀/下拉目標載入（同 mappings.js 做法）
+        // =================================================================
+
+        async _loadPermTargets(grantType) {
+            this.ruleTargetOptions = [];
+            const containerId = 'pp-rule-tree-' + this.showRulePanel;
+            const container = document.getElementById(containerId);
+
+            if (grantType === 'department' || grantType === 'group') {
+                this.ruleTreeLoading = true;
+                if (container) container.innerHTML = '';
+
+                try {
+                    let treeRoots = [];
+
+                    if (grantType === 'department') {
+                        if (!this._permCache.departments) {
+                            const res = await fetch('/api/units/departments?tree=true');
+                            const data = await res.json();
+                            this._permCache.departments = data.units || [];
+                        }
+                        treeRoots = [{
+                            secure_code: '__ORG_ROOT__',
+                            name: this.orgName,
+                            full_path: this.orgName,
+                            children: this._permCache.departments,
+                            _isVirtualRoot: true,
+                        }];
+                    } else {
+                        // 社群：雙根（企業內部 + 外部廠商）
+                        if (!this._permCache.groups) {
+                            const res = await fetch('/api/units/groups?tree=true');
+                            const data = await res.json();
+                            this._permCache.groups = data.units || [];
+                        }
+                        var intGroups = [];
+                        var extGroups = [];
+                        for (var i = 0; i < this._permCache.groups.length; i++) {
+                            var g = this._permCache.groups[i];
+                            if (g.code === 'EXTERNAL_VENDORS' || g.code === 'external_vendors') {
+                                extGroups.push(g);
+                            } else {
+                                intGroups.push(g);
+                            }
+                        }
+                        // 企業內部群組根
+                        treeRoots.push({
+                            secure_code: '__ORG_ROOT__',
+                            name: this.orgName,
+                            full_path: this.orgName,
+                            children: intGroups,
+                            _isVirtualRoot: true,
+                        });
+                        // 外部廠商根（使用實際 DB 節點，展開其子群組）
+                        for (var j = 0; j < extGroups.length; j++) {
+                            treeRoots.push(extGroups[j]);
+                        }
+                    }
+
+                    if (container) {
+                        this._renderTree(container, treeRoots, 0);
+                    }
+                } catch (e) {
+                    console.error('Load tree targets failed:', e);
+                } finally {
+                    this.ruleTreeLoading = false;
                 }
-            } catch (e) {
-                console.error('Load user targets failed:', e);
+
+            } else if (grantType === 'user') {
+                if (!this._permCache.users) {
+                    const res = await fetch('/api/users?per_page=100');
+                    const data = await res.json();
+                    if (data.users) {
+                        this._permCache.users = data.users;
+                    }
+                }
+                this.ruleTargetOptions = (this._permCache.users || []).map(u => ({
+                    value: u.secure_code || u.id,
+                    label: u.display_name || u.native_name || u.employee_id || u.id,
+                }));
             }
         },
 
-        async _loadTreeTargets() {
-            this.ruleTreeLoading = true;
-            try {
-                const type = this.newRule.grant_type === 'department' ? 'DEPARTMENT' : 'GROUP';
-                const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode
-                    + '/site-map/targets?type=' + type
-                );
-                const data = await res.json();
-                if (data.success) {
-                    const items = data.data || [];
-                    this.$nextTick(() => {
-                        this._renderRuleTree(items);
+        _renderTree(container, nodes, depth) {
+            const self = this;
+            for (const node of nodes) {
+                const hasChildren = node.children && node.children.length > 0;
+                const isRoot = (depth === 0);
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'dc-perm-tree-node';
+
+                // 行
+                const row = document.createElement('div');
+                row.className = 'dc-perm-tree-row';
+                if (isRoot) row.classList.add('dc-perm-tree-root');
+                row.style.paddingLeft = (8 + depth * 16) + 'px';
+
+                // 展開/收合
+                const toggle = document.createElement('span');
+                toggle.className = 'dc-perm-tree-toggle';
+                if (hasChildren) {
+                    toggle.textContent = '\u25BC';  // 預設展開
+                    toggle.style.cursor = 'pointer';
+                }
+                row.appendChild(toggle);
+
+                // 標籤
+                const label = document.createElement('span');
+                label.className = 'dc-perm-tree-label';
+                label.textContent = node.name;
+                row.appendChild(label);
+
+                nodeEl.appendChild(row);
+
+                // 子節點容器
+                let childContainer = null;
+                if (hasChildren) {
+                    childContainer = document.createElement('div');
+                    childContainer.className = 'dc-perm-tree-children';
+                    childContainer.style.display = 'block';
+                    this._renderTree(childContainer, node.children, depth + 1);
+                    nodeEl.appendChild(childContainer);
+                }
+
+                // 展開/收合事件
+                if (hasChildren) {
+                    toggle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var isOpen = childContainer.style.display !== 'none';
+                        childContainer.style.display = isOpen ? 'none' : 'block';
+                        toggle.textContent = isOpen ? '\u25B6' : '\u25BC';
                     });
                 }
-            } catch (e) {
-                console.error('Load tree targets failed:', e);
-            } finally {
-                this.ruleTreeLoading = false;
-            }
-        },
 
-        _renderRuleTree(items) {
-            this._destroyRuleTree();
-            const container = document.getElementById('pp-rule-tree-container');
-            if (!container || !items.length) return;
-
-            const treeData = items.map(item => ({
-                title: item.display_name || item.name || item.label || '',
-                key: item.secure_code || item.value,
-                children: (item.children || []).map(c => ({
-                    title: c.display_name || c.name || c.label || '',
-                    key: c.secure_code || c.value,
-                })),
-            }));
-
-            const self = this;
-            this._ruleTreeInstance = new mar10.Wunderbaum({
-                element: container,
-                source: treeData,
-                selectMode: '1',
-                click(e) {
-                    const node = e.node;
-                    if (node) {
-                        self.newRule.grant_target = node.key;
-                        self.newRule.grant_target_name = node.title;
-                        self.newRule._selectedName = node.title;
+                // 選擇事件
+                const sc = node.secure_code || node.id;
+                const nodeName = node.full_path || node.name;
+                row.addEventListener('click', function() {
+                    // 清除同樹所有選中
+                    var treeBox = container.closest('.dc-perm-tree-box');
+                    if (treeBox) {
+                        treeBox.querySelectorAll('.dc-perm-tree-row.selected')
+                            .forEach(function(el) { el.classList.remove('selected'); });
                     }
-                },
-            });
-        },
+                    row.classList.add('selected');
+                    self.newRule.grant_target = sc;
+                    self.newRule._selectedName = nodeName;
+                });
 
-        _destroyRuleTree() {
-            if (this._ruleTreeInstance) {
-                try { this._ruleTreeInstance.destroy(); } catch (_) {}
-                this._ruleTreeInstance = null;
+                container.appendChild(nodeEl);
             }
-            const container = document.getElementById('pp-rule-tree-container');
-            if (container) container.innerHTML = '';
         },
 
         async addRule(pgSc) {
@@ -307,6 +410,14 @@ function subSystemConfigManager() {
                 this.showToast('請選擇目標', 'error');
                 return;
             }
+
+            // 組合顯示名稱
+            let targetName = this.newRule._selectedName;
+            if (!targetName) {
+                const opt = this.ruleTargetOptions.find(o => o.value === this.newRule.grant_target);
+                targetName = opt ? opt.label : this.newRule.grant_target;
+            }
+
             try {
                 const res = await fetch(
                     '/api/nocode-builder/sub-systems/' + this.secureCode
@@ -317,7 +428,7 @@ function subSystemConfigManager() {
                         body: JSON.stringify({
                             grant_type: this.newRule.grant_type,
                             grant_target: this.newRule.grant_target,
-                            grant_target_name: this.newRule.grant_target_name || this.newRule._selectedName,
+                            grant_target_name: targetName,
                             include_children: this.newRule.include_children,
                         }),
                     }
@@ -325,7 +436,18 @@ function subSystemConfigManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showToast('規則已新增', 'success');
-                    this.resetNewRule();
+                    // 清除選取狀態，保持樹不動
+                    this.newRule.grant_target = '';
+                    this.newRule._selectedName = '';
+                    this.newRule.include_children = false;
+                    var treeContainer = document.getElementById('pp-rule-tree-' + pgSc);
+                    if (treeContainer) {
+                        var treeBox = treeContainer.closest('.dc-perm-tree-box');
+                        if (treeBox) {
+                            treeBox.querySelectorAll('.dc-perm-tree-row.selected')
+                                .forEach(function(el) { el.classList.remove('selected'); });
+                        }
+                    }
                     await this.loadPolicies();
                 } else {
                     this.showToast(data.error || '新增失敗', 'error');
