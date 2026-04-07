@@ -19,7 +19,12 @@ function siteMapEditor(subSystemSc) {
             access_roles: [],
             redirect_to: '/dashboard',
             crud_overrides: {}, data_filters: {},
+            permission_mode: 'inherit',
+            permission_policy_secure_code: '',
         },
+
+        // 權限政策組列表 (從 [設定] 頁建立)
+        permissionPolicies: [],
 
         // 新增網頁 Modal
         showAddModal: false,
@@ -50,6 +55,7 @@ function siteMapEditor(subSystemSc) {
             await Promise.all([
                 this.loadTree(),
                 this.loadLayouts(),
+                this.loadPermissionPolicies(),
             ]);
             this.loading = false;
         },
@@ -78,6 +84,18 @@ function siteMapEditor(subSystemSc) {
                 }
             } catch (e) {
                 console.error('loadLayouts:', e);
+            }
+        },
+
+        async loadPermissionPolicies() {
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + subSystemSc + '/permission-policies');
+                var data = await res.json();
+                if (data.success) {
+                    this.permissionPolicies = data.data || [];
+                }
+            } catch (e) {
+                console.error('loadPermissionPolicies:', e);
             }
         },
 
@@ -162,10 +180,17 @@ function siteMapEditor(subSystemSc) {
                 redirect_to: d.redirect_to || '/dashboard',
                 crud_overrides: JSON.parse(JSON.stringify(d.crud_overrides || {})),
                 data_filters: JSON.parse(JSON.stringify(d.data_filters || {})),
+                permission_mode: d.permission_mode || 'inherit',
+                permission_policy_secure_code: d.permission_policy_secure_code || '',
             };
             this._ip_selectedIcon = this.nodeForm.icon;
-            // 載入准入權限
-            this.loadNodePermissions(d.secure_code);
+            // 載入准入權限 (僅 custom 模式需要)
+            if (this.nodeForm.permission_mode === 'custom') {
+                this.loadNodePermissions(d.secure_code);
+            } else {
+                this.nodePermissions = [];
+                this.nodePermLoading = false;
+            }
         },
 
         // ===== 准入控制 (grant-based permissions) =====
@@ -469,6 +494,10 @@ function siteMapEditor(subSystemSc) {
                     redirect_to: this.nodeForm.redirect_to || '/dashboard',
                     crud_overrides: this.nodeForm.crud_overrides,
                     data_filters: this.nodeForm.data_filters,
+                    permission_mode: this.nodeForm.permission_mode || null,
+                    permission_policy_secure_code: this.nodeForm.permission_mode === 'policy'
+                        ? (this.nodeForm.permission_policy_secure_code || null)
+                        : null,
                 };
                 var res = await fetch(
                     '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
@@ -488,6 +517,48 @@ function siteMapEditor(subSystemSc) {
             } catch (e) {
                 this.showToast('更新失敗: ' + e.message, 'error');
             }
+        },
+
+        onPermModeChange() {
+            if (this.nodeForm.permission_mode === 'custom' && this.selectedNode) {
+                this.loadNodePermissions(this.selectedNode.secure_code);
+            } else {
+                this.nodePermissions = [];
+            }
+            if (this.nodeForm.permission_mode !== 'policy') {
+                this.nodeForm.permission_policy_secure_code = '';
+            }
+        },
+
+        async applyDown() {
+            if (!this.selectedNode) return;
+            if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ skip_custom: true }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.showToast(data.message || '已套用', 'success');
+                    await this.loadTree();
+                } else {
+                    this.showToast(data.error || '套用失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('套用失敗: ' + e.message, 'error');
+            }
+        },
+
+        getPermModePolicyName() {
+            var sc = this.nodeForm.permission_policy_secure_code;
+            if (!sc) return '';
+            var pg = this.permissionPolicies.find(function(p) { return p.secure_code === sc; });
+            return pg ? pg.name : '';
         },
 
         async deleteNode() {

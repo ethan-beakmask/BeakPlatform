@@ -36,6 +36,11 @@ class DcSiteMapNode(ModuleBaseModel):
     access_roles = Column(JSONB, default=list)
     redirect_to = Column(String(200), default='/dashboard')
 
+    # 權限模式: 'inherit'(向上繼承), 'policy'(政策組), 'custom'(自訂), NULL(禁止)
+    permission_mode = Column(String(20), nullable=True, default='inherit')
+    # 套用的權限政策組 secure_code (permission_mode='policy' 時使用)
+    permission_policy_secure_code = Column(String(32), nullable=True)
+
     # 保留供過渡期（Phase 3 移至 widget 層級）
     crud_overrides = Column(JSONB, default=dict)
     data_filters = Column(JSONB, default=dict)
@@ -54,6 +59,8 @@ class DcSiteMapNode(ModuleBaseModel):
             'display_order': self.display_order,
             'access_roles': self.access_roles or [],
             'redirect_to': self.redirect_to or '/dashboard',
+            'permission_mode': self.permission_mode,
+            'permission_policy_secure_code': self.permission_policy_secure_code,
             'crud_overrides': self.crud_overrides or {},
             'data_filters': self.data_filters or {},
             'is_active': self.is_active,

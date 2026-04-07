@@ -70,7 +70,7 @@ function studioManager() {
         selectedZoneId: null,
 
         // Page/SubSystem style config
-        styleConfig: { bgColor: '', bgImage: { url: '', opacity: 30, fit: 'contain', position: 'center center' }, textColor: '', fontFamily: '', fontSize: null },
+        styleConfig: { bgColor: '#ffffff', bgImage: { url: '', opacity: 30, fit: 'contain', position: 'center center' }, textColor: '#333333', fontFamily: '', fontSize: null },
         _subSystemStyleConfig: {},  // 子系統預設樣式(快取)
 
         // Background gallery
@@ -142,7 +142,12 @@ function studioManager() {
         _iconTarget: 'node',   // 'node' | 'add' | 'item'
         _iconEditNodeSc: '',   // 'item' target 時追蹤的節點 SC
 
-        // 准入權限 (grant-based)
+        // 權限模式
+        permissionPolicies: [],
+        _currentPermMode: 'inherit',
+        _currentPolicySc: '',
+
+        // 准入權限 (grant-based, custom 模式用)
         nodePermissions: [],
         nodePermLoading: false,
         newNodePerm: { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' },
@@ -183,6 +188,7 @@ function studioManager() {
                 this._loadViews(),
                 this._loadPages(),
                 this._loadDataSources(),
+                this._loadPermissionPolicies(),
             ]);
 
             this.loading = false;
@@ -1513,12 +1519,112 @@ function studioManager() {
         // 准入設定 (grant-based permissions)
         // ================================================================
 
+        async _loadPermissionPolicies() {
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/permission-policies');
+                var data = await res.json();
+                if (data.success) {
+                    this.permissionPolicies = data.data || [];
+                }
+            } catch (e) {
+                console.error('_loadPermissionPolicies:', e);
+            }
+        },
+
         openAccessRoles: function () {
             if (!this.selectedNode) return;
             this.propsMode = 'perm';
             this.showProps = true;
             this.showStylePanel = false;
-            this._loadNodePermissions(this.selectedNode.secure_code);
+            // 讀取節點的權限模式
+            this._currentPermMode = this.selectedNode.permission_mode || 'inherit';
+            this._currentPolicySc = this.selectedNode.permission_policy_secure_code || '';
+            if (this._currentPermMode === 'custom') {
+                this._loadNodePermissions(this.selectedNode.secure_code);
+            } else {
+                this.nodePermissions = [];
+                this.nodePermLoading = false;
+            }
+        },
+
+        onPermModeChange: function () {
+            if (this._currentPermMode === 'custom' && this.selectedNode) {
+                this._loadNodePermissions(this.selectedNode.secure_code);
+            } else {
+                this.nodePermissions = [];
+            }
+            if (this._currentPermMode !== 'policy') {
+                this._currentPolicySc = '';
+            }
+        },
+
+        async savePermMode() {
+            if (!this.selectedNode) return;
+            try {
+                var body = {
+                    permission_mode: this._currentPermMode || null,
+                    permission_policy_secure_code: this._currentPermMode === 'policy'
+                        ? (this._currentPolicySc || null) : null,
+                };
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + this.selectedNode.secure_code,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    // 同步到 tree data
+                    this.selectedNode.permission_mode = this._currentPermMode;
+                    this.selectedNode.permission_policy_secure_code = this._currentPolicySc;
+                    var treeNode = this._findTreeNode(this.tree, this.selectedNode.secure_code);
+                    if (treeNode) {
+                        treeNode.permission_mode = this._currentPermMode;
+                        treeNode.permission_policy_secure_code = this._currentPolicySc;
+                    }
+                    this.showToast('權限模式已儲存', 'success');
+                } else {
+                    this.showToast(data.error || '儲存失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('儲存失敗: ' + e.message, 'error');
+            }
+        },
+
+        async applyPermDown() {
+            if (!this.selectedNode) return;
+            if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
+            try {
+                var res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ skip_custom: true }),
+                    }
+                );
+                var data = await res.json();
+                if (data.success) {
+                    this.showToast(data.message || '已套用', 'success');
+                    await this._loadTree();
+                    this._initSiteMapTree();
+                } else {
+                    this.showToast(data.error || '套用失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('套用失敗: ' + e.message, 'error');
+            }
+        },
+
+        getPermModePolicyName: function () {
+            var sc = this._currentPolicySc;
+            if (!sc) return '';
+            var pg = this.permissionPolicies.find(function(p) { return p.secure_code === sc; });
+            return pg ? pg.name : '';
         },
 
         async _loadNodePermissions(nodeSc) {
@@ -1790,9 +1896,9 @@ function studioManager() {
                 bg.position = srcBg.position || 'center center';
             }
             this.styleConfig = {
-                bgColor: s.bgColor || def.bgColor || '',
+                bgColor: s.bgColor || def.bgColor || '#ffffff',
                 bgImage: bg,
-                textColor: s.textColor || def.textColor || '',
+                textColor: s.textColor || def.textColor || '#333333',
                 fontFamily: s.fontFamily || def.fontFamily || '',
                 fontSize: s.fontSize || def.fontSize || null,
             };

@@ -1,14 +1,12 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}子系統配置 - 資料表工具{% endblock %}
+{% block title %}子系統設定{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
 <link rel="stylesheet" href="/static/vendor/wunderbaum/bootstrap-icons.css">
 <link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
-<link rel="stylesheet" href="/static/vendor/beak-trellis/beak-trellis.css">
 <style>
-    .ssc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .ssc-section {
         background: #fff;
         border: 1px solid #ddd;
@@ -29,102 +27,66 @@
         font-weight: 500;
         font-size: 13px;
     }
-    .ssc-field input, .ssc-field select, .ssc-field textarea {
+    .ssc-field input:not([type="checkbox"]),
+    .ssc-field select,
+    .ssc-field textarea {
         width: 100%;
         padding: 6px 8px;
         border: 1px solid #ddd;
         font-size: 13px;
         box-sizing: border-box;
     }
-    .ssc-page-item {
+    .ssc-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .ssc-readonly {
+        padding: 6px 0;
+        font-size: 13px;
+        color: #333;
+    }
+
+    /* 政策組列表 */
+    .pp-list { }
+    .pp-item {
+        border: 1px solid #e0e0e0;
+        margin-bottom: 8px;
+        background: #fff;
+    }
+    .pp-item-header {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 10px 12px;
-        border-bottom: 1px solid #eee;
-    }
-    .ssc-page-item:last-child { border-bottom: none; }
-    .ssc-page-name { flex: 1; font-weight: 500; }
-    .ssc-page-order { width: 50px; text-align: center; }
-    .ssc-tag {
-        display: inline-block;
-        padding: 1px 6px;
-        font-size: 11px;
-        border: 1px solid #ddd;
-        margin-right: 4px;
-        background: #f9f9f9;
-    }
-    .ssc-tag.active { border-color: #16a34a; color: #16a34a; }
-    .ssc-roles-editor { margin-top: 8px; }
-    .ssc-roles-editor label {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-right: 12px;
-        font-weight: normal;
-        font-size: 12px;
-    }
-    .ssc-crud-grid {
-        display: grid;
-        grid-template-columns: 100px repeat(3, 1fr);
-        gap: 4px;
-        font-size: 12px;
-        margin-top: 8px;
-    }
-    .ssc-crud-grid .header { font-weight: 600; text-align: center; }
-    .ssc-crud-grid .role-name { font-weight: 500; }
-    .ssc-crud-grid .check { text-align: center; }
-    .ssc-filter-row { display: flex; gap: 4px; margin-bottom: 4px; align-items: center; }
-    .ssc-filter-row input { font-size: 12px; padding: 4px 6px; }
-
-    /* Tabs */
-    .ssc-tabs {
-        display: flex;
-        border-bottom: 2px solid #ddd;
-        margin-bottom: 16px;
-    }
-    .ssc-tab {
-        padding: 10px 20px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
+    }
+    .pp-item-header:hover { background: #fafafa; }
+    .pp-item-name { font-weight: 600; font-size: 14px; flex: 1; }
+    .pp-item-summary {
+        font-size: 11px;
+        color: #888;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pp-item-usage {
+        font-size: 11px;
         color: #666;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
+        background: #f0f0f0;
+        padding: 2px 8px;
+        white-space: nowrap;
     }
-    .ssc-tab:hover { color: #333; }
-    .ssc-tab.active { color: #0066cc; border-bottom-color: #0066cc; }
+    .pp-item-actions { display: flex; gap: 4px; }
 
-    /* Site Map Editor */
-    .sm-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 500px; }
-    .sm-tree-panel {
-        background: #fff;
-        border: 1px solid #ddd;
-        display: flex;
-        flex-direction: column;
+    /* 規則面板 */
+    .pp-rules-panel {
+        border-top: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        background: #fafafa;
     }
-    .sm-tree-toolbar {
-        padding: 8px 12px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        gap: 4px;
-        flex-wrap: wrap;
-    }
-    .sm-tree-body {
-        flex: 1;
-        overflow: auto;
-        min-height: 300px;
-    }
-    .sm-props-panel {
-        background: #fff;
-        border: 1px solid #ddd;
-    }
-    .sm-props-empty {
-        padding: 40px;
-        text-align: center;
-        color: #999;
-    }
-    .sm-perm-item {
+    .pp-rule-row {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -132,8 +94,8 @@
         border-bottom: 1px solid #f0f0f0;
         font-size: 13px;
     }
-    .sm-perm-item:last-child { border-bottom: none; }
-    .sm-perm-type {
+    .pp-rule-row:last-child { border-bottom: none; }
+    .pp-type-tag {
         display: inline-block;
         padding: 1px 6px;
         font-size: 11px;
@@ -141,6 +103,38 @@
         background: #f5f5f5;
         min-width: 40px;
         text-align: center;
+    }
+    .pp-type-tag.dept { border-color: #93c5fd; color: #1e40af; background: #eff6ff; }
+    .pp-type-tag.group { border-color: #fbbf24; color: #92400e; background: #fefce8; }
+    .pp-type-tag.user { border-color: #86efac; color: #166534; background: #f0fdf4; }
+    .pp-rule-name { flex: 1; }
+    .pp-rule-note { font-size: 11px; color: #888; }
+
+    /* 新增規則區 */
+    .pp-add-rule {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px dashed #ddd;
+        background: #fff;
+    }
+    .pp-add-rule-title {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #555;
+    }
+    .pp-tree-box {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 4px;
+        margin-top: 6px;
+    }
+    .pp-empty {
+        padding: 24px;
+        text-align: center;
+        color: #999;
+        font-size: 13px;
     }
 </style>
 {% endblock %}
@@ -157,7 +151,7 @@ window.__SSC_CONFIG = {
     <!-- Header -->
     <div class="dc-header">
         <div>
-            <h1>子系統配置: <span x-text="form.name || '載入中...'"></span></h1>
+            <h1>子系統設定: <span x-text="form.name || '載入中...'"></span></h1>
         </div>
         <div class="dc-toolbar">
             <a href="/nocode-builder/sub-systems" class="dc-btn">返回列表</a>
@@ -169,455 +163,209 @@ window.__SSC_CONFIG = {
 
     <template x-if="!loading">
         <div>
-            <div class="ssc-grid">
-                <!-- 基本資訊 -->
-                <div class="ssc-section">
-                    <div class="ssc-section-title">基本資訊</div>
-                    <div class="ssc-section-body">
-                        <div class="ssc-field">
-                            <label>名稱 *</label>
-                            <input type="text" x-model="form.name">
-                        </div>
-                        <div class="ssc-field">
-                            <label>說明</label>
-                            <textarea x-model="form.description" rows="2"></textarea>
-                        </div>
-                        <div class="ssc-field">
-                            <label>圖示</label>
-                            <input type="text" x-model="form.icon" style="width: 100px;">
-                        </div>
-                        <div class="ssc-field">
-                            <label>綁定社群 *</label>
-                            <select x-model="form.group_unit_secure_code">
-                                <option value="">-- 請選擇 --</option>
-                                <template x-for="g in groups" :key="g.secure_code">
-                                    <option :value="g.secure_code" x-text="g.name"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="ssc-field">
-                            <label>綁定選單項</label>
-                            <select x-model="form.menu_item_secure_code">
-                                <option value="">-- 不綁定 --</option>
-                                <template x-for="m in menuItems" :key="m.secure_code">
-                                    <option :value="m.secure_code" x-text="m.title"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="ssc-field">
-                            <label>
-                                <input type="checkbox" x-model="form.is_active"> 啟用
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 快速導覽 -->
-                <div class="ssc-section">
-                    <div class="ssc-section-title">准入規則說明</div>
-                    <div class="ssc-section-body" style="font-size: 13px; color: #666;">
-                        <p style="margin: 0 0 8px 0; font-weight: 500;">准入類型:</p>
-                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                            <tr><td style="padding: 4px 0; font-weight: 500; color: #1e40af;">部門</td><td>指定部門的成員（可含子部門）</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500; color: #92400e;">社群</td><td>指定社群的成員（可含下層群組）</td></tr>
-                            <tr><td style="padding: 4px 0; font-weight: 500; color: #166534;">個人</td><td>指定特定帳號</td></tr>
-                        </table>
-                        <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
-                        <p style="margin: 0; font-weight: 500;">准入邏輯:</p>
-                        <p style="margin: 4px 0 0 0;">無規則 = 所有社群成員可進入</p>
-                        <p style="margin: 2px 0 0 0;">有規則 = 僅匹配的部門/社群/個人可進入</p>
-                        <p style="margin: 2px 0 0 0;">管理層（團長/副團長/代理）自動擁有所有網頁存取權</p>
-                        <p style="margin: 2px 0 0 0;">可在同一節點設定多條規則（OR 邏輯）</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 切換 -->
-            <div class="ssc-tabs">
-                <div class="ssc-tab" :class="activeTab === 'sitemap' ? 'active' : ''"
-                     @click="activeTab = 'sitemap'">網站地圖</div>
-                <div class="ssc-tab" :class="activeTab === 'matrix' ? 'active' : ''"
-                     @click="activeTab = 'matrix'">准入矩陣</div>
-                <div class="ssc-tab" :class="activeTab === 'pages' ? 'active' : ''"
-                     @click="activeTab = 'pages'">頁面管理 (舊)</div>
-            </div>
-
-            <!-- Tab: 網站地圖 -->
-            <div x-show="activeTab === 'sitemap'" x-data="siteMapEditor(secureCode)">
-                <div class="sm-layout">
-                    <!-- 左側: 樹 -->
-                    <div class="sm-tree-panel">
-                        <div class="sm-tree-toolbar">
-                            <button class="dc-btn sm" @click="openAddModal(selectedNode ? selectedNode.secure_code : null)">+ 網頁</button>
-                        </div>
-                        <div class="sm-tree-body" id="sm-tree"></div>
-                    </div>
-
-                    <!-- 右側: 屬性面板 -->
-                    <div class="sm-props-panel">
-                        <div class="sm-props-empty" x-show="!selectedNode">
-                            選擇左側網頁以編輯屬性
-                        </div>
-                        <div x-show="selectedNode" style="padding: 0;">
-                            <!-- 網頁屬性 -->
-                            <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>網頁屬性</span>
-                                <div style="display: flex; gap: 4px;">
-                                    <button class="dc-btn sm primary" @click="saveNode()">儲存</button>
-                                    <button class="dc-btn sm danger" @click="deleteNode()">刪除</button>
-                                </div>
-                            </div>
-                            <div class="ssc-section-body">
-                                <div class="ssc-field">
-                                    <label>名稱 *</label>
-                                    <input type="text" x-model="nodeForm.name">
-                                </div>
-                                <div class="ssc-field">
-                                    <label>圖示</label>
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <span x-show="nodeForm.icon" style="font-size:20px;width:28px;text-align:center;"><i :class="nodeForm.icon"></i></span>
-                                        <button type="button" @click="openIconPicker('node')" class="dc-btn sm">選擇圖示</button>
-                                        <span x-show="nodeForm.icon" x-text="nodeForm.icon" style="font-size:11px;color:#999;"></span>
-                                        <button type="button" x-show="nodeForm.icon" @click="nodeForm.icon=''; _ip_selectedIcon=''" class="dc-btn sm danger" style="padding:2px 6px;">X</button>
-                                    </div>
-                                </div>
-                                <div class="ssc-field">
-                                    <label>連結頁面</label>
-                                    <select x-model="nodeForm.page_layout_secure_code">
-                                        <option value="">-- 自動建立 --</option>
-                                        <template x-for="layout in availableLayouts" :key="layout.secure_code">
-                                            <option :value="layout.secure_code" x-text="layout.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div class="ssc-field">
-                                    <label>
-                                        <input type="checkbox" x-model="nodeForm.is_active"> 啟用
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- CRUD 權限覆蓋 (僅 page) -->
-                            <template x-if="nodeForm.node_type === 'page'">
-                                <div>
-                                    <div class="ssc-section-title">CRUD 權限覆蓋</div>
-                                    <div class="ssc-section-body">
-                                        <div class="ssc-crud-grid">
-                                            <div class="header"></div>
-                                            <div class="header">新增</div>
-                                            <div class="header">編輯</div>
-                                            <div class="header">刪除</div>
-                                            <template x-for="role in ['MANAGER','MEMBER']" :key="'sm_crud_' + role">
-                                                <div style="display: contents;">
-                                                    <div class="role-name" x-text="role"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'create')" @change="setCrud(role, 'create', $event.target.checked)"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'edit')" @change="setCrud(role, 'edit', $event.target.checked)"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(role, 'delete')" @change="setCrud(role, 'delete', $event.target.checked)"></div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-
-                                    <div class="ssc-section-title">資料篩選</div>
-                                    <div class="ssc-section-body">
-                                        <template x-for="role in ['MANAGER','MEMBER']" :key="'sm_filter_' + role">
-                                            <div style="margin-bottom: 8px;">
-                                                <span style="font-size: 12px; font-weight: 500;" x-text="role + ':'"></span>
-                                                <template x-for="(val, col) in getFilters(role)" :key="role + '_' + col">
-                                                    <div class="ssc-filter-row">
-                                                        <input type="text" :value="col" @change="renameFilter(role, col, $event.target.value)" placeholder="欄位" style="width: 120px;">
-                                                        <span>=</span>
-                                                        <input type="text" :value="val" @change="setFilterValue(role, col, $event.target.value)" placeholder="值" style="width: 160px;">
-                                                        <button class="dc-btn sm danger" @click="removeFilter(role, col)" style="padding: 2px 6px;">x</button>
-                                                    </div>
-                                                </template>
-                                                <button class="dc-btn sm" @click="addFilter(role)" style="margin-top: 2px;">+ 篩選</button>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <!-- 准入控制 (grant-based permissions) -->
-                            <div class="ssc-section-title">准入控制</div>
-                            <div class="ssc-section-body">
-                                <p style="font-size: 11px; color: #888; margin: 0 0 8px 0;">
-                                    無規則 = 開放給所有社群成員 | 有規則 = 僅匹配的部門/社群/個人可進入
-                                </p>
-
-                                <!-- 已設定的規則列表 -->
-                                <div class="dc-perm-list">
-                                    <div x-show="nodePermLoading" class="dc-perm-empty">載入中...</div>
-                                    <template x-if="!nodePermLoading && nodePermissions.length === 0">
-                                        <div class="dc-perm-empty">尚無准入規則（所有社群成員皆可進入）</div>
-                                    </template>
-                                    <template x-for="rule in nodePermissions" :key="rule.secure_code">
-                                        <div class="dc-perm-row">
-                                            <span class="dc-perm-type-tag"
-                                                  :class="getPermTypeCss(rule.grant_type)"
-                                                  x-text="getPermTypeLabel(rule.grant_type)"></span>
-                                            <span class="dc-perm-name" x-text="rule.grant_target_name"></span>
-                                            <span class="dc-perm-note" x-show="rule.grant_type === 'department' && rule.include_children">（含子部門）</span>
-                                            <span class="dc-perm-note" x-show="rule.grant_type === 'group' && rule.include_children">（含下層群組）</span>
-                                            <button class="dc-perm-del" @click="deleteNodePermRule(rule.secure_code)" title="刪除">&times;</button>
-                                        </div>
-                                    </template>
-                                </div>
-
-                                <!-- 新增規則 -->
-                                <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #555;">+ 新增規則</div>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                                        <div class="dc-perm-field">
-                                            <label>類型</label>
-                                            <select x-model="newNodePerm.grant_type" @change="onPermTypeChange()" style="width: 90px;">
-                                                <option value="department">部門</option>
-                                                <option value="group">社群</option>
-                                                <option value="user">個人</option>
-                                            </select>
-                                        </div>
-                                        <div x-show="newNodePerm.grant_type === 'department'" style="margin-top: 12px;">
-                                            <label style="white-space: nowrap; font-size: 11px;">
-                                                <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right: 3px;">含子部門
-                                            </label>
-                                        </div>
-                                        <div x-show="newNodePerm.grant_type === 'group'" style="margin-top: 12px;">
-                                            <label style="white-space: nowrap; font-size: 11px;">
-                                                <input type="checkbox" x-model="newNodePerm.include_children" style="margin-right: 3px;">含下層群組
-                                            </label>
-                                        </div>
-                                        <button class="dc-btn sm primary" @click="addNodePermRule()"
-                                                :disabled="!newNodePerm.grant_target || permSaving"
-                                                style="white-space: nowrap; margin-top: 12px;">新增</button>
-                                    </div>
-
-                                    <!-- 樹狀選擇器（部門/社群） -->
-                                    <div x-show="newNodePerm.grant_type === 'department' || newNodePerm.grant_type === 'group'" class="dc-perm-tree-box">
-                                        <div x-show="permTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">載入中...</div>
-                                        <div x-show="!permTreeLoading" id="sm-perm-tree-container"></div>
-                                    </div>
-
-                                    <!-- 下拉選單（個人） -->
-                                    <div x-show="newNodePerm.grant_type === 'user'" class="dc-perm-field" style="width: 100%;">
-                                        <label>選擇成員</label>
-                                        <select x-model="newNodePerm.grant_target" style="width: 100%;">
-                                            <option value="">-- 請選擇 --</option>
-                                            <template x-for="opt in permTargetOptions" :key="opt.value">
-                                                <option :value="opt.value" x-text="opt.label"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-
-                                    <div x-show="newNodePerm.grant_target" style="font-size: 11px; color: #0066cc;">
-                                        已選擇: <strong x-text="newNodePerm._selectedName || ''"></strong>
-                                    </div>
-                                </div>
-
-                                <div class="ssc-field" style="margin-top: 12px;" x-show="nodeForm.node_type === 'page'">
-                                    <label style="font-size: 12px;">拒絕時轉向</label>
-                                    <input type="text" x-model="nodeForm.redirect_to"
-                                           style="width: 200px; font-size: 12px;" placeholder="/dashboard">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Node Modal -->
-                <div x-show="showAddModal" x-cloak class="dc-modal">
-                    <div class="dc-modal-content" style="width: 480px;">
-                        <div class="dc-modal-header">
-                            <h3>新增網頁</h3>
-                            <button class="dc-close-btn" @click="showAddModal = false">&times;</button>
-                        </div>
-                        <div class="dc-modal-body">
+            <!-- 基本資訊 -->
+            <div class="ssc-section">
+                <div class="ssc-section-title">基本資訊</div>
+                <div class="ssc-section-body">
+                    <div class="ssc-info-grid">
+                        <div>
                             <div class="ssc-field">
                                 <label>名稱 *</label>
-                                <input type="text" x-model="addForm.name" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
+                                <input type="text" x-model="form.name">
+                            </div>
+                            <div class="ssc-field">
+                                <label>說明</label>
+                                <textarea x-model="form.description" rows="2"></textarea>
                             </div>
                             <div class="ssc-field">
                                 <label>圖示</label>
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <span x-show="addForm.icon" style="font-size:20px;width:28px;text-align:center;"><i :class="addForm.icon"></i></span>
-                                    <button type="button" @click="openIconPicker('add')" class="dc-btn sm">選擇圖示</button>
-                                    <span x-show="addForm.icon" x-text="addForm.icon" style="font-size:11px;color:#999;"></span>
-                                    <button type="button" x-show="addForm.icon" @click="addForm.icon=''; _ip_selectedIcon=''" class="dc-btn sm danger" style="padding:2px 6px;">X</button>
-                                </div>
+                                <input type="text" x-model="form.icon" style="width: 160px;">
                             </div>
+                        </div>
+                        <div>
                             <div class="ssc-field">
-                                <label>連結既有頁面 (留空自動建立)</label>
-                                <select x-model="addForm.page_layout_secure_code" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
-                                    <option value="">-- 自動建立空白頁面 --</option>
-                                    <template x-for="layout in availableLayouts" :key="layout.secure_code">
-                                        <option :value="layout.secure_code" x-text="layout.name"></option>
+                                <label>架構師</label>
+                                <div class="ssc-readonly">
+                                    <template x-if="developerNames.length > 0">
+                                        <span x-text="developerNames.join(', ')"></span>
                                     </template>
-                                </select>
+                                    <template x-if="developerNames.length === 0">
+                                        <span style="color: #999;">-- 未指定 --</span>
+                                    </template>
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                    透過 SubSystemProvision 流程指定
+                                </div>
                             </div>
                         </div>
-                        <div class="dc-modal-footer">
-                            <button class="dc-btn" @click="showAddModal = false">取消</button>
-                            <button class="dc-btn primary" @click="doAddNode()">建立</button>
-                        </div>
                     </div>
                 </div>
-
-                <!-- Toast (site map) -->
-                <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
-                     x-text="toast.message" x-transition></div>
-
-                <!-- Icon Picker Modal -->
-                {% include "partials/_icon_picker.html" %}
             </div>
 
-            <!-- Tab: 准入矩陣 -->
-            <div x-show="activeTab === 'matrix'" x-data="accessMatrixManager(secureCode)">
-                <div class="ssc-section">
-                    <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>准入矩陣 -- 網頁 x 角色</span>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <span x-show="dirty" style="font-size: 12px; color: #e65100;">有未儲存的變更</span>
-                            <button class="dc-btn sm primary" @click="saveAll()"
-                                    :disabled="saving || !dirty"
-                                    x-text="saving ? '儲存中...' : '儲存'"></button>
-                            <button class="dc-btn sm" @click="loadAndRender()">重新載入</button>
-                        </div>
-                    </div>
-                    <div class="ssc-section-body" style="padding: 0;">
-                        <div x-show="loading" style="padding: 40px; text-align: center; color: #999;">載入中...</div>
-                        <div id="access-matrix" style="min-height: 200px;"></div>
-                    </div>
+            <!-- 權限政策組 -->
+            <div class="ssc-section">
+                <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>權限政策組</span>
+                    <button class="dc-btn sm primary" @click="openAddPolicy()">+ 新增政策組</button>
                 </div>
-                <div style="margin-top: 8px; font-size: 12px; color: #999;">
-                    GUEST = 任何人 (含非成員) | 空 = NONE (預設拒絕) | GUEST 與角色互斥
-                </div>
-                <div x-show="toast.show" x-cloak class="dc-toast" :class="toast.type"
-                     x-text="toast.message" x-transition></div>
-            </div>
+                <div class="ssc-section-body" style="padding: 0;">
+                    <div x-show="policyGroups.length === 0" class="pp-empty">
+                        尚未建立任何權限政策組。<br>
+                        <span style="font-size: 12px;">建立政策組後，可在設計器的網頁屬性中選擇套用。</span>
+                    </div>
 
-            <!-- Tab: 頁面管理 (舊) -->
-            <div x-show="activeTab === 'pages'">
-                <div class="ssc-section">
-                    <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>頁面管理</span>
-                        <button class="dc-btn sm primary" @click="showAddPageModal = true">+ 新增頁面</button>
-                    </div>
-                    <div class="ssc-section-body" style="padding: 0;">
-                        <div x-show="pages.length === 0" style="padding: 40px; text-align: center; color: #999;">
-                            尚未加入任何頁面
-                        </div>
-                        <template x-for="(p, idx) in pages" :key="p.secure_code">
-                            <div class="ssc-page-item" style="flex-direction: column; align-items: stretch;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="ssc-page-order" x-text="idx + 1" style="color: #999; font-size: 12px;"></span>
-                                    <span class="ssc-page-name" x-text="p.display_name || p.page_name"></span>
-                                    <span class="ssc-tag" style="font-size: 11px; color: #999;" x-text="'排序: ' + p.display_order"></span>
-                                    <button class="dc-btn sm" @click="togglePageDetail(idx)">
-                                        <span x-text="expandedPage === idx ? '收合' : '展開'"></span>
-                                    </button>
-                                    <button class="dc-btn sm danger" @click="removePage(p)">移除</button>
+                    <div class="pp-list" x-show="policyGroups.length > 0" style="padding: 12px;">
+                        <template x-for="pg in policyGroups" :key="pg.secure_code">
+                            <div class="pp-item">
+                                <div class="pp-item-header" @click="toggleRulePanel(pg)">
+                                    <span class="pp-item-name" x-text="pg.name"></span>
+                                    <span class="pp-item-summary" x-text="ruleSummary(pg)"></span>
+                                    <span class="pp-item-usage"
+                                          x-text="pg.usage_count + ' 個網頁使用'"></span>
+                                    <div class="pp-item-actions" @click.stop>
+                                        <button class="dc-btn sm" @click="openEditPolicy(pg)">編輯</button>
+                                        <button class="dc-btn sm danger" @click="deletePolicy(pg)">刪除</button>
+                                    </div>
                                 </div>
-                                <!-- 展開的詳細設定 -->
-                                <div x-show="expandedPage === idx" style="margin-top: 12px; padding: 12px; border: 1px solid #eee; background: #fafafa;">
-                                    <div class="ssc-field">
-                                        <label>顯示名稱</label>
-                                        <input type="text" x-model="p.display_name">
-                                    </div>
-                                    <div class="ssc-field">
-                                        <label>排序</label>
-                                        <input type="number" x-model.number="p.display_order" style="width: 80px;">
-                                    </div>
 
-                                    <!-- visible_roles -->
-                                    <div class="ssc-field">
-                                        <label>可見角色</label>
-                                        <div class="ssc-roles-editor">
-                                            <label><input type="checkbox" :checked="hasRole(p, '*')" @change="toggleRole(p, '*')"> 全部</label>
-                                            <label><input type="checkbox" :checked="hasRole(p, 'MANAGER')" @change="toggleRole(p, 'MANAGER')"> MANAGER</label>
-                                            <label><input type="checkbox" :checked="hasRole(p, 'DEPUTY')" @change="toggleRole(p, 'DEPUTY')"> DEPUTY</label>
-                                            <label><input type="checkbox" :checked="hasRole(p, 'MEMBER')" @change="toggleRole(p, 'MEMBER')"> MEMBER</label>
+                                <!-- 規則展開面板 -->
+                                <div class="pp-rules-panel" x-show="showRulePanel === pg.secure_code" x-cloak>
+                                    <!-- 已設定的規則列表 -->
+                                    <div x-show="getPolicyRules(pg.secure_code).length === 0"
+                                         style="padding: 8px 0; font-size: 12px; color: #999;">
+                                        尚無規則 (此政策組無效果，套用時將禁止所有人)
+                                    </div>
+                                    <template x-for="rule in getPolicyRules(pg.secure_code)" :key="rule.secure_code">
+                                        <div class="pp-rule-row">
+                                            <span class="pp-type-tag"
+                                                  :class="getPermTypeCss(rule.grant_type)"
+                                                  x-text="getPermTypeLabel(rule.grant_type)"></span>
+                                            <span class="pp-rule-name" x-text="rule.grant_target_name || rule.grant_target"></span>
+                                            <span class="pp-rule-note"
+                                                  x-show="rule.grant_type === 'department' && rule.include_children">(含子部門)</span>
+                                            <span class="pp-rule-note"
+                                                  x-show="rule.grant_type === 'group' && rule.include_children">(含下層群組)</span>
+                                            <button class="dc-btn sm danger"
+                                                    @click="deleteRule(pg.secure_code, rule.secure_code)"
+                                                    style="padding: 2px 6px;">&times;</button>
                                         </div>
-                                    </div>
+                                    </template>
 
-                                    <!-- crud_overrides -->
-                                    <div class="ssc-field">
-                                        <label>CRUD 權限覆蓋 (按角色)</label>
-                                        <div class="ssc-crud-grid">
-                                            <div class="header"></div>
-                                            <div class="header">新增</div>
-                                            <div class="header">編輯</div>
-                                            <div class="header">刪除</div>
-
-                                            <template x-for="role in ['MANAGER','MEMBER']" :key="role">
-                                                <div style="display: contents;">
-                                                    <div class="role-name" x-text="role"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'create')" @change="setCrud(p, role, 'create', $event.target.checked)"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'edit')" @change="setCrud(p, role, 'edit', $event.target.checked)"></div>
-                                                    <div class="check"><input type="checkbox" :checked="getCrud(p, role, 'delete')" @change="setCrud(p, role, 'delete', $event.target.checked)"></div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-
-                                    <!-- data_filters -->
-                                    <div class="ssc-field">
-                                        <label>資料篩選 (按角色)</label>
-                                        <template x-for="role in ['MANAGER','MEMBER']" :key="role + '_filter'">
-                                            <div style="margin-bottom: 8px;">
-                                                <span style="font-size: 12px; font-weight: 500;" x-text="role + ':'"></span>
-                                                <template x-for="(val, col) in getFilters(p, role)" :key="role + '_' + col">
-                                                    <div class="ssc-filter-row">
-                                                        <input type="text" :value="col" @change="renameFilter(p, role, col, $event.target.value)" placeholder="欄位" style="width: 120px;">
-                                                        <span>=</span>
-                                                        <input type="text" :value="val" @change="setFilterValue(p, role, col, $event.target.value)" placeholder="值" style="width: 160px;">
-                                                        <button class="dc-btn sm danger" @click="removeFilter(p, role, col)" style="padding: 2px 6px;">x</button>
-                                                    </div>
-                                                </template>
-                                                <button class="dc-btn sm" @click="addFilter(p, role)" style="margin-top: 2px;">+ 篩選</button>
+                                    <!-- 新增規則 -->
+                                    <div class="pp-add-rule">
+                                        <div class="pp-add-rule-title">+ 新增規則</div>
+                                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                            <div>
+                                                <label style="font-size: 11px; display: block; margin-bottom: 2px;">類型</label>
+                                                <select x-model="newRule.grant_type"
+                                                        @change="onRuleTypeChange()"
+                                                        style="width: 90px; padding: 4px 6px; font-size: 12px;">
+                                                    <option value="department">部門</option>
+                                                    <option value="group">社群</option>
+                                                    <option value="user">個人</option>
+                                                </select>
                                             </div>
-                                        </template>
-                                    </div>
+                                            <div x-show="newRule.grant_type === 'department'" style="margin-top: 14px;">
+                                                <label style="font-size: 11px; white-space: nowrap;">
+                                                    <input type="checkbox" x-model="newRule.include_children"> 含子部門
+                                                </label>
+                                            </div>
+                                            <div x-show="newRule.grant_type === 'group'" style="margin-top: 14px;">
+                                                <label style="font-size: 11px; white-space: nowrap;">
+                                                    <input type="checkbox" x-model="newRule.include_children"> 含下層群組
+                                                </label>
+                                            </div>
+                                            <button class="dc-btn sm primary"
+                                                    @click="addRule(pg.secure_code)"
+                                                    :disabled="!newRule.grant_target"
+                                                    style="white-space: nowrap; margin-top: 14px;">新增</button>
+                                        </div>
 
-                                    <div style="text-align: right; margin-top: 8px;">
-                                        <button class="dc-btn sm primary" @click="savePage(p)">儲存此頁設定</button>
+                                        <!-- 樹狀選擇器 (部門/社群) -->
+                                        <div x-show="newRule.grant_type === 'department' || newRule.grant_type === 'group'">
+                                            <div x-show="ruleTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">載入中...</div>
+                                            <div class="pp-tree-box" x-show="!ruleTreeLoading">
+                                                <div id="pp-rule-tree-container"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 下拉選單 (個人) -->
+                                        <div x-show="newRule.grant_type === 'user'" style="margin-top: 6px;">
+                                            <select x-model="newRule.grant_target"
+                                                    @change="newRule._selectedName = $event.target.selectedOptions[0]?.text || ''"
+                                                    style="width: 100%; padding: 4px 6px; font-size: 12px;">
+                                                <option value="">-- 請選擇 --</option>
+                                                <template x-for="opt in ruleTargetOptions" :key="opt.value">
+                                                    <option :value="opt.value" x-text="opt.label"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        <div x-show="newRule.grant_target" style="font-size: 11px; color: #0066cc; margin-top: 4px;">
+                                            已選擇: <strong x-text="newRule._selectedName || newRule.grant_target_name || ''"></strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </template>
                     </div>
+                </div>
+            </div>
+
+            <!-- 使用說明 -->
+            <div class="ssc-section">
+                <div class="ssc-section-title">使用說明</div>
+                <div class="ssc-section-body" style="font-size: 13px; color: #666;">
+                    <p style="margin: 0 0 8px 0; font-weight: 500;">權限政策組的用途:</p>
+                    <p style="margin: 0 0 4px 0;">在此建立可複用的准入規則包，每組包含多條部門/社群/個人規則。</p>
+                    <p style="margin: 0 0 4px 0;">建立後到設計器 (Studio) 的網頁屬性中，選擇要套用的政策組。</p>
+                    <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="margin: 0 0 4px 0; font-weight: 500;">網頁的三種權限模式:</p>
+                    <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #0066cc; white-space: nowrap;">A. 權限政策組</td>
+                            <td>選擇已建立的政策組，直接套用其規則</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #16a34a; white-space: nowrap;">B. 向上繼承</td>
+                            <td>沿用父節點的權限（新增網頁的預設值）</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #9333ea; white-space: nowrap;">C. 自訂權限</td>
+                            <td>在網頁屬性中逐一設定部門/社群/個人規則</td>
+                        </tr>
+                    </table>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #999;">
+                        未設定權限的網頁預設為禁止狀態（僅設計者預覽可見）。管理層自動擁有所有存取權。
+                    </p>
                 </div>
             </div>
         </div>
     </template>
 
-    <!-- Add Page Modal -->
-    <div x-show="showAddPageModal" x-cloak class="dc-modal">
-        <div class="dc-modal-content" style="width: 500px;">
+    <!-- 政策組 新增/編輯 Modal -->
+    <div x-show="showPolicyModal" x-cloak class="dc-modal">
+        <div class="dc-modal-content" style="width: 450px;">
             <div class="dc-modal-header">
-                <h3>新增頁面</h3>
-                <button class="dc-close-btn" @click="showAddPageModal = false">&times;</button>
+                <h3 x-text="editingPolicy ? '編輯政策組' : '新增政策組'"></h3>
+                <button class="dc-close-btn" @click="showPolicyModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
                 <div class="ssc-field">
-                    <label>選擇頁面佈局 *</label>
-                    <select x-model="addPageForm.page_layout_secure_code" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
-                        <option value="">-- 請選擇 --</option>
-                        <template x-for="layout in availableLayouts" :key="layout.secure_code">
-                            <option :value="layout.secure_code" x-text="layout.name"></option>
-                        </template>
-                    </select>
+                    <label>名稱 *</label>
+                    <input type="text" x-model="policyForm.name"
+                           style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
                 </div>
                 <div class="ssc-field">
-                    <label>顯示名稱 (留空使用頁面原名)</label>
-                    <input type="text" x-model="addPageForm.display_name" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
-                </div>
-                <div class="ssc-field">
-                    <label>排序</label>
-                    <input type="number" x-model.number="addPageForm.display_order" style="width: 80px; padding: 6px 8px; border: 1px solid #ddd;">
+                    <label>說明</label>
+                    <textarea x-model="policyForm.description" rows="2"
+                              style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;"></textarea>
                 </div>
             </div>
             <div class="dc-modal-footer">
-                <button class="dc-btn" @click="showAddPageModal = false">取消</button>
-                <button class="dc-btn primary" @click="doAddPage()">加入</button>
+                <button class="dc-btn" @click="showPolicyModal = false">取消</button>
+                <button class="dc-btn primary" @click="savePolicy()"
+                        x-text="editingPolicy ? '更新' : '建立'"></button>
             </div>
         </div>
     </div>
@@ -628,11 +376,5 @@ window.__SSC_CONFIG = {
 </div>
 
 <script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
-<script src="/static/vendor/beak-trellis/beak-tree-model.js"></script>
-<script src="/static/vendor/beak-trellis/beak-trellis.js"></script>
-<script src="/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
-<script src="/static/js/icon-picker.js"></script>
-<script src="/static/modules/nocode_builder/js/site-map-editor.js"></script>
-<script src="/static/modules/nocode_builder/js/access-matrix.js"></script>
 <script src="/static/modules/nocode_builder/js/sub-system-config.js"></script>
 {% endblock %}

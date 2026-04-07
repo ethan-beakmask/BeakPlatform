@@ -21,6 +21,10 @@ files:
     - modules/nocode_builder/static/modules/nocode_builder/js/sitemenu-widget.js
     - modules/nocode_builder/static/modules/nocode_builder/js/access-matrix.js
     - modules/nocode_builder/static/modules/nocode_builder/js/sub-system-config.js
+  models:
+    - modules/nocode_builder/models/permission_policy.py
+  services:
+    - modules/nocode_builder/services/permission_policy_service.py
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css

@@ -141,6 +141,14 @@ def get_sub_system(secure_code):
 
     d = ss.to_dict()
     d['group_name'] = _get_group_name(ss.group_unit_secure_code)
+
+    # 附加架構師/開發者顯示名稱
+    developer_name_cache = _build_developer_name_cache([ss])
+    d['developer_names'] = [
+        developer_name_cache.get(sc, sc)
+        for sc in (ss.developers or [])
+    ]
+
     return jsonify({'success': True, 'data': d})
 
 

@@ -111,7 +111,8 @@ def update_site_map_node(ss_sc, node_sc):
     update_fields = {}
     for field in ('name', 'icon', 'page_layout_secure_code',
                   'display_order', 'access_roles', 'redirect_to',
-                  'crud_overrides', 'data_filters', 'is_active'):
+                  'crud_overrides', 'data_filters', 'is_active',
+                  'permission_mode', 'permission_policy_secure_code'):
         if field in data:
             update_fields[field] = data[field]
 
@@ -473,3 +474,228 @@ def get_site_map_node_context(ss_sc, node_sc):
             **context,
         }
     })
+
+
+# =============================================================================
+# 權限政策組 API
+# =============================================================================
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies')
+@admin_required
+def list_permission_policies(ss_sc):
+    """列出子系統的權限政策組"""
+    from ..models import DcSubSystem
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    ss = ResourceGateway.get(DcSubSystem, ss_sc, raise_on_not_found=False, check_permission=False)
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    groups = PermissionPolicyService.list_groups(ss_sc, ss.org_secure_code)
+    return jsonify({'success': True, 'data': groups})
+
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies', methods=['POST'])
+@csrf.exempt
+@admin_required
+def create_permission_policy(ss_sc):
+    """建立權限政策組"""
+    from ..models import DcSubSystem
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    ss = ResourceGateway.get(DcSubSystem, ss_sc, raise_on_not_found=False, check_permission=False)
+    if not ss or ss.is_deleted:
+        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
+
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+
+    try:
+        group = PermissionPolicyService.create_group(
+            ss_sc, ss.org_secure_code,
+            name=name,
+            description=data.get('description', ''),
+        )
+        db.session.commit()
+        return jsonify({'success': True, 'data': group.to_dict(), 'message': '政策組已建立'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] create error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies/<pp_sc>', methods=['PUT'])
+@csrf.exempt
+@admin_required
+def update_permission_policy(ss_sc, pp_sc):
+    """更新權限政策組"""
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    group = PermissionPolicyService.get_group(pp_sc, org.secure_code)
+    if not group:
+        return jsonify({'success': False, 'error': 'Policy group not found'}), 404
+
+    data = request.get_json() or {}
+    if 'name' in data and not (data['name'] or '').strip():
+        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+
+    try:
+        PermissionPolicyService.update_group(group, **data)
+        db.session.commit()
+        return jsonify({'success': True, 'data': group.to_dict(), 'message': '政策組已更新'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] update error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies/<pp_sc>', methods=['DELETE'])
+@csrf.exempt
+@admin_required
+def delete_permission_policy(ss_sc, pp_sc):
+    """刪除權限政策組"""
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    group = PermissionPolicyService.get_group(pp_sc, org.secure_code)
+    if not group:
+        return jsonify({'success': False, 'error': 'Policy group not found'}), 404
+
+    try:
+        result = PermissionPolicyService.delete_group(group)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'政策組已刪除，{result["affected_nodes"]} 個節點權限已重設'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] delete error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# --- 政策規則 ---
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies/<pp_sc>/rules')
+@admin_required
+def list_policy_rules(ss_sc, pp_sc):
+    """列出政策組的規則"""
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    group = PermissionPolicyService.get_group(pp_sc, org.secure_code)
+    if not group:
+        return jsonify({'success': False, 'error': 'Policy group not found'}), 404
+
+    rules = PermissionPolicyService.list_rules(pp_sc, org.secure_code)
+    return jsonify({'success': True, 'data': rules})
+
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies/<pp_sc>/rules', methods=['POST'])
+@csrf.exempt
+@admin_required
+def add_policy_rule(ss_sc, pp_sc):
+    """新增規則到政策組"""
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    group = PermissionPolicyService.get_group(pp_sc, org.secure_code)
+    if not group:
+        return jsonify({'success': False, 'error': 'Policy group not found'}), 404
+
+    data = request.get_json() or {}
+    grant_type = data.get('grant_type', '')
+    grant_target = data.get('grant_target', '')
+
+    if not grant_type or not grant_target:
+        return jsonify({'success': False, 'error': '缺少必要欄位'}), 400
+
+    try:
+        rule = PermissionPolicyService.add_rule(
+            pp_sc, org.secure_code,
+            grant_type=grant_type,
+            grant_target=grant_target,
+            grant_target_name=data.get('grant_target_name', ''),
+            include_children=data.get('include_children', False),
+        )
+        db.session.commit()
+        return jsonify({'success': True, 'data': rule.to_dict(), 'message': '規則已新增'})
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] add_rule error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/sub-systems/<ss_sc>/permission-policies/rules/<rule_sc>', methods=['DELETE'])
+@csrf.exempt
+@admin_required
+def delete_policy_rule(ss_sc, rule_sc):
+    """刪除政策規則"""
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    try:
+        ok = PermissionPolicyService.delete_rule(rule_sc, org.secure_code)
+        if not ok:
+            return jsonify({'success': False, 'error': 'Rule not found'}), 404
+        db.session.commit()
+        return jsonify({'success': True, 'message': '規則已刪除'})
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] delete_rule error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# --- 向下套用 ---
+
+@api_bp.route('/sub-systems/<ss_sc>/site-map/nodes/<node_sc>/apply-down', methods=['POST'])
+@csrf.exempt
+@admin_required
+def apply_permission_down(ss_sc, node_sc):
+    """向下套用：把節點的權限推送給所有子節點"""
+    from ..services.site_map_service import SiteMapService
+    from ..services.permission_policy_service import PermissionPolicyService
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    node = SiteMapService.get_node(node_sc, org.secure_code)
+    if not node:
+        return jsonify({'success': False, 'error': 'Node not found'}), 404
+
+    data = request.get_json() or {}
+    skip_custom = data.get('skip_custom', True)
+
+    try:
+        affected = PermissionPolicyService.apply_down(node, org.secure_code, skip_custom=skip_custom)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'data': {'affected': affected},
+            'message': f'已套用到 {affected} 個子節點'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.exception('[PermPolicy] apply_down error')
+        return jsonify({'success': False, 'error': str(e)}), 500

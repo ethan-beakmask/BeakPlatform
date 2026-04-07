@@ -1,31 +1,37 @@
 /**
  * sub_system_config.html - Alpine.js Manager
- * 子系統配置（基本資訊 + 頁面管理）
+ * 子系統設定：基本資訊 + 權限政策組管理
  */
 function subSystemConfigManager() {
     return {
         loading: true,
         secureCode: '',
-        activeTab: 'sitemap',
         form: {
             name: '',
             description: '',
             icon: '',
-            group_unit_secure_code: '',
-            menu_item_secure_code: '',
-            is_active: true,
         },
-        pages: [],
-        groups: [],
-        menuItems: [],
-        availableLayouts: [],
-        expandedPage: -1,
-        showAddPageModal: false,
-        addPageForm: {
-            page_layout_secure_code: '',
-            display_name: '',
-            display_order: 0,
+        developerNames: [],
+
+        // 權限政策組
+        policyGroups: [],
+        showPolicyModal: false,
+        editingPolicy: null,
+        policyForm: { name: '', description: '' },
+
+        // 規則編輯
+        showRulePanel: null,
+        newRule: {
+            grant_type: 'department',
+            grant_target: '',
+            grant_target_name: '',
+            include_children: false,
+            _selectedName: '',
         },
+        ruleTargetOptions: [],
+        ruleTreeLoading: false,
+        _ruleTreeInstance: null,
+
         toast: { show: false, message: '', type: 'success' },
 
         async init() {
@@ -34,13 +40,14 @@ function subSystemConfigManager() {
 
             await Promise.all([
                 this.loadSubSystem(),
-                this.loadPages(),
-                this.loadGroups(),
-                this.loadMenuItems(),
-                this.loadLayouts(),
+                this.loadPolicies(),
             ]);
             this.loading = false;
         },
+
+        // =================================================================
+        // 基本資訊
+        // =================================================================
 
         async loadSubSystem() {
             try {
@@ -51,60 +58,10 @@ function subSystemConfigManager() {
                     this.form.name = d.name || '';
                     this.form.description = d.description || '';
                     this.form.icon = d.icon || '';
-                    this.form.group_unit_secure_code = d.group_unit_secure_code || '';
-                    this.form.menu_item_secure_code = d.menu_item_secure_code || '';
-                    this.form.is_active = d.is_active !== false;
+                    this.developerNames = d.developer_names || [];
                 }
             } catch (e) {
                 console.error('Load sub-system failed:', e);
-            }
-        },
-
-        async loadPages() {
-            try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.secureCode + '/pages');
-                const data = await res.json();
-                if (data.success) {
-                    this.pages = data.data || [];
-                }
-            } catch (e) {
-                console.error('Load pages failed:', e);
-            }
-        },
-
-        async loadGroups() {
-            try {
-                const res = await fetch('/api/units/groups');
-                const data = await res.json();
-                if (data.units) {
-                    this.groups = data.units || [];
-                }
-            } catch (e) {
-                console.error('Load groups failed:', e);
-            }
-        },
-
-        async loadMenuItems() {
-            try {
-                const res = await fetch('/api/menu');
-                const data = await res.json();
-                if (data.items) {
-                    this.menuItems = data.items.filter(m => !m.children || m.children.length === 0);
-                }
-            } catch (e) {
-                console.error('Load menu items failed:', e);
-            }
-        },
-
-        async loadLayouts() {
-            try {
-                const res = await fetch('/api/nocode-builder/pages');
-                const data = await res.json();
-                if (data.success) {
-                    this.availableLayouts = data.data || [];
-                }
-            } catch (e) {
-                console.error('Load layouts failed:', e);
             }
         },
 
@@ -130,175 +87,296 @@ function subSystemConfigManager() {
             }
         },
 
-        // === 頁面管理 ===
+        // =================================================================
+        // 權限政策組 CRUD
+        // =================================================================
 
-        togglePageDetail(idx) {
-            this.expandedPage = this.expandedPage === idx ? -1 : idx;
+        async loadPolicies() {
+            try {
+                const res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies'
+                );
+                const data = await res.json();
+                if (data.success) {
+                    this.policyGroups = data.data || [];
+                }
+            } catch (e) {
+                console.error('Load policies failed:', e);
+            }
         },
 
-        async doAddPage() {
-            if (!this.addPageForm.page_layout_secure_code) {
-                this.showToast('請選擇頁面佈局', 'error');
+        openAddPolicy() {
+            this.editingPolicy = null;
+            this.policyForm = { name: '', description: '' };
+            this.showPolicyModal = true;
+        },
+
+        openEditPolicy(pg) {
+            this.editingPolicy = pg;
+            this.policyForm = { name: pg.name, description: pg.description || '' };
+            this.showPolicyModal = true;
+        },
+
+        async savePolicy() {
+            if (!this.policyForm.name.trim()) {
+                this.showToast('政策組名稱不可為空', 'error');
                 return;
             }
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.secureCode + '/pages', {
-                    method: 'POST',
+                let url, method;
+                if (this.editingPolicy) {
+                    url = '/api/nocode-builder/sub-systems/' + this.secureCode
+                        + '/permission-policies/' + this.editingPolicy.secure_code;
+                    method = 'PUT';
+                } else {
+                    url = '/api/nocode-builder/sub-systems/' + this.secureCode
+                        + '/permission-policies';
+                    method = 'POST';
+                }
+                const res = await fetch(url, {
+                    method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.addPageForm),
+                    body: JSON.stringify(this.policyForm),
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showAddPageModal = false;
-                    this.addPageForm = { page_layout_secure_code: '', display_name: '', display_order: 0 };
-                    this.showToast('頁面已加入', 'success');
-                    await this.loadPages();
+                    this.showPolicyModal = false;
+                    this.showToast(this.editingPolicy ? '政策組已更新' : '政策組已建立', 'success');
+                    await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '加入失敗', 'error');
+                    this.showToast(data.error || '操作失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('加入失敗: ' + e.message, 'error');
+                this.showToast('操作失敗: ' + e.message, 'error');
             }
         },
 
-        async savePage(p) {
+        async deletePolicy(pg) {
+            const msg = pg.usage_count > 0
+                ? `此政策組有 ${pg.usage_count} 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?`
+                : '確定刪除此政策組?';
+            if (!confirm(msg)) return;
+
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/pages/' + p.secure_code,
+                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/permission-policies/' + pg.secure_code,
+                    { method: 'DELETE' }
+                );
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast(data.message || '已刪除', 'success');
+                    if (this.showRulePanel === pg.secure_code) {
+                        this.showRulePanel = null;
+                    }
+                    await this.loadPolicies();
+                } else {
+                    this.showToast(data.error || '刪除失敗', 'error');
+                }
+            } catch (e) {
+                this.showToast('刪除失敗: ' + e.message, 'error');
+            }
+        },
+
+        // =================================================================
+        // 規則管理
+        // =================================================================
+
+        toggleRulePanel(pg) {
+            if (this.showRulePanel === pg.secure_code) {
+                this.showRulePanel = null;
+            } else {
+                this.showRulePanel = pg.secure_code;
+                this.resetNewRule();
+            }
+        },
+
+        resetNewRule() {
+            this.newRule = {
+                grant_type: 'department',
+                grant_target: '',
+                grant_target_name: '',
+                include_children: false,
+                _selectedName: '',
+            };
+            this.ruleTargetOptions = [];
+            this._destroyRuleTree();
+        },
+
+        getPolicyRules(pgSc) {
+            const pg = this.policyGroups.find(g => g.secure_code === pgSc);
+            return pg ? (pg.rules || []) : [];
+        },
+
+        async onRuleTypeChange() {
+            this.newRule.grant_target = '';
+            this.newRule.grant_target_name = '';
+            this.newRule._selectedName = '';
+            this.ruleTargetOptions = [];
+            this._destroyRuleTree();
+
+            if (this.newRule.grant_type === 'user') {
+                await this._loadUserTargets();
+            } else {
+                await this._loadTreeTargets();
+            }
+        },
+
+        async _loadUserTargets() {
+            try {
+                const type = 'ACCOUNT';
+                const res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/site-map/targets?type=' + type
+                );
+                const data = await res.json();
+                if (data.success) {
+                    this.ruleTargetOptions = (data.data || []).map(t => ({
+                        value: t.secure_code || t.value,
+                        label: t.display_name || t.name || t.label || t.value,
+                    }));
+                }
+            } catch (e) {
+                console.error('Load user targets failed:', e);
+            }
+        },
+
+        async _loadTreeTargets() {
+            this.ruleTreeLoading = true;
+            try {
+                const type = this.newRule.grant_type === 'department' ? 'DEPARTMENT' : 'GROUP';
+                const res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/site-map/targets?type=' + type
+                );
+                const data = await res.json();
+                if (data.success) {
+                    const items = data.data || [];
+                    this.$nextTick(() => {
+                        this._renderRuleTree(items);
+                    });
+                }
+            } catch (e) {
+                console.error('Load tree targets failed:', e);
+            } finally {
+                this.ruleTreeLoading = false;
+            }
+        },
+
+        _renderRuleTree(items) {
+            this._destroyRuleTree();
+            const container = document.getElementById('pp-rule-tree-container');
+            if (!container || !items.length) return;
+
+            const treeData = items.map(item => ({
+                title: item.display_name || item.name || item.label || '',
+                key: item.secure_code || item.value,
+                children: (item.children || []).map(c => ({
+                    title: c.display_name || c.name || c.label || '',
+                    key: c.secure_code || c.value,
+                })),
+            }));
+
+            const self = this;
+            this._ruleTreeInstance = new mar10.Wunderbaum({
+                element: container,
+                source: treeData,
+                selectMode: '1',
+                click(e) {
+                    const node = e.node;
+                    if (node) {
+                        self.newRule.grant_target = node.key;
+                        self.newRule.grant_target_name = node.title;
+                        self.newRule._selectedName = node.title;
+                    }
+                },
+            });
+        },
+
+        _destroyRuleTree() {
+            if (this._ruleTreeInstance) {
+                try { this._ruleTreeInstance.destroy(); } catch (_) {}
+                this._ruleTreeInstance = null;
+            }
+            const container = document.getElementById('pp-rule-tree-container');
+            if (container) container.innerHTML = '';
+        },
+
+        async addRule(pgSc) {
+            if (!this.newRule.grant_target) {
+                this.showToast('請選擇目標', 'error');
+                return;
+            }
+            try {
+                const res = await fetch(
+                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/permission-policies/' + pgSc + '/rules',
                     {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            display_name: p.display_name,
-                            display_order: p.display_order,
-                            visible_roles: p.visible_roles,
-                            crud_overrides: p.crud_overrides,
-                            data_filters: p.data_filters,
+                            grant_type: this.newRule.grant_type,
+                            grant_target: this.newRule.grant_target,
+                            grant_target_name: this.newRule.grant_target_name || this.newRule._selectedName,
+                            include_children: this.newRule.include_children,
                         }),
                     }
                 );
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('頁面設定已儲存', 'success');
+                    this.showToast('規則已新增', 'success');
+                    this.resetNewRule();
+                    await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || '新增失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast('新增失敗: ' + e.message, 'error');
             }
         },
 
-        async removePage(p) {
-            if (!confirm('確定移除此頁面?')) return;
+        async deleteRule(pgSc, ruleSc) {
+            if (!confirm('確定刪除此規則?')) return;
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/pages/' + p.secure_code,
+                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    + '/permission-policies/rules/' + ruleSc,
                     { method: 'DELETE' }
                 );
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('頁面已移除', 'success');
-                    await this.loadPages();
+                    this.showToast('規則已刪除', 'success');
+                    await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '移除失敗', 'error');
+                    this.showToast(data.error || '刪除失敗', 'error');
                 }
             } catch (e) {
-                this.showToast('移除失敗: ' + e.message, 'error');
+                this.showToast('刪除失敗: ' + e.message, 'error');
             }
         },
 
-        // === visible_roles 操作 ===
+        // =================================================================
+        // 輔助
+        // =================================================================
 
-        hasRole(p, role) {
-            return (p.visible_roles || []).includes(role);
+        getPermTypeLabel(type) {
+            return { department: '部門', group: '社群', user: '個人' }[type] || type;
         },
 
-        toggleRole(p, role) {
-            if (!p.visible_roles) p.visible_roles = [];
-            if (role === '*') {
-                // 切換「全部」
-                if (this.hasRole(p, '*')) {
-                    p.visible_roles = [];
-                } else {
-                    p.visible_roles = ['*'];
-                }
-                return;
-            }
-            // 非 * 角色：移除 * 後切換
-            p.visible_roles = p.visible_roles.filter(r => r !== '*');
-            const idx = p.visible_roles.indexOf(role);
-            if (idx >= 0) {
-                p.visible_roles.splice(idx, 1);
-            } else {
-                p.visible_roles.push(role);
-            }
-            if (p.visible_roles.length === 0) {
-                p.visible_roles = ['*'];
-            }
+        getPermTypeCss(type) {
+            return { department: 'dept', group: 'group', user: 'user' }[type] || '';
         },
 
-        // === crud_overrides 操作 ===
-
-        getCrud(p, role, action) {
-            const overrides = p.crud_overrides || {};
-            const roleOverride = overrides[role];
-            if (!roleOverride) {
-                // 預設: 管理層全開，成員全關
-                const adminRoles = ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'];
-                return adminRoles.includes(role);
-            }
-            return roleOverride[action] || false;
+        ruleSummary(pg) {
+            const rules = pg.rules || [];
+            if (!rules.length) return '(無規則)';
+            const items = rules.slice(0, 3).map(r => {
+                const label = this.getPermTypeLabel(r.grant_type);
+                return label + ':' + (r.grant_target_name || r.grant_target);
+            });
+            if (rules.length > 3) items.push('...(共' + rules.length + '條)');
+            return items.join(', ');
         },
-
-        setCrud(p, role, action, value) {
-            if (!p.crud_overrides) p.crud_overrides = {};
-            if (!p.crud_overrides[role]) {
-                // 初始化
-                const adminRoles = ['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'];
-                const isAdmin = adminRoles.includes(role);
-                p.crud_overrides[role] = {
-                    create: isAdmin, edit: isAdmin, delete: isAdmin
-                };
-            }
-            p.crud_overrides[role][action] = value;
-        },
-
-        // === data_filters 操作 ===
-
-        getFilters(p, role) {
-            return (p.data_filters || {})[role] || {};
-        },
-
-        addFilter(p, role) {
-            if (!p.data_filters) p.data_filters = {};
-            if (!p.data_filters[role]) p.data_filters[role] = {};
-            // 產生一個暫時 key
-            const key = 'column_' + Date.now();
-            p.data_filters[role][key] = '';
-        },
-
-        removeFilter(p, role, col) {
-            if (p.data_filters && p.data_filters[role]) {
-                delete p.data_filters[role][col];
-            }
-        },
-
-        renameFilter(p, role, oldCol, newCol) {
-            if (!newCol || oldCol === newCol) return;
-            if (p.data_filters && p.data_filters[role]) {
-                const val = p.data_filters[role][oldCol];
-                delete p.data_filters[role][oldCol];
-                p.data_filters[role][newCol] = val;
-            }
-        },
-
-        setFilterValue(p, role, col, value) {
-            if (p.data_filters && p.data_filters[role]) {
-                p.data_filters[role][col] = value;
-            }
-        },
-
-        // === 通用 ===
 
         showToast(message, type) {
             this.toast = { show: true, message, type };

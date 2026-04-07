@@ -221,43 +221,44 @@ class SiteMapService:
     def check_page_access(role_type: Optional[str], node: DcSiteMapNode,
                           user=None) -> bool:
         """
-        檢查用戶是否有權進入此頁面（grant-based permission）
+        檢查用戶是否有權進入此頁面
 
-        邏輯:
-          1. 節點無任何 grant permission → 開放（所有社群成員可進入）
-          2. 節點有 grant permission → 白名單匹配（部門/社群/個人）
+        支援三種 permission_mode:
+          - 'inherit': 向上繼承父節點權限
+          - 'policy': 使用權限政策組的規則
+          - 'custom': 使用節點自身的 DcSiteMapPermission 記錄
+          - NULL: 禁止所有人
+
+        向後相容: permission_mode 為空且有舊 permission 記錄時走舊邏輯。
 
         管理層角色（MANAGER/DEPUTY/PROXY1/PROXY2）在上層已跳過此檢查。
-
-        Args:
-            role_type: 用戶角色（None/'GUEST' 表示非成員）
-            node: 目標節點
-            user: 當前用戶物件（用於 grant-based 匹配）
-
-        Returns:
-            True = 允許, False = 拒絕
         """
+        from ..services.permission_policy_service import PermissionPolicyService
+
         org_sc = node.org_secure_code
+        mode = node.permission_mode
 
-        # 取得此節點的 grant permission 記錄
-        grant_perms = DcSiteMapPermission.query.filter(
-            DcSiteMapPermission.node_secure_code == node.secure_code,
-            DcSiteMapPermission.org_secure_code == org_sc,
-            DcSiteMapPermission.grant_type.isnot(None),
-            DcSiteMapPermission.is_deleted == False,
-        ).all()
+        # NULL mode → 禁止所有人
+        if mode is None:
+            return False
 
-        # 無 grant permission → 開放給社群成員
-        if not grant_perms:
-            # 非成員（GUEST）無法進入
+        # 解析有效的 permission 記錄
+        resolved = PermissionPolicyService.resolve_node_permissions(node, org_sc)
+
+        # resolve 回傳 None = 禁止
+        if resolved is None:
+            return False
+
+        # 無規則 → 開放給社群成員（非成員拒絕）
+        if not resolved:
             effective_role = role_type or 'GUEST'
             return effective_role != 'GUEST'
 
-        # 有 grant permission → 白名單匹配
+        # 有規則 → 白名單匹配
         if not user:
             return False
 
-        return SiteMapService._match_grant_permissions(user, grant_perms, org_sc)
+        return SiteMapService._match_grant_permissions(user, resolved, org_sc)
 
     # ==========================================================================
     # 節點 CRUD
@@ -337,6 +338,7 @@ class SiteMapService:
             'name', 'icon', 'page_layout_secure_code',
             'display_order', 'access_roles', 'redirect_to',
             'crud_overrides', 'data_filters', 'is_active',
+            'permission_mode', 'permission_policy_secure_code',
         }
         for key, value in kwargs.items():
             if key in allowed:
@@ -664,11 +666,13 @@ class SiteMapService:
         org_sc: str,
     ) -> Set[str]:
         """
-        grant-based permission 過濾演算法
+        permission 過濾演算法（支援 permission_mode）
 
-        邏輯:
-          - 節點無 grant permission → 社群成員可見（非成員不可見）
-          - 節點有 grant permission → 匹配部門/社群/個人
+        permission_mode:
+          - 'inherit': 解析父節點鏈的有效權限
+          - 'policy': 使用權限政策組規則
+          - 'custom': 使用節點自身的 DcSiteMapPermission
+          - NULL: 禁止所有人
 
         Args:
             nodes: 所有啟用節點
@@ -679,52 +683,117 @@ class SiteMapService:
         Returns:
             可見節點的 secure_code 集合
         """
+        from ..services.permission_policy_service import PermissionPolicyService
+
         if not nodes:
             return set()
 
-        node_scs = [n.secure_code for n in nodes]
-
-        # 批量取得所有 grant permissions
-        all_grant_perms = DcSiteMapPermission.query.filter(
-            DcSiteMapPermission.node_secure_code.in_(node_scs),
-            DcSiteMapPermission.org_secure_code == org_sc,
-            DcSiteMapPermission.grant_type.isnot(None),
-            DcSiteMapPermission.is_deleted == False,
-        ).all()
-
-        # 按 node_sc 分組
-        perms_by_node = {}
-        for p in all_grant_perms:
-            perms_by_node.setdefault(p.node_secure_code, []).append(p)
-
-        visible = set()
         is_member = (role_type != 'GUEST')
 
-        for n in nodes:
-            node_perms = perms_by_node.get(n.secure_code)
+        # 建立 node lookup (供 inherit 向上查找)
+        node_by_sc = {n.secure_code: n for n in nodes}
 
-            if not node_perms:
-                # 無 grant permission → 社群成員可見
+        # 批量取得 custom 模式的 grant permissions
+        custom_node_scs = [n.secure_code for n in nodes if n.permission_mode == 'custom']
+        perms_by_node = {}
+        if custom_node_scs:
+            all_grant_perms = DcSiteMapPermission.query.filter(
+                DcSiteMapPermission.node_secure_code.in_(custom_node_scs),
+                DcSiteMapPermission.org_secure_code == org_sc,
+                DcSiteMapPermission.grant_type.isnot(None),
+                DcSiteMapPermission.is_deleted == False,
+            ).all()
+            for p in all_grant_perms:
+                perms_by_node.setdefault(p.node_secure_code, []).append(p)
+
+        # 批量取得 policy 模式的政策規則
+        from ..models.permission_policy import DcPermissionPolicyRule
+        policy_scs = {n.permission_policy_secure_code for n in nodes
+                      if n.permission_mode == 'policy' and n.permission_policy_secure_code}
+        rules_by_policy = {}
+        if policy_scs:
+            all_rules = DcPermissionPolicyRule.query.filter(
+                DcPermissionPolicyRule.policy_group_secure_code.in_(policy_scs),
+                DcPermissionPolicyRule.org_secure_code == org_sc,
+                DcPermissionPolicyRule.is_deleted == False,
+            ).all()
+            for r in all_rules:
+                rules_by_policy.setdefault(r.policy_group_secure_code, []).append(r)
+
+        # 快取已解析的節點權限結果
+        resolved_cache: Dict[str, Optional[List]] = {}
+
+        def _resolve(node_sc: str) -> Optional[List]:
+            """遞迴解析節點有效權限，帶快取"""
+            if node_sc in resolved_cache:
+                return resolved_cache[node_sc]
+
+            n = node_by_sc.get(node_sc)
+            if not n:
+                resolved_cache[node_sc] = None
+                return None
+
+            mode = n.permission_mode
+
+            if mode is None:
+                resolved_cache[node_sc] = None
+                return None
+
+            if mode == 'custom':
+                result = perms_by_node.get(n.secure_code, [])
+                resolved_cache[node_sc] = result
+                return result
+
+            if mode == 'policy':
+                psc = n.permission_policy_secure_code
+                result = rules_by_policy.get(psc, []) if psc else []
+                resolved_cache[node_sc] = result
+                return result
+
+            if mode == 'inherit':
+                if not n.parent_secure_code:
+                    # 根節點 inherit = 無規則（開放）
+                    resolved_cache[node_sc] = []
+                    return []
+                result = _resolve(n.parent_secure_code)
+                resolved_cache[node_sc] = result
+                return result
+
+            # 未知 mode
+            resolved_cache[node_sc] = None
+            return None
+
+        visible = set()
+        for n in nodes:
+            perms = _resolve(n.secure_code)
+
+            # None = 禁止
+            if perms is None:
+                continue
+
+            # 無規則 = 社群成員可見
+            if not perms:
                 if is_member:
                     visible.add(n.secure_code)
                 continue
 
-            # 有 grant permission → 匹配
-            if user and SiteMapService._match_grant_permissions(user, node_perms, org_sc):
+            # 有規則 = 白名單匹配
+            if user and SiteMapService._match_grant_permissions(user, perms, org_sc):
                 visible.add(n.secure_code)
 
         return visible
 
     @staticmethod
     def _match_grant_permissions(
-        user, perms: List[DcSiteMapPermission], org_sc: str
+        user, perms: List, org_sc: str
     ) -> bool:
         """
         檢查用戶是否匹配任一 grant permission
 
         Args:
             user: 當前用戶
-            perms: 節點的 grant permission 記錄
+            perms: grant permission 記錄 (DcSiteMapPermission 或 DcPermissionPolicyRule，
+                   需有 grant_type, grant_target, include_children 屬性)
             org_sc: 企業 secure_code
 
         Returns:
