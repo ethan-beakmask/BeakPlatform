@@ -416,6 +416,25 @@ function pageManager() {
 - Radio/checkbox 被撐寬後，同列的 label 文字會被擠成直排或換行
 - 解法：CSS selector 加 `:not([type="radio"]):not([type="checkbox"])` 排除
 
+### FRONT-06: Alpine.js x-show 與 display 衝突規範
+
+**禁止在有 `x-show` 的元素上用 inline style 設定 `display` 屬性。**
+
+原因：Alpine.js `x-show` 透過切換 inline `display: none` 控制顯隱。
+還原時會清除 inline display，導致原本的 `display: flex` 等值遺失，
+元素退回 `<div>` 預設的 `display: block`。
+
+正確做法：將 `display: flex` 等佈局屬性寫在 CSS class 中，
+讓 `x-show` 只操作 inline display 而不影響 class 定義的佈局。
+
+```html
+<!-- 錯誤 - x-show 還原時 display:flex 會遺失 -->
+<div x-show="visible" style="display:flex; flex-wrap:wrap; gap:8px;">
+
+<!-- 正確 - 佈局屬性寫在 CSS class -->
+<div x-show="visible" class="my-flex-container">
+```
+
 ---
 
 ## 時區處理規範 (TZ-01)
@@ -485,6 +504,7 @@ new Date(record.created_at).toLocaleString('zh-TW')
 11. **禁止** 前端 JS 用 `new Date().toLocaleString()` 顯示 DB 時間（應用 `BkTime.format()`，參見 TZ-01）
 12. **禁止** 繞過 `file_service` 直接操作檔案儲存目錄（參見 FILE-01）
 13. **禁止** 手動呼叫 `crypto/engine.py` 加解密（應透過 `file_service` 自動處理）
+14. **禁止** 在有 `x-show` 的元素上用 inline style 設定 `display`（應用 CSS class，參見 FRONT-06）
 
 ---
 

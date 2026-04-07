@@ -718,8 +718,7 @@
                 <div class="stu-field" style="margin-top:12px;">
                     <label>選擇模板 <span style="font-weight:normal;color:#999;font-size:12px;">(可選，不選則建立空白頁)</span></label>
                     <div x-show="loadingTemplates" style="color:#999;font-size:13px;padding:8px 0;">載入模板中...</div>
-                    <div x-show="!loadingTemplates"
-                         style="display:inline-flex; flex-wrap:wrap; gap:8px; margin-top:6px; max-height:280px; overflow-y:auto; padding:2px; width:100%;">
+                    <div x-show="!loadingTemplates" class="stu-tpl-grid">
                         <!-- 空白頁選項 -->
                         <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': !selectedTemplateSc }"
                              @click="selectedTemplateSc = null"
