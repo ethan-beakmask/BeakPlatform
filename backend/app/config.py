@@ -36,6 +36,7 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_NAME = 'beakmask_session'
+    SESSION_KEY_PREFIX = 'session:'
 
     # CSRF Protection
     WTF_CSRF_ENABLED = True
@@ -84,14 +85,11 @@ class DevelopmentConfig(BaseConfig):
     # Allow missing SECRET_KEY in dev
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-    # Use cachelib filesystem session in development (no Redis required)
-    # 根據專案路徑衍生目錄名，避免多實例共用同一目錄導致權限衝突
-    SESSION_TYPE = 'cachelib'
-    from cachelib import FileSystemCache
-    import hashlib
-    _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _session_suffix = hashlib.md5(_project_root.encode()).hexdigest()[:8]
-    SESSION_CACHELIB = FileSystemCache(f'/tmp/beakplatform_sessions_{_session_suffix}')
+    # Session: 繼承 BaseConfig 的 Redis session（不再用 cachelib）
+    # /tmp 的 FileSystemCache 會被 systemd-tmpfiles 清除導致 session 遺失
+    # 雙版本隔離: cookie name + Redis key prefix 區分，Redis DB 由 REDIS_URL 控制
+    SESSION_COOKIE_NAME = 'beakmask_dev_session'
+    SESSION_KEY_PREFIX = 'dev_session:'
 
 
 class ProductionConfig(BaseConfig):
