@@ -1041,7 +1041,7 @@ function studioManager() {
                 itemHoverBgColor: this.smItemHoverBgColor,
                 itemHoverTextColor: this.smItemHoverTextColor,
                 accentColor: this.smAccentColor,
-                itemGap: parseInt(this.smItemGap, 10) || 6,
+                itemGap: !isNaN(parseInt(this.smItemGap, 10)) ? parseInt(this.smItemGap, 10) : 6,
                 hoverExpand: this.smHoverExpand,
                 hoverExpandDelay: parseInt(this.smHoverExpandDelay, 10) || 300,
                 contextOutputs: JSON.parse(JSON.stringify(validOutputs)),

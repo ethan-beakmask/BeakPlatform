@@ -131,8 +131,7 @@
     /* 預留 active 上下邊框空間 (透明) */
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
-    /* 項目間分隔線 */
-    border-right: 1px solid #e7e7e7;
+    border-right: none;
 }
 
 /* Horizontal active: 上下 accent 邊框 + 陰影 + 三角指示器 */

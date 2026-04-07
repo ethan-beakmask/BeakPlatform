@@ -566,6 +566,12 @@ function siteMapPortal() {
             content.style.fontFamily = sc.fontFamily || '';
             content.style.fontSize = sc.fontSize ? (sc.fontSize + 'px') : '';
 
+            // 同步套用底色到 grid 容器，避免 CSS 預設 background:#fff 蓋住
+            var gridEl = content.querySelector('.grid-stack') || content.querySelector('.portal-grid');
+            if (gridEl) {
+                gridEl.style.backgroundColor = sc.bgColor || '';
+            }
+
             // 底圖
             var styleId = 'sp2-page-bg-style';
             var existing = document.getElementById(styleId);
