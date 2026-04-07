@@ -183,9 +183,6 @@ function siteMapPortal() {
                 var ctx = ctxData.data;
                 var layout = layoutData.data.layout_json || {};
 
-                // 套用頁面樣式
-                this._applyPageStyle(layoutData.data.style_config || {});
-
                 // v3 Grid 模式 or v2 GridStack 模式
                 if (layout.version === 3 && layout.mode === 'grid') {
                     this._renderGridLayout(layout, ctx);
@@ -196,6 +193,9 @@ function siteMapPortal() {
                     this._initGrid();
                     this._renderLayout(items, ctx);
                 }
+
+                // 套用頁面樣式（必須在渲染之後，確保 .portal-grid 已建立）
+                this._applyPageStyle(layoutData.data.style_config || {});
             } catch (e) {
                 this.pageError = '載入頁面失敗: ' + e.message;
             } finally {
@@ -346,7 +346,7 @@ function siteMapPortal() {
                     widget.init();
                     self._widgets[wid] = widget;
                 } else {
-                    cell.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
+                    // 空白區域保持透明，讓頁面底色透出
                 }
 
                 container.appendChild(cell);
