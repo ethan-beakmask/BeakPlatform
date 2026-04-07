@@ -890,6 +890,7 @@ html, body {
 .portal-grid {
     display: grid;
     gap: 0;
+    flex: 1;
     min-height: 400px;
 }
 
