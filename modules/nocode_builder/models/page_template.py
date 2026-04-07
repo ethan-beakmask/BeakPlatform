@@ -14,6 +14,7 @@ class DcPageTemplate(ModuleBaseModel):
 
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
+    category = Column(String(50), nullable=False, default='常用', server_default='常用')
     layout_json = Column(JSONB, nullable=False, default=dict)
     style_config = Column(JSONB, default=dict)
     thumbnail_svg = Column(Text, nullable=True)
@@ -25,6 +26,7 @@ class DcPageTemplate(ModuleBaseModel):
         data.update({
             'name': self.name,
             'description': self.description,
+            'category': self.category or '常用',
             'layout_json': self.layout_json or {},
             'style_config': self.style_config or {},
             'thumbnail_svg': self.thumbnail_svg or '',

@@ -153,11 +153,13 @@ function studioManager() {
 
         // Templates
         showSaveTemplateModal: false,
-        saveTemplateForm: { name: '', description: '' },
+        saveTemplateForm: { name: '', description: '', category: '常用' },
         savingTemplate: false,
         templateList: [],
         loadingTemplates: false,
         selectedTemplateSc: null,
+        templateCategories: ['常用', '登入,首頁', 'DB顯示,查詢', '增,刪,改', '一對多', '圖表', 'google', '多功能'],
+        activeTemplateCategory: '常用',
 
         // Toast
         toast: { show: false, message: '', type: 'success' },
@@ -1276,6 +1278,7 @@ function studioManager() {
                 };
             }
             this.selectedTemplateSc = null;
+            this.activeTemplateCategory = '常用';
             this._loadTemplates();
             this.showAddNodeModal = true;
         },
@@ -1820,7 +1823,7 @@ function studioManager() {
                 this.showToast('請先選擇一個頁面', 'error');
                 return;
             }
-            this.saveTemplateForm = { name: '', description: '' };
+            this.saveTemplateForm = { name: '', description: '', category: '常用' };
             this.showSaveTemplateModal = true;
         },
 
@@ -1845,6 +1848,7 @@ function studioManager() {
                     body: JSON.stringify({
                         name: name,
                         description: this.saveTemplateForm.description.trim(),
+                        category: this.saveTemplateForm.category || '常用',
                         layout_json: layoutJson,
                         style_config: styleConfig,
                         thumbnail_svg: thumbnailSvg,
@@ -1899,11 +1903,18 @@ function studioManager() {
             this.selectedTemplateSc = this.selectedTemplateSc === sc ? null : sc;
         },
 
+        filteredTemplates: function () {
+            var cat = this.activeTemplateCategory;
+            return this.templateList.filter(function (t) {
+                return (t.category || '常用') === cat;
+            });
+        },
+
         /**
          * 根據 layout_json + style_config 產生 SVG 縮圖
          */
         _generateThumbnailSvg: function (layoutJson, styleConfig) {
-            var W = 160, H = 100;
+            var W = 240, H = 150;
             var bgColor = (styleConfig && styleConfig.bgColor) || '#ffffff';
             var rects = '';
 
@@ -2045,6 +2056,9 @@ function studioManager() {
                 );
                 var data = await res.json();
                 if (data.success) {
+                    // 同步 this.tree 原始節點的 icon（selectedNode 是副本）
+                    var treeNode = this._findTreeNode(this.tree, this.selectedNode.secure_code);
+                    if (treeNode) treeNode.icon = iconClass || '';
                     this._initSiteMapTree();
                 } else {
                     this.showToast(data.error || '圖示儲存失敗', 'error');

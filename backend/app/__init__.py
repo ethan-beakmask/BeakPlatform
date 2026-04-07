@@ -103,6 +103,9 @@ def create_app(config_name: str = None) -> Flask:
     # Register context processors
     register_context_processors(app)
 
+    # Register static asset cache-busting
+    register_static_cache_busting(app)
+
     # Load modules (after blueprints and before returning)
     from .module_loader import init_module_loader
     init_module_loader(app)
@@ -302,3 +305,29 @@ def register_error_handlers(app: Flask) -> None:
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': 'Internal server error'}), 500
         return render_template('errors/500.html'), 500
+
+
+def register_static_cache_busting(app: Flask) -> None:
+    """靜態資源 cache-busting：確保 JS/CSS 變更後瀏覽器立即載入新版。
+
+    兩層機制：
+    1. url_for('static', ...) 自動附加 ?v=<啟動時間戳> 參數
+    2. 所有 /static/ 回應設定 Cache-Control: no-cache，強制條件請求（304/200）
+    """
+    import time
+    from flask import request as req
+
+    _boot_version = str(int(time.time()))
+
+    @app.url_defaults
+    def _static_cache_bust(endpoint, values):
+        if endpoint == 'static' or (endpoint and endpoint.endswith('.static')):
+            values['v'] = _boot_version
+
+    @app.after_request
+    def _static_no_cache(response):
+        if req.path.startswith('/static/') and response.status_code == 200:
+            ext = req.path.rsplit('.', 1)[-1].lower() if '.' in req.path else ''
+            if ext in ('js', 'css'):
+                response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        return response

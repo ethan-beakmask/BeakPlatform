@@ -718,38 +718,49 @@
                 <div class="stu-field" style="margin-top:12px;">
                     <label>選擇模板 <span style="font-weight:normal;color:#999;font-size:12px;">(可選，不選則建立空白頁)</span></label>
                     <div x-show="loadingTemplates" style="color:#999;font-size:13px;padding:8px 0;">載入模板中...</div>
-                    <div x-show="!loadingTemplates" class="stu-tpl-grid">
-                        <!-- 空白頁選項 -->
-                        <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': !selectedTemplateSc }"
-                             @click="selectedTemplateSc = null"
-                             style="cursor:pointer;">
-                            <div class="stu-tpl-thumb">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 100" style="width:100%;height:100%;display:block;">
-                                    <rect width="160" height="100" rx="4" fill="#ffffff"/>
-                                    <rect width="160" height="100" rx="4" fill="none" stroke="#ddd" stroke-width="1"/>
-                                    <text x="80" y="54" text-anchor="middle" font-size="12" fill="#bbb" font-family="sans-serif">空白</text>
-                                </svg>
-                            </div>
-                            <div class="stu-tpl-name">空白頁面</div>
+                    <div x-show="!loadingTemplates">
+                        <!-- 分類頁籤 -->
+                        <div class="stu-tpl-tabs">
+                            <template x-for="cat in templateCategories" :key="cat">
+                                <button class="stu-tpl-tab"
+                                        :class="{ 'active': activeTemplateCategory === cat }"
+                                        @click="activeTemplateCategory = cat; selectedTemplateSc = null;"
+                                        x-text="cat"></button>
+                            </template>
                         </div>
                         <!-- 模板列表 -->
-                        <template x-for="tpl in templateList" :key="tpl.secure_code">
-                            <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': selectedTemplateSc === tpl.secure_code }"
-                                 @click="selectTemplate(tpl.secure_code)"
-                                 style="cursor:pointer; position:relative;">
-                                <div class="stu-tpl-thumb" x-html="tpl.thumbnail_svg || ''"></div>
-                                <div class="stu-tpl-name" x-text="tpl.name"></div>
-                                <button class="stu-btn sm danger" @click.stop="deleteTemplate(tpl.secure_code)"
-                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;font-size:10px;"
-                                        title="刪除模板">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                        <div class="stu-tpl-grid">
+                            <!-- 空白頁選項 -->
+                            <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': !selectedTemplateSc }"
+                                 @click="selectedTemplateSc = null"
+                                 style="cursor:pointer;">
+                                <div class="stu-tpl-thumb">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 150" style="width:100%;height:100%;display:block;">
+                                        <rect width="240" height="150" rx="4" fill="#ffffff"/>
+                                        <rect width="240" height="150" rx="4" fill="none" stroke="#ddd" stroke-width="1"/>
+                                        <text x="120" y="79" text-anchor="middle" font-size="14" fill="#bbb" font-family="sans-serif">空白</text>
+                                    </svg>
+                                </div>
+                                <div class="stu-tpl-name">空白頁面</div>
                             </div>
-                        </template>
-                    </div>
-                    <div x-show="!loadingTemplates && templateList.length === 0"
-                         style="color:#999;font-size:12px;padding:4px 0;">
-                        尚無模板，可在設計頁面後點擊 [儲存成模板] 建立
+                            <template x-for="tpl in filteredTemplates()" :key="tpl.secure_code">
+                                <div class="stu-tpl-card" :class="{ 'stu-tpl-selected': selectedTemplateSc === tpl.secure_code }"
+                                     @click="selectTemplate(tpl.secure_code)"
+                                     style="cursor:pointer; position:relative;">
+                                    <div class="stu-tpl-thumb" x-html="tpl.thumbnail_svg || ''"></div>
+                                    <div class="stu-tpl-name" x-text="tpl.name"></div>
+                                    <button class="stu-btn sm danger" @click.stop="deleteTemplate(tpl.secure_code)"
+                                            style="position:absolute;top:2px;right:2px;padding:1px 4px;font-size:10px;"
+                                            title="刪除模板">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="filteredTemplates().length === 0"
+                             style="color:#999;font-size:12px;padding:4px 0;">
+                            此分類尚無模板
+                        </div>
                     </div>
                 </div>
             </div>
@@ -771,6 +782,14 @@
                 <div class="stu-field">
                     <label>模板名稱 *</label>
                     <input type="text" x-model="saveTemplateForm.name" placeholder="例如: 左右分欄報表">
+                </div>
+                <div class="stu-field">
+                    <label>分類 *</label>
+                    <select x-model="saveTemplateForm.category" style="width:100%;">
+                        <template x-for="cat in templateCategories" :key="cat">
+                            <option :value="cat" x-text="cat"></option>
+                        </template>
+                    </select>
                 </div>
                 <div class="stu-field">
                     <label>說明</label>

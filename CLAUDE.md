@@ -435,6 +435,22 @@ function pageManager() {
 <div x-show="visible" class="my-flex-container">
 ```
 
+### CACHE-01: 靜態資源 Cache-Busting
+
+**Flask 全站機制，確保 JS/CSS 變更後瀏覽器立即載入新版，無需 F5。**
+
+實作位置：`backend/app/__init__.py` 的 `register_static_cache_busting()`
+
+| 層 | 覆蓋範圍 | 原理 |
+|---|---|---|
+| `url_defaults` | `url_for('static', ...)` 引入的檔案 | 自動附加 `?v=<啟動時間戳>`，重啟服務即換版本號 |
+| `after_request` | 裸路徑 `/static/...` 引入的檔案 | JS/CSS 回應加 `Cache-Control: no-cache, must-revalidate`，強制條件請求 |
+
+**開發時注意事項：**
+- 兩種引入方式都已涵蓋，新增模板時用哪種都可以
+- 檔案有變更 -> 瀏覽器拿 200 新內容；沒變更 -> 304（不浪費頻寬）
+- 重啟 Flask 後版本號自動更新
+
 ---
 
 ## 時區處理規範 (TZ-01)

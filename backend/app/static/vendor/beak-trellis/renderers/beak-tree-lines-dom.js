@@ -59,6 +59,14 @@
             cell.appendChild(leaf);
         }
 
+        // 圖示（若 node.data 含 icon）
+        var iconClass = node.data && node.data.icon;
+        if (iconClass) {
+            var ico = document.createElement('i');
+            ico.className = iconClass + ' bt-node-icon';
+            cell.appendChild(ico);
+        }
+
         // 標籤
         var lbl = document.createElement('span');
         lbl.className = 'bt-label';

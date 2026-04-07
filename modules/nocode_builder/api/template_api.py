@@ -60,11 +60,14 @@ def create_template():
         if not layout_json:
             return jsonify({'success': False, 'error': '缺少頁面佈局資料'}), 400
 
+        category = data.get('category', '常用').strip() or '常用'
+
         template = ResourceGateway.create(
             DcPageTemplate,
             check_permission=False,
             name=name,
             description=data.get('description', ''),
+            category=category,
             layout_json=layout_json,
             style_config=data.get('style_config', {}),
             thumbnail_svg=data.get('thumbnail_svg', ''),
@@ -102,7 +105,7 @@ def update_template(secure_code):
 
         data = request.get_json() or {}
         update_fields = {}
-        for field in ('name', 'description'):
+        for field in ('name', 'description', 'category'):
             if field in data:
                 update_fields[field] = data[field]
 

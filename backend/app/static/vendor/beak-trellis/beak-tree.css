@@ -165,6 +165,15 @@
     flex-shrink: 0;
 }
 
+.bk-tree-container .bt-node-icon {
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 2px;
+}
+
 .bk-tree-container .bt-label {
     padding-left: 2px;
     overflow: hidden;
