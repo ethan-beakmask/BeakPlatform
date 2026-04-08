@@ -107,30 +107,6 @@
                     <label style="display: block; margin-bottom: 4px; font-weight: 500;">說明</label>
                     <textarea x-model="createForm.description" rows="2" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;"></textarea>
                 </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">圖示</label>
-                    <input type="text" x-model="createForm.icon" placeholder="例: (F)" style="width: 100px; padding: 6px 8px; border: 1px solid #ddd;">
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">綁定社群 *</label>
-                    <select x-model="createForm.group_unit_secure_code"
-                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
-                        <option value="">-- 請選擇社群 --</option>
-                        <template x-for="g in groups" :key="g.secure_code">
-                            <option :value="g.secure_code" x-text="g.name"></option>
-                        </template>
-                    </select>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">綁定選單項</label>
-                    <select x-model="createForm.menu_item_secure_code"
-                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
-                        <option value="">-- 不綁定 --</option>
-                        <template x-for="m in menuItems" :key="m.secure_code">
-                            <option :value="m.secure_code" x-text="m.title"></option>
-                        </template>
-                    </select>
-                </div>
             </div>
             <div class="dc-modal-footer">
                 <button class="dc-btn" @click="showCreateModal = false">取消</button>

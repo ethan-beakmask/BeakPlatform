@@ -5,8 +5,6 @@
 function subSystemListManager() {
     return {
         items: [],
-        groups: [],
-        menuItems: [],
         meta: { is_system_admin: false, is_org_admin: false, can_manage: false },
         loading: true,
         showCreateModal: false,
@@ -15,18 +13,11 @@ function subSystemListManager() {
         createForm: {
             name: '',
             description: '',
-            icon: '',
-            group_unit_secure_code: '',
-            menu_item_secure_code: '',
         },
         toast: { show: false, message: '', type: 'success' },
 
         async init() {
-            await Promise.all([
-                this.loadList(),
-                this.loadGroups(),
-                this.loadMenuItems(),
-            ]);
+            await this.loadList();
         },
 
         async loadList() {
@@ -47,38 +38,9 @@ function subSystemListManager() {
             }
         },
 
-        async loadGroups() {
-            try {
-                const res = await fetch('/api/units/groups');
-                const data = await res.json();
-                if (data.units) {
-                    this.groups = data.units || [];
-                }
-            } catch (e) {
-                console.error('Load groups failed:', e);
-            }
-        },
-
-        async loadMenuItems() {
-            try {
-                const res = await fetch('/api/menu');
-                const data = await res.json();
-                if (data.items) {
-                    // 只列出 leaf 節點（無子項的選單）
-                    this.menuItems = data.items.filter(m => !m.children || m.children.length === 0);
-                }
-            } catch (e) {
-                console.error('Load menu items failed:', e);
-            }
-        },
-
         async doCreate() {
             if (!this.createForm.name.trim()) {
                 this.showToast('名稱不可為空', 'error');
-                return;
-            }
-            if (!this.createForm.group_unit_secure_code) {
-                this.showToast('請選擇綁定社群', 'error');
                 return;
             }
             try {
@@ -90,10 +52,7 @@ function subSystemListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showCreateModal = false;
-                    this.createForm = {
-                        name: '', description: '', icon: '',
-                        group_unit_secure_code: '', menu_item_secure_code: '',
-                    };
+                    this.createForm = { name: '', description: '' };
                     this.showToast('子系統已建立', 'success');
                     await this.loadList();
                 } else {

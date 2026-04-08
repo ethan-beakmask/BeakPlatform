@@ -92,7 +92,6 @@
                         <button class="stu-btn sm" :class="dirty ? 'primary' : ''"
                                 @click="savePage()" :disabled="!dirty || !currentPageSc">儲存</button>
                         <button class="stu-btn sm" @click="openAddNode()"><i class="fas fa-plus"></i> 網頁</button>
-                        <button class="stu-btn sm" @click="openAccessRoles()" :disabled="!selectedNode">准入</button>
                         <button class="stu-btn sm danger" @click="deleteNode()" :disabled="!selectedNode">刪除</button>
                     </div>
                     <!-- 選中節點: 圖示設定 -->
@@ -118,10 +117,10 @@
             <!-- Middle Panel (Properties / Style) -->
             <div class="stu-props" :class="{ 'stu-props-hidden': !showProps && !showStylePanel }">
 
-                <!-- ===== Page Style Settings ===== -->
-                <div x-show="showStylePanel && propsMode !== 'perm' && propsMode !== 'widget'">
+                <!-- ===== Page Config Settings ===== -->
+                <div x-show="showStylePanel && propsMode !== 'widget'">
                     <div class="stu-panel-title">
-                        <i class="fas fa-palette"></i> 頁面樣式
+                        <i class="fas fa-cog"></i> 頁面組態
                     </div>
                     <div class="stu-props-body">
                         <div class="stu-section-divider">底色</div>
@@ -243,22 +242,15 @@
                                 子系統預設: 新頁面自動套用 / 全域覆蓋: 覆蓋所有頁面
                             </p>
                         </div>
-                    </div>
-                </div>
 
-                <!-- 准入設定 (permission mode + grant-based permissions) -->
-                <template x-if="propsMode === 'perm'">
-                    <div>
-                        <div class="stu-panel-title">
-                            准入設定
-                            <button class="stu-btn sm" @click="showProps = false; propsMode = 'style';" style="float:right;">
-                                <i class="fas fa-times"></i>
-                            </button>
+                        <!-- ===== 准入設定（整合至頁面組態） ===== -->
+                        <div class="stu-section-divider" style="margin-top:16px;">准入設定</div>
+                        <div x-show="!selectedNode" style="font-size:12px;color:#999;padding:4px 0;">
+                            請先選擇一個網頁節點
                         </div>
-                        <div class="stu-props-body">
+                        <div x-show="selectedNode">
                             <!-- 權限模式選擇 -->
                             <div style="margin-bottom:12px;">
-                                <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#333;">權限模式</div>
                                 <div style="display:flex;flex-direction:column;gap:6px;">
                                     <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
                                         <input type="radio" value="inherit" x-model="_currentPermMode" @change="onPermModeChange()">
@@ -287,7 +279,7 @@
                                     </label>
                                 </div>
                                 <div style="display:flex;gap:6px;margin-top:8px;">
-                                    <button class="dc-btn sm primary" @click="savePermMode()">儲存模式</button>
+                                    <button class="dc-btn sm primary" @click="savePermMode()">儲存</button>
                                     <button class="dc-btn sm" @click="applyPermDown()">向下套用</button>
                                 </div>
                             </div>
@@ -367,15 +359,15 @@
                             </div>
 
                             <!-- inherit / policy 模式的提示 -->
-                            <div x-show="_currentPermMode === 'inherit'" style="padding:12px 0;font-size:12px;color:#666;">
+                            <div x-show="_currentPermMode === 'inherit'" style="padding:4px 0;font-size:12px;color:#666;">
                                 此網頁將沿用父節點的權限設定。根節點的繼承 = 開放給所有社群成員。
                             </div>
-                            <div x-show="_currentPermMode === 'policy' && _currentPolicySc" style="padding:12px 0;font-size:12px;color:#666;">
+                            <div x-show="_currentPermMode === 'policy' && _currentPolicySc" style="padding:4px 0;font-size:12px;color:#666;">
                                 使用政策組: <strong x-text="getPermModePolicyName()"></strong>
                             </div>
                         </div>
                     </div>
-                </template>
+                </div>
 
                 <!-- Widget settings mode -->
                 <div x-show="propsMode === 'widget'">

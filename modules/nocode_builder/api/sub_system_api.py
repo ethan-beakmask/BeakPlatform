@@ -99,20 +99,14 @@ def create_sub_system():
 
     data = request.get_json() or {}
     name = data.get('name', '').strip()
-    group_sc = data.get('group_unit_secure_code', '').strip()
 
     if not name:
         return jsonify({'success': False, 'error': 'Name is required'}), 400
-    if not group_sc:
-        return jsonify({'success': False, 'error': 'Group unit is required'}), 400
 
     result = SubSystemProvisionService.create_sub_system(
         org_sc=org.secure_code,
         name=name,
-        icon=data.get('icon', ''),
         description=data.get('description', ''),
-        group_unit_secure_code=group_sc,
-        menu_item_secure_code=data.get('menu_item_secure_code', ''),
     )
 
     if not result['success']:

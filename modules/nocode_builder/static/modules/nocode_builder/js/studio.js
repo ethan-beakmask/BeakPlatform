@@ -528,11 +528,20 @@ function studioManager() {
                 this._setupEmptyCanvas();
             }
 
-            // 顯示頁面樣式面板(選了頁面時)
+            // 顯示頁面組態面板(選了頁面時)
             this.showProps = false;
             this.propsMode = 'style';
             this.showStylePanel = !!pageSc;
             this.selectedZoneId = null;
+
+            // 自動載入權限模式
+            this._currentPermMode = nodeData.permission_mode || 'inherit';
+            this._currentPolicySc = nodeData.permission_policy_secure_code || '';
+            if (this._currentPermMode === 'custom') {
+                this._loadNodePermissions(nodeData.secure_code);
+            } else {
+                this.nodePermissions = [];
+            }
         },
 
         async _loadPageLayout(pageSc) {
@@ -1531,22 +1540,6 @@ function studioManager() {
             }
         },
 
-        openAccessRoles: function () {
-            if (!this.selectedNode) return;
-            this.propsMode = 'perm';
-            this.showProps = true;
-            this.showStylePanel = false;
-            // 讀取節點的權限模式
-            this._currentPermMode = this.selectedNode.permission_mode || 'inherit';
-            this._currentPolicySc = this.selectedNode.permission_policy_secure_code || '';
-            if (this._currentPermMode === 'custom') {
-                this._loadNodePermissions(this.selectedNode.secure_code);
-            } else {
-                this.nodePermissions = [];
-                this.nodePermLoading = false;
-            }
-        },
-
         onPermModeChange: function () {
             if (this._currentPermMode === 'custom' && this.selectedNode) {
                 this._loadNodePermissions(this.selectedNode.secure_code);
@@ -1598,6 +1591,9 @@ function studioManager() {
             if (!this.selectedNode) return;
             if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
             try {
+                // 先儲存當前節點的權限模式，確保 DB 是最新的
+                await this.savePermMode();
+                // 再向下套用
                 var res = await fetch(
                     '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
