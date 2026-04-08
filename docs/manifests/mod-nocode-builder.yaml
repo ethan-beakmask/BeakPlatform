@@ -25,6 +25,8 @@ files:
     - modules/nocode_builder/models/permission_policy.py
   services:
     - modules/nocode_builder/services/permission_policy_service.py
+    - modules/nocode_builder/services/data_source_manager.py
+    - modules/nocode_builder/services/sqlite_crud_service.py
   css:
     - modules/nocode_builder/static/modules/nocode_builder/css/nocode-builder.css
     - modules/nocode_builder/static/modules/nocode_builder/css/studio.css

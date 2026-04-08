@@ -565,7 +565,10 @@ def query_rows(secure_code):
     """查詢視圖資料（分頁）"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -596,18 +599,35 @@ def query_rows(secure_code):
                 dynamic_filters[col_name] = request.args.get(key)
 
     try:
-        with get_data_conn(view.org_secure_code, view.data_source) as conn:
-            result = CrudService.query_rows(
-                conn=conn,
-                view=view,
-                page=page,
-                per_page=per_page,
-                search=search,
-                sort_column=sort_col,
-                sort_dir=sort_dir,
-                dynamic_filters=dynamic_filters,
-            )
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        if is_sqlite_source(view.data_source):
+            # SQLite 路徑
+            from ..services.sqlite_crud_service import SqliteCrudService
+            ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
+            with get_sqlite_session(ss_sc, view.data_source) as session:
+                result = SqliteCrudService.query_rows(
+                    session=session,
+                    view=view,
+                    page=page,
+                    per_page=per_page,
+                    search=search,
+                    sort_column=sort_col,
+                    sort_dir=sort_dir,
+                    dynamic_filters=dynamic_filters,
+                )
+        else:
+            # PostgreSQL 路徑
+            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+                result = CrudService.query_rows(
+                    conn=conn,
+                    view=view,
+                    page=page,
+                    per_page=per_page,
+                    search=search,
+                    sort_column=sort_col,
+                    sort_dir=sort_dir,
+                    dynamic_filters=dynamic_filters,
+                )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     return jsonify({'success': True, 'data': result})
@@ -619,7 +639,10 @@ def get_row(secure_code, row_id):
     """取得單筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -630,9 +653,15 @@ def get_row(secure_code, row_id):
         return jsonify({'success': False, 'error': 'View not found'}), 404
 
     try:
-        with get_data_conn(view.org_secure_code, view.data_source) as conn:
-            result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        if is_sqlite_source(view.data_source):
+            from ..services.sqlite_crud_service import SqliteCrudService
+            ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
+            with get_sqlite_session(ss_sc, view.data_source) as session:
+                result = SqliteCrudService.get_row(session=session, view=view, row_id=row_id)
+        else:
+            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+                result = CrudService.get_row(conn=conn, view=view, row_id=row_id)
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -704,7 +733,10 @@ def create_row(secure_code):
     """新增一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -729,12 +761,20 @@ def create_row(secure_code):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn(view.org_secure_code, view.data_source) as conn:
-            result = CrudService.create_row(
-                conn=conn, view=view, row_data=data,
-                is_conglomerate=(view.data_source == 'conglomerate'),
-            )
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        if is_sqlite_source(view.data_source):
+            from ..services.sqlite_crud_service import SqliteCrudService
+            ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
+            with get_sqlite_session(ss_sc, view.data_source) as session:
+                result = SqliteCrudService.create_row(
+                    session=session, view=view, row_data=data,
+                )
+        else:
+            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+                result = CrudService.create_row(
+                    conn=conn, view=view, row_data=data,
+                    is_conglomerate=(view.data_source == 'conglomerate'),
+                )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -749,7 +789,10 @@ def update_row(secure_code, row_id):
     """更新一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -774,12 +817,20 @@ def update_row(secure_code, row_id):
 
     data = request.get_json() or {}
     try:
-        with get_data_conn(view.org_secure_code, view.data_source) as conn:
-            result = CrudService.update_row(
-                conn=conn, view=view, row_id=row_id, row_data=data,
-                is_conglomerate=(view.data_source == 'conglomerate'),
-            )
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        if is_sqlite_source(view.data_source):
+            from ..services.sqlite_crud_service import SqliteCrudService
+            ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
+            with get_sqlite_session(ss_sc, view.data_source) as session:
+                result = SqliteCrudService.update_row(
+                    session=session, view=view, row_id=row_id, row_data=data,
+                )
+        else:
+            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+                result = CrudService.update_row(
+                    conn=conn, view=view, row_id=row_id, row_data=data,
+                    is_conglomerate=(view.data_source == 'conglomerate'),
+                )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -794,7 +845,10 @@ def delete_row(secure_code, row_id):
     """刪除一筆資料"""
     from ..models import DcCrudView
     from ..services.crud_service import CrudService
-    from ..services.db_connector import get_data_conn, OrgDatabaseNotFound, CgDatabaseNotFound
+    from ..services.db_connector import (
+        get_data_conn, get_sqlite_session, is_sqlite_source,
+        OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound,
+    )
 
     view = ResourceGateway.get(
         DcCrudView, secure_code,
@@ -818,12 +872,20 @@ def delete_row(secure_code, row_id):
         return lock_denied
 
     try:
-        with get_data_conn(view.org_secure_code, view.data_source) as conn:
-            result = CrudService.delete_row(
-                conn=conn, view=view, row_id=row_id,
-                is_conglomerate=(view.data_source == 'conglomerate'),
-            )
-    except (OrgDatabaseNotFound, CgDatabaseNotFound) as e:
+        if is_sqlite_source(view.data_source):
+            from ..services.sqlite_crud_service import SqliteCrudService
+            ss_sc = request.args.get('sub_system_sc', '') or _resolve_sub_system_sc(view)
+            with get_sqlite_session(ss_sc, view.data_source) as session:
+                result = SqliteCrudService.delete_row(
+                    session=session, view=view, row_id=row_id,
+                )
+        else:
+            with get_data_conn(view.org_secure_code, view.data_source) as conn:
+                result = CrudService.delete_row(
+                    conn=conn, view=view, row_id=row_id,
+                    is_conglomerate=(view.data_source == 'conglomerate'),
+                )
+    except (OrgDatabaseNotFound, CgDatabaseNotFound, PortalDatabaseNotFound) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
     if not result['success']:
@@ -1048,6 +1110,43 @@ def unpublish_page(secure_code):
         db.session.rollback()
         logger.exception('[PageLayout] unpublish_page error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# SQLite 輔助: 從 view 反查子系統 secure_code
+# =============================================================================
+
+def _resolve_sub_system_sc(view) -> str:
+    """
+    從 DcCrudView 反查所屬子系統的 secure_code
+
+    SQLite CRUD 需要 sub_system_sc 才能定位檔案路徑。
+    優先讀 request header/param，不行再查 DB。
+    """
+    # 1. 嘗試從 request 取得 (前端設計器會送)
+    ss_sc = request.headers.get('X-SubSystem-SC', '').strip()
+    if ss_sc:
+        return ss_sc
+
+    ss_sc = request.args.get('sub_system_sc', '').strip()
+    if ss_sc:
+        return ss_sc
+
+    # 2. 從 DcSubSystemPage 反查 (view 被某個子系統頁面引用)
+    from ..models.sub_system_page import DcSubSystemPage
+    ssp = DcSubSystemPage.query.filter_by(
+        page_layout_secure_code=view.secure_code if hasattr(view, 'page_layout_secure_code') else None,
+        org_secure_code=view.org_secure_code,
+        is_deleted=False,
+    ).first()
+    if ssp:
+        return ssp.sub_system_secure_code
+
+    logger.warning(
+        'Cannot resolve sub_system_sc for view %s (data_source=%s)',
+        view.secure_code, view.data_source,
+    )
+    return ''
 
 
 # =============================================================================

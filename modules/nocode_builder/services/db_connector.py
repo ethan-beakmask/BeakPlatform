@@ -3,8 +3,10 @@ Data CRUD Module - DB Connector
 根據視圖的 data_source 路由到正確的資料庫連線
 
 路由策略:
-  data_source='org'           → 企業專屬資料庫 (org_{org_id})
-  data_source='conglomerate'  → 集團共享資料庫 (cg_{cg_id})，member 角色 + RLS
+  data_source='org'           → 企業專屬資料庫 (org_{org_id}) [psycopg2]
+  data_source='conglomerate'  → 集團共享資料庫 (cg_{cg_id}) [psycopg2]
+  data_source='portal'        → 子系統帳號角色 SQLite [SQLAlchemy session]
+  data_source='portal_data'   → 子系統公開資料 SQLite [SQLAlchemy session]
 """
 import logging
 from contextlib import contextmanager
@@ -24,10 +26,21 @@ class CgDatabaseNotFound(Exception):
     pass
 
 
+class PortalDatabaseNotFound(Exception):
+    """子系統尚未初始化 SQLite"""
+    pass
+
+
+def is_sqlite_source(data_source: str) -> bool:
+    """判斷 data_source 是否為 SQLite 類型"""
+    from .data_source_manager import SQLITE_SOURCES
+    return data_source in SQLITE_SOURCES
+
+
 @contextmanager
 def get_data_conn(org_secure_code=None, data_source='org'):
     """
-    取得目標資料庫連線（context manager）
+    取得目標資料庫連線（context manager）-- 僅用於 PostgreSQL 來源
 
     Args:
         org_secure_code: 視圖綁定的企業代碼。
@@ -38,6 +51,8 @@ def get_data_conn(org_secure_code=None, data_source='org'):
         with get_data_conn(view.org_secure_code, view.data_source) as conn:
             with conn.cursor() as cur:
                 cur.execute(...)
+
+    注意: portal / portal_data 類型請用 get_sqlite_session()
     """
     org_sc = org_secure_code or current_user.org_secure_code
 
@@ -45,6 +60,35 @@ def get_data_conn(org_secure_code=None, data_source='org'):
         yield from _get_cg_data_conn(org_sc)
     else:
         yield from _get_org_data_conn(org_sc)
+
+
+@contextmanager
+def get_sqlite_session(sub_system_sc: str, data_source: str):
+    """
+    取得 SQLite 資料庫 Session (context manager)
+
+    Args:
+        sub_system_sc: 子系統 secure_code
+        data_source: 'portal' 或 'portal_data'
+
+    Usage:
+        with get_sqlite_session(ss_sc, 'portal_data') as session:
+            result = session.execute(text('SELECT ...'))
+
+    Raises:
+        PortalDatabaseNotFound: SQLite 檔案不存在
+    """
+    from .data_source_manager import DataSourceManager, SQLITE_SOURCES
+
+    if data_source not in SQLITE_SOURCES:
+        raise ValueError(f'Not a SQLite source: {data_source}')
+
+    mgr = DataSourceManager()
+    try:
+        with mgr.get_session(sub_system_sc, data_source) as session:
+            yield session
+    except FileNotFoundError as e:
+        raise PortalDatabaseNotFound(str(e)) from e
 
 
 def _get_org_data_conn(org_sc):

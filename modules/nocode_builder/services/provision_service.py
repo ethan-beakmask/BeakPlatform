@@ -149,7 +149,17 @@ class SubSystemProvisionService:
                     display_order=0,
                 )
 
-                # Step 4: 授予開發者模組使用權（有指定時）
+                # Step 4: 初始化子系統 SQLite (portal.db + portal_data.db)
+                from .data_source_manager import init_portal_sqlite
+                try:
+                    init_portal_sqlite(ss.secure_code)
+                except OSError as e:
+                    logger.warning(
+                        'SQLite init failed for sub_system=%s: %s (non-fatal)',
+                        ss.secure_code, e,
+                    )
+
+                # Step 5: 授予開發者模組使用權（有指定時）
                 if developer_sc:
                     cls._grant_module_access(org_sc, developer_sc)
 
@@ -246,6 +256,16 @@ class SubSystemProvisionService:
                 ResourceGateway.delete(ss, check_permission=False, soft=True)
 
                 db.session.commit()
+
+                # 清理子系統 SQLite 檔案
+                from .data_source_manager import cleanup_portal_sqlite
+                try:
+                    cleanup_portal_sqlite(ss.secure_code)
+                except Exception as e:
+                    logger.warning(
+                        'SQLite cleanup failed for sub_system=%s: %s (non-fatal)',
+                        ss.secure_code, e,
+                    )
 
             logger.info('SubSystem deleted: code=%s', sub_system_code)
             return {'success': True}

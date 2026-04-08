@@ -175,6 +175,16 @@ class ProjectService:
         ResourceGateway.delete(ss, check_permission=False, soft=True)
         ResourceGateway.commit()
 
+        # 清理子系統 SQLite 檔案
+        from .data_source_manager import cleanup_portal_sqlite
+        try:
+            cleanup_portal_sqlite(ss.secure_code)
+        except Exception as e:
+            logger.warning(
+                'SQLite cleanup failed for project=%s: %s (non-fatal)',
+                secure_code, e,
+            )
+
         return {'success': True}
 
     @staticmethod
