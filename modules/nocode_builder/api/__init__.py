@@ -28,6 +28,10 @@ api_bp = Blueprint(
     url_prefix='/api/nocode-builder'
 )
 
+# 額外 Blueprint（由 module_loader additional_blueprints 機制註冊）
+from ..web.portal_public import public_portal_bp
+additional_blueprints = [public_portal_bp]
+
 
 # =============================================================================
 # 模組資訊

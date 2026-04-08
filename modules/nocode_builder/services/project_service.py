@@ -168,6 +168,10 @@ class ProjectService:
             if menu_item:
                 menu_item.is_active = False
 
+        # 刪除公開 Portal 路徑記錄
+        from .portal_path_service import delete_portal_path
+        delete_portal_path(ss.secure_code)
+
         # 撤銷開發者 nocode_builder 權限（無其他開發案時才撤銷）
         for dev_sc in (ss.developers or []):
             _revoke_if_no_other_projects(org_sc, dev_sc, ss.secure_code)
@@ -189,7 +193,7 @@ class ProjectService:
 
     @staticmethod
     def publish(secure_code: str) -> Dict[str, Any]:
-        """上線開發案 -- 同時啟用關聯選單"""
+        """上線開發案 -- 同時啟用關聯選單 + 啟用公開路徑"""
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -210,13 +214,17 @@ class ProjectService:
             if menu_item:
                 menu_item.is_active = True
 
+        # 連動: 啟用公開 Portal 路徑
+        from .portal_path_service import set_active
+        set_active(secure_code, True)
+
         ResourceGateway.commit()
 
         return {'success': True, 'data': ss.to_dict()}
 
     @staticmethod
     def unpublish(secure_code: str) -> Dict[str, Any]:
-        """下線開發案 -- 同時停用關聯選單"""
+        """下線開發案 -- 同時停用關聯選單 + 停用公開路徑"""
         ss = ResourceGateway.get(
             DcSubSystem, secure_code,
             raise_on_not_found=False,
@@ -236,6 +244,10 @@ class ProjectService:
             ).first()
             if menu_item:
                 menu_item.is_active = False
+
+        # 連動: 停用公開 Portal 路徑
+        from .portal_path_service import set_active
+        set_active(secure_code, False)
 
         ResourceGateway.commit()
 

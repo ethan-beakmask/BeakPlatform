@@ -159,7 +159,15 @@ class SubSystemProvisionService:
                         ss.secure_code, e,
                     )
 
-                # Step 5: 授予開發者模組使用權（有指定時）
+                # Step 5: 建立公開 Portal 路徑記錄
+                from .portal_path_service import create_portal_path
+                portal_path_item = create_portal_path(
+                    sub_system_sc=ss.secure_code,
+                    display_name=name,
+                )
+                portal_path_id = portal_path_item.code if portal_path_item else None
+
+                # Step 6: 授予開發者模組使用權（有指定時）
                 if developer_sc:
                     cls._grant_module_access(org_sc, developer_sc)
 
@@ -177,6 +185,7 @@ class SubSystemProvisionService:
                     'sub_system_code': ss_code,
                     'menu_code': menu_code,
                     'menu_item_secure_code': final_menu_item_sc,
+                    'portal_path_id': portal_path_id,
                 },
             }
 
@@ -247,6 +256,10 @@ class SubSystemProvisionService:
 
                 # 停用選單
                 cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)
+
+                # 刪除公開 Portal 路徑記錄
+                from .portal_path_service import delete_portal_path
+                delete_portal_path(ss.secure_code)
 
                 # 撤銷全部開發者 nocode_builder 權限
                 for dev_sc in (ss.developers or []):
