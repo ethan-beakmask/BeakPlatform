@@ -272,6 +272,16 @@ function siteMapPortal() {
                         smw.init();
                         self._widgets[id] = smw;
                     }
+                } else if (widgetConfig && widgetConfig.type === 'FORMGRID' && typeof FormGridWidget !== 'undefined') {
+                    widgetConfig.id = id;
+                    widgetConfig._subSystemSc = self.subSystemSc;
+                    widgetConfig._siteMapNodeSc = (self.currentNode && self.currentNode.secure_code) || '';
+                    if (content) {
+                        content.innerHTML = '';
+                        var fgw = new FormGridWidget(content, widgetConfig);
+                        fgw.init();
+                        self._widgets[id] = fgw;
+                    }
                 } else if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
                     self._applyWidgetPermissions(widgetConfig, ctx);
@@ -338,6 +348,14 @@ function siteMapPortal() {
                     var smw = new SiteMenuWidget(cell, widgetConfig);
                     smw.init();
                     self._widgets[wid] = smw;
+                } else if (widgetConfig && widgetConfig.type === 'FORMGRID' && typeof FormGridWidget !== 'undefined') {
+                    var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
+                    widgetConfig.id = wid;
+                    widgetConfig._subSystemSc = self.subSystemSc;
+                    widgetConfig._siteMapNodeSc = (self.currentNode && self.currentNode.secure_code) || '';
+                    var fgw = new FormGridWidget(cell, widgetConfig);
+                    fgw.init();
+                    self._widgets[wid] = fgw;
                 } else if (widgetConfig && widgetConfig.viewCode) {
                     var wid = widgetConfig.id || ('v_' + Math.random().toString(36).slice(2, 8));
                     widgetConfig.id = wid;

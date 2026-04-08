@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/static/css/bk-file-attachment.css">
     <link rel="stylesheet" href="/static/modules/nocode_builder/css/datalist-widget.css">
     <link rel="stylesheet" href="/static/modules/nocode_builder/css/sitemenu-widget.css">
+    <link rel="stylesheet" href="/static/modules/nocode_builder/css/formgrid-widget.css">
     <style>[x-cloak] { display: none !important; }</style>
     <script defer src="/static/vendor/alpine.min.js"></script>
 </head>
@@ -372,7 +373,7 @@
                 <!-- Widget settings mode -->
                 <div x-show="propsMode === 'widget'">
                     <div class="stu-panel-title">
-                        <span x-text="settingWidgetType === 'SITEMENU' ? '選單設定' : '元件設定'"></span>
+                        <span x-text="settingWidgetType === 'SITEMENU' ? '選單設定' : (settingWidgetType === 'FORMGRID' ? '主細元件設定' : '元件設定')"></span>
                         <button class="stu-btn sm" @click="closeWidgetProps()" style="float:right;">
                             <i class="fas fa-times"></i>
                         </button>
@@ -545,8 +546,170 @@
                         </div>
                     </div>
 
+                    <!-- ===== FORMGRID Settings ===== -->
+                    <div class="stu-props-body" x-show="settingWidgetType === 'FORMGRID'">
+                        <div class="stu-section-divider">Master 表</div>
+                        <div class="stu-field">
+                            <label>資料來源</label>
+                            <select x-model="fgMasterDataSource" @change="fgOnMasterDataSourceChange()">
+                                <option value="">-- 選擇來源 --</option>
+                                <template x-for="ds in dataSources" :key="'fgm-'+ds.key">
+                                    <option :value="ds.key" x-text="ds.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="stu-field" x-show="fgMasterDataSource">
+                            <label>資料表</label>
+                            <select x-model="fgMasterTableName" @change="fgOnMasterTableChange()"
+                                    x-effect="fgMasterSourceTables.length; $nextTick(() => { if (fgMasterTableName) $el.value = fgMasterTableName })"
+                                    :disabled="fgLoadingMasterTables">
+                                <option value="">-- 選擇資料表 --</option>
+                                <template x-for="t in fgMasterSourceTables" :key="'fgmt-'+t.name">
+                                    <option :value="t.name" x-text="t.name + (t.comment ? ' (' + t.comment + ')' : '')"></option>
+                                </template>
+                            </select>
+                            <div x-show="fgLoadingMasterTables" style="font-size:11px;color:#999;">載入中...</div>
+                        </div>
+                        <div x-show="fgResolvingMasterView" style="font-size:11px;color:#999;padding:4px 0;">
+                            正在準備視圖配置...
+                        </div>
+                        <div class="stu-field" x-show="fgMasterViewCode">
+                            <label>PKey 欄位</label>
+                            <select x-model="fgMasterPkeyColumn"
+                                    x-effect="fgMasterColumns.length; $nextTick(() => { if (fgMasterPkeyColumn) $el.value = fgMasterPkeyColumn })">
+                                <option value="">-- 選擇主鍵 --</option>
+                                <template x-for="col in fgMasterColumns" :key="'fgmpk-'+col.column">
+                                    <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="stu-field" x-show="fgMasterViewCode">
+                            <label>簡式清單顯示欄位</label>
+                            <div style="max-height:120px;overflow-y:auto;border:1px solid #e5e7eb;padding:4px;">
+                                <template x-for="col in fgMasterColumns" :key="'fgml-'+col.column">
+                                    <div class="stu-field-check" style="margin-bottom:2px;">
+                                        <input type="checkbox"
+                                               :checked="fgMasterListColumns.indexOf(col.column) >= 0"
+                                               @change="fgToggleMasterListCol(col.column)"
+                                               :id="'fgml-'+col.column">
+                                        <label :for="'fgml-'+col.column" x-text="col.label + ' [' + col.column + ']'"
+                                               style="font-size:11px;"></label>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="stu-section-divider">Detail 表</div>
+                        <div class="stu-field">
+                            <label>資料來源</label>
+                            <select x-model="fgDetailDataSource" @change="fgOnDetailDataSourceChange()">
+                                <option value="">-- 選擇來源 --</option>
+                                <template x-for="ds in dataSources" :key="'fgd-'+ds.key">
+                                    <option :value="ds.key" x-text="ds.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="stu-field" x-show="fgDetailDataSource">
+                            <label>資料表</label>
+                            <select x-model="fgDetailTableName" @change="fgOnDetailTableChange()"
+                                    x-effect="fgDetailSourceTables.length; $nextTick(() => { if (fgDetailTableName) $el.value = fgDetailTableName })"
+                                    :disabled="fgLoadingDetailTables">
+                                <option value="">-- 選擇資料表 --</option>
+                                <template x-for="t in fgDetailSourceTables" :key="'fgdt-'+t.name">
+                                    <option :value="t.name" x-text="t.name + (t.comment ? ' (' + t.comment + ')' : '')"></option>
+                                </template>
+                            </select>
+                            <div x-show="fgLoadingDetailTables" style="font-size:11px;color:#999;">載入中...</div>
+                        </div>
+                        <div x-show="fgResolvingDetailView" style="font-size:11px;color:#999;padding:4px 0;">
+                            正在準備視圖配置...
+                        </div>
+                        <div class="stu-field" x-show="fgDetailViewCode">
+                            <label>FKey 欄位 (關聯 Master PKey)</label>
+                            <select x-model="fgDetailFkeyColumn"
+                                    x-effect="fgDetailColumns.length; $nextTick(() => { if (fgDetailFkeyColumn) $el.value = fgDetailFkeyColumn })">
+                                <option value="">-- 選擇外鍵 --</option>
+                                <template x-for="col in fgDetailColumns" :key="'fgdfk-'+col.column">
+                                    <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="stu-section-divider">設定</div>
+                        <div class="stu-field">
+                            <label>標題</label>
+                            <input type="text" x-model="settingTitle" placeholder="自訂標題">
+                        </div>
+                        <div class="stu-field">
+                            <label>Detail 每頁筆數</label>
+                            <input type="number" x-model="fgDetailPageSize" min="1" max="100">
+                        </div>
+                        <div class="stu-field">
+                            <label>PKey 編號規則</label>
+                            <select x-model="fgNumberingRuleSc">
+                                <option value="">自動遞增 (auto+1)</option>
+                                <template x-for="rule in fgNumberingRules" :key="'fgnr-'+rule.secure_code">
+                                    <option :value="rule.secure_code" x-text="rule.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="stu-section-divider">CRUD 權限</div>
+                        <div class="stu-field-check">
+                            <input type="checkbox" x-model="fgAllowCreate" id="fg-create">
+                            <label for="fg-create">允許新增</label>
+                        </div>
+                        <div class="stu-field-check">
+                            <input type="checkbox" x-model="fgAllowEdit" id="fg-edit">
+                            <label for="fg-edit">允許編輯</label>
+                        </div>
+                        <div class="stu-field-check">
+                            <input type="checkbox" x-model="fgAllowDelete" id="fg-delete">
+                            <label for="fg-delete">允許刪除</label>
+                        </div>
+
+                        <div class="stu-section-divider">
+                            Context Outputs
+                            <button class="stu-btn sm" style="float:right;" @click="addContextOutput()">+</button>
+                        </div>
+                        <template x-for="(out, idx) in settingContextOutputs" :key="'fgo-'+idx">
+                            <div class="stu-ctx-row">
+                                <input type="text" x-model="out.contextKey" placeholder="contextKey">
+                                <select x-model="out.sourceColumn">
+                                    <option value="">--</option>
+                                    <template x-for="col in fgMasterColumns" :key="'fgoc-'+col.column">
+                                        <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
+                                    </template>
+                                </select>
+                                <button class="stu-btn sm danger" @click="settingContextOutputs.splice(idx, 1)">x</button>
+                            </div>
+                        </template>
+
+                        <div class="stu-section-divider">
+                            Context Inputs
+                            <button class="stu-btn sm" style="float:right;" @click="addContextInput()">+</button>
+                        </div>
+                        <template x-for="(inp, idx) in settingContextInputs" :key="'fgi-'+idx">
+                            <div class="stu-ctx-row">
+                                <input type="text" x-model="inp.contextKey" placeholder="contextKey">
+                                <select x-model="inp.filterColumn">
+                                    <option value="">--</option>
+                                    <template x-for="col in fgMasterColumns" :key="'fgic-'+col.column">
+                                        <option :value="col.column" x-text="col.label + ' [' + col.column + ']'"></option>
+                                    </template>
+                                </select>
+                                <button class="stu-btn sm danger" @click="settingContextInputs.splice(idx, 1)">x</button>
+                            </div>
+                        </template>
+
+                        <div class="stu-actions">
+                            <button class="stu-btn primary" @click="applyWidgetSettings()">套用</button>
+                            <button class="stu-btn danger" @click="removeSelectedWidget()">移除元件</button>
+                        </div>
+                    </div>
+
                     <!-- ===== DATALIST Settings ===== -->
-                    <div class="stu-props-body" x-show="settingWidgetType !== 'SITEMENU'">
+                    <div class="stu-props-body" x-show="settingWidgetType !== 'SITEMENU' && settingWidgetType !== 'FORMGRID'">
                         <div class="stu-field">
                             <label>資料來源</label>
                             <select x-model="settingDataSource" @change="onDataSourceChange()">
@@ -978,6 +1141,7 @@ window.__STUDIO_CONFIG = {
 <script src="/static/js/bk-file-attachment.js"></script>
 <script src="/static/modules/nocode_builder/js/datalist-widget.js"></script>
 <script src="/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
+<script src="/static/modules/nocode_builder/js/formgrid-widget.js"></script>
 <script src="/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
 <script src="/static/modules/nocode_builder/js/studio.js"></script>
 <script src="/static/js/auth.js"></script>

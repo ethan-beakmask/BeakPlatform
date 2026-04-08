@@ -640,6 +640,63 @@ def get_row(secure_code, row_id):
     return jsonify(result)
 
 
+def _check_formgrid_lock(request_obj):
+    """
+    FORMGRID 鎖定檢查。
+    前端透過 X-Lock-Check-View + X-Lock-Check-RowId 傳入 Master 的 view code 和 row id，
+    後端查詢 Master 記錄的 is_locked 欄位。若鎖定則回傳 403 回應。
+
+    Returns:
+        Flask response (403) if locked, None if OK or not applicable.
+    """
+    lock_view_code = request_obj.headers.get('X-Lock-Check-View', '').strip()
+    lock_row_id = request_obj.headers.get('X-Lock-Check-RowId', '').strip()
+
+    if not lock_view_code or not lock_row_id:
+        return None  # 非 FORMGRID 操作或不需檢查
+
+    from ..models import DcCrudView
+    from ..services.db_connector import get_data_conn
+
+    master_view = ResourceGateway.get(
+        DcCrudView, lock_view_code,
+        raise_on_not_found=False,
+        check_permission=False
+    )
+    if not master_view:
+        return None  # Master view 不存在，略過
+
+    try:
+        from psycopg2 import sql as psql
+        from ..services.crud_service import _find_row_id_column
+
+        row_id_col = _find_row_id_column(master_view)
+        if not row_id_col:
+            return None
+
+        with get_data_conn(master_view.org_secure_code, master_view.data_source) as conn:
+            with conn.cursor() as cur:
+                query = psql.SQL('SELECT {} FROM {} WHERE {} = %s').format(
+                    psql.Identifier('is_locked'),
+                    psql.Identifier(master_view.table_name),
+                    psql.Identifier(row_id_col),
+                )
+                cur.execute(query, (lock_row_id,))
+                row = cur.fetchone()
+                conn.rollback()  # read-only
+
+                if row and row[0]:
+                    return jsonify({
+                        'success': False,
+                        'error': '此 Master 記錄已鎖定，無法修改關聯資料'
+                    }), 403
+    except Exception as e:
+        logger.warning('FORMGRID lock check failed: %s', e)
+        # 檢查失敗不阻擋操作（寬容策略）
+
+    return None
+
+
 @api_bp.route('/views/<secure_code>/rows', methods=['POST'])
 @csrf.exempt
 @module_access_required('nocode_builder', False)
@@ -664,6 +721,11 @@ def create_row(secure_code):
 
     if not view.allow_create:
         return jsonify({'success': False, 'error': 'Create not allowed'}), 403
+
+    # FORMGRID 鎖定檢查
+    lock_denied = _check_formgrid_lock(request)
+    if lock_denied:
+        return lock_denied
 
     data = request.get_json() or {}
     try:
@@ -705,6 +767,11 @@ def update_row(secure_code, row_id):
     if not view.allow_edit:
         return jsonify({'success': False, 'error': 'Edit not allowed'}), 403
 
+    # FORMGRID 鎖定檢查
+    lock_denied = _check_formgrid_lock(request)
+    if lock_denied:
+        return lock_denied
+
     data = request.get_json() or {}
     try:
         with get_data_conn(view.org_secure_code, view.data_source) as conn:
@@ -744,6 +811,11 @@ def delete_row(secure_code, row_id):
 
     if not view.allow_delete:
         return jsonify({'success': False, 'error': 'Delete not allowed'}), 403
+
+    # FORMGRID 鎖定檢查
+    lock_denied = _check_formgrid_lock(request)
+    if lock_denied:
+        return lock_denied
 
     try:
         with get_data_conn(view.org_secure_code, view.data_source) as conn:

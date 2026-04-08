@@ -44,6 +44,7 @@ function studioManager() {
         componentTypes: [
             { type: 'DATALIST', label: '資料清單', icon: 'fa-table', desc: '展示與操作資料表' },
             { type: 'SITEMENU', label: '選單', icon: 'fa-bars', desc: 'Site Map 導航選單' },
+            { type: 'FORMGRID', label: '主細元件', icon: 'fa-th-list', desc: '主表+明細表二表三態' },
         ],
 
         // Site Map
@@ -108,6 +109,31 @@ function studioManager() {
         smItemGap: 6,
         smHoverExpand: true,
         smHoverExpandDelay: 300,
+
+        // FORMGRID settings
+        fgMasterDataSource: '',
+        fgMasterTableName: '',
+        fgMasterViewCode: '',
+        fgDetailDataSource: '',
+        fgDetailTableName: '',
+        fgDetailViewCode: '',
+        fgMasterPkeyColumn: '',
+        fgDetailFkeyColumn: '',
+        fgMasterListColumns: [],
+        fgDetailPageSize: 5,
+        fgNumberingRuleSc: '',
+        fgAllowCreate: true,
+        fgAllowEdit: true,
+        fgAllowDelete: true,
+        fgMasterColumns: [],     // 快取: master view 的欄位清單
+        fgDetailColumns: [],     // 快取: detail view 的欄位清單
+        fgMasterSourceTables: [],
+        fgDetailSourceTables: [],
+        fgLoadingMasterTables: false,
+        fgLoadingDetailTables: false,
+        fgResolvingMasterView: false,
+        fgResolvingDetailView: false,
+        fgNumberingRules: [],    // 可用的 numbering 規則
 
         // Role permissions & filters
         settingUseRolePerms: false,
@@ -731,6 +757,17 @@ function studioManager() {
                     itemGap: 6, hoverExpand: true, hoverExpandDelay: 300,
                     contextOutputs: [], contextInputs: [],
                 };
+            } else if (type === 'FORMGRID') {
+                widgetConfig = {
+                    id: wid, type: 'FORMGRID', title: '',
+                    masterViewCode: '', detailViewCode: '',
+                    masterPkeyColumn: '', detailFkeyColumn: '',
+                    masterListColumns: [],
+                    detailPageSize: 5,
+                    numberingRuleSc: '',
+                    allowCreate: true, allowEdit: true, allowDelete: true,
+                    contextOutputs: [], contextInputs: [],
+                };
             } else {
                 widgetConfig = {
                     id: wid, type: type, viewCode: '', title: '',
@@ -765,6 +802,9 @@ function studioManager() {
         _createWidgetInstance: function (container, config) {
             if (config.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
                 return new SiteMenuWidget(container, config);
+            }
+            if (config.type === 'FORMGRID' && typeof FormGridWidget !== 'undefined') {
+                return new FormGridWidget(container, config);
             }
             if (typeof DataListWidget !== 'undefined') {
                 return new DataListWidget(container, config);
@@ -881,6 +921,25 @@ function studioManager() {
             this.settingContextOutputs = JSON.parse(JSON.stringify(widgetConfig.contextOutputs || []));
             this.settingContextInputs = JSON.parse(JSON.stringify(widgetConfig.contextInputs || []));
 
+            if (this.settingWidgetType === 'FORMGRID') {
+                // FORMGRID 專用欄位
+                this.fgMasterViewCode = widgetConfig.masterViewCode || '';
+                this.fgDetailViewCode = widgetConfig.detailViewCode || '';
+                this.fgMasterPkeyColumn = widgetConfig.masterPkeyColumn || '';
+                this.fgDetailFkeyColumn = widgetConfig.detailFkeyColumn || '';
+                this.fgMasterListColumns = (widgetConfig.masterListColumns || []).slice();
+                this.fgDetailPageSize = widgetConfig.detailPageSize || 5;
+                this.fgNumberingRuleSc = widgetConfig.numberingRuleSc || '';
+                this.fgAllowCreate = widgetConfig.allowCreate !== false;
+                this.fgAllowEdit = widgetConfig.allowEdit !== false;
+                this.fgAllowDelete = widgetConfig.allowDelete !== false;
+                // 載入欄位清單
+                this._fgLoadColumns('master');
+                this._fgLoadColumns('detail');
+                this._fgLoadNumberingRules();
+                return;
+            }
+
             if (this.settingWidgetType === 'SITEMENU') {
                 // SITEMENU 專用欄位
                 this.smStartNodeSc = widgetConfig.startNodeSc || '';
@@ -966,6 +1025,10 @@ function studioManager() {
         applyWidgetSettings: function () {
             if (this.settingWidgetType === 'SITEMENU') {
                 this._applySiteMenuSettings();
+                return;
+            }
+            if (this.settingWidgetType === 'FORMGRID') {
+                this._applyFormGridSettings();
                 return;
             }
 
@@ -1095,6 +1158,187 @@ function studioManager() {
             }
 
             this.showToast('已套用', 'success');
+        },
+
+        // ===== FORMGRID Settings Apply =====
+
+        _applyFormGridSettings: function () {
+            var validOutputs = this.settingContextOutputs.filter(function (o) {
+                return o.contextKey && o.contextKey.trim() && o.sourceColumn && o.sourceColumn.trim();
+            });
+            var validInputs = this.settingContextInputs.filter(function (i) {
+                return i.contextKey && i.contextKey.trim() && i.filterColumn && i.filterColumn.trim();
+            });
+
+            var widgetConfig = {
+                title: this.settingTitle,
+                masterViewCode: this.fgMasterViewCode,
+                detailViewCode: this.fgDetailViewCode,
+                masterPkeyColumn: this.fgMasterPkeyColumn,
+                detailFkeyColumn: this.fgDetailFkeyColumn,
+                masterListColumns: this.fgMasterListColumns.slice(),
+                detailPageSize: parseInt(this.fgDetailPageSize, 10) || 5,
+                numberingRuleSc: this.fgNumberingRuleSc || null,
+                allowCreate: this.fgAllowCreate,
+                allowEdit: this.fgAllowEdit,
+                allowDelete: this.fgAllowDelete,
+                contextOutputs: JSON.parse(JSON.stringify(validOutputs)),
+                contextInputs: JSON.parse(JSON.stringify(validInputs)),
+            };
+
+            if (this.editMode === 'grid' && this._gridEditor && this.selectedZoneId) {
+                this._gridEditor.updateWidget(this.selectedZoneId, widgetConfig);
+            } else if (this.editMode === 'free' && this.selectedZoneId) {
+                var wid = this.selectedZoneId;
+                if (this._gsWidgetConfigs[wid]) {
+                    Object.assign(this._gsWidgetConfigs[wid], widgetConfig);
+                    this._gsUpdateWidget(wid, this._gsWidgetConfigs[wid]);
+                }
+                this.dirty = true;
+            }
+
+            this.showToast('已套用', 'success');
+        },
+
+        // FORMGRID: 資料來源變更
+        async fgOnMasterDataSourceChange() {
+            this.fgMasterSourceTables = [];
+            this.fgMasterTableName = '';
+            this.fgMasterViewCode = '';
+            this.fgMasterColumns = [];
+            if (!this.fgMasterDataSource) return;
+            this.fgLoadingMasterTables = true;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgMasterDataSource + '/tables');
+                var data = await res.json();
+                if (data.success) this.fgMasterSourceTables = data.data || [];
+            } catch (e) { console.error(e); }
+            finally { this.fgLoadingMasterTables = false; }
+        },
+
+        async fgOnDetailDataSourceChange() {
+            this.fgDetailSourceTables = [];
+            this.fgDetailTableName = '';
+            this.fgDetailViewCode = '';
+            this.fgDetailColumns = [];
+            if (!this.fgDetailDataSource) return;
+            this.fgLoadingDetailTables = true;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgDetailDataSource + '/tables');
+                var data = await res.json();
+                if (data.success) this.fgDetailSourceTables = data.data || [];
+            } catch (e) { console.error(e); }
+            finally { this.fgLoadingDetailTables = false; }
+        },
+
+        // FORMGRID: 表格名稱變更 → 自動解析 view
+        async fgOnMasterTableChange() {
+            this.fgMasterViewCode = '';
+            this.fgMasterColumns = [];
+            if (!this.fgMasterTableName || !this.fgMasterDataSource) return;
+            this.fgResolvingMasterView = true;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table_name: this.fgMasterTableName, data_source: this.fgMasterDataSource }),
+                });
+                var data = await res.json();
+                if (data.success && data.data) {
+                    this.fgMasterViewCode = data.data.secure_code;
+                    this.fgMasterColumns = (data.data.columns_config || []).filter(function (c) { return c.visible; });
+                    // 加入 availableViews
+                    if (!this.availableViews.find(function (v) { return v.secure_code === data.data.secure_code; })) {
+                        this.availableViews.push(data.data);
+                    }
+                }
+            } catch (e) { console.error(e); }
+            finally { this.fgResolvingMasterView = false; }
+        },
+
+        async fgOnDetailTableChange() {
+            this.fgDetailViewCode = '';
+            this.fgDetailColumns = [];
+            if (!this.fgDetailTableName || !this.fgDetailDataSource) return;
+            this.fgResolvingDetailView = true;
+            try {
+                var res = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table_name: this.fgDetailTableName, data_source: this.fgDetailDataSource }),
+                });
+                var data = await res.json();
+                if (data.success && data.data) {
+                    this.fgDetailViewCode = data.data.secure_code;
+                    this.fgDetailColumns = (data.data.columns_config || []).filter(function (c) { return c.visible; });
+                    if (!this.availableViews.find(function (v) { return v.secure_code === data.data.secure_code; })) {
+                        this.availableViews.push(data.data);
+                    }
+                }
+            } catch (e) { console.error(e); }
+            finally { this.fgResolvingDetailView = false; }
+        },
+
+        // FORMGRID: 載入已存 view 的欄位 + 回填資料來源下拉選單
+        async _fgLoadColumns(which) {
+            var viewCode = which === 'master' ? this.fgMasterViewCode : this.fgDetailViewCode;
+            if (!viewCode) return;
+            try {
+                var res = await fetch('/api/nocode-builder/views/' + viewCode);
+                var data = await res.json();
+                if (data.success && data.data) {
+                    var cols = (data.data.columns_config || []).filter(function (c) { return c.visible; });
+                    var ds = data.data.data_source || '';
+                    var tn = data.data.table_name || '';
+
+                    if (which === 'master') {
+                        this.fgMasterColumns = cols;
+                        this.fgMasterDataSource = ds;
+                        this.fgMasterTableName = tn;
+                    } else {
+                        this.fgDetailColumns = cols;
+                        this.fgDetailDataSource = ds;
+                        this.fgDetailTableName = tn;
+                    }
+
+                    // 回填 source tables 下拉選單（否則資料表顯示「請選擇」）
+                    if (ds && this.subSystemSc) {
+                        var tablesRes = await fetch(
+                            '/api/nocode-builder/sub-systems/' + this.subSystemSc
+                            + '/data-sources/' + ds + '/tables'
+                        );
+                        var tablesData = await tablesRes.json();
+                        if (tablesData.success) {
+                            if (which === 'master') {
+                                this.fgMasterSourceTables = tablesData.data || [];
+                            } else {
+                                this.fgDetailSourceTables = tablesData.data || [];
+                            }
+                        }
+                    }
+                }
+            } catch (e) { console.error(e); }
+        },
+
+        // FORMGRID: 載入 numbering 規則
+        async _fgLoadNumberingRules() {
+            try {
+                var res = await fetch('/api/numbering/rules');
+                var data = await res.json();
+                if (data.success) {
+                    this.fgNumberingRules = data.data || [];
+                }
+            } catch (e) { console.error(e); }
+        },
+
+        // FORMGRID: Master List 欄位勾選
+        fgToggleMasterListCol: function (colName) {
+            var idx = this.fgMasterListColumns.indexOf(colName);
+            if (idx >= 0) {
+                this.fgMasterListColumns.splice(idx, 1);
+            } else {
+                this.fgMasterListColumns.push(colName);
+            }
         },
 
         _gsUpdateWidget: function (wid, cfg) {

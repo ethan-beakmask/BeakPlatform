@@ -78,6 +78,19 @@ function labViewer() {
                         smw.init();
                         this.widgets[id] = smw;
                     }
+                } else if (widgetConfig && widgetConfig.type === 'FORMGRID' && typeof FormGridWidget !== 'undefined') {
+                    widgetConfig.id = id;
+                    if (this.subCtx) {
+                        widgetConfig._subSystemSc = this.subCtx.subSystemSc || '';
+                        widgetConfig._siteMapNodeSc = this.subCtx.siteMapNodeSc || '';
+                    }
+                    const content = gsItem.querySelector('.grid-stack-item-content');
+                    if (content) {
+                        content.innerHTML = '';
+                        const fgw = new FormGridWidget(content, widgetConfig);
+                        fgw.init();
+                        this.widgets[id] = fgw;
+                    }
                 } else if (widgetConfig && widgetConfig.viewCode) {
                     widgetConfig.id = id;
 
