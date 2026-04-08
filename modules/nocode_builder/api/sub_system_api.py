@@ -188,19 +188,12 @@ def update_sub_system(secure_code):
 @csrf.exempt
 @admin_required
 def delete_sub_system(secure_code):
-    """刪除子系統"""
-    from ..models import DcSubSystem
+    """刪除子系統（委派 ProjectService 處理完整清理）"""
+    from ..services.project_service import ProjectService
 
-    ss = ResourceGateway.get(
-        DcSubSystem, secure_code,
-        raise_on_not_found=False,
-        check_permission=False
-    )
-    if not ss or ss.is_deleted:
-        return jsonify({'success': False, 'error': 'Sub system not found'}), 404
-
-    ResourceGateway.delete(ss, check_permission=False, soft=True)
-    ResourceGateway.commit()
+    result = ProjectService.delete_project(secure_code)
+    if not result.get('success'):
+        return jsonify({'success': False, 'error': result.get('error', 'Delete failed')}), 404
 
     return jsonify({'success': True, 'message': '子系統已刪除'})
 
