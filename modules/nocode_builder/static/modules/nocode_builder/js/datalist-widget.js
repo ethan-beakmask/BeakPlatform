@@ -267,7 +267,7 @@ class DataListWidget {
                 }
             }
 
-            const res = await fetch(url);
+            const res = await fetch(url, { headers: this._buildContextHeaders() });
             const data = await res.json();
             if (data.success) {
                 this.rows = data.data.rows || [];
@@ -602,6 +602,9 @@ class DataListWidget {
         } else if (this.config._subSystemSspSc && this.config._subSystemSc) {
             headers['X-SubSystem-SSP'] = this.config._subSystemSspSc;
             headers['X-SubSystem-SC'] = this.config._subSystemSc;
+        } else if (this.config._subSystemSc) {
+            // Studio 設計模式: 只有 _subSystemSc，無 SiteMap/SSP context
+            headers['X-SubSystem-SC'] = this.config._subSystemSc;
         }
         // Widget ID: 後端用來從 layout_json 定位 widget 做權限檢查
         if (this.id) {
@@ -713,7 +716,8 @@ class DataListWidget {
         if (isEdit && rowId) {
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId
+                    '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId,
+                    { headers: this._buildContextHeaders() }
                 );
                 const data = await res.json();
                 if (!data.success) {

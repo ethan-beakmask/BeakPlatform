@@ -800,6 +800,8 @@ function studioManager() {
 
         /** 依 type 建立對應 widget instance */
         _createWidgetInstance: function (container, config) {
+            // Studio 設計模式: 注入 subSystemSc 讓 SQLite 資料來源能定位檔案
+            config._subSystemSc = this.subSystemSc;
             if (config.type === 'SITEMENU' && typeof SiteMenuWidget !== 'undefined') {
                 return new SiteMenuWidget(container, config);
             }
