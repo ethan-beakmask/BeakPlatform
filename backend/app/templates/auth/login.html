@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     {% if login_type == 'org' and org %}
     <title>{{ _('登入') }} - {{ org.name }}</title>
     {% else %}
@@ -100,6 +101,21 @@
             color: #9ca3af;
             font-size: 12px;
         }
+        .login-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 900px;
+            height: 900px;
+            background-image: url("{{ url_for('static', filename='img/logo-watermark.png') }}");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
@@ -115,6 +131,7 @@
         <h1>{{ _('登入') }}</h1>
         {% endif %}
     {% else %}
+    <div class="login-watermark"></div>
     <h1>BeakPlatform {{ _('登入') }}</h1>
     {% endif %}
 
