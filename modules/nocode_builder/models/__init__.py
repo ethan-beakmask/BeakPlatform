@@ -10,9 +10,11 @@ from .site_map_node import DcSiteMapNode
 from .site_map_permission import DcSiteMapPermission
 from .permission_policy import DcPermissionPolicyGroup, DcPermissionPolicyRule
 from .background import DcBackground
+from .bridge_log import DcBridgeLog
 
 __all__ = [
     'DcCrudView', 'DcPageLayout', 'DcPageTemplate', 'DcSubSystem',
     'DcSubSystemPage', 'DcSiteMapNode', 'DcSiteMapPermission',
     'DcPermissionPolicyGroup', 'DcPermissionPolicyRule', 'DcBackground',
+    'DcBridgeLog',
 ]

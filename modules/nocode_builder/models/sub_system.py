@@ -36,6 +36,9 @@ class DcSubSystem(ModuleBaseModel):
     # 子系統預設樣式
     style_config = Column(JSONB, default=dict)
 
+    # 資料橋接規則 (Studio 可配置)
+    bridge_rules = Column(JSONB, default=list)
+
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
         data.update({
@@ -51,5 +54,6 @@ class DcSubSystem(ModuleBaseModel):
             'layout_mode': self.layout_mode,
             'provision_serial_number': self.provision_serial_number,
             'style_config': self.style_config or {},
+            'bridge_rules': self.bridge_rules or [],
         })
         return data
