@@ -6,14 +6,10 @@
 子系統建立時自動在此 category 下建立 lookup_item，
 item.code = 隨機路徑 ID，item.value_str = sub_system_secure_code。
 
-用法:
-    cd <project_root>/backend
-    python3 ../modules/nocode_builder/migrations/013_public_portal_paths_category.py --dry-run
-    python3 ../modules/nocode_builder/migrations/013_public_portal_paths_category.py --run
+由 run_migrations.py 無參數執行。冪等：已存在則 SKIP。
 """
 import sys
 import os
-import argparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
 
@@ -66,19 +62,9 @@ def run_migration(dry_run=True):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='013: 建立 PUBLIC_PORTAL_PATHS category')
-    parser.add_argument('--run', action='store_true', help='Execute migration (default: dry-run)')
-    parser.add_argument('--dry-run', action='store_true', help='Show what would be done')
-    args = parser.parse_args()
-
-    if not args.run and not args.dry_run:
-        parser.print_help()
-        print('\n請指定 --dry-run 或 --run')
-        sys.exit(1)
-
     app = create_app()
     with app.app_context():
-        run_migration(dry_run=not args.run)
+        run_migration(dry_run=False)
 
 
 if __name__ == '__main__':
