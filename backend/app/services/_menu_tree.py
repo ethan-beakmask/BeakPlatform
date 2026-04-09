@@ -444,7 +444,7 @@ class MenuTreeMixin:
         # 解析連結
         href = cls._resolve_link(item)
 
-        # 判斷是否為系統級選單 (屬於 system.local)
+        # 判斷是否為系統級選單 (屬於 SYSTEM_ORG_CODE)
         is_system_menu = item.org_secure_code == SYSTEM_ORG_CODE
 
         # 計算權限等級標記 (viewer-independent，依 CSV 權限顏色表)

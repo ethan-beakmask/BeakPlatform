@@ -1,13 +1,13 @@
 -- Migration 017: 重構選單架構 - 通用選單改為系統共用
 -- 問題：beakmask.local 的選單被授權給 SYSTEM_ADMIN，違反多租戶隔離概念
--- 解法：將通用功能選單移到 system.local 並設為 is_shared = true
+-- 解法：將通用功能選單移到系統企業 (SYSTEM_ORG_CODE) 並設為 is_shared = true
 --
 -- 執行時機：beakmask.local 企業被軟刪除前執行
 -- 注意：此遷移已於 2025-12-28 執行完成
 
 BEGIN;
 
--- 1. 將通用選單移到 system.local 並設為共用
+-- 1. 將通用選單移到系統企業 (SYSTEM_ORG_CODE) 並設為共用
 -- 這些選單對所有企業都適用，由 ResourceGateway 保證資料隔離
 UPDATE menu_items
 SET org_secure_code = (SELECT secure_code FROM organizations WHERE code = 'SYSTEM' LIMIT 1),
@@ -33,7 +33,7 @@ WHERE org_secure_code = 'lkpjrhad7yXuJuLOhxyS38'  -- beakmask.local
 
 -- 2. 修正選單的 module 引用
 -- 問題：移動後的選單仍引用 beakmask.local 的 module
--- 解法：改為引用 system.local 的 system_core module
+-- 解法：改為引用系統企業 (SYSTEM_ORG_CODE) 的 system_core module
 UPDATE menu_items
 SET module_secure_code = (
     SELECT secure_code FROM modules

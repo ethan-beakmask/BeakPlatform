@@ -8,7 +8,7 @@ BeakPlatform Web Routes (HTML Pages)
 
 路由層級：
 - /public/*  -> 對外公開區 (無需登入)
-- /portal/*  -> 系統管理員專區 (system.local)
+- /portal/*  -> 系統管理員專區 (SYSTEM_ORG_CODE)
 - /admin/*   -> 企業管理員專區 (各企業)
 - /*         -> 一般用戶功能
 """
@@ -57,7 +57,7 @@ def register_web_blueprints(app: Flask) -> None:
     # Public - 對外公開區 (無需登入)
     app.register_blueprint(public_bp, url_prefix='/public')
 
-    # System Accounts - 系統級帳號管理 (system.local)
+    # System Accounts - 系統級帳號管理 (SYSTEM_ORG_CODE)
     app.register_blueprint(sys_accounts_bp, url_prefix='/sys-accounts')
 
     # Admin - 企業管理員專區 (各企業)

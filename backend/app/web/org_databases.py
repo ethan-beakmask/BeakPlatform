@@ -171,7 +171,7 @@ def system_view():
     系統級：master-detail 佈局，只顯示有獨立 DB 的企業
 
     資料來源：FwOrgDatabase 取有 DB 的 org_id → Organization 取企業資訊。
-    system.local 不排除（若已建 DB 就會出現）。
+    系統企業不排除（若已建 DB 就會出現）。
     """
     from modules.form_workflow.models.org_database import FwOrgDatabase
 

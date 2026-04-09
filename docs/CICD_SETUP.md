@@ -158,7 +158,7 @@ CHANGELOG.md                               # Keep a Changelog 格式
 
 1. 等待 PostgreSQL 就緒（最多 60 秒）
 2. 檢查 `organizations` 表是否存在
-   - 不存在 → `db.create_all()` + 建立 system.local 企業 + admin 帳號
+   - 不存在 → `db.create_all()` + 建立系統企業 (SYSTEM_ORG_CODE) + admin 帳號
    - 存在 → 跳過
 3. 執行 `scripts/init_menus.py`（平台選單初始化，冪等操作）
 4. 執行 `flask module sync`（模組選單/權限同步）
@@ -179,7 +179,7 @@ CD 觸發後執行 `deploy/deploy-remote.sh`：
 
 | 帳號 | 密碼 | 說明 |
 |------|------|------|
-| admin@system.local | 由 `ADMIN_INITIAL_PASSWORD` 環境變數設定 | 系統管理員（首次登入強制改密碼） |
+| admin@BeakPlatform_Identifier_Code | 由 `ADMIN_INITIAL_PASSWORD` 環境變數設定 | 系統管理員（首次登入強制改密碼） |
 
 ---
 

@@ -380,7 +380,7 @@ class MenuFactoryMixin:
             code_to_item = {item.code: item for item in items}
 
         total = 0
-        # system.local 也要 seed
+        # 系統企業 (SYSTEM_ORG_CODE) 也要 seed
         total += cls.seed_org_role_requirements(
             SYSTEM_ORG_CODE, code_to_item
         )
@@ -452,7 +452,7 @@ class MenuFactoryMixin:
                 )
 
             # 3. 快照 menu_role_requirements (Key2)
-            #    以 system.local 企業的設定為基準，用 role code 紀錄
+            #    以系統企業 (SYSTEM_ORG_CODE) 的設定為基準，用 role code 紀錄
             all_mrrs = MenuRoleRequirement.query.filter(
                 MenuRoleRequirement.org_secure_code == SYSTEM_ORG_CODE,
                 MenuRoleRequirement.is_deleted == False,

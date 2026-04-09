@@ -820,7 +820,7 @@ class OrganizationService:
         """
         初始化系統企業
 
-        系統企業 (system.local) 是特殊企業，永久有效，不受合約限制。
+        系統企業 (SYSTEM_ORG_CODE) 是特殊企業，永久有效，不受合約限制。
         用於存放系統管理員帳號。
 
         Returns:

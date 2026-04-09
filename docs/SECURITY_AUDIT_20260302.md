@@ -123,9 +123,9 @@
 
 **`_filter_with_bypass()` 分流器**: 靜態方法，將 items 分為受管轄 (subject) 與不受管轄兩組，只對受管轄組執行過濾，最後合併保持原始順序。
 
-**system.local 合約豁免**: `_get_authorized_modules()` 對 `SYSTEM_ORG_CODE` 直接回傳所有已安裝模組，不查合約。與 `Organization.get_contract_valid_range()` 永久有效邏輯一致。
+**系統企業合約豁免**: `_get_authorized_modules()` 對 `SYSTEM_ORG_CODE` 直接回傳所有已安裝模組，不查合約。與 `Organization.get_contract_valid_range()` 永久有效邏輯一致。
 
-**`SYSTEM_ORG_CODE` 集中化**: 所有 system.local 判斷統一從 `backend/app/constants.py` 匯入常數，不再分散定義。
+**`SYSTEM_ORG_CODE` 集中化**: 所有系統企業判斷統一從 `backend/app/constants.py` 匯入常數，不再分散定義。
 
 ### module_menu_service.py is_deleted 查詢邏輯
 

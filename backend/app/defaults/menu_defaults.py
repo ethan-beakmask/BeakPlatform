@@ -622,7 +622,7 @@ CORE_MENUS = [
 # 選單角色需求預設值 (雙鑰匙 Key2)
 # menu_code → [role_codes]
 #
-# 從 system.local 的 menu_role_requirements 匯出 (2026-03-30)
+# 從系統企業 (SYSTEM_ORG_CODE) 的 menu_role_requirements 匯出 (2026-03-30)
 # SYSTEM_ADMIN 專用選單不需要角色（程式 bypass），故不在此列
 # ============================================================================
 MENU_ROLE_DEFAULTS = {

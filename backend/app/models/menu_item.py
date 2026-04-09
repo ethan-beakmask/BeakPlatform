@@ -91,7 +91,7 @@ class MenuItem(TenantBaseModel):
     required_level = Column(Integer, default=2, nullable=False)
 
     # === Phase 2 系統級擴展 ===
-    # 是否為系統共用選單 (只有 system.local 的選單可設為 True)
+    # 是否為系統共用選單 (只有系統企業 SYSTEM_ORG_CODE 的選單可設為 True)
     # is_shared=True 的選單會出現在所有企業用戶的選單中
     is_shared = Column(Boolean, default=False, nullable=False, index=True)
 

@@ -212,7 +212,7 @@ class ModuleAccessService:
         """
         檢查用戶企業是否擁有指定模組的有效合約
 
-        系統企業 (system.local) 不受合約限制。
+        系統企業 (SYSTEM_ORG_CODE) 不受合約限制。
 
         Args:
             user: 當前用戶

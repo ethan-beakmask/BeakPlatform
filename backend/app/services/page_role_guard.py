@@ -78,7 +78,7 @@ class PageRoleGuard:
         if getattr(user, 'is_original_admin', False):
             return None
 
-        # RLS context: 選單項目屬於 system.local，角色需求跨企業
+        # RLS context: 選單項目屬於系統企業 (SYSTEM_ORG_CODE)，角色需求跨企業
         # 需要 system_admin 權限才能查詢所有企業的資料
         try:
             db.session.execute(text("SET LOCAL app.is_system_admin = 'true'"))

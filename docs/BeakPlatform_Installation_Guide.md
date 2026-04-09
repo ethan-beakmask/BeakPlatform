@@ -162,15 +162,15 @@ from app.models import Organization, User, UserType
 
 app = create_app()
 with app.app_context():
-    existing = Organization.query.filter_by(domain_name='system.local').first()
+    existing = Organization.query.filter_by(domain_name='BeakPlatform_Identifier_Code').first()
     if existing:
         print("初始資料已存在，跳過")
     else:
         system_org = Organization(
-            secure_code='system.local',
+            secure_code='BeakPlatform_Identifier_Code',
             code='SYSTEM',
-            name='system.local',
-            domain_name='system.local',
+            name='BeakPlatform_Identifier_Code',
+            domain_name='BeakPlatform_Identifier_Code',
             is_active=True
         )
         db.session.add(system_org)
@@ -187,9 +187,9 @@ with app.app_context():
         password_hash = bcrypt.hashpw(password, salt).decode('utf-8')
 
         admin = User(
-            org_secure_code='system.local',
+            org_secure_code='BeakPlatform_Identifier_Code',
             username='admin',
-            email='admin@system.local',
+            email='admin@BeakPlatform_Identifier_Code',
             display_name='System Admin',
             password_hash=password_hash,
             user_type=UserType.SYSTEM_ADMIN,
@@ -199,7 +199,7 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print("初始資料建立完成")
-        print("  帳號: admin@system.local")
+        print("  帳號: admin@BeakPlatform_Identifier_Code")
         print("  密碼: (由 ADMIN_INITIAL_PASSWORD 設定，首次登入須變更)")
 EOF
 ```
@@ -274,10 +274,10 @@ curl -s http://localhost:7000/health
 ### 5.1 系統管理員登入
 
 - URL: `http://<主機IP>:7000/auth/login`
-- 帳號: `admin@system.local`
+- 帳號: `admin@BeakPlatform_Identifier_Code`
 - 密碼: 安裝時透過 `ADMIN_INITIAL_PASSWORD` 設定的密碼（首次登入強制變更）
 
-**重要: 系統管理員必須使用 `/auth/login` (共用登入頁)，不要使用 `/auth/org/system.local/login`。**
+**重要: 系統管理員必須使用 `/auth/login` (共用登入頁)，不要使用 `/auth/org/BeakPlatform_Identifier_Code/login`。**
 
 首次登入會要求變更密碼，新密碼最少 12 碼。
 
@@ -338,7 +338,7 @@ flask run --host=0.0.0.0 --port=7000
 
 ### 7.2 登出後導向
 - 登出後系統會根據 session 記錄的企業 domain 導向企業專屬登入頁
-- 系統管理員登出後可能被導向 `/auth/org/system.local/login`
+- 系統管理員登出後可能被導向 `/auth/org/BeakPlatform_Identifier_Code/login`
 - 此時請手動前往 `/auth/login` 重新登入
 
 ### 7.3 合約檢查
@@ -363,7 +363,7 @@ from app.models import User
 new_pw = getpass.getpass('輸入新密碼: ')
 app = create_app()
 with app.app_context():
-    user = User.query.filter_by(username='admin', org_secure_code='system.local').first()
+    user = User.query.filter_by(username='admin', org_secure_code='BeakPlatform_Identifier_Code').first()
     pw = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
     user.password_hash = pw
     user.must_change_password = True

@@ -352,7 +352,7 @@ class ModuleMenuService:
     @classmethod
     def ensure_system_org_exists(cls) -> bool:
         """
-        確保 system.local 組織存在
+        確保系統企業 (SYSTEM_ORG_CODE) 組織存在
 
         Returns:
             是否成功

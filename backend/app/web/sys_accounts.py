@@ -31,7 +31,7 @@ def _wants_json():
 
 
 def _get_system_org():
-    """取得系統企業 (system.local)"""
+    """取得系統企業 (SYSTEM_ORG_CODE)"""
     return Organization.query.filter(
         Organization.domain_name == SYSTEM_ORG_CODE,
         Organization.is_deleted == False

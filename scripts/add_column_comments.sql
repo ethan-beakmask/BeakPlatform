@@ -188,7 +188,7 @@ COMMENT ON COLUMN menu_items.depth IS '層級深度';
 COMMENT ON COLUMN menu_items.is_expanded IS '是否預設展開';
 COMMENT ON COLUMN menu_items.is_active IS '是否啟用';
 COMMENT ON COLUMN menu_items.required_level IS '[已棄用] 改用 MenuPermission';
-COMMENT ON COLUMN menu_items.is_shared IS '是否為系統共用選單 (僅 system.local 可設為 True)';
+COMMENT ON COLUMN menu_items.is_shared IS '是否為系統共用選單 (僅 BeakPlatform 系統級可設為 True)';
 COMMENT ON COLUMN menu_items.required_permission IS '需要的權限代碼 (如 user:manage)，用於 RBAC 過濾';
 COMMENT ON COLUMN menu_items.created_at IS '建立時間';
 COMMENT ON COLUMN menu_items.updated_at IS '更新時間';

@@ -7,7 +7,7 @@ RBAC 出廠預設值管理（儲存、匯出、匯入、恢復）。
 
 安全設計：
 - SYSTEM_ADMIN: 可看全部角色/選單/權限，可操作全部
-- ORG_ADMIN: 只能看到自己企業 + system.local 共用角色，
+- ORG_ADMIN: 只能看到自己企業 + 系統企業 (SYSTEM_ORG_CODE) 共用角色，
   只能看到授權給 ORG_ADMIN/EMPLOYEE/EXTERNAL 的選單，
   不能操作 SYSTEM 級權限
 """
