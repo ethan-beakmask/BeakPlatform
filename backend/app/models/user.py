@@ -106,6 +106,9 @@ class User(TenantBaseModel, UserMixin):
     # 備註（管理員可見）
     notes = Column(Text, nullable=True, comment='用戶備註（管理員可見）')
 
+    # 外部身份識別碼（跨站錨點，如 AD userPrincipalName）
+    external_identity = Column(String(500), nullable=True, index=True, comment='外部身份識別碼 (如 AD UPN)')
+
     # 企業管理員綁定的企業成員帳號 (一對一)
     # 非 admin@ 的企業管理員必須綁定一個有企業成員編號的企業成員帳號
     # 當被綁定的企業成員帳號停用/刪除時，此管理員帳號也無法登入
