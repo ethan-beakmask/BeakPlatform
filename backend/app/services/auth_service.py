@@ -1,6 +1,7 @@
 """
-BeakMask Authentication Service
-認證相關業務邏輯
+BeakPlatform Authentication Service
+認證相關業務邏輯（密碼重設、密碼強度驗證）
+登入邏輯統一由 api/auth.py _do_login() 處理
 """
 import logging
 from datetime import datetime
