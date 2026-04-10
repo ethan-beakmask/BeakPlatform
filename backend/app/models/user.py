@@ -252,7 +252,7 @@ class User(TenantBaseModel, UserMixin):
                 f"用戶 {self.username}@{self.org_secure_code} 嘗試登入，"
                 f"但企業無有效合約"
             )
-            return False, "帳號或密碼錯誤"  # 不洩露合約狀態，統一錯誤訊息
+            return False, "帳號或密碼錯誤 code:HU931"  # 不洩露合約狀態，僅供管理員辨識
 
         return True, None
 

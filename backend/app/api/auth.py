@@ -16,7 +16,6 @@ from flask_login import login_user, logout_user, current_user
 
 from ..security.decorators import public_route, login_required
 from ..security.resource_gateway import ResourceGateway
-from ..services.auth_service import AuthService
 from ..services import file_service
 from ..services.password_policy_service import PasswordPolicyService
 from ..models import Organization, User
@@ -175,8 +174,25 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
         )
         return error_response('帳號或密碼錯誤', 401)
 
+    # 帳號鎖定檢查
+    is_locked, lock_error = PasswordPolicyService.check_account_lock(user)
+    if is_locked:
+        logger.warning(f"Login denied for locked account: {username}@{domain_name} from {request.remote_addr}")
+        from ..services.audit_service import AuditService
+        AuditService.log_auth_event(
+            action='LOGIN_DENIED',
+            org_secure_code=org.secure_code,
+            user_secure_code=user.secure_code,
+            details=f'帳號鎖定: {username}@{domain_name}',
+            status_code=401,
+        )
+        return error_response(lock_error, 401)
+
     # 驗證密碼
     if not user.check_password(password):
+        # 記錄登入失敗（可能觸發鎖定）
+        lock_msg = PasswordPolicyService.record_login_failure(user, org.secure_code)
+        db.session.commit()
         logger.warning(f"Failed login attempt for: {username}@{domain_name} from {request.remote_addr}")
         # 稽核記錄: 密碼錯誤
         from ..services.audit_service import AuditService
@@ -184,10 +200,10 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
             action='LOGIN_FAILED',
             org_secure_code=org.secure_code,
             user_secure_code=user.secure_code,
-            details=f'密碼錯誤: {username}@{domain_name}',
+            details=f'密碼錯誤: {username}@{domain_name} (失敗 {user.failed_login_count} 次)',
             status_code=401,
         )
-        return error_response('帳號或密碼錯誤', 401)
+        return error_response(lock_msg or '帳號或密碼錯誤', 401)
 
     # 檢查是否可登入
     can_login, error_msg = user.can_login()
@@ -204,7 +220,8 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
         )
         return error_response(error_msg, 403)
 
-    # 登入成功
+    # 登入成功 — 重置失敗計數
+    PasswordPolicyService.record_login_success(user)
     login_user(user, remember=False)
     user.update_last_login()
     db.session.commit()

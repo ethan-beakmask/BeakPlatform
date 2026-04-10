@@ -30,15 +30,6 @@
 
 ## 每次對話必做
 
-### 0. 對話開始 (啟動檢查)
-**每次對話開始時**，主動執行：
-
-1. 查看 Forgejo Issues：
-   ```bash
-   curl -s http://192.168.0.16:3000/api/v1/repos/forgejoadmin/BeakPlatform/issues?state=open | jq '.[] | {number, title}'
-   ```
-2. 與用戶確認本次要處理的項目
-
 ### 1. Git Commit (對話結束)
 **每次對話結束前**：
 

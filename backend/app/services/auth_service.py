@@ -14,33 +14,8 @@ logger = logging.getLogger(__name__)
 class AuthService:
     """認證服務"""
 
-    @staticmethod
-    def authenticate(email: str, password: str) -> Optional[User]:
-        """
-        驗證用戶憑證。
-
-        Args:
-            email: 用戶 email
-            password: 密碼
-
-        Returns:
-            User instance if valid, None otherwise
-        """
-        user = User.query.filter_by(
-            email=email.lower(),
-            is_deleted=False
-        ).first()
-
-        if user is None:
-            return None
-
-        if not user.check_password(password):
-            return None
-
-        # Update last login time
-        user.last_login_at = datetime.utcnow()
-
-        return user
+    # authenticate() 已移除 — 登入邏輯統一由 api/auth.py _do_login() 處理
+    # 該方法曾以 email 查詢且未過濾 org_secure_code，與多租戶架構不一致
 
     @staticmethod
     def request_password_reset(email: str) -> bool:
