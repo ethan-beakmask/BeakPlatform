@@ -1,9 +1,9 @@
 /**
- * spec-multifaceted.js -- 多面向規格管理
+ * spec-schema.js -- 資料結構規格管理
  * Alpine.js 驅動的列表頁
  */
 
-function specMultifacetedManager() {
+function specSchemaManager() {
     return {
         loading: true,
         specs: [],
@@ -40,7 +40,7 @@ function specMultifacetedManager() {
         async loadSpecs() {
             this.loading = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs');
+                var resp = await fetch('/api/spec-formulate/schema/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specs = data.data || [];
@@ -53,7 +53,7 @@ function specMultifacetedManager() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/data-classes');
+                var resp = await fetch('/api/spec-formulate/schema/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -75,7 +75,7 @@ function specMultifacetedManager() {
                 return;
             }
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                var resp = await fetch('/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ function specMultifacetedManager() {
             }
             this.creating = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs', {
+                var resp = await fetch('/api/spec-formulate/schema/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ function specMultifacetedManager() {
             this.deleting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' +
+                    '/api/spec-formulate/schema/specs/' +
                     this.deleteTarget.secure_code,
                     {
                         method: 'DELETE',
@@ -222,7 +222,7 @@ function specMultifacetedManager() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' +
+                    '/api/spec-formulate/schema/specs/' +
                     item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
@@ -309,7 +309,7 @@ function specMultifacetedManager() {
 
             this.docxExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/export/docx', {
+                var resp = await fetch('/api/spec-formulate/schema/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

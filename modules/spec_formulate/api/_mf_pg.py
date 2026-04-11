@@ -1,5 +1,5 @@
 """
-Multifaceted API - PostgreSQL
+Schema API - PostgreSQL
 企業專屬 DB 資料表操作
 """
 import logging
@@ -21,7 +21,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def pg_ensure_db():
         """確保企業專屬 DB 存在，回傳 DB 資訊"""
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             ensure_org_database,
         )
 
@@ -46,7 +46,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def pg_list_tables():
         """列出企業 DB 中的所有資料表"""
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             list_tables,
             ensure_org_database,
         )
@@ -67,7 +67,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def pg_introspect_table(table_name):
         """讀取資料表結構"""
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             introspect_table,
         )
 
@@ -85,8 +85,8 @@ def register(bp):
     @module_access_required('spec_formulate')
     def pg_compare(spec_sc, table_name):
         """比對 SPEC 與資料表結構"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             introspect_table,
             compare_spec_with_table,
         )
@@ -95,7 +95,7 @@ def register(bp):
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -118,8 +118,8 @@ def register(bp):
 
         Body: { "table_name": "spec_xxx" }  // 選填，預設用 spec.table_name
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             ensure_org_database,
             create_table_from_spec,
         )
@@ -128,7 +128,7 @@ def register(bp):
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -184,8 +184,8 @@ def register(bp):
 
         Body: { "table_name": "xxx" }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             introspect_table,
             apply_spec_to_table,
         )
@@ -194,7 +194,7 @@ def register(bp):
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -230,13 +230,13 @@ def register(bp):
     @module_access_required('spec_formulate')
     def pg_unlink_table(spec_sc):
         """解除資料表關聯"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,

@@ -1,7 +1,7 @@
 """
-Multifaceted FormIO Generator - 多面向規格轉 FormIO Schema
+Spec FormIO Generator - 規格轉 FormIO Schema
 
-將 multifaceted spec fields (core + facets.formio) 轉換為 FormIO schema，
+將 spec fields (core + facets.formio) 轉換為 FormIO schema，
 用於建立 FwFormTemplate。
 """
 import logging
@@ -9,14 +9,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def multifaceted_field_to_formio_component(field):
+def spec_field_to_formio_component(field):
     """
-    單一 multifaceted 欄位 -> FormIO component
+    單一 spec 欄位 -> FormIO component
 
     優先使用 facets.formio 的設定，若無則根據 data_class 推導。
 
     Args:
-        field: multifaceted 欄位 dict (含 core + facets)
+        field: spec 欄位 dict (含 core + facets)
 
     Returns:
         dict: FormIO component，若不支援 formio 則回傳 None
@@ -118,12 +118,12 @@ def _make_form_title_component(title):
     }
 
 
-def multifaceted_to_formio_schema(fields, form_title=None):
+def spec_fields_to_formio_schema(fields, form_title=None):
     """
-    整個 multifaceted spec fields -> FormIO schema
+    整個 spec fields -> FormIO schema
 
     Args:
-        fields: multifaceted spec fields list
+        fields: spec fields list
         form_title: 表單標題，加在最前面
 
     Returns:
@@ -135,14 +135,14 @@ def multifaceted_to_formio_schema(fields, form_title=None):
         components.append(_make_form_title_component(form_title))
 
     for f in (fields or []):
-        comp = multifaceted_field_to_formio_component(f)
+        comp = spec_field_to_formio_component(f)
         if comp:
             components.append(comp)
         else:
             fk = f.get('field_key', '?')
             dc = f.get('core', {}).get('data_class', '?')
             logger.warning(
-                'multifaceted field %s (data_class=%s) 無法轉為 FormIO component，已跳過',
+                'spec field %s (data_class=%s) 無法轉為 FormIO component，已跳過',
                 fk, dc,
             )
 

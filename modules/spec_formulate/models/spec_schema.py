@@ -1,5 +1,5 @@
 """
-Spec Multifaceted Model - 多面向規格定義
+Spec Schema Model - 資料結構規格定義
 
 核心設計：
 - fields JSONB 每個欄位包含 core（通用）+ facets（格式專屬）
@@ -11,9 +11,9 @@ from sqlalchemy import Column, String, Integer, Text, JSON, event
 from .base import ModuleBaseModel
 
 
-class FwSpecMultifaceted(ModuleBaseModel):
+class FwSpecSchema(ModuleBaseModel):
     """
-    多面向規格定義
+    資料結構規格定義
 
     每個 SPEC 是一組欄位定義，透過 data_class 抽象資料類別
     橋接 PostgreSQL / FormIO / Excel / CSV 四種格式的差異。
@@ -40,7 +40,7 @@ class FwSpecMultifaceted(ModuleBaseModel):
         }
     ]
     """
-    __tablename__ = 'fw_spec_multifaceted'
+    __tablename__ = 'fw_spec_schema'
 
     org_secure_code = Column(String(100), nullable=False, index=True)
 
@@ -80,7 +80,7 @@ class FwSpecMultifaceted(ModuleBaseModel):
 
     def __repr__(self):
         return (
-            f'<FwSpecMultifaceted name={self.name!r} '
+            f'<FwSpecSchema name={self.name!r} '
             f'v{self.version} ({self.status})>'
         )
 
@@ -125,7 +125,7 @@ class FwSpecMultifaceted(ModuleBaseModel):
             self.active_facets = facets
 
 
-@event.listens_for(FwSpecMultifaceted, 'before_insert')
-def generate_mf_secure_code(mapper, connection, target):
+@event.listens_for(FwSpecSchema, 'before_insert')
+def generate_schema_secure_code(mapper, connection, target):
     if not target.secure_code:
         target.secure_code = secrets.token_urlsafe(16)

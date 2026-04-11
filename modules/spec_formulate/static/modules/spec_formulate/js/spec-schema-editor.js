@@ -1,5 +1,5 @@
 /**
- * spec-multifaceted-editor.js -- 多面向規格編輯器
+ * spec-schema-editor.js -- 資料結構規格編輯器
  * Alpine.js + Tabulator 6.x 整合
  *
  * 核心差異（vs field-spec-editor）：
@@ -9,7 +9,7 @@
  * - 格式投影面板顯示各格式的映射結果
  */
 
-function specMultifacetedEditor() {
+function specSchemaEditor() {
     return {
         specSc: window.__MF_SPEC_CONFIG.specSc || '',
         loading: true,
@@ -132,7 +132,7 @@ function specMultifacetedEditor() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/data-classes');
+                var resp = await fetch('/api/spec-formulate/schema/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -150,7 +150,7 @@ function specMultifacetedEditor() {
         async loadSpecList() {
             this.specListLoading = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs');
+                var resp = await fetch('/api/spec-formulate/schema/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specList = data.data || [];
@@ -169,7 +169,7 @@ function specMultifacetedEditor() {
         async loadSpec() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc
+                    '/api/spec-formulate/schema/specs/' + this.specSc
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -464,10 +464,10 @@ function specMultifacetedEditor() {
             try {
                 var url, method;
                 if (this.specSc) {
-                    url = '/api/spec-formulate/multifaceted/specs/' + this.specSc;
+                    url = '/api/spec-formulate/schema/specs/' + this.specSc;
                     method = 'POST';
                 } else {
-                    url = '/api/spec-formulate/multifaceted/specs';
+                    url = '/api/spec-formulate/schema/specs';
                     method = 'POST';
                 }
 
@@ -529,7 +529,7 @@ function specMultifacetedEditor() {
 
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     '/populate-facet',
                     {
                         method: 'POST',
@@ -626,7 +626,7 @@ function specMultifacetedEditor() {
             if (!this.specSc) return;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' +
+                    '/api/spec-formulate/schema/specs/' +
                     this.specSc + '/history'
                 );
                 var data = await resp.json();
@@ -669,7 +669,7 @@ function specMultifacetedEditor() {
             if (this.specTableName) return;
             if (!this.specName || !this.specName.trim()) return;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                var resp = await fetch('/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -688,7 +688,7 @@ function specMultifacetedEditor() {
 
         async _translateFieldKey(label, row) {
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                var resp = await fetch('/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -721,7 +721,7 @@ function specMultifacetedEditor() {
             this.linkTemplatesLoading = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/available-templates'
+                    '/api/spec-formulate/schema/available-templates'
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -738,7 +738,7 @@ function specMultifacetedEditor() {
             this.linkSubmitting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/link-form',
+                    '/api/spec-formulate/schema/specs/' + this.specSc + '/link-form',
                     {
                         method: 'POST',
                         headers: {
@@ -768,7 +768,7 @@ function specMultifacetedEditor() {
         async unlinkForm() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/unlink-form',
+                    '/api/spec-formulate/schema/specs/' + this.specSc + '/unlink-form',
                     {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
@@ -799,7 +799,7 @@ function specMultifacetedEditor() {
             await this.saveSpec();
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/sync-to-form',
+                    '/api/spec-formulate/schema/specs/' + this.specSc + '/sync-to-form',
                     {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
@@ -826,7 +826,7 @@ function specMultifacetedEditor() {
             this.createFormSubmitting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc + '/create-form',
+                    '/api/spec-formulate/schema/specs/' + this.specSc + '/create-form',
                     {
                         method: 'POST',
                         headers: {
@@ -858,7 +858,7 @@ function specMultifacetedEditor() {
 
         async loadCgInfo() {
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/cg/info');
+                var resp = await fetch('/api/spec-formulate/schema/cg/info');
                 var data = await resp.json();
                 if (data.success && data.data.has_conglomerate_db) {
                     this.cgDbAvailable = true;
@@ -913,12 +913,12 @@ function specMultifacetedEditor() {
             try {
                 if (this.pgTarget === 'org') {
                     // 企業 DB: 先確保存在
-                    await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                    await fetch('/api/spec-formulate/schema/pg/ensure-db', {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
                     });
                 }
-                var resp = await fetch('/api/spec-formulate/multifaceted' + prefix + 'tables');
+                var resp = await fetch('/api/spec-formulate/schema' + prefix + 'tables');
                 var data = await resp.json();
                 if (data.success) {
                     this.pgTables = data.data || [];
@@ -942,7 +942,7 @@ function specMultifacetedEditor() {
                 : this.pgSelectedTable;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'compare/' + encodeURIComponent(tableName)
                 );
                 var data = await resp.json();
@@ -961,7 +961,7 @@ function specMultifacetedEditor() {
             var prefix = this._pgApiPrefix();
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'apply-to-table',
                     {
                         method: 'POST',
@@ -991,7 +991,7 @@ function specMultifacetedEditor() {
                 : this.pgSelectedTable;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'apply-to-table',
                     {
                         method: 'POST',
@@ -1053,14 +1053,14 @@ function specMultifacetedEditor() {
 
                 if (this.pgTarget === 'org') {
                     // 確保企業 DB 存在
-                    await fetch('/api/spec-formulate/multifaceted/pg/ensure-db', {
+                    await fetch('/api/spec-formulate/schema/pg/ensure-db', {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
                     });
                 }
 
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'create-table',
                     {
                         method: 'POST',
@@ -1093,7 +1093,7 @@ function specMultifacetedEditor() {
         async pgUnlinkTable() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + this.specSc +
+                    '/api/spec-formulate/schema/specs/' + this.specSc +
                     '/pg/unlink-table',
                     {
                         method: 'POST',
@@ -1125,7 +1125,7 @@ function specMultifacetedEditor() {
             var name = (this.newSpecForm.name || '').trim();
             if (!name) { this.newSpecTableSuggestion = ''; return; }
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/translate', {
+                var resp = await fetch('/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1147,7 +1147,7 @@ function specMultifacetedEditor() {
             if (!name) { alert('規格名稱必填'); return; }
             this.newSpecCreating = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/specs', {
+                var resp = await fetch('/api/spec-formulate/schema/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1219,7 +1219,7 @@ function specMultifacetedEditor() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/multifaceted/specs/' + item.spec_sc + '/versions'
+                    '/api/spec-formulate/schema/specs/' + item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -1294,7 +1294,7 @@ function specMultifacetedEditor() {
             }
             this.docxExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/export/docx', {
+                var resp = await fetch('/api/spec-formulate/schema/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1360,7 +1360,7 @@ function specMultifacetedEditor() {
             }
             this.pdfExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/multifaceted/export/pdf', {
+                var resp = await fetch('/api/spec-formulate/schema/export/pdf', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

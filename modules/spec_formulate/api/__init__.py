@@ -11,6 +11,6 @@ api_bp = Blueprint(
 )
 
 # 導入 API Blueprints
-from .multifaceted import multifaceted_bp
+from .schema import schema_bp
 
-additional_blueprints = [multifaceted_bp]
+additional_blueprints = [schema_bp]

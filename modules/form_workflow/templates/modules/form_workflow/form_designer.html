@@ -175,7 +175,7 @@
         if (!ftSc) return;
         var csrfInput = document.querySelector('input[name="csrf_token"]');
         var csrfToken = csrfInput ? csrfInput.value : '';
-        fetch('/api/spec-formulate/multifaceted/by-form-template/' + ftSc, {
+        fetch('/api/spec-formulate/schema/by-form-template/' + ftSc, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken },
         })

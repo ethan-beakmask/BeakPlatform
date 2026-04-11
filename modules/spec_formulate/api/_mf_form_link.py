@@ -1,5 +1,5 @@
 """
-Multifaceted API - Form Link
+Schema API - Form Link
 版本清單、表單關聯/解連/同步/建立
 """
 import logging
@@ -14,7 +14,7 @@ from app.platform.data import get_current_org
 from ._mf_helpers import (
     _get_user_info,
     _sync_form_to_spec,
-    _formio_schema_to_multifaceted_fields,
+    _formio_schema_to_spec_fields,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,15 +28,15 @@ def register(bp):
     def list_versions(spec_sc):
         """取得規格的所有版本號清單（供匯出選擇版本用）"""
         from modules.spec_formulate.models import (
-            FwSpecMultifaceted,
-            FwSpecMultifacetedHistory,
+            FwSpecSchema,
+            FwSpecSchemaHistory,
         )
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -46,11 +46,11 @@ def register(bp):
             return jsonify({'success': False, 'error': '規格不存在'}), 404
 
         # 歷史版本
-        histories = FwSpecMultifacetedHistory.query.filter_by(
+        histories = FwSpecSchemaHistory.query.filter_by(
             spec_secure_code=spec_sc,
             is_deleted=False,
         ).order_by(
-            FwSpecMultifacetedHistory.version.desc()
+            FwSpecSchemaHistory.version.desc()
         ).all()
 
         versions = []
@@ -78,19 +78,19 @@ def register(bp):
     @module_access_required('spec_formulate')
     def get_or_create_spec_by_form_template(ft_sc):
         """
-        依表單模板查找或自動建立關聯的 multifaceted spec
+        依表單模板查找或自動建立關聯的 spec
 
         GET  -- 查找，找不到回 404
         POST -- 查找，找不到則自動建立空 spec 並關聯，回 201
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
         from modules.form_workflow.models import FwFormTemplate
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': 'no org'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             org_secure_code=org.secure_code,
             linked_form_template_sc=ft_sc,
             is_deleted=False,
@@ -124,11 +124,11 @@ def register(bp):
 
         user_sc, user_name = _get_user_info()
 
-        # 從 FormIO schema 反向轉為 multifaceted fields
-        fields = _formio_schema_to_multifaceted_fields(template.schema)
+        # 從 FormIO schema 反向轉為 spec fields
+        fields = _formio_schema_to_spec_fields(template.schema)
         active_facets = ['formio'] if fields else []
 
-        spec = FwSpecMultifaceted(
+        spec = FwSpecSchema(
             org_secure_code=org.secure_code,
             name=template.name or ft_sc,
             table_name=None,
@@ -153,8 +153,8 @@ def register(bp):
     @bp.route('/available-templates', methods=['GET'])
     @module_access_required('spec_formulate')
     def available_templates():
-        """列出可關聯的表單模板（未被任何 multifaceted spec 佔用的）"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        """列出可關聯的表單模板（未被任何 spec 佔用的）"""
+        from modules.spec_formulate.models import FwSpecSchema
         from modules.form_workflow.models import FwFormTemplate
 
         org = get_current_org()
@@ -163,7 +163,7 @@ def register(bp):
 
         # 已被佔用的 form_template secure_codes
         occupied = set()
-        specs = FwSpecMultifaceted.query.filter_by(
+        specs = FwSpecSchema.query.filter_by(
             org_secure_code=org.secure_code,
             is_deleted=False,
             status='active',
@@ -194,18 +194,18 @@ def register(bp):
     @module_access_required('spec_formulate')
     def link_form(spec_sc):
         """
-        關聯現有表單模板到 multifaceted spec
+        關聯現有表單模板到 spec
 
         Body: { "form_template_secure_code": "xxx" }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
         from modules.form_workflow.models import FwFormTemplate
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -228,7 +228,7 @@ def register(bp):
             return jsonify({'success': False, 'error': '表單模板不存在'}), 404
 
         # 檢查是否已被其他 spec 佔用
-        existing = FwSpecMultifaceted.query.filter_by(
+        existing = FwSpecSchema.query.filter_by(
             org_secure_code=org.secure_code,
             linked_form_template_sc=ft_sc,
             is_deleted=False,
@@ -257,13 +257,13 @@ def register(bp):
     @module_access_required('spec_formulate')
     def unlink_form(spec_sc):
         """解除表單關聯"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -285,17 +285,17 @@ def register(bp):
         以 spec fields 產生新的 FormIO schema，覆蓋表單模板的 schema。
         保留表單模板原有的非欄位設定（如 display、settings 等）。
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
         from modules.form_workflow.models import FwFormTemplate
-        from modules.spec_formulate.services.multifaceted.formio_generator import (
-            multifaceted_to_formio_schema,
+        from modules.spec_formulate.services.schema.formio_generator import (
+            spec_fields_to_formio_schema,
         )
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -314,7 +314,7 @@ def register(bp):
             return jsonify({'success': False, 'error': '關聯的表單模板不存在'}), 404
 
         # 產生新的 FormIO schema（帶入表單名稱作為標題）
-        new_schema = multifaceted_to_formio_schema(spec.fields or [], form_title=template.name)
+        new_schema = spec_fields_to_formio_schema(spec.fields or [], form_title=template.name)
 
         # 保留原 schema 的非 components 設定
         old_schema = template.schema or {}
@@ -339,7 +339,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def create_form(spec_sc):
         """
-        從 multifaceted spec 建立新的 FormIO 表單模板
+        從 spec 建立新的 FormIO 表單模板
 
         Body: {
             "name": "表單名稱",
@@ -347,17 +347,17 @@ def register(bp):
             "category_secure_code": ""   // 選填
         }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
         from modules.form_workflow.models import FwFormTemplate
-        from modules.spec_formulate.services.multifaceted.formio_generator import (
-            multifaceted_to_formio_schema,
+        from modules.spec_formulate.services.schema.formio_generator import (
+            spec_fields_to_formio_schema,
         )
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -394,7 +394,7 @@ def register(bp):
             }), 400
 
         # 產生 FormIO schema
-        schema = multifaceted_to_formio_schema(
+        schema = spec_fields_to_formio_schema(
             spec.fields or [], form_title=form_name
         )
 

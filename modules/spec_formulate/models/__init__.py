@@ -5,13 +5,13 @@ Spec Formulate Module - Models
 模型使用 'fw_' 前綴（歷史沿革自 form_workflow）。
 """
 from .base import ModuleBaseModel
-from .spec_multifaceted import FwSpecMultifaceted
-from .spec_multifaceted_history import FwSpecMultifacetedHistory
+from .spec_schema import FwSpecSchema
+from .spec_schema_history import FwSpecSchemaHistory
 from .conglomerate_table_registry import FwConglomerateTableRegistry
 
 __all__ = [
     'ModuleBaseModel',
-    'FwSpecMultifaceted',
-    'FwSpecMultifacetedHistory',
+    'FwSpecSchema',
+    'FwSpecSchemaHistory',
     'FwConglomerateTableRegistry',
 ]

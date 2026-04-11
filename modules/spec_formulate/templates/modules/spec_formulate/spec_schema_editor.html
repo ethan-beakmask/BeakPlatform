@@ -1,10 +1,10 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}多面向規格編輯器 - BeakPlatform{% endblock %}
+{% block title %}規格編輯器 - BeakPlatform{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/modules/spec_formulate/vendor/tabulator_bootstrap5.min.css">
-<link rel="stylesheet" href="/static/modules/spec_formulate/css/spec-multifaceted-editor.css">
+<link rel="stylesheet" href="/static/modules/spec_formulate/css/spec-schema-editor.css">
 <script src="/static/modules/spec_formulate/vendor/tabulator.min.js"></script>
 {% endblock %}
 
@@ -15,11 +15,11 @@ window.__MF_SPEC_CONFIG = {
 };
 </script>
 
-<div class="mfe-container" x-data="specMultifacetedEditor()">
+<div class="mfe-container" x-data="specSchemaEditor()">
 
     <!-- Header -->
     <div class="mfe-header">
-        <h1>多面向規格編輯器</h1>
+        <h1>規格編輯器</h1>
     </div>
 
     <!-- Toast Container -->
@@ -651,5 +651,5 @@ window.__MF_SPEC_CONFIG = {
 
 </div>
 
-<script src="/static/modules/spec_formulate/js/spec-multifaceted-editor.js"></script>
+<script src="/static/modules/spec_formulate/js/spec-schema-editor.js"></script>
 {% endblock %}

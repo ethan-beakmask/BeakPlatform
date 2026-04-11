@@ -1,5 +1,5 @@
 """
-Multifaceted API - Export
+Schema API - Export
 DOCX / PDF 匯出
 """
 import logging
@@ -37,10 +37,10 @@ def register(bp):
         }
         """
         from modules.spec_formulate.models import (
-            FwSpecMultifaceted,
-            FwSpecMultifacetedHistory,
+            FwSpecSchema,
+            FwSpecSchemaHistory,
         )
-        from modules.spec_formulate.services.multifaceted.docx_writer import (
+        from modules.spec_formulate.services.schema.docx_writer import (
             generate_spec_docx,
         )
 
@@ -70,7 +70,7 @@ def register(bp):
                 }), 400
 
             # 查詢 spec
-            spec = FwSpecMultifaceted.query.filter_by(
+            spec = FwSpecSchema.query.filter_by(
                 secure_code=spec_sc,
                 org_secure_code=org.secure_code,
                 is_deleted=False,
@@ -82,7 +82,7 @@ def register(bp):
             # 取得指定版本的 fields
             if req_version and req_version != spec.version:
                 # 從歷史記錄取
-                history = FwSpecMultifacetedHistory.query.filter_by(
+                history = FwSpecSchemaHistory.query.filter_by(
                     spec_secure_code=spec_sc,
                     version=req_version,
                     is_deleted=False,
@@ -168,10 +168,10 @@ def register(bp):
         }
         """
         from modules.spec_formulate.models import (
-            FwSpecMultifaceted,
-            FwSpecMultifacetedHistory,
+            FwSpecSchema,
+            FwSpecSchemaHistory,
         )
-        from modules.spec_formulate.services.multifaceted.pdf_writer import (
+        from modules.spec_formulate.services.schema.pdf_writer import (
             generate_spec_pdf,
         )
 
@@ -200,7 +200,7 @@ def register(bp):
                     'error': f'規格 {spec_sc} 未指定匯出格式',
                 }), 400
 
-            spec = FwSpecMultifaceted.query.filter_by(
+            spec = FwSpecSchema.query.filter_by(
                 secure_code=spec_sc,
                 org_secure_code=org.secure_code,
                 is_deleted=False,
@@ -210,7 +210,7 @@ def register(bp):
                 return jsonify({'success': False, 'error': f'規格不存在: {spec_sc}'}), 404
 
             if req_version and req_version != spec.version:
-                history = FwSpecMultifacetedHistory.query.filter_by(
+                history = FwSpecSchemaHistory.query.filter_by(
                     spec_secure_code=spec_sc,
                     version=req_version,
                     is_deleted=False,

@@ -685,7 +685,7 @@ MENU_ROLE_DEFAULTS = {
 
     # 規格制定模組（ORG_ADMIN + SPEC_DESIGNER）
     'spec_formulate': ['ORG_ADMIN', 'SPEC_DESIGNER'],
-    'spec_formulate.spec_multifaceted': ['ORG_ADMIN', 'SPEC_DESIGNER'],
+    'spec_formulate.spec_schema': ['ORG_ADMIN', 'SPEC_DESIGNER'],
 
     # 無程式碼建構模組（ORG_ADMIN + SUBSYS_DESIGNER）
     'nocode_builder': ['ORG_ADMIN', 'SUBSYS_DESIGNER'],

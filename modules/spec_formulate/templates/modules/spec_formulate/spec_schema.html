@@ -1,18 +1,18 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}多面向規格 - BeakPlatform{% endblock %}
+{% block title %}規格管理 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/spec_formulate/css/spec-multifaceted.css">
+<link rel="stylesheet" href="/static/modules/spec_formulate/css/spec-schema.css">
 {% endblock %}
 
 {% block content %}
-<div class="mf-container" x-data="specMultifacetedManager()">
+<div class="mf-container" x-data="specSchemaManager()">
 
     <!-- Header -->
     <div class="mf-header">
         <div>
-            <h1>多面向規格管理</h1>
+            <h1>規格管理</h1>
         </div>
         <div class="mf-toolbar">
             <button class="mf-btn" @click="loadSpecs()" :disabled="loading">重新載入</button>
@@ -26,7 +26,7 @@
 
     <!-- Empty -->
     <div x-show="!loading && specs.length === 0" class="mf-empty">
-        <p>尚未建立任何多面向規格</p>
+        <p>尚未建立任何規格</p>
         <button class="mf-btn primary" @click="openCreate()" style="margin-top: 8px;">建立第一個規格</button>
     </div>
 
@@ -83,7 +83,7 @@
     <div x-show="showCreateModal" x-cloak class="mf-modal">
         <div class="mf-modal-content">
             <div class="mf-modal-header">
-                <h3>新增多面向規格</h3>
+                <h3>新增規格</h3>
                 <button @click="showCreateModal = false"
                         style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
@@ -241,5 +241,5 @@
 
 </div>
 
-<script src="/static/modules/spec_formulate/js/spec-multifaceted.js"></script>
+<script src="/static/modules/spec_formulate/js/spec-schema.js"></script>
 {% endblock %}

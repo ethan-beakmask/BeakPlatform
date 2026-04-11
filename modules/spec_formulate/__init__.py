@@ -1,7 +1,7 @@
 """
 Spec Formulate Module - 規格制定模組
 
-資料表欄位規格定義與管理工具。
+資料結構規格定義與管理工具 (Schema)。
 目前提供資料表三相工具（SQL / JSON / 規格），
 未來將擴展至 APP、AI 開發規格化。
 """
@@ -10,7 +10,7 @@ MODULE_INFO = {
     'name': 'spec_formulate',
     'display_name': '規格制定模組',
     'version': '1.0.0',
-    'description': '資料表欄位規格定義與管理',
+    'description': '資料結構規格定義與管理',
     'author': 'BeakPlatform Team',
     'dependencies': ['form_workflow'],
     'platform_version': '>=1.0.0',
@@ -26,9 +26,9 @@ MODULE_INFO = {
             'user_types': ['ORG_ADMIN'],
             'children': [
                 {
-                    'code': 'spec_formulate.spec_multifaceted',
+                    'code': 'spec_formulate.spec_schema',
                     'name': '規格管理',
-                    'url': 'spec_formulate_web.spec_multifaceted',
+                    'url': 'spec_formulate_web.spec_schema',
                     'sort_order': 0,
                 },
             ]

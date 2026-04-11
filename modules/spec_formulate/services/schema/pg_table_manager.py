@@ -1,5 +1,5 @@
 """
-Multifaceted PostgreSQL Table Manager
+Schema PostgreSQL Table Manager
 
 負責：
 1. 確保企業專屬 DB 存在（複用 form_workflow 的 provision 機制）

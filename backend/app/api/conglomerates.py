@@ -258,7 +258,7 @@ def provision_shared_db(secure_code: str):
         return jsonify({'error': '此集團已有共享資料庫'}), 400
 
     try:
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             ensure_conglomerate_database,
         )
         cg_db = ensure_conglomerate_database(conglomerate)

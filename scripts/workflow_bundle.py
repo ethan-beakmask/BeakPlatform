@@ -213,7 +213,7 @@ class BundleExporter:
         if not sc or sc in self.specs:
             return
         row = self.conn.execute(
-            text('SELECT * FROM fw_spec_multifaceted WHERE secure_code = :sc AND is_deleted = false'),
+            text('SELECT * FROM fw_spec_schema WHERE secure_code = :sc AND is_deleted = false'),
             {'sc': sc}
         ).fetchone()
         if row:
@@ -222,7 +222,7 @@ class BundleExporter:
     def _collect_spec_by_form(self, form_sc: str):
         """透過 form template SC 找到關聯的 spec"""
         row = self.conn.execute(
-            text('''SELECT * FROM fw_spec_multifaceted
+            text('''SELECT * FROM fw_spec_schema
                     WHERE linked_form_template_sc = :sc AND is_deleted = false'''),
             {'sc': form_sc}
         ).fetchone()
@@ -280,7 +280,7 @@ class BundleExporter:
 
         # 所有規格
         rows = self.conn.execute(
-            text('SELECT secure_code FROM fw_spec_multifaceted WHERE org_secure_code = :org AND is_deleted = false'),
+            text('SELECT secure_code FROM fw_spec_schema WHERE org_secure_code = :org AND is_deleted = false'),
             {'org': org_sc}
         ).fetchall()
         for r in rows:
@@ -759,7 +759,7 @@ class BundleImporter:
             name = item.get('name', '')
 
             existing = self.conn.execute(
-                text('''SELECT secure_code FROM fw_spec_multifaceted
+                text('''SELECT secure_code FROM fw_spec_schema
                         WHERE org_secure_code = :org AND name = :name AND is_deleted = false'''),
                 {'org': self.target_org_sc, 'name': name}
             ).fetchone()
@@ -785,7 +785,7 @@ class BundleImporter:
             linked_ft_sc = self.map_sc(item.get('linked_form_template_sc'))
 
             self.conn.execute(
-                text('''INSERT INTO fw_spec_multifaceted
+                text('''INSERT INTO fw_spec_schema
                         (secure_code, org_secure_code, name, description, version,
                          fields, active_facets, status, table_name,
                          linked_form_template_sc, linked_sql_table, linked_sql_target,

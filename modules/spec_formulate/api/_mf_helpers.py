@@ -1,5 +1,5 @@
 """
-Multifaceted API - Helper Functions
+Schema API - Helper Functions
 共用輔助函式與 FormIO 轉換邏輯
 """
 import json
@@ -80,7 +80,7 @@ def _merge_formio_into_fields(old_fields, formio_fields):
 def _sync_form_to_spec(spec, ft_sc, org_sc):
     """從表單模板同步最新 schema 到 spec（合併式，保留其他 facets）"""
     from modules.form_workflow.models import FwFormTemplate
-    from modules.spec_formulate.models import FwSpecMultifacetedHistory
+    from modules.spec_formulate.models import FwSpecSchemaHistory
 
     template = FwFormTemplate.query.filter_by(
         secure_code=ft_sc,
@@ -89,7 +89,7 @@ def _sync_form_to_spec(spec, ft_sc, org_sc):
     if not template or not template.schema:
         return
 
-    formio_fields = _formio_schema_to_multifaceted_fields(template.schema)
+    formio_fields = _formio_schema_to_spec_fields(template.schema)
     merged = _merge_formio_into_fields(spec.fields, formio_fields)
 
     # 比較合併結果與現有欄位
@@ -97,7 +97,7 @@ def _sync_form_to_spec(spec, ft_sc, org_sc):
         return
 
     # 寫入歷史
-    history = FwSpecMultifacetedHistory(
+    history = FwSpecSchemaHistory(
         org_secure_code=org_sc,
         spec_secure_code=spec.secure_code,
         version=spec.version,
@@ -154,9 +154,9 @@ _FORMIO_SKIP_TYPES = {
 }
 
 
-def _formio_schema_to_multifaceted_fields(schema):
+def _formio_schema_to_spec_fields(schema):
     """
-    從 FormIO schema 反向轉為 multifaceted spec fields
+    從 FormIO schema 反向轉為 spec fields
 
     遞迴處理巢狀 components（panel/columns 等容器內的欄位也提取）。
     """
@@ -170,7 +170,7 @@ def _formio_schema_to_multifaceted_fields(schema):
 
 
 def _extract_components(components, fields, sort_start):
-    """遞迴提取 FormIO components 為 multifaceted fields"""
+    """遞迴提取 FormIO components 為 spec fields"""
     for comp in (components or []):
         ctype = comp.get('type', '')
 

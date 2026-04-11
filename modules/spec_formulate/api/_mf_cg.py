@@ -1,5 +1,5 @@
 """
-Multifaceted API - Conglomerate DB
+Schema API - Conglomerate DB
 集團共享 DB 資料表操作
 """
 import logging
@@ -82,7 +82,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def cg_list_tables():
         """列出集團共享 DB 中的所有資料表"""
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             cg_list_tables as _cg_list_tables,
         )
 
@@ -131,7 +131,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def cg_introspect_table(table_name):
         """讀取集團共享 DB 中指定表的結構"""
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             cg_introspect_table as _cg_introspect,
         )
 
@@ -155,8 +155,8 @@ def register(bp):
     @module_access_required('spec_formulate')
     def cg_compare(spec_sc, table_name):
         """比對 SPEC 與集團共享 DB 中的表結構"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             cg_introspect_table as _cg_introspect,
             cg_compare_spec_with_table,
         )
@@ -169,7 +169,7 @@ def register(bp):
         if err:
             return err
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -197,8 +197,8 @@ def register(bp):
 
         Body: { "table_name": "spec_xxx" }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             cg_create_table_from_spec,
         )
 
@@ -210,7 +210,7 @@ def register(bp):
         if err:
             return err
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -271,8 +271,8 @@ def register(bp):
 
         Body: { "table_name": "xxx" }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.pg_table_manager import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.pg_table_manager import (
             cg_introspect_table as _cg_introspect,
             cg_apply_spec_to_table,
         )
@@ -285,7 +285,7 @@ def register(bp):
         if err:
             return err
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,

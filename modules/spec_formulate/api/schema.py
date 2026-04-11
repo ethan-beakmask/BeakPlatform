@@ -1,8 +1,8 @@
 """
-Spec Formulate Module - Multifaceted Specs API
+Spec Formulate Module - Schema Specs API
 多面向規格 CRUD API
 
-URL prefix: /api/spec-formulate/multifaceted
+URL prefix: /api/spec-formulate/schema
 
 子模組:
   _mf_helpers.py     - 共用輔助函式與 FormIO 轉換
@@ -14,10 +14,10 @@ URL prefix: /api/spec-formulate/multifaceted
 """
 from flask import Blueprint
 
-multifaceted_bp = Blueprint(
-    'spec_formulate_multifaceted',
+schema_bp = Blueprint(
+    'spec_formulate_schema',
     __name__,
-    url_prefix='/api/spec-formulate/multifaceted'
+    url_prefix='/api/spec-formulate/schema'
 )
 
 # 掛載子模組路由
@@ -27,8 +27,8 @@ from . import _mf_form_link
 from . import _mf_pg
 from . import _mf_cg
 
-_mf_specs_crud.register(multifaceted_bp)
-_mf_export.register(multifaceted_bp)
-_mf_form_link.register(multifaceted_bp)
-_mf_pg.register(multifaceted_bp)
-_mf_cg.register(multifaceted_bp)
+_mf_specs_crud.register(schema_bp)
+_mf_export.register(schema_bp)
+_mf_form_link.register(schema_bp)
+_mf_pg.register(schema_bp)
+_mf_cg.register(schema_bp)

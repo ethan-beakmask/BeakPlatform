@@ -1,5 +1,5 @@
 """
-Spec Multifaceted History Model - 多面向規格版本歷史
+Spec Schema History Model - 資料結構規格版本歷史
 
 記錄每次 spec 變更的快照和差異。
 """
@@ -8,14 +8,14 @@ from sqlalchemy import Column, String, Integer, Text, JSON, event
 from .base import ModuleBaseModel
 
 
-class FwSpecMultifacetedHistory(ModuleBaseModel):
+class FwSpecSchemaHistory(ModuleBaseModel):
     """
-    多面向規格版本歷史
+    資料結構規格版本歷史
 
     每次 spec 被更新時，儲存一筆歷史記錄，
     包含當時的欄位快照（含 core + facets）和與前一版的差異。
     """
-    __tablename__ = 'fw_spec_multifaceted_histories'
+    __tablename__ = 'fw_spec_schema_histories'
 
     # 關聯 spec
     spec_secure_code = Column(String(32), nullable=False, index=True)
@@ -41,7 +41,7 @@ class FwSpecMultifacetedHistory(ModuleBaseModel):
 
     def __repr__(self):
         return (
-            f'<FwSpecMultifacetedHistory spec={self.spec_secure_code} '
+            f'<FwSpecSchemaHistory spec={self.spec_secure_code} '
             f'v{self.version}>'
         )
 
@@ -60,7 +60,7 @@ class FwSpecMultifacetedHistory(ModuleBaseModel):
         return base
 
 
-@event.listens_for(FwSpecMultifacetedHistory, 'before_insert')
-def generate_mfh_secure_code(mapper, connection, target):
+@event.listens_for(FwSpecSchemaHistory, 'before_insert')
+def generate_schema_history_secure_code(mapper, connection, target):
     if not target.secure_code:
         target.secure_code = secrets.token_urlsafe(16)

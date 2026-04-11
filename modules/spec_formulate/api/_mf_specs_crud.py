@@ -1,5 +1,5 @@
 """
-Multifaceted API - Specs CRUD
+Schema API - Specs CRUD
 翻譯、Data Class、規格 CRUD、版本歷史、Facet 填充
 """
 import logging
@@ -62,7 +62,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def list_data_classes():
         """取得所有 data_class 清單（含格式支援資訊）"""
-        from modules.spec_formulate.services.multifaceted.data_class_registry import (
+        from modules.spec_formulate.services.schema.data_class_registry import (
             get_data_class_list,
         )
         return jsonify({'success': True, 'data': get_data_class_list()})
@@ -72,7 +72,7 @@ def register(bp):
     @module_access_required('spec_formulate')
     def get_data_class_facet_defaults(data_class, facet_name):
         """取得指定 data_class 在特定格式下的預設 facet 值"""
-        from modules.spec_formulate.services.multifaceted.data_class_registry import (
+        from modules.spec_formulate.services.schema.data_class_registry import (
             get_facet_defaults,
             is_facet_supported,
             get_unsupported_reason,
@@ -104,17 +104,17 @@ def register(bp):
     @module_access_required('spec_formulate')
     def list_specs():
         """列出所有多面向規格"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        specs = FwSpecMultifaceted.query.filter_by(
+        specs = FwSpecSchema.query.filter_by(
             org_secure_code=org.secure_code,
             is_deleted=False,
         ).order_by(
-            FwSpecMultifaceted.updated_at.desc()
+            FwSpecSchema.updated_at.desc()
         ).all()
 
         result = []
@@ -129,8 +129,8 @@ def register(bp):
     @module_access_required('spec_formulate')
     def create_spec():
         """建立多面向規格"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.field_normalizer import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.field_normalizer import (
             normalize_fields,
         )
 
@@ -158,7 +158,7 @@ def register(bp):
 
         user_sc, user_name = _get_user_info()
 
-        spec = FwSpecMultifaceted(
+        spec = FwSpecSchema(
             org_secure_code=org.secure_code,
             name=name,
             table_name=table_name or None,
@@ -187,13 +187,13 @@ def register(bp):
     @module_access_required('spec_formulate')
     def get_spec(spec_sc):
         """取得單一多面向規格"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -221,10 +221,10 @@ def register(bp):
     def update_spec(spec_sc):
         """更新多面向規格（自動版本遞增 + 歷史記錄）"""
         from modules.spec_formulate.models import (
-            FwSpecMultifaceted,
-            FwSpecMultifacetedHistory,
+            FwSpecSchema,
+            FwSpecSchemaHistory,
         )
-        from modules.spec_formulate.services.multifaceted.field_normalizer import (
+        from modules.spec_formulate.services.schema.field_normalizer import (
             normalize_fields,
             compute_diff,
         )
@@ -233,7 +233,7 @@ def register(bp):
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -272,7 +272,7 @@ def register(bp):
         user_sc, user_name = _get_user_info()
 
         # 寫入歷史（儲存舊版快照）
-        history = FwSpecMultifacetedHistory(
+        history = FwSpecSchemaHistory(
             spec_secure_code=spec.secure_code,
             version=spec.version,
             fields_snapshot=old_fields,
@@ -313,13 +313,13 @@ def register(bp):
     @module_access_required('spec_formulate')
     def delete_spec(spec_sc):
         """軟刪除多面向規格"""
-        from modules.spec_formulate.models import FwSpecMultifaceted
+        from modules.spec_formulate.models import FwSpecSchema
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -342,15 +342,15 @@ def register(bp):
     def get_history(spec_sc):
         """取得規格版本歷史"""
         from modules.spec_formulate.models import (
-            FwSpecMultifaceted,
-            FwSpecMultifacetedHistory,
+            FwSpecSchema,
+            FwSpecSchemaHistory,
         )
 
         org = get_current_org()
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
@@ -359,11 +359,11 @@ def register(bp):
         if not spec:
             return jsonify({'success': False, 'error': '規格不存在'}), 404
 
-        histories = FwSpecMultifacetedHistory.query.filter_by(
+        histories = FwSpecSchemaHistory.query.filter_by(
             spec_secure_code=spec_sc,
             is_deleted=False,
         ).order_by(
-            FwSpecMultifacetedHistory.version.desc()
+            FwSpecSchemaHistory.version.desc()
         ).all()
 
         return jsonify({
@@ -381,8 +381,8 @@ def register(bp):
 
         Body: { "facet_name": "postgresql" }
         """
-        from modules.spec_formulate.models import FwSpecMultifaceted
-        from modules.spec_formulate.services.multifaceted.data_class_registry import (
+        from modules.spec_formulate.models import FwSpecSchema
+        from modules.spec_formulate.services.schema.data_class_registry import (
             populate_facet_defaults,
             is_facet_supported,
             get_unsupported_reason,
@@ -393,7 +393,7 @@ def register(bp):
         if not org:
             return jsonify({'success': False, 'error': '無法取得企業資訊'}), 403
 
-        spec = FwSpecMultifaceted.query.filter_by(
+        spec = FwSpecSchema.query.filter_by(
             secure_code=spec_sc,
             org_secure_code=org.secure_code,
             is_deleted=False,
