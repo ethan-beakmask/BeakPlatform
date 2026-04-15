@@ -9,6 +9,8 @@ BeakPlatform 的 vuln_lifecycle 模組透過此服務讀取弱點資料。
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import current_app
+from datetime import datetime, date
+from decimal import Decimal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,21 @@ def get_conn():
     return psycopg2.connect(**cfg)
 
 
+def _serialize_row(row):
+    """將 DB row 中的非 JSON 可序列化類型轉為字串"""
+    result = {}
+    for k, v in row.items():
+        if isinstance(v, datetime):
+            result[k] = v.isoformat()
+        elif isinstance(v, date):
+            result[k] = v.isoformat()
+        elif isinstance(v, Decimal):
+            result[k] = float(v)
+        else:
+            result[k] = v
+    return result
+
+
 def query(sql, params=None, fetchone=False):
     """執行 SQL 查詢"""
     conn = get_conn()
@@ -52,8 +69,8 @@ def query(sql, params=None, fetchone=False):
             cur.execute(sql, params)
             if fetchone:
                 row = cur.fetchone()
-                return dict(row) if row else None
-            return [dict(r) for r in cur.fetchall()]
+                return _serialize_row(dict(row)) if row else None
+            return [_serialize_row(dict(r)) for r in cur.fetchall()]
     finally:
         conn.close()
 

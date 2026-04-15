@@ -1,168 +1,233 @@
-{% extends "base.html" %}
-{% block title %}Asset Detail{% endblock %}
+{% extends "layouts/base.html" %}
+{% block title %}資產弱點詳情{% endblock %}
 
-{% block page_content %}
-<style>
-.presence-dot { display:inline-block; width:18px; height:18px; border-radius:3px;
-                text-align:center; font-size:10px; line-height:18px; font-weight:700; }
-.presence-found { background:#fdd; color:#900; }
-.presence-clear { background:#dfd; color:#070; }
-.session-hdr { font-size:11px; writing-mode:vertical-lr; text-orientation:mixed;
-               transform:rotate(180deg); white-space:nowrap; max-height:100px; }
-.adj-badge { font-size:11px; padding:1px 6px; border-radius:3px; }
-.adj-ACCEPTED { background:#e8e8e8; color:#555; }
-.adj-MITIGATED { background:#def; color:#369; }
-.adj-FALSE_POSITIVE { background:#dfd; color:#060; }
-.adj-DEFERRED { background:#fef; color:#939; }
-.badge-new { background:#fdd; color:#900; }
-.badge-open { background:#fed; color:#a60; }
-.badge-fixed { background:#dfd; color:#070; }
-.badge-recurred { background:#edf; color:#609; }
-</style>
-<div class="container-fluid">
-    <div class="d-flex align-items-center mb-3">
-        <a href="/vuln/assets" class="btn btn-sm btn-outline-secondary me-2">&larr; Back</a>
-        <h5 class="mb-0" id="asset-title">Asset #{{ asset_id }}</h5>
+{% block head %}
+<link rel="stylesheet" href="/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container" x-data="assetDetail()">
+
+    <div class="vlc-page-header">
+        <a href="/vuln/assets" class="vlc-btn-back">&larr; 返回清冊</a>
+        <h1 x-text="title">資產 #{{ asset_id }}</h1>
     </div>
 
-    <div class="card mb-3" id="info-card" style="display:none">
-        <div class="card-body py-2" style="font-size:13px">
-            <span class="me-4"><strong>IP:</strong> <span id="info-ip">-</span></span>
-            <span class="me-4"><strong>Hostname:</strong> <span id="info-hostname">-</span></span>
-            <span class="me-4"><strong>Type:</strong> <span id="info-type">-</span></span>
-            <span class="me-4"><strong>Scans:</strong> <span id="info-scans">-</span></span>
-            <span><strong>Findings:</strong> <span id="info-findings">-</span></span>
-        </div>
+    <!-- 資產資訊卡 -->
+    <div class="vlc-info-card" x-show="loaded" x-cloak>
+        <span><strong>IP:</strong> <span x-text="info.ip">-</span></span>
+        <span><strong>主機名稱:</strong> <span x-text="info.hostname">-</span></span>
+        <span><strong>類型:</strong> <span x-text="info.type">-</span></span>
+        <span><strong>掃描次數:</strong> <span x-text="info.scans">-</span></span>
+        <span><strong>弱點數:</strong> <span x-text="info.findings">-</span></span>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-body py-2">
-            <label style="font-size:13px">Severity &ge;</label>
-            <input type="number" id="filter-sev" value="0" min="0" max="10" step="0.1"
-                   style="width:60px;font-size:13px" onchange="load()">
-        </div>
+    <!-- 篩選 -->
+    <div class="vlc-filter-bar">
+        <label>嚴重度 &ge;</label>
+        <input type="number" x-model="sevFilter" @change="load()" value="0" min="0" max="10" step="0.1">
     </div>
 
-    <div class="card">
-        <div class="card-body p-0" style="overflow-x:auto">
-            <table class="table table-sm mb-0">
+    <!-- 弱點時間軸表 -->
+    <div class="vlc-section">
+        <div class="vlc-section-body" style="overflow-x:auto">
+            <table class="vlc-table">
                 <thead id="t-head"></thead>
-                <tbody id="t-body"><tr><td>Loading...</td></tr></tbody>
+                <tbody id="t-body">
+                    <tr><td class="vlc-empty">載入中...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
-</div>
 
-<!-- Adjust Modal -->
-<div class="modal fade" id="adjModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header"><h6 class="modal-title">Risk Adjustment</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <p id="adj-target" class="text-muted small"></p>
-                <div class="mb-2"><label class="form-label">Type</label>
-                    <select id="adj-type" class="form-select form-select-sm">
-                        <option value="ACCEPTED">Accepted</option>
-                        <option value="MITIGATED">Mitigated</option>
-                        <option value="FALSE_POSITIVE">False Positive</option>
-                        <option value="DEFERRED">Deferred</option>
-                    </select></div>
-                <div class="mb-2"><label class="form-label">Adjusted Severity</label>
-                    <input type="number" id="adj-sev" class="form-control form-control-sm" value="0" min="0" max="10" step="0.1"></div>
-                <div class="mb-2"><label class="form-label">Justification</label>
-                    <textarea id="adj-just" class="form-control form-control-sm" rows="3"></textarea></div>
-                <div class="mb-2"><label class="form-label">Expires</label>
-                    <input type="date" id="adj-exp" class="form-control form-control-sm"></div>
+    <!-- 風險調整 Modal -->
+    <div class="vlc-modal-overlay" x-show="showModal" x-cloak @click.self="">
+        <div class="vlc-modal-box">
+            <div class="vlc-modal-header">
+                <h3>風險調整</h3>
+                <button class="vlc-modal-close" @click="showModal=false">&times;</button>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-sm btn-primary" onclick="submitAdj()">Save</button>
+            <p style="font-size:13px;color:#666" x-text="adjTarget"></p>
+            <div style="margin-bottom:12px">
+                <label class="form-label">調整類型</label>
+                <select x-model="adjType" class="form-control" style="font-size:13px">
+                    <option value="ACCEPTED">已接受 (Accepted)</option>
+                    <option value="MITIGATED">已緩解 (Mitigated)</option>
+                    <option value="FALSE_POSITIVE">誤報 (False Positive)</option>
+                    <option value="DEFERRED">延後處理 (Deferred)</option>
+                </select>
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">調整後嚴重度</label>
+                <input type="number" x-model="adjSev" class="form-control" style="font-size:13px"
+                       min="0" max="10" step="0.1">
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">調整理由</label>
+                <textarea x-model="adjJust" class="form-control" style="font-size:13px"
+                          rows="3" placeholder="請說明風險調整的理由..."></textarea>
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">到期日</label>
+                <input type="date" x-model="adjExp" class="form-control" style="font-size:13px">
+            </div>
+            <div class="vlc-modal-footer">
+                <button class="btn btn-secondary" @click="showModal=false">取消</button>
+                <button class="btn btn-primary" @click="submitAdj()">儲存</button>
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}
 
-{% block page_scripts %}
+{% block scripts %}
 <script>
-var assetId = {{ asset_id }};
-var adjVulnId = null;
-var statusBadge = {
-    'NEW':'<span class="badge badge-new">NEW</span>',
-    'OPEN':'<span class="badge badge-open">OPEN</span>',
-    'FIXED':'<span class="badge badge-fixed">FIXED</span>',
-    'RECURRED':'<span class="badge badge-recurred">RECUR</span>'
-};
+function assetDetail() {
+    var assetId = {{ asset_id }};
 
-function load() {
-    var sev = document.getElementById('filter-sev').value;
-    fetch('/api/vuln-lifecycle/assets/'+assetId+'/findings?severity_min='+sev)
-    .then(r => r.json()).then(r => {
-        if (!r.success) { document.getElementById('t-body').innerHTML='<tr><td class="text-danger">'+r.message+'</td></tr>'; return; }
-        var d = r.data, a = d.asset, ss = d.sessions, ff = d.findings;
-        document.getElementById('asset-title').textContent = 'Asset: '+(a.ip||a.id);
-        document.getElementById('info-ip').textContent = a.ip||'-';
-        document.getElementById('info-hostname').textContent = a.hostname||'-';
-        document.getElementById('info-type').textContent = a.asset_type||'-';
-        document.getElementById('info-scans').textContent = ss.length;
-        document.getElementById('info-findings').textContent = ff.length;
-        document.getElementById('info-card').style.display = '';
+    var ADJ_LABEL = {
+        'ACCEPTED': '已接受', 'MITIGATED': '已緩解',
+        'FALSE_POSITIVE': '誤報', 'DEFERRED': '延後'
+    };
 
-        var th = '<tr><th>Vulnerability</th><th>Port</th><th>Sev</th><th>Status</th>';
-        ss.forEach(s => { var dt = s.scan_start ? s.scan_start.substring(5,10) : '?';
-            th += '<th style="width:28px;text-align:center;padding:2px"><div class="session-hdr">'+dt+'</div></th>'; });
-        th += '<th>Adjustment</th><th></th></tr>';
-        document.getElementById('t-head').innerHTML = th;
+    function sevColor(v) {
+        if (v >= 9) return '#c00';
+        if (v >= 7) return '#e60';
+        if (v >= 4) return '#e90';
+        return '#999';
+    }
 
-        var html = '';
-        ff.forEach(f => {
-            var sc = f.max_severity>=9?'#c00':f.max_severity>=7?'#e60':f.max_severity>=4?'#e90':'#999';
-            html += '<tr><td title="'+(f.vuln_name||'')+'">'+(f.vuln_name||'-').substring(0,50)+
-                (f.cve?' <small class="text-muted">'+f.cve+'</small>':'')+'</td>'+
-                '<td>'+(f.port||'-')+'</td>'+
-                '<td style="color:'+sc+'">'+f.max_severity.toFixed(1)+'</td>'+
-                '<td>'+(statusBadge[f.status]||f.status)+'</td>';
-            (f.presence||[]).forEach(p => {
-                html += '<td style="text-align:center;padding:2px"><span class="presence-dot '+
-                    (p?'presence-found':'presence-clear')+'">'+(p?'X':'')+'</span></td>';
+    function statusHtml(s) {
+        var map = {
+            'NEW': '<span class="vlc-badge vlc-badge-new">NEW</span>',
+            'OPEN': '<span class="vlc-badge vlc-badge-open">OPEN</span>',
+            'FIXED': '<span class="vlc-badge vlc-badge-fixed">FIXED</span>',
+            'RECURRED': '<span class="vlc-badge vlc-badge-recurred">RECUR</span>'
+        };
+        return map[s] || s;
+    }
+
+    return {
+        title: '資產 #' + assetId,
+        loaded: false,
+        sevFilter: 0,
+        info: { ip: '-', hostname: '-', type: '-', scans: '-', findings: '-' },
+        showModal: false,
+        adjVulnId: null,
+        adjTarget: '',
+        adjType: 'ACCEPTED',
+        adjSev: 0,
+        adjJust: '',
+        adjExp: '',
+
+        init: function() { this.load(); },
+
+        load: function() {
+            var self = this;
+            fetch('/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.success) {
+                    document.getElementById('t-body').innerHTML =
+                        '<tr><td style="color:#c00;padding:16px">' + r.message + '</td></tr>';
+                    return;
+                }
+                var d = r.data, a = d.asset, ss = d.sessions, ff = d.findings;
+
+                self.title = '資產: ' + (a.ip || a.id);
+                self.info = {
+                    ip: a.ip || '-',
+                    hostname: a.hostname || '-',
+                    type: a.asset_type || '-',
+                    scans: ss.length,
+                    findings: ff.length
+                };
+                self.loaded = true;
+
+                // 表頭
+                var th = '<tr><th>弱點名稱</th><th>Port</th><th>嚴重度</th><th>狀態</th>';
+                ss.forEach(function(s) {
+                    var dt = s.scan_start ? s.scan_start.substring(5, 10) : '?';
+                    th += '<th style="width:28px;text-align:center;padding:2px">' +
+                        '<div class="vlc-session-hdr">' + dt + '</div></th>';
+                });
+                th += '<th>風險調整</th><th></th></tr>';
+                document.getElementById('t-head').innerHTML = th;
+
+                // 弱點列
+                var html = '';
+                ff.forEach(function(f) {
+                    var sc = sevColor(f.max_severity);
+                    var vn = (f.vuln_name || '-');
+                    var short = vn.length > 50 ? vn.substring(0, 50) + '...' : vn;
+                    html += '<tr>';
+                    html += '<td title="' + vn.replace(/"/g, '&quot;') + '">' + short;
+                    if (f.cve) html += ' <small style="color:#999">' + f.cve + '</small>';
+                    html += '</td>';
+                    html += '<td>' + (f.port || '-') + '</td>';
+                    html += '<td style="color:' + sc + ';font-weight:' + (f.max_severity >= 7 ? '600' : 'normal') + '">' + f.max_severity.toFixed(1) + '</td>';
+                    html += '<td>' + statusHtml(f.status) + '</td>';
+
+                    (f.presence || []).forEach(function(p) {
+                        html += '<td style="text-align:center;padding:2px">' +
+                            '<span class="vlc-dot ' + (p ? 'vlc-dot-found' : 'vlc-dot-clear') + '">' +
+                            (p ? 'X' : '') + '</span></td>';
+                    });
+
+                    if (f.adjustment) {
+                        html += '<td><span class="vlc-adj-badge vlc-adj-' + f.adjustment.type.toLowerCase() + '">' +
+                            (ADJ_LABEL[f.adjustment.type] || f.adjustment.type) + '</span></td><td></td>';
+                    } else {
+                        html += '<td>-</td>';
+                        html += '<td><button class="vlc-btn-adjust" ' +
+                            'onclick="document.querySelector(\'[x-data]\').__x.$data.openAdj(' +
+                            f.vuln_id + ',\'' + vn.replace(/'/g, "\\'").replace(/"/g, '&quot;') +
+                            '\',' + f.max_severity + ')">調整</button></td>';
+                    }
+                    html += '</tr>';
+                });
+                document.getElementById('t-body').innerHTML =
+                    html || '<tr><td colspan="99" class="vlc-empty">無弱點發現</td></tr>';
             });
-            if (f.adjustment) {
-                html += '<td><span class="adj-badge adj-'+f.adjustment.type+'">'+f.adjustment.type+'</span></td><td></td>';
-            } else {
-                html += '<td>-</td><td><button class="btn btn-outline-primary btn-sm" style="font-size:11px;padding:0 6px" '+
-                    'onclick="openAdj('+f.vuln_id+',\''+((f.vuln_name||'').replace(/'/g,"\\'"))+'\','+f.max_severity+')">Adjust</button></td>';
+        },
+
+        openAdj: function(vid, vname, sev) {
+            this.adjVulnId = vid;
+            this.adjTarget = vname;
+            this.adjSev = Math.max(0, sev - 2).toFixed(1);
+            this.adjJust = '';
+            this.adjExp = '';
+            this.showModal = true;
+        },
+
+        submitAdj: function() {
+            var self = this;
+            if (!self.adjJust.trim()) {
+                alert('請填寫調整理由');
+                return;
             }
-            html += '</tr>';
-        });
-        document.getElementById('t-body').innerHTML = html || '<tr><td colspan="99">No findings</td></tr>';
-    });
+            fetch('/api/vuln-lifecycle/risk/adjust', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    asset_id: assetId,
+                    vuln_id: self.adjVulnId,
+                    adjustment_type: self.adjType,
+                    adjusted_severity: parseFloat(self.adjSev),
+                    justification: self.adjJust,
+                    expires_at: self.adjExp || null
+                })
+            }).then(function(r) { return r.json(); }).then(function(r) {
+                if (r.success) {
+                    self.showModal = false;
+                    self.load();
+                } else {
+                    alert(r.message || '儲存失敗');
+                }
+            });
+        }
+    };
 }
-
-function openAdj(vid, vname, sev) {
-    adjVulnId = vid;
-    document.getElementById('adj-target').textContent = vname;
-    document.getElementById('adj-sev').value = Math.max(0,sev-2).toFixed(1);
-    document.getElementById('adj-just').value = '';
-    new bootstrap.Modal(document.getElementById('adjModal')).show();
-}
-
-function submitAdj() {
-    fetch('/api/vuln-lifecycle/risk/adjust', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-            asset_id: assetId, vuln_id: adjVulnId,
-            adjustment_type: document.getElementById('adj-type').value,
-            adjusted_severity: parseFloat(document.getElementById('adj-sev').value),
-            justification: document.getElementById('adj-just').value,
-            expires_at: document.getElementById('adj-exp').value || null
-        })
-    }).then(r => r.json()).then(r => {
-        if (r.success) { bootstrap.Modal.getInstance(document.getElementById('adjModal')).hide(); load(); }
-        else alert(r.message);
-    });
-}
-
-load();
 </script>
 {% endblock %}

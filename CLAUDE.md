@@ -426,6 +426,32 @@ function pageManager() {
 <div x-show="visible" class="my-flex-container">
 ```
 
+### FRONT-07: 模組 CSS 命名與排版規範
+
+**平台未載入 Bootstrap，禁止在模板中使用 Bootstrap class。**
+
+平台全域 CSS 為 `common.css` + `base-layout.css`，提供按鈕（`.btn`）、表格（`.data-table`）、
+表單（`.form-control`）、Modal（`.modal-overlay`）等基礎元件，但**沒有 Grid 系統**
+（無 `row`、`col-md-*`、`container-fluid`）。
+
+**模組 CSS 開發規則：**
+
+| 規則 | 說明 |
+|------|------|
+| 模組專屬前綴 | 所有 class 使用模組前綴（`vlc-`、`fw-` 等），避免與 common.css 撞名 |
+| 排版方式 | CSS Grid / Flexbox（非 Bootstrap grid） |
+| 區塊容器 | `xxx-section` + `xxx-section-header`（白底 + 1px border） |
+| 統計卡片 | `xxx-stats` 用 `display: grid; grid-template-columns: repeat(N, 1fr)` |
+| 雙欄佈局 | `xxx-grid-2` 用 `display: grid; grid-template-columns: 1fr 1fr; gap: 16px` |
+
+**參考實作：** `modules/form_workflow/static/modules/form_workflow/css/fw-dashboard.css`
+
+**常見錯誤（會導致排版全部擠在一起）：**
+- 使用 `row` + `col-md-6`（不存在，無效果）
+- 使用 `card` + `card-header` + `card-body`（common.css 無此定義）
+- 使用 `table-sm`、`table-hover`（應用 `data-table` 或模組自訂 `xxx-table`）
+- 使用 `mb-3`、`p-0`、`d-flex` 等 Bootstrap utility class
+
 ### CACHE-01: 靜態資源 Cache-Busting
 
 **Flask 全站機制，確保 JS/CSS 變更後瀏覽器立即載入新版，無需 F5。**

@@ -1,108 +1,171 @@
-{% extends "base.html" %}
-{% block title %}Vuln Dashboard{% endblock %}
+{% extends "layouts/base.html" %}
+{% block title %}弱點儀表板{% endblock %}
 
-{% block page_content %}
-<div class="container-fluid">
-    <h5 class="mb-3">Vulnerability Dashboard</h5>
+{% block head %}
+<link rel="stylesheet" href="/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
 
-    <div class="row mb-3" id="stat-cards">
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700;color:#c00" id="stat-critical">-</div>
-                <div class="text-muted" style="font-size:13px">Critical</div>
+{% block content %}
+<div class="vlc-container">
+
+    <div class="vlc-page-header">
+        <h1>弱點儀表板</h1>
+    </div>
+
+    <!-- 嚴重等級統計 -->
+    <div class="vlc-stats" id="stat-cards">
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-critical" id="stat-critical">-</div>
+            <div class="vlc-stat-label">Critical</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-high" id="stat-high">-</div>
+            <div class="vlc-stat-label">High</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-medium" id="stat-medium">-</div>
+            <div class="vlc-stat-label">Medium</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-low" id="stat-low">-</div>
+            <div class="vlc-stat-label">Low</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value" style="color:#333" id="stat-assets">-</div>
+            <div class="vlc-stat-label">資產數</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value" style="color:#369" id="stat-adjusted">-</div>
+            <div class="vlc-stat-label">已調整</div>
+        </div>
+    </div>
+
+    <!-- 雙欄區塊 -->
+    <div class="vlc-grid-2">
+        <!-- 掃描器來源 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">掃描器來源</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead>
+                        <tr>
+                            <th>名稱</th><th>類型</th><th>匯入方式</th>
+                            <th>掃描次數</th><th>最後掃描</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scanner-table">
+                        <tr><td colspan="5" class="vlc-empty">載入中...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700;color:#e60" id="stat-high">-</div>
-                <div class="text-muted" style="font-size:13px">High</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700;color:#e90" id="stat-medium">-</div>
-                <div class="text-muted" style="font-size:13px">Medium</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700;color:#999" id="stat-low">-</div>
-                <div class="text-muted" style="font-size:13px">Low</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700" id="stat-assets">-</div>
-                <div class="text-muted" style="font-size:13px">Assets</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center p-3">
-                <div style="font-size:32px;font-weight:700" id="stat-adjusted">-</div>
-                <div class="text-muted" style="font-size:13px">Adjusted</div>
+
+        <!-- 風險調整 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">生效中的風險調整</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead>
+                        <tr><th>調整類型</th><th>數量</th></tr>
+                    </thead>
+                    <tbody id="adj-table">
+                        <tr><td colspan="2" class="vlc-empty">載入中...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">Scanner Sources</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm mb-0">
-                        <thead><tr><th>Name</th><th>Type</th><th>Method</th><th>Sessions</th><th>Last Scan</th></tr></thead>
-                        <tbody id="scanner-table"><tr><td colspan="5">Loading...</td></tr></tbody>
-                    </table>
-                </div>
+    <!-- 雙欄區塊 -->
+    <div class="vlc-grid-2">
+        <!-- 資產類型 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">資產類型分布</div>
+            <div class="vlc-section-body">
+                <table class="vlc-table">
+                    <thead><tr><th>類型</th><th>數量</th></tr></thead>
+                    <tbody id="asset-type-table">
+                        <tr><td colspan="2" class="vlc-empty">載入中...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">Active Risk Adjustments</div>
-                <div class="card-body p-0">
-                    <table class="table table-sm mb-0">
-                        <thead><tr><th>Type</th><th>Count</th></tr></thead>
-                        <tbody id="adj-table"><tr><td colspan="2">Loading...</td></tr></tbody>
-                    </table>
-                </div>
+
+        <!-- 部署模式 -->
+        <div class="vlc-section">
+            <div class="vlc-section-header">部署模式</div>
+            <div class="vlc-section-body padded">
+                <span id="deploy-mode" class="vlc-mode-badge vlc-mode-standalone">-</span>
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}
 
-{% block page_scripts %}
+{% block scripts %}
 <script>
-fetch('/api/vuln-lifecycle/dashboard/summary')
-.then(r => r.json())
-.then(r => {
-    if (!r.success) return;
-    var d = r.data, s = d.severity || {};
-    document.getElementById('stat-critical').textContent = s.critical || 0;
-    document.getElementById('stat-high').textContent = s.high || 0;
-    document.getElementById('stat-medium').textContent = s.medium || 0;
-    document.getElementById('stat-low').textContent = s.low || 0;
+(function() {
+    var ADJ_LABEL = {
+        'ACCEPTED': '已接受', 'MITIGATED': '已緩解',
+        'FALSE_POSITIVE': '誤報', 'DEFERRED': '延後處理'
+    };
+    var ASSET_LABEL = { 'host': '主機 (Host)', 'webapp': '網頁應用 (WebApp)' };
+    var MODE_LABEL = { 'standalone': '獨立模式', 'platform': '平台模式', 'unknown': '未知' };
 
-    var ta = 0; for (var k in (d.assets||{})) ta += d.assets[k];
-    document.getElementById('stat-assets').textContent = ta;
+    fetch('/api/vuln-lifecycle/dashboard/summary')
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        if (!r.success) return;
+        var d = r.data, s = d.severity || {};
 
-    var adj = 0; for (var k in (d.adjustments||{})) adj += d.adjustments[k];
-    document.getElementById('stat-adjusted').textContent = adj;
+        document.getElementById('stat-critical').textContent = s.critical || 0;
+        document.getElementById('stat-high').textContent = s.high || 0;
+        document.getElementById('stat-medium').textContent = s.medium || 0;
+        document.getElementById('stat-low').textContent = s.low || 0;
 
-    var html = '';
-    (d.scanners||[]).forEach(sc => {
-        var ls = sc.last_scan ? sc.last_scan.substring(0,16).replace('T',' ') : '-';
-        html += '<tr><td>'+sc.name+'</td><td>'+sc.scanner_type+
-                '</td><td><span class="badge bg-secondary">'+sc.import_method+
-                '</span></td><td>'+sc.session_count+'</td><td>'+ls+'</td></tr>';
+        var ta = 0;
+        for (var k in (d.assets || {})) ta += d.assets[k];
+        document.getElementById('stat-assets').textContent = ta;
+
+        var adj = 0;
+        for (var k in (d.adjustments || {})) adj += d.adjustments[k];
+        document.getElementById('stat-adjusted').textContent = adj;
+
+        // 掃描器表
+        var html = '';
+        (d.scanners || []).forEach(function(sc) {
+            var ls = sc.last_scan ? BkTime.format(sc.last_scan, 'short') : '-';
+            html += '<tr><td>' + sc.name + '</td><td>' + sc.scanner_type +
+                '</td><td><span class="vlc-adj-badge vlc-adj-mitigated">' + sc.import_method +
+                '</span></td><td>' + sc.session_count + '</td><td>' + ls + '</td></tr>';
+        });
+        document.getElementById('scanner-table').innerHTML =
+            html || '<tr><td colspan="5" class="vlc-empty">無掃描器</td></tr>';
+
+        // 風險調整表
+        html = '';
+        for (var t in (d.adjustments || {})) {
+            html += '<tr><td>' + (ADJ_LABEL[t] || t) + '</td><td>' + d.adjustments[t] + '</td></tr>';
+        }
+        document.getElementById('adj-table').innerHTML =
+            html || '<tr><td colspan="2" class="vlc-empty">無調整紀錄</td></tr>';
+
+        // 資產類型表
+        html = '';
+        for (var at in (d.assets || {})) {
+            html += '<tr><td>' + (ASSET_LABEL[at] || at) + '</td><td>' + d.assets[at] + '</td></tr>';
+        }
+        document.getElementById('asset-type-table').innerHTML =
+            html || '<tr><td colspan="2" class="vlc-empty">無資產</td></tr>';
+
+        // 部署模式
+        var mode = d.mode || 'unknown';
+        var el = document.getElementById('deploy-mode');
+        el.textContent = MODE_LABEL[mode] || mode;
+        el.className = 'vlc-mode-badge ' +
+            (mode === 'platform' ? 'vlc-mode-platform' : 'vlc-mode-standalone');
     });
-    document.getElementById('scanner-table').innerHTML = html || '<tr><td colspan="5">No scanners</td></tr>';
-
-    html = '';
-    for (var t in (d.adjustments||{})) {
-        html += '<tr><td>'+t+'</td><td>'+d.adjustments[t]+'</td></tr>';
-    }
-    document.getElementById('adj-table').innerHTML = html || '<tr><td colspan="2">None</td></tr>';
-});
+})();
 </script>
 {% endblock %}

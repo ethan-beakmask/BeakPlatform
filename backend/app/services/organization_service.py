@@ -473,6 +473,22 @@ class OrganizationService:
         db.session.add(external_users_role)
         roles['external_users'] = external_users_role
 
+        # 弱點風險管制員角色
+        risk_controller_role = Role(
+            org_secure_code=org.secure_code,
+            role_type=RoleType.ROLE,
+            scope_type=ScopeType.GLOBAL,
+            code='RISK_CONTROLLER',
+            name='弱點風險管制員',
+            description='管理弱點生命週期、風險調整審核與資產弱點追蹤',
+            is_manager=False,
+            is_system_role=True,
+            is_active=True
+        )
+        risk_controller_role.update_full_path()
+        db.session.add(risk_controller_role)
+        roles['risk_controller'] = risk_controller_role
+
         logger.info(f"Default roles created for org {org.code}")
 
         return roles
@@ -505,6 +521,14 @@ class OrganizationService:
                 'form_workflow.workflow.view',
                 'form_workflow.workflow.manage',
                 'form_workflow.design.tryout',
+            ],
+            'risk_controller': [
+                'vuln_lifecycle.dashboard.view',
+                'vuln_lifecycle.asset.view',
+                'vuln_lifecycle.finding.view',
+                'vuln_lifecycle.risk.view',
+                'vuln_lifecycle.risk.adjust',
+                'vuln_lifecycle.risk.approve',
             ],
         }
 

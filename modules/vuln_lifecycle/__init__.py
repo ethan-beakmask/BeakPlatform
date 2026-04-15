@@ -13,9 +13,9 @@ VulnLifecycle Module - 弱點生命週期管理模組
 
 MODULE_INFO = {
     'name': 'vuln_lifecycle',
-    'display_name': 'Vulnerability Lifecycle',
+    'display_name': 'BeakRisk 弱點管理系統',
     'version': '0.1.0',
-    'description': 'Vulnerability lifecycle management with risk adjustment workflow',
+    'description': '弱點生命週期管理，含風險調整簽核流程',
     'author': 'BeakPlatform Team',
     'dependencies': [],  # form_workflow 為選配，非硬依賴
     'platform_version': '>=1.0.0',
@@ -25,7 +25,7 @@ MODULE_INFO = {
     'menu_items': [
         {
             'code': 'vuln_lifecycle',
-            'name': 'Vuln Lifecycle',
+            'name': '弱點管理',
             'icon': 'ri-shield-check-line',
             'parent': None,
             'sort_order': 8,
@@ -33,21 +33,21 @@ MODULE_INFO = {
             'children': [
                 {
                     'code': 'vuln_lifecycle.dashboard',
-                    'name': 'Dashboard',
+                    'name': '弱點儀表板',
                     'url': 'vuln_lifecycle_web.dashboard',
                     'sort_order': 0,
                     'required_permission': 'vuln_lifecycle.dashboard.view',
                 },
                 {
                     'code': 'vuln_lifecycle.assets',
-                    'name': 'Assets',
+                    'name': '資產清冊',
                     'url': 'vuln_lifecycle_web.assets',
                     'sort_order': 1,
                     'required_permission': 'vuln_lifecycle.asset.view',
                 },
                 {
                     'code': 'vuln_lifecycle.risk',
-                    'name': 'Risk Adjustments',
+                    'name': '風險調整',
                     'url': 'vuln_lifecycle_web.risk_list',
                     'sort_order': 2,
                     'required_permission': 'vuln_lifecycle.risk.view',
@@ -61,46 +61,46 @@ MODULE_INFO = {
         # 檢視權限
         {
             'code': 'vuln_lifecycle.dashboard.view',
-            'name': 'View Dashboard',
-            'description': 'View vulnerability dashboard and statistics',
+            'name': '檢視儀表板',
+            'description': '檢視弱點儀表板與統計數據',
             'level': 'MODULE',
         },
         {
             'code': 'vuln_lifecycle.asset.view',
-            'name': 'View Assets',
-            'description': 'View asset inventory and vulnerability timeline',
+            'name': '檢視資產',
+            'description': '檢視資產清冊與弱點時間軸',
             'level': 'MODULE',
         },
         {
             'code': 'vuln_lifecycle.finding.view',
-            'name': 'View Findings',
-            'description': 'View vulnerability findings detail',
+            'name': '檢視弱點',
+            'description': '檢視弱點發現詳情',
             'level': 'MODULE',
         },
         {
             'code': 'vuln_lifecycle.risk.view',
-            'name': 'View Risk Adjustments',
-            'description': 'View risk adjustment records',
+            'name': '檢視風險調整',
+            'description': '檢視風險調整紀錄',
             'level': 'MODULE',
         },
         # 操作權限
         {
             'code': 'vuln_lifecycle.risk.adjust',
-            'name': 'Submit Risk Adjustment',
-            'description': 'Submit risk adjustment request (initiates workflow)',
+            'name': '提交風險調整',
+            'description': '提交風險調整申請（啟動簽核流程）',
             'level': 'MODULE',
         },
         {
             'code': 'vuln_lifecycle.risk.approve',
-            'name': 'Approve Risk Adjustment',
-            'description': 'Approve or reject risk adjustment requests',
+            'name': '審核風險調整',
+            'description': '核准或駁回風險調整申請',
             'level': 'ORG',
         },
         # 管理權限
         {
             'code': 'vuln_lifecycle.admin',
-            'name': 'Module Admin',
-            'description': 'Full management of vulnerability lifecycle module',
+            'name': '模組管理',
+            'description': '弱點生命週期模組完整管理權限',
             'level': 'ORG',
         },
     ],
