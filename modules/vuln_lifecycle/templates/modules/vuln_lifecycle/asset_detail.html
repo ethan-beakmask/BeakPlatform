@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Asset Detail{% endblock %}
+
+{% block page_content %}
+<style>
+.presence-dot { display:inline-block; width:18px; height:18px; border-radius:3px;
+                text-align:center; font-size:10px; line-height:18px; font-weight:700; }
+.presence-found { background:#fdd; color:#900; }
+.presence-clear { background:#dfd; color:#070; }
+.session-hdr { font-size:11px; writing-mode:vertical-lr; text-orientation:mixed;
+               transform:rotate(180deg); white-space:nowrap; max-height:100px; }
+.adj-badge { font-size:11px; padding:1px 6px; border-radius:3px; }
+.adj-ACCEPTED { background:#e8e8e8; color:#555; }
+.adj-MITIGATED { background:#def; color:#369; }
+.adj-FALSE_POSITIVE { background:#dfd; color:#060; }
+.adj-DEFERRED { background:#fef; color:#939; }
+.badge-new { background:#fdd; color:#900; }
+.badge-open { background:#fed; color:#a60; }
+.badge-fixed { background:#dfd; color:#070; }
+.badge-recurred { background:#edf; color:#609; }
+</style>
+<div class="container-fluid">
+    <div class="d-flex align-items-center mb-3">
+        <a href="/vuln/assets" class="btn btn-sm btn-outline-secondary me-2">&larr; Back</a>
+        <h5 class="mb-0" id="asset-title">Asset #{{ asset_id }}</h5>
+    </div>
+
+    <div class="card mb-3" id="info-card" style="display:none">
+        <div class="card-body py-2" style="font-size:13px">
+            <span class="me-4"><strong>IP:</strong> <span id="info-ip">-</span></span>
+            <span class="me-4"><strong>Hostname:</strong> <span id="info-hostname">-</span></span>
+            <span class="me-4"><strong>Type:</strong> <span id="info-type">-</span></span>
+            <span class="me-4"><strong>Scans:</strong> <span id="info-scans">-</span></span>
+            <span><strong>Findings:</strong> <span id="info-findings">-</span></span>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <label style="font-size:13px">Severity &ge;</label>
+            <input type="number" id="filter-sev" value="0" min="0" max="10" step="0.1"
+                   style="width:60px;font-size:13px" onchange="load()">
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0" style="overflow-x:auto">
+            <table class="table table-sm mb-0">
+                <thead id="t-head"></thead>
+                <tbody id="t-body"><tr><td>Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Adjust Modal -->
+<div class="modal fade" id="adjModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h6 class="modal-title">Risk Adjustment</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <p id="adj-target" class="text-muted small"></p>
+                <div class="mb-2"><label class="form-label">Type</label>
+                    <select id="adj-type" class="form-select form-select-sm">
+                        <option value="ACCEPTED">Accepted</option>
+                        <option value="MITIGATED">Mitigated</option>
+                        <option value="FALSE_POSITIVE">False Positive</option>
+                        <option value="DEFERRED">Deferred</option>
+                    </select></div>
+                <div class="mb-2"><label class="form-label">Adjusted Severity</label>
+                    <input type="number" id="adj-sev" class="form-control form-control-sm" value="0" min="0" max="10" step="0.1"></div>
+                <div class="mb-2"><label class="form-label">Justification</label>
+                    <textarea id="adj-just" class="form-control form-control-sm" rows="3"></textarea></div>
+                <div class="mb-2"><label class="form-label">Expires</label>
+                    <input type="date" id="adj-exp" class="form-control form-control-sm"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="submitAdj()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+var assetId = {{ asset_id }};
+var adjVulnId = null;
+var statusBadge = {
+    'NEW':'<span class="badge badge-new">NEW</span>',
+    'OPEN':'<span class="badge badge-open">OPEN</span>',
+    'FIXED':'<span class="badge badge-fixed">FIXED</span>',
+    'RECURRED':'<span class="badge badge-recurred">RECUR</span>'
+};
+
+function load() {
+    var sev = document.getElementById('filter-sev').value;
+    fetch('/api/vuln-lifecycle/assets/'+assetId+'/findings?severity_min='+sev)
+    .then(r => r.json()).then(r => {
+        if (!r.success) { document.getElementById('t-body').innerHTML='<tr><td class="text-danger">'+r.message+'</td></tr>'; return; }
+        var d = r.data, a = d.asset, ss = d.sessions, ff = d.findings;
+        document.getElementById('asset-title').textContent = 'Asset: '+(a.ip||a.id);
+        document.getElementById('info-ip').textContent = a.ip||'-';
+        document.getElementById('info-hostname').textContent = a.hostname||'-';
+        document.getElementById('info-type').textContent = a.asset_type||'-';
+        document.getElementById('info-scans').textContent = ss.length;
+        document.getElementById('info-findings').textContent = ff.length;
+        document.getElementById('info-card').style.display = '';
+
+        var th = '<tr><th>Vulnerability</th><th>Port</th><th>Sev</th><th>Status</th>';
+        ss.forEach(s => { var dt = s.scan_start ? s.scan_start.substring(5,10) : '?';
+            th += '<th style="width:28px;text-align:center;padding:2px"><div class="session-hdr">'+dt+'</div></th>'; });
+        th += '<th>Adjustment</th><th></th></tr>';
+        document.getElementById('t-head').innerHTML = th;
+
+        var html = '';
+        ff.forEach(f => {
+            var sc = f.max_severity>=9?'#c00':f.max_severity>=7?'#e60':f.max_severity>=4?'#e90':'#999';
+            html += '<tr><td title="'+(f.vuln_name||'')+'">'+(f.vuln_name||'-').substring(0,50)+
+                (f.cve?' <small class="text-muted">'+f.cve+'</small>':'')+'</td>'+
+                '<td>'+(f.port||'-')+'</td>'+
+                '<td style="color:'+sc+'">'+f.max_severity.toFixed(1)+'</td>'+
+                '<td>'+(statusBadge[f.status]||f.status)+'</td>';
+            (f.presence||[]).forEach(p => {
+                html += '<td style="text-align:center;padding:2px"><span class="presence-dot '+
+                    (p?'presence-found':'presence-clear')+'">'+(p?'X':'')+'</span></td>';
+            });
+            if (f.adjustment) {
+                html += '<td><span class="adj-badge adj-'+f.adjustment.type+'">'+f.adjustment.type+'</span></td><td></td>';
+            } else {
+                html += '<td>-</td><td><button class="btn btn-outline-primary btn-sm" style="font-size:11px;padding:0 6px" '+
+                    'onclick="openAdj('+f.vuln_id+',\''+((f.vuln_name||'').replace(/'/g,"\\'"))+'\','+f.max_severity+')">Adjust</button></td>';
+            }
+            html += '</tr>';
+        });
+        document.getElementById('t-body').innerHTML = html || '<tr><td colspan="99">No findings</td></tr>';
+    });
+}
+
+function openAdj(vid, vname, sev) {
+    adjVulnId = vid;
+    document.getElementById('adj-target').textContent = vname;
+    document.getElementById('adj-sev').value = Math.max(0,sev-2).toFixed(1);
+    document.getElementById('adj-just').value = '';
+    new bootstrap.Modal(document.getElementById('adjModal')).show();
+}
+
+function submitAdj() {
+    fetch('/api/vuln-lifecycle/risk/adjust', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            asset_id: assetId, vuln_id: adjVulnId,
+            adjustment_type: document.getElementById('adj-type').value,
+            adjusted_severity: parseFloat(document.getElementById('adj-sev').value),
+            justification: document.getElementById('adj-just').value,
+            expires_at: document.getElementById('adj-exp').value || null
+        })
+    }).then(r => r.json()).then(r => {
+        if (r.success) { bootstrap.Modal.getInstance(document.getElementById('adjModal')).hide(); load(); }
+        else alert(r.message);
+    });
+}
+
+load();
+</script>
+{% endblock %}

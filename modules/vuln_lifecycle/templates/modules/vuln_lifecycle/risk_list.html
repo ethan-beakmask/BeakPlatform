@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Risk Adjustments{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <h5 class="mb-3">Risk Adjustments</h5>
+
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <label style="font-size:13px">Status</label>
+            <select id="filter-status" onchange="loadAdj()" style="font-size:13px">
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="REVOKED">Revoked</option>
+                <option value="SUPERSEDED">Superseded</option>
+            </select>
+            <span class="ms-3 text-muted" id="adj-count" style="font-size:13px"></span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr>
+                    <th>ID</th><th>Asset</th><th>Vulnerability</th><th>Type</th>
+                    <th>Adj Sev</th><th>Reviewer</th><th>Expires</th><th>Justification</th>
+                </tr></thead>
+                <tbody id="adj-table"><tr><td colspan="8">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+function loadAdj() {
+    var st = document.getElementById('filter-status').value;
+    fetch('/api/vuln-lifecycle/risk/adjustments?status='+st)
+    .then(r => r.json()).then(r => {
+        if (!r.success) return;
+        document.getElementById('adj-count').textContent = r.data.length + ' records';
+        var html = '';
+        r.data.forEach(a => {
+            var exp = a.expires_at ? a.expires_at.substring(0,10) : '-';
+            html += '<tr><td>'+a.id+'</td>'+
+                '<td><a href="/vuln/assets/'+a.asset_id+'">'+(a.ip||'-')+'</a></td>'+
+                '<td title="'+(a.vuln_name||'')+'">'+(a.vuln_name||'-').substring(0,40)+
+                (a.cve?' <small>'+a.cve+'</small>':'')+'</td>'+
+                '<td>'+a.adjustment_type+'</td>'+
+                '<td>'+(a.adjusted_severity!=null?Number(a.adjusted_severity).toFixed(1):'-')+'</td>'+
+                '<td>'+(a.reviewer||'-')+'</td>'+
+                '<td>'+exp+'</td>'+
+                '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+
+                (a.justification||'')+'">'+(a.justification||'-')+'</td></tr>';
+        });
+        document.getElementById('adj-table').innerHTML = html || '<tr><td colspan="8">No records</td></tr>';
+    });
+}
+loadAdj();
+</script>
+{% endblock %}

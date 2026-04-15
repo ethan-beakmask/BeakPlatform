@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Assets{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <h5 class="mb-3">Asset Inventory</h5>
+
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <label class="me-2" style="font-size:13px">Type</label>
+            <select id="filter-type" onchange="loadAssets()" style="font-size:13px">
+                <option value="">All</option>
+                <option value="host">Host</option>
+                <option value="webapp">WebApp</option>
+            </select>
+            <label class="ms-3 me-2" style="font-size:13px">Severity &ge;</label>
+            <input type="number" id="filter-sev" value="0" min="0" max="10" step="0.1"
+                   style="width:60px;font-size:13px" onchange="loadAssets()">
+            <span class="ms-3 text-muted" id="asset-count" style="font-size:13px"></span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr>
+                    <th>ID</th><th>IP / URL</th><th>Hostname</th><th>Type</th>
+                    <th>Scans</th><th>Vulns</th><th>Max Sev</th><th>Last Seen</th>
+                </tr></thead>
+                <tbody id="asset-table"><tr><td colspan="8">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+function loadAssets() {
+    var type = document.getElementById('filter-type').value;
+    var sev = document.getElementById('filter-sev').value;
+    var url = '/api/vuln-lifecycle/assets?severity_min=' + sev;
+    if (type) url += '&type=' + type;
+
+    fetch(url).then(r => r.json()).then(r => {
+        if (!r.success) return;
+        document.getElementById('asset-count').textContent = r.total + ' assets';
+        var html = '';
+        r.data.forEach(a => {
+            var sc = a.max_severity >= 9 ? '#c00' : a.max_severity >= 7 ? '#e60' :
+                     a.max_severity >= 4 ? '#e90' : '#999';
+            var ls = a.last_seen ? a.last_seen.substring(0,10) : '-';
+            html += '<tr style="cursor:pointer" onclick="location.href=\'/vuln/assets/'+a.id+'\'">'+
+                '<td>'+a.id+'</td><td><strong>'+a.ip+'</strong></td>'+
+                '<td>'+(a.hostname||'-')+'</td><td>'+(a.asset_type||'-')+'</td>'+
+                '<td>'+(a.scan_count||0)+'</td><td>'+(a.finding_count||0)+'</td>'+
+                '<td style="color:'+sc+'">'+Number(a.max_severity).toFixed(1)+'</td>'+
+                '<td>'+ls+'</td></tr>';
+        });
+        document.getElementById('asset-table').innerHTML = html || '<tr><td colspan="8">No assets</td></tr>';
+    });
+}
+loadAssets();
+</script>
+{% endblock %}
