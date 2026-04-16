@@ -1123,7 +1123,7 @@ def _resolve_policy_org():
     Returns: (org, error_response)
     """
     org_code = request.args.get('org_code') or (
-        request.get_json() or {}).get('org_code')
+        request.get_json(silent=True) or {}).get('org_code')
 
     if org_code and current_user.is_system_admin:
         org = Organization.query.filter_by(

@@ -490,7 +490,10 @@ REQUIRED_PKGS=(python3 python3-venv python3-pip postgresql postgresql-contrib re
 MISSING_PKGS=()
 
 for pkg in "${REQUIRED_PKGS[@]}"; do
-    if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+    if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+        printf "  %-25s %s\n" "$pkg" "OK"
+    else
+        printf "  %-25s %s\n" "$pkg" "缺少"
         MISSING_PKGS+=("$pkg")
     fi
 done
