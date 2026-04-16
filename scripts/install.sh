@@ -16,10 +16,9 @@
 #   DB_NAME                資料庫名稱 (預設: beakplatform)
 #   DB_USER                資料庫使用者 (預設: beakplatform)
 #   DB_PASS                資料庫密碼 (預設: postgres123)
-#   APP_PORT               應用程式 port (預設: 8000)
+#   BEAK_PORT              BeakPlatform 存取 port (預設: 7000，被佔用時自動找空 port)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
-#   NGINX_PORT             Nginx 監聽 port (預設: 80，與現有網站共存時可改用其他 port)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
 # =============================================================================
 set -e
@@ -29,12 +28,10 @@ INSTALL_DIR="${INSTALL_DIR:-/opt/BeakPlatform}"
 DB_NAME="${DB_NAME:-beakplatform}"
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-postgres123}"
-APP_PORT="${APP_PORT:-8000}"
-NGINX_PORT="${NGINX_PORT:-80}"
+BEAK_PORT="${BEAK_PORT:-7000}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
 SERVICE_NAME="beakplatform"
 SERVICE_USER="beakplatform"
-HEALTH_URL="http://localhost:${APP_PORT}/health"
 HEALTH_TIMEOUT=60
 
 # === 顏色 ===
@@ -63,6 +60,57 @@ check_ubuntu() {
     if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
         log_warn "此腳本針對 Ubuntu 22.04/24.04 設計，其他系統可能需要調整"
     fi
+}
+
+# 檢查 port 是否被佔用（0=空閒, 1=佔用）
+is_port_in_use() {
+    ss -tlnH "sport = :$1" 2>/dev/null | grep -q . && return 0
+    return 1
+}
+
+# 從指定 port 開始找一個空閒 port
+find_free_port() {
+    local port=$1
+    local max_try=100
+    local i=0
+    while [ $i -lt $max_try ]; do
+        if ! is_port_in_use "$port"; then
+            echo "$port"
+            return 0
+        fi
+        port=$((port + 1))
+        i=$((i + 1))
+    done
+    return 1
+}
+
+# 解析 port：檢查用戶指定的 BEAK_PORT，佔用則自動找空 port
+# 同時設定 NGINX_PORT（外部）和 APP_PORT（內部 Gunicorn）
+resolve_ports() {
+    NGINX_PORT="$BEAK_PORT"
+
+    if is_port_in_use "$NGINX_PORT"; then
+        local new_port
+        new_port=$(find_free_port "$NGINX_PORT")
+        if [ -z "$new_port" ]; then
+            log_error "無法找到可用的 port（從 $NGINX_PORT 開始搜尋）"
+            exit 1
+        fi
+        log_warn "Port $NGINX_PORT 已被佔用，自動改用 port $new_port"
+        NGINX_PORT="$new_port"
+    fi
+
+    # Gunicorn 內部 port = NGINX_PORT + 1，綁 127.0.0.1
+    APP_PORT=$((NGINX_PORT + 1))
+    if is_port_in_use "$APP_PORT"; then
+        APP_PORT=$(find_free_port "$((NGINX_PORT + 2))")
+        if [ -z "$APP_PORT" ]; then
+            log_error "無法找到 Gunicorn 內部可用 port"
+            exit 1
+        fi
+    fi
+
+    HEALTH_URL="http://localhost:${APP_PORT}/health"
 }
 
 health_check() {
@@ -156,8 +204,7 @@ case "${1:-}" in
         echo "環境變數:"
         echo "  INSTALL_DIR=$INSTALL_DIR"
         echo "  DB_NAME=$DB_NAME"
-        echo "  APP_PORT=$APP_PORT"
-        echo "  NGINX_PORT=$NGINX_PORT (與現有網站共存時可改用其他 port)"
+        echo "  BEAK_PORT=$BEAK_PORT (存取 port，被佔用時自動找空 port)"
         echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
         exit 1
         ;;
@@ -229,6 +276,9 @@ fi
 # =========================================================================
 if [ "$ACTION" = "start" ]; then
     check_root
+    # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
+    local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
+    HEALTH_URL="http://localhost:${local_app_port:-7001}/health"
     log_info "啟動 BeakPlatform..."
     systemctl start "$SERVICE_NAME"
     health_check
@@ -381,6 +431,9 @@ if [ "$ACTION" = "update" ]; then
 
     # [6] 重啟服務
     log_step "6/6" "重啟服務..."
+    # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
+    local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
+    HEALTH_URL="http://localhost:${local_app_port:-7001}/health"
     systemctl restart "$SERVICE_NAME"
 
     health_check
@@ -404,9 +457,13 @@ echo "============================================"
 echo "  BeakPlatform 全新安裝"
 echo "============================================"
 echo ""
+
+# 解析 port（檢查佔用，自動分配）
+resolve_ports
+
 echo "  安裝目錄: $INSTALL_DIR"
 echo "  資料庫:   $DB_NAME"
-echo "  Port:     $APP_PORT"
+echo "  Port:     $NGINX_PORT (Nginx) / $APP_PORT (Gunicorn internal)"
 echo "  來源:     $GITHUB_REPO"
 echo ""
 
@@ -429,6 +486,8 @@ fi
 # === [1/9] 系統依賴 ===
 log_step "1/9" "安裝系統依賴..."
 apt-get update -qq || log_warn "部分 apt 來源無法更新，繼續安裝..."
+
+# 基礎依賴（不含 nginx，另外處理）
 apt-get install -y -qq \
     python3 \
     python3-venv \
@@ -436,10 +495,17 @@ apt-get install -y -qq \
     postgresql \
     postgresql-contrib \
     redis-server \
-    nginx \
     git \
     curl \
     sudo
+
+# Nginx：已安裝就跳過，沒有才裝
+if command -v nginx &>/dev/null; then
+    log_info "Nginx 已安裝，跳過安裝"
+else
+    apt-get install -y -qq nginx
+    log_info "Nginx 已安裝"
+fi
 
 # 確保服務啟動
 systemctl enable --now postgresql 2>/dev/null || true
@@ -761,23 +827,6 @@ log_step "9/9" "設定 Nginx..."
 SERVER_IP=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
 SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
 SERVER_IP="${SERVER_IP:-$(hostname -f 2>/dev/null)}"
-
-# 檢查 NGINX_PORT 是否已被其他 nginx server block 佔用
-if [ -d /etc/nginx/sites-enabled ]; then
-    for conf in /etc/nginx/sites-enabled/*; do
-        [ -f "$conf" ] || continue
-        conf_name=$(basename "$conf")
-        # 跳過自己的設定檔
-        [ "$conf_name" = "$SERVICE_NAME" ] && continue
-        if grep -qE "listen\s+${NGINX_PORT}[^0-9]" "$conf" 2>/dev/null || \
-           grep -qE "listen\s+${NGINX_PORT}$" "$conf" 2>/dev/null; then
-            log_error "Nginx port ${NGINX_PORT} 已被 ${conf_name} 佔用"
-            log_error "請指定其他 port 重新安裝，例如:"
-            echo "  NGINX_PORT=8443 sudo bash $0"
-            exit 1
-        fi
-    done
-fi
 
 cat > "/etc/nginx/sites-available/$SERVICE_NAME" << 'NGXEOF'
 upstream beakplatform {
