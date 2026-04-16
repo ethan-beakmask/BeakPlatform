@@ -10,7 +10,7 @@ Group=ethan
 WorkingDirectory=/opt/BeakPlatform/backend
 EnvironmentFile=/opt/BeakPlatform/.env
 Environment="PATH=/opt/BeakPlatform/venv/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=/opt/BeakPlatform/venv/bin/flask run --host=0.0.0.0 --port=7000
+ExecStart=/opt/BeakPlatform/venv/bin/flask run --host=0.0.0.0 --port=8000
 Restart=always
 RestartSec=5
 

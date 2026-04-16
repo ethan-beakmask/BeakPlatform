@@ -117,7 +117,7 @@ REDIS_URL=redis://localhost:6380/0
 SECRET_KEY=<請更換為隨機字串>
 FLASK_ENV=development
 FLASK_DEBUG=1
-APP_PORT=7000
+APP_PORT=8000
 ```
 
 若需產生新的 SECRET_KEY:
@@ -263,7 +263,7 @@ sudo systemctl start beakplatform
 sudo systemctl status beakplatform
 
 # 健康檢查
-curl -s http://localhost:7000/health
+curl -s http://localhost:8000/health
 # 預期回應: {"service":"beakplatform","status":"healthy"}
 ```
 
@@ -273,7 +273,7 @@ curl -s http://localhost:7000/health
 
 ### 5.1 系統管理員登入
 
-- URL: `http://<主機IP>:7000/auth/login`
+- URL: `http://<主機IP>:8000/auth/login`
 - 帳號: `admin@BeakPlatform_Identifier_Code`
 - 密碼: 安裝時透過 `ADMIN_INITIAL_PASSWORD` 設定的密碼（首次登入強制變更）
 
@@ -295,9 +295,9 @@ curl -s http://localhost:7000/health
 
 ### 5.4 企業成員登入
 
-- URL: `http://<主機IP>:7000/auth/org/<domain_name>/login`
+- URL: `http://<主機IP>:8000/auth/org/<domain_name>/login`
 - 帳號: 僅輸入 username (不含 @domain)
-- 或使用共用登入頁: `http://<主機IP>:7000/auth/login`，帳號格式 `username@domain`
+- 或使用共用登入頁: `http://<主機IP>:8000/auth/login`，帳號格式 `username@domain`
 
 ---
 
@@ -323,7 +323,7 @@ sudo journalctl -u beakplatform -f
 cd /opt/BeakPlatform/backend
 source /opt/BeakPlatform/venv/bin/activate
 set -a && source /opt/BeakPlatform/.env && set +a
-flask run --host=0.0.0.0 --port=7000
+flask run --host=0.0.0.0 --port=8000
 ```
 
 ---

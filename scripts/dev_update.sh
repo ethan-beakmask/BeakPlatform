@@ -3,8 +3,8 @@
 # BeakPlatform 開發環境更新腳本
 # 用於這台開發主機，執行兩件事：
 #   1. 呼叫 install.sh --update 更新安裝環境 (/opt/BeakPlatform)
-#   2. 補上開發環境的 Nginx vhost (app.beakmask.org → 7000)
-#      並將安裝環境改為 domain-only (dev.beakmask.org → 8000)
+#   2. 補上 Nginx vhost (app.beakmask.org → 8000 安裝環境)
+#      開發環境 (dev.beakmask.org → 7000)
 #      IP 直連回 444
 # =============================================================================
 # 用法:
@@ -54,16 +54,16 @@ if [ -f /etc/nginx/sites-available/beakplatform ]; then
     cp /etc/nginx/sites-available/beakplatform "/etc/nginx/sites-available/beakplatform.bak.$(date +%Y%m%d%H%M%S)"
 fi
 
-# --- 安裝環境: dev.beakmask.org → 8000 ---
+# --- 安裝環境: app.beakmask.org → 8000 (CloudFlare Tunnel) ---
 cat > /etc/nginx/sites-available/beakplatform << 'NGXEOF'
-# === 安裝環境 (模擬用戶安裝) ===
+# === 安裝環境 (模擬用戶安裝, CloudFlare Tunnel 入口) ===
 upstream beakplatform_prod {
     server 127.0.0.1:8000;
 }
 
 server {
     listen 80;
-    server_name dev.beakmask.org;
+    server_name app.beakmask.org;
 
     client_max_body_size 20M;
 
@@ -97,7 +97,7 @@ server {
 }
 NGXEOF
 
-# --- 開發環境: app.beakmask.org → 7000 ---
+# --- 開發環境: dev.beakmask.org → 7000 ---
 cat > /etc/nginx/sites-available/beakplatform-dev << 'NGXEOF'
 # === 開發環境 ===
 upstream beakplatform_dev {
@@ -106,7 +106,7 @@ upstream beakplatform_dev {
 
 server {
     listen 80;
-    server_name app.beakmask.org;
+    server_name dev.beakmask.org;
 
     client_max_body_size 20M;
 
@@ -168,7 +168,7 @@ echo ""
 echo "======================================"
 echo "  Nginx vhost 設定"
 echo "======================================"
-echo "  app.beakmask.org  → 127.0.0.1:7000 (開發環境)"
-echo "  dev.beakmask.org  → 127.0.0.1:8000 (安裝環境)"
+echo "  app.beakmask.org  → 127.0.0.1:8000 (安裝環境, CloudFlare Tunnel)"
+echo "  dev.beakmask.org  → 127.0.0.1:7000 (開發環境)"
 echo "  IP 直連 / 其他     → 444 (拒絕)"
 echo ""

@@ -16,7 +16,7 @@
 #   DB_NAME                資料庫名稱 (預設: beakplatform)
 #   DB_USER                資料庫使用者 (預設: beakplatform)
 #   DB_PASS                資料庫密碼 (預設: postgres123)
-#   BEAK_PORT              BeakPlatform 存取 port (預設: 7000，被佔用時自動找空 port)
+#   BEAK_PORT              BeakPlatform 存取 port (預設: 8000，被佔用時自動找空 port)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
@@ -28,7 +28,7 @@ INSTALL_DIR="${INSTALL_DIR:-/opt/BeakPlatform}"
 DB_NAME="${DB_NAME:-beakplatform}"
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-postgres123}"
-BEAK_PORT="${BEAK_PORT:-7000}"
+BEAK_PORT="${BEAK_PORT:-8000}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
 SERVICE_NAME="beakplatform"
 SERVICE_USER="beakplatform"
@@ -204,7 +204,7 @@ case "${1:-}" in
         echo "環境變數:"
         echo "  INSTALL_DIR=$INSTALL_DIR"
         echo "  DB_NAME=$DB_NAME"
-        echo "  BEAK_PORT=$BEAK_PORT (存取 port，被佔用時自動找空 port)"
+        echo "  BEAK_PORT=$BEAK_PORT (存取 port，預設 8000，被佔用時自動找空 port)"
         echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
         exit 1
         ;;
@@ -278,7 +278,7 @@ if [ "$ACTION" = "start" ]; then
     check_root
     # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
     local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
-    HEALTH_URL="http://localhost:${local_app_port:-7001}/health"
+    HEALTH_URL="http://localhost:${local_app_port:-8001}/health"
     log_info "啟動 BeakPlatform..."
     systemctl start "$SERVICE_NAME"
     health_check
@@ -433,7 +433,7 @@ if [ "$ACTION" = "update" ]; then
     log_step "6/6" "重啟服務..."
     # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
     local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
-    HEALTH_URL="http://localhost:${local_app_port:-7001}/health"
+    HEALTH_URL="http://localhost:${local_app_port:-8001}/health"
     systemctl restart "$SERVICE_NAME"
 
     health_check
