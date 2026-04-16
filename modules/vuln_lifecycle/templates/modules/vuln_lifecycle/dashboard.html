@@ -115,12 +115,10 @@
 
     fetch('/api/vuln-lifecycle/dashboard/summary')
     .then(function(r) {
-        if (r.status === 503) {
-            return r.json().then(function(data) {
-                document.getElementById('stat-cards').innerHTML =
-                    '<div style="color:#dc3545;font-weight:bold;padding:20px;">未安裝弱點管理模組</div>';
-                return null;
-            });
+        if (!r.ok) {
+            document.getElementById('stat-cards').innerHTML =
+                '<div style="color:#dc3545;font-weight:bold;padding:20px;">未安裝 BeakRisk 弱點管制系統</div>';
+            return null;
         }
         return r.json();
     })

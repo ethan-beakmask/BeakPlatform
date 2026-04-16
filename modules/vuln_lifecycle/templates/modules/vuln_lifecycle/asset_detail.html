@@ -127,9 +127,9 @@ function assetDetail() {
             var self = this;
             fetch('/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
             .then(function(r) {
-                if (r.status === 503) {
+                if (!r.ok) {
                     document.getElementById('t-body').innerHTML =
-                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">未安裝弱點管理模組</td></tr>';
+                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">未安裝 BeakRisk 弱點管制系統</td></tr>';
                     return null;
                 }
                 return r.json();

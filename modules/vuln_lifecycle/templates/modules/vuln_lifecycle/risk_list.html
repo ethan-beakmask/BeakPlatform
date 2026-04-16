@@ -62,9 +62,11 @@
         var st = document.getElementById('filter-status').value;
         fetch('/api/vuln-lifecycle/risk/adjustments?status=' + st)
         .then(function(r) {
-            if (r.status === 503) {
+            if (!r.ok) {
                 document.getElementById('adj-count').innerHTML =
-                    '<span style="color:#dc3545;font-weight:bold;">未安裝弱點管理模組</span>';
+                    '<span style="color:#dc3545;font-weight:bold;">未安裝 BeakRisk 弱點管制系統</span>';
+                document.getElementById('adj-table').innerHTML =
+                    '<tr><td colspan="8" class="vlc-empty"></td></tr>';
                 return null;
             }
             return r.json();

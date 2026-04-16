@@ -55,9 +55,9 @@ function loadAssets() {
     if (type) url += '&type=' + type;
 
     fetch(url).then(function(r) {
-        if (r.status === 503) {
+        if (!r.ok) {
             document.getElementById('asset-loading').innerHTML =
-                '<span style="color:#dc3545;font-weight:bold;">未安裝弱點管理模組</span>';
+                '<span style="color:#dc3545;font-weight:bold;">未安裝 BeakRisk 弱點管制系統</span>';
             return null;
         }
         return r.json();

@@ -80,6 +80,9 @@ def query(sql, params=None, fetchone=False):
                 row = cur.fetchone()
                 return _serialize_row(dict(row)) if row else None
             return [_serialize_row(dict(r)) for r in cur.fetchall()]
+    except psycopg2.Error as e:
+        logger.error(f"vulnmgmt DB 查詢失敗: {e}")
+        raise VulnDBUnavailable(str(e))
     finally:
         conn.close()
 
@@ -95,6 +98,9 @@ def execute(sql, params=None):
         with conn.cursor() as cur:
             cur.execute(sql, params)
         conn.commit()
+    except psycopg2.Error as e:
+        logger.error(f"vulnmgmt DB 寫入失敗: {e}")
+        raise VulnDBUnavailable(str(e))
     finally:
         conn.close()
 
