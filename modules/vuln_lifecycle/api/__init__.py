@@ -18,17 +18,23 @@ api_bp = Blueprint(
 )
 
 
-@api_bp.errorhandler(Exception)
-def handle_vuln_db_error(error):
-    """vulnmgmt DB 不可用時回 503，不讓 Flask 噴 500"""
-    from ..services.vulnmgmt_db import VulnDBUnavailable
-    if isinstance(error, VulnDBUnavailable):
-        return jsonify({
-            'success': False,
-            'unavailable': True,
-            'message': '弱點管理資料庫未安裝或無法連線',
-        }), 503
-    raise error
+import functools
+from ..services.vulnmgmt_db import VulnDBUnavailable
+
+
+def catch_db_unavailable(f):
+    """攔截 vulnmgmt DB 連線失敗，回 503 而非 500"""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except VulnDBUnavailable:
+            return jsonify({
+                'success': False,
+                'unavailable': True,
+                'message': '弱點管理資料庫未安裝或無法連線',
+            }), 503
+    return wrapper
 
 
 # =============================================================================
@@ -57,6 +63,7 @@ def module_info():
 @api_bp.route('/dashboard/summary')
 @module_access_required('vuln_lifecycle')
 @require_permission('vuln_lifecycle.dashboard.view')
+@catch_db_unavailable
 def dashboard_summary():
     """儀表板摘要統計"""
     from ..services.vulnmgmt_db import query, get_deployment_mode
@@ -118,6 +125,7 @@ def dashboard_summary():
 @api_bp.route('/assets')
 @module_access_required('vuln_lifecycle')
 @require_permission('vuln_lifecycle.asset.view')
+@catch_db_unavailable
 def asset_list():
     """資產清冊"""
     from ..services.vulnmgmt_db import query
@@ -160,6 +168,7 @@ def asset_list():
 @api_bp.route('/assets/<int:asset_id>/findings')
 @module_access_required('vuln_lifecycle')
 @require_permission('vuln_lifecycle.finding.view')
+@catch_db_unavailable
 def asset_findings(asset_id):
     """單一資產的弱點列表與時間軸"""
     from ..services.vulnmgmt_db import query
@@ -274,6 +283,7 @@ def asset_findings(asset_id):
 @api_bp.route('/risk/adjustments')
 @module_access_required('vuln_lifecycle')
 @require_permission('vuln_lifecycle.risk.view')
+@catch_db_unavailable
 def risk_list():
     """列出風險調整紀錄"""
     from ..services.vulnmgmt_db import query
@@ -293,6 +303,7 @@ def risk_list():
 @api_bp.route('/risk/adjust', methods=['POST'])
 @module_access_required('vuln_lifecycle')
 @require_permission('vuln_lifecycle.risk.adjust')
+@catch_db_unavailable
 def risk_adjust():
     """提交風險調整（模式2: 將建立表單簽核流程）"""
     from ..services.vulnmgmt_db import execute, get_deployment_mode
