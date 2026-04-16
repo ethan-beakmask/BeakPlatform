@@ -19,6 +19,7 @@
 #   APP_PORT               應用程式 port (預設: 8000)
 #   ADMIN_INITIAL_PASSWORD 管理員初始密碼 (不設定則互動式輸入)
 #   GITHUB_TOKEN           GitHub Personal Access Token (不設定則互動式輸入)
+#   NGINX_PORT             Nginx 監聽 port (預設: 80，與現有網站共存時可改用其他 port)
 #   GITHUB_REPO            GitHub clone URL (預設: https://github.com/beakplatform/BeakPlatform.git)
 # =============================================================================
 set -e
@@ -29,6 +30,7 @@ DB_NAME="${DB_NAME:-beakplatform}"
 DB_USER="${DB_USER:-beakplatform}"
 DB_PASS="${DB_PASS:-postgres123}"
 APP_PORT="${APP_PORT:-8000}"
+NGINX_PORT="${NGINX_PORT:-80}"
 GITHUB_REPO="${GITHUB_REPO:-https://github.com/beakplatform/BeakPlatform.git}"
 SERVICE_NAME="beakplatform"
 SERVICE_USER="beakplatform"
@@ -155,6 +157,7 @@ case "${1:-}" in
         echo "  INSTALL_DIR=$INSTALL_DIR"
         echo "  DB_NAME=$DB_NAME"
         echo "  APP_PORT=$APP_PORT"
+        echo "  NGINX_PORT=$NGINX_PORT (與現有網站共存時可改用其他 port)"
         echo "  GITHUB_TOKEN=<GitHub PAT> (不設定則互動式輸入)"
         exit 1
         ;;
@@ -754,14 +757,36 @@ log_info "systemd 服務已建立: ${SERVICE_NAME}.service"
 # === [9/9] Nginx ===
 log_step "9/9" "設定 Nginx..."
 
+# 自動偵測 server IP（供 nginx server_name 和完成訊息使用）
+SERVER_IP=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
+SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+SERVER_IP="${SERVER_IP:-$(hostname -f 2>/dev/null)}"
+
+# 檢查 NGINX_PORT 是否已被其他 nginx server block 佔用
+if [ -d /etc/nginx/sites-enabled ]; then
+    for conf in /etc/nginx/sites-enabled/*; do
+        [ -f "$conf" ] || continue
+        conf_name=$(basename "$conf")
+        # 跳過自己的設定檔
+        [ "$conf_name" = "$SERVICE_NAME" ] && continue
+        if grep -qE "listen\s+${NGINX_PORT}[^0-9]" "$conf" 2>/dev/null || \
+           grep -qE "listen\s+${NGINX_PORT}$" "$conf" 2>/dev/null; then
+            log_error "Nginx port ${NGINX_PORT} 已被 ${conf_name} 佔用"
+            log_error "請指定其他 port 重新安裝，例如:"
+            echo "  NGINX_PORT=8443 sudo bash $0"
+            exit 1
+        fi
+    done
+fi
+
 cat > "/etc/nginx/sites-available/$SERVICE_NAME" << 'NGXEOF'
 upstream beakplatform {
     server 127.0.0.1:APP_PORT_PLACEHOLDER;
 }
 
 server {
-    listen 80;
-    server_name _;
+    listen NGINX_PORT_PLACEHOLDER;
+    server_name SERVER_NAME_PLACEHOLDER;
 
     client_max_body_size 20M;
 
@@ -796,13 +821,14 @@ server {
 }
 NGXEOF
 
-# 替換 port placeholder
+# 替換 placeholders
 sed -i "s/APP_PORT_PLACEHOLDER/${APP_PORT}/" "/etc/nginx/sites-available/$SERVICE_NAME"
+sed -i "s/NGINX_PORT_PLACEHOLDER/${NGINX_PORT}/" "/etc/nginx/sites-available/$SERVICE_NAME"
+sed -i "s/SERVER_NAME_PLACEHOLDER/${SERVER_IP}/" "/etc/nginx/sites-available/$SERVICE_NAME"
 
 ln -sf "/etc/nginx/sites-available/$SERVICE_NAME" "/etc/nginx/sites-enabled/"
-rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 
-# 移除可能衝突的舊站台設定
+# 移除可能衝突的舊站台設定（僅限 BeakPlatform 前身，不動用戶的其他設定）
 for old_conf in beakmask; do
     if [ -f "/etc/nginx/sites-enabled/$old_conf" ]; then
         rm -f "/etc/nginx/sites-enabled/$old_conf"
@@ -811,7 +837,7 @@ for old_conf in beakmask; do
 done
 
 nginx -t && systemctl reload nginx
-log_info "Nginx 設定完成 (port 80 -> $APP_PORT)"
+log_info "Nginx 設定完成 (port $NGINX_PORT -> Gunicorn $APP_PORT)"
 
 
 # === 啟動服務 ===
@@ -823,17 +849,18 @@ health_check
 # 讀取部署資訊
 deployed_org_code=$(grep '^SYSTEM_ORG_CODE=' "$INSTALL_DIR/.env" | cut -d'=' -f2-)
 
-# 自動偵測 server IP（排除 loopback，取第一個非 docker/veth 介面的 IPv4）
-SERVER_IP=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
-SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
-SERVER_IP="${SERVER_IP:-YOUR_SERVER_IP}"
+# 組裝 URL（port 80 不顯示 port，其他 port 要帶上）
+if [ "$NGINX_PORT" = "80" ]; then
+    DISPLAY_URL="http://$SERVER_IP"
+else
+    DISPLAY_URL="http://$SERVER_IP:$NGINX_PORT"
+fi
 
 echo ""
 echo "============================================"
 log_info "全新安裝完成"
 echo ""
-echo "  URL:  http://$SERVER_IP (Nginx port 80)"
-echo "        http://$SERVER_IP:$APP_PORT (直連 Gunicorn)"
+echo "  URL:  $DISPLAY_URL"
 echo ""
 echo "  系統企業: $deployed_org_code"
 echo "  管理員:   admin@$deployed_org_code"
