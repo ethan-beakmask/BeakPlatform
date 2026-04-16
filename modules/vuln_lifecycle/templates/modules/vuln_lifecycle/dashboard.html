@@ -114,9 +114,18 @@
     var MODE_LABEL = { 'standalone': '獨立模式', 'platform': '平台模式', 'unknown': '未知' };
 
     fetch('/api/vuln-lifecycle/dashboard/summary')
-    .then(function(r) { return r.json(); })
     .then(function(r) {
-        if (!r.success) return;
+        if (r.status === 503) {
+            return r.json().then(function(data) {
+                document.getElementById('stat-cards').innerHTML =
+                    '<div style="color:#dc3545;font-weight:bold;padding:20px;">未安裝弱點管理模組</div>';
+                return null;
+            });
+        }
+        return r.json();
+    })
+    .then(function(r) {
+        if (!r || !r.success) return;
         var d = r.data, s = d.severity || {};
 
         document.getElementById('stat-critical').textContent = s.critical || 0;

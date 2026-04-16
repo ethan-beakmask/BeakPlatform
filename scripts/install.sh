@@ -624,8 +624,16 @@ DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME
 # Redis
 REDIS_URL=redis://localhost:6379/0
 
-# Rate Limiting
+# Rate Limiting (速率限制)
+# RATELIMIT_DEFAULT: 全站 API 總量上限 (每日/每分鐘，已登入用戶 per-user、未登入 per-IP)
+# RATELIMIT_LOGIN: 登入端點限制 (per-IP，防暴力破解)
+# RATELIMIT_FORGOT_PASSWORD: 忘記密碼端點限制 (per-IP)
+# RATELIMIT_RESET_PASSWORD: 重設密碼端點限制 (per-IP)
 RATELIMIT_ENABLED=true
+RATELIMIT_DEFAULT="200000 per day;6000 per minute"
+RATELIMIT_LOGIN="50 per minute"
+RATELIMIT_FORGOT_PASSWORD="30 per hour"
+RATELIMIT_RESET_PASSWORD="50 per hour"
 
 # Gunicorn
 GUNICORN_BIND=127.0.0.1:${APP_PORT}

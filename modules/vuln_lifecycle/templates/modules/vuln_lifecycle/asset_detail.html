@@ -126,8 +126,16 @@ function assetDetail() {
         load: function() {
             var self = this;
             fetch('/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
-            .then(function(r) { return r.json(); })
             .then(function(r) {
+                if (r.status === 503) {
+                    document.getElementById('t-body').innerHTML =
+                        '<tr><td style="color:#dc3545;font-weight:bold;padding:16px">未安裝弱點管理模組</td></tr>';
+                    return null;
+                }
+                return r.json();
+            })
+            .then(function(r) {
+                if (!r) return;
                 if (!r.success) {
                     document.getElementById('t-body').innerHTML =
                         '<tr><td style="color:#c00;padding:16px">' + r.message + '</td></tr>';

@@ -18,6 +18,19 @@ api_bp = Blueprint(
 )
 
 
+@api_bp.errorhandler(Exception)
+def handle_vuln_db_error(error):
+    """vulnmgmt DB 不可用時回 503，不讓 Flask 噴 500"""
+    from ..services.vulnmgmt_db import VulnDBUnavailable
+    if isinstance(error, VulnDBUnavailable):
+        return jsonify({
+            'success': False,
+            'unavailable': True,
+            'message': '弱點管理資料庫未安裝或無法連線',
+        }), 503
+    raise error
+
+
 # =============================================================================
 # 模組資訊
 # =============================================================================

@@ -61,9 +61,18 @@ def _serialize_row(row):
     return result
 
 
+class VulnDBUnavailable(Exception):
+    """vulnmgmt 資料庫無法連線"""
+    pass
+
+
 def query(sql, params=None, fetchone=False):
     """執行 SQL 查詢"""
-    conn = get_conn()
+    try:
+        conn = get_conn()
+    except Exception as e:
+        logger.error(f"vulnmgmt DB 連線失敗: {e}")
+        raise VulnDBUnavailable(str(e))
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql, params)
@@ -77,7 +86,11 @@ def query(sql, params=None, fetchone=False):
 
 def execute(sql, params=None):
     """執行 SQL 寫入"""
-    conn = get_conn()
+    try:
+        conn = get_conn()
+    except Exception as e:
+        logger.error(f"vulnmgmt DB 連線失敗: {e}")
+        raise VulnDBUnavailable(str(e))
     try:
         with conn.cursor() as cur:
             cur.execute(sql, params)

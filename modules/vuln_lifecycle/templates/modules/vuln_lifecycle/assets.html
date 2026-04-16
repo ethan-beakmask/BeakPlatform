@@ -54,8 +54,15 @@ function loadAssets() {
     var url = '/api/vuln-lifecycle/assets?severity_min=' + sev;
     if (type) url += '&type=' + type;
 
-    fetch(url).then(function(r) { return r.json(); }).then(function(r) {
-        if (!r.success) return;
+    fetch(url).then(function(r) {
+        if (r.status === 503) {
+            document.getElementById('asset-loading').innerHTML =
+                '<span style="color:#dc3545;font-weight:bold;">未安裝弱點管理模組</span>';
+            return null;
+        }
+        return r.json();
+    }).then(function(r) {
+        if (!r || !r.success) return;
 
         document.getElementById('asset-loading').style.display = 'none';
         document.getElementById('asset-count').textContent = r.total + ' 筆資產';

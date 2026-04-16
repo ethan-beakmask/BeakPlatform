@@ -61,9 +61,16 @@
     window.loadAdj = function() {
         var st = document.getElementById('filter-status').value;
         fetch('/api/vuln-lifecycle/risk/adjustments?status=' + st)
-        .then(function(r) { return r.json(); })
         .then(function(r) {
-            if (!r.success) return;
+            if (r.status === 503) {
+                document.getElementById('adj-count').innerHTML =
+                    '<span style="color:#dc3545;font-weight:bold;">未安裝弱點管理模組</span>';
+                return null;
+            }
+            return r.json();
+        })
+        .then(function(r) {
+            if (!r || !r.success) return;
             document.getElementById('adj-count').textContent = r.data.length + ' 筆紀錄';
             var html = '';
             r.data.forEach(function(a) {
