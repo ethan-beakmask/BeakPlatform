@@ -66,7 +66,7 @@ class BaseConfig:
     RATELIMIT_HEADERS_ENABLED = True
 
     # L3 預設 (已認證用戶 per-user / 未認證 per-IP 共用此上限)
-    RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '20000 per day;600 per minute')
+    RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '200000 per day;6000 per minute')
 
     # L1 嚴格 — 敏感端點 (per-IP，防暴力破解)
     RATELIMIT_LOGIN = os.getenv('RATELIMIT_LOGIN', '5 per minute')

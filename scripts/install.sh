@@ -626,8 +626,6 @@ REDIS_URL=redis://localhost:6379/0
 
 # Rate Limiting
 RATELIMIT_ENABLED=true
-RATELIMIT_DEFAULT="200 per day;50 per hour"
-RATELIMIT_LOGIN="30 per minute"
 
 # Gunicorn
 GUNICORN_BIND=127.0.0.1:${APP_PORT}
