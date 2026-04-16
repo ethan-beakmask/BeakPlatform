@@ -48,6 +48,7 @@ EXCLUDE_FILES=(
     "scripts/readme.txt"
     "scripts/security_scan.sh"
     "scripts/spec_check.py"
+    "scripts/dev_update.sh"
     "scripts/add_column_comments.sql"
     "scripts/init_db.sql"
     "scripts/workflow_bundle.py"
