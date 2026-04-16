@@ -169,13 +169,20 @@ def execute_sql_file(conn, filepath):
 
 
 def execute_py_file(filepath):
-    """執行 .py migration（subprocess）"""
+    """執行 .py migration（subprocess，自動帶 --run 參數）"""
     env = os.environ.copy()
     backend_dir = os.path.join(PROJECT_ROOT, 'backend')
     env['PYTHONPATH'] = backend_dir
 
+    # 偵測 .py migration 是否支援 --run 參數（需要明確觸發才執行的腳本）
+    cmd = [sys.executable, filepath]
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+    if "'--run'" in content or '"--run"' in content:
+        cmd.append('--run')
+
     result = subprocess.run(
-        [sys.executable, filepath],
+        cmd,
         env=env,
         capture_output=True,
         text=True,

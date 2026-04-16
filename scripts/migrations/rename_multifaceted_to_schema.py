@@ -11,8 +11,9 @@ Migration: spec_multifaceted → spec_schema 全面改名
 5. menu_items.link_target: spec_formulate_web.spec_multifaceted → spec_formulate_web.spec_schema
 """
 import argparse
+import os
 import sys
-sys.path.insert(0, '/opt/BeakPlatform-dev/backend')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 
 STEPS = [
     {
@@ -56,12 +57,11 @@ def main():
     parser.add_argument('--check', action='store_true', help='只檢查不執行')
     args = parser.parse_args()
 
-    from app import create_app
+    from app import create_app, db
     from sqlalchemy import text
     app = create_app()
 
     with app.app_context():
-        from app.database import db
         for step in STEPS:
             result = db.session.execute(text(step['check'])).fetchone()
             if result:

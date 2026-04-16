@@ -327,12 +327,18 @@ if [ "$ACTION" = "update" ]; then
 
     if [ "$local_hash" = "$remote_hash" ]; then
         log_info "程式碼已是最新版本 ($(git log --oneline -1))"
-        echo "如需強制重新初始化，請使用全新安裝"
-        exit 0
-    fi
 
-    git reset --hard origin/main
-    log_info "更新至: $(git log --oneline -1)"
+        # 檢查是否有未完成的 migration（上次更新可能中途失敗）
+        pending_count=$(run_as_app "cd backend && EXECUTOR_STANDALONE=1 python3 ../scripts/run_migrations.py --status 2>/dev/null" | grep -c "待執行:" || true)
+        if [ "${pending_count:-0}" -eq 0 ]; then
+            log_info "無待處理的 migration，已完全更新"
+            exit 0
+        fi
+        log_warn "偵測到 ${pending_count} 個未完成的 migration，繼續執行..."
+    else
+        git reset --hard origin/main
+        log_info "更新至: $(git log --oneline -1)"
+    fi
 
     # 確保服務帳號存在 + 修正檔案所有權
     ensure_service_user
