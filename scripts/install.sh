@@ -484,27 +484,24 @@ fi
 
 
 # === [1/9] 系統依賴 ===
-log_step "1/9" "安裝系統依賴..."
-apt-get update -qq || log_warn "部分 apt 來源無法更新，繼續安裝..."
+log_step "1/9" "檢查系統依賴..."
 
-# 基礎依賴（不含 nginx，另外處理）
-apt-get install -y -qq \
-    python3 \
-    python3-venv \
-    python3-pip \
-    postgresql \
-    postgresql-contrib \
-    redis-server \
-    git \
-    curl \
-    sudo
+REQUIRED_PKGS=(python3 python3-venv python3-pip postgresql postgresql-contrib redis-server nginx git curl sudo)
+MISSING_PKGS=()
 
-# Nginx：已安裝就跳過，沒有才裝
-if command -v nginx &>/dev/null; then
-    log_info "Nginx 已安裝，跳過安裝"
+for pkg in "${REQUIRED_PKGS[@]}"; do
+    if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+        MISSING_PKGS+=("$pkg")
+    fi
+done
+
+if [ ${#MISSING_PKGS[@]} -eq 0 ]; then
+    log_info "所有系統依賴已安裝，跳過"
 else
-    apt-get install -y -qq nginx
-    log_info "Nginx 已安裝"
+    log_info "需要安裝: ${MISSING_PKGS[*]}"
+    # apt-get update 加 120 秒 timeout，避免在封閉網路無限等待
+    timeout 120 apt-get update -q || log_warn "apt update 逾時或失敗，嘗試直接安裝..."
+    apt-get install -y -q "${MISSING_PKGS[@]}"
 fi
 
 # 確保服務啟動
