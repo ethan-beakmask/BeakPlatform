@@ -69,7 +69,17 @@ health_check() {
     while [ $elapsed -lt $HEALTH_TIMEOUT ]; do
         if curl -sf "$HEALTH_URL" 2>/dev/null | grep -q '"healthy"'; then
             log_info "健康檢查通過"
-            return 0
+            # 穩定性驗證：等 5 秒後確認服務仍在運行
+            sleep 5
+            if systemctl is-active --quiet "$SERVICE_NAME"; then
+                log_info "服務穩定性驗證通過"
+                return 0
+            else
+                log_error "服務在健康檢查後崩潰"
+                log_warn "最近日誌:"
+                journalctl -u "$SERVICE_NAME" -n 20 --no-pager 2>/dev/null || true
+                return 1
+            fi
         fi
         sleep 3
         elapsed=$((elapsed + 3))
@@ -77,7 +87,8 @@ health_check() {
     done
     echo ""
     log_error "健康檢查逾時 (${HEALTH_TIMEOUT}s)"
-    log_warn "檢查服務日誌: journalctl -u ${SERVICE_NAME} -n 50"
+    log_warn "最近日誌:"
+    journalctl -u "$SERVICE_NAME" -n 20 --no-pager 2>/dev/null || true
     return 1
 }
 
@@ -719,7 +730,7 @@ After=network.target postgresql.service redis-server.service
 Requires=postgresql.service redis-server.service
 
 [Service]
-Type=notify
+Type=exec
 User=$SERVICE_USER
 Group=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR/backend
@@ -812,12 +823,17 @@ health_check
 # 讀取部署資訊
 deployed_org_code=$(grep '^SYSTEM_ORG_CODE=' "$INSTALL_DIR/.env" | cut -d'=' -f2-)
 
+# 自動偵測 server IP（排除 loopback，取第一個非 docker/veth 介面的 IPv4）
+SERVER_IP=$(ip -4 route get 8.8.8.8 2>/dev/null | awk '/src/ {print $7; exit}')
+SERVER_IP="${SERVER_IP:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+SERVER_IP="${SERVER_IP:-YOUR_SERVER_IP}"
+
 echo ""
 echo "============================================"
 log_info "全新安裝完成"
 echo ""
-echo "  URL:  http://YOUR_SERVER_IP (Nginx port 80)"
-echo "        http://YOUR_SERVER_IP:$APP_PORT (直連 Gunicorn)"
+echo "  URL:  http://$SERVER_IP (Nginx port 80)"
+echo "        http://$SERVER_IP:$APP_PORT (直連 Gunicorn)"
 echo ""
 echo "  系統企業: $deployed_org_code"
 echo "  管理員:   admin@$deployed_org_code"
