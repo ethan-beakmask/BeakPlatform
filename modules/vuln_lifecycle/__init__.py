@@ -52,6 +52,13 @@ MODULE_INFO = {
                     'sort_order': 2,
                     'required_permission': 'vuln_lifecycle.risk.view',
                 },
+                {
+                    'code': 'vuln_lifecycle.kynd',
+                    'name': 'KYND',
+                    'url': 'vuln_lifecycle_web.kynd',
+                    'sort_order': 3,
+                    'required_permission': 'vuln_lifecycle.kynd.view',
+                },
             ]
         }
     ],
@@ -81,6 +88,12 @@ MODULE_INFO = {
             'code': 'vuln_lifecycle.risk.view',
             'name': '檢視風險調整',
             'description': '檢視風險調整紀錄',
+            'level': 'MODULE',
+        },
+        {
+            'code': 'vuln_lifecycle.kynd.view',
+            'name': '檢視 KYND',
+            'description': '檢視 KYND 外部風險監控資料',
             'level': 'MODULE',
         },
         # 操作權限

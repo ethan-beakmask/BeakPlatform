@@ -55,3 +55,11 @@ def asset_detail(asset_id):
 def risk_list():
     """風險調整紀錄"""
     return render_template('modules/vuln_lifecycle/risk_list.html')
+
+
+@web_bp.route('/kynd')
+@module_access_required('vuln_lifecycle', False)
+@require_permission('vuln_lifecycle.kynd.view')
+def kynd():
+    """KYND 外部風險監控"""
+    return render_template('modules/vuln_lifecycle/kynd.html')

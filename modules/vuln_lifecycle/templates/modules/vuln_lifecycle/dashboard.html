@@ -12,6 +12,9 @@
         <h1>弱點儀表板</h1>
     </div>
 
+    <!-- BeakRisk 服務狀態提示 -->
+    <div id="health-banner" class="vlc-health-banner" style="display:none;"></div>
+
     <!-- 嚴重等級統計 -->
     <div class="vlc-stats" id="stat-cards">
         <div class="vlc-stat-card">
@@ -106,6 +109,14 @@
 {% block scripts %}
 <script>
 (function() {
+    var STATUS_MSG = {
+        'service_down': 'BeakRisk 服務未啟動 -- 顯示的是最後一次同步的資料',
+        'db_error': 'BeakRisk 資料庫暫時不可用',
+    };
+    var STATUS_COLOR = {
+        'service_down': '#d97706',
+        'db_error': '#dc2626',
+    };
     var ADJ_LABEL = {
         'ACCEPTED': '已接受', 'MITIGATED': '已緩解',
         'FALSE_POSITIVE': '誤報', 'DEFERRED': '延後處理'
@@ -113,12 +124,42 @@
     var ASSET_LABEL = { 'host': '主機 (Host)', 'webapp': '網頁應用 (WebApp)' };
     var MODE_LABEL = { 'standalone': '獨立模式', 'platform': '平台模式', 'unknown': '未知' };
 
+    // 先查 BeakRisk 服務狀態
+    fetch('/api/vuln-lifecycle/health')
+    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        var health = r.data || {};
+        var banner = document.getElementById('health-banner');
+        if (health.status === 'ok') {
+            banner.style.display = 'none';
+        } else {
+            var msg = STATUS_MSG[health.status] || health.message || 'BeakRisk 狀態未知';
+            var color = STATUS_COLOR[health.status] || '#666';
+            banner.style.display = 'block';
+            banner.style.color = color;
+            banner.style.borderColor = color;
+            banner.textContent = msg;
+        }
+    })
+    .catch(function() {
+        // health API 本身失敗（未登入等），不顯示 banner
+    });
+
+    // 載入 dashboard 資料
     fetch('/api/vuln-lifecycle/dashboard/summary')
     .then(function(r) {
         if (!r.ok) {
-            document.getElementById('stat-cards').innerHTML =
-                '<div style="color:#dc3545;font-weight:bold;padding:20px;">未安裝 BeakRisk 弱點管制系統</div>';
-            return null;
+            return r.json().then(function(j) {
+                var msg = (j && j.message) ? j.message : 'BeakRisk 資料庫不可用';
+                document.getElementById('stat-cards').innerHTML =
+                    '<div style="color:#dc2626;font-weight:bold;padding:20px;">' +
+                    msg + '</div>';
+                return null;
+            }).catch(function() {
+                document.getElementById('stat-cards').innerHTML =
+                    '<div style="color:#dc2626;font-weight:bold;padding:20px;">BeakRisk 資料庫不可用</div>';
+                return null;
+            });
         }
         return r.json();
     })
@@ -144,7 +185,7 @@
         (d.scanners || []).forEach(function(sc) {
             var ls = sc.last_scan ? BkTime.format(sc.last_scan, 'short') : '-';
             html += '<tr><td>' + sc.name + '</td><td>' + sc.scanner_type +
-                '</td><td><span class="vlc-adj-badge vlc-adj-mitigated">' + sc.import_method +
+                '</td><td><span class="vlc-adj-badge vlc-adj-mitigated">' + (sc.import_method || 'direct_db') +
                 '</span></td><td>' + sc.session_count + '</td><td>' + ls + '</td></tr>';
         });
         document.getElementById('scanner-table').innerHTML =

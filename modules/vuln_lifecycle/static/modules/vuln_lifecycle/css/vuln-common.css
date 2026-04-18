@@ -1,10 +1,28 @@
 /* vuln_lifecycle 模組共用樣式 */
 
+/* 全域 box-sizing (平台未設定全域 border-box) */
+.vlc-container,
+.vlc-container *,
+.vlc-container *::before,
+.vlc-container *::after {
+    box-sizing: border-box;
+}
+
 /* 容器 */
 .vlc-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 16px;
+}
+
+/* BeakRisk 服務狀態提示 */
+.vlc-health-banner {
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #d97706;
+    background: #fffbeb;
 }
 
 /* 頁面標題 */
@@ -242,6 +260,151 @@
 }
 .vlc-btn-back:hover {
     background: #f0f0f0;
+}
+
+/* ========================================
+   KYND 外部風險監控
+   ======================================== */
+
+/* KYND 統計卡片列 (4 欄) */
+.vlc-kynd-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* KYND Panel 六宮格 */
+.vlc-kynd-panels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.vlc-kynd-panel {
+    background: white;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.vlc-kynd-panel:hover {
+    border-color: #999;
+}
+.vlc-kynd-panel.active {
+    border-color: #369;
+    box-shadow: 0 0 0 1px #369;
+}
+.vlc-kynd-panel-header {
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+    background: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.vlc-kynd-panel-body {
+    padding: 12px 14px;
+}
+
+/* KYND traffic light 計數 */
+.vlc-kynd-lights {
+    display: flex;
+    gap: 16px;
+}
+.vlc-kynd-light {
+    text-align: center;
+    flex: 1;
+}
+.vlc-kynd-light-val {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.vlc-kynd-light-label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}
+.vlc-kynd-red { color: #c00; }
+.vlc-kynd-amber { color: #d97706; }
+.vlc-kynd-green { color: #16a34a; }
+
+/* KYND 趨勢箭頭 */
+.vlc-kynd-trend {
+    font-size: 11px;
+    margin-left: 4px;
+}
+.vlc-kynd-trend-up { color: #c00; }
+.vlc-kynd-trend-down { color: #16a34a; }
+.vlc-kynd-trend-flat { color: #999; }
+
+/* KYND panel 的 total badge */
+.vlc-kynd-total {
+    font-size: 12px;
+    font-weight: 400;
+    color: #666;
+}
+
+/* KYND findings 展開區域 */
+.vlc-kynd-detail {
+    background: white;
+    border: 1px solid #ddd;
+    margin-bottom: 16px;
+}
+.vlc-kynd-detail-header {
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+    background: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.vlc-kynd-detail-header .vlc-filter-bar {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+/* KYND risk level badges */
+.vlc-kynd-badge-red {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #fdd;
+    color: #900;
+    font-weight: 600;
+}
+.vlc-kynd-badge-amber {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #fef3cd;
+    color: #92400e;
+    font-weight: 600;
+}
+.vlc-kynd-badge-green {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+}
+
+/* KYND session 選擇器 */
+.vlc-kynd-session-sel {
+    font-size: 13px;
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
 }
 
 /* Trellis Grid 容器 */

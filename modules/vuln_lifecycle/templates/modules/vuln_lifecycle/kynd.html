@@ -1,0 +1,407 @@
+{% extends "layouts/base.html" %}
+{% block title %}KYND 外部風險監控{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/modules/vuln_lifecycle/css/vuln-common.css">
+{% endblock %}
+
+{% block content %}
+<div class="vlc-container" x-data="kyndPage()" x-init="init()">
+
+    <!-- BeakRisk 服務狀態提示 -->
+    <div id="health-banner" class="vlc-health-banner" style="display:none;"></div>
+
+    <div class="vlc-page-header">
+        <h1>KYND 外部風險監控</h1>
+        <select class="vlc-kynd-session-sel" x-model="selectedSession" @change="loadSummary()">
+            <template x-for="s in sessions" :key="s.id">
+                <option :value="s.id" x-text="BkTime.format(s.scan_date, 'date')"></option>
+            </template>
+        </select>
+    </div>
+
+    <!-- 頂部統計 -->
+    <div class="vlc-kynd-stats">
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value" style="color:#333" x-text="assetCount">-</div>
+            <div class="vlc-stat-label">監控網域</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-kynd-red" x-text="totalRed">-</div>
+            <div class="vlc-stat-label">Red</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-kynd-amber" x-text="totalAmber">-</div>
+            <div class="vlc-stat-label">Amber</div>
+        </div>
+        <div class="vlc-stat-card">
+            <div class="vlc-stat-value vlc-kynd-green" x-text="totalGreen">-</div>
+            <div class="vlc-stat-label">Green</div>
+        </div>
+    </div>
+
+    <!-- 六宮格 Panel -->
+    <div class="vlc-kynd-panels">
+        <template x-for="cat in categoryOrder" :key="cat">
+            <div class="vlc-kynd-panel"
+                 :class="{'active': activeCategory === cat}"
+                 @click="selectCategory(cat)">
+                <div class="vlc-kynd-panel-header">
+                    <span x-text="categoryLabel[cat] || cat"></span>
+                    <span class="vlc-kynd-total" x-text="getCatTotal(cat)"></span>
+                </div>
+                <div class="vlc-kynd-panel-body">
+                    <div class="vlc-kynd-lights">
+                        <div class="vlc-kynd-light">
+                            <div class="vlc-kynd-light-val vlc-kynd-red">
+                                <span x-text="getCatVal(cat, 'red')"></span>
+                                <span class="vlc-kynd-trend"
+                                      :class="trendClass(cat, 'red')"
+                                      x-text="trendIcon(cat, 'red')"></span>
+                            </div>
+                            <div class="vlc-kynd-light-label">Red</div>
+                        </div>
+                        <div class="vlc-kynd-light">
+                            <div class="vlc-kynd-light-val vlc-kynd-amber">
+                                <span x-text="getCatVal(cat, 'amber')"></span>
+                                <span class="vlc-kynd-trend"
+                                      :class="trendClass(cat, 'amber')"
+                                      x-text="trendIcon(cat, 'amber')"></span>
+                            </div>
+                            <div class="vlc-kynd-light-label">Amber</div>
+                        </div>
+                        <div class="vlc-kynd-light">
+                            <div class="vlc-kynd-light-val vlc-kynd-green"
+                                 x-text="getCatVal(cat, 'green')"></div>
+                            <div class="vlc-kynd-light-label">Green</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Findings 展開區 -->
+    <div class="vlc-kynd-detail" x-show="activeCategory" x-cloak>
+        <div class="vlc-kynd-detail-header">
+            <span x-text="(categoryLabel[activeCategory] || activeCategory) + ' Findings'"></span>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <label style="font-size:13px;font-weight:400;">Risk:</label>
+                <select class="vlc-kynd-session-sel" x-model="filterRisk" @change="loadFindings()">
+                    <option value="">All</option>
+                    <option value="red">Red</option>
+                    <option value="amber">Amber</option>
+                    <option value="green">Green</option>
+                </select>
+                <span class="vlc-filter-count" x-text="findings.length + ' findings'"></span>
+            </div>
+        </div>
+        <div class="vlc-section-body">
+            <table class="vlc-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px">Risk</th>
+                        <th style="width:180px">Issue Type</th>
+                        <th>Domain</th>
+                        <th>Summary</th>
+                        <th style="width:80px">Adjust</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-if="findings.length === 0">
+                        <tr><td colspan="5" class="vlc-empty">無資料</td></tr>
+                    </template>
+                    <template x-for="f in findings" :key="f.id">
+                        <tr>
+                            <td>
+                                <span :class="'vlc-kynd-badge-' + f.risk_level"
+                                      x-text="f.risk_level"></span>
+                                <template x-if="f.adj_id">
+                                    <span class="vlc-adj-badge vlc-adj-mitigated"
+                                          x-text="f.adjustment_type"
+                                          style="margin-left:4px;"></span>
+                                </template>
+                            </td>
+                            <td x-text="f.issue_type"></td>
+                            <td x-text="f.sld"></td>
+                            <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                :title="f.summary"
+                                x-text="f.summary"></td>
+                            <td>
+                                <template x-if="!f.adj_id">
+                                    <button class="vlc-btn-adjust"
+                                            @click="openAdjust(f)">Adjust</button>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 風險調整 Modal -->
+    <div class="vlc-modal-overlay" x-show="showModal" x-cloak>
+        <div class="vlc-modal-box" style="width:500px;">
+            <div class="vlc-modal-header">
+                <h3>KYND 風險調整</h3>
+                <button class="vlc-modal-close" @click="showModal=false">&times;</button>
+            </div>
+
+            <div style="font-size:13px;margin-bottom:12px;">
+                <div><strong>Domain:</strong> <span x-text="modalFinding.sld"></span></div>
+                <div><strong>Issue:</strong> <span x-text="modalFinding.issue_type"></span></div>
+                <div><strong>Risk:</strong>
+                    <span :class="'vlc-kynd-badge-' + (modalFinding.risk_level || '')"
+                          x-text="modalFinding.risk_level"></span>
+                </div>
+                <div style="margin-top:4px;color:#666;" x-text="modalFinding.summary"></div>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">
+                    Adjustment Type</label>
+                <select style="width:100%;font-size:13px;padding:4px 8px;border:1px solid #ccc;border-radius:3px;"
+                        x-model="adjType">
+                    <option value="ACCEPTED">ACCEPTED (接受風險)</option>
+                    <option value="MITIGATED">MITIGATED (已緩解)</option>
+                    <option value="FALSE_POSITIVE">FALSE_POSITIVE (誤報)</option>
+                    <option value="DEFERRED">DEFERRED (延後處理)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">
+                    Adjusted Risk</label>
+                <select style="width:100%;font-size:13px;padding:4px 8px;border:1px solid #ccc;border-radius:3px;"
+                        x-model="adjRisk">
+                    <option value="green">Green</option>
+                    <option value="amber">Amber</option>
+                    <option value="red">Red</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">
+                    Justification *</label>
+                <textarea style="width:100%;font-size:13px;padding:6px 8px;border:1px solid #ccc;border-radius:3px;min-height:80px;"
+                          x-model="adjJustification"></textarea>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label style="font-size:13px;font-weight:500;display:block;margin-bottom:4px;">
+                    Expires (optional)</label>
+                <input type="date"
+                       style="font-size:13px;padding:4px 8px;border:1px solid #ccc;border-radius:3px;"
+                       x-model="adjExpires">
+            </div>
+
+            <div class="vlc-modal-footer">
+                <button class="vlc-btn-back" @click="showModal=false">Cancel</button>
+                <button class="vlc-btn-adjust" style="font-size:13px;padding:4px 16px;"
+                        @click="submitAdjust()"
+                        :disabled="!adjJustification.trim()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function kyndPage() {
+    return {
+        sessions: [],
+        selectedSession: '',
+        categories: {},
+        assetCount: 0,
+        totalRed: 0,
+        totalAmber: 0,
+        totalGreen: 0,
+        activeCategory: '',
+        filterRisk: '',
+        findings: [],
+        showModal: false,
+        modalFinding: {},
+        adjType: 'ACCEPTED',
+        adjRisk: 'green',
+        adjJustification: '',
+        adjExpires: '',
+
+        categoryOrder: ['CERTIFICATE', 'DOMAIN', 'EMAIL', 'SERVICE', 'PHISHING', 'RANSOMWARE'],
+        categoryLabel: {
+            'CERTIFICATE': 'Certificate',
+            'DOMAIN': 'Domain',
+            'EMAIL': 'Email Security',
+            'SERVICE': 'Service',
+            'PHISHING': 'Phishing',
+            'RANSOMWARE': 'Ransomware',
+        },
+
+        init() {
+            this.checkHealth();
+            this.loadSessions();
+        },
+
+        checkHealth() {
+            var STATUS_MSG = {
+                'service_down': 'BeakRisk 服務未啟動 -- 顯示的是最後一次同步的資料',
+                'db_error': 'BeakRisk 資料庫暫時不可用',
+            };
+            var STATUS_COLOR = {
+                'service_down': '#d97706',
+                'db_error': '#dc2626',
+            };
+            fetch('/api/vuln-lifecycle/health')
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                var health = r.data || {};
+                var banner = document.getElementById('health-banner');
+                if (health.status === 'ok') {
+                    banner.style.display = 'none';
+                } else {
+                    banner.style.display = 'block';
+                    banner.style.color = STATUS_COLOR[health.status] || '#666';
+                    banner.style.borderColor = STATUS_COLOR[health.status] || '#666';
+                    banner.textContent = STATUS_MSG[health.status] || health.message || 'BeakRisk 狀態未知';
+                }
+            }).catch(function() {});
+        },
+
+        loadSessions() {
+            var self = this;
+            fetch('/api/vuln-lifecycle/kynd/sessions')
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.success) return;
+                self.sessions = r.data;
+                if (self.sessions.length > 0) {
+                    self.selectedSession = self.sessions[0].id;
+                    self.loadSummary();
+                }
+            });
+        },
+
+        loadSummary() {
+            var self = this;
+            fetch('/api/vuln-lifecycle/kynd/summary')
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.success) return;
+                var d = r.data;
+                self.categories = d.categories || {};
+                self.assetCount = d.asset_count || 0;
+
+                var tr = 0, ta = 0, tg = 0;
+                for (var cat in self.categories) {
+                    var c = self.categories[cat];
+                    tr += c.red; ta += c.amber; tg += c.green;
+                }
+                self.totalRed = tr;
+                self.totalAmber = ta;
+                self.totalGreen = tg;
+
+                if (self.activeCategory) {
+                    self.loadFindings();
+                }
+            });
+        },
+
+        getCatVal(cat, level) {
+            var c = this.categories[cat];
+            return c ? c[level] : 0;
+        },
+        getCatTotal(cat) {
+            var c = this.categories[cat];
+            return c ? c.total : 0;
+        },
+        trendIcon(cat, level) {
+            var c = this.categories[cat];
+            if (!c) return '';
+            var curr = c[level];
+            var prev = c['prev_' + level] || 0;
+            if (curr > prev) return '+' + (curr - prev);
+            if (curr < prev) return String(curr - prev);
+            return '';
+        },
+        trendClass(cat, level) {
+            var c = this.categories[cat];
+            if (!c) return 'vlc-kynd-trend-flat';
+            var curr = c[level];
+            var prev = c['prev_' + level] || 0;
+            if (curr > prev) return 'vlc-kynd-trend-up';
+            if (curr < prev) return 'vlc-kynd-trend-down';
+            return 'vlc-kynd-trend-flat';
+        },
+
+        selectCategory(cat) {
+            if (this.activeCategory === cat) {
+                this.activeCategory = '';
+                this.findings = [];
+                return;
+            }
+            this.activeCategory = cat;
+            this.filterRisk = '';
+            this.loadFindings();
+        },
+
+        loadFindings() {
+            var self = this;
+            var params = 'category=' + encodeURIComponent(this.activeCategory);
+            if (this.filterRisk) params += '&risk_level=' + this.filterRisk;
+            if (this.selectedSession) params += '&session_id=' + this.selectedSession;
+
+            fetch('/api/vuln-lifecycle/kynd/findings?' + params)
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                self.findings = r.success ? r.data : [];
+            });
+        },
+
+        openAdjust(f) {
+            this.modalFinding = f;
+            this.adjType = 'ACCEPTED';
+            this.adjRisk = 'green';
+            this.adjJustification = '';
+            this.adjExpires = '';
+            this.showModal = true;
+        },
+
+        submitAdjust() {
+            var self = this;
+            var body = {
+                asset_id: this.modalFinding.asset_id || this.getAssetId(this.modalFinding),
+                fingerprint: this.modalFinding.fingerprint,
+                adjustment_type: this.adjType,
+                adjusted_risk: this.adjRisk,
+                justification: this.adjJustification,
+                expires_at: this.adjExpires || null,
+            };
+
+            fetch('/api/vuln-lifecycle/kynd/risk/adjust', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (r.success) {
+                    self.showModal = false;
+                    self.loadFindings();
+                } else {
+                    alert(r.message || 'Error');
+                }
+            });
+        },
+
+        getAssetId(f) {
+            // findings API 直接帶 asset_id (透過 JOIN)
+            // 但 kynd_findings 沒有直接回傳 asset_id，需從 detail 查
+            // 此處的 f 是 API 回傳的完整物件
+            return f.asset_id;
+        },
+    };
+}
+</script>
+{% endblock %}

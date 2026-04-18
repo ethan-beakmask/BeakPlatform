@@ -19,11 +19,11 @@ api_bp = Blueprint(
 
 
 import functools
-from ..services.vulnmgmt_db import VulnDBUnavailable
+from ..services.vulnmgmt_db import VulnDBUnavailable, check_beakrisk_health
 
 
 def catch_db_unavailable(f):
-    """攔截 vulnmgmt DB 連線失敗，回 503 而非 500"""
+    """攔截 vulnmgmt DB 連線/查詢失敗，回 503 並附帶分類狀態"""
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         try:
@@ -32,13 +32,14 @@ def catch_db_unavailable(f):
             return jsonify({
                 'success': False,
                 'unavailable': True,
-                'message': '弱點管理資料庫未安裝或無法連線',
+                'beakrisk_status': 'db_error',
+                'message': 'BeakRisk 資料庫暫時不可用',
             }), 503
     return wrapper
 
 
 # =============================================================================
-# 模組資訊
+# 模組資訊 & Health Check
 # =============================================================================
 
 @api_bp.route('/info')
@@ -54,6 +55,19 @@ def module_info():
             'version': MODULE_INFO['version'],
         }
     })
+
+
+@api_bp.route('/health')
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.dashboard.view')
+def health_check():
+    """BeakRisk 服務健康狀態"""
+    health = check_beakrisk_health()
+    status_code = 200 if health['status'] == 'ok' else 503
+    return jsonify({
+        'success': health['status'] == 'ok',
+        'data': health,
+    }), status_code
 
 
 # =============================================================================
@@ -344,3 +358,219 @@ def risk_adjust():
     #     update risk_adjustments set form_instance_code = ...
 
     return jsonify({'success': True, 'message': 'Risk adjustment saved'})
+
+
+# =============================================================================
+# KYND API
+# =============================================================================
+
+@api_bp.route('/kynd/summary')
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.kynd.view')
+@catch_db_unavailable
+def kynd_summary():
+    """KYND 總覽：各 category 的 red/amber/green 計數 + 趨勢"""
+    from ..services.vulnmgmt_db import query
+
+    # 最新兩個 session（用於趨勢比較）
+    sessions = query("""
+        SELECT id, scan_date, total_findings, record_counts
+        FROM kynd_scan_sessions
+        ORDER BY scan_date DESC LIMIT 2
+    """)
+
+    if not sessions:
+        return jsonify({'success': True, 'data': {
+            'sessions': [], 'categories': {}, 'asset_count': 0,
+        }})
+
+    latest = sessions[0]
+    previous = sessions[1] if len(sessions) > 1 else None
+
+    # 最新 session 各 category 的 risk_level 統計
+    categories = query("""
+        SELECT category,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE risk_level = 'red') AS red,
+            COUNT(*) FILTER (WHERE risk_level = 'amber') AS amber,
+            COUNT(*) FILTER (WHERE risk_level = 'green') AS green
+        FROM kynd_findings
+        WHERE session_id = %s
+        GROUP BY category ORDER BY category
+    """, (latest['id'],))
+
+    # 前一次 session 統計（趨勢比較用）
+    prev_map = {}
+    if previous:
+        prev_cats = query("""
+            SELECT category,
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE risk_level = 'red') AS red,
+                COUNT(*) FILTER (WHERE risk_level = 'amber') AS amber,
+                COUNT(*) FILTER (WHERE risk_level = 'green') AS green
+            FROM kynd_findings
+            WHERE session_id = %s
+            GROUP BY category
+        """, (previous['id'],))
+        prev_map = {r['category']: r for r in prev_cats}
+
+    # 組合 category 資料（含趨勢）
+    cat_data = {}
+    for c in categories:
+        cat = c['category']
+        prev = prev_map.get(cat, {})
+        cat_data[cat] = {
+            'total': c['total'],
+            'red': c['red'],
+            'amber': c['amber'],
+            'green': c['green'],
+            'prev_red': prev.get('red', 0),
+            'prev_amber': prev.get('amber', 0),
+            'prev_total': prev.get('total', 0),
+        }
+
+    # KYND 風險調整統計
+    adj_count = query("""
+        SELECT COUNT(*) AS cnt FROM kynd_risk_adjustments
+        WHERE status = 'ACTIVE'
+    """, fetchone=True)
+
+    asset_count = query(
+        "SELECT COUNT(*) AS cnt FROM kynd_assets", fetchone=True
+    )
+
+    return jsonify({'success': True, 'data': {
+        'latest_session': latest,
+        'previous_session': previous,
+        'categories': cat_data,
+        'asset_count': asset_count['cnt'] if asset_count else 0,
+        'active_adjustments': adj_count['cnt'] if adj_count else 0,
+    }})
+
+
+@api_bp.route('/kynd/findings')
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.kynd.view')
+@catch_db_unavailable
+def kynd_findings():
+    """KYND findings 列表（依 category 篩選）"""
+    from ..services.vulnmgmt_db import query
+
+    category = request.args.get('category', '')
+    risk_level = request.args.get('risk_level', '')
+    session_id = request.args.get('session_id', '')
+
+    # 預設使用最新 session
+    if not session_id:
+        latest = query(
+            "SELECT id FROM kynd_scan_sessions ORDER BY scan_date DESC LIMIT 1",
+            fetchone=True
+        )
+        if not latest:
+            return jsonify({'success': True, 'data': [], 'total': 0})
+        session_id = latest['id']
+
+    sql = """
+        SELECT f.id, f.asset_id, f.fingerprint, f.category, f.issue_type,
+               f.risk_level, f.summary, f.detail,
+               a.sld, a.parent_domain,
+               adj.id AS adj_id, adj.adjustment_type, adj.adjusted_risk,
+               adj.reviewer, adj.status AS adj_status
+        FROM kynd_findings f
+        JOIN kynd_assets a ON f.asset_id = a.id
+        LEFT JOIN kynd_risk_adjustments adj
+            ON adj.asset_id = f.asset_id
+            AND adj.fingerprint = f.fingerprint
+            AND adj.status = 'ACTIVE'
+        WHERE f.session_id = %s
+    """
+    params = [session_id]
+
+    if category:
+        sql += " AND f.category = %s"
+        params.append(category)
+    if risk_level:
+        sql += " AND f.risk_level = %s"
+        params.append(risk_level)
+
+    sql += " ORDER BY CASE f.risk_level WHEN 'red' THEN 0 WHEN 'amber' THEN 1 ELSE 2 END, f.issue_type, a.sld"
+
+    rows = query(sql, params)
+    return jsonify({'success': True, 'data': rows, 'total': len(rows)})
+
+
+@api_bp.route('/kynd/sessions')
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.kynd.view')
+@catch_db_unavailable
+def kynd_sessions():
+    """KYND 掃描 session 列表"""
+    from ..services.vulnmgmt_db import query
+
+    rows = query("""
+        SELECT id, scan_date, total_findings, record_counts
+        FROM kynd_scan_sessions
+        ORDER BY scan_date DESC
+    """)
+    return jsonify({'success': True, 'data': rows})
+
+
+@api_bp.route('/kynd/risk/adjustments')
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.risk.view')
+@catch_db_unavailable
+def kynd_risk_list():
+    """KYND 風險調整紀錄"""
+    from ..services.vulnmgmt_db import query
+
+    status = request.args.get('status', 'ACTIVE')
+    rows = query("""
+        SELECT ra.*, a.sld, a.parent_domain
+        FROM kynd_risk_adjustments ra
+        JOIN kynd_assets a ON ra.asset_id = a.id
+        WHERE ra.status = %s
+        ORDER BY ra.updated_at DESC
+    """, (status,))
+    return jsonify({'success': True, 'data': rows})
+
+
+@api_bp.route('/kynd/risk/adjust', methods=['POST'])
+@module_access_required('vuln_lifecycle')
+@require_permission('vuln_lifecycle.risk.adjust')
+@catch_db_unavailable
+def kynd_risk_adjust():
+    """提交 KYND 風險調整"""
+    from ..services.vulnmgmt_db import execute
+
+    data = request.get_json()
+    asset_id = data.get('asset_id')
+    fingerprint = data.get('fingerprint')
+    adj_type = data.get('adjustment_type')
+    adjusted_risk = data.get('adjusted_risk', 'green')
+    justification = data.get('justification', '')
+    expires_at = data.get('expires_at')
+
+    if not justification:
+        return jsonify({'success': False, 'message': '必須填寫調整理由'}), 400
+    if not fingerprint:
+        return jsonify({'success': False, 'message': '缺少 fingerprint'}), 400
+
+    reviewer = current_user.display_name if current_user else 'system'
+
+    # 關閉既有 ACTIVE 調整
+    execute("""
+        UPDATE kynd_risk_adjustments
+        SET status = 'SUPERSEDED', updated_at = NOW()
+        WHERE asset_id = %s AND fingerprint = %s AND status = 'ACTIVE'
+    """, (asset_id, fingerprint))
+
+    # 新增調整
+    execute("""
+        INSERT INTO kynd_risk_adjustments
+            (asset_id, fingerprint, adjustment_type, adjusted_risk,
+             reviewer, review_date, justification, expires_at, status)
+        VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, 'ACTIVE')
+    """, (asset_id, fingerprint, adj_type, adjusted_risk,
+          reviewer, justification, expires_at))
+
+    return jsonify({'success': True, 'message': 'KYND risk adjustment saved'})

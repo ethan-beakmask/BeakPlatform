@@ -12,8 +12,85 @@ from flask import current_app
 from datetime import datetime, date
 from decimal import Decimal
 import logging
+import time
+import urllib.request
+import json
 
 logger = logging.getLogger(__name__)
+
+# BeakRisk health check 快取
+_health_cache = {'result': None, 'ts': 0}
+HEALTH_CACHE_TTL = 60  # 秒
+BEAKRISK_HEALTH_URL = 'http://localhost:5088/health'
+BEAKRISK_HEALTH_TIMEOUT = 3  # 秒
+
+
+def check_beakrisk_health():
+    """
+    檢查 BeakRisk 服務狀態，結果快取 60 秒。
+
+    回傳 dict:
+      status: 'ok' | 'service_down' | 'not_installed' | 'db_error'
+      message: 人類可讀訊息
+      detail: 原始回應（status=ok 時）
+    """
+    now = time.time()
+    if _health_cache['result'] and (now - _health_cache['ts']) < HEALTH_CACHE_TTL:
+        return _health_cache['result']
+
+    result = _do_health_check()
+    _health_cache['result'] = result
+    _health_cache['ts'] = now
+    return result
+
+
+def _do_health_check():
+    """實際執行 health check"""
+    try:
+        req = urllib.request.Request(BEAKRISK_HEALTH_URL)
+        with urllib.request.urlopen(req, timeout=BEAKRISK_HEALTH_TIMEOUT) as resp:
+            data = json.loads(resp.read())
+            if resp.status == 200 and data.get('status') == 'ok':
+                return {
+                    'status': 'ok',
+                    'message': 'BeakRisk 運行中',
+                    'detail': data,
+                }
+            # 503 from BeakRisk = DB error
+            return {
+                'status': 'db_error',
+                'message': 'BeakRisk 資料庫暫時不可用',
+                'detail': data,
+            }
+    except urllib.error.HTTPError as e:
+        if e.code == 503:
+            try:
+                data = json.loads(e.read())
+            except Exception:
+                data = {}
+            return {
+                'status': 'db_error',
+                'message': 'BeakRisk 資料庫暫時不可用',
+                'detail': data,
+            }
+        return {
+            'status': 'service_down',
+            'message': f'BeakRisk 服務異常 (HTTP {e.code})',
+            'detail': {},
+        }
+    except (urllib.error.URLError, ConnectionRefusedError, OSError):
+        return {
+            'status': 'service_down',
+            'message': 'BeakRisk 服務未啟動',
+            'detail': {},
+        }
+    except Exception as e:
+        logger.warning(f"BeakRisk health check failed: {e}")
+        return {
+            'status': 'service_down',
+            'message': 'BeakRisk 服務未啟動',
+            'detail': {},
+        }
 
 # 預設連線參數（可透過 Flask config 覆蓋）
 DEFAULT_CONFIG = {
