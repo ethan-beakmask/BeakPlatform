@@ -207,7 +207,7 @@ function menuRoleManager() {
 
         loadRoles: async function() {
             try {
-                var resp = await fetch('/api/menu/' + menuSc + '/roles', {
+                var resp = await fetch('/bp/api/menu/' + menuSc + '/roles', {
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 if (!resp.ok) return;
@@ -238,7 +238,7 @@ function menuRoleManager() {
 
         _saveRoles: async function(roleScs) {
             try {
-                var resp = await fetch('/api/menu/' + menuSc + '/roles', {
+                var resp = await fetch('/bp/api/menu/' + menuSc + '/roles', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

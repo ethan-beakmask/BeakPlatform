@@ -28,7 +28,7 @@
 
             try {
                 console.log(`📥 載入流程: ${currentWorkflowId}`);
-                const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}`);
+                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`);
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -162,7 +162,7 @@
                             const warning = document.createElement('div');
                             warning.id = 'readonly-warning';
                             warning.style.cssText = 'background: #e8f4fd; border: 1px solid #90caf9; color: #1565c0; padding: 6px 16px; margin-bottom: 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 8px;';
-                            warning.innerHTML = '<i class="fas fa-eye"></i><strong>唯讀模式</strong> — 通用子流程僅供檢視。如需編輯，請從<a href="/forms/workflows" style="color: #1565c0; margin-left: 2px;">流程管理</a>頁面開啟。';
+                            warning.innerHTML = '<i class="fas fa-eye"></i><strong>唯讀模式</strong> — 通用子流程僅供檢視。如需編輯，請從<a href="/bp/forms/workflows" style="color: #1565c0; margin-left: 2px;">流程管理</a>頁面開啟。';
                             toolbar.parentNode.insertBefore(warning, toolbar);
                         }
                     }
@@ -275,7 +275,7 @@
                     id: 'node-Start',
                     label: 'Start',
                     type: 'Start',
-                    icon: '/static/modules/form_workflow/icons/workflow/start.svg',
+                    icon: '/bp/static/modules/form_workflow/icons/workflow/start.svg',
                     config: {},
                     description: '',
                     position: { x: -175, y: -50 }
@@ -295,7 +295,7 @@
                     id: 'node-End',
                     label: 'End',
                     type: 'End',
-                    icon: '/static/modules/form_workflow/icons/workflow/end.svg',
+                    icon: '/bp/static/modules/form_workflow/icons/workflow/end.svg',
                     config: {},
                     description: '',
                     position: { x: 875, y: 350 }
@@ -399,7 +399,7 @@
                     // 取得圖示 URL（支援本地 SVG 路徑和 Font Awesome class）
                     let iconUrl = node.iconUrl || '';
                     if (!iconUrl && node.icon) {
-                        if (node.icon.startsWith('/static/') || node.icon.startsWith('http')) {
+                        if (node.icon.startsWith('/bp/static/') || node.icon.startsWith('http')) {
                             // 已經是 URL 路徑，直接使用
                             iconUrl = node.icon;
                         } else {

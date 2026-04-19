@@ -48,7 +48,7 @@ function sysAccountsManager() {
 
         async _loadPasswordRequirements() {
             try {
-                var response = await fetch('/auth/password-policy');
+                var response = await fetch('/bp/auth/password-policy');
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -84,7 +84,7 @@ function sysAccountsManager() {
             }
             try {
                 var csrfToken = config.csrfToken;
-                var response = await fetch('/auth/password-policy/validate', {
+                var response = await fetch('/bp/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ function sysAccountsManager() {
         async _generatePassword() {
             try {
                 var csrfToken = config.csrfToken;
-                var response = await fetch('/auth/password-policy/generate', {
+                var response = await fetch('/bp/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

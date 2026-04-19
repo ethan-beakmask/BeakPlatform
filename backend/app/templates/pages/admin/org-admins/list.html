@@ -106,7 +106,7 @@
     <div class="modal-content modal-sm">
         <h3>重設密碼</h3>
         <p style="margin-bottom: 16px;">為 <strong x-text="resetName"></strong> 設定新密碼</p>
-        <form method="POST" :action="'/admin/org-admins/' + resetTarget + '/reset-password'">
+        <form method="POST" :action="'/bp/admin/org-admins/' + resetTarget + '/reset-password'">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="new_password">新密碼</label>
             <div class="password-field">

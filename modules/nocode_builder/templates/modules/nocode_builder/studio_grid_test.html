@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Studio Grid Test</title>
-<script defer src="/static/vendor/alpine.min.js"></script>
-<link rel="stylesheet" href="/static/vendor/wunderbaum/wunderbaum.css">
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/studio.css">
+<script defer src="/bp/static/vendor/alpine.min.js"></script>
+<link rel="stylesheet" href="/bp/static/vendor/wunderbaum/wunderbaum.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/studio.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: system-ui, sans-serif; font-size: 14px; background: #f5f5f5; }
@@ -111,8 +111,8 @@ btn:hover { background: #f0f0f0; }
 
 </div>
 
-<script src="/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
-<script src="/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
+<script src="/bp/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
 <script>
 function gridTest() {
     const config = window.__STUDIO_CONFIG || {};
@@ -167,7 +167,7 @@ function gridTest() {
         // === Tree ===
         async _loadTree() {
             try {
-                const r = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
+                const r = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
                 const d = await r.json();
                 console.log('[gridTest] _loadTree response:', d);
                 if (d.success) this.tree = d.data || [];
@@ -281,7 +281,7 @@ function gridTest() {
         async _loadPageLayout(pageSc) {
             console.log('[gridTest] loading page layout:', pageSc);
             try {
-                const r = await fetch('/api/nocode-builder/pages/' + pageSc);
+                const r = await fetch('/bp/api/nocode-builder/pages/' + pageSc);
                 const d = await r.json();
                 console.log('[gridTest] page layout response:', d);
                 if (d.success) {
@@ -313,7 +313,7 @@ function gridTest() {
             // Auto-create page layout for page nodes
             if (type === 'page') {
                 try {
-                    const pr = await fetch('/api/nocode-builder/pages', {
+                    const pr = await fetch('/bp/api/nocode-builder/pages', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -330,7 +330,7 @@ function gridTest() {
             }
 
             try {
-                const r = await fetch('/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes', {
+                const r = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -354,7 +354,7 @@ function gridTest() {
             if (!confirm('Delete node "' + this.selectedNode.name + '"?')) return;
             try {
                 const r = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
+                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
                     { method: 'DELETE' }
                 );
                 const d = await r.json();

@@ -45,7 +45,7 @@
             }
 
             try {
-                const response = await fetch(`/api/workflows/data/templates/${currentWorkflowId}/mapped-forms?version_type=${versionType}`);
+                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}/mapped-forms?version_type=${versionType}`);
                 const result = await response.json();
 
                 if (!result.success) {
@@ -98,7 +98,7 @@
                 // 取得配對表單的 ID 列表
                 const formIds = currentMappedForms.map(f => f.form_id);
 
-                const response = await fetch('/api/workflows/data/variable-mapping', {
+                const response = await fetch('/bp/api/workflows/data/variable-mapping', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form_ids: formIds })
@@ -222,7 +222,7 @@
             try {
                 // 優先使用 form_secure_code，若無則使用 form_id
                 const formIdentifier = form.form_secure_code || form.form_id;
-                let url = `/api/workflows/data/forms/${formIdentifier}/fields?version_type=${currentVersionType}`;
+                let url = `/bp/api/workflows/data/forms/${formIdentifier}/fields?version_type=${currentVersionType}`;
                 if (form.mapping_id) {
                     url += `&mapping_id=${form.mapping_id}`;
                 }
@@ -1402,7 +1402,7 @@
 
             try {
                 const form = currentMappedForms.find(f => f.form_id === parseInt(formId));
-                let url = `/api/workflows/data/forms/${formId}/fields?version_type=${currentVersionType}`;
+                let url = `/bp/api/workflows/data/forms/${formId}/fields?version_type=${currentVersionType}`;
                 if (form && form.mapping_id) {
                     url += `&mapping_id=${form.mapping_id}`;
                 }
@@ -1749,7 +1749,7 @@
             // 取得第一張配對表單的欄位
             const form = currentMappedForms[0];
             const formIdentifier = form.form_secure_code || form.form_id;
-            let url = `/api/workflows/data/forms/${formIdentifier}/fields?version_type=design`;
+            let url = `/bp/api/workflows/data/forms/${formIdentifier}/fields?version_type=design`;
             if (form.mapping_id) url += `&mapping_id=${form.mapping_id}`;
 
             try {

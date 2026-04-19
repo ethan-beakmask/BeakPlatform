@@ -23,7 +23,7 @@ function subSystemListManager() {
         async loadList() {
             this.loading = true;
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems');
+                const res = await fetch('/bp/api/nocode-builder/sub-systems');
                 const data = await res.json();
                 if (data.success) {
                     this.items = data.data || [];
@@ -44,7 +44,7 @@ function subSystemListManager() {
                 return;
             }
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems', {
+                const res = await fetch('/bp/api/nocode-builder/sub-systems', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.createForm),
@@ -71,7 +71,7 @@ function subSystemListManager() {
         async doDelete() {
             if (!this.deletingItem) return;
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.deletingItem.secure_code, {
+                const res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.deletingItem.secure_code, {
                     method: 'DELETE'
                 });
                 const data = await res.json();

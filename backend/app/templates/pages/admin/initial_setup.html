@@ -388,7 +388,7 @@
                 var username = this.normalizedUsername;
                 if (!username) return;
                 try {
-                    var resp = await fetch('/users/check-username?username=' + encodeURIComponent(username));
+                    var resp = await fetch('/bp/users/check-username?username=' + encodeURIComponent(username));
                     var data = await resp.json();
                     if (this.normalizedUsername === username) {
                         this.usernameAvailable = data.available;
@@ -400,7 +400,7 @@
 
             async loadPasswordRequirements() {
                 try {
-                    var response = await fetch('/auth/password-policy');
+                    var response = await fetch('/bp/auth/password-policy');
                     if (response.ok) {
                         var data = await response.json();
                         if (data.success && data.data.policy.enabled) {
@@ -418,7 +418,7 @@
             async loadSuggestedPassword() {
                 try {
                     var csrfToken = (document.querySelector('input[name="csrf_token"]') || {}).value;
-                    var response = await fetch('/auth/password-policy/generate', {
+                    var response = await fetch('/bp/auth/password-policy/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
                     });
@@ -446,7 +446,7 @@
                 try {
                     var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                     (document.querySelector('input[name="csrf_token"]') || {}).value;
-                    var response = await fetch('/auth/password-policy/validate', {
+                    var response = await fetch('/bp/auth/password-policy/validate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                         body: JSON.stringify({ password: this.password })
@@ -464,7 +464,7 @@
                 try {
                     var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                     (document.querySelector('input[name="csrf_token"]') || {}).value;
-                    var response = await fetch('/api/transliterate/name', {
+                    var response = await fetch('/bp/api/transliterate/name', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                         body: JSON.stringify({ name: this.nativeName })

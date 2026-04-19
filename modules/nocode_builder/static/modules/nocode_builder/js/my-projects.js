@@ -23,7 +23,7 @@ function myProjectsManager() {
         async loadList() {
             this.loading = true;
             try {
-                const res = await fetch('/api/nocode-builder/projects');
+                const res = await fetch('/bp/api/nocode-builder/projects');
                 const data = await res.json();
                 if (data.success) {
                     this.items = data.data || [];
@@ -46,7 +46,7 @@ function myProjectsManager() {
                 return;
             }
             try {
-                const res = await fetch('/api/nocode-builder/projects', {
+                const res = await fetch('/bp/api/nocode-builder/projects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.createForm),
@@ -70,7 +70,7 @@ function myProjectsManager() {
             if (!confirm('確定要' + label + '「' + item.name + '」嗎?')) return;
 
             try {
-                const res = await fetch('/api/nocode-builder/projects/' + item.secure_code + '/' + action, {
+                const res = await fetch('/bp/api/nocode-builder/projects/' + item.secure_code + '/' + action, {
                     method: 'POST',
                 });
                 const data = await res.json();
@@ -93,7 +93,7 @@ function myProjectsManager() {
         async doDelete() {
             if (!this.deletingItem) return;
             try {
-                const res = await fetch('/api/nocode-builder/projects/' + this.deletingItem.secure_code, {
+                const res = await fetch('/bp/api/nocode-builder/projects/' + this.deletingItem.secure_code, {
                     method: 'DELETE',
                 });
                 const data = await res.json();

@@ -14,7 +14,7 @@ Variables:
 {% set layout = menu_layout | default('navbar') %}
 {% set expand_level = default_expand_level | default(1) %}
 
-<link rel="stylesheet" href="/static/css/menu.css">
+<link rel="stylesheet" href="/bp/static/css/menu.css">
 
 <div x-data="menuComponent()" x-init="loadMenu()">
     {% if layout == 'navbar' %}
@@ -42,4 +42,4 @@ window.__MENU_CONFIG = {
     layout: '{{ layout }}'
 };
 </script>
-<script src="/static/js/menu.js"></script>
+<script src="/bp/static/js/menu.js"></script>

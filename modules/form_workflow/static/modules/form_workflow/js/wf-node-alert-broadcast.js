@@ -14,7 +14,7 @@
 
         function loadAlertBroadcastOptions(selectedRoles, selectedDepts) {
             // 載入角色
-            fetch('/api/form-workflow/data/org-roles', {
+            fetch('/bp/api/form-workflow/data/org-roles', {
                 credentials: 'same-origin',
                 headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
             })
@@ -34,7 +34,7 @@
             .catch(() => {});
 
             // 載入部門
-            fetch('/api/form-workflow/data/org-departments', {
+            fetch('/bp/api/form-workflow/data/org-departments', {
                 credentials: 'same-origin',
                 headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' }
             })

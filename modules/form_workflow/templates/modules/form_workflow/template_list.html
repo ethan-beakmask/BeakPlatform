@@ -3,7 +3,7 @@
 {% block title %}表單模板 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/form_workflow/css/template-list.css">
+<link rel="stylesheet" href="/bp/static/modules/form_workflow/css/template-list.css">
 {% endblock %}
 
 {% block content %}
@@ -103,7 +103,7 @@
                         <td class="actions">
                             <button class="fw-btn" @click="editTemplate(t)">編輯</button>
                             <button class="fw-btn" @click="viewSchema(t)">結構</button>
-                            <a class="fw-btn" :href="'/forms/templates/' + t.secure_code + '/spec'" title="欄位規格">規格</a>
+                            <a class="fw-btn" :href="'/bp/forms/templates/' + t.secure_code + '/spec'" title="欄位規格">規格</a>
                         </td>
                     </tr>
                 </template>
@@ -242,5 +242,5 @@
 
 </div>
 
-<script src="/static/modules/form_workflow/js/template-list.js"></script>
+<script src="/bp/static/modules/form_workflow/js/template-list.js"></script>
 {% endblock %}

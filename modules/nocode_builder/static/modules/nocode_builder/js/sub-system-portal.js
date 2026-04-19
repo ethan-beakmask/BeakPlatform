@@ -35,7 +35,7 @@ function subSystemPortal() {
             }
 
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + config.subSystemSc + '/portal');
+                const res = await fetch('/bp/api/nocode-builder/sub-systems/' + config.subSystemSc + '/portal');
                 const data = await res.json();
                 if (!data.success) {
                     this.error = data.error || '載入失敗';
@@ -56,7 +56,7 @@ function subSystemPortal() {
 
         openPage(page) {
             const config = window.__PORTAL_CONFIG || {};
-            const url = '/nocode-builder/pages/' + page.page_layout_secure_code
+            const url = '/bp/nocode-builder/pages/' + page.page_layout_secure_code
                 + '?sub=' + encodeURIComponent(config.subSystemSc)
                 + '&ssp=' + encodeURIComponent(page.secure_code);
             window.location.href = url;

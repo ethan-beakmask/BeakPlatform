@@ -3,7 +3,7 @@
 {% block title %}職級職稱矩陣 - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/job-matrix.css">
+<link rel="stylesheet" href="/bp/static/css/job-matrix.css">
 {% endblock %}
 
 {% block content %}
@@ -84,7 +84,7 @@ window.__MATRIX_CONFIG = {
     updateTitlePositionUrl: '{{ url_for("job_levels.update_title_position") }}'
 };
 </script>
-<script src="/static/js/job-matrix.js"></script>
+<script src="/bp/static/js/job-matrix.js"></script>
 
 {% else %}
 <p style="color: #6b7280;">

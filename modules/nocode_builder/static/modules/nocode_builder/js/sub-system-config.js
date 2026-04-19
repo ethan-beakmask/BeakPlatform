@@ -66,7 +66,7 @@ function subSystemConfigManager() {
 
         async loadSubSystem() {
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.secureCode);
+                const res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.secureCode);
                 const data = await res.json();
                 if (data.success) {
                     const d = data.data;
@@ -86,7 +86,7 @@ function subSystemConfigManager() {
                 return;
             }
             try {
-                const res = await fetch('/api/nocode-builder/sub-systems/' + this.secureCode, {
+                const res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.secureCode, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.form),
@@ -109,7 +109,7 @@ function subSystemConfigManager() {
         async loadPolicies() {
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies'
+                    '/bp/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies'
                 );
                 const data = await res.json();
                 if (data.success) {
@@ -126,7 +126,7 @@ function subSystemConfigManager() {
             const autoName = '政策組 ' + idx;
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies',
+                    '/bp/api/nocode-builder/sub-systems/' + this.secureCode + '/permission-policies',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +164,7 @@ function subSystemConfigManager() {
                 return;
             }
             try {
-                const url = '/api/nocode-builder/sub-systems/' + this.secureCode
+                const url = '/bp/api/nocode-builder/sub-systems/' + this.secureCode
                     + '/permission-policies/' + this.editingPolicy.secure_code;
                 const res = await fetch(url, {
                     method: 'PUT',
@@ -192,7 +192,7 @@ function subSystemConfigManager() {
 
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    '/bp/api/nocode-builder/sub-systems/' + this.secureCode
                     + '/permission-policies/' + pg.secure_code,
                     { method: 'DELETE' }
                 );
@@ -269,7 +269,7 @@ function subSystemConfigManager() {
 
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
-                            const res = await fetch('/api/units/departments?tree=true');
+                            const res = await fetch('/bp/api/units/departments?tree=true');
                             const data = await res.json();
                             this._permCache.departments = data.units || [];
                         }
@@ -283,7 +283,7 @@ function subSystemConfigManager() {
                     } else {
                         // 社群：雙根（企業內部 + 外部廠商）
                         if (!this._permCache.groups) {
-                            const res = await fetch('/api/units/groups?tree=true');
+                            const res = await fetch('/bp/api/units/groups?tree=true');
                             const data = await res.json();
                             this._permCache.groups = data.units || [];
                         }
@@ -322,7 +322,7 @@ function subSystemConfigManager() {
 
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
-                    const res = await fetch('/api/users?per_page=100');
+                    const res = await fetch('/bp/api/users?per_page=100');
                     const data = await res.json();
                     if (data.users) {
                         this._permCache.users = data.users;
@@ -420,7 +420,7 @@ function subSystemConfigManager() {
 
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    '/bp/api/nocode-builder/sub-systems/' + this.secureCode
                     + '/permission-policies/' + pgSc + '/rules',
                     {
                         method: 'POST',
@@ -461,7 +461,7 @@ function subSystemConfigManager() {
             if (!confirm('確定刪除此規則?')) return;
             try {
                 const res = await fetch(
-                    '/api/nocode-builder/sub-systems/' + this.secureCode
+                    '/bp/api/nocode-builder/sub-systems/' + this.secureCode
                     + '/permission-policies/rules/' + ruleSc,
                     { method: 'DELETE' }
                 );

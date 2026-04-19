@@ -40,7 +40,7 @@ function roleCreateForm() {
             }
 
             try {
-                var resp = await fetch('/api/roles/generate-code', {
+                var resp = await fetch('/bp/api/roles/generate-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ function roleCreateForm() {
             }
 
             try {
-                var resp = await fetch('/api/roles/validate-code', {
+                var resp = await fetch('/bp/api/roles/validate-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ function roleCreateForm() {
             }
 
             try {
-                var resp = await fetch('/api/roles/', {
+                var resp = await fetch('/bp/api/roles/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

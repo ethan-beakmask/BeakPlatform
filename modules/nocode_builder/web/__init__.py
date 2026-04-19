@@ -24,7 +24,7 @@ web_bp = Blueprint(
 @module_access_required('nocode_builder')
 def index():
     """模組首頁 → 導向子系統列表"""
-    return redirect('/nocode-builder/sub-systems')
+    return redirect('/bp/nocode-builder/sub-systems')
 
 
 @web_bp.route('/lab')
@@ -57,13 +57,13 @@ def page_view(secure_code):
         if sub_system_context is None:
             _deny_and_logout('nocode_page_view', secure_code, sub_sc)
             from flask import redirect
-            return redirect('/auth/login')
+            return redirect('/bp/auth/login')
 
         # SiteMap 節點權限檢查
         if not _check_site_map_node_access(sub_sc, secure_code, current_user):
             _deny_and_logout('nocode_sitemap_node', secure_code, sub_sc)
             from flask import redirect
-            return redirect('/auth/login')
+            return redirect('/bp/auth/login')
 
     return render_template(
         'modules/nocode_builder/lab_view.html',

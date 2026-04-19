@@ -2,7 +2,7 @@
 {% block title %}風險調整{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/vuln_lifecycle/css/vuln-common.css">
+<link rel="stylesheet" href="/bp/static/modules/vuln_lifecycle/css/vuln-common.css">
 {% endblock %}
 
 {% block content %}
@@ -60,7 +60,7 @@
 
     window.loadAdj = function() {
         var st = document.getElementById('filter-status').value;
-        fetch('/api/vuln-lifecycle/risk/adjustments?status=' + st)
+        fetch('/bp/api/vuln-lifecycle/risk/adjustments?status=' + st)
         .then(function(r) {
             if (!r.ok) {
                 document.getElementById('adj-count').innerHTML =
@@ -83,7 +83,7 @@
                 var short = vn.length > 40 ? vn.substring(0, 40) + '...' : vn;
                 html += '<tr>';
                 html += '<td>' + a.id + '</td>';
-                html += '<td><a href="/vuln/assets/' + a.asset_id + '">' + (a.ip || '-') + '</a></td>';
+                html += '<td><a href="/bp/vuln/assets/' + a.asset_id + '">' + (a.ip || '-') + '</a></td>';
                 html += '<td title="' + vn.replace(/"/g, '&quot;') + '">' + short;
                 if (a.cve) html += ' <small style="color:#999">' + a.cve + '</small>';
                 html += '</td>';

@@ -37,7 +37,7 @@ function recipientGroupManager() {
         async loadGroups() {
             this.loading = true;
             try {
-                var response = await fetch('/api/admin/settings/recipient-groups');
+                var response = await fetch('/bp/api/admin/settings/recipient-groups');
                 var result = await response.json();
                 if (result.success) {
                     this.groups = result.data;
@@ -51,7 +51,7 @@ function recipientGroupManager() {
 
         async loadOrgTree() {
             try {
-                var response = await fetch('/api/admin/settings/org-tree');
+                var response = await fetch('/bp/api/admin/settings/org-tree');
                 var result = await response.json();
                 if (result.success) {
                     this.orgTree = result.data;
@@ -70,7 +70,7 @@ function recipientGroupManager() {
                 return;
             }
             try {
-                var response = await fetch('/api/admin/settings/org-users?search=' + encodeURIComponent(this.userSearch));
+                var response = await fetch('/bp/api/admin/settings/org-users?search=' + encodeURIComponent(this.userSearch));
                 var result = await response.json();
                 if (result.success) {
                     this.searchedUsers = result.data;
@@ -151,7 +151,7 @@ function recipientGroupManager() {
         async openEditModal(group) {
             this.isEditing = true;
             try {
-                var response = await fetch('/api/admin/settings/recipient-groups/' + group.id);
+                var response = await fetch('/bp/api/admin/settings/recipient-groups/' + group.id);
                 var result = await response.json();
                 if (result.success) {
                     var data = result.data;
@@ -192,8 +192,8 @@ function recipientGroupManager() {
 
             try {
                 var url = this.isEditing
-                    ? '/api/admin/settings/recipient-groups/' + this.formData.id
-                    : '/api/admin/settings/recipient-groups';
+                    ? '/bp/api/admin/settings/recipient-groups/' + this.formData.id
+                    : '/bp/api/admin/settings/recipient-groups';
                 var method = this.isEditing ? 'PUT' : 'POST';
 
                 var response = await fetch(url, {
@@ -223,7 +223,7 @@ function recipientGroupManager() {
             this.showPreviewModal = true;
 
             try {
-                var response = await fetch('/api/admin/settings/recipient-groups/' + group.id + '/resolve');
+                var response = await fetch('/bp/api/admin/settings/recipient-groups/' + group.id + '/resolve');
                 var result = await response.json();
                 if (result.success) {
                     this.previewRecipientsList = result.data.recipients;
@@ -242,7 +242,7 @@ function recipientGroupManager() {
             if (!this.groupToDelete) return;
 
             try {
-                var response = await fetch('/api/admin/settings/recipient-groups/' + this.groupToDelete.id, {
+                var response = await fetch('/bp/api/admin/settings/recipient-groups/' + this.groupToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()

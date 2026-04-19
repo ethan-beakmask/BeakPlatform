@@ -145,7 +145,7 @@ function userForm() {
             var username = this.normalizedUsername;
             if (!username) return;
             try {
-                var resp = await fetch('/users/check-username?username=' + encodeURIComponent(username));
+                var resp = await fetch('/bp/users/check-username?username=' + encodeURIComponent(username));
                 var data = await resp.json();
                 if (this.normalizedUsername === username) {
                     this.usernameAvailable = data.available;
@@ -158,7 +158,7 @@ function userForm() {
         // === 密碼 ===
         async loadPasswordRequirements() {
             try {
-                var response = await fetch('/auth/password-policy');
+                var response = await fetch('/bp/auth/password-policy');
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -176,7 +176,7 @@ function userForm() {
         async loadSuggestedPassword() {
             try {
                 var csrfToken = (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/auth/password-policy/generate', {
+                var response = await fetch('/bp/auth/password-policy/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
                 });
@@ -203,7 +203,7 @@ function userForm() {
             try {
                 var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                 (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/auth/password-policy/validate', {
+                var response = await fetch('/bp/auth/password-policy/validate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ password: this.password })
@@ -218,7 +218,7 @@ function userForm() {
         // === 用戶編號 ===
         async loadRules() {
             try {
-                var response = await fetch('/api/numbering/rules?scope=INTERNAL_ONLY');
+                var response = await fetch('/bp/api/numbering/rules?scope=INTERNAL_ONLY');
                 var data = await response.json();
                 if (data.success && data.data.length > 0) {
                     this.rules = data.data;
@@ -237,7 +237,7 @@ function userForm() {
         async onRuleChange() {
             if (!this.selectedRule) return;
             try {
-                var response = await fetch('/api/numbering/next?rule=' + this.selectedRule);
+                var response = await fetch('/bp/api/numbering/next?rule=' + this.selectedRule);
                 var data = await response.json();
                 if (data.success) {
                     this.nextNumber = data.data.number;
@@ -254,7 +254,7 @@ function userForm() {
             try {
                 var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                 (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/api/transliterate/name', {
+                var response = await fetch('/bp/api/transliterate/name', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ name: this.nativeName })
@@ -277,7 +277,7 @@ function userForm() {
 
         async _loadDeptTree() {
             try {
-                var response = await fetch('/api/units/departments?tree=true');
+                var response = await fetch('/bp/api/units/departments?tree=true');
                 var data = await response.json();
                 if (response.ok) {
                     this._deptTreeData = data.units || [];

@@ -36,7 +36,7 @@ function categoryManager() {
         async loadCategories() {
             this.loading = true;
             try {
-                const res = await fetch('/api/form-workflow/categories');
+                const res = await fetch('/bp/api/form-workflow/categories');
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
@@ -103,8 +103,8 @@ function categoryManager() {
 
             try {
                 const url = this.editingCategory
-                    ? `/api/form-workflow/categories/${this.editingCategory.secure_code}`
-                    : '/api/form-workflow/categories';
+                    ? `/bp/api/form-workflow/categories/${this.editingCategory.secure_code}`
+                    : '/bp/api/form-workflow/categories';
                 const method = this.editingCategory ? 'PUT' : 'POST';
 
                 const res = await fetch(url, {
@@ -137,7 +137,7 @@ function categoryManager() {
             if (!this.deletingCategory) return;
 
             try {
-                const res = await fetch(`/api/form-workflow/categories/${this.deletingCategory.secure_code}`, {
+                const res = await fetch(`/bp/api/form-workflow/categories/${this.deletingCategory.secure_code}`, {
                     method: 'DELETE'
                 });
                 const data = await res.json();

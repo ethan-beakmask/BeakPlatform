@@ -3,7 +3,7 @@
 {% block title %}子系統管理 - 資料表工具{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
 {% endblock %}
 
 {% block content %}
@@ -75,11 +75,11 @@
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(item.updated_at)"></td>
                         <td class="actions">
-                            <a :href="'/nocode-builder/studio/' + item.secure_code"
+                            <a :href="'/bp/nocode-builder/studio/' + item.secure_code"
                                class="dc-btn sm">設計器</a>
-                            <a :href="'/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
+                            <a :href="'/bp/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
                                class="dc-btn sm" target="_blank">預覽</a>
-                            <a :href="'/nocode-builder/sub-systems/' + item.secure_code + '/config'"
+                            <a :href="'/bp/nocode-builder/sub-systems/' + item.secure_code + '/config'"
                                class="dc-btn sm">設定</a>
                             <template x-if="meta.can_manage">
                                 <button class="dc-btn sm danger" @click="confirmDelete(item)">刪除</button>
@@ -137,5 +137,5 @@
          x-text="toast.message" x-transition></div>
 </div>
 
-<script src="/static/modules/nocode_builder/js/sub-system-list.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/sub-system-list.js"></script>
 {% endblock %}

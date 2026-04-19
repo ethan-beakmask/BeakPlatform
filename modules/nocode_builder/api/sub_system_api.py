@@ -705,7 +705,7 @@ def _update_menu_link(sub_system):
             is_deleted=False,
         ).first()
         if menu:
-            menu.link_target = '/nocode-builder/sub-systems/' + sub_system.secure_code + '/portal'
+            menu.link_target = '/bp/nocode-builder/sub-systems/' + sub_system.secure_code + '/portal'
             menu.link_type = 'url'
             db.session.commit()
             logger.info('Updated menu link_target for sub_system=%s', sub_system.name)

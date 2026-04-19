@@ -3,6 +3,8 @@ BeakMask - Security-First Multi-tenant SaaS Platform
 """
 import os
 from flask import Flask
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.wrappers import Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -126,6 +128,17 @@ def create_app(config_name: str = None) -> Flask:
     # SEC-03: 選單權限與路由裝飾器一致性審計
     from .security.permission_audit import run_startup_audit
     run_startup_audit(app)
+
+    # URL 前綴隔離：所有路由掛在 /bp/ 下，根路徑不回應
+    # DispatcherMiddleware 自動設定 SCRIPT_NAME=/bp，url_for() 產生的 URL 自動帶前綴
+    app.config['APPLICATION_ROOT'] = '/bp'
+
+    def _root_fallback(environ, start_response):
+        """根路徑及非 /bp 路徑一律回 404"""
+        resp = Response('Not Found', status=404, content_type='text/plain')
+        return resp(environ, start_response)
+
+    app.wsgi_app = DispatcherMiddleware(_root_fallback, {'/bp': app.wsgi_app})
 
     return app
 

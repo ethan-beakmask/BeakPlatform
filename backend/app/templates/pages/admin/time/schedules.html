@@ -71,7 +71,7 @@
                             </template>
                         </td>
                         <td class="actions">
-                            <a :href="'/admin/settings/work-schedules/' + schedule.id + '/holidays'">假日設定</a>
+                            <a :href="'/bp/admin/settings/work-schedules/' + schedule.id + '/holidays'">假日設定</a>
                             <button @click="openEditModal(schedule)">編輯</button>
                             <template x-if="!schedule.is_default">
                                 <button @click="setDefault(schedule)">設為預設</button>

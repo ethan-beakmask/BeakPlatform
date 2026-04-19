@@ -59,7 +59,7 @@ function lookupManager() {
         async loadCategories() {
             this.loading = true;
             try {
-                var res = await fetch('/api/lookup/categories');
+                var res = await fetch('/bp/api/lookup/categories');
                 var data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
@@ -122,10 +122,10 @@ function lookupManager() {
             try {
                 var url, method;
                 if (this.catForm.secure_code) {
-                    url = '/api/lookup/categories/' + this.catForm.secure_code;
+                    url = '/bp/api/lookup/categories/' + this.catForm.secure_code;
                     method = 'PUT';
                 } else {
-                    url = '/api/lookup/categories';
+                    url = '/bp/api/lookup/categories';
                     method = 'POST';
                 }
                 var body = {
@@ -164,7 +164,7 @@ function lookupManager() {
                                 : '確定要停用類別「' + this.selectedCat.name + '」？';
             if (!confirm(msg)) return;
             try {
-                var res = await fetch('/api/lookup/categories/' + this.selectedCat.secure_code, {
+                var res = await fetch('/bp/api/lookup/categories/' + this.selectedCat.secure_code, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_active: newActive }),
@@ -195,7 +195,7 @@ function lookupManager() {
             }
             if (!confirm('確定要刪除類別「' + this.selectedCat.name + '」及其所有選項？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。')) return;
             try {
-                var res = await fetch('/api/lookup/categories/' + this.selectedCat.secure_code, {
+                var res = await fetch('/bp/api/lookup/categories/' + this.selectedCat.secure_code, {
                     method: 'DELETE',
                 });
                 var data = await res.json();
@@ -219,7 +219,7 @@ function lookupManager() {
             if (!this.selectedCat) return;
             this.itemsLoading = true;
             try {
-                var res = await fetch('/api/lookup/categories/' + this.selectedCat.secure_code + '/items');
+                var res = await fetch('/bp/api/lookup/categories/' + this.selectedCat.secure_code + '/items');
                 var data = await res.json();
                 if (data.success) {
                     this.items = data.data || [];
@@ -469,7 +469,7 @@ function lookupManager() {
 
             try {
                 var res = await fetch(
-                    '/api/lookup/categories/' + this.selectedCat.secure_code + '/items/reorder',
+                    '/bp/api/lookup/categories/' + this.selectedCat.secure_code + '/items/reorder',
                     {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
@@ -489,7 +489,7 @@ function lookupManager() {
             var item = this.items.find(function(i) { return i.secure_code === secureCode; });
             if (!item) return;
             try {
-                var res = await fetch('/api/lookup/items/' + secureCode, {
+                var res = await fetch('/bp/api/lookup/items/' + secureCode, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_active: !item.is_active }),
@@ -515,7 +515,7 @@ function lookupManager() {
             }
             if (!confirm('確定要刪除選項「' + item.label + '」？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。')) return;
             try {
-                var res = await fetch('/api/lookup/items/' + secureCode, {
+                var res = await fetch('/bp/api/lookup/items/' + secureCode, {
                     method: 'DELETE',
                 });
                 var data = await res.json();
@@ -640,10 +640,10 @@ function lookupManager() {
             try {
                 var url, method;
                 if (this.itemForm.secure_code) {
-                    url = '/api/lookup/items/' + this.itemForm.secure_code;
+                    url = '/bp/api/lookup/items/' + this.itemForm.secure_code;
                     method = 'PUT';
                 } else {
-                    url = '/api/lookup/categories/' + this.selectedCat.secure_code + '/items';
+                    url = '/bp/api/lookup/categories/' + this.selectedCat.secure_code + '/items';
                     method = 'POST';
                 }
                 var body = {

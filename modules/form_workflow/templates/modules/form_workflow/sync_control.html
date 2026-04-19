@@ -3,7 +3,7 @@
 {% block title %}同步中控台 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/form_workflow/css/sync-control.css">
+<link rel="stylesheet" href="/bp/static/modules/form_workflow/css/sync-control.css">
 {% endblock %}
 
 {% block content %}
@@ -22,7 +22,7 @@
         <div class="sc-toolbar">
             <button class="sc-btn" @click="loadStatus()" :disabled="loading">重新載入</button>
             <button class="sc-btn" @click="goSpecEditor()">開啟規格編輯器</button>
-            <button class="sc-btn" @click="window.open('/forms/data-specs', '_self')">返回規格列表</button>
+            <button class="sc-btn" @click="window.open('/bp/forms/data-specs', '_self')">返回規格列表</button>
         </div>
     </div>
 
@@ -255,5 +255,5 @@ window.__SYNC_CONFIG = {
     formTemplateSc: '{{ form_template_secure_code }}',
 };
 </script>
-<script src="/static/modules/form_workflow/js/sync-control.js"></script>
+<script src="/bp/static/modules/form_workflow/js/sync-control.js"></script>
 {% endblock %}

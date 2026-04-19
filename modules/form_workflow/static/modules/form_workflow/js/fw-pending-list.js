@@ -23,7 +23,7 @@ function pendingListManager() {
         async loadTasks() {
             this.loading = true;
             try {
-                var res = await fetch('/api/form-workflow/pending-tasks');
+                var res = await fetch('/bp/api/form-workflow/pending-tasks');
                 var data = await res.json();
                 if (data.success) {
                     this.tasks = data.data.tasks || [];
@@ -49,7 +49,7 @@ function pendingListManager() {
             this.showApproveModal = true;
 
             try {
-                var res = await fetch('/api/form-workflow/pending-tasks/' + task.queue_secure_code);
+                var res = await fetch('/bp/api/form-workflow/pending-tasks/' + task.queue_secure_code);
                 var data = await res.json();
                 if (data.success) {
                     this.taskDetail = data.data;
@@ -78,7 +78,7 @@ function pendingListManager() {
 
             this.submitting = true;
             try {
-                var res = await fetch('/api/form-workflow/pending-tasks/' + this.currentTask.queue_secure_code + '/approve', {
+                var res = await fetch('/bp/api/form-workflow/pending-tasks/' + this.currentTask.queue_secure_code + '/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

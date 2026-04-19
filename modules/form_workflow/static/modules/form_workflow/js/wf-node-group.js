@@ -21,7 +21,7 @@
             // 載入節點定義（若尚未載入）
             if (!replaceNodeDefinitions) {
                 try {
-                    const response = await fetch('/api/workflows/data/node-definitions');
+                    const response = await fetch('/bp/api/workflows/data/node-definitions');
                     const result = await response.json();
                     if (!result.success) {
                         throw new Error(result.message || '載入節點定義失敗');
@@ -230,7 +230,7 @@
             // 套用圖示
             let iconUrl = buf.data.iconUrl || '';
             if (!iconUrl && buf.icon) {
-                if (buf.icon.startsWith('/static/') || buf.icon.startsWith('http')) {
+                if (buf.icon.startsWith('/bp/static/') || buf.icon.startsWith('http')) {
                     iconUrl = buf.icon;
                 } else {
                     iconUrl = getSvgDataUrl(buf.icon, '#333333');
@@ -388,7 +388,7 @@
             // 套用新節點的圖示
             if (newIcon) {
                 let iconUrl = newIcon;
-                if (!newIcon.startsWith('/static/') && !newIcon.startsWith('http')) {
+                if (!newIcon.startsWith('/bp/static/') && !newIcon.startsWith('http')) {
                     iconUrl = getSvgDataUrl(newIcon, '#333333');
                 }
                 newNode.style({

@@ -37,7 +37,7 @@ cd "$DEV_DIR"
 source venv/bin/activate
 set -a && source .env && set +a
 cd backend
-nohup flask run --host=0.0.0.0 --port=7000 > /tmp/beakplatform-dev-flask.log 2>&1 &
+nohup flask run --host=127.0.0.1 --port=7000 > /tmp/beakplatform-dev-flask.log 2>&1 &
 echo "  PID: $!"
 echo "  done"
 

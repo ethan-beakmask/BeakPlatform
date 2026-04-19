@@ -29,7 +29,7 @@
     }
 
     function poll() {
-        fetch('/api/broadcasts/active', {
+        fetch('/bp/api/broadcasts/active', {
             method: 'GET',
             credentials: 'same-origin',
             headers: { 'X-CSRFToken': CSRF_TOKEN }
@@ -229,7 +229,7 @@
     }
 
     function acknowledgeAndClose(securecode, overlay) {
-        fetch('/api/broadcasts/' + securecode + '/acknowledge', {
+        fetch('/bp/api/broadcasts/' + securecode + '/acknowledge', {
             method: 'POST',
             credentials: 'same-origin',
             headers: {

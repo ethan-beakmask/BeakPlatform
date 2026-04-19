@@ -237,7 +237,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/api/menu/reorder', {
+                var resp = await fetch('/bp/api/menu/reorder', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/api/menu/reset-positions', {
+                var resp = await fetch('/bp/api/menu/reset-positions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/api/menu/reset-factory', {
+                var resp = await fetch('/bp/api/menu/reset-factory', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -332,7 +332,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/api/menu/save-factory-defaults', {
+                var resp = await fetch('/bp/api/menu/save-factory-defaults', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

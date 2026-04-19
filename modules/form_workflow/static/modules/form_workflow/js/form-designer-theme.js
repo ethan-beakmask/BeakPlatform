@@ -87,7 +87,7 @@ function applyThemeDefaultsToAll() {
 
 // 從 API 載入可用主題並填充下拉選單
 function loadFormThemes() {
-    return fetch('/api/form-workflow/form-themes')
+    return fetch('/bp/api/form-workflow/form-themes')
         .then(r => r.json())
         .then(json => {
             if (!json.success) return;

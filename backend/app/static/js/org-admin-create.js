@@ -24,7 +24,7 @@ function createAdminForm() {
 
         async loadRequirements() {
             try {
-                var response = await fetch('/auth/password-policy');
+                var response = await fetch('/bp/auth/password-policy');
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -63,7 +63,7 @@ function createAdminForm() {
             try {
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                 document.querySelector('input[name="csrf_token"]')?.value;
-                var response = await fetch('/auth/password-policy/generate', {
+                var response = await fetch('/bp/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ function createAdminForm() {
             try {
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                 document.querySelector('input[name="csrf_token"]')?.value;
-                var response = await fetch('/auth/password-policy/validate', {
+                var response = await fetch('/bp/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ function instanceListManager() {
         async loadInstances() {
             this.loading = true;
             try {
-                var url = '/api/form-workflow/instances?page=' + this.pagination.page + '&tab=' + this.tab;
+                var url = '/bp/api/form-workflow/instances?page=' + this.pagination.page + '&tab=' + this.tab;
                 if (this.statusFilter) url += '&status=' + this.statusFilter;
 
                 var res = await fetch(url);
@@ -42,7 +42,7 @@ function instanceListManager() {
 
         async viewDetail(i) {
             try {
-                var res = await fetch('/api/form-workflow/instances/' + i.secure_code);
+                var res = await fetch('/bp/api/form-workflow/instances/' + i.secure_code);
                 var data = await res.json();
                 if (data.success) {
                     this.viewingInstance = data.data;

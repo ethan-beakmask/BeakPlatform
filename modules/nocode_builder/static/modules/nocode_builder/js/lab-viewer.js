@@ -27,7 +27,7 @@ function labViewer() {
 
             // 從 API 載入佈局
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + config.secureCode);
+                const res = await fetch('/bp/api/nocode-builder/pages/' + config.secureCode);
                 const data = await res.json();
                 if (!data.success) {
                     this.error = '載入失敗: ' + (data.error || '');

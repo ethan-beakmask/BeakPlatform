@@ -195,7 +195,7 @@ function groupManager() {
         async init() {
             // 統一使用 group-member-candidates (含 EMPLOYEE + EXTERNAL)
             try {
-                var res = await fetch('/api/units/group-member-candidates?per_page=1000');
+                var res = await fetch('/bp/api/units/group-member-candidates?per_page=1000');
                 if (res.ok) {
                     var data = await res.json();
                     this.allUsers = (data.users || []).filter(function(u) {
@@ -221,7 +221,7 @@ function groupManager() {
 
         async loadGroups() {
             try {
-                var res = await fetch('/api/units/groups?tree=true');
+                var res = await fetch('/bp/api/units/groups?tree=true');
                 var data = await res.json();
                 if (res.ok) {
                     this.groups = data.units || [];
@@ -236,7 +236,7 @@ function groupManager() {
             var self = this;
             var loadForGroup = async function(group) {
                 try {
-                    var res = await fetch('/api/units/' + group.id + '/cross-members');
+                    var res = await fetch('/bp/api/units/' + group.id + '/cross-members');
                     if (res.ok) {
                         var data = await res.json();
                         group._members = data.cross_members || [];
@@ -255,7 +255,7 @@ function groupManager() {
 
         async loadMembers(groupId) {
             try {
-                var res = await fetch('/api/units/' + groupId + '/cross-members');
+                var res = await fetch('/bp/api/units/' + groupId + '/cross-members');
                 var data = await res.json();
                 if (res.ok) {
                     var rawMembers = data.cross_members || [];
@@ -528,7 +528,7 @@ function groupManager() {
             if (node.data.type === 'group' && this.isAdmin) {
                 var parentId = (newParentId === 'root') ? null : newParentId;
                 try {
-                    var res = await fetch('/api/units/' + nodeId, {
+                    var res = await fetch('/bp/api/units/' + nodeId, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ parent_id: parentId })
@@ -595,7 +595,7 @@ function groupManager() {
 
         async createGroup() {
             try {
-                var res = await fetch('/api/units/', {
+                var res = await fetch('/bp/api/units/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
@@ -620,7 +620,7 @@ function groupManager() {
         async updateGroup() {
             if (!this.selectedGroup) return;
             try {
-                var res = await fetch('/api/units/' + this.selectedGroup.id, {
+                var res = await fetch('/bp/api/units/' + this.selectedGroup.id, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
@@ -646,7 +646,7 @@ function groupManager() {
                 return;
             }
             try {
-                var checkRes = await fetch('/api/units/' + this.selectedGroup.id + '?check_only=true&cascade=true', {
+                var checkRes = await fetch('/bp/api/units/' + this.selectedGroup.id + '?check_only=true&cascade=true', {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -658,7 +658,7 @@ function groupManager() {
 
                 if (!confirm(msgs.join(''))) return;
 
-                var url = '/api/units/' + this.selectedGroup.id + '?cascade=true&confirm_members=true';
+                var url = '/bp/api/units/' + this.selectedGroup.id + '?cascade=true&confirm_members=true';
                 var res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
                 var data = await res.json();
                 if (res.ok) {
@@ -765,7 +765,7 @@ function groupManager() {
                 if (['MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2'].includes(roleType)) {
                     var currentHolder = this.members.find(function(m) { return m.role_type === roleType; });
                     if (currentHolder && currentHolder.user_secure_code !== userId) {
-                        await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + currentHolder.id, {
+                        await fetch('/bp/api/units/' + this.selectedGroup.id + '/cross-members/' + currentHolder.id, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                             body: JSON.stringify({ role_type: 'MEMBER' })
@@ -775,7 +775,7 @@ function groupManager() {
 
                 if (existing) {
                     // 已是成員：更新角色
-                    var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + existing.id, {
+                    var res = await fetch('/bp/api/units/' + this.selectedGroup.id + '/cross-members/' + existing.id, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ role_type: roleType })
@@ -788,7 +788,7 @@ function groupManager() {
                     }
                 } else {
                     // 新增成員
-                    var res2 = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members', {
+                    var res2 = await fetch('/bp/api/units/' + this.selectedGroup.id + '/cross-members', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ user_id: userId, role_type: roleType })
@@ -820,7 +820,7 @@ function groupManager() {
             if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
-                var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + leader.membershipId, {
+                var res = await fetch('/bp/api/units/' + this.selectedGroup.id + '/cross-members/' + leader.membershipId, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -845,7 +845,7 @@ function groupManager() {
             if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
-                var res = await fetch('/api/units/' + this.selectedGroup.id + '/cross-members/' + member.id, {
+                var res = await fetch('/bp/api/units/' + this.selectedGroup.id + '/cross-members/' + member.id, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -917,7 +917,7 @@ function groupManager() {
 
                 var userId = self.draggedUser.id;
                 try {
-                    var res = await fetch('/api/units/' + targetId + '/cross-members', {
+                    var res = await fetch('/bp/api/units/' + targetId + '/cross-members', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ user_id: userId, role_type: 'MEMBER' })
@@ -966,7 +966,7 @@ function groupManager() {
             var findAndUpdate = async function(items) {
                 for (var i = 0; i < items.length; i++) {
                     if (items[i].id === groupId) {
-                        var res = await fetch('/api/units/' + items[i].id + '/cross-members');
+                        var res = await fetch('/bp/api/units/' + items[i].id + '/cross-members');
                         if (res.ok) {
                             var data = await res.json();
                             items[i]._members = data.cross_members || [];

@@ -26,7 +26,7 @@ function fcFormFill() {
             try {
                 // 根據來源決定 API 參數
                 const source = form._source || 'published';
-                const url = `/api/form-center/forms/${form.secure_code}?source=${source}`;
+                const url = `/bp/api/form-center/forms/${form.secure_code}?source=${source}`;
                 const res = await fetch(url);
                 const data = await res.json();
 
@@ -143,7 +143,7 @@ function fcFormFill() {
                     payload.published_secure_code = this.selectedForm.secure_code;
                 }
 
-                const res = await fetch('/api/form-center/submit', {
+                const res = await fetch('/bp/api/form-center/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

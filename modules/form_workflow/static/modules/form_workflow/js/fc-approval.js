@@ -48,7 +48,7 @@ function fcApproval() {
 
             try {
                 // Step 1: 取得簽核鎖定
-                const lockRes = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}/lock`, {
+                const lockRes = await fetch(`/bp/api/form-center/pending-tasks/${item.queue_secure_code}/lock`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -62,7 +62,7 @@ function fcApproval() {
 
                 // Step 2: 取得任務詳情
                 this.showApprovalModal = true;
-                const res = await fetch(`/api/form-center/pending-tasks/${item.queue_secure_code}`);
+                const res = await fetch(`/bp/api/form-center/pending-tasks/${item.queue_secure_code}`);
                 const data = await res.json();
 
                 if (data.success) {
@@ -74,7 +74,7 @@ function fcApproval() {
                     // Step 4: 註冊 beforeunload 釋放鎖
                     const queueCode = item.queue_secure_code;
                     this._beforeUnloadHandler = () => {
-                        fetch(`/api/form-center/pending-tasks/${queueCode}/lock`, {
+                        fetch(`/bp/api/form-center/pending-tasks/${queueCode}/lock`, {
                             method: 'DELETE',
                             keepalive: true
                         }).catch(() => {});
@@ -190,7 +190,7 @@ function fcApproval() {
 
             // 釋放鎖定（best-effort）
             if (this.currentApproval?.queue_secure_code) {
-                fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/lock`, {
+                fetch(`/bp/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/lock`, {
                     method: 'DELETE'
                 }).catch(() => {});
             }
@@ -302,7 +302,7 @@ function fcApproval() {
                     payload.form_data = this.approvalFormInstance.submission.data;
                 }
 
-                const res = await fetch(`/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/approve`, {
+                const res = await fetch(`/bp/api/form-center/pending-tasks/${this.currentApproval.queue_secure_code}/approve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

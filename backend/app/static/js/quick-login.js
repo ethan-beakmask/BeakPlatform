@@ -30,7 +30,7 @@ function quickLoginManager() {
 
         async loadOrganizations() {
             try {
-                const response = await fetch('/dev/get-orgs');
+                const response = await fetch('/bp/dev/get-orgs');
                 const result = await response.json();
                 if (result.success) {
                     // 系統企業排在最前面
@@ -91,7 +91,7 @@ function quickLoginManager() {
             this.successMessage = '';
 
             try {
-                const response = await fetch('/dev/quick-login', {
+                const response = await fetch('/bp/dev/quick-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user.id })
@@ -124,7 +124,7 @@ function quickLoginManager() {
             this.currentUser = null;
 
             try {
-                await fetch('/dev/logout', { method: 'POST' });
+                await fetch('/bp/dev/logout', { method: 'POST' });
                 this.successMessage = 'Session 已清除';
             } catch (error) {
                 // 忽略錯誤

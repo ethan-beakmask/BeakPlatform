@@ -132,7 +132,7 @@ function specSchemaEditor() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/api/spec-formulate/schema/data-classes');
+                var resp = await fetch('/bp/api/spec-formulate/schema/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -150,7 +150,7 @@ function specSchemaEditor() {
         async loadSpecList() {
             this.specListLoading = true;
             try {
-                var resp = await fetch('/api/spec-formulate/schema/specs');
+                var resp = await fetch('/bp/api/spec-formulate/schema/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specList = data.data || [];
@@ -163,13 +163,13 @@ function specSchemaEditor() {
 
         switchSpec(sc) {
             if (sc === this.specSc) return;
-            window.location.href = '/spec-formulate/' + sc + '/edit';
+            window.location.href = '/bp/spec-formulate/' + sc + '/edit';
         },
 
         async loadSpec() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -464,10 +464,10 @@ function specSchemaEditor() {
             try {
                 var url, method;
                 if (this.specSc) {
-                    url = '/api/spec-formulate/schema/specs/' + this.specSc;
+                    url = '/bp/api/spec-formulate/schema/specs/' + this.specSc;
                     method = 'POST';
                 } else {
-                    url = '/api/spec-formulate/schema/specs';
+                    url = '/bp/api/spec-formulate/schema/specs';
                     method = 'POST';
                 }
 
@@ -495,7 +495,7 @@ function specSchemaEditor() {
                     if (!this.specSc && s.secure_code) {
                         this.specSc = s.secure_code;
                         history.replaceState(null, '',
-                            '/spec-formulate/' + s.secure_code + '/edit');
+                            '/bp/spec-formulate/' + s.secure_code + '/edit');
                     }
                     if (s.warnings && s.warnings.length > 0) {
                         this.showToast('已儲存（有 ' + s.warnings.length + ' 個警告）', 'warning');
@@ -529,7 +529,7 @@ function specSchemaEditor() {
 
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     '/populate-facet',
                     {
                         method: 'POST',
@@ -626,7 +626,7 @@ function specSchemaEditor() {
             if (!this.specSc) return;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' +
+                    '/bp/api/spec-formulate/schema/specs/' +
                     this.specSc + '/history'
                 );
                 var data = await resp.json();
@@ -669,7 +669,7 @@ function specSchemaEditor() {
             if (this.specTableName) return;
             if (!this.specName || !this.specName.trim()) return;
             try {
-                var resp = await fetch('/api/spec-formulate/schema/translate', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -688,7 +688,7 @@ function specSchemaEditor() {
 
         async _translateFieldKey(label, row) {
             try {
-                var resp = await fetch('/api/spec-formulate/schema/translate', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -721,7 +721,7 @@ function specSchemaEditor() {
             this.linkTemplatesLoading = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/available-templates'
+                    '/bp/api/spec-formulate/schema/available-templates'
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -738,7 +738,7 @@ function specSchemaEditor() {
             this.linkSubmitting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc + '/link-form',
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc + '/link-form',
                     {
                         method: 'POST',
                         headers: {
@@ -768,7 +768,7 @@ function specSchemaEditor() {
         async unlinkForm() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc + '/unlink-form',
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc + '/unlink-form',
                     {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
@@ -799,7 +799,7 @@ function specSchemaEditor() {
             await this.saveSpec();
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc + '/sync-to-form',
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc + '/sync-to-form',
                     {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
@@ -826,7 +826,7 @@ function specSchemaEditor() {
             this.createFormSubmitting = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc + '/create-form',
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc + '/create-form',
                     {
                         method: 'POST',
                         headers: {
@@ -858,7 +858,7 @@ function specSchemaEditor() {
 
         async loadCgInfo() {
             try {
-                var resp = await fetch('/api/spec-formulate/schema/cg/info');
+                var resp = await fetch('/bp/api/spec-formulate/schema/cg/info');
                 var data = await resp.json();
                 if (data.success && data.data.has_conglomerate_db) {
                     this.cgDbAvailable = true;
@@ -913,12 +913,12 @@ function specSchemaEditor() {
             try {
                 if (this.pgTarget === 'org') {
                     // 企業 DB: 先確保存在
-                    await fetch('/api/spec-formulate/schema/pg/ensure-db', {
+                    await fetch('/bp/api/spec-formulate/schema/pg/ensure-db', {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
                     });
                 }
-                var resp = await fetch('/api/spec-formulate/schema' + prefix + 'tables');
+                var resp = await fetch('/bp/api/spec-formulate/schema' + prefix + 'tables');
                 var data = await resp.json();
                 if (data.success) {
                     this.pgTables = data.data || [];
@@ -942,7 +942,7 @@ function specSchemaEditor() {
                 : this.pgSelectedTable;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'compare/' + encodeURIComponent(tableName)
                 );
                 var data = await resp.json();
@@ -961,7 +961,7 @@ function specSchemaEditor() {
             var prefix = this._pgApiPrefix();
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'apply-to-table',
                     {
                         method: 'POST',
@@ -991,7 +991,7 @@ function specSchemaEditor() {
                 : this.pgSelectedTable;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'apply-to-table',
                     {
                         method: 'POST',
@@ -1053,14 +1053,14 @@ function specSchemaEditor() {
 
                 if (this.pgTarget === 'org') {
                     // 確保企業 DB 存在
-                    await fetch('/api/spec-formulate/schema/pg/ensure-db', {
+                    await fetch('/bp/api/spec-formulate/schema/pg/ensure-db', {
                         method: 'POST',
                         headers: { 'X-CSRFToken': this.csrfToken },
                     });
                 }
 
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     prefix + 'create-table',
                     {
                         method: 'POST',
@@ -1093,7 +1093,7 @@ function specSchemaEditor() {
         async pgUnlinkTable() {
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + this.specSc +
+                    '/bp/api/spec-formulate/schema/specs/' + this.specSc +
                     '/pg/unlink-table',
                     {
                         method: 'POST',
@@ -1125,7 +1125,7 @@ function specSchemaEditor() {
             var name = (this.newSpecForm.name || '').trim();
             if (!name) { this.newSpecTableSuggestion = ''; return; }
             try {
-                var resp = await fetch('/api/spec-formulate/schema/translate', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1147,7 +1147,7 @@ function specSchemaEditor() {
             if (!name) { alert('規格名稱必填'); return; }
             this.newSpecCreating = true;
             try {
-                var resp = await fetch('/api/spec-formulate/schema/specs', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1163,7 +1163,7 @@ function specSchemaEditor() {
                 var data = await resp.json();
                 if (data.success) {
                     this.showNewSpecModal = false;
-                    window.location.href = '/spec-formulate/' + data.data.secure_code + '/edit';
+                    window.location.href = '/bp/spec-formulate/' + data.data.secure_code + '/edit';
                 } else {
                     alert(data.error || '建立失敗');
                 }
@@ -1219,7 +1219,7 @@ function specSchemaEditor() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/api/spec-formulate/schema/specs/' + item.spec_sc + '/versions'
+                    '/bp/api/spec-formulate/schema/specs/' + item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
                 if (data.success) {
@@ -1294,7 +1294,7 @@ function specSchemaEditor() {
             }
             this.docxExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/schema/export/docx', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1360,7 +1360,7 @@ function specSchemaEditor() {
             }
             this.pdfExporting = true;
             try {
-                var resp = await fetch('/api/spec-formulate/schema/export/pdf', {
+                var resp = await fetch('/bp/api/spec-formulate/schema/export/pdf', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

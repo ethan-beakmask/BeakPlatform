@@ -45,7 +45,7 @@
                     <div x-show="successMessage" x-cloak class="message success">
                         <i class="fas fa-check-circle"></i>
                         <span x-text="successMessage"></span>
-                        <a href="/" class="goto-btn">前往首頁</a>
+                        <a href="/bp/" class="goto-btn">前往首頁</a>
                     </div>
 
                     <!-- 錯誤訊息 -->
@@ -112,7 +112,7 @@
                         <div class="info-item">
                             <div class="info-label">共用登入頁面</div>
                             <div class="info-content">
-                                <a href="/auth/login" target="_blank" class="info-link">
+                                <a href="/bp/auth/login" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i> /auth/login
                                 </a>
                                 <div class="info-hint">登入格式: username@domain_name</div>
@@ -125,9 +125,9 @@
                                 企業成員登入（<span x-text="selectedOrgDomain || window.__SYSTEM_ORG_CODE"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'" target="_blank" class="info-link">
+                                <a :href="'/bp/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'"></span>
+                                    <span x-text="'/bp/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'"></span>
                                 </a>
                                 <div class="info-hint">登入格式: username（自動帶入企業網域）</div>
                             </div>
@@ -139,9 +139,9 @@
                                 外部廠商登入（<span x-text="selectedOrgDomain"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
+                                <a :href="'/bp/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/auth/org/' + selectedOrgDomain + '/public/login'"></span>
+                                    <span x-text="'/bp/auth/org/' + selectedOrgDomain + '/public/login'"></span>
                                 </a>
                                 <div class="info-hint">登入格式: 完整 Email（如 guest@gmail.com）</div>
                             </div>
@@ -153,9 +153,9 @@
                                 公開區入口（<span x-text="selectedOrgDomain"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/auth/org/' + selectedOrgDomain + '/public'" target="_blank" class="info-link">
+                                <a :href="'/bp/auth/org/' + selectedOrgDomain + '/public'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/auth/org/' + selectedOrgDomain + '/public'"></span>
+                                    <span x-text="'/bp/auth/org/' + selectedOrgDomain + '/public'"></span>
                                 </a>
                                 <div class="info-hint">企業成員 / 外部廠商登入選擇頁</div>
                             </div>

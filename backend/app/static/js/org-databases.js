@@ -38,7 +38,7 @@ function odbSystemView() {
                 return;
             }
             this.orgs.forEach(function(org) {
-                fetch('/organizations/databases/' + org.secureCode + '/stats')
+                fetch('/bp/organizations/databases/' + org.secureCode + '/stats')
                     .then(function(resp) {
                         if (!resp.ok) throw new Error('HTTP ' + resp.status);
                         return resp.json();
@@ -394,7 +394,7 @@ function odbOrgView() {
             this.previewLoading = true;
             this.detailRow = null;
 
-            fetch('/admin/org-database/preview/' + encodeURIComponent(name))
+            fetch('/bp/admin/org-database/preview/' + encodeURIComponent(name))
                 .then(function(resp) {
                     var ct = resp.headers.get('content-type') || '';
                     if (ct.indexOf('application/json') >= 0) {
@@ -435,7 +435,7 @@ function odbOrgView() {
             this.deleteRefs = {};
 
             var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            fetch('/admin/org-database/check-references', {
+            fetch('/bp/admin/org-database/check-references', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
                 body: JSON.stringify({tables: this.selectedNames})
@@ -461,7 +461,7 @@ function odbOrgView() {
             this.deleting = true;
 
             var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            fetch('/admin/org-database/drop-tables', {
+            fetch('/bp/admin/org-database/drop-tables', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
                 body: JSON.stringify({tables: this.selectedNames})

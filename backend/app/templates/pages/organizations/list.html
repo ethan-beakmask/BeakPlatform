@@ -4,7 +4,7 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="/static/css/organizations.css">
+<link rel="stylesheet" href="/bp/static/css/organizations.css">
 {% endblock %}
 
 {% block content %}
@@ -437,5 +437,5 @@ window.__ORG_PAGE_CONFIG = {
     contracts: {{ contracts_json | default('[]') | safe }}
 };
 </script>
-<script src="/static/js/organizations.js"></script>
+<script src="/bp/static/js/organizations.js"></script>
 {% endblock %}

@@ -52,7 +52,7 @@ function mappingsManager() {
         async loadMappings() {
             this.loading = true;
             try {
-                const res = await fetch('/api/mappings/');
+                const res = await fetch('/bp/api/mappings/');
                 const data = await res.json();
                 if (data.success) {
                     const defaultRule = this.numberingRules.find(r => r.is_form_default);
@@ -74,7 +74,7 @@ function mappingsManager() {
 
         async loadArchivedMappings() {
             try {
-                const res = await fetch('/api/mappings/?is_archived=true');
+                const res = await fetch('/bp/api/mappings/?is_archived=true');
                 const data = await res.json();
                 if (data.success) {
                     this.archivedMappings = data.data || [];
@@ -86,7 +86,7 @@ function mappingsManager() {
 
         async loadUnmappedForms() {
             try {
-                const res = await fetch('/api/mappings/unmapped-forms');
+                const res = await fetch('/bp/api/mappings/unmapped-forms');
                 const data = await res.json();
                 if (data.success) {
                     this.unmappedForms = data.data || [];
@@ -98,7 +98,7 @@ function mappingsManager() {
 
         async loadWorkflows() {
             try {
-                const res = await fetch('/api/mappings/workflows-for-mapping');
+                const res = await fetch('/bp/api/mappings/workflows-for-mapping');
                 const data = await res.json();
                 if (data.success) {
                     this.workflows = data.data || [];
@@ -123,7 +123,7 @@ function mappingsManager() {
             this.saving = true;
 
             try {
-                const res = await fetch('/api/mappings/', {
+                const res = await fetch('/bp/api/mappings/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.newMapping)
@@ -149,7 +149,7 @@ function mappingsManager() {
             if (!confirm(`確定要新發行「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
 
             try {
-                const res = await fetch(`/api/mappings/${m.secure_code}/publish`, {
+                const res = await fetch(`/bp/api/mappings/${m.secure_code}/publish`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -172,7 +172,7 @@ function mappingsManager() {
             this.showVersionsModal = true;
 
             try {
-                const res = await fetch(`/api/mappings/published?mapping_secure_code=${m.secure_code}`);
+                const res = await fetch(`/bp/api/mappings/published?mapping_secure_code=${m.secure_code}`);
                 const data = await res.json();
                 if (data.success) {
                     this.publishedVersions = data.data || [];
@@ -190,7 +190,7 @@ function mappingsManager() {
 
         async suspendVersion(v) {
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}/suspend`, {
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}/suspend`, {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -208,7 +208,7 @@ function mappingsManager() {
 
         async reopenVersion(v) {
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}/reopen`, {
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}/reopen`, {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -228,7 +228,7 @@ function mappingsManager() {
             if (!confirm('確定要封存此版本嗎？封存後無法重新開放。')) return;
 
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}/archive`, {
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}/archive`, {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -247,7 +247,7 @@ function mappingsManager() {
             if (!confirm(`確定要封存「${m.form_template_name}」與「${m.workflow_template_name}」的配對嗎？`)) return;
 
             try {
-                const res = await fetch(`/api/mappings/${m.secure_code}/archive`, {
+                const res = await fetch(`/bp/api/mappings/${m.secure_code}/archive`, {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -265,7 +265,7 @@ function mappingsManager() {
 
         async unarchiveMapping(a) {
             try {
-                const res = await fetch(`/api/mappings/${a.secure_code}/unarchive`, {
+                const res = await fetch(`/bp/api/mappings/${a.secure_code}/unarchive`, {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -285,7 +285,7 @@ function mappingsManager() {
             if (!confirm(`確定要刪除版本 v${v.publish_version} 嗎？此操作無法還原。`)) return;
 
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}`, {
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}`, {
                     method: 'DELETE'
                 });
                 const data = await res.json();
@@ -315,7 +315,7 @@ function mappingsManager() {
             if (!this.deletingMapping) return;
 
             try {
-                const res = await fetch(`/api/mappings/${this.deletingMapping.secure_code}`, {
+                const res = await fetch(`/bp/api/mappings/${this.deletingMapping.secure_code}`, {
                     method: 'DELETE'
                 });
                 const data = await res.json();
@@ -345,7 +345,7 @@ function mappingsManager() {
                 return;
             }
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}/sql-sync`, {
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}/sql-sync`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sql_sync_enabled: true })
@@ -367,7 +367,7 @@ function mappingsManager() {
 
         async loadSyncStatus(v) {
             try {
-                const res = await fetch(`/api/mappings/published/${v.secure_code}/sql-sync/status`);
+                const res = await fetch(`/bp/api/mappings/published/${v.secure_code}/sql-sync/status`);
                 const data = await res.json();
                 if (data.success && data.data.table) {
                     v._syncInfo = `${data.data.table.row_count || 0} 筆`;
@@ -380,7 +380,7 @@ function mappingsManager() {
 
         async loadNumberingRules() {
             try {
-                const res = await fetch('/api/mappings/numbering-rules');
+                const res = await fetch('/bp/api/mappings/numbering-rules');
                 const data = await res.json();
                 if (data.success) {
                     this.numberingRules = data.data || [];
@@ -397,7 +397,7 @@ function mappingsManager() {
 
         async updateNumberingRule(m, ruleSecureCode) {
             try {
-                const res = await fetch(`/api/mappings/${m.secure_code}`, {
+                const res = await fetch(`/bp/api/mappings/${m.secure_code}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ numbering_rule_secure_code: ruleSecureCode || null })
@@ -422,7 +422,7 @@ function mappingsManager() {
         async _loadPermCounts() {
             for (const m of this.mappings) {
                 try {
-                    const res = await fetch(`/api/mapping-permissions/${m.secure_code}`);
+                    const res = await fetch(`/bp/api/mapping-permissions/${m.secure_code}`);
                     const data = await res.json();
                     if (data.success) {
                         m._perm_count = (data.data || []).length;
@@ -442,7 +442,7 @@ function mappingsManager() {
 
         async _loadPermRules(mappingSc) {
             try {
-                const res = await fetch(`/api/mapping-permissions/${mappingSc}`);
+                const res = await fetch(`/bp/api/mapping-permissions/${mappingSc}`);
                 const data = await res.json();
                 if (data.success) {
                     this.permRules = data.data || [];
@@ -474,7 +474,7 @@ function mappingsManager() {
                     let treeRoots = [];
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
-                            const res = await fetch('/api/units/departments?tree=true');
+                            const res = await fetch('/bp/api/units/departments?tree=true');
                             const data = await res.json();
                             this._permCache.departments = data.units || [];
                         }
@@ -488,7 +488,7 @@ function mappingsManager() {
                         }];
                     } else {
                         if (!this._permCache.groups) {
-                            const res = await fetch('/api/units/groups?tree=true');
+                            const res = await fetch('/bp/api/units/groups?tree=true');
                             const data = await res.json();
                             this._permCache.groups = data.units || [];
                         }
@@ -526,7 +526,7 @@ function mappingsManager() {
                 }
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
-                    const res = await fetch('/api/users?per_page=100');
+                    const res = await fetch('/bp/api/users?per_page=100');
                     const data = await res.json();
                     if (data.users) {
                         this._permCache.users = data.users;
@@ -617,7 +617,7 @@ function mappingsManager() {
             }
 
             try {
-                const res = await fetch(`/api/mapping-permissions/${this.permMapping.secure_code}`, {
+                const res = await fetch(`/bp/api/mapping-permissions/${this.permMapping.secure_code}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -649,7 +649,7 @@ function mappingsManager() {
         async deletePermRule(secureCcode) {
             if (!confirm('確定要刪除此權限規則？')) return;
             try {
-                const res = await fetch(`/api/mapping-permissions/rule/${secureCcode}`, {
+                const res = await fetch(`/bp/api/mapping-permissions/rule/${secureCcode}`, {
                     method: 'DELETE',
                 });
                 const data = await res.json();

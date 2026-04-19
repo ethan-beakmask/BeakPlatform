@@ -53,7 +53,7 @@
                 let iconUrl = node.data('iconUrl') || '';
                 if (!iconUrl && node.data('icon')) {
                     const icon = node.data('icon');
-                    if (icon.startsWith('/static/') || icon.startsWith('http')) {
+                    if (icon.startsWith('/bp/static/') || icon.startsWith('http')) {
                         iconUrl = icon;
                     } else {
                         iconUrl = getSvgDataUrl(icon, '#333333');

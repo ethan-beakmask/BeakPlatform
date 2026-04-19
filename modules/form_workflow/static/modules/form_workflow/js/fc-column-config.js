@@ -33,7 +33,7 @@ function fcColumnConfig() {
 
         async loadColumnConfig() {
             try {
-                const res = await fetch('/api/form-center/column-config');
+                const res = await fetch('/bp/api/form-center/column-config');
                 const data = await res.json();
                 if (data.success) {
                     this.columnConfig = data.data.config || {};
@@ -65,7 +65,7 @@ function fcColumnConfig() {
             this.showColumnConfigModal = true;
             this.savingColumnConfig = false;
             try {
-                const res = await fetch('/api/form-center/column-config/all');
+                const res = await fetch('/bp/api/form-center/column-config/all');
                 const data = await res.json();
                 if (data.success) {
                     this.columnConfigLocales = data.data.configs.map(c => c.locale);
@@ -102,7 +102,7 @@ function fcColumnConfig() {
         async switchColumnConfigLocale(locale) {
             this.columnConfigLocale = locale;
             try {
-                const res = await fetch('/api/form-center/column-config/all');
+                const res = await fetch('/bp/api/form-center/column-config/all');
                 const data = await res.json();
                 if (data.success) {
                     this._loadConfigForLocale(data.data);
@@ -140,7 +140,7 @@ function fcColumnConfig() {
                         hidden: !!val.hidden,
                     };
                 }
-                const res = await fetch('/api/form-center/column-config', {
+                const res = await fetch('/bp/api/form-center/column-config', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

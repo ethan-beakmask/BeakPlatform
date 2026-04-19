@@ -38,7 +38,7 @@ function modulePermissions() {
             this.aclLoading = true;
             this.aclList = [];
             try {
-                const res = await fetch('/api/module-access/' + encodeURIComponent(moduleCode));
+                const res = await fetch('/bp/api/module-access/' + encodeURIComponent(moduleCode));
                 const data = await res.json();
                 if (data.success) {
                     this.aclList = data.data;
@@ -68,7 +68,7 @@ function modulePermissions() {
                     type: this.addTargetType,
                     q: this.targetSearch,
                 });
-                const res = await fetch('/api/module-access/targets?' + params);
+                const res = await fetch('/bp/api/module-access/targets?' + params);
                 const data = await res.json();
                 if (data.success) {
                     this.targetList = data.data;
@@ -82,7 +82,7 @@ function modulePermissions() {
             if (!this.addTargetSC || !this.addModuleCode || !this.addTargetType) return;
 
             try {
-                const res = await fetch('/api/module-access/', {
+                const res = await fetch('/bp/api/module-access/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -107,7 +107,7 @@ function modulePermissions() {
             if (!confirm('確定要移除此使用權指派？')) return;
 
             try {
-                const res = await fetch('/api/module-access/' + secureCode, {
+                const res = await fetch('/bp/api/module-access/' + secureCode, {
                     method: 'DELETE',
                 });
                 const data = await res.json();

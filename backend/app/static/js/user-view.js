@@ -30,7 +30,7 @@ function resetPasswordForm() {
 
         async loadPasswordRequirements() {
             try {
-                const response = await fetch('/auth/password-policy');
+                const response = await fetch('/bp/auth/password-policy');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -53,7 +53,7 @@ function resetPasswordForm() {
         async generatePassword() {
             try {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/auth/password-policy/generate', {
+                const response = await fetch('/bp/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ function resetPasswordForm() {
 
             try {
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/auth/password-policy/validate', {
+                const response = await fetch('/bp/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

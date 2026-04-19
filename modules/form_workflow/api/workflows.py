@@ -39,7 +39,7 @@ def _get_default_graph():
                 "id": "node-Start",
                 "label": "開始",
                 "type": "Start",
-                "icon": "/static/modules/form_workflow/icons/workflow/start.svg",
+                "icon": "/bp/static/modules/form_workflow/icons/workflow/start.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": -175, "y": -50}
@@ -48,7 +48,7 @@ def _get_default_graph():
                 "id": "node-End",
                 "label": "結束",
                 "type": "End",
-                "icon": "/static/modules/form_workflow/icons/workflow/end.svg",
+                "icon": "/bp/static/modules/form_workflow/icons/workflow/end.svg",
                 "config": {},
                 "description": "",
                 "position": {"x": 875, "y": 350}

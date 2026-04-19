@@ -13,7 +13,7 @@ function menuComponent() {
         async loadMenu() {
             try {
                 var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                var resp = await fetch('/api/menu?layout=' + (__MENU_CONFIG.layout || 'navbar'), {
+                var resp = await fetch('/bp/api/menu?layout=' + (__MENU_CONFIG.layout || 'navbar'), {
                     headers: {
                         'X-CSRFToken': csrfToken || ''
                     }

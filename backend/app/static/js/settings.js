@@ -19,7 +19,7 @@ function logoSettings() {
 
         async loadLogo() {
             try {
-                const response = await fetch('/api/admin/settings/logo');
+                const response = await fetch('/bp/api/admin/settings/logo');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.data.logo_url) {
@@ -42,7 +42,7 @@ function logoSettings() {
             formData.append('logo', file);
 
             try {
-                const response = await fetch('/api/admin/settings/logo', {
+                const response = await fetch('/bp/api/admin/settings/logo', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': getCsrfToken()
@@ -74,7 +74,7 @@ function logoSettings() {
             if (!confirm('確定要刪除企業 Logo 嗎？')) return;
 
             try {
-                const response = await fetch('/api/admin/settings/logo', {
+                const response = await fetch('/bp/api/admin/settings/logo', {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()
@@ -118,7 +118,7 @@ function generalSettings() {
 
         async loadSettings() {
             try {
-                const response = await fetch('/api/admin/settings/general');
+                const response = await fetch('/bp/api/admin/settings/general');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -132,7 +132,7 @@ function generalSettings() {
 
         async saveSettings() {
             try {
-                const response = await fetch('/api/admin/settings/general', {
+                const response = await fetch('/bp/api/admin/settings/general', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ function loginBrandingSettings() {
 
         async loadSettings() {
             try {
-                const response = await fetch('/api/admin/settings/general');
+                const response = await fetch('/bp/api/admin/settings/general');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -193,7 +193,7 @@ function loginBrandingSettings() {
             try {
                 const payload = {};
                 payload[key] = value;
-                const response = await fetch('/api/admin/settings/general', {
+                const response = await fetch('/bp/api/admin/settings/general', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ function passwordPolicySettings() {
 
         async loadPolicy() {
             try {
-                const response = await fetch('/api/admin/settings/password-policy');
+                const response = await fetch('/bp/api/admin/settings/password-policy');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -255,7 +255,7 @@ function passwordPolicySettings() {
 
         async savePolicy() {
             try {
-                const response = await fetch('/api/admin/settings/password-policy', {
+                const response = await fetch('/bp/api/admin/settings/password-policy', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

@@ -17,10 +17,10 @@
 // 第一時間覆寫 CDN — 封閉網路環境，指向本地 vendor
 // 必須用 setBaseUrl() 才會觸發 updateUrls() 重新計算所有路徑
 if (Formio.cdn && typeof Formio.cdn.setBaseUrl === 'function') {
-    Formio.cdn.setBaseUrl('/static/vendor');
+    Formio.cdn.setBaseUrl('/bp/static/vendor');
     console.log('Formio CDN 已覆寫，ACE 路徑:', Formio.cdn.ace);
 }
-Formio.ace = { basePath: '/static/vendor/ace' };
+Formio.ace = { basePath: '/bp/static/vendor/ace' };
 
 // v5 預設改用 Bootstrap Icons，強制使用 Font Awesome
 Formio.icons = 'fontawesome';

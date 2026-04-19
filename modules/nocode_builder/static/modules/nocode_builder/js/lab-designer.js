@@ -256,7 +256,7 @@ function labDesigner() {
 
         async _loadViews() {
             try {
-                const res = await fetch('/api/nocode-builder/views');
+                const res = await fetch('/bp/api/nocode-builder/views');
                 const data = await res.json();
                 if (data.success) {
                     this.availableViews = data.data.filter(v => v.is_active);
@@ -296,7 +296,7 @@ function labDesigner() {
             // 更新既有頁面
             const layout = this._buildLayoutJson();
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + this.pageSecureCode, {
+                const res = await fetch('/bp/api/nocode-builder/pages/' + this.pageSecureCode, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -323,7 +323,7 @@ function labDesigner() {
             }
             const layout = this._buildLayoutJson();
             try {
-                const res = await fetch('/api/nocode-builder/pages', {
+                const res = await fetch('/bp/api/nocode-builder/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -338,7 +338,7 @@ function labDesigner() {
                     this.pageName = data.data.name;
                     this.showSaveAsModal = false;
                     // 更新 URL
-                    history.replaceState(null, '', '/nocode-builder/lab/' + this.pageSecureCode);
+                    history.replaceState(null, '', '/bp/nocode-builder/lab/' + this.pageSecureCode);
                     alert('已儲存');
                 } else {
                     alert('儲存失敗: ' + (data.error || ''));
@@ -350,7 +350,7 @@ function labDesigner() {
 
         async openPageList() {
             try {
-                const res = await fetch('/api/nocode-builder/pages');
+                const res = await fetch('/bp/api/nocode-builder/pages');
                 const data = await res.json();
                 if (data.success) {
                     this.savedPages = data.data;
@@ -364,12 +364,12 @@ function labDesigner() {
         async openPage(secureCode) {
             this.showPageListModal = false;
             await this._loadPage(secureCode);
-            history.replaceState(null, '', '/nocode-builder/lab/' + secureCode);
+            history.replaceState(null, '', '/bp/nocode-builder/lab/' + secureCode);
         },
 
         async _loadPage(secureCode) {
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + secureCode);
+                const res = await fetch('/bp/api/nocode-builder/pages/' + secureCode);
                 const data = await res.json();
                 if (!data.success) {
                     alert('載入失敗: ' + (data.error || ''));
@@ -456,7 +456,7 @@ function labDesigner() {
             this.pageName = '';
             this.pageDescription = '';
             this.pageStatus = 'draft';
-            history.replaceState(null, '', '/nocode-builder/lab');
+            history.replaceState(null, '', '/bp/nocode-builder/lab');
         },
 
         // 預覽
@@ -465,7 +465,7 @@ function labDesigner() {
                 alert('請先儲存頁面');
                 return;
             }
-            window.open('/nocode-builder/pages/' + this.pageSecureCode, '_blank');
+            window.open('/bp/nocode-builder/pages/' + this.pageSecureCode, '_blank');
         },
 
         // 發布
@@ -475,7 +475,7 @@ function labDesigner() {
                 return;
             }
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + this.pageSecureCode + '/publish', {
+                const res = await fetch('/bp/api/nocode-builder/pages/' + this.pageSecureCode + '/publish', {
                     method: 'PATCH',
                 });
                 const data = await res.json();
@@ -495,7 +495,7 @@ function labDesigner() {
             if (!this.pageSecureCode) return;
             if (!confirm('確定要取消發布？取消後 /p/ 連結將無法存取。')) return;
             try {
-                const res = await fetch('/api/nocode-builder/pages/' + this.pageSecureCode + '/unpublish', {
+                const res = await fetch('/bp/api/nocode-builder/pages/' + this.pageSecureCode + '/unpublish', {
                     method: 'PATCH',
                 });
                 const data = await res.json();
@@ -513,7 +513,7 @@ function labDesigner() {
         // 上線版 URL
         get publishedUrl() {
             if (!this.pageSecureCode || this.pageStatus !== 'published') return '';
-            return '/p/' + this.pageSecureCode;
+            return '/bp/p/' + this.pageSecureCode;
         },
 
         _loadLayoutWidgets(items) {

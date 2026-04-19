@@ -77,7 +77,7 @@ class BkFileAttachment {
                 context_type: this.config.contextType,
                 context_id: this.config.contextId,
             });
-            const res = await fetch('/api/files/list?' + params.toString());
+            const res = await fetch('/bp/api/files/list?' + params.toString());
             const data = await res.json();
             this.files = data.success ? (data.data || []) : [];
         } catch (e) {
@@ -135,7 +135,7 @@ class BkFileAttachment {
                     formData.append('node_id', this.config.nodeId);
                 }
 
-                const res = await fetch('/api/files/upload', {
+                const res = await fetch('/bp/api/files/upload', {
                     method: 'POST',
                     body: formData,
                 });
@@ -516,7 +516,7 @@ class BkFileAttachment {
                     formData.append('node_id', this.config.nodeId);
                 }
 
-                const res = await fetch('/api/files/upload', {
+                const res = await fetch('/bp/api/files/upload', {
                     method: 'POST',
                     body: formData,
                 });
@@ -552,7 +552,7 @@ class BkFileAttachment {
 
     async _downloadFile(fileSc) {
         try {
-            const res = await fetch('/api/files/' + fileSc + '/download-token', {
+            const res = await fetch('/bp/api/files/' + fileSc + '/download-token', {
                 method: 'POST',
             });
             const data = await res.json();
@@ -572,7 +572,7 @@ class BkFileAttachment {
         if (!confirm('確定要刪除此附件？')) return;
 
         try {
-            const res = await fetch('/api/files/' + fileSc, { method: 'DELETE' });
+            const res = await fetch('/bp/api/files/' + fileSc, { method: 'DELETE' });
             const data = await res.json();
             if (data.success) {
                 if (typeof this.config.onDelete === 'function') {
@@ -589,7 +589,7 @@ class BkFileAttachment {
 
     async _revertDelete(fileSc) {
         try {
-            const res = await fetch('/api/files/' + fileSc + '/revert-delete', {
+            const res = await fetch('/bp/api/files/' + fileSc + '/revert-delete', {
                 method: 'POST',
             });
             const data = await res.json();

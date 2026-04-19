@@ -3,7 +3,7 @@
 {% block title %}我的開發案 - Web Builder{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
 {% endblock %}
 
 {% block content %}
@@ -64,9 +64,9 @@
                         <td style="text-align: center;" x-text="item.developer_count || 1"></td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(item.created_at)"></td>
                         <td class="actions">
-                            <a :href="'/nocode-builder/studio/' + item.secure_code"
+                            <a :href="'/bp/nocode-builder/studio/' + item.secure_code"
                                class="dc-btn sm primary">設計器</a>
-                            <a :href="'/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
+                            <a :href="'/bp/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
                                class="dc-btn sm" target="_blank">預覽</a>
                             <button class="dc-btn sm"
                                     @click="togglePublish(item)"
@@ -145,5 +145,5 @@
          x-text="toast.message" x-transition></div>
 </div>
 
-<script src="/static/modules/nocode_builder/js/my-projects.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/my-projects.js"></script>
 {% endblock %}

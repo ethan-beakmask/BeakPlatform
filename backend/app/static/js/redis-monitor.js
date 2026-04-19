@@ -49,7 +49,7 @@ function redisMonitor() {
         loadInfo: function() {
             var self = this;
             self.loading = true;
-            fetch('/server-manage/api/redis/info')
+            fetch('/bp/server-manage/api/redis/info')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.ok) {
@@ -90,7 +90,7 @@ function redisMonitor() {
                 db: self.keyDb
             });
 
-            fetch('/server-manage/api/redis/keys?' + params.toString())
+            fetch('/bp/server-manage/api/redis/keys?' + params.toString())
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.ok) {
@@ -113,7 +113,7 @@ function redisMonitor() {
         viewKey: function(keyName) {
             var self = this;
             var params = new URLSearchParams({ db: self.keyDb });
-            fetch('/server-manage/api/redis/key/' + encodeURIComponent(keyName) + '?' + params.toString())
+            fetch('/bp/server-manage/api/redis/key/' + encodeURIComponent(keyName) + '?' + params.toString())
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.ok) {
@@ -132,7 +132,7 @@ function redisMonitor() {
         loadSlowlog: function() {
             var self = this;
             self.slowlogLoading = true;
-            fetch('/server-manage/api/redis/slowlog')
+            fetch('/bp/server-manage/api/redis/slowlog')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.ok) {

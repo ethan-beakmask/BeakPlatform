@@ -3,14 +3,14 @@
 {% block title %}流程樹系圖 - BeakPlatform{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/modules/form_workflow/css/fw-workflow-tree.css">
+<link rel="stylesheet" href="/bp/static/modules/form_workflow/css/fw-workflow-tree.css">
 {% endblock %}
 
 {% block content %}
 <div class="tree-page" x-data="workflowTreePage()" x-cloak>
 
     <div class="tree-toolbar">
-        <button class="tree-ctrl-btn" @click="window.location.href='/forms/workflows'" title="返回列表">
+        <button class="tree-ctrl-btn" @click="window.location.href='/bp/forms/workflows'" title="返回列表">
             <i class="ri-arrow-left-s-line"></i>
         </button>
         <div class="spacer"></div>
@@ -44,5 +44,5 @@
 <script>
 window.__TREE_CONFIG = { secureCode: '{{ secure_code }}' };
 </script>
-<script src="/static/modules/form_workflow/js/fw-workflow-tree.js"></script>
+<script src="/bp/static/modules/form_workflow/js/fw-workflow-tree.js"></script>
 {% endblock %}

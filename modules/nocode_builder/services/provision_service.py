@@ -356,7 +356,7 @@ class SubSystemProvisionService:
             title=title,
             icon=icon or '',
             link_type='route',
-            link_target=f'/nocode-builder/sub-systems/{sub_system_sc}/portal',
+            link_target=f'/bp/nocode-builder/sub-systems/{sub_system_sc}/portal',
             open_in_new_tab=False,
             display_order=(max_order or 0) + 10,
             depth=parent.depth + 1,

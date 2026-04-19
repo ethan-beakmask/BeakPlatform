@@ -46,7 +46,7 @@ class FwWorkflowBackground(BaseModel):
         if self.platform_file_sc:
             url = f'/api/files/{self.platform_file_sc}/serve'
         else:
-            url = f'/static/uploads/backgrounds/{self.filename}'
+            url = f'/bp/static/uploads/backgrounds/{self.filename}'
         data.update({
             'filename': self.filename,
             'original_filename': self.original_filename,

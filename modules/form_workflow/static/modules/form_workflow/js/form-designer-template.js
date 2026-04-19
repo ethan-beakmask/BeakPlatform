@@ -93,7 +93,7 @@ const TemplateManager = {
         `;
 
         try {
-            const response = await fetch('/api/forms/data/formio-templates');
+            const response = await fetch('/bp/api/forms/data/formio-templates');
             const result = await response.json();
 
             if (result.success && result.data.length > 0) {
@@ -166,7 +166,7 @@ const TemplateManager = {
             this.loadButton.disabled = true;
             this.loadButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>載入中...';
 
-            const response = await fetch(`/api/forms/data/formio-templates/${this.selectedTemplateId}`);
+            const response = await fetch(`/bp/api/forms/data/formio-templates/${this.selectedTemplateId}`);
             const result = await response.json();
 
             if (result.success) {

@@ -3,11 +3,11 @@
 {% block title %}{{ page_name or '頁面預覽' }} - 資料表工具{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/vendor/gridstack/gridstack.min.css">
-<link rel="stylesheet" href="/static/css/bk-file-attachment.css">
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/datalist-widget.css">
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/sitemenu-widget.css">
-<link rel="stylesheet" href="/static/modules/nocode_builder/css/formgrid-widget.css">
+<link rel="stylesheet" href="/bp/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="/bp/static/css/bk-file-attachment.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/datalist-widget.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/sitemenu-widget.css">
+<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/formgrid-widget.css">
 <style>
     .viewer-container {
         padding: 16px;
@@ -61,13 +61,13 @@ window.__PAGE_CONFIG = {
                       x-text="subCtx.is_admin ? '管理' : '成員'"></span>
             </template>
             <template x-if="subCtx && subCtx.sub_sc">
-                <a :href="'/nocode-builder/sub-systems/' + subCtx.sub_sc + '/portal'" class="dc-btn">返回子系統</a>
+                <a :href="'/bp/nocode-builder/sub-systems/' + subCtx.sub_sc + '/portal'" class="dc-btn">返回子系統</a>
             </template>
             <template x-if="!subCtx || !subCtx.sub_sc">
-                <a href="/nocode-builder/lab/{{ secure_code }}" class="dc-btn">編輯此頁</a>
+                <a href="/bp/nocode-builder/lab/{{ secure_code }}" class="dc-btn">編輯此頁</a>
             </template>
             <template x-if="!subCtx || !subCtx.sub_sc">
-                <a href="/nocode-builder/" class="dc-btn">返回</a>
+                <a href="/bp/nocode-builder/" class="dc-btn">返回</a>
             </template>
         </div>
     </div>
@@ -79,11 +79,11 @@ window.__PAGE_CONFIG = {
     </div>
 </div>
 
-<script src="/static/vendor/gridstack/gridstack-all.js"></script>
-<script src="/static/modules/nocode_builder/js/page-context.js"></script>
-<script src="/static/js/bk-file-attachment.js"></script>
-<script src="/static/modules/nocode_builder/js/datalist-widget.js"></script>
-<script src="/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
-<script src="/static/modules/nocode_builder/js/formgrid-widget.js"></script>
-<script src="/static/modules/nocode_builder/js/lab-viewer.js"></script>
+<script src="/bp/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/page-context.js"></script>
+<script src="/bp/static/js/bk-file-attachment.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/datalist-widget.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/formgrid-widget.js"></script>
+<script src="/bp/static/modules/nocode_builder/js/lab-viewer.js"></script>
 {% endblock %}

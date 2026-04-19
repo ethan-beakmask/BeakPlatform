@@ -12,7 +12,7 @@
             if (!groupSelect) return;
 
             try {
-                const response = await fetch('/api/enterprise/data/settings/email-groups/available');
+                const response = await fetch('/bp/api/enterprise/data/settings/email-groups/available');
                 if (!response.ok) {
                     groupSelect.innerHTML = '<option value="">無法載入群組</option>';
                     return;
