@@ -1,0 +1,85 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}內部商場 - BeakPlatform{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+{% endblock %}
+
+{% block content %}
+<div x-data="storeManager()" x-init="init()">
+    <h2>內部商場</h2>
+    <p class="store-subtitle">瀏覽並安裝 BeakMask 官方提供的範本與工具</p>
+
+    <!-- 篩選列 -->
+    <div class="store-filters">
+        <button class="store-filter-btn" :class="{'active': filter === 'all'}" @click="filter = 'all'; loadItems()">全部</button>
+        <button class="store-filter-btn" :class="{'active': filter === 'workflow_bundle'}" @click="filter = 'workflow_bundle'; loadItems()">表單+流程</button>
+        <button class="store-filter-btn" :class="{'active': filter === 'form_template'}" @click="filter = 'form_template'; loadItems()">表單範本</button>
+    </div>
+
+    <!-- 載入中 -->
+    <div x-show="loading" class="store-loading">載入中...</div>
+
+    <!-- 錯誤 -->
+    <div x-show="errorMsg" class="store-error" x-text="errorMsg"></div>
+
+    <!-- 商品網格 -->
+    <div class="store-grid" x-show="!loading && items.length > 0">
+        <template x-for="item in items" :key="item.secure_code">
+            <div class="store-card">
+                <div class="store-card-header">
+                    <span class="store-card-icon" x-text="item.icon || 'ri-file-text-line'"></span>
+                    <div class="store-card-badge-group">
+                        <span class="store-card-type" x-text="typeLabel(item.item_type)"></span>
+                        <span class="store-card-version" x-text="'v' + item.version"></span>
+                    </div>
+                </div>
+                <div class="store-card-body">
+                    <h3 class="store-card-title" x-text="item.name"></h3>
+                    <p class="store-card-desc" x-text="item.description || '（無說明）'"></p>
+                    <div class="store-card-category" x-show="item.category">
+                        <span x-text="item.category"></span>
+                    </div>
+                </div>
+                <div class="store-card-footer">
+                    <template x-if="item.installed && !item.upgradable">
+                        <div class="store-installed-info">
+                            <span class="store-installed-badge">已安裝</span>
+                            <small x-text="'by ' + item.installed_by"></small>
+                        </div>
+                    </template>
+                    <template x-if="item.installed && item.upgradable">
+                        <div class="store-installed-info">
+                            <span class="store-upgrade-badge">可升級</span>
+                            <small x-text="'目前 v' + item.installed_version"></small>
+                        </div>
+                    </template>
+                    <template x-if="!item.installed">
+                        <button class="btn btn-primary store-install-btn"
+                                @click="installItem(item)"
+                                :disabled="installing === item.secure_code">
+                            <span x-show="installing !== item.secure_code">安裝</span>
+                            <span x-show="installing === item.secure_code">安裝中...</span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- 空狀態 -->
+    <div x-show="!loading && items.length === 0 && !errorMsg" class="store-empty">
+        <p>目前沒有可用的商品</p>
+    </div>
+
+    <!-- 安裝成功提示 -->
+    <div x-show="successMsg" class="store-success" x-text="successMsg"
+         x-transition
+         @click="successMsg = ''"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/store.js') }}"></script>
+{% endblock %}

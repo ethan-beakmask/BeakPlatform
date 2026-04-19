@@ -178,7 +178,7 @@ class PageRoleGuard:
         except Exception as e:
             logger.error(f"Failed to logout user: {e}")
 
-        return '/auth/login', 302
+        return '/bp/auth/login', 302
 
     # =========================================================================
     # URL 匹配

@@ -157,3 +157,7 @@ def register_web_blueprints(app: Flask) -> None:
     from .server_manage import server_manage_bp
     app.register_blueprint(server_manage_bp, url_prefix='/server-manage')
 
+    # Store - 內部商場
+    from .store import store_web_bp
+    app.register_blueprint(store_web_bp, url_prefix='/store')
+

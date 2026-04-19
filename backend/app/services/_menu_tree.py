@@ -520,7 +520,7 @@ class MenuTreeMixin:
 
         if item.link_type == 'page' and item.link_target:
             # 連結到動態頁面
-            return f'/p/{item.link_target}'
+            return f'/bp/p/{item.link_target}'
 
         if item.link_type in ('divider', 'header'):
             return None

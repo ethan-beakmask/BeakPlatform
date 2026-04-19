@@ -105,3 +105,7 @@ def register_blueprints(app: Flask) -> None:
     # 統一檔案管理
     from .files import files_bp
     app.register_blueprint(files_bp)
+
+    # 內部商場
+    from .store import store_bp
+    app.register_blueprint(store_bp)

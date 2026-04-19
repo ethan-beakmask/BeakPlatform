@@ -97,6 +97,10 @@ from .user_numbering_rule import (
 # 模組使用權控制
 from .module_access_control import ModuleAccessControl, TargetType
 
+# 內部商場
+from .store_item import StoreItem
+from .store_installation import StoreInstallation
+
 # 時間管理（班表、排班）
 from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
 from .schedule_holiday import ScheduleHoliday, DEFAULT_TW_HOLIDAYS_2026
@@ -197,6 +201,9 @@ __all__ = [
     # 模組使用權控制
     'ModuleAccessControl',
     'TargetType',
+    # 內部商場
+    'StoreItem',
+    'StoreInstallation',
     # 時間管理
     'WorkSchedule',
     'DEFAULT_WORK_SCHEDULES',

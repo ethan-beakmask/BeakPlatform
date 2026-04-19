@@ -19,6 +19,7 @@ from .constants import SYSTEM_ORG_CODE
 def register_cli(app):
     """註冊 CLI 命令到 Flask 應用程式"""
     app.cli.add_command(module_cli)
+    app.cli.add_command(store_cli)
 
 
 @click.group('module')
@@ -258,3 +259,97 @@ def module_status():
         perms = len(module.permissions) if module.permissions else 0
         menus = len(module.menu_items) if module.menu_items else 0
         click.echo(f"  - {module.name}: {perms} permissions, {menus} menu items")
+
+
+# ================================================================
+# Store CLI (內部商場)
+# ================================================================
+
+@click.group('store')
+def store_cli():
+    """內部商場管理命令"""
+    pass
+
+
+@store_cli.command('seed')
+@click.option('--dir', 'fixture_dir', default=None, help='fixtures 目錄路徑')
+@click.option('--force', is_flag=True, help='強制覆蓋已存在的商品')
+@with_appcontext
+def seed_store(fixture_dir, force):
+    """從 fixtures/store/ 載入官方商品到 store_items"""
+    import json
+    from pathlib import Path
+    from . import db
+    from .models.store_item import StoreItem
+
+    if fixture_dir:
+        base = Path(fixture_dir)
+    else:
+        base = Path(current_app.root_path).parent.parent / 'fixtures' / 'store'
+
+    if not base.exists():
+        click.echo(click.style(f"Fixture directory not found: {base}", fg="red"))
+        return
+
+    json_files = sorted(base.glob('*.json'))
+    if not json_files:
+        click.echo("No fixture files found.")
+        return
+
+    click.echo(f"\n=== Seeding Store Items from {base} ===\n")
+
+    stats = {'created': 0, 'updated': 0, 'skipped': 0}
+
+    for f in json_files:
+        try:
+            data = json.loads(f.read_text(encoding='utf-8'))
+            code = data.get('code')
+            if not code:
+                click.echo(click.style(f"  {f.name}: missing 'code', skipped", fg="yellow"))
+                stats['skipped'] += 1
+                continue
+
+            existing = StoreItem.query.filter_by(code=code, is_deleted=False).first()
+
+            if existing:
+                if force or existing.version != data.get('version', '1.0'):
+                    existing.name = data.get('name', existing.name)
+                    existing.description = data.get('description')
+                    existing.icon = data.get('icon')
+                    existing.item_type = data.get('item_type', 'workflow_bundle')
+                    existing.category = data.get('category')
+                    existing.version = data.get('version', '1.0')
+                    existing.payload = data.get('payload')
+                    existing.source = data.get('source', 'official')
+                    existing.scope = data.get('scope', 'tenant')
+                    click.echo(f"  {code}: updated -> v{existing.version}")
+                    stats['updated'] += 1
+                else:
+                    click.echo(f"  {code}: v{existing.version} unchanged, skipped")
+                    stats['skipped'] += 1
+            else:
+                item = StoreItem(
+                    code=code,
+                    name=data.get('name', code),
+                    description=data.get('description'),
+                    icon=data.get('icon'),
+                    item_type=data.get('item_type', 'workflow_bundle'),
+                    category=data.get('category'),
+                    version=data.get('version', '1.0'),
+                    payload=data.get('payload'),
+                    source=data.get('source', 'official'),
+                    scope=data.get('scope', 'tenant'),
+                )
+                db.session.add(item)
+                click.echo(f"  {code}: created v{item.version}")
+                stats['created'] += 1
+
+        except json.JSONDecodeError as e:
+            click.echo(click.style(f"  {f.name}: invalid JSON - {e}", fg="red"))
+            stats['skipped'] += 1
+        except Exception as e:
+            click.echo(click.style(f"  {f.name}: error - {e}", fg="red"))
+            stats['skipped'] += 1
+
+    db.session.commit()
+    click.echo(f"\nDone: {stats['created']} created, {stats['updated']} updated, {stats['skipped']} skipped")

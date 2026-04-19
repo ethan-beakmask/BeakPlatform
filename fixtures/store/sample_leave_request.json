@@ -1,0 +1,90 @@
+{
+    "code": "OFFICIAL_LEAVE_REQUEST",
+    "name": "請假申請範本",
+    "description": "標準請假申請表單，含主管審核流程。包含假別選擇、日期區間、代理人指定等欄位。",
+    "icon": "ri-calendar-check-line",
+    "item_type": "workflow_bundle",
+    "category": "人事管理",
+    "version": "1.0",
+    "source": "official",
+    "scope": "tenant",
+    "payload": {
+        "form_template": {
+            "code": "LEAVE_REQUEST",
+            "name": "請假申請單",
+            "description": "標準請假申請表單",
+            "category": "人事管理",
+            "schema": {
+                "components": [
+                    {
+                        "type": "select",
+                        "key": "leaveType",
+                        "label": "假別",
+                        "data": {
+                            "values": [
+                                {"label": "特休假", "value": "annual"},
+                                {"label": "事假", "value": "personal"},
+                                {"label": "病假", "value": "sick"},
+                                {"label": "公假", "value": "official"},
+                                {"label": "婚假", "value": "marriage"},
+                                {"label": "喪假", "value": "bereavement"}
+                            ]
+                        },
+                        "validate": {"required": true}
+                    },
+                    {
+                        "type": "datetime",
+                        "key": "startDate",
+                        "label": "開始日期",
+                        "validate": {"required": true}
+                    },
+                    {
+                        "type": "datetime",
+                        "key": "endDate",
+                        "label": "結束日期",
+                        "validate": {"required": true}
+                    },
+                    {
+                        "type": "number",
+                        "key": "totalHours",
+                        "label": "請假時數",
+                        "validate": {"required": true, "min": 1}
+                    },
+                    {
+                        "type": "textfield",
+                        "key": "deputy",
+                        "label": "職務代理人",
+                        "validate": {"required": true}
+                    },
+                    {
+                        "type": "textarea",
+                        "key": "reason",
+                        "label": "請假事由",
+                        "validate": {"required": true}
+                    }
+                ]
+            }
+        },
+        "workflow_template": {
+            "code": "LEAVE_REQUEST_WF",
+            "name": "請假審核流程",
+            "description": "主管審核 → 人事確認",
+            "graph": {
+                "nodes": [
+                    {"id": "start", "type": "start", "label": "開始"},
+                    {"id": "supervisor", "type": "approval", "label": "主管審核"},
+                    {"id": "hr", "type": "approval", "label": "人事確認"},
+                    {"id": "end", "type": "end", "label": "結束"}
+                ],
+                "edges": [
+                    {"source": "start", "target": "supervisor"},
+                    {"source": "supervisor", "target": "hr"},
+                    {"source": "hr", "target": "end"}
+                ]
+            }
+        },
+        "mapping": {
+            "priority": 0
+        }
+    }
+}
