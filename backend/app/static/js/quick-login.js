@@ -61,7 +61,7 @@ function quickLoginManager() {
             this.loadingUsers = true;
 
             try {
-                const response = await fetch(`/dev/get-users/${secureCode}`);
+                const response = await fetch(`/bp/dev/get-users/${secureCode}`);
                 const result = await response.json();
                 if (result.success) {
                     // 排序：系統管理員 > 企業管理員 > 一般用戶

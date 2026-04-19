@@ -448,6 +448,7 @@ class LookupService:
                 'version': module.version,
                 'description': module.description,
                 'enabled': True,
+                'scope': module.scope,
             }
 
             if mod_code in existing_map:

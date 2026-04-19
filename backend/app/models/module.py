@@ -4,7 +4,7 @@ BeakMask Module Model
 """
 from typing import Dict, Any
 
-from sqlalchemy import Column, String, Boolean, Integer, Text
+from sqlalchemy import Column, String, Boolean, Integer, Text, CheckConstraint
 from sqlalchemy.orm import relationship
 
 from .base import TenantBaseModel
@@ -18,6 +18,9 @@ class Module(TenantBaseModel):
     No-Code Builder 可自動生成模組及其關聯的頁面和選單。
     """
     __tablename__ = 'modules'
+    __table_args__ = (
+        CheckConstraint("scope IN ('tenant', 'platform')", name='ck_modules_scope'),
+    )
 
     # 模組代碼 (企業內唯一)
     code = Column(String(50), nullable=False)
@@ -30,6 +33,9 @@ class Module(TenantBaseModel):
 
     # 模組圖標 (文字符號，如 "👤")
     icon = Column(String(10), nullable=True)
+
+    # 模組用途範圍: tenant=一般業務模組, platform=基礎設施模組(僅系統企業)
+    scope = Column(String(20), nullable=False, default='tenant')
 
     # 是否系統內建模組 (不可刪除)
     is_system_module = Column(Boolean, default=False, nullable=False)
@@ -54,6 +60,7 @@ class Module(TenantBaseModel):
             'name': self.name,
             'description': self.description,
             'icon': self.icon,
+            'scope': self.scope,
             'is_system_module': self.is_system_module,
             'is_active': self.is_active,
             'display_order': self.display_order,

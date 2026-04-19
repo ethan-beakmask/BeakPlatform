@@ -434,7 +434,10 @@ def add_contract(org_secure_code: str):
             db.session.rollback()
             flash(f'新增失敗: {str(e)}', 'error')
 
-    available_modules = LookupService.get_items('INSTALLED_MODULES')
+    available_modules = [
+        m for m in LookupService.get_items('INSTALLED_MODULES')
+        if not (isinstance(m.value, dict) and m.value.get('scope') == 'platform')
+    ]
 
     return render_template(
         'pages/organizations/contract_form.html',
@@ -486,7 +489,10 @@ def edit_contract(org_secure_code: str, contract_secure_code: str):
         else:
             flash('合約建立後不可修改內容，如需變更請建立新合約', 'error')
 
-    available_modules = LookupService.get_items('INSTALLED_MODULES')
+    available_modules = [
+        m for m in LookupService.get_items('INSTALLED_MODULES')
+        if not (isinstance(m.value, dict) and m.value.get('scope') == 'platform')
+    ]
 
     selected_modules = []
     if contract.modules_config:

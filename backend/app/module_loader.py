@@ -43,6 +43,7 @@ class ModuleInfo:
         self.menu_items = info.get('menu_items', [])
         self.permissions = info.get('permissions', [])
         self.enabled = info.get('enabled', True)
+        self.scope = info.get('scope', 'tenant')  # tenant | platform
 
         # Blueprint references (loaded later)
         self.api_blueprint = None
