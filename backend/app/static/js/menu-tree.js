@@ -128,7 +128,7 @@ function menuTreeManager() {
                         sortable: false,
                         resizable: false,
                         renderer: function(val, node) {
-                            return '<a href=window.__BP + "/menu/' + node.id + '/edit">[編輯]</a>';
+                            return '<a href="' + window.__BP + '/menu/' + node.id + '/edit">[編輯]</a>';
                         }
                     },
                     {

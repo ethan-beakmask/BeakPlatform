@@ -505,6 +505,9 @@ class MenuTreeMixin:
             解析後的 URL 或 None
         """
         if item.link_type == 'url':
+            if item.link_target and item.link_target.startswith('/'):
+                from flask import request as _req
+                return f'{_req.script_root}{item.link_target}'
             return item.link_target
 
         if item.link_type == 'route' and item.link_target:
