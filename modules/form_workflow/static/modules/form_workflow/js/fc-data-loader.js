@@ -35,12 +35,12 @@ function fcDataLoader() {
             const hs = this.historySort;
             const hss = this.historySignedSort;
             const [forms, approvals, tracking, signed, history, signedHist] = await Promise.all([
-                safeFetch('/bp/api/form-center/available-forms'),
-                safeFetch(`/bp/api/form-center/pending-tasks?sort=${ps.field}&order=${ps.order}`),
-                safeFetch(`/bp/api/form-center/my-forms?status=RUNNING&sort=${ts.field}&order=${ts.order}`),
-                safeFetch(`/bp/api/form-center/my-forms?signed=1&status=RUNNING&sort=${tss.field}&order=${tss.order}`),
-                safeFetch(`/bp/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hs.field}&order=${hs.order}`),
-                safeFetch(`/bp/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hss.field}&order=${hss.order}`)
+                safeFetch(window.__BP + '/api/form-center/available-forms'),
+                safeFetch(`${window.__BP}/api/form-center/pending-tasks?sort=${ps.field}&order=${ps.order}`),
+                safeFetch(`${window.__BP}/api/form-center/my-forms?status=RUNNING&sort=${ts.field}&order=${ts.order}`),
+                safeFetch(`${window.__BP}/api/form-center/my-forms?signed=1&status=RUNNING&sort=${tss.field}&order=${tss.order}`),
+                safeFetch(`${window.__BP}/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hs.field}&order=${hs.order}`),
+                safeFetch(`${window.__BP}/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${hss.field}&order=${hss.order}`)
             ]);
             // 任一請求失敗即視為失敗（觸發退避）
             const results = [forms, approvals, tracking, signed, history, signedHist];
@@ -57,7 +57,7 @@ function fcDataLoader() {
         async loadAvailableForms() {
             this.loadingForms = true;
             try {
-                const res = await fetch('/bp/api/form-center/available-forms');
+                const res = await fetch(window.__BP + '/api/form-center/available-forms');
                 const data = await res.json();
                 if (data.success) this.availableForms = data.data || [];
             } catch (e) { console.error('載入可填寫表單失敗:', e); }
@@ -67,7 +67,7 @@ function fcDataLoader() {
         async loadCategories() {
             this.loadingCategories = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/categories?context=form_center');
+                const res = await fetch(window.__BP + '/api/form-workflow/categories?context=form_center');
                 const data = await res.json();
                 if (data.success) {
                     const cats = data.data || [];
@@ -84,7 +84,7 @@ function fcDataLoader() {
             this.loadingPending = true;
             try {
                 const {field, order} = this.pendingSort;
-                const res = await fetch(`/bp/api/form-center/pending-tasks?sort=${field}&order=${order}`);
+                const res = await fetch(`${window.__BP}/api/form-center/pending-tasks?sort=${field}&order=${order}`);
                 const data = await res.json();
                 if (data.success) {
                     this.pendingApprovals = data.data || [];
@@ -101,7 +101,7 @@ function fcDataLoader() {
             this.loadingTracking = true;
             try {
                 const {field, order} = this.trackingSort;
-                const res = await fetch(`/bp/api/form-center/my-forms?status=RUNNING&sort=${field}&order=${order}`);
+                const res = await fetch(`${window.__BP}/api/form-center/my-forms?status=RUNNING&sort=${field}&order=${order}`);
                 const data = await res.json();
                 if (data.success) this.trackingList = data.data || [];
             } catch (e) { console.error('載入追蹤失敗:', e); }
@@ -112,7 +112,7 @@ function fcDataLoader() {
             this.loadingSigned = true;
             try {
                 const {field, order} = this.trackingSignedSort;
-                const res = await fetch(`/bp/api/form-center/my-forms?signed=1&status=RUNNING&sort=${field}&order=${order}`);
+                const res = await fetch(`${window.__BP}/api/form-center/my-forms?signed=1&status=RUNNING&sort=${field}&order=${order}`);
                 const data = await res.json();
                 if (data.success) this.signedList = data.data || [];
             } catch (e) { console.error('載入簽核追蹤失敗:', e); }
@@ -123,7 +123,7 @@ function fcDataLoader() {
             this.loadingHistory = true;
             try {
                 const {field, order} = this.historySort;
-                const res = await fetch(`/bp/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
+                const res = await fetch(`${window.__BP}/api/form-center/my-forms?status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
                 const data = await res.json();
                 if (data.success) this.historyList = data.data || [];
             } catch (e) { console.error('載入歷史失敗:', e); }
@@ -134,7 +134,7 @@ function fcDataLoader() {
             this.loadingSignedHistory = true;
             try {
                 const {field, order} = this.historySignedSort;
-                const res = await fetch(`/bp/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
+                const res = await fetch(`${window.__BP}/api/form-center/my-forms?signed=1&status=COMPLETED,ERROR,CANCELLED,REJECTED&sort=${field}&order=${order}`);
                 const data = await res.json();
                 if (data.success) this.signedHistoryList = data.data || [];
             } catch (e) { console.error('載入簽核歷史失敗:', e); }

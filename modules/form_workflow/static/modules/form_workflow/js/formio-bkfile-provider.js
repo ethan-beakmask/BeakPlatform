@@ -41,7 +41,7 @@
 
                 return new Promise(function (resolve, reject) {
                     const xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/bp/api/files/upload');
+                    xhr.open('POST', window.__BP + '/api/files/upload');
 
                     // 進度回報
                     if (typeof progressCallback === 'function') {
@@ -108,7 +108,7 @@
                 }
 
                 // file.url 是 secure_code
-                return fetch('/bp/api/files/' + file.url + '/download-token', {
+                return fetch(window.__BP + '/api/files/' + file.url + '/download-token', {
                     method: 'POST'
                 })
                 .then(function (res) { return res.json(); })
@@ -131,7 +131,7 @@
                     return Promise.resolve();
                 }
 
-                return fetch('/bp/api/files/' + file.url, {
+                return fetch(window.__BP + '/api/files/' + file.url, {
                     method: 'DELETE'
                 })
                 .then(function (res) { return res.json(); })

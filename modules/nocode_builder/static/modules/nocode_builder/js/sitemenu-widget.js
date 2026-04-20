@@ -107,7 +107,7 @@ class SiteMenuWidget {
             return;
         }
         try {
-            var res = await fetch('/bp/api/nocode-builder/sub-systems/' + ssSc + '/site-map/menu-tree');
+            var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + ssSc + '/site-map/menu-tree');
             var data = await res.json();
             if (data.success) {
                 this.tree = (data.data && data.data.tree) || [];

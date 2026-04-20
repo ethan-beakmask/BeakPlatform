@@ -41,7 +41,7 @@ function workflowListManager() {
 
         async loadCategories() {
             try {
-                const res = await fetch('/bp/api/form-workflow/categories?context=workflow_design');
+                const res = await fetch(window.__BP + '/api/form-workflow/categories?context=workflow_design');
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
@@ -80,7 +80,7 @@ function workflowListManager() {
         async loadWorkflows() {
             this.loading = true;
             try {
-                let url = `/bp/api/form-workflow/workflows?page=${this.pagination.page}`;
+                let url = `${window.__BP}/api/form-workflow/workflows?page=${this.pagination.page}`;
                 if (this.searchQuery) url += `&q=${encodeURIComponent(this.searchQuery)}`;
                 if (this.flowType) url += `&flow_type=${this.flowType}`;
 
@@ -100,7 +100,7 @@ function workflowListManager() {
 
         async _updateTabCounts() {
             try {
-                const res = await fetch(`/bp/api/form-workflow/workflows?${this.searchQuery ? 'q=' + encodeURIComponent(this.searchQuery) : ''}`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/workflows?${this.searchQuery ? 'q=' + encodeURIComponent(this.searchQuery) : ''}`);
                 const data = await res.json();
                 if (data.success) {
                     const all = data.data.workflows || [];
@@ -128,7 +128,7 @@ function workflowListManager() {
         },
 
         editWorkflow(w) {
-            window.location.href = `/bp/forms/workflows/${w.secure_code}`;
+            window.location.href = `${window.__BP}/forms/workflows/${w.secure_code}`;
         },
 
         closeModal() {
@@ -141,8 +141,8 @@ function workflowListManager() {
             this.saving = true;
             try {
                 const url = this.editingWorkflow
-                    ? `/bp/api/form-workflow/workflows/${this.editingWorkflow.secure_code}`
-                    : '/bp/api/form-workflow/workflows';
+                    ? `${window.__BP}/api/form-workflow/workflows/${this.editingWorkflow.secure_code}`
+                    : window.__BP + '/api/form-workflow/workflows';
                 const method = this.editingWorkflow ? 'PUT' : 'POST';
                 const res = await fetch(url, {
                     method,
@@ -152,7 +152,7 @@ function workflowListManager() {
                 const data = await res.json();
                 if (data.success) {
                     if (!this.editingWorkflow && data.data && data.data.secure_code) {
-                        window.location.href = `/bp/forms/workflows/${data.data.secure_code}?created=1`;
+                        window.location.href = `${window.__BP}/forms/workflows/${data.data.secure_code}?created=1`;
                     } else {
                         this.closeModal();
                         this.loadWorkflows();
@@ -195,7 +195,7 @@ function workflowListManager() {
                 const qp = [];
                 if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
                 if (node.is_unused) { qp.push('editable=1'); }
-                const href = '/bp/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
+                const href = window.__BP + '/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
                 const thumb = node.thumbnail_2x1
                     ? '<img src="' + node.thumbnail_2x1 + '" style="width:210px;height:120px;object-fit:contain;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;">'
                     : '<div style="width:210px;height:120px;display:flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;"><i class="ri-flow-chart" style="font-size:32px;color:#9ca3af;"></i></div>';
@@ -269,7 +269,7 @@ function workflowListManager() {
 
         async _loadTreeData(rootCode) {
             try {
-                const res = await fetch('/bp/api/form-workflow/workflows/flow-trees/' + rootCode);
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows/flow-trees/' + rootCode);
                 const data = await res.json();
                 if (!data.success) return;
                 const tree = data.data.tree;
@@ -290,7 +290,7 @@ function workflowListManager() {
         async _loadUnusedData(rootCode) {
             this.unusedView.loading = true;
             try {
-                const res = await fetch(`/bp/api/form-workflow/workflows/${rootCode}/unused-subflows`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/workflows/${rootCode}/unused-subflows`);
                 const data = await res.json();
                 if (data.success) {
                     this.unusedView.subflows = data.data.subflows || [];
@@ -307,7 +307,7 @@ function workflowListManager() {
             this.overviewView.loading = true;
             this.overviewView.error = null;
             try {
-                const res = await fetch(`/bp/api/form-workflow/workflows/${rootCode}/flow-overview`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/workflows/${rootCode}/flow-overview`);
                 const result = await res.json();
                 if (!result.success) {
                     this.overviewView.error = result.error || '載入失敗';
@@ -477,13 +477,13 @@ function workflowListManager() {
         },
 
         editUnusedSubflow(sf) {
-            window.location.href = '/bp/forms/workflows/' + sf.secure_code + '?editable=1';
+            window.location.href = window.__BP + '/forms/workflows/' + sf.secure_code + '?editable=1';
         },
 
         async deleteUnusedSubflow(sf) {
             if (!confirm(`確定要刪除「${sf.name}」？此操作無法復原。`)) return;
             try {
-                const res = await fetch(`/bp/api/workflows/data/subflows/${sf.secure_code}`, { method: 'DELETE' });
+                const res = await fetch(`${window.__BP}/api/workflows/data/subflows/${sf.secure_code}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     this.unusedView.subflows = this.unusedView.subflows.filter(s => s.secure_code !== sf.secure_code);
@@ -503,7 +503,7 @@ function workflowListManager() {
             let ok = 0, fail = 0;
             for (const sf of [...this.unusedView.subflows]) {
                 try {
-                    const res = await fetch(`/bp/api/workflows/data/subflows/${sf.secure_code}`, { method: 'DELETE' });
+                    const res = await fetch(`${window.__BP}/api/workflows/data/subflows/${sf.secure_code}`, { method: 'DELETE' });
                     const data = await res.json();
                     if (data.success) ok++;
                     else fail++;
@@ -520,7 +520,7 @@ function workflowListManager() {
             this.deletingWorkflow = w;
             this.deleteWarnings = [];
             try {
-                const res = await fetch(`/bp/api/form-workflow/workflows/${w.secure_code}?check=1`, { method: 'DELETE' });
+                const res = await fetch(`${window.__BP}/api/form-workflow/workflows/${w.secure_code}?check=1`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success && data.has_mappings) {
                     this.deleteWarnings = data.mappings || [];
@@ -532,7 +532,7 @@ function workflowListManager() {
         async deleteWorkflow() {
             if (!this.deletingWorkflow) return;
             try {
-                const res = await fetch(`/bp/api/form-workflow/workflows/${this.deletingWorkflow.secure_code}`, { method: 'DELETE' });
+                const res = await fetch(`${window.__BP}/api/form-workflow/workflows/${this.deletingWorkflow.secure_code}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     this.showDeleteModal = false;
@@ -599,7 +599,7 @@ function workflowListManager() {
             if (!confirm(`確定要將選取的 ${this.selectedItems.length} 個流程另存新版？`)) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/workflows/batch/save-new-version', {
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows/batch/save-new-version', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })
@@ -634,7 +634,7 @@ function workflowListManager() {
                 }
                 if (!confirm(`即將匯入 ${items.length} 個流程模板（含子流程），code 重複者將跳過。確定？`)) return;
 
-                const res = await fetch('/bp/api/form-workflow/workflows/batch/import', {
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows/batch/import', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ items })
@@ -655,7 +655,7 @@ function workflowListManager() {
             if (this.batchProcessing || this.selectedItems.length === 0) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/workflows/batch/export', {
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows/batch/export', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })
@@ -693,7 +693,7 @@ function workflowListManager() {
             if (!confirm(`確定要刪除選取的 ${this.selectedItems.length} 個流程？此操作無法復原。`)) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/workflows/batch/delete', {
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows/batch/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })

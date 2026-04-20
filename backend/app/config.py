@@ -36,7 +36,7 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_NAME = 'beakmask_session'
-    SESSION_COOKIE_PATH = '/bp'
+    SESSION_COOKIE_PATH = os.getenv('APP_PREFIX', '/beakplatform') or '/'
     SESSION_KEY_PREFIX = 'session:'
 
     # CSRF Protection
@@ -90,7 +90,7 @@ class DevelopmentConfig(BaseConfig):
     # /tmp 的 FileSystemCache 會被 systemd-tmpfiles 清除導致 session 遺失
     # 雙版本隔離: cookie name + Redis key prefix 區分，Redis DB 由 REDIS_URL 控制
     SESSION_COOKIE_NAME = 'beakmask_dev_session'
-    SESSION_COOKIE_PATH = '/bp'
+    SESSION_COOKIE_PATH = os.getenv('APP_PREFIX', '/beakplatform') or '/'
     SESSION_KEY_PREFIX = 'dev_session:'
 
 

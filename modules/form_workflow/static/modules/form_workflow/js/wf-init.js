@@ -132,7 +132,7 @@
                         if (confirmLeave) {
                             // 用戶確認離開
                             console.log('✅ 用戶確認離開');
-                            window.location.href = '/bp/forms/workflows';
+                            window.location.href = window.__BP + '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消離開');
                             updateStatus('已取消離開，繼續編輯', 'info');
@@ -142,7 +142,7 @@
                         const confirmLeave = confirm('確定要返回流程目錄嗎？');
                         if (confirmLeave) {
                             console.log('✅ 用戶確認返回目錄');
-                            window.location.href = '/bp/forms/workflows';
+                            window.location.href = window.__BP + '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消');
                             updateStatus('已取消返回，繼續編輯', 'info');

@@ -164,7 +164,7 @@ function schedulesApp() {
             this.form.weekly_hours = this.dayConfigToWeeklyHours();
             this.saving = true;
             try {
-                const url = this.editingSchedule ? `/bp/api/admin/work-schedules/${this.editingSchedule.id}` : '/bp/api/admin/work-schedules';
+                const url = this.editingSchedule ? `${window.__BP}/api/admin/work-schedules/${this.editingSchedule.id}` : window.__BP + '/api/admin/work-schedules';
                 const method = this.editingSchedule ? 'PUT' : 'POST';
                 const response = await fetch(url, {
                     method,
@@ -180,7 +180,7 @@ function schedulesApp() {
 
         async setDefault(schedule) {
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${schedule.id}/default`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${schedule.id}/default`, {
                     method: 'PUT',
                     headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
                 });
@@ -193,7 +193,7 @@ function schedulesApp() {
         async deleteSchedule(schedule) {
             if (!confirm(`確定要刪除班表「${schedule.name}」嗎？`)) return;
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${schedule.id}`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${schedule.id}`, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
                 });
@@ -205,7 +205,7 @@ function schedulesApp() {
 
         async loadSchedules() {
             try {
-                const response = await fetch('/bp/api/admin/work-schedules');
+                const response = await fetch(window.__BP + '/api/admin/work-schedules');
                 const result = await response.json();
                 if (result.success) this.schedules = result.data;
             } catch (error) { console.error('載入班表失敗:', error); }

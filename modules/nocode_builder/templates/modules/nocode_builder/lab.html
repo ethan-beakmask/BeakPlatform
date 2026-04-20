@@ -3,12 +3,12 @@
 {% block title %}Web Builder Lab - 資料表工具{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/vendor/gridstack/gridstack.min.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
-<link rel="stylesheet" href="/bp/static/css/bk-file-attachment.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/datalist-widget.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/sitemenu-widget.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/formgrid-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/bk-file-attachment.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/datalist-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/sitemenu-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/formgrid-widget.css">
 {% endblock %}
 
 {% block content %}
@@ -45,7 +45,7 @@
                 <button class="dc-btn" style="background:#dc3545; color:#fff; border-color:#dc3545;"
                         @click="unpublishPage()">取消發布</button>
             </template>
-            <a href="/bp/nocode-builder/" class="dc-btn">返回</a>
+            <a href="{{ app_prefix }}/nocode-builder/" class="dc-btn">返回</a>
         </div>
     </div>
 
@@ -256,11 +256,11 @@
 
 </div>
 
-<script src="/bp/static/vendor/gridstack/gridstack-all.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/page-context.js"></script>
-<script src="/bp/static/js/bk-file-attachment.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/datalist-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/formgrid-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/lab-designer.js"></script>
+<script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-context.js"></script>
+<script src="{{ app_prefix }}/static/js/bk-file-attachment.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/datalist-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/formgrid-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/lab-designer.js"></script>
 {% endblock %}

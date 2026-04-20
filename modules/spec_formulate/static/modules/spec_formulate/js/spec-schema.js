@@ -40,7 +40,7 @@ function specSchemaManager() {
         async loadSpecs() {
             this.loading = true;
             try {
-                var resp = await fetch('/bp/api/spec-formulate/schema/specs');
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/specs');
                 var data = await resp.json();
                 if (data.success) {
                     this.specs = data.data || [];
@@ -53,7 +53,7 @@ function specSchemaManager() {
 
         async loadDataClasses() {
             try {
-                var resp = await fetch('/bp/api/spec-formulate/schema/data-classes');
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/data-classes');
                 var data = await resp.json();
                 if (data.success) {
                     this.dataClasses = data.data || [];
@@ -75,7 +75,7 @@ function specSchemaManager() {
                 return;
             }
             try {
-                var resp = await fetch('/bp/api/spec-formulate/schema/translate', {
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ function specSchemaManager() {
             }
             this.creating = true;
             try {
-                var resp = await fetch('/bp/api/spec-formulate/schema/specs', {
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/specs', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -117,7 +117,7 @@ function specSchemaManager() {
                 if (data.success) {
                     this.showCreateModal = false;
                     // 導向編輯頁
-                    window.location.href = '/bp/spec-formulate/' +
+                    window.location.href = window.__BP + '/spec-formulate/' +
                         data.data.secure_code + '/edit';
                 } else {
                     alert(data.error || '建立失敗');
@@ -129,7 +129,7 @@ function specSchemaManager() {
         },
 
         openEdit(spec) {
-            window.location.href = '/bp/spec-formulate/' +
+            window.location.href = window.__BP + '/spec-formulate/' +
                 spec.secure_code + '/edit';
         },
 
@@ -143,7 +143,7 @@ function specSchemaManager() {
             this.deleting = true;
             try {
                 var resp = await fetch(
-                    '/bp/api/spec-formulate/schema/specs/' +
+                    window.__BP + '/api/spec-formulate/schema/specs/' +
                     this.deleteTarget.secure_code,
                     {
                         method: 'DELETE',
@@ -222,7 +222,7 @@ function specSchemaManager() {
             item.loadingVersions = true;
             try {
                 var resp = await fetch(
-                    '/bp/api/spec-formulate/schema/specs/' +
+                    window.__BP + '/api/spec-formulate/schema/specs/' +
                     item.spec_sc + '/versions'
                 );
                 var data = await resp.json();
@@ -309,7 +309,7 @@ function specSchemaManager() {
 
             this.docxExporting = true;
             try {
-                var resp = await fetch('/bp/api/spec-formulate/schema/export/docx', {
+                var resp = await fetch(window.__BP + '/api/spec-formulate/schema/export/docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

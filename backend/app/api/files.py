@@ -262,7 +262,7 @@ def request_download_token(secure_code):
 
     return jsonify({
         'success': True,
-        'url': f'/bp/api/files/dl/{token}',
+        'url': f'{request.script_root}/api/files/dl/{token}',
     })
 
 

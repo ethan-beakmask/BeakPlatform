@@ -391,7 +391,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-<script src="/bp/static/js/settings-recipients.js"></script>
-<script src="/bp/static/js/settings-smtp.js"></script>
-<script src="/bp/static/js/settings-telegram.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-recipients.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-smtp.js"></script>
+<script src="{{ app_prefix }}/static/js/settings-telegram.js"></script>
 {% endblock %}

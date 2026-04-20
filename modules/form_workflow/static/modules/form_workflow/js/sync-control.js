@@ -6,7 +6,7 @@
 function syncControl() {
     const cfg = window.__SYNC_CONFIG || {};
     const ftSc = cfg.formTemplateSc;
-    const apiBase = '/bp/api/form-workflow/specs/' + ftSc;
+    const apiBase = window.__BP + '/api/form-workflow/specs/' + ftSc;
 
     return {
         ftSc: ftSc,
@@ -182,7 +182,7 @@ function syncControl() {
 
         // --- 跳轉 ---
         goSpecEditor() {
-            window.location.href = '/bp/forms/templates/' + this.ftSc + '/spec';
+            window.location.href = window.__BP + '/forms/templates/' + this.ftSc + '/spec';
         },
 
         // --- 工具 ---

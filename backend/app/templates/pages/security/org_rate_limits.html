@@ -123,7 +123,7 @@ function orgRateLimits() {
         async load() {
             this.loading = true;
             try {
-                const res = await fetch('/bp/api/security/rate-limits', {
+                const res = await fetch('{{ app_prefix }}/api/security/rate-limits', {
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 const data = await res.json();
@@ -144,7 +144,7 @@ function orgRateLimits() {
             try {
                 const body = {};
                 this.categories.forEach(c => { body[c.key] = c.value; });
-                const res = await fetch('/bp/api/security/rate-limits', {
+                const res = await fetch('{{ app_prefix }}/api/security/rate-limits', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

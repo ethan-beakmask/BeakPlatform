@@ -47,7 +47,7 @@ function siteMapPortal() {
             }
 
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/user-tree');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/user-tree');
                 var data = await res.json();
                 if (!data.success) {
                     this.error = data.error || '載入失敗';
@@ -157,12 +157,12 @@ function siteMapPortal() {
             try {
                 // 並行: 取得 node context + page layout
                 var ctxPromise = fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + nodeData.secure_code + '/context'
                 ).then(function(r) { return r.json(); });
 
                 var layoutPromise = fetch(
-                    '/bp/api/nocode-builder/pages/' + pageSc
+                    window.__BP + '/api/nocode-builder/pages/' + pageSc
                 ).then(function(r) { return r.json(); });
 
                 var results = await Promise.all([ctxPromise, layoutPromise]);

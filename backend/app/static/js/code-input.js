@@ -46,7 +46,7 @@ function codeInputMixin(entityType) {
 
             this._ci_loading = true;
             try {
-                var resp = await fetch('/bp/api/code/generate', {
+                var resp = await fetch(window.__BP + '/api/code/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ function codeInputMixin(entityType) {
 
             this._ci_loading = true;
             try {
-                var resp = await fetch('/bp/api/code/validate', {
+                var resp = await fetch(window.__BP + '/api/code/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

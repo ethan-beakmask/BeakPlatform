@@ -29,7 +29,7 @@
     function fetchOrgTree() {
         if (_orgTreeCache) return Promise.resolve(_orgTreeCache);
         if (_orgTreeLoading) return _orgTreeLoading;
-        _orgTreeLoading = fetch('/bp/api/form-center/org-tree')
+        _orgTreeLoading = fetch(window.__BP + '/api/form-center/org-tree')
             .then(function (r) { return r.json(); })
             .then(function (json) {
                 if (json.success) {
@@ -46,7 +46,7 @@
 
     function fetchCurrentUser() {
         if (_currentUserCache) return Promise.resolve(_currentUserCache);
-        return fetch('/bp/api/form-center/current-user')
+        return fetch(window.__BP + '/api/form-center/current-user')
             .then(function (r) { return r.json(); })
             .then(function (json) {
                 if (json.success) {

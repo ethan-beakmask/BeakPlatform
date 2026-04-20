@@ -31,13 +31,13 @@ function rescueResetPasswordForm() {
         openModal(secureCode, displayName) {
             this.resetTarget = secureCode;
             this.resetName = displayName;
-            this.formAction = '/bp/organizations/' + orgCode + '/admins/' + secureCode + '/reset-password';
+            this.formAction = window.__BP + '/organizations/' + orgCode + '/admins/' + secureCode + '/reset-password';
             this.generatePassword();
         },
 
         async loadPasswordRequirements() {
             try {
-                const url = '/bp/auth/password-policy' + (orgCode ? '?org_code=' + encodeURIComponent(orgCode) : '');
+                const url = window.__BP + '/auth/password-policy' + (orgCode ? '?org_code=' + encodeURIComponent(orgCode) : '');
                 const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
@@ -64,7 +64,7 @@ function rescueResetPasswordForm() {
                                 || document.querySelector('meta[name="csrf-token"]')?.content;
                 const body = {};
                 if (orgCode) body.org_code = orgCode;
-                const response = await fetch('/bp/auth/password-policy/generate', {
+                const response = await fetch(window.__BP + '/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ function rescueResetPasswordForm() {
                                 || document.querySelector('meta[name="csrf-token"]')?.content;
                 const body = { password: this.password };
                 if (orgCode) body.org_code = orgCode;
-                const response = await fetch('/bp/auth/password-policy/validate', {
+                const response = await fetch(window.__BP + '/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

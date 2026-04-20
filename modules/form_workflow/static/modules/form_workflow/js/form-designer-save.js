@@ -85,7 +85,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
         if (currentFormId) {
             // 更新現有表單（背景生成縮圖）
             response = await Promise.race([
-                fetch(`/bp/api/forms/data/templates/${currentFormId}`, {
+                fetch(`${window.__BP}/api/forms/data/templates/${currentFormId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -104,7 +104,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
         } else {
             // 建立新表單（背景生成縮圖）
             response = await Promise.race([
-                fetch('/bp/api/forms/data/templates', {
+                fetch(window.__BP + '/api/forms/data/templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -176,7 +176,7 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
 
         if (currentFormId) {
             // 更新現有表單（背景生成縮圖）
-            response = await fetch(`/bp/api/forms/data/templates/${currentFormId}`, {
+            response = await fetch(`${window.__BP}/api/forms/data/templates/${currentFormId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -190,7 +190,7 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
             });
         } else {
             // 建立新表單（背景生成縮圖）
-            response = await fetch('/bp/api/forms/data/templates', {
+            response = await fetch(window.__BP + '/api/forms/data/templates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -224,7 +224,7 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
             }
 
             // 跳轉到表單清單頁面
-            window.location.href = '/bp/forms/templates';
+            window.location.href = window.__BP + '/forms/templates';
         } else {
             throw new Error(result.message || '儲存失敗');
         }
@@ -268,7 +268,7 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
             fileUploadEnabled: document.getElementById('chk-file-upload').checked
         };
 
-        await fetch(`/bp/api/forms/data/templates/${currentFormId}`, {
+        await fetch(`${window.__BP}/api/forms/data/templates/${currentFormId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -282,7 +282,7 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
         });
 
         // 呼叫儲存新版 API
-        const response = await fetch(`/bp/api/forms/data/templates/${currentFormId}/save-new-version`, {
+        const response = await fetch(`${window.__BP}/api/forms/data/templates/${currentFormId}/save-new-version`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -326,7 +326,7 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
 async function cleanupAndRedirect() {
     if (!hasEverSaved && currentFormId) {
         try {
-            await fetch(`/bp/api/forms/data/templates/${currentFormId}`, {
+            await fetch(`${window.__BP}/api/forms/data/templates/${currentFormId}`, {
                 method: 'DELETE'
             });
             console.log('已刪除從未儲存的表單記錄:', currentFormId);
@@ -335,7 +335,7 @@ async function cleanupAndRedirect() {
         }
     }
     hasUnsavedChanges = false;
-    window.location.href = '/bp/forms/templates';
+    window.location.href = window.__BP + '/forms/templates';
 }
 
 const discardModal = document.getElementById('discard-confirm-modal');

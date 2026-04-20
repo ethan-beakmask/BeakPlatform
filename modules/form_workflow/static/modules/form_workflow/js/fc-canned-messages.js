@@ -16,7 +16,7 @@ function fcCannedMessages() {
 
         async loadCannedMessages() {
             try {
-                const res = await fetch('/bp/api/form-center/canned-messages');
+                const res = await fetch(window.__BP + '/api/form-center/canned-messages');
                 const data = await res.json();
                 if (data.success) this.cannedMessages = data.data || [];
             } catch (e) { console.error('載入簽核片語失敗:', e); }
@@ -37,7 +37,7 @@ function fcCannedMessages() {
             const text = (this.cannedNewText || '').trim();
             if (!text) return;
             try {
-                const res = await fetch('/bp/api/form-center/canned-messages', {
+                const res = await fetch(window.__BP + '/api/form-center/canned-messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
@@ -66,7 +66,7 @@ function fcCannedMessages() {
             const text = (this.cannedEditText || '').trim();
             if (!text) return;
             try {
-                const res = await fetch(`/bp/api/form-center/canned-messages/${sc}`, {
+                const res = await fetch(`${window.__BP}/api/form-center/canned-messages/${sc}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
@@ -86,7 +86,7 @@ function fcCannedMessages() {
         async deleteCannedMessage(sc) {
             if (!confirm('確定刪除此簽核片語？')) return;
             try {
-                const res = await fetch(`/bp/api/form-center/canned-messages/${sc}`, { method: 'DELETE' });
+                const res = await fetch(`${window.__BP}/api/form-center/canned-messages/${sc}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     this.cannedMessages = this.cannedMessages.filter(m => m.secure_code !== sc);

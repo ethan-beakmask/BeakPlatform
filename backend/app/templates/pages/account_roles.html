@@ -173,7 +173,7 @@ function accountRoles() {
             this.assigning = true;
             this.assignMsg = '';
             try {
-                const res = await fetch('/bp/admin/account-roles/api/assign', {
+                const res = await fetch('{{ app_prefix }}/admin/account-roles/api/assign', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -198,7 +198,7 @@ function accountRoles() {
         async revokeRole(userSc, roleSc, userName, roleName) {
             if (!confirm('確定移除 ' + userName + ' 的「' + roleName + '」角色？')) return;
             try {
-                const res = await fetch('/bp/admin/account-roles/api/revoke', {
+                const res = await fetch('{{ app_prefix }}/admin/account-roles/api/revoke', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

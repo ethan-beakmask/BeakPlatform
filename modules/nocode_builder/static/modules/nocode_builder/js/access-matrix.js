@@ -31,7 +31,7 @@ function accessMatrixManager(subSystemSc) {
         async loadAndRender() {
             this.loading = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map');
                 var json = await res.json();
                 if (!json.success) {
                     this.showToast(json.error || '載入失敗', 'error');
@@ -195,7 +195,7 @@ function accessMatrixManager(subSystemSc) {
             for (var i = 0; i < updates.length; i++) {
                 try {
                     var res = await fetch(
-                        '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + updates[i].secure_code,
+                        window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + updates[i].secure_code,
                         {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },

@@ -25,7 +25,7 @@ function fwDashboard() {
 
         async loadStats() {
             try {
-                const res = await fetch('/bp/api/form-workflow/stats');
+                const res = await fetch(window.__BP + '/api/form-workflow/stats');
                 const data = await res.json();
                 if (data.success) {
                     this.stats = data.data;
@@ -37,7 +37,7 @@ function fwDashboard() {
 
         async loadTemplates() {
             try {
-                const res = await fetch('/bp/api/form-workflow/templates');
+                const res = await fetch(window.__BP + '/api/form-workflow/templates');
                 const data = await res.json();
                 if (data.success) {
                     this.templates = data.data.templates || [];
@@ -49,7 +49,7 @@ function fwDashboard() {
 
         async loadWorkflows() {
             try {
-                const res = await fetch('/bp/api/form-workflow/workflows');
+                const res = await fetch(window.__BP + '/api/form-workflow/workflows');
                 const data = await res.json();
                 if (data.success) {
                     this.workflows = data.data.workflows || [];
@@ -61,7 +61,7 @@ function fwDashboard() {
 
         async loadInstances() {
             try {
-                const res = await fetch('/bp/api/form-workflow/instances');
+                const res = await fetch(window.__BP + '/api/form-workflow/instances');
                 const data = await res.json();
                 if (data.success) {
                     this.instances = data.data.instances || [];
@@ -73,10 +73,10 @@ function fwDashboard() {
 
         goTo(page) {
             var urls = {
-                'templates': '/bp/forms/templates',
-                'workflows': '/bp/forms/workflows',
-                'instances': '/bp/forms/instances',
-                'pending': '/bp/forms/pending'
+                'templates': window.__BP + '/forms/templates',
+                'workflows': window.__BP + '/forms/workflows',
+                'instances': window.__BP + '/forms/instances',
+                'pending': window.__BP + '/forms/pending'
             };
             if (urls[page]) {
                 window.location.href = urls[page];

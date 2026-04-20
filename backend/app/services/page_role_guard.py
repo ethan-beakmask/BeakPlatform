@@ -178,7 +178,8 @@ class PageRoleGuard:
         except Exception as e:
             logger.error(f"Failed to logout user: {e}")
 
-        return '/bp/auth/login', 302
+        from flask import request as _req
+        return f'{_req.script_root}/auth/login', 302
 
     # =========================================================================
     # URL 匹配

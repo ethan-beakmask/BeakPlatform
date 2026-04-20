@@ -35,9 +35,9 @@
             const rootCode = urlParams.get('root');
 
             if (fromTree && rootCode) {
-                window.location.href = '/bp/forms/workflows/' + rootCode + '/tree';
+                window.location.href = window.__BP + '/forms/workflows/' + rootCode + '/tree';
             } else {
-                window.location.href = '/bp/forms/workflows';
+                window.location.href = window.__BP + '/forms/workflows';
             }
 
             console.log('✅ 已儲存並返回');
@@ -75,7 +75,7 @@
                     requestBody.target_node = targetNode;
                 }
 
-                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}/save-new-version`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}/save-new-version`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
@@ -261,7 +261,7 @@
             if (!hasEverSaved && currentWorkflowId) {
                 console.log('⚠️ 從未儲存過，刪除工作流程記錄:', currentWorkflowId);
                 try {
-                    const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`, {
+                    const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
                         method: 'DELETE'
                     });
 
@@ -279,7 +279,7 @@
             clearStatusHistory();
 
             // 返回流程目錄頁
-            window.location.href = '/bp/forms/workflows';
+            window.location.href = window.__BP + '/forms/workflows';
 
             console.log('✅ 已放棄變更並返回流程目錄');
         }
@@ -287,7 +287,7 @@
         // 載入分類列表（二層結構）
         async function loadCategories() {
             try {
-                const response = await fetch('/bp/api/forms/data/categories');
+                const response = await fetch(window.__BP + '/api/forms/data/categories');
                 const result = await response.json();
 
                 if (result.success) {
@@ -314,7 +314,7 @@
         // 載入流程列表
         async function loadWorkflowList() {
             try {
-                const response = await fetch('/bp/api/workflows/data/templates');
+                const response = await fetch(window.__BP + '/api/workflows/data/templates');
                 const workflows = await response.json();
 
                 // 渲染到大型流程選擇卡片
@@ -411,7 +411,7 @@
             // 直接刪除，不再確認
 
             try {
-                const response = await fetch(`/bp/api/workflows/data/templates/${workflowId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/templates/${workflowId}`, {
                     method: 'DELETE'
                 });
 
@@ -442,7 +442,7 @@
             try {
                 console.log('🆕 開始建立新流程:', name);
 
-                const response = await fetch('/bp/api/workflows/data/templates', {
+                const response = await fetch(window.__BP + '/api/workflows/data/templates', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -495,7 +495,7 @@
             try {
                 console.log('🆕 從 URL 建立新流程:', { name, category_secure_code: categorySc, description });
 
-                const response = await fetch('/bp/api/workflows/data/templates', {
+                const response = await fetch(window.__BP + '/api/workflows/data/templates', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -523,7 +523,7 @@
 
                 // 建立成功後，立即將 URL 改為編輯模式，防止重新整理時重複建立
                 const newUrl = new URL(window.location.href);
-                newUrl.pathname = '/bp/forms/workflows/' + workflowData.secure_code;
+                newUrl.pathname = window.__BP + '/forms/workflows/' + workflowData.secure_code;
                 newUrl.searchParams.delete('new');
                 newUrl.searchParams.delete('name');
                 newUrl.searchParams.delete('category');
@@ -546,7 +546,7 @@
                 console.error('錯誤堆疊:', error.stack);
                 updateStatus('建立流程失敗：' + error.message, 'warning');
                 // 失敗時重定向回列表頁
-                window.location.href = '/bp/forms/workflows';
+                window.location.href = window.__BP + '/forms/workflows';
             } finally {
                 isCreatingWorkflow = false;
             }

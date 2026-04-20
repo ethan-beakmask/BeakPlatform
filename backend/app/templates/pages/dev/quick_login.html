@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>快速登入 - BeakPlatform 開發工具</title>
+    <script>window.__BP = '{{ app_prefix }}';</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/quick-login.css') }}">
 </head>
@@ -45,7 +46,7 @@
                     <div x-show="successMessage" x-cloak class="message success">
                         <i class="fas fa-check-circle"></i>
                         <span x-text="successMessage"></span>
-                        <a href="/bp/" class="goto-btn">前往首頁</a>
+                        <a href="{{ app_prefix }}/" class="goto-btn">前往首頁</a>
                     </div>
 
                     <!-- 錯誤訊息 -->
@@ -112,8 +113,8 @@
                         <div class="info-item">
                             <div class="info-label">共用登入頁面</div>
                             <div class="info-content">
-                                <a href="/bp/auth/login" target="_blank" class="info-link">
-                                    <i class="fas fa-external-link-alt"></i> /bp/auth/login
+                                <a href="{{ app_prefix }}/auth/login" target="_blank" class="info-link">
+                                    <i class="fas fa-external-link-alt"></i> {{ app_prefix }}/auth/login
                                 </a>
                                 <div class="info-hint">登入格式: username@domain_name</div>
                             </div>
@@ -125,9 +126,9 @@
                                 企業成員登入（<span x-text="selectedOrgDomain || window.__SYSTEM_ORG_CODE"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/bp/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'" target="_blank" class="info-link">
+                                <a :href="'{{ app_prefix }}/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/bp/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'"></span>
+                                    <span x-text="'{{ app_prefix }}/auth/org/' + (selectedOrgDomain || window.__SYSTEM_ORG_CODE) + '/login'"></span>
                                 </a>
                                 <div class="info-hint">登入格式: username（自動帶入企業網域）</div>
                             </div>
@@ -139,9 +140,9 @@
                                 外部廠商登入（<span x-text="selectedOrgDomain"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/bp/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
+                                <a :href="'{{ app_prefix }}/auth/org/' + selectedOrgDomain + '/public/login'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/bp/auth/org/' + selectedOrgDomain + '/public/login'"></span>
+                                    <span x-text="'{{ app_prefix }}/auth/org/' + selectedOrgDomain + '/public/login'"></span>
                                 </a>
                                 <div class="info-hint">登入格式: 完整 Email（如 guest@gmail.com）</div>
                             </div>
@@ -153,9 +154,9 @@
                                 公開區入口（<span x-text="selectedOrgDomain"></span>）
                             </div>
                             <div class="info-content">
-                                <a :href="'/bp/auth/org/' + selectedOrgDomain + '/public'" target="_blank" class="info-link">
+                                <a :href="'{{ app_prefix }}/auth/org/' + selectedOrgDomain + '/public'" target="_blank" class="info-link">
                                     <i class="fas fa-external-link-alt"></i>
-                                    <span x-text="'/bp/auth/org/' + selectedOrgDomain + '/public'"></span>
+                                    <span x-text="'{{ app_prefix }}/auth/org/' + selectedOrgDomain + '/public'"></span>
                                 </a>
                                 <div class="info-hint">企業成員 / 外部廠商登入選擇頁</div>
                             </div>

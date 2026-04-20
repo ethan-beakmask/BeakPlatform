@@ -55,7 +55,7 @@
 
             orgTreeLoading = true;
             try {
-                const response = await fetch('/bp/api/workflows/data/org-tree');
+                const response = await fetch(window.__BP + '/api/workflows/data/org-tree');
                 const result = await response.json();
                 if (result.success) {
                     orgTreeData = result.data;
@@ -88,7 +88,7 @@
             }
 
             try {
-                const response = await fetch('/bp/api/workflows/data/roles');
+                const response = await fetch(window.__BP + '/api/workflows/data/roles');
                 const result = await response.json();
                 if (result.success) {
                     rolesListData = result.data;

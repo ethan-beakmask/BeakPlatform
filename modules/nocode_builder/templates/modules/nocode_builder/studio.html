@@ -5,19 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>NoCode Builder - BeakPlatform</title>
-    <link rel="stylesheet" href="/bp/static/css/themes.css">
-    <link rel="stylesheet" href="/bp/static/vendor/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="/bp/static/fonts/remixicon/remixicon.css">
-    <link rel="stylesheet" href="/bp/static/vendor/beak-trellis/beak-tree.css">
-    <link rel="stylesheet" href="/bp/static/vendor/gridstack/gridstack.min.css">
-    <link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
-    <link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/studio.css">
-    <link rel="stylesheet" href="/bp/static/css/bk-file-attachment.css">
-    <link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/datalist-widget.css">
-    <link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/sitemenu-widget.css">
-    <link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/formgrid-widget.css">
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/themes.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/fonts/remixicon/remixicon.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/studio.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/bk-file-attachment.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/datalist-widget.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/sitemenu-widget.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/formgrid-widget.css">
     <style>[x-cloak] { display: none !important; }</style>
-    <script defer src="/bp/static/vendor/alpine.min.js"></script>
+    <script defer src="{{ app_prefix }}/static/vendor/alpine.min.js"></script>
 </head>
 <body>
 
@@ -33,7 +34,7 @@
         <!-- ===== Top Bar ===== -->
         <div class="stu-topbar">
             <div class="stu-topbar-left">
-                <a href="/bp/nocode-builder/sub-systems" class="stu-btn sm" title="返回列表">
+                <a href="{{ app_prefix }}/nocode-builder/sub-systems" class="stu-btn sm" title="返回列表">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <h2 x-text="subSystem ? subSystem.name : ''"></h2>
@@ -1131,19 +1132,19 @@ window.__STUDIO_CONFIG = {
     subSystemSc: '{{ sub_system_sc }}',
 };
 </script>
-<script src="/bp/static/js/icon-picker.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-tree-model.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-tree.js"></script>
-<script src="/bp/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-tree-drag.js"></script>
-<script src="/bp/static/vendor/gridstack/gridstack-all.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/page-context.js"></script>
-<script src="/bp/static/js/bk-file-attachment.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/datalist-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/formgrid-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/studio.js"></script>
-<script src="/bp/static/js/auth.js"></script>
+<script src="{{ app_prefix }}/static/js/icon-picker.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-drag.js"></script>
+<script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-context.js"></script>
+<script src="{{ app_prefix }}/static/js/bk-file-attachment.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/datalist-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/formgrid-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/grid-layout-editor.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/studio.js"></script>
+<script src="{{ app_prefix }}/static/js/auth.js"></script>
 </body>
 </html>

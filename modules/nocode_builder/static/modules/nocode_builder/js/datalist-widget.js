@@ -188,7 +188,7 @@ class DataListWidget {
 
     async _loadViewConfig() {
         try {
-            const res = await fetch('/bp/api/nocode-builder/views/' + this.config.viewCode);
+            const res = await fetch(window.__BP + '/api/nocode-builder/views/' + this.config.viewCode);
             const data = await res.json();
             if (data.success) {
                 this.viewConfig = data.data;
@@ -214,7 +214,7 @@ class DataListWidget {
         // 收集唯一 category codes
         const codes = [...new Set(lookupCols.map(c => c.lookup_category_code))];
         const fetches = codes.map(code =>
-            fetch('/bp/api/lookup/by-code/' + encodeURIComponent(code))
+            fetch(window.__BP + '/api/lookup/by-code/' + encodeURIComponent(code))
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -246,7 +246,7 @@ class DataListWidget {
         this._showLoading(true);
 
         try {
-            let url = '/bp/api/nocode-builder/views/' + this.config.viewCode + '/rows'
+            let url = window.__BP + '/api/nocode-builder/views/' + this.config.viewCode + '/rows'
                 + '?page=' + this.pagination.page
                 + '&per_page=' + this.pagination.per_page;
             if (this.search) url += '&q=' + encodeURIComponent(this.search);
@@ -563,7 +563,7 @@ class DataListWidget {
 
     async _tokenDownload(fileSc) {
         try {
-            const res = await fetch('/bp/api/files/' + fileSc + '/download-token', {
+            const res = await fetch(window.__BP + '/api/files/' + fileSc + '/download-token', {
                 method: 'POST',
             });
             const data = await res.json();
@@ -630,7 +630,7 @@ class DataListWidget {
         if (!confirm('確定要刪除此筆資料嗎?')) return;
         try {
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId,
+                window.__BP + '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId,
                 { method: 'DELETE', headers: this._buildContextHeaders() }
             );
             const data = await res.json();
@@ -716,7 +716,7 @@ class DataListWidget {
         if (isEdit && rowId) {
             try {
                 const res = await fetch(
-                    '/bp/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId,
+                    window.__BP + '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId,
                     { headers: this._buildContextHeaders() }
                 );
                 const data = await res.json();
@@ -994,7 +994,7 @@ class DataListWidget {
                             fd.append('file', fileInput.files[0]);
                             fd.append('context_type', 'subsystem_file');
                             fd.append('context_id', this.config.viewCode || '');
-                            const res = await fetch('/bp/api/files/upload', { method: 'POST', body: fd });
+                            const res = await fetch(window.__BP + '/api/files/upload', { method: 'POST', body: fd });
                             const result = await res.json();
                             if (result.success) {
                                 hiddenInput.value = result.data.secure_code;
@@ -1160,10 +1160,10 @@ class DataListWidget {
         try {
             let url, method;
             if (isEdit) {
-                url = '/bp/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId;
+                url = window.__BP + '/api/nocode-builder/views/' + this.config.viewCode + '/rows/' + rowId;
                 method = 'PUT';
             } else {
-                url = '/bp/api/nocode-builder/views/' + this.config.viewCode + '/rows';
+                url = window.__BP + '/api/nocode-builder/views/' + this.config.viewCode + '/rows';
                 method = 'POST';
             }
 

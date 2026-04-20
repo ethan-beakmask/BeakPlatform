@@ -24,7 +24,7 @@ function telegramManager() {
         async loadConfigs() {
             this.loading = true;
             try {
-                var response = await fetch('/bp/api/admin/settings/telegram');
+                var response = await fetch(window.__BP + '/api/admin/settings/telegram');
                 var result = await response.json();
                 if (result.success) {
                     this.configs = result.data;
@@ -52,7 +52,7 @@ function telegramManager() {
         async openEditModal(config) {
             this.isEditing = true;
             try {
-                var response = await fetch('/bp/api/admin/settings/telegram/' + config.id);
+                var response = await fetch(window.__BP + '/api/admin/settings/telegram/' + config.id);
                 var result = await response.json();
                 if (result.success) {
                     var data = result.data;
@@ -110,8 +110,8 @@ function telegramManager() {
 
             try {
                 var url = this.isEditing
-                    ? '/bp/api/admin/settings/telegram/' + this.formData.id
-                    : '/bp/api/admin/settings/telegram';
+                    ? window.__BP + '/api/admin/settings/telegram/' + this.formData.id
+                    : window.__BP + '/api/admin/settings/telegram';
                 var method = this.isEditing ? 'PUT' : 'POST';
 
                 var response = await fetch(url, {
@@ -156,7 +156,7 @@ function telegramManager() {
             }
 
             try {
-                var response = await fetch('/bp/api/admin/settings/telegram/' + config.id + '/test', {
+                var response = await fetch(window.__BP + '/api/admin/settings/telegram/' + config.id + '/test', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ function telegramManager() {
             if (!this.configToDelete) return;
 
             try {
-                var response = await fetch('/bp/api/admin/settings/telegram/' + this.configToDelete.id, {
+                var response = await fetch(window.__BP + '/api/admin/settings/telegram/' + this.configToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()

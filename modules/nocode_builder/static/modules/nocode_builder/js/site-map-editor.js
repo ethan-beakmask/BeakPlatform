@@ -17,7 +17,7 @@ function siteMapEditor(subSystemSc) {
             name: '', icon: '',
             page_layout_secure_code: '', is_active: true,
             access_roles: [],
-            redirect_to: '/bp/dashboard',
+            redirect_to: window.__BP + '/dashboard',
             crud_overrides: {}, data_filters: {},
             permission_mode: 'inherit',
             permission_policy_secure_code: '',
@@ -64,7 +64,7 @@ function siteMapEditor(subSystemSc) {
 
         async loadTree() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map');
                 var data = await res.json();
                 if (data.success) {
                     this.tree = data.data || [];
@@ -77,7 +77,7 @@ function siteMapEditor(subSystemSc) {
 
         async loadLayouts() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/pages');
+                var res = await fetch(window.__BP + '/api/nocode-builder/pages');
                 var data = await res.json();
                 if (data.success) {
                     this.availableLayouts = data.data || [];
@@ -89,7 +89,7 @@ function siteMapEditor(subSystemSc) {
 
         async loadPermissionPolicies() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/permission-policies');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/permission-policies');
                 var data = await res.json();
                 if (data.success) {
                     this.permissionPolicies = data.data || [];
@@ -177,7 +177,7 @@ function siteMapEditor(subSystemSc) {
                 page_layout_secure_code: d.page_layout_secure_code || '',
                 is_active: d.is_active !== false,
                 access_roles: (d.access_roles || []).slice(),
-                redirect_to: d.redirect_to || '/bp/dashboard',
+                redirect_to: d.redirect_to || window.__BP + '/dashboard',
                 crud_overrides: JSON.parse(JSON.stringify(d.crud_overrides || {})),
                 data_filters: JSON.parse(JSON.stringify(d.data_filters || {})),
                 permission_mode: d.permission_mode || 'inherit',
@@ -200,7 +200,7 @@ function siteMapEditor(subSystemSc) {
             this.nodePermissions = [];
             this.newNodePerm = { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' };
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions');
                 var data = await res.json();
                 if (data.success) {
                     // 只取 grant-based 記錄
@@ -234,7 +234,7 @@ function siteMapEditor(subSystemSc) {
                     var orgName = '企業';
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
-                            var res = await fetch('/bp/api/units/departments?tree=true');
+                            var res = await fetch(window.__BP + '/api/units/departments?tree=true');
                             var data = await res.json();
                             this._permCache.departments = data.units || [];
                         }
@@ -247,7 +247,7 @@ function siteMapEditor(subSystemSc) {
                         }];
                     } else {
                         if (!this._permCache.groups) {
-                            var res2 = await fetch('/bp/api/units/groups?tree=true');
+                            var res2 = await fetch(window.__BP + '/api/units/groups?tree=true');
                             var data2 = await res2.json();
                             this._permCache.groups = data2.units || [];
                         }
@@ -282,7 +282,7 @@ function siteMapEditor(subSystemSc) {
                 }
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
-                    var res3 = await fetch('/bp/api/users?per_page=100');
+                    var res3 = await fetch(window.__BP + '/api/users?per_page=100');
                     var data3 = await res3.json();
                     if (data3.users) {
                         this._permCache.users = data3.users;
@@ -374,7 +374,7 @@ function siteMapEditor(subSystemSc) {
 
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -408,7 +408,7 @@ function siteMapEditor(subSystemSc) {
             if (!confirm('確定要刪除此准入規則?')) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/permissions/' + permSc,
+                    window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/permissions/' + permSc,
                     { method: 'DELETE' }
                 );
                 var data = await res.json();
@@ -460,7 +460,7 @@ function siteMapEditor(subSystemSc) {
                     parent_secure_code: this.addForm.parent_secure_code || null,
                     page_layout_secure_code: this.addForm.page_layout_secure_code || null,
                 };
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -491,7 +491,7 @@ function siteMapEditor(subSystemSc) {
                     page_layout_secure_code: this.nodeForm.page_layout_secure_code || null,
                     is_active: this.nodeForm.is_active,
                     access_roles: this.nodeForm.access_roles,
-                    redirect_to: this.nodeForm.redirect_to || '/bp/dashboard',
+                    redirect_to: this.nodeForm.redirect_to || window.__BP + '/dashboard',
                     crud_overrides: this.nodeForm.crud_overrides,
                     data_filters: this.nodeForm.data_filters,
                     permission_mode: this.nodeForm.permission_mode || null,
@@ -500,7 +500,7 @@ function siteMapEditor(subSystemSc) {
                         : null,
                 };
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
+                    window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -535,7 +535,7 @@ function siteMapEditor(subSystemSc) {
             if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -566,7 +566,7 @@ function siteMapEditor(subSystemSc) {
             if (!confirm('確定要刪除此網頁（含所有子網頁）?')) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
+                    window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
                     { method: 'DELETE' }
                 );
                 var data = await res.json();
@@ -597,7 +597,7 @@ function siteMapEditor(subSystemSc) {
             });
 
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/reorder', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/reorder', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nodes: nodes }),

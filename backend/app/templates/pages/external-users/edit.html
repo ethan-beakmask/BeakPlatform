@@ -3,7 +3,7 @@
 {% block title %}編輯 {{ user.display_name }} - 外部廠商 - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/css/external-user-edit.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/external-user-edit.css">
 {% endblock %}
 
 {% block content %}
@@ -121,7 +121,7 @@
     </table>
 </form>
 
-<script src="/bp/static/js/password-form.js"></script>
+<script src="{{ app_prefix }}/static/js/password-form.js"></script>
 
 <!-- 群組管理 -->
 <div class="section-title optional">歸屬群組</div>

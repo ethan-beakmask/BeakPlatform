@@ -506,7 +506,7 @@ function numberingEditor() {
             try {
                 const elements = this.buildElements();
                 const csrfToken = this.$el.closest('form').querySelector('[name="csrf_token"]').value;
-                const resp = await fetch('/bp/api/admin/numbering-rules/preview', {
+                const resp = await fetch('{{ app_prefix }}/api/admin/numbering-rules/preview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ elements: elements, count: 10 })

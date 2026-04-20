@@ -151,7 +151,7 @@ function fcBatchApproval() {
             try {
                 // 用第一筆取得節點資訊（因為同 batch key，所有項目的選項一致）
                 const firstQsc = this.batchSelected[0];
-                const res = await fetch(`/bp/api/form-center/pending-tasks/${firstQsc}`);
+                const res = await fetch(`${window.__BP}/api/form-center/pending-tasks/${firstQsc}`);
                 const data = await res.json();
                 if (data.success) {
                     this.batchApprovalInfo = data.data;
@@ -231,7 +231,7 @@ function fcBatchApproval() {
                     comment: this.batchApprovalComment
                 };
 
-                const res = await fetch('/bp/api/form-center/pending-tasks/batch-approve', {
+                const res = await fetch(window.__BP + '/api/form-center/pending-tasks/batch-approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

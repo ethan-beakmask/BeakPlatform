@@ -237,7 +237,7 @@ function fcFlowOverview() {
 
             try {
                 const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
-                const res = await fetch(`/bp/api/form-center/executions/${instanceId}/path`);
+                const res = await fetch(`${window.__BP}/api/form-center/executions/${instanceId}/path`);
                 const result = await res.json();
 
                 if (!result.success) {

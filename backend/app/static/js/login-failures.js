@@ -53,7 +53,7 @@ function loginFailures() {
             this.loading = true;
             this.error = '';
             try {
-                let url = '/bp/api/security/login-failures';
+                let url = window.__BP + '/api/security/login-failures';
                 if (this.isSystemAdmin && this.selectedOrgCode) {
                     url += '?org_code=' + encodeURIComponent(this.selectedOrgCode);
                 }

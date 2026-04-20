@@ -3,7 +3,7 @@
 {% block title %}{{ sub_system_name }}{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
 <style>
     .portal-container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
     .portal-header {
@@ -101,5 +101,5 @@ window.__PORTAL_CONFIG = {
     </div>
 </div>
 
-<script src="/bp/static/modules/nocode_builder/js/sub-system-portal.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sub-system-portal.js"></script>
 {% endblock %}

@@ -26,7 +26,7 @@ function fcReadForm() {
             this.loadingReadForm = true;
 
             try {
-                const res = await fetch(`/bp/api/form-center/pending-tasks/${item.queue_secure_code}`);
+                const res = await fetch(`${window.__BP}/api/form-center/pending-tasks/${item.queue_secure_code}`);
                 const result = await res.json();
 
                 if (result.success) {
@@ -63,7 +63,7 @@ function fcReadForm() {
 
             try {
                 const secureCode = item.secure_code;
-                const response = await fetch(`/bp/api/form-center/form-detail/${secureCode}`);
+                const response = await fetch(`${window.__BP}/api/form-center/form-detail/${secureCode}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -138,7 +138,7 @@ function fcReadForm() {
             if (!confirm(`確定要刪除 ${count} 筆測試表單嗎？\n\n此操作僅刪除您發起的已結束測試表單（TEST-），不影響正式表單。`)) return;
 
             try {
-                const res = await fetch('/bp/api/form-center/my-test-forms', {
+                const res = await fetch(window.__BP + '/api/form-center/my-test-forms', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 });

@@ -20,7 +20,7 @@ const BackgroundManager = {
     async init() {
         // 從 user 資訊取得 org_secure_code
         try {
-            const response = await AuthModule.authenticatedFetch('/bp/auth/me');
+            const response = await AuthModule.authenticatedFetch(window.__BP + '/auth/me');
             const data = await response.json();
             const user = data.data || data.user;
             if (user && user.org_secure_code) {
@@ -89,7 +89,7 @@ const BackgroundManager = {
         const gallery = document.getElementById('bg-gallery');
 
         try {
-            const response = await fetch('/bp/api/workflows/backgrounds');
+            const response = await fetch(window.__BP + '/api/workflows/backgrounds');
             const result = await response.json();
 
             if (result.success && result.data.length > 0) {
@@ -135,7 +135,7 @@ const BackgroundManager = {
         formData.append('file', file);
 
         try {
-            const response = await fetch('/bp/api/workflows/backgrounds/upload', {
+            const response = await fetch(window.__BP + '/api/workflows/backgrounds/upload', {
                 method: 'POST',
                 body: formData
             });

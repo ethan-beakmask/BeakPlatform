@@ -15,7 +15,7 @@
             if (!configSelect) return;
 
             try {
-                const response = await fetch('/bp/api/enterprise/data/settings/telegram/available');
+                const response = await fetch(window.__BP + '/api/enterprise/data/settings/telegram/available');
                 if (!response.ok) {
                     configSelect.innerHTML = '<option value="">無法載入設定</option>';
                     return;
@@ -163,7 +163,7 @@
 
             try {
                 // 呼叫系統級 API（只回傳 org_secure_code 為 NULL 的設定）
-                const response = await fetch('/bp/api/system/data/settings/telegram');
+                const response = await fetch(window.__BP + '/api/system/data/settings/telegram');
                 if (!response.ok) {
                     configSelect.innerHTML = '<option value="">無法載入設定</option>';
                     return;

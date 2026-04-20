@@ -36,7 +36,7 @@ const urlDescription = urlParams.get('description') || '';
 // 載入分類清單（二層結構）
 async function loadCategories() {
     try {
-        const response = await fetch('/bp/api/forms/data/categories?context=form_design');
+        const response = await fetch(window.__BP + '/api/forms/data/categories?context=form_design');
         const result = await response.json();
         if (result.success) {
             const select = document.getElementById('form-category');
@@ -67,7 +67,7 @@ loadCategories();
 let formioI18n = {};
 async function loadFormioTranslations() {
     try {
-        const response = await fetch('/bp/static/vendor/formio-i18n-zh-TW.json');
+        const response = await fetch(window.__BP + '/static/vendor/formio-i18n-zh-TW.json');
         if (response.ok) {
             formioI18n = await response.json();
             console.log('Form.io 中文翻譯載入成功，共', Object.keys(formioI18n).length, '個字串');
@@ -173,7 +173,7 @@ async function loadFormData() {
         // 編輯模式 - 載入現有表單
         try {
             console.log('載入表單 ID:', formId);
-            const response = await fetch(`/bp/api/forms/data/templates/${formId}`);
+            const response = await fetch(`${window.__BP}/api/forms/data/templates/${formId}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }

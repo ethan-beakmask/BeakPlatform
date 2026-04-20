@@ -162,7 +162,7 @@
             // 判斷 icon 是本地 SVG 路徑還是 Font Awesome class
             let iconUrl = '';
             if (icon) {
-                if (icon.startsWith('/bp/static/') || icon.startsWith('http')) {
+                if (icon.startsWith(window.__BP + '/static/') || icon.startsWith('http')) {
                     // 已經是 URL 路徑，直接使用
                     iconUrl = icon;
                 } else {

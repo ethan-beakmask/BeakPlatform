@@ -520,7 +520,8 @@ class MenuTreeMixin:
 
         if item.link_type == 'page' and item.link_target:
             # 連結到動態頁面
-            return f'/bp/p/{item.link_target}'
+            from flask import request as _req
+            return f'{_req.script_root}/p/{item.link_target}'
 
         if item.link_type in ('divider', 'header'):
             return None

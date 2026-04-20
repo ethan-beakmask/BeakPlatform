@@ -73,7 +73,7 @@ const API = {
 
             // Handle unauthorized (redirect to login)
             if (response.status === 401) {
-                window.location.href = '/bp/auth/login';
+                window.location.href = window.__BP + '/auth/login';
                 return null;
             }
 

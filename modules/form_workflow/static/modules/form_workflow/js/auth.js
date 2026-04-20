@@ -42,7 +42,7 @@ const AuthModule = (() => {
             // 如果是 401 未授權，跳轉到登入頁
             if (response.status === 401) {
                 console.warn('⚠️ 401 未授權，跳轉到登入頁');
-                window.location.href = '/bp/auth/login';
+                window.location.href = window.__BP + '/auth/login';
                 return response;
             }
 
@@ -69,14 +69,14 @@ const AuthModule = (() => {
      */
     async function logout() {
         try {
-            await fetch('/bp/auth/logout', {
+            await fetch(window.__BP + '/auth/logout', {
                 method: 'POST',
                 credentials: 'same-origin'
             });
         } catch (error) {
             console.error('❌ 登出失敗:', error);
         } finally {
-            window.location.href = '/bp/auth/login';
+            window.location.href = window.__BP + '/auth/login';
         }
     }
 

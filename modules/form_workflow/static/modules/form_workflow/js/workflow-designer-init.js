@@ -83,7 +83,7 @@ var CATEGORY_ICONS = {
 
 async function loadNodeDefinitions() {
     try {
-        var response = await fetch('/bp/api/workflows/data/node-definitions');
+        var response = await fetch(window.__BP + '/api/workflows/data/node-definitions');
         var result = await response.json();
 
         if (!result.success) {

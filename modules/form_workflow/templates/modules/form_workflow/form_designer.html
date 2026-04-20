@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>表單設計器 - BeakPlatform</title>
+    <script>window.__BP = '{{ app_prefix }}';</script>
 
     <!-- Bootstrap 5 (本地) -->
-    <link href="/bp/static/vendor/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ app_prefix }}/static/vendor/bootstrap.min.css" rel="stylesheet">
 
     <!-- Font Awesome 6 (本地) -->
-    <link rel="stylesheet" href="/bp/static/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/fontawesome/css/all.min.css">
 
     <!-- Form.io CSS (本地) -->
-    <link rel="stylesheet" href="/bp/static/vendor/formio.full.min.css">
-    <link rel="stylesheet" href="/bp/static/css/formio-theme.css">
-    <link rel="stylesheet" href="/bp/api/form-workflow/form-themes/bundle.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/formio.full.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/formio-theme.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/api/form-workflow/form-themes/bundle.css">
 
     <!-- Theme Styles -->
-    <link rel="stylesheet" href="/bp/static/css/theme-styles.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/theme-styles.css">
 
     <!-- 表單設計器樣式 (含 navbar) -->
-    <link rel="stylesheet" href="/bp/static/modules/form_workflow/css/form-designer.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/form-designer.css">
 </head>
 <body>
     <!-- Toast 容器 -->
@@ -132,25 +133,25 @@
     </div>
 
     <!-- Bootstrap 5 JS (本地) -->
-    <script src="/bp/static/vendor/bootstrap.bundle.min.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/bootstrap.bundle.min.js"></script>
 
     <!-- Auth Module -->
-    <script src="/bp/static/js/auth.js"></script>
+    <script src="{{ app_prefix }}/static/js/auth.js"></script>
 
     <!-- Timezone (BkTime) -->
-    <script src="/bp/static/js/timezone.js"></script>
+    <script src="{{ app_prefix }}/static/js/timezone.js"></script>
 
     <!-- Form.io JS (本地) -->
-    <script src="/bp/static/vendor/formio.full.min.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
 
     <!-- FormIO 自訂 Storage Provider (上傳走 file_service 加密) -->
-    <script src="/bp/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
 
     <!-- BaekTree (UserPicker 依賴) -->
-    <script src="/bp/static/vendor/beak-trellis/beak-tree-model.js"></script>
-    <script src="/bp/static/vendor/beak-trellis/beak-tree.js"></script>
-    <script src="/bp/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
-    <link rel="stylesheet" href="/bp/static/vendor/beak-trellis/beak-tree.css">
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
+    <script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.css">
 
     <!-- 設計器配置（權限等級控制元件面板） -->
     <script>
@@ -160,8 +161,8 @@
     </script>
 
     <!-- Form.io 自訂元件 -->
-    <script src="/bp/static/js/formio-user-picker.js"></script>
-    <script src="/bp/static/js/formio-form-title.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-user-picker.js"></script>
+    <script src="{{ app_prefix }}/static/js/formio-form-title.js"></script>
 
     <!-- 設計器 ID 注入 -->
     <script>
@@ -175,14 +176,14 @@
         if (!ftSc) return;
         var csrfInput = document.querySelector('input[name="csrf_token"]');
         var csrfToken = csrfInput ? csrfInput.value : '';
-        fetch('/bp/api/spec-formulate/schema/by-form-template/' + ftSc, {
+        fetch('{{ app_prefix }}/api/spec-formulate/schema/by-form-template/' + ftSc, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken },
         })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
-                    window.location.href = '/bp/spec-formulate/' + data.data.secure_code + '/edit';
+                    window.location.href = '{{ app_prefix }}/spec-formulate/' + data.data.secure_code + '/edit';
                 } else {
                     alert(data.error || '開啟規格失敗');
                 }
@@ -194,13 +195,13 @@
     </script>
 
     <!-- form-designer-main.js 拆分為主檔索引 + 7 個子模組 -->
-    <script src="/bp/static/modules/form_workflow/js/form-designer-main.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-toast.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-theme.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-background.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-preview.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-save.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-template.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/form-designer-init.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-main.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-toast.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-theme.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-background.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-preview.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-save.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-template.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/form-designer-init.js"></script>
 </body>
 </html>

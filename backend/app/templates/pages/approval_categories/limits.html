@@ -3,7 +3,7 @@
 {% block title %}設定核決上限 - {{ category.name }} - BeakMask{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/css/approval-limits.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/approval-limits.css">
 {% endblock %}
 
 {% block content %}
@@ -90,7 +90,7 @@ window.__LIMITS_CONFIG = {
     listUrl: '{{ url_for("approval_categories.list_categories") }}'
 };
 </script>
-<script src="/bp/static/js/approval-limits.js"></script>
+<script src="{{ app_prefix }}/static/js/approval-limits.js"></script>
 
 {% else %}
 <p style="color: #6b7280;">

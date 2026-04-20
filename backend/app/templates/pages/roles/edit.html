@@ -223,7 +223,7 @@ function roleEditForm() {
             this.errorMsg = '';
 
             try {
-                const resp = await fetch('/bp/api/roles/{{ role.secure_code }}', {
+                const resp = await fetch('{{ app_prefix }}/api/roles/{{ role.secure_code }}', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ function roleEditForm() {
             this.isDeleting = true;
 
             try {
-                const resp = await fetch('/bp/api/roles/{{ role.secure_code }}', {
+                const resp = await fetch('{{ app_prefix }}/api/roles/{{ role.secure_code }}', {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': this.getCSRFToken()

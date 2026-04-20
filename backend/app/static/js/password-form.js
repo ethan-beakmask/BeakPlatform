@@ -34,7 +34,7 @@ function passwordForm(config) {
 
         async loadRequirements() {
             try {
-                var response = await fetch(this._buildUrl('/bp/auth/password-policy'));
+                var response = await fetch(this._buildUrl(window.__BP + '/auth/password-policy'));
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -62,7 +62,7 @@ function passwordForm(config) {
                 if (config.orgCode) {
                     body.org_code = config.orgCode;
                 }
-                var response = await fetch('/bp/auth/password-policy/generate', {
+                var response = await fetch(window.__BP + '/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ function passwordForm(config) {
                 if (config.orgCode) {
                     body.org_code = config.orgCode;
                 }
-                var response = await fetch('/bp/auth/password-policy/validate', {
+                var response = await fetch(window.__BP + '/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

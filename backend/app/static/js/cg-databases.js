@@ -26,7 +26,7 @@ function cgdbOverview() {
             this.loading = true;
             this.error = null;
             try {
-                const resp = await fetch('/bp/admin/cg-databases/data');
+                const resp = await fetch(window.__BP + '/admin/cg-databases/data');
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 const data = await resp.json();
                 this.databases = (data.databases || []).map(db => ({
@@ -50,7 +50,7 @@ function cgdbOverview() {
                 if (!db._logs && db.conglomerate_secure_code && !db._logsLoading) {
                     db._logsLoading = true;
                     try {
-                        const resp = await fetch('/bp/admin/cg-databases/' + db.conglomerate_secure_code + '/logs');
+                        const resp = await fetch(window.__BP + '/admin/cg-databases/' + db.conglomerate_secure_code + '/logs');
                         if (resp.ok) {
                             const data = await resp.json();
                             db._logs = data.logs || [];

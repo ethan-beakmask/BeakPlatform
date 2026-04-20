@@ -177,7 +177,7 @@ function departmentManager() {
 
         async init() {
             try {
-                var res = await fetch('/bp/api/users');
+                var res = await fetch(window.__BP + '/api/users');
                 if (res.ok) {
                     var data = await res.json();
                     this.allUsers = data.users || [];
@@ -246,7 +246,7 @@ function departmentManager() {
 
         async loadDepartments() {
             try {
-                var res = await fetch('/bp/api/units/departments?tree=true');
+                var res = await fetch(window.__BP + '/api/units/departments?tree=true');
                 var data = await res.json();
                 if (res.ok) {
                     this.departments = data.units || [];
@@ -261,8 +261,8 @@ function departmentManager() {
             var load = async (dept) => {
                 try {
                     var [mRes, lRes] = await Promise.all([
-                        fetch(`/bp/api/units/${dept.id}/members`),
-                        fetch(`/bp/api/units/${dept.id}/leadership`)
+                        fetch(`${window.__BP}/api/units/${dept.id}/members`),
+                        fetch(`${window.__BP}/api/units/${dept.id}/leadership`)
                     ]);
                     if (mRes.ok) dept._members = (await mRes.json()).members || [];
                     if (lRes.ok) dept._leadership = await lRes.json();
@@ -276,7 +276,7 @@ function departmentManager() {
 
         async loadUnassignedUsers() {
             try {
-                var res = await fetch('/bp/api/units/unassigned-users');
+                var res = await fetch(window.__BP + '/api/units/unassigned-users');
                 var data = await res.json();
                 if (res.ok) this.unassignedUsers = data.users || [];
             } catch (err) {}
@@ -284,7 +284,7 @@ function departmentManager() {
 
         async loadMembers(deptId) {
             try {
-                var res = await fetch(`/bp/api/units/${deptId}/members`);
+                var res = await fetch(`${window.__BP}/api/units/${deptId}/members`);
                 var data = await res.json();
                 this.members = res.ok ? data.members || [] : [];
             } catch (err) { this.members = []; }
@@ -292,7 +292,7 @@ function departmentManager() {
 
         async loadLeadership(deptId) {
             try {
-                var res = await fetch(`/bp/api/units/${deptId}/leadership`);
+                var res = await fetch(`${window.__BP}/api/units/${deptId}/leadership`);
                 var data = await res.json();
                 if (res.ok) this.leadership = data;
             } catch (err) {
@@ -302,7 +302,7 @@ function departmentManager() {
 
         async loadCrossMembers(deptId) {
             try {
-                var res = await fetch(`/bp/api/units/${deptId}/cross-members`);
+                var res = await fetch(`${window.__BP}/api/units/${deptId}/cross-members`);
                 var data = await res.json();
                 if (res.ok) {
                     this.crossMembers = (data.cross_members || []).map(cm => ({
@@ -422,7 +422,7 @@ function departmentManager() {
             if (node.data.type === 'dept') {
                 var parentId = (newParentId === 'root') ? null : newParentId;
                 try {
-                    var res = await fetch('/bp/api/units/' + nodeId, {
+                    var res = await fetch(window.__BP + '/api/units/' + nodeId, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                         body: JSON.stringify({ parent_id: parentId })
@@ -511,7 +511,7 @@ function departmentManager() {
                     parent_id: this.formData.parent_id,
                     unit_type: 'DEPARTMENT'
                 };
-                var res = await fetch('/bp/api/units', {
+                var res = await fetch(window.__BP + '/api/units', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify(payload)
@@ -530,7 +530,7 @@ function departmentManager() {
         async updateDepartment() {
             if (!this.selectedDept) return;
             try {
-                var res = await fetch('/bp/api/units/' + this.selectedDept.id, {
+                var res = await fetch(window.__BP + '/api/units/' + this.selectedDept.id, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({ name: this.formData.name, parent_id: this.formData.parent_id || null })
@@ -548,7 +548,7 @@ function departmentManager() {
         async deleteDepartment() {
             if (!this.selectedDept) return;
             try {
-                var checkRes = await fetch('/bp/api/units/' + this.selectedDept.id + '?check_only=true&cascade=true', {
+                var checkRes = await fetch(window.__BP + '/api/units/' + this.selectedDept.id + '?check_only=true&cascade=true', {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -560,7 +560,7 @@ function departmentManager() {
 
                 if (!confirm(msgs.join(''))) return;
 
-                var url = '/bp/api/units/' + this.selectedDept.id + '?cascade=true&confirm_members=true';
+                var url = window.__BP + '/api/units/' + this.selectedDept.id + '?cascade=true&confirm_members=true';
                 var res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
                 var data = await res.json();
                 if (res.ok) {
@@ -623,7 +623,7 @@ function departmentManager() {
             var userName = cm.user?.native_name || cm.user?.display_name || '此人員';
             if (!confirm('\u78BA\u5B9A\u79FB\u9664 ' + userName + ' \u7684\u8DE8\u90E8\u9580\u95DC\u4FC2\uFF1F')) return;
             try {
-                var res = await fetch('/bp/api/units/' + this.selectedDept.id + '/cross-members/' + cm.id, {
+                var res = await fetch(window.__BP + '/api/units/' + this.selectedDept.id + '/cross-members/' + cm.id, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -644,7 +644,7 @@ function departmentManager() {
         async removeCrossIfExists(userId) {
             var crossMember = this.crossMembers.find(cm => cm.user_secure_code === userId);
             if (crossMember) {
-                await fetch('/bp/api/units/' + this.selectedDept.id + '/cross-members/' + crossMember.id, {
+                await fetch(window.__BP + '/api/units/' + this.selectedDept.id + '/cross-members/' + crossMember.id, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
@@ -754,19 +754,19 @@ function departmentManager() {
                 var oldDeptId = this._dragData.deptId;
                 var oldRole = this._dragData.role;
                 if (oldRole && oldRole !== 'member') {
-                    await this._apiDelete('/bp/api/units/' + oldDeptId + '/leadership/' + oldRole);
+                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/leadership/' + oldRole);
                 }
                 if (oldDeptId !== this.selectedDept.id) {
                     // 404 表示非此部門主要成員，忽略即可
-                    await this._apiDelete('/bp/api/units/' + oldDeptId + '/members/' + person.id).catch(function() {});
+                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/members/' + person.id).catch(function() {});
                 }
             }
             // 管理層職位互換
             else if (this.draggedLeader && this.draggedLeaderType !== position) {
-                await this._apiDelete('/bp/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
+                await this._apiDelete(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
             }
 
-            var res = await this._apiPost('/bp/api/units/' + this.selectedDept.id + '/leadership/' + position, { user_id: person.id });
+            var res = await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + position, { user_id: person.id });
             if (res.ok) {
                 var data = await res.json();
                 await this.removeCrossIfExists(person.id);
@@ -811,21 +811,21 @@ function departmentManager() {
                 var oldDeptId = this._dragData.deptId;
                 var oldRole = this._dragData.role;
                 if (oldRole && oldRole !== 'member') {
-                    await this._apiDelete('/bp/api/units/' + oldDeptId + '/leadership/' + oldRole);
+                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/leadership/' + oldRole);
                 }
                 if (oldDeptId !== this.selectedDept.id) {
-                    await this._apiDelete('/bp/api/units/' + oldDeptId + '/members/' + person.id);
-                    await this._apiPost('/bp/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
+                    await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/members/' + person.id);
+                    await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
                     await this.removeCrossIfExists(person.id);
                     this.showToast('已調至此部門', 'success');
                 } else {
                     this.showToast('已移除管理層角色', 'success');
                 }
             } else if (this.draggedLeader) {
-                await this._apiDelete('/bp/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
+                await this._apiDelete(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
                 this.showToast('已移除管理層角色', 'success');
             } else if (this.draggedUser) {
-                await this._apiPost('/bp/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
+                await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
                 await this.removeCrossIfExists(person.id);
                 this.showToast('已加入部門', 'success');
             }
@@ -850,12 +850,12 @@ function departmentManager() {
             if (!person || !deptId) return;
 
             if (fromTree && this._dragData?.role && this._dragData.role !== 'member') {
-                await this._apiDelete('/bp/api/units/' + deptId + '/leadership/' + this._dragData.role);
+                await this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/' + this._dragData.role);
             } else if (this.draggedLeader) {
-                await this._apiDelete('/bp/api/units/' + deptId + '/leadership/' + this.draggedLeaderType);
+                await this._apiDelete(window.__BP + '/api/units/' + deptId + '/leadership/' + this.draggedLeaderType);
             }
 
-            await this._apiDelete('/bp/api/units/' + deptId + '/members/' + person.id);
+            await this._apiDelete(window.__BP + '/api/units/' + deptId + '/members/' + person.id);
             this.showToast('已移出部門', 'success');
             await this._refreshAll();
             this.clearDrag();
@@ -878,7 +878,7 @@ function departmentManager() {
         },
 
         async _addCrossViaApi(deptId, userId, roleType) {
-            var res = await this._apiPost('/bp/api/units/' + deptId + '/cross-members', {
+            var res = await this._apiPost(window.__BP + '/api/units/' + deptId + '/cross-members', {
                 user_id: userId, role_type: roleType
             });
             if (res.ok) {
@@ -980,13 +980,13 @@ function departmentManager() {
 
                 // 管理層先移除職位
                 if (self.draggedLeader && self.selectedDept) {
-                    await self._apiDelete('/bp/api/units/' + self.selectedDept.id + '/leadership/' + self.draggedLeaderType);
+                    await self._apiDelete(window.__BP + '/api/units/' + self.selectedDept.id + '/leadership/' + self.draggedLeaderType);
                 }
                 // 從原部門移除再加入新部門
                 if (self.selectedDept) {
-                    await self._apiDelete('/bp/api/units/' + self.selectedDept.id + '/members/' + person.id);
+                    await self._apiDelete(window.__BP + '/api/units/' + self.selectedDept.id + '/members/' + person.id);
                 }
-                await self._apiPost('/bp/api/units/' + targetId + '/members', { user_id: person.id });
+                await self._apiPost(window.__BP + '/api/units/' + targetId + '/members', { user_id: person.id });
                 var targetDept = self.findDeptById(targetId);
                 self.showToast('已調至 ' + (targetDept?.name || targetId), 'success');
                 await self._refreshAll();
@@ -1015,13 +1015,13 @@ function departmentManager() {
         async _movePersonToDept(drag, targetDeptId) {
             var personId = drag.person?.id || drag.person;
             if (drag.role && drag.role !== 'member' && drag.deptId) {
-                await this._apiDelete('/bp/api/units/' + drag.deptId + '/leadership/' + drag.role);
+                await this._apiDelete(window.__BP + '/api/units/' + drag.deptId + '/leadership/' + drag.role);
             }
             if (drag.deptId && drag.deptId !== targetDeptId) {
-                await this._apiDelete('/bp/api/units/' + drag.deptId + '/members/' + personId);
+                await this._apiDelete(window.__BP + '/api/units/' + drag.deptId + '/members/' + personId);
             }
             if (targetDeptId && targetDeptId !== 'root') {
-                await this._apiPost('/bp/api/units/' + targetDeptId + '/members', { user_id: personId });
+                await this._apiPost(window.__BP + '/api/units/' + targetDeptId + '/members', { user_id: personId });
                 var dept = this.findDeptById(targetDeptId);
                 this.showToast('已調至 ' + (dept?.name || targetDeptId), 'success');
             }

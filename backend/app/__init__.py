@@ -129,16 +129,15 @@ def create_app(config_name: str = None) -> Flask:
     from .security.permission_audit import run_startup_audit
     run_startup_audit(app)
 
-    # URL 前綴隔離：所有路由掛在 /bp/ 下，根路徑不回應
-    # DispatcherMiddleware 自動設定 SCRIPT_NAME=/bp，url_for() 產生的 URL 自動帶前綴
-    app.config['APPLICATION_ROOT'] = '/bp'
+    # URL 前綴隔離：APP_PREFIX 環境變數控制，預設 /beakplatform
+    # DispatcherMiddleware 自動設定 SCRIPT_NAME，url_for() / window.__BP / {{ app_prefix }} 自動帶前綴
+    app_prefix = os.getenv('APP_PREFIX', '/beakplatform').rstrip('/')
+    if app_prefix:
+        def _root_fallback(environ, start_response):
+            resp = Response('Not Found', status=404, content_type='text/plain')
+            return resp(environ, start_response)
 
-    def _root_fallback(environ, start_response):
-        """根路徑及非 /bp 路徑一律回 404"""
-        resp = Response('Not Found', status=404, content_type='text/plain')
-        return resp(environ, start_response)
-
-    app.wsgi_app = DispatcherMiddleware(_root_fallback, {'/bp': app.wsgi_app})
+        app.wsgi_app = DispatcherMiddleware(_root_fallback, {app_prefix: app.wsgi_app})
 
     return app
 
@@ -239,6 +238,12 @@ def register_context_processors(app: Flask) -> None:
         return {
             'current_timezone': getattr(g, 'timezone', 'Asia/Taipei'),
         }
+
+    @app.context_processor
+    def inject_app_prefix():
+        """注入 URL 前綴（來自 SCRIPT_NAME），供模板和前端 JS 使用"""
+        from flask import request as req
+        return {'app_prefix': req.script_root}
 
     @app.context_processor
     def inject_system_org_code():

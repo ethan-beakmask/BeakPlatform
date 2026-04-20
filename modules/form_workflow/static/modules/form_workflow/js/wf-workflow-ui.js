@@ -185,7 +185,7 @@
             }
 
             try {
-                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -238,7 +238,7 @@
             document.getElementById('current-workflow-description').value = fullText.split('\n')[0];
             if (!currentWorkflowId) return;
             try {
-                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ description: fullText })

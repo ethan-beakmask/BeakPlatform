@@ -239,7 +239,7 @@ function studioManager() {
 
         async _loadSubSystem() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc);
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc);
                 var data = await res.json();
                 if (data.success) {
                     this.subSystem = data.data;
@@ -252,7 +252,7 @@ function studioManager() {
 
         async _loadTree() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map');
                 var data = await res.json();
                 if (data.success) this.tree = data.data || [];
             } catch (e) {
@@ -262,7 +262,7 @@ function studioManager() {
 
         async _loadViews() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/views');
+                var res = await fetch(window.__BP + '/api/nocode-builder/views');
                 var data = await res.json();
                 if (data.success) this.availableViews = data.data || [];
             } catch (e) {
@@ -272,7 +272,7 @@ function studioManager() {
 
         async _loadPages() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/pages');
+                var res = await fetch(window.__BP + '/api/nocode-builder/pages');
                 var data = await res.json();
                 if (data.success) this.pageList = data.data || [];
             } catch (e) {
@@ -282,7 +282,7 @@ function studioManager() {
 
         async _loadDataSources() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources');
                 var data = await res.json();
                 if (data.success) {
                     this.dataSources = (data.data || []).filter(function (s) { return s.available; });
@@ -301,7 +301,7 @@ function studioManager() {
             this.loadingTables = true;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc +
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc +
                     '/data-sources/' + this.settingDataSource + '/tables'
                 );
                 var data = await res.json();
@@ -320,7 +320,7 @@ function studioManager() {
             this.resolvingView = true;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -572,7 +572,7 @@ function studioManager() {
 
         async _loadPageLayout(pageSc) {
             try {
-                var res = await fetch('/bp/api/nocode-builder/pages/' + pageSc);
+                var res = await fetch(window.__BP + '/api/nocode-builder/pages/' + pageSc);
                 var data = await res.json();
                 if (!data.success) return;
 
@@ -988,7 +988,7 @@ function studioManager() {
                 this.loadingTables = true;
                 try {
                     var res = await fetch(
-                        '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc +
+                        window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc +
                         '/data-sources/' + this.settingDataSource + '/tables'
                     );
                     var data = await res.json();
@@ -1211,7 +1211,7 @@ function studioManager() {
             if (!this.fgMasterDataSource) return;
             this.fgLoadingMasterTables = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgMasterDataSource + '/tables');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgMasterDataSource + '/tables');
                 var data = await res.json();
                 if (data.success) this.fgMasterSourceTables = data.data || [];
             } catch (e) { console.error(e); }
@@ -1226,7 +1226,7 @@ function studioManager() {
             if (!this.fgDetailDataSource) return;
             this.fgLoadingDetailTables = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgDetailDataSource + '/tables');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/data-sources/' + this.fgDetailDataSource + '/tables');
                 var data = await res.json();
                 if (data.success) this.fgDetailSourceTables = data.data || [];
             } catch (e) { console.error(e); }
@@ -1240,7 +1240,7 @@ function studioManager() {
             if (!this.fgMasterTableName || !this.fgMasterDataSource) return;
             this.fgResolvingMasterView = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ table_name: this.fgMasterTableName, data_source: this.fgMasterDataSource }),
@@ -1264,7 +1264,7 @@ function studioManager() {
             if (!this.fgDetailTableName || !this.fgDetailDataSource) return;
             this.fgResolvingDetailView = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/resolve-view', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ table_name: this.fgDetailTableName, data_source: this.fgDetailDataSource }),
@@ -1286,7 +1286,7 @@ function studioManager() {
             var viewCode = which === 'master' ? this.fgMasterViewCode : this.fgDetailViewCode;
             if (!viewCode) return;
             try {
-                var res = await fetch('/bp/api/nocode-builder/views/' + viewCode);
+                var res = await fetch(window.__BP + '/api/nocode-builder/views/' + viewCode);
                 var data = await res.json();
                 if (data.success && data.data) {
                     var cols = (data.data.columns_config || []).filter(function (c) { return c.visible; });
@@ -1306,7 +1306,7 @@ function studioManager() {
                     // 回填 source tables 下拉選單（否則資料表顯示「請選擇」）
                     if (ds && this.subSystemSc) {
                         var tablesRes = await fetch(
-                            '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                            window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                             + '/data-sources/' + ds + '/tables'
                         );
                         var tablesData = await tablesRes.json();
@@ -1325,7 +1325,7 @@ function studioManager() {
         // FORMGRID: 載入 numbering 規則
         async _fgLoadNumberingRules() {
             try {
-                var res = await fetch('/bp/api/numbering/rules');
+                var res = await fetch(window.__BP + '/api/numbering/rules');
                 var data = await res.json();
                 if (data.success) {
                     this.fgNumberingRules = data.data || [];
@@ -1589,7 +1589,7 @@ function studioManager() {
                     pagePayload.style_config = styleConfig;
                 }
 
-                var pageRes = await fetch('/bp/api/nocode-builder/pages', {
+                var pageRes = await fetch(window.__BP + '/api/nocode-builder/pages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(pagePayload),
@@ -1603,7 +1603,7 @@ function studioManager() {
                 }
 
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes',
                     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
                 );
                 var data = await res.json();
@@ -1632,7 +1632,7 @@ function studioManager() {
 
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code,
                     { method: 'DELETE' }
                 );
@@ -1684,7 +1684,7 @@ function studioManager() {
 
             try {
                 await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/reorder',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/reorder',
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1714,7 +1714,7 @@ function studioManager() {
             }
 
             try {
-                var res = await fetch('/bp/api/nocode-builder/pages/' + this.currentPageSc, {
+                var res = await fetch(window.__BP + '/api/nocode-builder/pages/' + this.currentPageSc, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1740,7 +1740,7 @@ function studioManager() {
             if (this.dirty && this.currentPageSc) {
                 await this.savePage();
             }
-            var url = '/bp/nocode-builder/sub-systems/' + this.subSystemSc + '/portal';
+            var url = window.__BP + '/nocode-builder/sub-systems/' + this.subSystemSc + '/portal';
             if (this.selectedNode) {
                 url += '?page=' + this.selectedNode.secure_code;
             }
@@ -1755,7 +1755,7 @@ function studioManager() {
             if (!confirm('確定要' + label + '「' + this.subSystem.name + '」嗎?')) return;
 
             try {
-                var res = await fetch('/bp/api/nocode-builder/projects/' + this.subSystemSc + '/' + action, {
+                var res = await fetch(window.__BP + '/api/nocode-builder/projects/' + this.subSystemSc + '/' + action, {
                     method: 'POST',
                 });
                 var data = await res.json();
@@ -1776,7 +1776,7 @@ function studioManager() {
 
         async _loadPermissionPolicies() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/permission-policies');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/permission-policies');
                 var data = await res.json();
                 if (data.success) {
                     this.permissionPolicies = data.data || [];
@@ -1806,7 +1806,7 @@ function studioManager() {
                         ? (this._currentPolicySc || null) : null,
                 };
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code,
                     {
                         method: 'PUT',
@@ -1841,7 +1841,7 @@ function studioManager() {
                 await this.savePermMode();
                 // 再向下套用
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
                     {
                         method: 'POST',
@@ -1874,7 +1874,7 @@ function studioManager() {
             this.nodePermissions = [];
             this.newNodePerm = { grant_type: 'department', grant_target: '', include_children: false, _selectedName: '' };
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions');
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + nodeSc + '/permissions');
                 var data = await res.json();
                 if (data.success) {
                     this.nodePermissions = (data.data || []).filter(function(p) { return p.grant_type; });
@@ -1906,7 +1906,7 @@ function studioManager() {
                     var orgName = '企業';
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
-                            var res = await fetch('/bp/api/units/departments?tree=true');
+                            var res = await fetch(window.__BP + '/api/units/departments?tree=true');
                             var data = await res.json();
                             this._permCache.departments = data.units || [];
                         }
@@ -1919,7 +1919,7 @@ function studioManager() {
                         }];
                     } else {
                         if (!this._permCache.groups) {
-                            var res2 = await fetch('/bp/api/units/groups?tree=true');
+                            var res2 = await fetch(window.__BP + '/api/units/groups?tree=true');
                             var data2 = await res2.json();
                             this._permCache.groups = data2.units || [];
                         }
@@ -1954,7 +1954,7 @@ function studioManager() {
                 }
             } else if (grantType === 'user') {
                 if (!this._permCache.users) {
-                    var res3 = await fetch('/bp/api/users?per_page=100');
+                    var res3 = await fetch(window.__BP + '/api/users?per_page=100');
                     var data3 = await res3.json();
                     if (data3.users) {
                         this._permCache.users = data3.users;
@@ -2046,7 +2046,7 @@ function studioManager() {
 
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/permissions',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2086,7 +2086,7 @@ function studioManager() {
             if (!confirm('確定要刪除此准入規則?')) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/permissions/' + permSc,
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/permissions/' + permSc,
                     { method: 'DELETE' }
                 );
                 var data = await res.json();
@@ -2242,7 +2242,7 @@ function studioManager() {
 
         async _loadBgGallery() {
             try {
-                var res = await fetch('/bp/api/nocode-builder/backgrounds');
+                var res = await fetch(window.__BP + '/api/nocode-builder/backgrounds');
                 var data = await res.json();
                 if (data.success) this.bgGallery = data.data || [];
             } catch (e) {
@@ -2259,7 +2259,7 @@ function studioManager() {
         async deleteBgFromGallery(sc) {
             if (!confirm('確定刪除此底圖?')) return;
             try {
-                var res = await fetch('/bp/api/nocode-builder/backgrounds/' + sc, { method: 'DELETE' });
+                var res = await fetch(window.__BP + '/api/nocode-builder/backgrounds/' + sc, { method: 'DELETE' });
                 var data = await res.json();
                 if (data.success) {
                     this.bgGallery = this.bgGallery.filter(function (b) { return b.secure_code !== sc; });
@@ -2293,7 +2293,7 @@ function studioManager() {
             var formData = new FormData();
             formData.append('file', file);
             try {
-                var res = await fetch('/bp/api/nocode-builder/backgrounds/upload', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/backgrounds/upload', {
                     method: 'POST',
                     body: formData,
                 });
@@ -2327,7 +2327,7 @@ function studioManager() {
             var style = this._buildStyleConfigForSave();
             if (!confirm('將目前頁面樣式設為子系統預設?')) return;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ style_config: style }),
@@ -2348,7 +2348,7 @@ function studioManager() {
             var style = this._buildStyleConfigForSave();
             if (!confirm('將目前頁面樣式覆蓋到此子系統的所有頁面? 此操作不可復原。')) return;
             try {
-                var res = await fetch('/bp/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style/apply-all', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style/apply-all', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ style_config: style }),
@@ -2392,7 +2392,7 @@ function studioManager() {
                 var styleConfig = this._buildStyleConfigForSave();
                 var thumbnailSvg = this._generateThumbnailSvg(layoutJson, styleConfig);
 
-                var res = await fetch('/bp/api/nocode-builder/templates', {
+                var res = await fetch(window.__BP + '/api/nocode-builder/templates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2421,7 +2421,7 @@ function studioManager() {
         async _loadTemplates() {
             this.loadingTemplates = true;
             try {
-                var res = await fetch('/bp/api/nocode-builder/templates');
+                var res = await fetch(window.__BP + '/api/nocode-builder/templates');
                 var data = await res.json();
                 if (data.success) {
                     this.templateList = data.data || [];
@@ -2436,7 +2436,7 @@ function studioManager() {
         async deleteTemplate(sc) {
             if (!confirm('確定要刪除此模板?')) return;
             try {
-                var res = await fetch('/bp/api/nocode-builder/templates/' + sc, { method: 'DELETE' });
+                var res = await fetch(window.__BP + '/api/nocode-builder/templates/' + sc, { method: 'DELETE' });
                 var data = await res.json();
                 if (data.success) {
                     this.templateList = this.templateList.filter(function (t) { return t.secure_code !== sc; });
@@ -2596,7 +2596,7 @@ function studioManager() {
             if (!this.selectedNode) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + this.selectedNode.secure_code,
                     {
                         method: 'PUT',
@@ -2656,7 +2656,7 @@ function studioManager() {
             if (!nodeSc) return;
             try {
                 var res = await fetch(
-                    '/bp/api/nocode-builder/sub-systems/' + this.subSystemSc
+                    window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc
                     + '/site-map/nodes/' + nodeSc,
                     {
                         method: 'PUT',

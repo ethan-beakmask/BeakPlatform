@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>流程設計器 - BeakPlatform</title>
-    <link rel="stylesheet" href="/bp/static/css/themes.css">
-    <script src="/bp/static/vendor/cytoscape.min.js"></script>
+    <script>window.__BP = '{{ app_prefix }}';</script>
+    <link rel="stylesheet" href="{{ app_prefix }}/static/css/themes.css">
+    <script src="{{ app_prefix }}/static/vendor/cytoscape.min.js"></script>
     <!-- Font Awesome Icons (本地) -->
-    <link rel="stylesheet" href="/bp/static/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/fontawesome/css/all.min.css">
     <!-- Workflow Designer CSS (模組靜態檔案) -->
-    <link rel="stylesheet" href="/bp/static/modules/form_workflow/css/workflow-designer.css">
+    <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/workflow-designer.css">
 </head>
 <body>
     <!-- Navbar (與 base.html 共用風格) -->
@@ -838,48 +839,48 @@
     </script>
 
     <!-- Workflow Designer JS (模組靜態檔案) -->
-    <script src="/bp/static/modules/form_workflow/js/var-picker.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/formadapter-decisions.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/var-picker.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/formadapter-decisions.js"></script>
     <!-- workflow-main.js 拆分為主檔 + 14 個子模組 -->
-    <script src="/bp/static/modules/form_workflow/js/workflow-main.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-undo.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/workflow-main.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-undo.js"></script>
     <!-- wf-core.js 拆分為主檔索引 + 7 個子模組 -->
-    <script src="/bp/static/modules/form_workflow/js/wf-core.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-cy-init.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-events.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-relay.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-dnd-nodes.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-workflow-ui.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-workflow-crud.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-render.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion-subflow.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion-messaging.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion-broadcast.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion-flow.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion-operations.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-accordion.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-configs.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-parallel-join.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-field-write.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-opset.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-sql-executor.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-telegram.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-email-relay.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-navbar-broadcast.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-alert-broadcast.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-email-adapter.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-branch.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-form-adapter.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-form-adapter.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-save.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-canvas.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-polyline.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-edge-props.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-ui-controls.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-node-group.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-tree.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-variables.js"></script>
-    <script src="/bp/static/modules/form_workflow/js/wf-init.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-core.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-cy-init.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-events.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-relay.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-dnd-nodes.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-workflow-ui.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-workflow-crud.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-render.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion-subflow.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion-messaging.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion-broadcast.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion-flow.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion-operations.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-accordion.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-configs.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-parallel-join.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-field-write.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-opset.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-sql-executor.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-telegram.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-email-relay.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-navbar-broadcast.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-alert-broadcast.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-email-adapter.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-branch.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-form-adapter.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-form-adapter.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-save.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-canvas.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-polyline.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-edge-props.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-ui-controls.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-node-group.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-tree.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-variables.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/wf-init.js"></script>
 
     <!-- 右鍵選單 -->
     <div id="contextMenu" class="context-menu">
@@ -889,10 +890,10 @@
     </div><!-- 關閉 workflow-container -->
 
     <!-- 認證腳本 -->
-    <script src="/bp/static/js/auth.js"></script>
+    <script src="{{ app_prefix }}/static/js/auth.js"></script>
 
     <!-- 主題管理 + 節點定義載入 -->
-    <script src="/bp/static/modules/form_workflow/js/workflow-designer-init.js"></script>
+    <script src="{{ app_prefix }}/static/modules/form_workflow/js/workflow-designer-init.js"></script>
 
     <!-- Debug Footer 容器 (組件會自動載入) -->
     <div class="container-fluid" style="padding: 3px 15px; min-height: 10px;">

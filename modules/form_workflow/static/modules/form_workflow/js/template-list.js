@@ -45,7 +45,7 @@ function templateListManager() {
 
         async loadCategories() {
             try {
-                const res = await fetch('/bp/api/form-workflow/categories?context=form_design');
+                const res = await fetch(window.__BP + '/api/form-workflow/categories?context=form_design');
                 const data = await res.json();
                 if (data.success) {
                     this.categories = data.data || [];
@@ -84,7 +84,7 @@ function templateListManager() {
         async loadTemplates() {
             this.loading = true;
             try {
-                let url = `/bp/api/form-workflow/templates?page=${this.pagination.page}`;
+                let url = `${window.__BP}/api/form-workflow/templates?page=${this.pagination.page}`;
                 if (this.searchQuery) url += `&q=${encodeURIComponent(this.searchQuery)}`;
 
                 const res = await fetch(url);
@@ -114,7 +114,7 @@ function templateListManager() {
 
         async silentReload() {
             try {
-                let url = `/bp/api/form-workflow/templates?page=${this.pagination.page}`;
+                let url = `${window.__BP}/api/form-workflow/templates?page=${this.pagination.page}`;
                 if (this.searchQuery) url += `&q=${encodeURIComponent(this.searchQuery)}`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -138,7 +138,7 @@ function templateListManager() {
                     return;
                 }
                 try {
-                    const res = await fetch(`/bp/api/form-workflow/templates/${pendingCode}`);
+                    const res = await fetch(`${window.__BP}/api/form-workflow/templates/${pendingCode}`);
                     const data = await res.json();
                     if (!data.success || !data.data.thumbnail_2x1) return;
                     const target = this.templates.find(t => t.secure_code === pendingCode);
@@ -163,7 +163,7 @@ function templateListManager() {
         },
 
         editTemplate(t) {
-            window.location.href = `/bp/forms/templates/${t.secure_code}`;
+            window.location.href = `${window.__BP}/forms/templates/${t.secure_code}`;
         },
 
         closeModal() {
@@ -177,8 +177,8 @@ function templateListManager() {
 
             try {
                 const url = this.editingTemplate
-                    ? `/bp/api/form-workflow/templates/${this.editingTemplate.secure_code}`
-                    : '/bp/api/form-workflow/templates';
+                    ? `${window.__BP}/api/form-workflow/templates/${this.editingTemplate.secure_code}`
+                    : window.__BP + '/api/form-workflow/templates';
                 const method = this.editingTemplate ? 'PUT' : 'POST';
 
                 const res = await fetch(url, {
@@ -190,7 +190,7 @@ function templateListManager() {
 
                 if (data.success) {
                     if (!this.editingTemplate && data.data && data.data.secure_code) {
-                        window.location.href = `/bp/forms/templates/${data.data.secure_code}?created=1`;
+                        window.location.href = `${window.__BP}/forms/templates/${data.data.secure_code}?created=1`;
                     } else {
                         this.closeModal();
                         this.loadTemplates();
@@ -207,7 +207,7 @@ function templateListManager() {
 
         async viewSchema(t) {
             try {
-                const res = await fetch(`/bp/api/form-workflow/templates/${t.secure_code}`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/templates/${t.secure_code}`);
                 const data = await res.json();
                 if (data.success) {
                     this.viewingTemplate = data.data;
@@ -222,7 +222,7 @@ function templateListManager() {
             this.deletingTemplate = t;
             this.deleteWarnings = [];
             try {
-                const res = await fetch(`/bp/api/form-workflow/templates/${t.secure_code}?check=1`, { method: 'DELETE' });
+                const res = await fetch(`${window.__BP}/api/form-workflow/templates/${t.secure_code}?check=1`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success && data.has_mappings) {
                     this.deleteWarnings = data.mappings || [];
@@ -235,7 +235,7 @@ function templateListManager() {
             if (!this.deletingTemplate) return;
 
             try {
-                const res = await fetch(`/bp/api/form-workflow/templates/${this.deletingTemplate.secure_code}`, {
+                const res = await fetch(`${window.__BP}/api/form-workflow/templates/${this.deletingTemplate.secure_code}`, {
                     method: 'DELETE'
                 });
                 const data = await res.json();
@@ -300,7 +300,7 @@ function templateListManager() {
             if (!confirm(`確定要將選取的 ${this.selectedItems.length} 個表單另存新版？`)) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/templates/batch/save-new-version', {
+                const res = await fetch(window.__BP + '/api/form-workflow/templates/batch/save-new-version', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })
@@ -335,7 +335,7 @@ function templateListManager() {
                 }
                 if (!confirm(`即將匯入 ${items.length} 個表單模板，code 重複者將跳過。確定？`)) return;
 
-                const res = await fetch('/bp/api/form-workflow/templates/batch/import', {
+                const res = await fetch(window.__BP + '/api/form-workflow/templates/batch/import', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ items })
@@ -356,7 +356,7 @@ function templateListManager() {
             if (this.batchProcessing || this.selectedItems.length === 0) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/templates/batch/export', {
+                const res = await fetch(window.__BP + '/api/form-workflow/templates/batch/export', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })
@@ -394,7 +394,7 @@ function templateListManager() {
             if (!confirm(`確定要刪除選取的 ${this.selectedItems.length} 個表單？此操作無法復原。`)) return;
             this.batchProcessing = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/templates/batch/delete', {
+                const res = await fetch(window.__BP + '/api/form-workflow/templates/batch/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ secure_codes: this.selectedItems })

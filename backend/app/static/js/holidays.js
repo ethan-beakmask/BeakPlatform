@@ -41,7 +41,7 @@ function holidaysApp() {
 
         async loadHolidays() {
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays?year=${this.year}`);
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays?year=${this.year}`);
                 const result = await response.json();
                 if (result.success) {
                     this.holidays = result.data;
@@ -194,7 +194,7 @@ function holidaysApp() {
 
             this.saving = true;
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays/batch`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/batch`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: JSON.stringify({ holidays, replace_year: false })
@@ -223,7 +223,7 @@ function holidaysApp() {
             }
             this.saving = true;
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays/${this.editingHoliday.id}`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/${this.editingHoliday.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: JSON.stringify(data)
@@ -238,7 +238,7 @@ function holidaysApp() {
         async deleteHoliday(h) {
             if (!confirm(`確定要刪除 ${h.holiday_date} 的設定嗎？`)) return;
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays/${h.id}`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/${h.id}`, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
                 });
@@ -260,7 +260,7 @@ function holidaysApp() {
             try {
                 for (const h of holidaysToDelete) {
                     try {
-                        const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays/${h.id}`, {
+                        const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/${h.id}`, {
                             method: 'DELETE',
                             headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
                         });
@@ -300,7 +300,7 @@ function holidaysApp() {
             }
             if (!confirm('確定要匯入 2026 年台灣國定假日嗎？已存在的日期將略過。')) return;
             try {
-                const response = await fetch(`/bp/api/admin/work-schedules/${this.scheduleId}/holidays/batch`, {
+                const response = await fetch(`${window.__BP}/api/admin/work-schedules/${this.scheduleId}/holidays/batch`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
                     body: JSON.stringify({ holidays: twHolidays2026, replace_year: false })

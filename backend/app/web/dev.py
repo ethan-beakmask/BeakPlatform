@@ -166,7 +166,7 @@ def quick_login():
             'success': True,
             'message': f'已登入：{user.display_name or user.username}',
             'data': {
-                'redirect_url': '/bp/',
+                'redirect_url': f'{request.script_root}/',
                 'user': {
                     'username': user.username,
                     'display_name': user.display_name,

@@ -110,9 +110,9 @@ function fieldSpecEditor() {
 
         get apiBase() {
             if (this.isStandalone && this.specSc) {
-                return '/bp/api/form-workflow/specs/standalone/' + this.specSc;
+                return window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc;
             }
-            return '/bp/api/form-workflow/specs/' + this.formTemplateSc;
+            return window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc;
         },
 
         async init() {
@@ -127,7 +127,7 @@ function fieldSpecEditor() {
 
         async loadLookupCategories() {
             try {
-                var res = await fetch('/bp/api/lookup/categories');
+                var res = await fetch(window.__BP + '/api/lookup/categories');
                 var data = await res.json();
                 if (data.success) {
                     this.lookupCategories = data.data || [];
@@ -144,7 +144,7 @@ function fieldSpecEditor() {
             }
             this.lookupPreviewLoading = true;
             try {
-                var res = await fetch('/bp/api/lookup/by-code/' + encodeURIComponent(code));
+                var res = await fetch(window.__BP + '/api/lookup/by-code/' + encodeURIComponent(code));
                 var data = await res.json();
                 if (data.success) {
                     this.lookupPreviewItems = (data.data || []).slice(0, 10);
@@ -159,7 +159,7 @@ function fieldSpecEditor() {
 
         async loadTemplateName() {
             try {
-                var res = await fetch('/bp/api/form-workflow/templates/' + this.formTemplateSc);
+                var res = await fetch(window.__BP + '/api/form-workflow/templates/' + this.formTemplateSc);
                 var data = await res.json();
                 if (data.success && data.data) {
                     this.formTemplateName = data.data.name || '';
@@ -180,7 +180,7 @@ function fieldSpecEditor() {
                 return;
             }
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/standalone/' + this.specSc);
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc);
                 var data = await res.json();
                 if (data.success && data.data) {
                     this.fields = _normalizeFields(data.data.fields || []);
@@ -201,7 +201,7 @@ function fieldSpecEditor() {
         async loadSpec() {
             this.loading = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc);
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc);
                 var data = await res.json();
                 if (data.success && data.data) {
                     this.fields = _normalizeFields(data.data.fields || []);
@@ -281,13 +281,13 @@ function fieldSpecEditor() {
                         this.saving = false;
                         return;
                     }
-                    url = '/bp/api/form-workflow/specs/standalone';
+                    url = window.__BP + '/api/form-workflow/specs/standalone';
                     body = JSON.stringify({ name: this.specName, fields: cleanFields });
                 } else if (this.isStandalone && this.specSc) {
-                    url = '/bp/api/form-workflow/specs/standalone/' + this.specSc;
+                    url = window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc;
                     body = JSON.stringify({ name: this.specName, fields: cleanFields });
                 } else {
-                    url = '/bp/api/form-workflow/specs/' + this.formTemplateSc;
+                    url = window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc;
                     body = JSON.stringify({ fields: cleanFields });
                 }
 
@@ -304,7 +304,7 @@ function fieldSpecEditor() {
                     if (this.isStandalone && !this.specSc && data.data.secure_code) {
                         this.specSc = data.data.secure_code;
                         // 更新 URL 不重載頁面
-                        history.replaceState(null, '', '/bp/forms/data-specs/' + this.specSc + '/edit');
+                        history.replaceState(null, '', window.__BP + '/forms/data-specs/' + this.specSc + '/edit');
                     }
                     _toast('success', data.message || '已儲存');
                 } else {
@@ -320,7 +320,7 @@ function fieldSpecEditor() {
             if (!confirm('從 FormIO schema 同步會覆蓋目前的規格，確認?')) return;
             this.saving = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc + '/sync-from-formio', {
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/sync-from-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}',
@@ -343,7 +343,7 @@ function fieldSpecEditor() {
             if (mode !== 'preview' && !confirm('套用到表單將修改 FormIO schema，確認?')) return;
             this.saving = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc + '/apply-to-form', {
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/apply-to-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: mode }),
@@ -368,7 +368,7 @@ function fieldSpecEditor() {
         async generatePreview() {
             this.previewing = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc + '/generate-formio', {
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/generate-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}',
@@ -389,7 +389,7 @@ function fieldSpecEditor() {
         async runCompare() {
             this.comparing = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc + '/compare');
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/compare');
                 var data = await res.json();
                 if (data.success) {
                     this.compareResult = data.data;
@@ -408,9 +408,9 @@ function fieldSpecEditor() {
             try {
                 var url;
                 if (this.isStandalone && this.specSc) {
-                    url = '/bp/api/form-workflow/specs/standalone/' + this.specSc + '/history';
+                    url = window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc + '/history';
                 } else {
-                    url = '/bp/api/form-workflow/specs/' + this.formTemplateSc + '/history';
+                    url = window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/history';
                 }
                 var res = await fetch(url);
                 var data = await res.json();
@@ -439,10 +439,10 @@ function fieldSpecEditor() {
                 var fields = h.fields_snapshot || [];
                 var url, body;
                 if (this.isStandalone && this.specSc) {
-                    url = '/bp/api/form-workflow/specs/standalone/' + this.specSc;
+                    url = window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc;
                     body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
                 } else {
-                    url = '/bp/api/form-workflow/specs/' + this.formTemplateSc;
+                    url = window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc;
                     body = { fields: fields, description: '從 v' + h.version + ' 取回建立' };
                 }
                 var res = await fetch(url, {
@@ -477,7 +477,7 @@ function fieldSpecEditor() {
             this.historyRestoring = true;
             try {
                 // 先取回為新版
-                var saveRes = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc, {
+                var saveRes = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -493,7 +493,7 @@ function fieldSpecEditor() {
                 }
 
                 // 套用到表單
-                var applyRes = await fetch('/bp/api/form-workflow/specs/' + this.formTemplateSc + '/sync-spec-to-formio', {
+                var applyRes = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/sync-spec-to-formio', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: '{}',
@@ -522,7 +522,7 @@ function fieldSpecEditor() {
             this.linkTemplateSc = null;
             this.linkLoading = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/available-templates');
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/available-templates');
                 var data = await res.json();
                 if (data.success) {
                     this.linkTemplates = data.data || [];
@@ -536,7 +536,7 @@ function fieldSpecEditor() {
         async confirmLinkForm() {
             if (!this.linkTemplateSc || !this.specSc) return;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/standalone/' + this.specSc + '/link-form', {
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc + '/link-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ form_template_secure_code: this.linkTemplateSc }),
@@ -562,7 +562,7 @@ function fieldSpecEditor() {
             this.showCreateFormModal = true;
             this.createFormLoading = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/categories?context=form_design&flat=1');
+                var res = await fetch(window.__BP + '/api/form-workflow/categories?context=form_design&flat=1');
                 var data = await res.json();
                 if (data.success) {
                     this.createFormCategories = data.data || [];
@@ -582,7 +582,7 @@ function fieldSpecEditor() {
                 if (this.createFormCategorySc) {
                     body.category_secure_code = this.createFormCategorySc;
                 }
-                var res = await fetch('/bp/api/form-workflow/specs/standalone/' + this.specSc + '/create-form', {
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/standalone/' + this.specSc + '/create-form', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -611,7 +611,7 @@ function fieldSpecEditor() {
             this.sqlTables = [];
             this.showSqlTableModal = true;
             try {
-                var res = await fetch('/bp/api/form-workflow/specs/sql-tables');
+                var res = await fetch(window.__BP + '/api/form-workflow/specs/sql-tables');
                 var data = await res.json();
                 if (data.success) {
                     this.sqlTables = data.data || [];

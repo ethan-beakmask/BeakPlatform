@@ -17,7 +17,7 @@ function storeManager() {
             this.loading = true;
             this.errorMsg = '';
             try {
-                let url = '/bp/api/store/items';
+                let url = window.__BP + '/api/store/items';
                 if (this.filter !== 'all') {
                     url += '?type=' + this.filter;
                 }
@@ -44,7 +44,7 @@ function storeManager() {
             this.successMsg = '';
 
             try {
-                const resp = await fetch('/bp/api/store/items/' + item.secure_code + '/install', {
+                const resp = await fetch(window.__BP + '/api/store/items/' + item.secure_code + '/install', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

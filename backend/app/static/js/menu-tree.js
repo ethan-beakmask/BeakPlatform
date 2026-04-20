@@ -128,7 +128,7 @@ function menuTreeManager() {
                         sortable: false,
                         resizable: false,
                         renderer: function(val, node) {
-                            return '<a href="/bp/menu/' + node.id + '/edit">[編輯]</a>';
+                            return '<a href=window.__BP + "/menu/' + node.id + '/edit">[編輯]</a>';
                         }
                     },
                     {
@@ -237,7 +237,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/bp/api/menu/reorder', {
+                var resp = await fetch(window.__BP + '/api/menu/reorder', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/bp/api/menu/reset-positions', {
+                var resp = await fetch(window.__BP + '/api/menu/reset-positions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/bp/api/menu/reset-factory', {
+                var resp = await fetch(window.__BP + '/api/menu/reset-factory', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -332,7 +332,7 @@ function menuTreeManager() {
             this.message = '';
 
             try {
-                var resp = await fetch('/bp/api/menu/save-factory-defaults', {
+                var resp = await fetch(window.__BP + '/api/menu/save-factory-defaults', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

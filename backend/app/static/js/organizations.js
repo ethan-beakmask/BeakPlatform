@@ -97,7 +97,7 @@ function orgManager() {
             }
 
             try {
-                const resp = await fetch('/bp/api/conglomerates', {
+                const resp = await fetch(window.__BP + '/api/conglomerates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({
@@ -122,7 +122,7 @@ function orgManager() {
                 this.conglomerateMode = true;
             }
             try {
-                const resp = await fetch('/bp/api/conglomerates/' + secureCode, {
+                const resp = await fetch(window.__BP + '/api/conglomerates/' + secureCode, {
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 const data = await resp.json();
@@ -144,12 +144,12 @@ function orgManager() {
             }
             const conglomerateId = this.editingConglomerate.secure_code;
             try {
-                await fetch('/bp/api/conglomerates/' + conglomerateId, {
+                await fetch(window.__BP + '/api/conglomerates/' + conglomerateId, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ name: this.editingConglomerate.name })
                 });
-                const resp = await fetch('/bp/api/conglomerates/' + conglomerateId + '/members', {
+                const resp = await fetch(window.__BP + '/api/conglomerates/' + conglomerateId + '/members', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ org_secure_codes: this.selectedOrgs })
@@ -172,7 +172,7 @@ function orgManager() {
 
             const conglomerateId = this.editingConglomerate.secure_code;
             try {
-                const resp = await fetch('/bp/api/conglomerates/' + conglomerateId, {
+                const resp = await fetch(window.__BP + '/api/conglomerates/' + conglomerateId, {
                     method: 'DELETE',
                     headers: { 'X-CSRFToken': csrfToken }
                 });
@@ -194,7 +194,7 @@ function orgManager() {
 
             const sc = this.editingConglomerate.secure_code;
             try {
-                const resp = await fetch('/bp/api/conglomerates/' + sc + '/provision-db', {
+                const resp = await fetch(window.__BP + '/api/conglomerates/' + sc + '/provision-db', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken }
                 });
@@ -283,7 +283,7 @@ function orgManager() {
 
         async editContract(secureCode) {
             try {
-                const resp = await fetch('/bp/api/contracts/' + secureCode, {
+                const resp = await fetch(window.__BP + '/api/contracts/' + secureCode, {
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 const data = await resp.json();
@@ -330,7 +330,7 @@ function orgManager() {
                     notes: form.notes || null,
                     modules_config: form.modules
                 };
-                const resp = await fetch('/bp/api/contracts/', {
+                const resp = await fetch(window.__BP + '/api/contracts/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify(payload)
@@ -352,7 +352,7 @@ function orgManager() {
             if (!confirm('確定要停用此合約嗎？停用後不可再啟用，如需恢復服務請建立新合約。')) return;
 
             try {
-                const resp = await fetch('/bp/api/contracts/' + this.contractModal.editing + '/disable', {
+                const resp = await fetch(window.__BP + '/api/contracts/' + this.contractModal.editing + '/disable', {
                     method: 'PATCH',
                     headers: { 'X-CSRFToken': csrfToken }
                 });

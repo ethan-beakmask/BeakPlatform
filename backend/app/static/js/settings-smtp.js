@@ -35,7 +35,7 @@ function smtpManager() {
         async loadConfigs() {
             this.loading = true;
             try {
-                var response = await fetch('/bp/api/admin/settings/smtp');
+                var response = await fetch(window.__BP + '/api/admin/settings/smtp');
                 var result = await response.json();
                 if (result.success) {
                     this.configs = result.data;
@@ -49,7 +49,7 @@ function smtpManager() {
 
         async loadPresets() {
             try {
-                var response = await fetch('/bp/api/admin/settings/smtp/presets');
+                var response = await fetch(window.__BP + '/api/admin/settings/smtp/presets');
                 var result = await response.json();
                 if (result.success) {
                     this.presets = result.data;
@@ -92,7 +92,7 @@ function smtpManager() {
         async openEditModal(config) {
             this.isEditing = true;
             try {
-                var response = await fetch('/bp/api/admin/settings/smtp/' + config.id);
+                var response = await fetch(window.__BP + '/api/admin/settings/smtp/' + config.id);
                 var result = await response.json();
                 if (result.success) {
                     var data = result.data;
@@ -131,8 +131,8 @@ function smtpManager() {
 
             try {
                 var url = this.isEditing
-                    ? '/bp/api/admin/settings/smtp/' + this.formData.id
-                    : '/bp/api/admin/settings/smtp';
+                    ? window.__BP + '/api/admin/settings/smtp/' + this.formData.id
+                    : window.__BP + '/api/admin/settings/smtp';
                 var method = this.isEditing ? 'PUT' : 'POST';
 
                 var response = await fetch(url, {
@@ -162,7 +162,7 @@ function smtpManager() {
             if (!recipient) return;
 
             try {
-                var response = await fetch('/bp/api/admin/settings/smtp/' + config.id + '/test', {
+                var response = await fetch(window.__BP + '/api/admin/settings/smtp/' + config.id + '/test', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ function smtpManager() {
             if (!this.configToDelete) return;
 
             try {
-                var response = await fetch('/bp/api/admin/settings/smtp/' + this.configToDelete.id, {
+                var response = await fetch(window.__BP + '/api/admin/settings/smtp/' + this.configToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCsrfToken()

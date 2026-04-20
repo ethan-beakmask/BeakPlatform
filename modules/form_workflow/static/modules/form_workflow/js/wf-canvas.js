@@ -179,7 +179,7 @@
         // 載入底圖列表
         async function loadBackgrounds() {
             try {
-                const response = await fetch(`/bp/api/workflows/backgrounds`);
+                const response = await fetch(`${window.__BP}/api/workflows/backgrounds`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -264,7 +264,7 @@
                 formData.append('file', file);
                 formData.append('description', description.trim());
 
-                const response = await fetch(`/bp/api/workflows/backgrounds/upload`, {
+                const response = await fetch(`${window.__BP}/api/workflows/backgrounds/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -327,7 +327,7 @@
             }
 
             try {
-                const response = await fetch(`/bp/api/workflows/backgrounds/${currentBackgroundId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/backgrounds/${currentBackgroundId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'
@@ -367,7 +367,7 @@
             }
 
             try {
-                const response = await fetch(`/bp/api/workflows/backgrounds/${currentBackgroundId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/backgrounds/${currentBackgroundId}`, {
                     method: 'DELETE'
                 });
 

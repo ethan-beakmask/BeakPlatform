@@ -17,7 +17,7 @@ function workflowTreePage() {
 
         async init() {
             try {
-                var res = await fetch('/bp/api/form-workflow/workflows/flow-trees/' + this.secureCode);
+                var res = await fetch(window.__BP + '/api/form-workflow/workflows/flow-trees/' + this.secureCode);
                 var data = await res.json();
                 if (!data.success) {
                     this.error = data.error || '載入失敗';
@@ -141,7 +141,7 @@ function workflowTreePage() {
                 var qp = [];
                 if (!isRoot) { qp.push('from=tree', 'root=' + rootCode); }
                 if (node.is_unused) { qp.push('editable=1'); }
-                var href = '/bp/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
+                var href = window.__BP + '/forms/workflows/' + node.secure_code + (qp.length ? '?' + qp.join('&') : '');
                 var thumb = node.thumbnail_2x1
                     ? '<img src="' + node.thumbnail_2x1 + '" style="width:210px;height:120px;object-fit:contain;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;">'
                     : '<div style="width:210px;height:120px;display:flex;align-items:center;justify-content:center;border:1px solid #e5e7eb;border-radius:4px;background:#f3f4f6;"><i class="ri-flow-chart" style="font-size:32px;color:#9ca3af;"></i></div>';

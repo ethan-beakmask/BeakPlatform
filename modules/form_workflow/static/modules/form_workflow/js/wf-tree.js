@@ -35,7 +35,7 @@
         function openFlowTreePage() {
             const code = rootWorkflowId || currentWorkflowId;
             if (!code) return;
-            window.location.href = '/bp/forms/workflows/' + code + '/tree';
+            window.location.href = window.__BP + '/forms/workflows/' + code + '/tree';
         }
 
         /**
@@ -49,7 +49,7 @@
                 if (visited.has(current)) break;
                 visited.add(current);
                 try {
-                    const res = await fetch(`/bp/api/workflows/data/templates/${current}`);
+                    const res = await fetch(`${window.__BP}/api/workflows/data/templates/${current}`);
                     const data = await res.json();
                     const wf = data.data || data;
                     name = wf.name;
@@ -163,7 +163,7 @@
 
                 try {
                     // 取得流程資訊
-                    const response = await fetch(`/bp/api/workflows/data/templates/${wfId}`);
+                    const response = await fetch(`${window.__BP}/api/workflows/data/templates/${wfId}`);
                     const result = await response.json();
                     const workflowData = result.data || result;
 
@@ -189,7 +189,7 @@
                     // subflowCodes 是從 graph/畫布的 SUBFLOW 節點提取的 childFlowId
 
                     // 從後端取得子流程的詳細資訊（用於取得 secure_code、name 等）
-                    const subflowsResponse = await fetch(`/bp/api/workflows/data/subflows/available?parent_id=${wfId}`);
+                    const subflowsResponse = await fetch(`${window.__BP}/api/workflows/data/subflows/available?parent_id=${wfId}`);
                     const subflowsResult = await subflowsResponse.json();
                     // API 回傳 { dedicated: [...], common_categories: [{category_name, subflows: [...]}] }
                     let availableSubflows = [];
@@ -228,7 +228,7 @@
                             // 這可能是通用子流程（跨流程引用）
                             try {
                                 // 用 code 查詢子流程
-                                const sfResponse = await fetch(`/bp/api/workflows/data/templates/by-code/${code}`);
+                                const sfResponse = await fetch(`${window.__BP}/api/workflows/data/templates/by-code/${code}`);
                                 if (sfResponse.ok) {
                                     const sfResult = await sfResponse.json();
                                     const sfData = sfResult.data || sfResult;
@@ -355,7 +355,7 @@
 
             // 更新 URL 並載入新流程（移除 editable，讓通用子流程的唯讀檢查能生效）
             const newUrl = new URL(window.location.href);
-            newUrl.pathname = '/bp/forms/workflows/' + secureCode;
+            newUrl.pathname = window.__BP + '/forms/workflows/' + secureCode;
             newUrl.searchParams.delete('id');
             newUrl.searchParams.delete('new');
             newUrl.searchParams.delete('editable');

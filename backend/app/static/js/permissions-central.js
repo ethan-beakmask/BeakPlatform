@@ -129,7 +129,7 @@ function permissionCentral() {
 
         async loadRoles() {
             try {
-                const res = await fetch('/bp/api/permissions/roles' + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/roles' + this._orgQueryParam());
                 const data = await res.json();
                 this.roles = data.roles || [];
             } catch (e) {
@@ -139,7 +139,7 @@ function permissionCentral() {
 
         async loadPermissions() {
             try {
-                const res = await fetch('/bp/api/permissions/permissions');
+                const res = await fetch(window.__BP + '/api/permissions/permissions');
                 const data = await res.json();
                 this.allPermissions = data.permissions || [];
             } catch (e) {
@@ -149,7 +149,7 @@ function permissionCentral() {
 
         async loadMenus() {
             try {
-                const res = await fetch('/bp/api/permissions/menus' + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/menus' + this._orgQueryParam());
                 const data = await res.json();
                 this.allMenus = data.menus || [];
             } catch (e) {
@@ -169,7 +169,7 @@ function permissionCentral() {
             this.roleLoading = true;
             this.showPermEditor = false;
             try {
-                const res = await fetch('/bp/api/permissions/role-view/' + this.selectedRoleCode + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/role-view/' + this.selectedRoleCode + this._orgQueryParam());
                 this.roleData = await res.json();
             } catch (e) {
                 console.error('Failed to load role view:', e);
@@ -213,7 +213,7 @@ function permissionCentral() {
             if (!this.selectedRoleCode) return;
             this.saving = true;
             try {
-                const url = '/bp/api/permissions/role-permissions' + this._orgQueryParam();
+                const url = window.__BP + '/api/permissions/role-permissions' + this._orgQueryParam();
                 const res = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -276,7 +276,7 @@ function permissionCentral() {
             }
             this.menuLoading = true;
             try {
-                const res = await fetch('/bp/api/permissions/menu-view/' + this.selectedMenuCode + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/menu-view/' + this.selectedMenuCode + this._orgQueryParam());
                 this.menuData = await res.json();
             } catch (e) {
                 console.error('Failed to load menu view:', e);
@@ -316,7 +316,7 @@ function permissionCentral() {
         async loadConflicts() {
             this.conflictsLoading = true;
             try {
-                const res = await fetch('/bp/api/permissions/conflicts' + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/conflicts' + this._orgQueryParam());
                 this.conflictsData = await res.json();
                 this._updateConflictCount();
             } catch (e) {
@@ -329,7 +329,7 @@ function permissionCentral() {
 
         async loadConflictCount() {
             try {
-                const res = await fetch('/bp/api/permissions/conflicts' + this._orgQueryParam());
+                const res = await fetch(window.__BP + '/api/permissions/conflicts' + this._orgQueryParam());
                 const data = await res.json();
                 this.conflictsData = data;
                 this._updateConflictCount();
@@ -372,7 +372,7 @@ function permissionCentral() {
         async doSaveFactoryDefaults() {
             this.showSaveFactoryModal = false;
             try {
-                var res = await fetch('/bp/api/permissions/save-factory-defaults' + this._orgQueryParam(), {
+                var res = await fetch(window.__BP + '/api/permissions/save-factory-defaults' + this._orgQueryParam(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -393,7 +393,7 @@ function permissionCentral() {
 
         async doExportRbac() {
             try {
-                var url = '/bp/api/permissions/export' + this._orgQueryParam();
+                var url = window.__BP + '/api/permissions/export' + this._orgQueryParam();
                 var res = await fetch(url);
                 if (!res.ok) {
                     var data = await res.json();
@@ -430,7 +430,7 @@ function permissionCentral() {
             formData.append('file', file);
 
             try {
-                var url = '/bp/api/permissions/import' + this._orgQueryParam();
+                var url = window.__BP + '/api/permissions/import' + this._orgQueryParam();
                 var res = await fetch(url, {
                     method: 'POST',
                     body: formData
@@ -457,7 +457,7 @@ function permissionCentral() {
         async doRestoreDefaults() {
             this.showRestoreModal = false;
             try {
-                var url = '/bp/api/permissions/restore-defaults' + this._orgQueryParam();
+                var url = window.__BP + '/api/permissions/restore-defaults' + this._orgQueryParam();
                 var res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }

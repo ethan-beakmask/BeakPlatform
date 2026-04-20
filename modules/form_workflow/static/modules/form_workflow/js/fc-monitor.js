@@ -156,7 +156,7 @@ function fcMonitor() {
         async loadExecutionLogs(instanceId) {
             console.log('[LOGS] loadExecutionLogs 呼叫, instanceId:', instanceId);
             try {
-                const url = `/bp/api/form-center/executions/${instanceId}/logs`;
+                const url = `${window.__BP}/api/form-center/executions/${instanceId}/logs`;
                 console.log('[LOGS] 請求 URL:', url);
                 const response = await fetch(url);
                 console.log('[LOGS] 回應狀態:', response.status);
@@ -179,7 +179,7 @@ function fcMonitor() {
             try {
                 // 使用 execution_code 或 workflow_instance_secure_code
                 const instanceId = item.execution_code || item.workflow_instance_secure_code || item.secure_code;
-                const response = await fetch(`/bp/api/form-center/executions/${instanceId}/path`);
+                const response = await fetch(`${window.__BP}/api/form-center/executions/${instanceId}/path`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -496,7 +496,7 @@ function fcMonitor() {
             this.loadingFormDetail = true;
             try {
                 const secureCode = this.monitoringExecution.secure_code;
-                const response = await fetch(`/bp/api/form-center/form-detail/${secureCode}`);
+                const response = await fetch(`${window.__BP}/api/form-center/form-detail/${secureCode}`);
                 const result = await response.json();
 
                 if (result.success) {
@@ -574,7 +574,7 @@ function fcMonitor() {
             const secureCode = this.monitoringExecution?.secure_code;
             if (!secureCode) return;
             try {
-                const res = await fetch(`/bp/api/form-center/force-end/${secureCode}`, {
+                const res = await fetch(`${window.__BP}/api/form-center/force-end/${secureCode}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

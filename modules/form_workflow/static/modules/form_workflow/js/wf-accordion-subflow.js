@@ -131,7 +131,7 @@
                     return;
                 }
 
-                const response = await fetch(`/bp/api/workflows/data/subflows/available?parent_id=${parentId}`);
+                const response = await fetch(`${window.__BP}/api/workflows/data/subflows/available?parent_id=${parentId}`);
                 const result = await response.json();
 
                 const dedicatedList = document.getElementById('dedicatedSubflowList');
@@ -278,7 +278,7 @@
             if (!confirm(`確定要刪除子流程「${name}」嗎？\n此操作無法復原。`)) return;
 
             try {
-                const response = await fetch(`/bp/api/workflows/data/subflows/${secureCode}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/subflows/${secureCode}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -309,7 +309,7 @@
             }
 
             try {
-                const response = await fetch(`/bp/api/workflows/data/subflows/create`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/subflows/create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

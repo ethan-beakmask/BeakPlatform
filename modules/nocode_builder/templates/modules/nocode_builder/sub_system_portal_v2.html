@@ -3,15 +3,15 @@
 {% block title %}{{ sub_system_name }}{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
-<link rel="stylesheet" href="/bp/static/vendor/wunderbaum/bootstrap-icons.css">
-<link rel="stylesheet" href="/bp/static/vendor/wunderbaum/wunderbaum.css">
-<link rel="stylesheet" href="/bp/static/vendor/gridstack/gridstack.min.css">
-<link rel="stylesheet" href="/bp/static/css/bk-file-attachment.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/datalist-widget.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/sitemenu-widget.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/formgrid-widget.css">
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/studio.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/wunderbaum/bootstrap-icons.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/wunderbaum/wunderbaum.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/bk-file-attachment.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/datalist-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/sitemenu-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/formgrid-widget.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/studio.css">
 <style>
     .sp2-layout {
         display: grid;
@@ -162,12 +162,12 @@ window.__PORTAL_CONFIG = {
     </div>
 </div>
 
-<script src="/bp/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
-<script src="/bp/static/vendor/gridstack/gridstack-all.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/page-context.js"></script>
-<script src="/bp/static/js/bk-file-attachment.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/datalist-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/formgrid-widget.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/site-map-portal.js"></script>
+<script src="{{ app_prefix }}/static/vendor/wunderbaum/wunderbaum.umd.min.js"></script>
+<script src="{{ app_prefix }}/static/vendor/gridstack/gridstack-all.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/page-context.js"></script>
+<script src="{{ app_prefix }}/static/js/bk-file-attachment.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/datalist-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sitemenu-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/formgrid-widget.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/site-map-portal.js"></script>
 {% endblock %}

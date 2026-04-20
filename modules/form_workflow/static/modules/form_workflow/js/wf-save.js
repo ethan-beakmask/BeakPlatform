@@ -455,7 +455,7 @@
                 console.log('  欄位取值設定:', fieldReadConfig);
                 console.log('📤 準備發送的配置:', cytoscape_config);
 
-                const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`, {
+                const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -563,7 +563,7 @@
                             console.log('✓ 3:2 縮圖已生成 (600x400)');
 
                             // 上傳縮圖到後端
-                            const response = await fetch(`/bp/api/workflows/data/templates/${currentWorkflowId}`, {
+                            const response = await fetch(`${window.__BP}/api/workflows/data/templates/${currentWorkflowId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({

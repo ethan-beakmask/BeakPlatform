@@ -24,7 +24,7 @@ function passwordForm() {
 
         async loadRequirements() {
             try {
-                const response = await fetch('/bp/auth/password-policy');
+                const response = await fetch(window.__BP + '/auth/password-policy');
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -48,7 +48,7 @@ function passwordForm() {
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                   document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/bp/auth/password-policy/generate', {
+                const response = await fetch(window.__BP + '/auth/password-policy/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ function passwordForm() {
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                   document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/bp/auth/password-policy/validate', {
+                const response = await fetch(window.__BP + '/auth/password-policy/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ function passwordForm() {
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
                                   document.querySelector('input[name="csrf_token"]')?.value;
-                const response = await fetch('/bp/api/transliterate/name', {
+                const response = await fetch(window.__BP + '/api/transliterate/name', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

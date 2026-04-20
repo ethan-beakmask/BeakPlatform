@@ -5,7 +5,7 @@
 <script>
 window.__INSTANCE_ID = '{{ instance_id }}';
 </script>
-<script src="/bp/static/vendor/cytoscape.min.js"></script>
+<script src="{{ app_prefix }}/static/vendor/cytoscape.min.js"></script>
 <style>
 .fo-toolbar { padding: 8px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .fo-toolbar h2 { font-size: 15px; font-weight: 600; margin: 0; }
@@ -87,7 +87,7 @@ function flowOverview() {
 
         async init() {
             try {
-                const res = await fetch(`/bp/api/form-center/executions/${window.__INSTANCE_ID}/path`);
+                const res = await fetch(`{{ app_prefix }}/api/form-center/executions/${window.__INSTANCE_ID}/path`);
                 const result = await res.json();
                 if (!result.success) { this.error = result.error || '載入失敗'; this.loading = false; return; }
 

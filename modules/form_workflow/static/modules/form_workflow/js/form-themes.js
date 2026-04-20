@@ -41,7 +41,7 @@ function formThemeManager() {
         async loadThemes() {
             this.loading = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/form-themes?all=1');
+                const res = await fetch(window.__BP + '/api/form-workflow/form-themes?all=1');
                 const json = await res.json();
                 if (json.success) {
                     this.themes = json.data;
@@ -72,7 +72,7 @@ function formThemeManager() {
         async editTheme(theme) {
             // 取得含 CSS 的完整資料
             try {
-                const res = await fetch(`/bp/api/form-workflow/form-themes/${theme.secure_code}`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${theme.secure_code}`);
                 const json = await res.json();
                 if (!json.success) {
                     this.showToast(json.message || '載入失敗', 'error');
@@ -99,10 +99,10 @@ function formThemeManager() {
             try {
                 let url, method;
                 if (this.editingTheme) {
-                    url = `/bp/api/form-workflow/form-themes/${this.editingTheme.secure_code}`;
+                    url = `${window.__BP}/api/form-workflow/form-themes/${this.editingTheme.secure_code}`;
                     method = 'PUT';
                 } else {
-                    url = '/bp/api/form-workflow/form-themes';
+                    url = window.__BP + '/api/form-workflow/form-themes';
                     method = 'POST';
                 }
 
@@ -163,7 +163,7 @@ function formThemeManager() {
                 formData.append('file', this.uploadFile);
                 formData.append('secure_code', this.uploadTarget.secure_code);
 
-                const res = await fetch('/bp/api/form-workflow/form-themes/upload', {
+                const res = await fetch(window.__BP + '/api/form-workflow/form-themes/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -186,7 +186,7 @@ function formThemeManager() {
 
         async downloadCSS(theme) {
             try {
-                const res = await fetch(`/bp/api/form-workflow/form-themes/${theme.secure_code}`);
+                const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${theme.secure_code}`);
                 const json = await res.json();
                 if (!json.success || !json.data.css_content) {
                     this.showToast('無 CSS 內容可下載', 'warning');
@@ -211,7 +211,7 @@ function formThemeManager() {
 
         async toggleActive(theme) {
             try {
-                const res = await fetch(`/bp/api/form-workflow/form-themes/${theme.secure_code}`, {
+                const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${theme.secure_code}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_active: !theme.is_active })
@@ -239,7 +239,7 @@ function formThemeManager() {
         async deleteTheme() {
             if (!this.deletingTheme) return;
             try {
-                const res = await fetch(`/bp/api/form-workflow/form-themes/${this.deletingTheme.secure_code}`, {
+                const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${this.deletingTheme.secure_code}`, {
                     method: 'DELETE'
                 });
                 const json = await res.json();

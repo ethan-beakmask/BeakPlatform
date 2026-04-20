@@ -203,7 +203,7 @@ function userCreateMixin(config) {
             var username = this.uc_normalizedUsername();
             if (!username) return;
             try {
-                var resp = await fetch('/bp/users/check-username?username=' + encodeURIComponent(username));
+                var resp = await fetch(window.__BP + '/users/check-username?username=' + encodeURIComponent(username));
                 var data = await resp.json();
                 if (this.uc_normalizedUsername() === username) {
                     this.uc_usernameAvailable = data.available;
@@ -219,7 +219,7 @@ function userCreateMixin(config) {
 
         uc_loadPasswordRequirements: async function() {
             try {
-                var response = await fetch('/bp/auth/password-policy');
+                var response = await fetch(window.__BP + '/auth/password-policy');
                 if (response.ok) {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
@@ -243,7 +243,7 @@ function userCreateMixin(config) {
             try {
                 var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                 (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/bp/auth/password-policy/generate', {
+                var response = await fetch(window.__BP + '/auth/password-policy/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }
                 });
@@ -279,7 +279,7 @@ function userCreateMixin(config) {
             try {
                 var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                 (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/bp/auth/password-policy/validate', {
+                var response = await fetch(window.__BP + '/auth/password-policy/validate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ password: this.uc_password })
@@ -298,7 +298,7 @@ function userCreateMixin(config) {
 
         uc_loadRules: async function() {
             try {
-                var response = await fetch('/bp/api/numbering/rules?scope=INTERNAL_ONLY,INTERNAL_UNIVERSAL');
+                var response = await fetch(window.__BP + '/api/numbering/rules?scope=INTERNAL_ONLY,INTERNAL_UNIVERSAL');
                 var data = await response.json();
                 if (data.success && data.data.length > 0) {
                     // 只保留企業成員預設編號與非預設(自訂)編號
@@ -322,7 +322,7 @@ function userCreateMixin(config) {
 
         uc_refreshNextNumber: async function(ruleCode) {
             try {
-                var response = await fetch('/bp/api/numbering/next?rule=' + (ruleCode || this.uc_selectedRule));
+                var response = await fetch(window.__BP + '/api/numbering/next?rule=' + (ruleCode || this.uc_selectedRule));
                 var data = await response.json();
                 if (data.success) {
                     this.uc_nextNumber = data.data.number;
@@ -347,7 +347,7 @@ function userCreateMixin(config) {
             try {
                 var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content ||
                                 (document.querySelector('input[name="csrf_token"]') || {}).value;
-                var response = await fetch('/bp/api/transliterate/name', {
+                var response = await fetch(window.__BP + '/api/transliterate/name', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify({ name: this.uc_nativeName })
@@ -411,7 +411,7 @@ function userCreateMixin(config) {
                     mobile_phone_2: this.uc_mobilePhone2 || null
                 };
 
-                var res = await fetch('/bp/api/users', {
+                var res = await fetch(window.__BP + '/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify(payload)

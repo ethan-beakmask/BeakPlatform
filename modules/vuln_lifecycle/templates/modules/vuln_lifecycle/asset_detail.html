@@ -2,14 +2,14 @@
 {% block title %}資產弱點詳情{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/modules/vuln_lifecycle/css/vuln-common.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
 {% endblock %}
 
 {% block content %}
 <div class="vlc-container" x-data="assetDetail()">
 
     <div class="vlc-page-header">
-        <a href="/bp/vuln/assets" class="vlc-btn-back">&larr; 返回清冊</a>
+        <a href="{{ app_prefix }}/vuln/assets" class="vlc-btn-back">&larr; 返回清冊</a>
         <h1 x-text="title">資產 #{{ asset_id }}</h1>
     </div>
 
@@ -125,7 +125,7 @@ function assetDetail() {
 
         load: function() {
             var self = this;
-            fetch('/bp/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/assets/' + assetId + '/findings?severity_min=' + self.sevFilter)
             .then(function(r) {
                 if (!r.ok) {
                     document.getElementById('t-body').innerHTML =
@@ -215,7 +215,7 @@ function assetDetail() {
                 alert('請填寫調整理由');
                 return;
             }
-            fetch('/bp/api/vuln-lifecycle/risk/adjust', {
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/risk/adjust', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

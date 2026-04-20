@@ -281,7 +281,7 @@
 
             const form = currentMappedForms[0];
             const formIdentifier = form.form_secure_code || form.form_id;
-            let url = `/bp/api/workflows/data/forms/${formIdentifier}/fields?version_type=design`;
+            let url = `${window.__BP}/api/workflows/data/forms/${formIdentifier}/fields?version_type=design`;
             if (form.mapping_id) url += `&mapping_id=${form.mapping_id}`;
 
             try {

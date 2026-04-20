@@ -3,7 +3,7 @@
 {% block title %}選項-清單-資料樹{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/vendor/beak-trellis/beak-trellis.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis.css">
 <style>
 /* 選項樹：隱藏展開/收合按鈕，一律全展開 */
 #bt-lookup-tree .bt-toggle { display: none; }
@@ -502,10 +502,10 @@
          x-text="toast.message" x-transition></div>
 </div>
 
-<script src="/bp/static/vendor/beak-trellis/beak-tree-model.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-trellis.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-trellis-drag.js"></script>
-<script src="/bp/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
-<script src="/bp/static/js/code-input.js"></script>
-<script src="/bp/static/modules/nocode_builder/js/lookup-manager.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis-drag.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<script src="{{ app_prefix }}/static/js/code-input.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/lookup-manager.js"></script>
 {% endblock %}

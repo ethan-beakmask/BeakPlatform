@@ -79,7 +79,7 @@ function roleListManager() {
             this.resultMsg = '';
 
             try {
-                var resp = await fetch('/bp/api/roles/batch-delete', {
+                var resp = await fetch(window.__BP + '/api/roles/batch-delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

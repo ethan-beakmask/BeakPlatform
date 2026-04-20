@@ -4,8 +4,8 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/master-detail.css') }}">
-<script src="/bp/static/js/password-form.js"></script>
-<script src="/bp/static/js/sys-accounts.js"></script>
+<script src="{{ app_prefix }}/static/js/password-form.js"></script>
+<script src="{{ app_prefix }}/static/js/sys-accounts.js"></script>
 {% endblock %}
 
 {% block content %}

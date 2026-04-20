@@ -2,7 +2,7 @@
 {% block title %}KYND 外部風險監控{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/modules/vuln_lifecycle/css/vuln-common.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/vuln_lifecycle/css/vuln-common.css">
 {% endblock %}
 
 {% block content %}
@@ -253,7 +253,7 @@ function kyndPage() {
                 'service_down': '#d97706',
                 'db_error': '#dc2626',
             };
-            fetch('/bp/api/vuln-lifecycle/health')
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/health')
             .then(function(r) { return r.json(); })
             .then(function(r) {
                 var health = r.data || {};
@@ -271,7 +271,7 @@ function kyndPage() {
 
         loadSessions() {
             var self = this;
-            fetch('/bp/api/vuln-lifecycle/kynd/sessions')
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/kynd/sessions')
             .then(function(r) { return r.json(); })
             .then(function(r) {
                 if (!r.success) return;
@@ -285,7 +285,7 @@ function kyndPage() {
 
         loadSummary() {
             var self = this;
-            fetch('/bp/api/vuln-lifecycle/kynd/summary')
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/kynd/summary')
             .then(function(r) { return r.json(); })
             .then(function(r) {
                 if (!r.success) return;
@@ -352,7 +352,7 @@ function kyndPage() {
             if (this.filterRisk) params += '&risk_level=' + this.filterRisk;
             if (this.selectedSession) params += '&session_id=' + this.selectedSession;
 
-            fetch('/bp/api/vuln-lifecycle/kynd/findings?' + params)
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/kynd/findings?' + params)
             .then(function(r) { return r.json(); })
             .then(function(r) {
                 self.findings = r.success ? r.data : [];
@@ -379,7 +379,7 @@ function kyndPage() {
                 expires_at: this.adjExpires || null,
             };
 
-            fetch('/bp/api/vuln-lifecycle/kynd/risk/adjust', {
+            fetch('{{ app_prefix }}/api/vuln-lifecycle/kynd/risk/adjust', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body),

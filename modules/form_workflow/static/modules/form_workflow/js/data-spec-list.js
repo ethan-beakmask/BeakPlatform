@@ -188,8 +188,8 @@ function dataSpecManager() {
             try {
                 // 並行載入 registry overview 和獨立規格
                 const [regRes, saRes] = await Promise.all([
-                    fetch('/bp/api/form-workflow/specs/registry-overview'),
-                    fetch('/bp/api/form-workflow/specs/standalone'),
+                    fetch(window.__BP + '/api/form-workflow/specs/registry-overview'),
+                    fetch(window.__BP + '/api/form-workflow/specs/standalone'),
                 ]);
                 const regData = await regRes.json();
                 const saData = await saRes.json();
@@ -238,7 +238,7 @@ function dataSpecManager() {
             this.selectedTemplateSc = null;
             this.loadingTemplates = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/specs/available-templates');
+                const res = await fetch(window.__BP + '/api/form-workflow/specs/available-templates');
                 const data = await res.json();
                 if (data.success) {
                     this.availableTemplates = data.data || [];
@@ -261,12 +261,12 @@ function dataSpecManager() {
                 return;
             }
             this.showNewModal = false;
-            window.location.href = '/bp/forms/templates/' + this.selectedTemplateSc + '/spec';
+            window.location.href = window.__BP + '/forms/templates/' + this.selectedTemplateSc + '/spec';
         },
 
         // --- 跳轉編輯器 ---
         goToSpecEditor(ftSc) {
-            window.location.href = '/bp/forms/templates/' + ftSc + '/spec';
+            window.location.href = window.__BP + '/forms/templates/' + ftSc + '/spec';
         },
 
         // --- 建立規格 (sync-from-formio) ---
@@ -275,7 +275,7 @@ function dataSpecManager() {
             this.creating = true;
             try {
                 const res = await fetch(
-                    '/bp/api/form-workflow/specs/' + item.form_template_secure_code + '/sync-from-formio',
+                    window.__BP + '/api/form-workflow/specs/' + item.form_template_secure_code + '/sync-from-formio',
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -301,7 +301,7 @@ function dataSpecManager() {
             this.compareTemplateName = item.form_template_name;
             try {
                 const res = await fetch(
-                    '/bp/api/form-workflow/specs/' + item.form_template_secure_code + '/compare'
+                    window.__BP + '/api/form-workflow/specs/' + item.form_template_secure_code + '/compare'
                 );
                 const data = await res.json();
                 if (data.success) {
@@ -318,22 +318,22 @@ function dataSpecManager() {
 
         // --- 獨立規格操作 ---
         goNewStandalone() {
-            window.location.href = '/bp/forms/data-specs/new';
+            window.location.href = window.__BP + '/forms/data-specs/new';
         },
 
         goEditStandalone(specSc) {
-            window.location.href = '/bp/forms/data-specs/' + specSc + '/edit';
+            window.location.href = window.__BP + '/forms/data-specs/' + specSc + '/edit';
         },
 
         goSyncControl(ftSc) {
-            window.location.href = '/bp/forms/data-specs/' + ftSc + '/sync';
+            window.location.href = window.__BP + '/forms/data-specs/' + ftSc + '/sync';
         },
 
         async deleteStandalone(specSc) {
             if (!confirm('確定要刪除此獨立規格？此操作無法復原。')) return;
             this.deletingSpec = true;
             try {
-                const res = await fetch('/bp/api/form-workflow/specs/standalone/' + specSc, {
+                const res = await fetch(window.__BP + '/api/form-workflow/specs/standalone/' + specSc, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                 });

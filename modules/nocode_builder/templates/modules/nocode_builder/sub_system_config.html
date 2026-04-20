@@ -3,7 +3,7 @@
 {% block title %}子系統設定{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/bp/static/modules/nocode_builder/css/nocode-builder.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
 <style>
     .ssc-section {
         background: #fff;
@@ -145,7 +145,7 @@ window.__SSC_CONFIG = {
             <h1>子系統設定: <span x-text="form.name || '載入中...'"></span></h1>
         </div>
         <div class="dc-toolbar">
-            <a href="/bp/nocode-builder/sub-systems" class="dc-btn">返回列表</a>
+            <a href="{{ app_prefix }}/nocode-builder/sub-systems" class="dc-btn">返回列表</a>
             <button class="dc-btn primary" @click="save()">儲存基本資訊</button>
         </div>
     </div>
@@ -362,5 +362,5 @@ window.__SSC_CONFIG = {
          x-text="toast.message" x-transition></div>
 </div>
 
-<script src="/bp/static/modules/nocode_builder/js/sub-system-config.js"></script>
+<script src="{{ app_prefix }}/static/modules/nocode_builder/js/sub-system-config.js"></script>
 {% endblock %}

@@ -12,7 +12,7 @@
             if (!smtpSelect) return;
 
             try {
-                const response = await fetch('/bp/api/enterprise/data/settings/smtp/available');
+                const response = await fetch(window.__BP + '/api/enterprise/data/settings/smtp/available');
                 if (!response.ok) {
                     smtpSelect.innerHTML = '<option value="">無法載入 SMTP 設定</option>';
                     return;
@@ -69,7 +69,7 @@
             if (!groupSelect) return;
 
             try {
-                const response = await fetch('/bp/api/enterprise/data/settings/email-groups/available');
+                const response = await fetch(window.__BP + '/api/enterprise/data/settings/email-groups/available');
                 if (!response.ok) {
                     groupSelect.innerHTML = '<option value="">無法載入群組</option>';
                     return;

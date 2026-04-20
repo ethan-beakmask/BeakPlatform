@@ -212,7 +212,7 @@ class FormGridWidget {
 
     async _loadMasterViewConfig() {
         try {
-            const res = await fetch('/bp/api/nocode-builder/views/' + this.config.masterViewCode);
+            const res = await fetch(window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode);
             const data = await res.json();
             if (data.success) {
                 this.masterViewConfig = data.data;
@@ -226,7 +226,7 @@ class FormGridWidget {
 
     async _loadDetailViewConfig() {
         try {
-            const res = await fetch('/bp/api/nocode-builder/views/' + this.config.detailViewCode);
+            const res = await fetch(window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode);
             const data = await res.json();
             if (data.success) {
                 this.detailViewConfig = data.data;
@@ -243,7 +243,7 @@ class FormGridWidget {
 
         const codes = [...new Set(lookupCols.map(c => c.lookup_category_code))];
         const fetches = codes.map(code =>
-            fetch('/bp/api/lookup/by-code/' + encodeURIComponent(code))
+            fetch(window.__BP + '/api/lookup/by-code/' + encodeURIComponent(code))
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -271,7 +271,7 @@ class FormGridWidget {
         if (!this.masterViewConfig) return;
 
         try {
-            let url = '/bp/api/nocode-builder/views/' + this.config.masterViewCode + '/rows'
+            let url = window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode + '/rows'
                 + '?page=1&per_page=200';
 
             // 排序: 優先用 update_date (若欄位存在)，否則用 view 預設
@@ -337,7 +337,7 @@ class FormGridWidget {
         }
 
         try {
-            let url = '/bp/api/nocode-builder/views/' + this.config.detailViewCode + '/rows'
+            let url = window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode + '/rows'
                 + '?page=' + this.detailPagination.page
                 + '&per_page=' + this.detailPagination.per_page;
 
@@ -372,7 +372,7 @@ class FormGridWidget {
         // 載入完整 Master 資料
         try {
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.masterViewCode + '/rows/' + rowId
+                window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode + '/rows/' + rowId
             );
             const data = await res.json();
             if (data.success) {
@@ -993,7 +993,7 @@ class FormGridWidget {
                 this._buildContextHeaders()
             );
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.masterViewCode
+                window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode
                 + '/rows/' + this.selectedMasterRowId,
                 { method: 'PUT', headers, body: JSON.stringify(data) }
             );
@@ -1026,7 +1026,7 @@ class FormGridWidget {
                 this._buildContextHeaders()
             );
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.masterViewCode
+                window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode
                 + '/rows/' + this.selectedMasterRowId,
                 { method: 'PUT', headers, body: JSON.stringify({ is_locked: newLocked }) }
             );
@@ -1047,7 +1047,7 @@ class FormGridWidget {
 
         try {
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.masterViewCode
+                window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode
                 + '/rows/' + this.selectedMasterRowId,
                 { method: 'DELETE', headers: this._buildContextHeaders() }
             );
@@ -1080,7 +1080,7 @@ class FormGridWidget {
         const pkeyCol = this.config.masterPkeyColumn;
         if (this.config.numberingRuleSc && pkeyCol) {
             try {
-                const res = await fetch('/bp/api/numbering/next?rule_sc=' + this.config.numberingRuleSc);
+                const res = await fetch(window.__BP + '/api/numbering/next?rule_sc=' + this.config.numberingRuleSc);
                 const data = await res.json();
                 if (data.success) suggestedPkey = data.number;
             } catch (e) { /* 忽略，使用者手動輸入 */ }
@@ -1136,7 +1136,7 @@ class FormGridWidget {
             // 若使用 numbering，消耗編號
             if (this.config.numberingRuleSc && pkeyCol && data[pkeyCol] === suggestedPkey) {
                 try {
-                    await fetch('/bp/api/numbering/consume', {
+                    await fetch(window.__BP + '/api/numbering/consume', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ rule_sc: this.config.numberingRuleSc }),
@@ -1153,7 +1153,7 @@ class FormGridWidget {
                     this._buildContextHeaders()
                 );
                 const res = await fetch(
-                    '/bp/api/nocode-builder/views/' + this.config.masterViewCode + '/rows',
+                    window.__BP + '/api/nocode-builder/views/' + this.config.masterViewCode + '/rows',
                     { method: 'POST', headers, body: JSON.stringify(data) }
                 );
                 const result = await res.json();
@@ -1188,7 +1188,7 @@ class FormGridWidget {
         if (isEdit && rowId) {
             try {
                 const res = await fetch(
-                    '/bp/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId
+                    window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId
                 );
                 const data = await res.json();
                 if (data.success) rowData = data.data || {};
@@ -1261,10 +1261,10 @@ class FormGridWidget {
             try {
                 let url, method;
                 if (isEdit) {
-                    url = '/bp/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId;
+                    url = window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId;
                     method = 'PUT';
                 } else {
-                    url = '/bp/api/nocode-builder/views/' + this.config.detailViewCode + '/rows';
+                    url = window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode + '/rows';
                     method = 'POST';
                 }
 
@@ -1304,7 +1304,7 @@ class FormGridWidget {
             headers['X-Lock-Check-RowId'] = this.selectedMasterRowId;
 
             const res = await fetch(
-                '/bp/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId,
+                window.__BP + '/api/nocode-builder/views/' + this.config.detailViewCode + '/rows/' + rowId,
                 { method: 'DELETE', headers }
             );
             const result = await res.json();

@@ -13,15 +13,15 @@ window.__USER_LOCALE = '{{ user_locale }}';
 window.__USER_SC = '{{ user_secure_code }}';
 </script>
 <!-- Bootstrap CSS -->
-<link rel="stylesheet" href="/bp/static/vendor/bootstrap.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/bootstrap.min.css">
 <!-- Form.io CSS -->
-<link rel="stylesheet" href="/bp/static/vendor/formio.full.min.css">
-<link rel="stylesheet" href="/bp/static/css/formio-theme.css">
-<link rel="stylesheet" href="/bp/api/form-workflow/form-themes/bundle.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/formio.full.min.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/formio-theme.css">
+<link rel="stylesheet" href="{{ app_prefix }}/api/form-workflow/form-themes/bundle.css">
 <!-- File Attachment CSS -->
-<link rel="stylesheet" href="/bp/static/css/bk-file-attachment.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/css/bk-file-attachment.css">
 <!-- Form Center CSS -->
-<link rel="stylesheet" href="/bp/static/modules/form_workflow/css/form-center.css">
+<link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/form-center.css">
 {% endblock %}
 
 {% block content %}
@@ -492,37 +492,37 @@ window.__USER_SC = '{{ user_secure_code }}';
 </div>
 
 <!-- Vendor JS -->
-<script src="/bp/static/vendor/formio.full.min.js"></script>
+<script src="{{ app_prefix }}/static/vendor/formio.full.min.js"></script>
 <script>Formio.icons = 'fontawesome';</script>
 
 <!-- FormIO 自訂 Storage Provider (上傳走 file_service 加密) -->
-<script src="/bp/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/formio-bkfile-provider.js"></script>
 
-<script src="/bp/static/vendor/cytoscape.min.js"></script>
+<script src="{{ app_prefix }}/static/vendor/cytoscape.min.js"></script>
 
 <!-- BaekTree (UserPicker 依賴) -->
-<script src="/bp/static/vendor/beak-trellis/beak-tree-model.js"></script>
-<script src="/bp/static/vendor/beak-trellis/beak-tree.js"></script>
-<script src="/bp/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
-<link rel="stylesheet" href="/bp/static/vendor/beak-trellis/beak-tree.css">
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree-model.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.js"></script>
+<script src="{{ app_prefix }}/static/vendor/beak-trellis/renderers/beak-tree-lines-dom.js"></script>
+<link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-tree.css">
 
 <!-- Form.io 自訂元件 -->
-<script src="/bp/static/js/formio-user-picker.js"></script>
-<script src="/bp/static/js/formio-form-title.js"></script>
+<script src="{{ app_prefix }}/static/js/formio-user-picker.js"></script>
+<script src="{{ app_prefix }}/static/js/formio-form-title.js"></script>
 
 <!-- File Attachment JS -->
-<script src="/bp/static/js/bk-file-attachment.js"></script>
+<script src="{{ app_prefix }}/static/js/bk-file-attachment.js"></script>
 <!-- Form Center JS (mixin 先載入，主檔最後) -->
-<script src="/bp/static/modules/form_workflow/js/fc-flow-overview.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-utils.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-data-loader.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-form-render.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-form-fill.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-approval.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-batch-approval.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-canned-messages.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-monitor.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-read-form.js"></script>
-<script src="/bp/static/modules/form_workflow/js/fc-column-config.js"></script>
-<script src="/bp/static/modules/form_workflow/js/form-center.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-flow-overview.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-utils.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-data-loader.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-form-render.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-form-fill.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-approval.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-batch-approval.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-canned-messages.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-monitor.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-read-form.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/fc-column-config.js"></script>
+<script src="{{ app_prefix }}/static/modules/form_workflow/js/form-center.js"></script>
 {% endblock %}
