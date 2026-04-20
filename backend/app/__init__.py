@@ -1,5 +1,6 @@
 """
 BeakMask - Security-First Multi-tenant SaaS Platform
+Multi-tenant RBAC platform with dynamic module loading
 """
 import os
 from flask import Flask
