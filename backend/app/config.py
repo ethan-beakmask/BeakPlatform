@@ -65,6 +65,8 @@ class BaseConfig:
     RATELIMIT_STORAGE_URI = os.getenv('REDIS_URL', 'redis://localhost:6379/1')
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_HEADERS_ENABLED = True
+    RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True   # Redis 斷線時回退到 in-memory，避免全站 429
+    RATELIMIT_SWALLOW_ERRORS = True                # in-memory 也失敗時放行，不阻擋請求
 
     # L3 預設 (已認證用戶 per-user / 未認證 per-IP 共用此上限)
     RATELIMIT_DEFAULT = os.getenv('RATELIMIT_DEFAULT', '200000 per day;6000 per minute')

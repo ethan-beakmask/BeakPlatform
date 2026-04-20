@@ -110,7 +110,9 @@ resolve_ports() {
         fi
     fi
 
-    HEALTH_URL="http://localhost:${APP_PORT}/health"
+    # APP_PREFIX 預設 /beakplatform（與 Python 端 __init__.py 一致）
+    local health_prefix="${APP_PREFIX:-/beakplatform}"
+    HEALTH_URL="http://localhost:${APP_PORT}${health_prefix}/health"
 }
 
 health_check() {
@@ -276,9 +278,10 @@ fi
 # =========================================================================
 if [ "$ACTION" = "start" ]; then
     check_root
-    # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
+    # 從已安裝的 .env 讀取 Gunicorn port 與 APP_PREFIX，設定 health check URL
     local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
-    HEALTH_URL="http://localhost:${local_app_port:-8001}/health"
+    local_app_prefix=$(grep '^APP_PREFIX=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo "")
+    HEALTH_URL="http://localhost:${local_app_port:-8001}${local_app_prefix:-/beakplatform}/health"
     log_info "啟動 BeakPlatform..."
     systemctl start "$SERVICE_NAME"
     health_check
@@ -431,9 +434,10 @@ if [ "$ACTION" = "update" ]; then
 
     # [6] 重啟服務
     log_step "6/6" "重啟服務..."
-    # 從已安裝的 .env 讀取 Gunicorn port，設定 health check URL
+    # 從已安裝的 .env 讀取 Gunicorn port 與 APP_PREFIX，設定 health check URL
     local_app_port=$(grep '^GUNICORN_BIND=' "$INSTALL_DIR/.env" 2>/dev/null | sed 's/.*://' || echo "")
-    HEALTH_URL="http://localhost:${local_app_port:-8001}/health"
+    local_app_prefix=$(grep '^APP_PREFIX=' "$INSTALL_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo "")
+    HEALTH_URL="http://localhost:${local_app_port:-8001}${local_app_prefix:-/beakplatform}/health"
     systemctl restart "$SERVICE_NAME"
 
     health_check
@@ -617,6 +621,9 @@ SYSTEM_ORG_CODE=$SYS_ORG_CODE
 # 應用程式
 SECRET_KEY=$SECRET_KEY
 ENABLE_DEV_TOOLS=false
+
+# URL 前綴 (Nginx location / DispatcherMiddleware 路徑)
+APP_PREFIX=/beakplatform
 
 # 資料庫
 DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost/$DB_NAME

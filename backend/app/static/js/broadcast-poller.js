@@ -11,9 +11,11 @@
 (function () {
     'use strict';
 
-    var POLL_INTERVAL = (window.__BROADCAST_POLL_INTERVAL || 1) * 60 * 1000;
+    var BASE_INTERVAL = (window.__BROADCAST_POLL_INTERVAL || 1) * 60 * 1000;
     var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
     var _timer = null;
+    var _currentInterval = BASE_INTERVAL;
+    var _backoffCount = 0;
     var _marqueeEl = null;
     var _currentNavbarItems = [];
     var _currentNavbarIndex = 0;
@@ -25,7 +27,29 @@
     // ================================================================
     function init() {
         poll();
-        _timer = setInterval(poll, POLL_INTERVAL);
+        schedulePoll();
+    }
+
+    function schedulePoll() {
+        if (_timer) clearTimeout(_timer);
+        _timer = setTimeout(function () {
+            poll();
+            schedulePoll();
+        }, _currentInterval);
+    }
+
+    function resetBackoff() {
+        if (_backoffCount > 0) {
+            _backoffCount = 0;
+            _currentInterval = BASE_INTERVAL;
+        }
+    }
+
+    function applyBackoff() {
+        _backoffCount++;
+        // 指數退避: 2x, 4x, 8x ... 最高 30 分鐘
+        var multiplier = Math.pow(2, Math.min(_backoffCount, 5));
+        _currentInterval = Math.min(BASE_INTERVAL * multiplier, 30 * 60 * 1000);
     }
 
     function poll() {
@@ -34,13 +58,21 @@
             credentials: 'same-origin',
             headers: { 'X-CSRFToken': CSRF_TOKEN }
         })
-        .then(function (res) { return res.json(); })
+        .then(function (res) {
+            if (res.status === 429) {
+                applyBackoff();
+                return null;
+            }
+            if (!res.ok) return null;
+            resetBackoff();
+            return res.json();
+        })
         .then(function (data) {
-            if (!data.success) return;
+            if (!data || !data.success) return;
             handleNavbar(data.navbar || []);
             handleAlerts(data.alerts || []);
         })
-        .catch(function () { /* silent */ });
+        .catch(function () { applyBackoff(); });
     }
 
     // ================================================================

@@ -12,7 +12,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
-from .. import db
+from .. import db, limiter
 from ..models import LookupItem, BroadcastAcknowledgment, User
 from ..models.organizational_unit import OrganizationalUnit
 from ..security.decorators import login_required
@@ -26,6 +26,7 @@ broadcasts_bp = Blueprint(
 
 @broadcasts_bp.route('/active', methods=['GET'])
 @login_required
+@limiter.exempt
 def get_active_broadcasts():
     """
     取得當前用戶可見的 active 廣播
