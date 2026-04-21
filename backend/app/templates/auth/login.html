@@ -43,19 +43,23 @@
         form td {
             padding: 8px 0;
         }
-        form input[type="text"],
-        form input[type="email"],
-        form .form-input {
+        form .sv-field {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             font-size: 14px;
             box-sizing: border-box;
-        }
-        .secure-entry {
             -webkit-text-security: disc;
             text-security: disc;
+        }
+        form input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
         form input:focus {
             outline: none;
@@ -153,48 +157,47 @@
     {% endwith %}
 
     {% if login_type == 'org' and org %}
-    <!-- 企業專屬登入表單 — 欄位偽裝防自動化猜測 -->
     <form method="POST" action="{{ url_for('auth.org_login', domain_name=domain_name) }}">
         <table border="0" cellpadding="0" cellspacing="0">
             <tr>
                 <td>
-                    <label for="username">{{ _('帳號') }}</label>
+                    <label for="f_account">{{ _('帳號') }}</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="username" name="username" autocomplete="username">
+                    <input type="text" id="f_account" name="username" autocomplete="off">
                     <div class="domain-suffix">@{{ domain_name }}</div>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="auth_token">{{ _('密碼') }}</label>
+                    <label for="f_sv_1">{{ _('驗證碼') }} 1</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="auth_token" name="auth_token" class="form-input secure-entry" autocomplete="off">
+                    <input type="text" id="f_sv_1" name="sv_1" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="otp_verify_1">OTP1</label>
+                    <label for="f_sv_2">{{ _('驗證碼') }} 2</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="otp_verify_1" name="OTP1" class="form-input secure-entry" autocomplete="one-time-code">
+                    <input type="text" id="f_sv_2" name="sv_2" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="otp_verify_2">OTP2</label>
+                    <label for="f_sv_3">{{ _('驗證碼') }} 3</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="otp_verify_2" name="OTP2" class="form-input secure-entry" autocomplete="off">
+                    <input type="text" id="f_sv_3" name="sv_3" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>
@@ -210,48 +213,47 @@
     </div>
 
     {% else %}
-    <!-- 共用登入表單 — 欄位偽裝防自動化猜測 -->
     <form method="POST" action="{{ url_for('auth.login') }}">
         <table border="0" cellpadding="0" cellspacing="0">
             <tr>
                 <td>
-                    <label for="account">{{ _('帳號') }}</label>
+                    <label for="f_account">{{ _('帳號') }}</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="account" name="account" autocomplete="username" placeholder="username@company.com">
+                    <input type="text" id="f_account" name="account" autocomplete="off" placeholder="username@company.com">
                     <div class="help-text">{{ _('格式：帳號@企業網域') }}</div>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="auth_token_shared">{{ _('密碼') }}</label>
+                    <label for="f_sv_1">{{ _('驗證碼') }} 1</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="auth_token_shared" name="auth_token" class="form-input secure-entry" autocomplete="off">
+                    <input type="text" id="f_sv_1" name="sv_1" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="otp_verify_1_shared">OTP1</label>
+                    <label for="f_sv_2">{{ _('驗證碼') }} 2</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="otp_verify_1_shared" name="OTP1" class="form-input secure-entry" autocomplete="one-time-code">
+                    <input type="text" id="f_sv_2" name="sv_2" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="otp_verify_2_shared">OTP2</label>
+                    <label for="f_sv_3">{{ _('驗證碼') }} 3</label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    <input type="text" id="otp_verify_2_shared" name="OTP2" class="form-input secure-entry" autocomplete="off">
+                    <input type="text" id="f_sv_3" name="sv_3" class="sv-field" autocomplete="off">
                 </td>
             </tr>
             <tr>

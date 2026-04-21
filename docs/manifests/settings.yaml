@@ -18,6 +18,7 @@ files:
     - backend/app/services/email_service.py
     - backend/app/services/rate_limit_service.py
     - backend/app/services/password_policy_service.py
+    - backend/app/services/login_security_service.py
   model:
     - backend/app/models/smtp_config.py
     - backend/app/models/telegram_config.py
@@ -30,6 +31,7 @@ files:
     - backend/app/templates/pages/hostconfig/system_settings.html
   js:
     - backend/app/static/js/settings.js
+    - backend/app/static/js/settings-login-security.js
     - backend/app/static/js/settings-recipients.js
     - backend/app/static/js/settings-smtp.js
     - backend/app/static/js/settings-telegram.js

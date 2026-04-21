@@ -1,0 +1,139 @@
+        <!-- 登入安全欄位設定 -->
+        <section id="login-security" class="settings-section"
+                 x-show="activeSection === 'login-security'"
+                 x-data="loginSecuritySettings()" x-init="init()">
+            <h2>登入安全欄位設定</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+                登入頁面有三個外觀一致的驗證碼欄位，可分別指定為密碼、地雷、救助用途。
+                員工登入與廠商登入各自獨���設定，避免洩漏彼此的策略。
+            </p>
+
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+
+            <div x-show="!loading">
+                <!-- 員工登入 -->
+                <div style="border: 1px solid #ddd; padding: 16px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 15px;">員工登入</h3>
+                    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <th style="text-align: left; width: 140px; background: #f5f5f5;">密碼欄位</th>
+                                <td>
+                                    <select x-model="employee.password_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === employee.mine_field || f === employee.rescue_field"></option>
+                                        </template>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">使用者實際輸入密碼的欄位</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">地雷欄位</th>
+                                <td>
+                                    <select x-model="employee.mine_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === employee.password_field || f === employee.rescue_field"></option>
+                                        </template>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">有任何輸入即視為攻擊，一律回應錯誤</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">救助欄位</th>
+                                <td>
+                                    <select x-model="employee.rescue_field"
+                                            @change="saveConfig('employee')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === employee.password_field || f === employee.mine_field"></option>
+                                        </template>
+                                    </select>
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">包含救助關鍵字時通知管理員</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">救助關鍵字</th>
+                                <td>
+                                    <input type="text" x-model="employee.rescue_keyword"
+                                           @change="saveConfig('employee')"
+                                           placeholder="留空=停用"
+                                           style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                    <span style="color: #666; font-size: 12px; margin-left: 8px;">忽略大小寫，出現在救助欄位中即觸發</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 廠商登入 -->
+                <div style="border: 1px solid #ddd; padding: 16px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 15px;">廠商登入</h3>
+                    <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; font-size: 13px;">
+                        <tbody>
+                            <tr>
+                                <th style="text-align: left; width: 140px; background: #f5f5f5;">密碼欄位</th>
+                                <td>
+                                    <select x-model="vendor.password_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === vendor.mine_field || f === vendor.rescue_field"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">地雷欄位</th>
+                                <td>
+                                    <select x-model="vendor.mine_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === vendor.password_field || f === vendor.rescue_field"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">救助欄位</th>
+                                <td>
+                                    <select x-model="vendor.rescue_field"
+                                            @change="saveConfig('vendor')"
+                                            style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <template x-for="f in validFields" :key="f">
+                                            <option :value="f" x-text="fieldLabel(f)"
+                                                    :disabled="f === vendor.password_field || f === vendor.mine_field"></option>
+                                        </template>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: left; background: #f5f5f5;">救助關鍵字</th>
+                                <td>
+                                    <input type="text" x-model="vendor.rescue_keyword"
+                                           @change="saveConfig('vendor')"
+                                           placeholder="留空=停用"
+                                           style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p x-show="saveMessage" x-text="saveMessage"
+                   style="margin-top: 10px; padding: 8px 12px; background: #e8f5e9; color: #2e7d32; border-radius: 4px;"
+                   x-transition></p>
+                <p x-show="errorMessage" x-text="errorMessage"
+                   style="margin-top: 10px; padding: 8px 12px; background: #fef2f2; color: #dc2626; border-radius: 4px;"
+                   x-transition></p>
+            </div>
+        </section>

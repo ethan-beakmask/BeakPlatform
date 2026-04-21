@@ -9,13 +9,14 @@ files:
     - backend/app/services/auth_service.py
     - backend/app/services/password_policy_service.py
     - backend/app/services/email_service.py
+    - backend/app/services/login_security_service.py
   model:
     - backend/app/models/user.py
     - backend/app/models/password_reset_token.py
     - backend/app/models/password_history.py
   template:
     - backend/app/templates/auth/login.html
-    - backend/app/templates/auth/org_login.html
+    - backend/app/templates/auth/org_public_login.html
     - backend/app/templates/auth/forgot_password.html
     - backend/app/templates/auth/verify_reset.html
   js:

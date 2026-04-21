@@ -32,6 +32,11 @@
             <span class="settings-menu-icon">[P]</span>
             <span>密碼政策</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'login-security' }"
+             @click="activeSection = 'login-security'">
+            <span class="settings-menu-icon">[F]</span>
+            <span>登入安全欄位</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
              @click="activeSection = 'recipients'">
             <span class="settings-menu-icon">[R]</span>
@@ -384,6 +389,7 @@
                x-transition></p>
         </section>
 
+{% include "pages/admin/_settings_login_security_section.html" %}
 {% include "pages/admin/_settings_recipients_section.html" %}
 {% include "pages/admin/_settings_smtp_section.html" %}
 {% include "pages/admin/_settings_telegram_section.html" %}
@@ -391,6 +397,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ app_prefix }}/static/js/settings-login-security.js"></script>
 <script src="{{ app_prefix }}/static/js/settings-recipients.js"></script>
 <script src="{{ app_prefix }}/static/js/settings-smtp.js"></script>
 <script src="{{ app_prefix }}/static/js/settings-telegram.js"></script>

@@ -9,6 +9,7 @@ BeakMask Authentication API
    - 格式: username (自動帶入 domain_name)
 """
 import logging
+import time
 from datetime import datetime
 from flask import Blueprint, request, jsonify, redirect, url_for, render_template, session, flash
 
@@ -296,35 +297,35 @@ def login():
         return render_template('auth/login.html', login_type='shared')
 
     # POST - Handle login
+    from ..services.login_security_service import LoginSecurityService
+
+    login_start = time.monotonic()
     is_json = request.is_json
 
     if is_json:
         data = request.get_json()
         account = data.get('account', '').strip() if data else ''
         password = (data.get('password', '') if data else '').strip()
+        sv_fields = None  # JSON API 不走三欄位機制
     else:
         account = request.form.get('account', '').strip()
-        # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '').strip()
-        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
-        _decoy_credential = request.form.get('auth_token', '')
-        _decoy_otp2 = request.form.get('OTP2', '')
-        if _decoy_credential or _decoy_otp2:
-            logger.warning(f"[HONEYPOT] Decoy fields filled on shared login: "
-                           f"credential={'Y' if _decoy_credential else 'N'}, "
-                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
-                           f"ip={request.remote_addr}")
+        sv_fields = {
+            'sv_1': request.form.get('sv_1', ''),
+            'sv_2': request.form.get('sv_2', ''),
+            'sv_3': request.form.get('sv_3', ''),
+        }
+        password = None  # 待從設定決定
 
     # 錯誤回應
     def error_response(message, status_code):
+        LoginSecurityService.enforce_delay(login_start)
         if is_json:
             return jsonify({'error': message}), status_code
         else:
-            from flask import flash
             flash(message, 'error')
             return render_template('auth/login.html', error=message, login_type='shared'), status_code
 
-    if not account or not password:
+    if not account:
         return error_response('請輸入帳號和密碼', 400)
 
     # 解析帳號
@@ -333,7 +334,38 @@ def login():
     if not username or not domain_name:
         return error_response('請輸入正確的帳號格式 (username@domain)', 400)
 
-    return _do_login(username, domain_name, password, is_json)
+    # 表單提交：透過三欄位機制解析密碼
+    if sv_fields is not None:
+        # 先查企業以取得設定（企業不存在時用系統預設）
+        org_for_config = Organization.query.filter(
+            Organization.domain_name == domain_name,
+            Organization.is_deleted == False
+        ).first()
+
+        config = LoginSecurityService.get_config(org_for_config, 'employee')
+        fields = LoginSecurityService.process_fields(sv_fields, config)
+
+        # 地雷欄位觸發：一律回錯（先檢查救助）
+        if fields['rescue_triggered'] and org_for_config:
+            LoginSecurityService.send_rescue_alert(
+                org_for_config, account, request.remote_addr, 'employee'
+            )
+
+        if fields['mine_triggered']:
+            logger.warning(
+                f"[MINE] Mine field triggered on shared login: "
+                f"account={account} ip={request.remote_addr}"
+            )
+            return error_response('帳號或密碼錯誤', 401)
+
+        password = fields['password']
+
+    if not password:
+        return error_response('請輸入帳號和密碼', 400)
+
+    result = _do_login(username, domain_name, password, is_json)
+    LoginSecurityService.enforce_delay(login_start)
+    return result
 
 
 @auth_bp.route('/org/<domain_name>/login', methods=['GET', 'POST'])
@@ -391,6 +423,9 @@ def org_login(domain_name: str):
         )
 
     # POST - Handle login
+    from ..services.login_security_service import LoginSecurityService
+
+    login_start = time.monotonic()
     is_json = request.is_json
 
     if org is None:
@@ -402,25 +437,22 @@ def org_login(domain_name: str):
         data = request.get_json()
         username = data.get('username', '').strip() if data else ''
         password = (data.get('password', '') if data else '').strip()
+        sv_fields = None
     else:
         username = request.form.get('username', '').strip()
-        # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '').strip()
-        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
-        _decoy_credential = request.form.get('auth_token', '')
-        _decoy_otp2 = request.form.get('OTP2', '')
-        if _decoy_credential or _decoy_otp2:
-            logger.warning(f"[HONEYPOT] Decoy fields filled on org login: "
-                           f"credential={'Y' if _decoy_credential else 'N'}, "
-                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
-                           f"domain={domain_name} ip={request.remote_addr}")
+        sv_fields = {
+            'sv_1': request.form.get('sv_1', ''),
+            'sv_2': request.form.get('sv_2', ''),
+            'sv_3': request.form.get('sv_3', ''),
+        }
+        password = None
 
     # 錯誤回應
     def error_response(message, status_code):
+        LoginSecurityService.enforce_delay(login_start)
         if is_json:
             return jsonify({'error': message}), status_code
         else:
-            from flask import flash
             flash(message, 'error')
             return render_template(
                 'auth/login.html',
@@ -432,10 +464,34 @@ def org_login(domain_name: str):
                 show_org_name=org.get_setting('login_employee_show_name', True) if org else True
             ), status_code
 
-    if not username or not password:
+    if not username:
         return error_response('請輸入帳號和密碼', 400)
 
-    return _do_login(username, domain_name, password, is_json, login_type='org', org_for_template=org)
+    # 表單提交：透過三欄位機制解析密碼
+    if sv_fields is not None:
+        config = LoginSecurityService.get_config(org, 'employee')
+        fields = LoginSecurityService.process_fields(sv_fields, config)
+
+        if fields['rescue_triggered']:
+            LoginSecurityService.send_rescue_alert(
+                org, f"{username}@{domain_name}", request.remote_addr, 'employee'
+            )
+
+        if fields['mine_triggered']:
+            logger.warning(
+                f"[MINE] Mine field triggered on org login: "
+                f"user={username} domain={domain_name} ip={request.remote_addr}"
+            )
+            return error_response('帳號或密碼錯誤', 401)
+
+        password = fields['password']
+
+    if not password:
+        return error_response('請輸入帳號和密碼', 400)
+
+    result = _do_login(username, domain_name, password, is_json, login_type='org', org_for_template=org)
+    LoginSecurityService.enforce_delay(login_start)
+    return result
 
 
 @auth_bp.route('/org/<domain_name>/public', methods=['GET'])
@@ -531,6 +587,9 @@ def org_public_login(domain_name: str):
         )
 
     # POST - Handle login
+    from ..services.login_security_service import LoginSecurityService
+
+    login_start = time.monotonic()
     is_json = request.is_json
 
     if org is None:
@@ -542,20 +601,18 @@ def org_public_login(domain_name: str):
         data = request.get_json()
         email = data.get('email', '').strip().lower() if data else ''
         password = (data.get('password', '') if data else '').strip()
+        sv_fields = None
     else:
         email = request.form.get('email', '').strip().lower()
-        # 偽裝欄位: 真正的密碼從 OTP1 讀取
-        password = request.form.get('OTP1', '').strip()
-        # Honeypot 偵測: decoy 欄位被填寫 → 可能是自動化攻擊
-        _decoy_credential = request.form.get('auth_token', '')
-        _decoy_otp2 = request.form.get('OTP2', '')
-        if _decoy_credential or _decoy_otp2:
-            logger.warning(f"[HONEYPOT] Decoy fields filled on external login: "
-                           f"credential={'Y' if _decoy_credential else 'N'}, "
-                           f"OTP2={'Y' if _decoy_otp2 else 'N'} "
-                           f"domain={domain_name} ip={request.remote_addr}")
+        sv_fields = {
+            'sv_1': request.form.get('sv_1', ''),
+            'sv_2': request.form.get('sv_2', ''),
+            'sv_3': request.form.get('sv_3', ''),
+        }
+        password = None
 
     def error_response(msg: str, status_code: int = 400):
+        LoginSecurityService.enforce_delay(login_start)
         if is_json:
             return jsonify({'error': msg}), status_code
         flash(msg, 'error')
@@ -569,7 +626,29 @@ def org_public_login(domain_name: str):
             show_org_name=org.get_setting('login_external_show_name', True)
         ), status_code
 
-    if not email or not password:
+    if not email:
+        return error_response('請輸入 Email 和密碼', 400)
+
+    # 表單提交：透過三欄位機制解析密碼（vendor 獨立設定）
+    if sv_fields is not None:
+        config = LoginSecurityService.get_config(org, 'vendor')
+        fields = LoginSecurityService.process_fields(sv_fields, config)
+
+        if fields['rescue_triggered']:
+            LoginSecurityService.send_rescue_alert(
+                org, email, request.remote_addr, 'vendor'
+            )
+
+        if fields['mine_triggered']:
+            logger.warning(
+                f"[MINE] Mine field triggered on vendor login: "
+                f"email={email} domain={domain_name} ip={request.remote_addr}"
+            )
+            return error_response('帳號或密碼錯誤', 401)
+
+        password = fields['password']
+
+    if not password:
         return error_response('請輸入 Email 和密碼', 400)
 
     # 查詢外部廠商帳號
@@ -613,6 +692,8 @@ def org_public_login(domain_name: str):
         details=f'外部廠商: {email} ({org.name})',
         status_code=200,
     )
+
+    LoginSecurityService.enforce_delay(login_start)
 
     if is_json:
         return jsonify({

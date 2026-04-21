@@ -63,6 +63,7 @@ from . import _ss_telegram
 from . import _ss_recipient_groups
 from . import _ss_packages
 from . import _ss_audit
+from . import _ss_login_security
 
 api_system_settings = Blueprint('api_system_settings', __name__, url_prefix='/api/system-settings')
 
@@ -73,3 +74,4 @@ _ss_telegram.register(api_system_settings)
 _ss_recipient_groups.register(api_system_settings)
 _ss_packages.register(api_system_settings)
 _ss_audit.register(api_system_settings)
+_ss_login_security.register(api_system_settings)

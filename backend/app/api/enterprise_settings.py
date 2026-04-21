@@ -81,6 +81,103 @@ def update_general_settings():
     })
 
 
+# ==================== 登入安全欄位設定 ====================
+
+def _login_security_get(context: str):
+    """取得企業登入安全欄位設定（employee 或 vendor）"""
+    from ..services.login_security_service import (
+        LoginSecurityService, VALID_FIELDS,
+    )
+
+    org = current_user.organization
+    if not org:
+        return jsonify({'success': False, 'message': '找不到企業'}), 404
+
+    config = LoginSecurityService.get_config(org, context)
+    return jsonify({
+        'success': True,
+        'data': config,
+        'valid_fields': list(VALID_FIELDS),
+    })
+
+
+def _login_security_put(context: str):
+    """更新企業登入安全欄位設定（employee 或 vendor）"""
+    from ..services.login_security_service import (
+        LoginSecurityService, VALID_FIELDS, DEFAULT_CONFIG,
+    )
+
+    org = current_user.organization
+    if not org:
+        return jsonify({'success': False, 'message': '找不到企業'}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': '請提供資料'}), 400
+
+    setting_key = f'login_security_{context}'
+
+    # 合併現有設定
+    existing = org.get_setting(setting_key)
+    merged = dict(DEFAULT_CONFIG)
+    if isinstance(existing, dict):
+        merged.update(existing)
+
+    for k in ('password_field', 'mine_field', 'rescue_field'):
+        val = data.get(k)
+        if val is not None:
+            if val not in VALID_FIELDS:
+                return jsonify({
+                    'success': False,
+                    'message': f'{k} 無效，允許值: {", ".join(VALID_FIELDS)}',
+                }), 400
+            merged[k] = val
+
+    if 'rescue_keyword' in data:
+        merged['rescue_keyword'] = str(data['rescue_keyword']).strip()
+
+    is_valid, err = LoginSecurityService.validate_config(merged)
+    if not is_valid:
+        return jsonify({'success': False, 'message': err}), 400
+
+    org.set_setting(setting_key, merged)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': '登入安全欄位設定已儲存',
+        'data': merged,
+    })
+
+
+@api_enterprise_settings.route('/login-security/employee', methods=['GET'])
+@admin_required
+def get_login_security_employee():
+    """取得企業員工登入安全欄位設定"""
+    return _login_security_get('employee')
+
+
+@api_enterprise_settings.route('/login-security/employee', methods=['PUT'])
+@admin_required
+def update_login_security_employee():
+    """更新企業員工登入安全欄位設定"""
+    return _login_security_put('employee')
+
+
+@api_enterprise_settings.route('/login-security/vendor', methods=['GET'])
+@admin_required
+def get_login_security_vendor():
+    """取得企業廠商登入安全欄位設定"""
+    return _login_security_get('vendor')
+
+
+@api_enterprise_settings.route('/login-security/vendor', methods=['PUT'])
+@admin_required
+def update_login_security_vendor():
+    """更新企業廠商登入安全欄位設定"""
+    return _login_security_put('vendor')
+
+
 # ==================== 密碼政策設定 ====================
 
 @api_enterprise_settings.route('/password-policy', methods=['GET'])

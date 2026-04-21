@@ -1,0 +1,128 @@
+        <!-- 登入安全欄位（系統預設） -->
+        <div class="settings-card" x-show="activeSection === 'loginsecurity'">
+            <h2>登入安全欄位（系統預設）</h2>
+            <p class="settings-hint">
+                設定所有企業的登入安全欄位預設值。企業可在各自的設定中覆蓋。
+                員工登入與廠商登入各自獨立設定。
+            </p>
+
+            <div x-show="!loginSecurity.loaded" style="text-align: center; padding: 32px; color: #666;">載入中...</div>
+
+            <div x-show="loginSecurity.loaded">
+                <!-- 員工登入預設 -->
+                <h3 style="margin: 16px 0 8px 0; font-size: 14px; color: #333;">員工登入預設</h3>
+                <table class="config-table" style="margin-bottom: 20px;">
+                    <tbody>
+                        <tr>
+                            <td style="width: 140px; font-weight: bold;">密碼欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.employee.password_field"
+                                        @change="saveLoginSecurity('employee')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.employee.mine_field || f === loginSecurity.employee.rescue_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">地雷欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.employee.mine_field"
+                                        @change="saveLoginSecurity('employee')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.employee.password_field || f === loginSecurity.employee.rescue_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">救助欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.employee.rescue_field"
+                                        @change="saveLoginSecurity('employee')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.employee.password_field || f === loginSecurity.employee.mine_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">救助關鍵字</td>
+                            <td>
+                                <input type="text" x-model="loginSecurity.employee.rescue_keyword"
+                                       @change="saveLoginSecurity('employee')"
+                                       placeholder="留空=停用"
+                                       style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                <span style="color: #666; font-size: 12px; margin-left: 8px;">忽略大小寫</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 廠商登入預設 -->
+                <h3 style="margin: 16px 0 8px 0; font-size: 14px; color: #333;">廠商登入預設</h3>
+                <table class="config-table">
+                    <tbody>
+                        <tr>
+                            <td style="width: 140px; font-weight: bold;">密碼欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.vendor.password_field"
+                                        @change="saveLoginSecurity('vendor')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.vendor.mine_field || f === loginSecurity.vendor.rescue_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">地雷欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.vendor.mine_field"
+                                        @change="saveLoginSecurity('vendor')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.vendor.password_field || f === loginSecurity.vendor.rescue_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">救助欄位</td>
+                            <td>
+                                <select x-model="loginSecurity.vendor.rescue_field"
+                                        @change="saveLoginSecurity('vendor')"
+                                        style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                    <template x-for="f in loginSecurity.validFields" :key="f">
+                                        <option :value="f" x-text="loginSecFieldLabel(f)"
+                                                :disabled="f === loginSecurity.vendor.password_field || f === loginSecurity.vendor.mine_field"></option>
+                                    </template>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: bold;">救助關鍵字</td>
+                            <td>
+                                <input type="text" x-model="loginSecurity.vendor.rescue_keyword"
+                                       @change="saveLoginSecurity('vendor')"
+                                       placeholder="留空=停用"
+                                       style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                <span style="color: #666; font-size: 12px; margin-left: 8px;">忽略大小寫</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div x-show="message.loginSecurity" class="message"
+                 :class="message.loginSecurityError ? 'message-error' : 'message-success'"
+                 x-text="message.loginSecurity" x-transition></div>
+        </div>

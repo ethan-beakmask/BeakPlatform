@@ -47,6 +47,11 @@
             <span class="settings-menu-icon">[L]</span>
             <span>速率限制</span>
         </div>
+        <div class="settings-menu-item" :class="{ active: activeSection === 'loginsecurity' }"
+             @click="activeSection = 'loginsecurity'; loadLoginSecuritySettings()">
+            <span class="settings-menu-icon">[K]</span>
+            <span>登入安全欄位</span>
+        </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'filestorage' }"
              @click="activeSection = 'filestorage'; loadFileStorageSettings()">
             <span class="settings-menu-icon">[F]</span>
@@ -68,6 +73,7 @@
         {% include "pages/hostconfig/_system_settings_section_menucolors.html" %}
         {% include "pages/hostconfig/_system_settings_section_audit.html" %}
         {% include "pages/hostconfig/_system_settings_section_ratelimit.html" %}
+        {% include "pages/hostconfig/_system_settings_section_loginsecurity.html" %}
         {% include "pages/hostconfig/_system_settings_section_filestorage.html" %}
         {% include "pages/hostconfig/_system_settings_section_packages.html" %}
     </div>
@@ -104,7 +110,9 @@ function serverSettings() {
             ratelimit: '',
             ratelimitError: false,
             fileStorage: '',
-            fileStorageError: false
+            fileStorageError: false,
+            loginSecurity: '',
+            loginSecurityError: false
         },
 
         // 載入狀態
@@ -203,6 +211,14 @@ function serverSettings() {
             dirFileLimit: 100000
         },
 
+        // 登入安全欄位
+        loginSecurity: {
+            employee: { password_field: 'sv_2', mine_field: 'sv_1', rescue_field: 'sv_3', rescue_keyword: '' },
+            vendor: { password_field: 'sv_2', mine_field: 'sv_1', rescue_field: 'sv_3', rescue_keyword: '' },
+            validFields: ['sv_1', 'sv_2', 'sv_3'],
+            loaded: false,
+        },
+
         // 套件版本
         packages: {
             python: [],
@@ -234,6 +250,7 @@ function serverSettings() {
 {% include "pages/hostconfig/_system_settings_packages_methods.html" %}
 {% include "pages/hostconfig/_system_settings_menucolors_methods.html" %}
 {% include "pages/hostconfig/_system_settings_misc_methods.html" %}
+{% include "pages/hostconfig/_system_settings_loginsecurity_methods.html" %}
 
     };
 }
