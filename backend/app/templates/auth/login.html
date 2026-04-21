@@ -112,13 +112,10 @@
             transform: translate(-50%, -50%);
             width: 900px;
             height: 900px;
-            background-image: url("{{ url_for('static', filename='img/logo-watermark.png') }}");
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.06;
             pointer-events: none;
             z-index: -1;
+            user-select: none;
+            -webkit-user-select: none;
         }
     </style>
 </head>
@@ -135,7 +132,7 @@
         <h1>{{ _('登入') }}</h1>
         {% endif %}
     {% else %}
-    <div class="login-watermark"></div>
+    <div class="login-watermark"><canvas id="bk-emblem" data-size="900" data-opacity="0.06"></canvas></div>
     <h1>BeakPlatform {{ _('登入') }}</h1>
     {% endif %}
 
@@ -272,5 +269,8 @@
     <footer>
         <p>&copy; 2025 BeakPlatform. Security First.</p>
     </footer>
+    {% if login_type != 'org' %}
+    <script src="{{ url_for('static', filename='js/login-emblem.js') }}"></script>
+    {% endif %}
 </body>
 </html>

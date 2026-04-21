@@ -107,3 +107,6 @@ E-MailRelay/spool/
 E-MailRelay/logs/
 E-MailRelay/*.pid
 temp_*
+
+# Brand assets (原始設計檔，不進版控)
+docs/BeakMask*
