@@ -19,10 +19,9 @@
                                 <select x-model="loginSecurity.employee.password_field"
                                         @change="saveLoginSecurity('employee')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.employee.mine_field || f === loginSecurity.employee.rescue_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.employee.mine_field || 'sv_1' === loginSecurity.employee.rescue_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.employee.mine_field || 'sv_2' === loginSecurity.employee.rescue_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.employee.mine_field || 'sv_3' === loginSecurity.employee.rescue_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>
@@ -32,10 +31,9 @@
                                 <select x-model="loginSecurity.employee.mine_field"
                                         @change="saveLoginSecurity('employee')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.employee.password_field || f === loginSecurity.employee.rescue_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.employee.password_field || 'sv_1' === loginSecurity.employee.rescue_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.employee.password_field || 'sv_2' === loginSecurity.employee.rescue_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.employee.password_field || 'sv_3' === loginSecurity.employee.rescue_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>
@@ -45,10 +43,9 @@
                                 <select x-model="loginSecurity.employee.rescue_field"
                                         @change="saveLoginSecurity('employee')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.employee.password_field || f === loginSecurity.employee.mine_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.employee.password_field || 'sv_1' === loginSecurity.employee.mine_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.employee.password_field || 'sv_2' === loginSecurity.employee.mine_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.employee.password_field || 'sv_3' === loginSecurity.employee.mine_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>
@@ -75,10 +72,9 @@
                                 <select x-model="loginSecurity.vendor.password_field"
                                         @change="saveLoginSecurity('vendor')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.vendor.mine_field || f === loginSecurity.vendor.rescue_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.vendor.mine_field || 'sv_1' === loginSecurity.vendor.rescue_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.vendor.mine_field || 'sv_2' === loginSecurity.vendor.rescue_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.vendor.mine_field || 'sv_3' === loginSecurity.vendor.rescue_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>
@@ -88,10 +84,9 @@
                                 <select x-model="loginSecurity.vendor.mine_field"
                                         @change="saveLoginSecurity('vendor')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.vendor.password_field || f === loginSecurity.vendor.rescue_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.vendor.password_field || 'sv_1' === loginSecurity.vendor.rescue_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.vendor.password_field || 'sv_2' === loginSecurity.vendor.rescue_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.vendor.password_field || 'sv_3' === loginSecurity.vendor.rescue_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>
@@ -101,10 +96,9 @@
                                 <select x-model="loginSecurity.vendor.rescue_field"
                                         @change="saveLoginSecurity('vendor')"
                                         style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <template x-for="f in loginSecurity.validFields" :key="f">
-                                        <option :value="f" x-text="loginSecFieldLabel(f)"
-                                                :disabled="f === loginSecurity.vendor.password_field || f === loginSecurity.vendor.mine_field"></option>
-                                    </template>
+                                    <option value="sv_1" :disabled="'sv_1' === loginSecurity.vendor.password_field || 'sv_1' === loginSecurity.vendor.mine_field">驗證碼 1</option>
+                                    <option value="sv_2" :disabled="'sv_2' === loginSecurity.vendor.password_field || 'sv_2' === loginSecurity.vendor.mine_field">驗證碼 2</option>
+                                    <option value="sv_3" :disabled="'sv_3' === loginSecurity.vendor.password_field || 'sv_3' === loginSecurity.vendor.mine_field">驗證碼 3</option>
                                 </select>
                             </td>
                         </tr>

@@ -5,7 +5,7 @@
             <h2>登入安全欄位設定</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
                 登入頁面有三個外觀一致的驗證碼欄位，可分別指定為密碼、地雷、救助用途。
-                員工登入與廠商登入各自獨���設定，避免洩漏彼此的策略。
+                員工登入與廠商登入各自獨立設定，避免洩漏彼此的策略。
             </p>
 
             <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
@@ -22,10 +22,9 @@
                                     <select x-model="employee.password_field"
                                             @change="saveConfig('employee')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === employee.mine_field || f === employee.rescue_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === employee.mine_field || 'sv_1' === employee.rescue_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.mine_field || 'sv_2' === employee.rescue_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.mine_field || 'sv_3' === employee.rescue_field">驗證碼 3</option>
                                     </select>
                                     <span style="color: #666; font-size: 12px; margin-left: 8px;">使用者實際輸入密碼的欄位</span>
                                 </td>
@@ -36,10 +35,9 @@
                                     <select x-model="employee.mine_field"
                                             @change="saveConfig('employee')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === employee.password_field || f === employee.rescue_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === employee.password_field || 'sv_1' === employee.rescue_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.password_field || 'sv_2' === employee.rescue_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.password_field || 'sv_3' === employee.rescue_field">驗證碼 3</option>
                                     </select>
                                     <span style="color: #666; font-size: 12px; margin-left: 8px;">有任何輸入即視為攻擊，一律回應錯誤</span>
                                 </td>
@@ -50,10 +48,9 @@
                                     <select x-model="employee.rescue_field"
                                             @change="saveConfig('employee')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === employee.password_field || f === employee.mine_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === employee.password_field || 'sv_1' === employee.mine_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === employee.password_field || 'sv_2' === employee.mine_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === employee.password_field || 'sv_3' === employee.mine_field">驗證碼 3</option>
                                     </select>
                                     <span style="color: #666; font-size: 12px; margin-left: 8px;">包含救助關鍵字時通知管理員</span>
                                 </td>
@@ -83,10 +80,9 @@
                                     <select x-model="vendor.password_field"
                                             @change="saveConfig('vendor')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === vendor.mine_field || f === vendor.rescue_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.mine_field || 'sv_1' === vendor.rescue_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.mine_field || 'sv_2' === vendor.rescue_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.mine_field || 'sv_3' === vendor.rescue_field">驗證碼 3</option>
                                     </select>
                                 </td>
                             </tr>
@@ -96,10 +92,9 @@
                                     <select x-model="vendor.mine_field"
                                             @change="saveConfig('vendor')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === vendor.password_field || f === vendor.rescue_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.password_field || 'sv_1' === vendor.rescue_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.password_field || 'sv_2' === vendor.rescue_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.password_field || 'sv_3' === vendor.rescue_field">驗證碼 3</option>
                                     </select>
                                 </td>
                             </tr>
@@ -109,10 +104,9 @@
                                     <select x-model="vendor.rescue_field"
                                             @change="saveConfig('vendor')"
                                             style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <template x-for="f in validFields" :key="f">
-                                            <option :value="f" x-text="fieldLabel(f)"
-                                                    :disabled="f === vendor.password_field || f === vendor.mine_field"></option>
-                                        </template>
+                                        <option value="sv_1" :disabled="'sv_1' === vendor.password_field || 'sv_1' === vendor.mine_field">驗證碼 1</option>
+                                        <option value="sv_2" :disabled="'sv_2' === vendor.password_field || 'sv_2' === vendor.mine_field">驗證碼 2</option>
+                                        <option value="sv_3" :disabled="'sv_3' === vendor.password_field || 'sv_3' === vendor.mine_field">驗證碼 3</option>
                                     </select>
                                 </td>
                             </tr>
