@@ -105,8 +105,11 @@ if [ "$excluded" -eq 0 ]; then
     echo "  無需排除的檔案"
     git checkout "$BRANCH" --quiet
     git branch -D "$TEMP_BRANCH" 2>/dev/null || true
-    echo "  直接推送..."
-    git push "$REMOTE" "$BRANCH"
+    # GitHub repo 的 history 與 origin 永遠不一致（過去過濾推送會產生不同 commit hash），
+    # 即使本次無檔案要排除，正常 push 也會被 fast-forward 拒絕。
+    # 一律 force push，維持「local main 是 source of truth、GitHub 是過濾鏡像」的語意。
+    echo "  Force push 推送 (GitHub 為過濾鏡像)..."
+    git push "$REMOTE" "$BRANCH" --force
 else
     # 提交移除
     git commit -m "chore: exclude internal files from public repository" --quiet
