@@ -1,0 +1,59 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}{{ doc.title if doc else menu_code }} 說明 - BeakPlatform{% endblock %}
+
+{% block head %}
+<style>
+.help-doc {
+    max-width: 880px;
+    margin: 24px auto;
+    padding: 24px 32px;
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #ddd);
+    border-radius: 6px;
+}
+.help-doc h1, .help-doc h2, .help-doc h3 {
+    margin-top: 1.4em;
+    margin-bottom: 0.6em;
+}
+.help-doc h2 { border-bottom: 1px solid var(--color-border, #ddd); padding-bottom: 6px; }
+.help-doc p { line-height: 1.7; margin: 0.8em 0; }
+.help-doc ul, .help-doc ol { line-height: 1.7; padding-left: 24px; }
+.help-doc code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.92em; }
+.help-doc pre { background: #f4f4f4; padding: 12px; border-radius: 4px; overflow-x: auto; }
+.help-doc table { border-collapse: collapse; margin: 12px 0; }
+.help-doc th, .help-doc td { border: 1px solid var(--color-border, #ccc); padding: 6px 12px; }
+.help-doc th { background: #f8f8f8; }
+.help-section + .help-section { margin-top: 32px; padding-top: 24px; border-top: 1px dashed var(--color-border, #ddd); }
+.help-audience-tag {
+    display: inline-block;
+    background: var(--color-accent-soft, #e8f0ff);
+    color: var(--color-accent, #2563eb);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    margin-bottom: 8px;
+}
+.help-empty { color: var(--color-text-secondary, #666); padding: 40px; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-doc">
+    {% if doc and doc.sections %}
+        <h1>{{ doc.title or menu_code }}</h1>
+        {% for sec in doc.sections %}
+        <div class="help-section">
+            {% if sec.audience and sec.audience != '*' %}
+            <div class="help-audience-tag">適用：{{ sec.audience }}</div>
+            {% endif %}
+            {{ sec.html|safe }}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="help-empty">
+            <p>此頁面（{{ menu_code }}）尚未提供說明文件。</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

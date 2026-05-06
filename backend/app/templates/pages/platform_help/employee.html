@@ -3,6 +3,22 @@
 {% block title %}平台說明 - 企業成員 - BeakPlatform{% endblock %}
 
 {% block content %}
-<h2>平台說明 - 企業成員</h2>
-<p style="color: var(--color-text-secondary);">此文件尚在準備中。</p>
+<div style="max-width:880px; margin:24px auto; padding:0 24px;">
+    <h2>平台說明 - 企業成員</h2>
+    <p style="color: var(--color-text-secondary);">
+        以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的
+        <i class="ri-question-line"></i> 按鈕，取得當前頁面的快速說明。
+    </p>
+
+    {% set my_docs = help_docs|selectattr('audiences', 'contains', 'EMPLOYEE')|list %}
+    {% if my_docs %}
+    <ul style="line-height:1.9;">
+        {% for d in my_docs %}
+        <li><a href="{{ url_for('platform_help.page_doc', menu_code=d.menu_code) }}">{{ d.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color:#888;">說明文件正在準備中。</p>
+    {% endif %}
+</div>
 {% endblock %}
