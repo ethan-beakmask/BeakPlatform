@@ -8,10 +8,14 @@ BeakMask Security Decorators
 - @login_required: 需要登入
 - @admin_required: 需要企業管理員權限
 - @system_admin_required: 需要系統管理員權限
+- @webhook_hmac_required: 外部 webhook(HMAC 簽章驗證)
 """
+import logging
 from functools import wraps
-from flask import abort, g, request
+from flask import abort, g, request, jsonify
 from flask_login import current_user
+
+logger = logging.getLogger(__name__)
 
 
 def public_route(f):
@@ -214,3 +218,182 @@ def permission_required(resource_type: str, action: str):
         return decorated_function
 
     return decorator
+
+
+# =============================================================================
+# Webhook HMAC 驗證(外部安全堆疊事件 webhook 用)
+# =============================================================================
+
+def _webhook_error(code: str, status: int = 401):
+    """webhook 統一錯誤回應格式"""
+    return jsonify({'error': code}), status
+
+
+def webhook_hmac_required(f):
+    """
+    HMAC 簽章驗證裝飾器(對外 webhook 入口用)。
+
+    對外契約: docs/integrations/open_defense_contract.md §3.1, §4.2
+
+    必要 headers:
+      X-OD-Key-Id     : intake key 公開識別碼
+      X-OD-Timestamp  : Unix 秒,±300 秒內有效
+      X-OD-Signature  : sha256=<hex(HMAC-SHA256(key_secret, "{ts}\n{body}"))>
+
+    驗證順序(先快後慢,失敗早返回):
+      1. headers 存在
+      2. timestamp 在容忍範圍(±300 sec)
+      3. key_id 對應 active intake key
+      4. 解密 secret -> 計算 expected sig -> compare_digest
+
+    成功時注入:
+      g.intake_key      = OdIntakeKey 物件
+      g.intake_key_org  = org_secure_code
+
+    被裝飾的 view function 自動視為 public_route(跳過全域認證攔截)。
+    """
+    f._public_route = True
+    f._webhook_hmac_required = True
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        key_id = request.headers.get('X-OD-Key-Id', '').strip()
+        timestamp = request.headers.get('X-OD-Timestamp', '').strip()
+        signature_header = request.headers.get('X-OD-Signature', '').strip()
+
+        if not key_id or not timestamp or not signature_header:
+            logger.warning(
+                'webhook_hmac: missing headers path=%s ip=%s',
+                request.path, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        from modules.open_defense.services.hmac_verifier import (
+            is_timestamp_valid, verify_signature,
+        )
+        if not is_timestamp_valid(timestamp):
+            logger.warning(
+                'webhook_hmac: timestamp out of range key_id=%s ts=%s',
+                key_id, timestamp,
+            )
+            return _webhook_error('auth_failed')
+
+        from modules.open_defense.services.intake_key_service import (
+            lookup_active_key, decrypt_secret, touch_last_used,
+        )
+        key_record = lookup_active_key(key_id)
+        if key_record is None:
+            logger.warning(
+                'webhook_hmac: key not found or inactive key_id=%s',
+                key_id,
+            )
+            return _webhook_error('auth_failed')
+
+        try:
+            secret = decrypt_secret(key_record)
+        except Exception as exc:
+            logger.error(
+                'webhook_hmac: decrypt failed key_id=%s err=%s',
+                key_id, exc,
+            )
+            return _webhook_error('auth_failed')
+
+        body = request.get_data(cache=True) or b''
+        if not verify_signature(secret, timestamp, body, signature_header):
+            logger.warning(
+                'webhook_hmac: signature mismatch key_id=%s ip=%s',
+                key_id, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        g.intake_key = key_record
+        g.intake_key_org = key_record.org_secure_code
+        try:
+            touch_last_used(key_record)
+        except Exception as exc:
+            logger.warning('webhook_hmac: touch_last_used failed: %s', exc)
+
+        logger.info(
+            'webhook_hmac: verified key_id=%s org=%s path=%s',
+            key_id, key_record.org_secure_code, request.path,
+        )
+        return f(*args, **kwargs)
+
+    # CSRF exempt:webhook 由外部系統呼叫,沒有 session,自然無法帶 CSRF token。
+    # 安全性由 HMAC 簽章 + timestamp 防 replay 取代 CSRF。
+    try:
+        from .. import csrf
+        decorated_function = csrf.exempt(decorated_function)
+    except Exception as exc:
+        logger.warning('webhook_hmac: csrf.exempt 註冊失敗: %s', exc)
+
+    return decorated_function
+
+
+# =============================================================================
+# Service Account JWT 驗證(OpenDefense 執行端用)
+# =============================================================================
+
+def service_account_required(f):
+    """
+    驗 Authorization: Bearer <jwt> 並注入 g.service_account。
+
+    對外契約 §3.2:JWT HS256,15 分鐘有效,簽章 secret = OD_SA_JWT_SECRET。
+
+    成功時注入:
+      g.service_account       = OdServiceAccount 物件
+      g.service_account_claims = JWT decoded claims dict
+
+    被裝飾 view function 自動視為 public_route(JWT 自身就是憑證,無需 session)。
+    """
+    f._public_route = True
+    f._service_account_required = True
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth = request.headers.get('Authorization', '').strip()
+        if not auth.startswith('Bearer '):
+            return jsonify({'error': 'auth_failed',
+                            'message': '缺 Authorization Bearer token'}), 401
+
+        token = auth[len('Bearer '):].strip()
+
+        from modules.open_defense.services.service_account_service import (
+            decode_jwt, lookup_active_sa, ServiceAccountError,
+        )
+        try:
+            claims = decode_jwt(token)
+        except ServiceAccountError as exc:
+            logger.warning('service_account: jwt decode fail code=%s ip=%s',
+                           exc.code, request.remote_addr)
+            return jsonify({'error': exc.code, 'message': str(exc)}), 401
+
+        sa_id = claims.get('sub')
+        record = lookup_active_sa(sa_id)
+        if record is None:
+            logger.warning('service_account: sa not found / inactive sa_id=%s',
+                           sa_id)
+            return jsonify({'error': 'sa_inactive',
+                            'message': 'service account 已停用或不存在'}), 401
+
+        # 防護:JWT claim 中的 org 必須與 DB 一致(SA 換 org 後舊 token 立即失效)
+        if claims.get('org') != record.org_secure_code:
+            logger.warning(
+                'service_account: org mismatch claim=%s db=%s sa_id=%s',
+                claims.get('org'), record.org_secure_code, sa_id,
+            )
+            return jsonify({'error': 'sa_changed',
+                            'message': 'service account 已變更,請重新登入'}), 401
+
+        g.service_account = record
+        g.service_account_claims = claims
+        return f(*args, **kwargs)
+
+    # CSRF exempt:外部端點,以 JWT 為憑證
+    try:
+        from .. import csrf
+        decorated_function = csrf.exempt(decorated_function)
+    except Exception as exc:
+        logger.warning('service_account_required: csrf.exempt 註冊失敗: %s', exc)
+
+    return decorated_function

@@ -1,0 +1,77 @@
+# Open Defense 模組
+# 對外接收 OCSF 安全事件,啟動表單流程,結果寫決策表供外部執行端拉取
+page:
+  - /open-defense/dashboard
+  - /open-defense/decisions
+  - /open-defense/intake-keys
+  - /open-defense/service-accounts
+description: |
+  Open Defense 是 BeakPlatform 與外部 OSS 安全堆疊的整合模組。
+  事件來源端(Suricata/Coraza/Falco/Vector 等)透過 HMAC webhook 推 OCSF 事件;
+  決策結果寫入 od_defense_decisions 表,供決策執行端(CrowdSec bridge / nftables executor 等)
+  以 Service Account JWT 拉取後落地實施。
+
+  對外整合契約: docs/integrations/open_defense_contract.md (v1.0)
+
+files:
+  module_root: modules/open_defense/
+  route:       modules/open_defense/web/
+  api:
+    - modules/open_defense/api/intake.py            # POST /api/open_defense/intake (HMAC webhook)
+    - modules/open_defense/api/decisions.py         # GET/PATCH /api/open_defense/decisions
+    - modules/open_defense/api/intake_keys.py       # CRUD intake keys (內部用)
+    - modules/open_defense/api/service_accounts.py  # CRUD SA + POST sa/login
+  service:
+    - modules/open_defense/services/intake_service.py        # webhook 接收 + 啟流程
+    - modules/open_defense/services/decision_service.py      # 決策 CRUD + 過期處理
+    - modules/open_defense/services/intake_key_service.py    # HMAC key 管理
+    - modules/open_defense/services/service_account_service.py
+    - modules/open_defense/services/hmac_verifier.py         # 簽章驗證
+  model:
+    - modules/open_defense/models/intake_key.py              # OdIntakeKey
+    - modules/open_defense/models/intake_event.py            # OdIntakeEvent (冪等記錄)
+    - modules/open_defense/models/defense_decision.py        # OdDefenseDecision
+    - modules/open_defense/models/service_account.py         # OdServiceAccount
+  template:
+    - modules/open_defense/templates/modules/open_defense/dashboard.html
+    - modules/open_defense/templates/modules/open_defense/decisions.html
+    - modules/open_defense/templates/modules/open_defense/intake_keys.html
+    - modules/open_defense/templates/modules/open_defense/service_accounts.html
+  js:
+    - modules/open_defense/static/modules/open_defense/js/od-dashboard.js
+    - modules/open_defense/static/modules/open_defense/js/od-decisions.js
+    - modules/open_defense/static/modules/open_defense/js/od-intake-keys.js
+    - modules/open_defense/static/modules/open_defense/js/od-service-accounts.js
+  css:
+    - modules/open_defense/static/modules/open_defense/css/od-common.css
+  migration:
+    - scripts/migrations/<TS>_create_open_defense.sql
+
+# 此模組會延伸的安全核心檔案(需小幅修改,但不改變既有行為)
+security_core_touch:
+  - backend/app/security/decorators.py         # 新增 @webhook_hmac_required, @service_account_required
+  - backend/app/security/rate_limiter.py       # 新增自訂 key_func helper(per key_id / per sa_id)
+  - backend/app/security/auth_interceptor.py   # 白名單加入 /api/open_defense/intake, /api/open_defense/sa/login
+  # 變動須先取得用戶同意,且每個 PR 均需額外人工 review
+
+# 此模組依賴的既有功能
+depends_on:
+  - mod-form-workflow.yaml          # 啟動 workflow instance + decision_writer node handler
+  - security-core.yaml              # ResourceGateway, decorators, limiter
+  - backend/app/crypto/             # HMAC secret + SA secret 加密儲存(沿用 Org Key 架構)
+
+# Workflow 整合
+workflow_integration:
+  new_node_type: decision_writer
+  handler_path: modules/form_workflow/services/node_handlers/decision_writer_handler.py
+  factory_register: modules/form_workflow/services/node_handlers/factory.py
+  db_seed: workflow_node_definitions 需加入 decision_writer 一筆(透過 migration 或 seed script)
+
+note: |
+  - 對外契約凍結於 docs/integrations/open_defense_contract.md v1.0,內部實作不得擅自偏離。
+  - intake_key 與 sa_secret 一律加密存 DB,沿用 crypto/key_manager 的 Org Key 架構,
+    但金鑰用途為 HMAC/SA 驗證,**不得**與檔案加密金鑰共用同一 DEK。
+  - od_defense_decisions 表的 status 流轉受限,執行端只能寫 picked_up/applied/partial/failed。
+    expired/revoked 由 BeakPlatform 排程獨佔。
+  - decision_writer node handler 寫表時必須帶 org_secure_code(從 form_instance 取),
+    避免跨租戶決策汙染。

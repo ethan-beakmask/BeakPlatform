@@ -89,6 +89,8 @@ url_index:
   /form-workflow/:               mod-form-workflow.yaml
   /nocode/:                      mod-nocode-builder.yaml
   /spec-formulate/:              mod-spec-formulate.yaml
+  /open-defense/:                mod-open-defense.yaml
+  /api/open_defense/:            mod-open-defense.yaml
 
   # === 基礎設施（非 URL，關鍵字查找） ===
   base_template:                 global-infra.yaml
@@ -131,3 +133,4 @@ manifest_files:
   - mod-form-workflow.yaml       # 表單工作流模組
   - mod-nocode-builder.yaml      # 無程式碼建構模組
   - mod-spec-formulate.yaml      # 規格制定模組
+  - mod-open-defense.yaml        # 對外安全事件接收 + 決策廣播表

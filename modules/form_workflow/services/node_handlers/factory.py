@@ -124,6 +124,7 @@ def register_builtin_handlers():
     from .sub_system_provision_handler import SubSystemProvisionHandler
     from .navbar_broadcast_handler import NavbarBroadcastHandler
     from .alert_broadcast_handler import AlertBroadcastHandler
+    from .decision_writer_handler import DecisionWriterHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -166,6 +167,9 @@ def register_builtin_handlers():
     # 廣播
     NodeHandlerFactory.register('NavbarBroadcast', NavbarBroadcastHandler)
     NodeHandlerFactory.register('AlertBroadcast', AlertBroadcastHandler)
+
+    # OpenDefense
+    NodeHandlerFactory.register('DecisionWriter', DecisionWriterHandler)
 
 
 # 自動執行註冊
