@@ -1,0 +1,206 @@
+/* od-common.css -- OpenDefense 模組共用樣式
+ * 平台無 Bootstrap,所有排版用 CSS Grid / Flexbox。
+ * Class 一律用 od- 前綴避免撞名。
+ */
+
+.od-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.od-header {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.od-header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+.od-header p  { margin: 4px 0 0 0; font-size: 13px; color: #666; }
+
+.od-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 16px;
+}
+.od-section-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.od-section-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.od-section-body {
+    padding: 16px;
+}
+
+/* 統計卡 */
+.od-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.od-stat-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 16px 20px;
+}
+.od-stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: #0066cc;
+    line-height: 1.2;
+}
+.od-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+.od-stat-value.warn   { color: #f59e0b; }
+.od-stat-value.danger { color: #dc2626; }
+.od-stat-value.ok     { color: #10b981; }
+
+/* 表格 */
+.od-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.od-table th, .od-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: top;
+}
+.od-table th {
+    background: #f7f7f7;
+    font-weight: 600;
+    font-size: 12px;
+    color: #555;
+}
+.od-table tbody tr:hover { background: #fafbfc; }
+.od-table .od-mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
+
+/* Badge */
+.od-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.od-badge-pending  { background: #fef3c7; color: #92400e; }
+.od-badge-picked   { background: #dbeafe; color: #1e40af; }
+.od-badge-applied  { background: #d1fae5; color: #065f46; }
+.od-badge-failed   { background: #fee2e2; color: #991b1b; }
+.od-badge-expired  { background: #e5e7eb; color: #4b5563; }
+.od-badge-revoked  { background: #e5e7eb; color: #4b5563; }
+.od-badge-partial  { background: #fef3c7; color: #92400e; }
+.od-badge-active   { background: #d1fae5; color: #065f46; }
+.od-badge-inactive { background: #fee2e2; color: #991b1b; }
+.od-badge-locked   { background: #fee2e2; color: #991b1b; }
+
+/* Action 列 */
+.od-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Form */
+.od-field { margin-bottom: 12px; }
+.od-field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+.od-field input:not([type="radio"]):not([type="checkbox"]),
+.od-field select,
+.od-field textarea {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.od-field textarea { min-height: 60px; }
+.od-field-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* Multi-select chips */
+.od-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.od-chip {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+}
+.od-chip.selected { background: #0066cc; color: #fff; border-color: #0066cc; }
+
+/* 一次性 secret 顯示 */
+.od-secret-box {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    padding: 12px 16px;
+    margin: 12px 0;
+}
+.od-secret-box h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #92400e;
+}
+.od-secret-value {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid #f59e0b;
+    padding: 8px 10px;
+    word-break: break-all;
+    user-select: all;
+}
+.od-secret-warn {
+    color: #92400e;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* Empty state */
+.od-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+/* Modal overlay -- 沿用平台既有 modal-overlay,只補佈局 */
+.od-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Filter 列 */
+.od-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #eee;
+}
+.od-filters label { font-size: 12px; color: #555; margin-right: 4px; }
+.od-filters select,
+.od-filters input {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}

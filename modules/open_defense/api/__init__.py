@@ -15,3 +15,8 @@ api_bp = Blueprint(
 from . import intake             # noqa: E402,F401
 from . import service_accounts   # noqa: E402,F401
 from . import decisions          # noqa: E402,F401
+
+# Admin API(供 UI 用,鎖 admin session,非對外契約)
+from .admin import admin_bp  # noqa: E402
+
+additional_blueprints = [admin_bp]
