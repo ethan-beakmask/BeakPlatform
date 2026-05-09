@@ -183,8 +183,15 @@ def _create_form_instance_and_start_workflow(
     db.session.add(form_instance)
     db.session.flush()
 
-    # 流程編號
+    # 流程編號 -- SELECT MAX+1 在並發時會撞 unique key,
+    # 用 PostgreSQL transaction-scoped advisory lock 強制序列化(per org+date 鍵)。
+    # 鎖在 commit/rollback 自動釋放,不會 leak。
     date_str = datetime.utcnow().strftime('%Y%m%d')
+    lock_key = f'od_exec_seq:{org_secure_code}:{date_str}'
+    db.session.execute(
+        text('SELECT pg_advisory_xact_lock(hashtext(:key))'),
+        {'key': lock_key},
+    )
     proc_seq = db.session.execute(
         text("""
             SELECT COALESCE(MAX(CAST(SUBSTRING(execution_code FROM '\\d{4}$')
