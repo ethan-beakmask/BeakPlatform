@@ -60,13 +60,15 @@
             <div class="od-section-header"><h2>最近事件</h2></div>
             <div x-show="!recent_events.length" class="od-empty">尚無事件</div>
             <table x-show="recent_events.length" class="od-table">
-                <thead><tr><th>時間</th><th>來源</th><th>類型</th><th>嚴重度</th></tr></thead>
+                <thead><tr><th>時間</th><th>來源</th><th>類型</th><th>來源 IP</th><th>國家</th><th>嚴重度</th></tr></thead>
                 <tbody>
                     <template x-for="e in recent_events" :key="e.secure_code">
                         <tr>
                             <td x-text="OD.formatTime(e.received_at, 'short')"></td>
                             <td x-text="e.source_system"></td>
                             <td x-text="e.event_class"></td>
+                            <td class="od-mono" x-text="e.actor_ip || '-'"></td>
+                            <td x-text="e.actor_country || '-'"></td>
                             <td x-text="e.severity_id ?? '-'"></td>
                         </tr>
                     </template>

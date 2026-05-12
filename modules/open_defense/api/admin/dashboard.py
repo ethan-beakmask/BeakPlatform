@@ -81,6 +81,8 @@ def dashboard_stats():
             'severity_id': e.severity_id,
             'received_at': e.received_at.isoformat() if e.received_at else None,
             'case_secure_code': e.case_secure_code,
+            'actor_ip': (e.raw_body or {}).get('actor', {}).get('ip'),
+            'actor_country': (e.raw_body or {}).get('actor', {}).get('country'),
         } for e in recent_events],
         'recent_pending': [{
             'secure_code': d.secure_code,
