@@ -22,6 +22,6 @@ OD.fetchJSON = async function (url, options = {}) {
 
 OD.formatTime = function (iso, style = 'short') {
     if (!iso) return '-';
-    if (window.BkTime) return BkTime.format(iso, style);
+    if (typeof BkTime !== 'undefined') return BkTime.format(iso, style);
     return new Date(iso).toLocaleString();
 };
