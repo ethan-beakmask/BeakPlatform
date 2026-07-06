@@ -1,4 +1,4 @@
-# 交接提示詞：檔案下載越權（同企業任何用戶可下載他人加密簽核附件）
+# 交接提示詞：檔案 API 物件級授權（下載越權 + list/meta 上收）
 
 > 把這份文件**整段貼給下一次對話的 Claude**（在 `/opt/BeakPlatform-dev/` 開的對話）。
 > 這是 API 授權稽核（`docs/handoff_authz_api_guard.md`）過程中發現的獨立弱點，已壓縮成接手包。
@@ -9,15 +9,18 @@
 
 前一輪對話針對「PageRoleGuard 跳過 /api/」做了 528 個 API 端點的守衛盤點，定案採
 `@permission_required`（方案 b）作為 API 細粒度授權統一機制。盤點過程深讀 33 條
-login-only 端點時，發現檔案 API 有一個**超出 decorator 能解決範圍**的越權問題，
-獨立成這份交接包。
+login-only 端點時，發現檔案 API 的問題**超出 decorator 能解決的範圍**（需要物件級
+/context 級判定），整組獨立成這份交接包。**檔案 API 的授權收斂全部歸這包**，
+包括原主線第 1 批曾列的 `files/list`、`meta` 上收。
 
 已確認的相關事實（不用重查）：
 
 - cross-members / units/groups / pages / store 等 login-only 端點**都有函式內授權**，不是破口。
-- `permission_required` decorator（`security/decorators.py:176`）呼叫了不存在的
-  `PermissionService.check_permission()`，掛上即 AttributeError——前一輪可能已修復，
-  接手時先確認該 decorator 現況。
+- `permission_required` decorator 已於 commit `57541d8b` 修復並強化：
+  改呼叫 `PermissionService.can()`，新增 `model`/`sc_kwarg` 參數可撈資源物件供
+  ABAC 條件評估，fail-closed。已有實際掛載範例：`api/users.py` 的
+  `GET /api/users/<sc>` 掛 `@permission_required('user', 'read', model=User)`，
+  低權限帳號驗收通過。**若檔案 API 有適合純 RBAC 解的端點，直接沿用此 decorator。**
 
 ---
 
@@ -90,9 +93,24 @@ login-only 端點時，發現檔案 API 有一個**超出 decorator 能解決範
 
 ---
 
+## 驗證環境備忘（這輪已確認可用）
+
+- 服務 URL 前綴：全站掛在 `/beakplatform` 下（DispatcherMiddleware），
+  API 實際路徑是 `http://192.168.0.16:7000/beakplatform/api/...`
+- 登入：`POST /beakplatform/auth/login`，JSON body
+  `{"account": "username@domain", "password": "..."}`（JSON 走 API 模式免 CSRF）
+- 低權限測試帳號（beluga 企業，org_sc=`_9c8TewkRkCBEf3XsUdqeF`）：
+  - `user@beluga.com` / `Test1234!`（EMPLOYEE，無任何角色）
+  - `admin-ethanyu@beluga.com` / `Test1234!`（ORG_ADMIN）
+- 驗收腳本範例可參考前一輪做法：requests.Session 登入 → 打 API 比對狀態碼
+  （該擋 403 / 該通 200 / admin 200 / 移除授權後回歸 403）
+- 改了 security 層或 API 程式後要重啟 Flask（服務非 debug 模式，不會 auto-reload）
+
+---
+
 ## 邊界
 
-- 這輪**只處理檔案 API 的物件級授權**，不要動：
+- 這輪**只處理檔案 API 的物件級授權**（含 `list`/`meta` 上收），不要動：
   - `@permission_required` 的全面鋪設（那是 `handoff_authz_api_guard.md` 主線的分批工作）
   - `ResourceGateway.list()` RBAC（已完成，見 git log）
   - 模組 API 的 223 條角色細分（用戶已定案這輪不碰）
