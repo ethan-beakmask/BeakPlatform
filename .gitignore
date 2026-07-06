@@ -110,3 +110,4 @@ temp_*
 
 # Brand assets (原始設計檔，不進版控)
 docs/BeakMask*
+backend/encrypted_storage/
