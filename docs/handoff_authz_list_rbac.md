@@ -15,6 +15,15 @@
 > - **SYSTEM 級資源(Organization/Contract 等)留到最後**:需先建 SYSTEM_ADMIN 角色並授 SYSTEM 權限(roles 表目前沒有此角色,[SEC-02] 已無 user_type 捷徑)。
 > - 剩餘 29 個 model 清單(依呼叫次數):DcSubSystem、WorkSchedule、JobLevel、Duty、JobTitle、DcPageLayout、SmtpConfig、UserNumberingRule、Page、DcCrudView、Contract、RecipientGroup、TelegramConfig、ApprovalCategory、Delegation、DcSubSystemPage、EmployeePosition、DcPageTemplate、JobLevelApprovalLimit、Form、UserRoleAssignment、DcBackground、DcSiteMapNode(其中 6 個已在 map 但未在 enforced 集合:User、Organization、OrganizationalUnit、Role、Module、MenuItem)。
 
+> **狀態更新 (2026-07-06 第三輪)**:第二批 10 個完成(HR/通知設定家族,全部呼叫端 @admin_required,零誤傷)。
+> - 已 enforced:JobLevel、JobTitle、Duty、WorkSchedule、ApprovalCategory、JobLevelApprovalLimit、SmtpConfig、TelegramConfig、RecipientGroup、UserNumberingRule(+首批 JobFamily、DutyCategory,共 12 個)。
+> - 批次大小改為**依關聯性分組**,不固定數量(用戶指示)。剩餘分組建議:
+>   1. **Dc* 子系統家族(7 個)**:DcSubSystem、DcCrudView、DcPageLayout、DcSubSystemPage、DcPageTemplate、DcBackground、DcSiteMapNode -- 注意 portal_mode 可能有公開路徑,要逐端點確認
+>   2. **員工自助類(2 個)**:Delegation、EmployeePosition -- EMPLOYEE 可達,需決定授權基線或逃生門
+>   3. **平台核心(3 個)**:Page、Form、UserRoleAssignment -- Page 涉及動態頁面解析,要確認一般用戶瀏覽路徑
+>   4. **已註冊未 enforced(6 個)**:User、Organization、OrganizationalUnit、Role、Module、MenuItem -- 呼叫端多、含 EMPLOYEE 可達路徑,逐端點盤點量大
+>   5. **SYSTEM 級(1 個)**:Contract -- 連同 Organization 的 enforced,需先建 SYSTEM_ADMIN 角色
+
 > 把這份文件**整段貼給下一次對話的 Claude**(在 `/opt/BeakPlatform-dev/` 開的對話)。
 > 這是既有安全稽核發現的結構性缺口之一,已壓縮成接手包。
 

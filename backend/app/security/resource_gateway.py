@@ -34,6 +34,16 @@ MODEL_RESOURCE_TYPE_MAP = {
     'MenuItem': 'module_content',
     'JobFamily': 'job_family',
     'DutyCategory': 'duty_category',
+    'JobLevel': 'job_level',
+    'JobTitle': 'job_title',
+    'Duty': 'duty',
+    'WorkSchedule': 'work_schedule',
+    'ApprovalCategory': 'approval_category',
+    'JobLevelApprovalLimit': 'job_level_approval_limit',
+    'SmtpConfig': 'smtp_config',
+    'TelegramConfig': 'telegram_config',
+    'RecipientGroup': 'recipient_group',
+    'UserNumberingRule': 'user_numbering_rule',
     # 未來擴展
     # 'FormTemplate': 'form_template',
     # 'FormInstance': 'form_instance',
@@ -55,6 +65,16 @@ MODEL_RESOURCE_TYPE_MAP = {
 LIST_RBAC_ENFORCED_MODELS = {
     'JobFamily',
     'DutyCategory',
+    'JobLevel',
+    'JobTitle',
+    'Duty',
+    'WorkSchedule',
+    'ApprovalCategory',
+    'JobLevelApprovalLimit',
+    'SmtpConfig',
+    'TelegramConfig',
+    'RecipientGroup',
+    'UserNumberingRule',
 }
 
 logger = logging.getLogger(__name__)
