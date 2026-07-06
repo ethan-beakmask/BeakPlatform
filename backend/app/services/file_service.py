@@ -70,6 +70,80 @@ CONTEXT_MAX_SIZE = {
 # 預設上限
 DEFAULT_MAX_SIZE = 50 * 1024 * 1024  # 50MB
 
+# 公開級 context_type（serve 端本來就是 @public_route，不做物件級授權）
+PUBLIC_CONTEXT_TYPES = {'org_logo', 'wf_background', 'nc_background'}
+
+# context_type → authorizer 函式註冊表
+# authorizer 簽名: fn(user, record: PlatformFile) -> bool
+# 模組在 init_runtime() 時呼叫 register_file_authorizer() 註冊自己的判定
+_FILE_AUTHORIZERS: dict = {}
+
+
+def register_file_authorizer(context_type: str, fn):
+    """
+    註冊 context_type 的物件級授權判定函式。
+
+    平台層不 import 模組層，由模組在載入時主動註冊，
+    解決「form_attachment 參與者判定需要查模組資料」的分層問題。
+    """
+    if context_type in _FILE_AUTHORIZERS:
+        logger.warning("file authorizer 重複註冊，覆蓋: %s", context_type)
+    _FILE_AUTHORIZERS[context_type] = fn
+    logger.info("file authorizer 已註冊: %s -> %s", context_type, fn.__qualname__)
+
+
+def can_access_file(user, record: 'PlatformFile') -> bool:
+    """
+    物件級授權判定：這個用戶跟這個檔案有沒有關係。
+
+    判定順序（fail-closed）：
+    1. 租戶隔離：非 system_admin 時，檔案必須屬於用戶所在企業
+    2. admin（org_admin / system_admin）→ 放行
+    3. 上傳者本人 → 放行
+    4. 公開級 context_type（org_logo 等）→ 放行
+    5. 依 context_type 分派給註冊的 authorizer
+    6. 無 authorizer 或 authorizer 拋錯 → 擋下並記 log
+    """
+    if user is None or record is None:
+        return False
+
+    is_system_admin = getattr(user, 'is_system_admin', False)
+
+    # 租戶隔離（防禦性重驗，即使呼叫端已用 org_sc 過濾）
+    if not is_system_admin:
+        org = getattr(user, 'organization', None)
+        if not org or record.org_secure_code != org.secure_code:
+            return False
+
+    if is_system_admin or getattr(user, 'is_org_admin', False):
+        return True
+
+    if record.uploader_sc and record.uploader_sc == user.secure_code:
+        return True
+
+    if record.context_type in PUBLIC_CONTEXT_TYPES:
+        return True
+
+    authorizer = _FILE_AUTHORIZERS.get(record.context_type)
+    if authorizer is None:
+        logger.warning(
+            "[SEC] 檔案存取被擋（無 authorizer）: context_type=%s file_sc=%s user=%s",
+            record.context_type, record.secure_code,
+            getattr(user, 'username', '?'),
+        )
+        return False
+
+    try:
+        return bool(authorizer(user, record))
+    except Exception:
+        logger.exception(
+            "[SEC] 檔案 authorizer 執行失敗（fail-closed 擋下）: "
+            "context_type=%s file_sc=%s user=%s",
+            record.context_type, record.secure_code,
+            getattr(user, 'username', '?'),
+        )
+        return False
+
 
 def _get_upload_dir():
     """取得 local 檔案儲存的絕對路徑（在 static/ 之外）"""
@@ -507,7 +581,7 @@ def get_file_by_sc(secure_code: str, org_sc: str = None) -> Optional[PlatformFil
 
 
 def list_files(org_sc: str, context_type: str = None,
-               context_id: str = None) -> list:
+               context_id: str = None, uploader_sc: str = None) -> list:
     """列出檔案記錄（含 active 和 pending_delete）"""
     query = PlatformFile.query.filter(
         PlatformFile.org_secure_code == org_sc,
@@ -518,6 +592,8 @@ def list_files(org_sc: str, context_type: str = None,
         query = query.filter_by(context_type=context_type)
     if context_id:
         query = query.filter_by(context_id=context_id)
+    if uploader_sc:
+        query = query.filter_by(uploader_sc=uploader_sc)
 
     return query.order_by(PlatformFile.created_at.desc()).all()
 

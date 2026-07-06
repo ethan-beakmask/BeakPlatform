@@ -226,6 +226,17 @@ def request_download_token(secure_code):
     if not record:
         return jsonify({'success': False, 'message': '檔案不存在'}), 404
 
+    # 物件級授權：這個用戶跟這個檔案有沒有關係
+    if not file_service.can_access_file(current_user, record):
+        logger.warning(
+            "[SEC] 下載 token 申請被拒（無檔案存取權）: file_sc=%s "
+            "context_type=%s user=%s ip=%s",
+            secure_code, record.context_type,
+            current_user.username, request.remote_addr,
+        )
+        _log_file_access(record, 'denied')
+        return jsonify({'success': False, 'message': '無此檔案的存取權限'}), 403
+
     # 前置檢查：檔案存在 + 大小合理（微秒級，不讀檔）
     preflight = file_service.preflight_check(record)
     if preflight:
@@ -381,6 +392,17 @@ def meta(secure_code):
     if not record:
         return jsonify({'success': False, 'message': '檔案不存在'}), 404
 
+    # 物件級授權（同 download-token）
+    if not file_service.can_access_file(current_user, record):
+        logger.warning(
+            "[SEC] metadata 讀取被拒（無檔案存取權）: file_sc=%s "
+            "context_type=%s user=%s ip=%s",
+            secure_code, record.context_type,
+            current_user.username, request.remote_addr,
+        )
+        _log_file_access(record, 'denied')
+        return jsonify({'success': False, 'message': '無此檔案的存取權限'}), 403
+
     return jsonify({
         'success': True,
         'data': record.to_dict()
@@ -495,6 +517,10 @@ def list_files():
     Query params:
         context_type: 用途類型 (選填)
         context_id: 關聯記錄 SC (選填)
+
+    授權規則：
+        - 無 context_id：只回自己上傳的檔案
+        - 有 context_id：逐筆過 can_access_file，只回有權限的
     """
     org = current_user.organization
     if not org:
@@ -503,11 +529,21 @@ def list_files():
     context_type = request.args.get('context_type')
     context_id = request.args.get('context_id')
 
-    records = file_service.list_files(
-        org_sc=org.secure_code,
-        context_type=context_type,
-        context_id=context_id,
-    )
+    if context_id:
+        records = file_service.list_files(
+            org_sc=org.secure_code,
+            context_type=context_type,
+            context_id=context_id,
+        )
+        records = [r for r in records
+                   if file_service.can_access_file(current_user, r)]
+    else:
+        # 無 context 時不開放列全企業檔案，只回自己上傳的
+        records = file_service.list_files(
+            org_sc=org.secure_code,
+            context_type=context_type,
+            uploader_sc=current_user.secure_code,
+        )
 
     return jsonify({
         'success': True,

@@ -53,3 +53,21 @@ MODULE_INFO = {
         },
     ],
 }
+
+
+def init_runtime(app):
+    """
+    模組運行時初始化 hook
+
+    在應用啟動時被 module_loader 調用。
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # 註冊 subsystem_file 的檔案物件級授權判定
+    try:
+        from app.services import file_service
+        from .services.file_authorizer import register
+        register(file_service)
+    except Exception as e:
+        logger.error(f'NocodeBuilder: 註冊檔案 authorizer 失敗: {str(e)}')
