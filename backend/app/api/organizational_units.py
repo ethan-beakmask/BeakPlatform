@@ -239,6 +239,7 @@ def list_units():
     units = ResourceGateway.filter(
         OrganizationalUnit,
         order_by='sort_order',
+        require_permission='department:read',
         **filters
     )
 

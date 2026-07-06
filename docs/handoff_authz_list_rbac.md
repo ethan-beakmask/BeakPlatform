@@ -1,5 +1,12 @@
 # 交接提示詞:ResourceGateway list/filter 缺 RBAC 過濾
 
+> **狀態更新 (2026-07-06)**:階段 A 已完成。
+> - `list()`/`filter()`/`count()`/`exists()` 新增 opt-in `require_permission` 參數(`_check_list_permission`),未通過拋 `PermissionDeniedError`(全域 handler 回 403)。
+> - 已接上:`api/users.py list_users`(user:read)、`web/roles.py list_roles`(role:read)、`api/organizational_units.py list_units`(department:read)。
+> - **偏差**:`api/organizations.py list_organizations` 未接。原因:`organization:read` 是 SYSTEM 級,[SEC-02] 已移除 SYSTEM_ADMIN 捷徑且 roles 表無 SYSTEM_ADMIN 角色(靠 user_type 判定),接上會讓所有系統管理員 403。該端點已有 `@system_admin_required` 把關。
+> - `/units/groups` 端點也未接:它是 `@login_required` 且自帶「團長只看管理群組」縮限,接 department:read 會弄壞團長流程。
+> - 階段 B(fail-open 翻 fail-closed)未做,仍待另案討論。
+
 > 把這份文件**整段貼給下一次對話的 Claude**(在 `/opt/BeakPlatform-dev/` 開的對話)。
 > 這是既有安全稽核發現的結構性缺口之一,已壓縮成接手包。
 

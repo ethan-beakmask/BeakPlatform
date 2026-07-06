@@ -35,6 +35,7 @@ def list_users():
         per_page=min(per_page, 100),  # Max 100 per page
         order_by='-created_at',
         org_secure_code=current_user.org_secure_code,  # 強制租戶隔離
+        require_permission='user:read',
         is_deleted=False,
         is_active=True
     )

@@ -176,18 +176,27 @@ class ResourceGateway:
         return resource
 
     @staticmethod
-    def exists(model_class: Type[T], skip_tenant_filter: bool = False, **filters) -> bool:
+    def exists(
+        model_class: Type[T],
+        skip_tenant_filter: bool = False,
+        require_permission: str = None,
+        **filters
+    ) -> bool:
         """
         檢查資源是否存在。
 
         Args:
             model_class: Model class
             skip_tenant_filter: 是否跳過租戶過濾
+            require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
             **filters: 過濾條件
 
         Returns:
             bool: 是否存在
         """
+        if require_permission:
+            ResourceGateway._check_list_permission(require_permission)
+
         tenant = get_current_tenant()
 
         query = model_class.query
@@ -204,18 +213,27 @@ class ResourceGateway:
         return query.first() is not None
 
     @staticmethod
-    def count(model_class: Type[T], skip_tenant_filter: bool = False, **filters) -> int:
+    def count(
+        model_class: Type[T],
+        skip_tenant_filter: bool = False,
+        require_permission: str = None,
+        **filters
+    ) -> int:
         """
         計算資源數量。
 
         Args:
             model_class: Model class
             skip_tenant_filter: 是否跳過租戶過濾
+            require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
             **filters: 過濾條件
 
         Returns:
             int: 數量
         """
+        if require_permission:
+            ResourceGateway._check_list_permission(require_permission)
+
         tenant = get_current_tenant()
 
         query = model_class.query
@@ -238,6 +256,7 @@ class ResourceGateway:
         order_by: str = None,
         limit: int = None,
         skip_tenant_filter: bool = False,
+        require_permission: str = None,
         **filters
     ) -> List[T]:
         """
@@ -248,11 +267,15 @@ class ResourceGateway:
             order_by: 排序欄位（-field 表示降序）
             limit: 限制數量
             skip_tenant_filter: 是否跳過租戶過濾
+            require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
             **filters: 過濾條件
 
         Returns:
             List of Model instances
         """
+        if require_permission:
+            ResourceGateway._check_list_permission(require_permission)
+
         tenant = get_current_tenant()
 
         query = model_class.query
@@ -291,6 +314,7 @@ class ResourceGateway:
         per_page: int = 20,
         order_by: str = None,
         skip_tenant_filter: bool = False,
+        require_permission: str = None,
         **filters
     ) -> Dict[str, Any]:
         """
@@ -302,6 +326,7 @@ class ResourceGateway:
             per_page: 每頁數量
             order_by: 排序欄位
             skip_tenant_filter: 是否跳過租戶過濾
+            require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
             **filters: 過濾條件
 
         Returns:
@@ -313,6 +338,9 @@ class ResourceGateway:
                 'pages': 5
             }
         """
+        if require_permission:
+            ResourceGateway._check_list_permission(require_permission)
+
         tenant = get_current_tenant()
 
         # Build base query
@@ -482,6 +510,32 @@ class ResourceGateway:
         if current_user and current_user.is_authenticated:
             return current_user
         return None
+
+    @staticmethod
+    def _check_list_permission(permission_code: str) -> None:
+        """
+        檢查集合查詢的資源類型層級權限（list/filter/count/exists 的 opt-in 檢查）。
+
+        無用戶上下文時跳過（比照 _check_view_permission，由認證層把關）。
+
+        Raises:
+            PermissionDeniedError: 沒有權限
+        """
+        user = ResourceGateway._get_current_user()
+        if user is None:
+            return
+
+        from ..services.permission_service import PermissionService
+        result = PermissionService.check(user, permission_code)
+        if not result.allowed:
+            logger.warning(
+                f"List permission denied: {permission_code} "
+                f"user={user.secure_code} reason={result.reason}"
+            )
+            from ..exceptions import PermissionDeniedError
+            raise PermissionDeniedError(
+                f"No permission to list resources: {permission_code}"
+            )
 
     @staticmethod
     def _check_view_permission(model_class: Type[T], resource: T) -> None:

@@ -271,7 +271,7 @@ def register_error_handlers(app: Flask) -> None:
     """註冊錯誤處理器"""
     from flask import render_template, request, jsonify
     from flask_wtf.csrf import CSRFError
-    from app.exceptions import ResourceNotFoundError
+    from app.exceptions import ResourceNotFoundError, PermissionDeniedError
 
     @app.errorhandler(CSRFError)
     def handle_csrf_error(error):
@@ -291,6 +291,12 @@ def register_error_handlers(app: Flask) -> None:
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({'error': str(error)}), 404
         return render_template('errors/404.html'), 404
+
+    @app.errorhandler(PermissionDeniedError)
+    def handle_permission_denied(error):
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({'error': str(error)}), 403
+        return render_template('errors/403.html'), 403
 
     @app.errorhandler(401)
     def unauthorized(error):

@@ -22,7 +22,8 @@ def list_roles():
         Role,
         is_deleted=False,
         order_by='sort_order',
-        per_page=100
+        per_page=100,
+        require_permission='role:read'
     )
 
     # 查詢每個角色的使用次數（排除已刪除的用戶）
