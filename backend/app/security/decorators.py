@@ -173,18 +173,37 @@ def module_access_required(module_code: str, check_acl: bool = True):
     return decorator
 
 
-def permission_required(resource_type: str, action: str):
+def permission_required(resource_type: str, action: str, *,
+                        model=None, sc_kwarg: str = 'secure_code'):
     """
-    資源級權限檢查裝飾器。
+    資源級權限檢查裝飾器（RBAC + ABAC）。
+
+    檢查順序：
+    1. 登入 + 帳號啟用
+    2. 設定租戶上下文
+    3. （選配）依 URL 的 secure_code 取得資源物件（租戶過濾，供 ABAC 條件評估）
+    4. PermissionService.can() 檢查 "{resource_type}:{action}" 權限，不通過 → 403
+
+    權限語意（見 PermissionService.check）：
+    - ORG_ADMIN 對非 SYSTEM 級權限直接通過
+    - SYSTEM_ADMIN 不享特權，走正常 RBAC 流程 [SEC-02]
+    - 一般用戶須持有已授予該權限的角色，否則 fail-closed 擋下
 
     Usage:
-        @permission_required('form', 'edit')
-        def edit_form(form_id):
+        @permission_required('user', 'read', model=User)
+        def get_user(secure_code):
+            ...
+
+        @permission_required('form_template', 'create')   # 無目標資源的操作
+        def create_template():
             ...
 
     Args:
-        resource_type: 資源類型 (form, workflow, user, etc.)
-        action: 操作類型 (view, create, edit, delete)
+        resource_type: 資源類型 (user, department, form_template, etc.)
+        action: 操作類型 (read, create, update, delete)
+        model: 資源 Model class（選填）。提供時會用 URL 中的 secure_code
+               透過 ResourceGateway 取得資源物件，供 ABAC 條件評估
+        sc_kwarg: URL 參數中 secure_code 的名稱（預設 'secure_code'）
     """
     def decorator(f):
         f._permission_required = (resource_type, action)
@@ -197,21 +216,32 @@ def permission_required(resource_type: str, action: str):
             if not current_user.is_active:
                 abort(403, description="Account is disabled")
 
-            # Check permission via PermissionService
-            from ..services.permission_service import PermissionService
-
-            # Get resource_id from kwargs or request
-            resource_id = kwargs.get(f'{resource_type}_id') or kwargs.get('id')
-
-            if not PermissionService.check_permission(
-                user=current_user,
-                resource_type=resource_type,
-                action=action,
-                resource_id=resource_id
-            ):
-                abort(403, description=f"Permission denied: {action} on {resource_type}")
-
+            # Set tenant context（ResourceGateway 租戶過濾依賴此值）
             g.current_org_secure_code = current_user.org_secure_code
+
+            # 取得目標資源物件（供 ABAC 條件評估）
+            # 找不到時 resource=None 繼續權限檢查：帶 ABAC 條件的授權會因
+            # 無資源而不通過（fail-closed）；404 語意交由 view 處理
+            resource = None
+            if model is not None:
+                sc = kwargs.get(sc_kwarg)
+                if sc:
+                    from .resource_gateway import ResourceGateway
+                    resource = ResourceGateway.get(
+                        model, sc,
+                        raise_on_not_found=False,
+                        check_permission=False,
+                    )
+
+            from ..services.permission_service import PermissionService
+            if not PermissionService.can(
+                current_user, resource_type, action, resource=resource
+            ):
+                logger.warning(
+                    "permission_required DENIED: user=%s perm=%s:%s path=%s",
+                    current_user.secure_code, resource_type, action, request.path,
+                )
+                abort(403, description=f"Permission denied: {action} on {resource_type}")
 
             return f(*args, **kwargs)
 

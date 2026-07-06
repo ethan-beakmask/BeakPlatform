@@ -5,7 +5,7 @@ BeakMask Users API
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
 
-from ..security.decorators import login_required, admin_required
+from ..security.decorators import login_required, admin_required, permission_required
 from ..security.resource_gateway import ResourceGateway
 from ..models.user import User, UserType
 from ..models.organizational_unit import OrganizationalUnit
@@ -55,12 +55,13 @@ def list_users():
 
 
 @users_bp.route('/<secure_code>', methods=['GET'])
-@login_required
+@permission_required('user', 'read', model=User)
 def get_user(secure_code: str):
     """
     取得單一用戶資訊。
 
     GET /api/users/<secure_code>
+    需要 user:read 權限（to_dict 含手機/備用信箱等 PII，不開放一般登入用戶）
     """
     user = ResourceGateway.get(User, secure_code)
 
