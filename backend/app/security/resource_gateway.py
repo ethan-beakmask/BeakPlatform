@@ -44,6 +44,8 @@ MODEL_RESOURCE_TYPE_MAP = {
     'TelegramConfig': 'telegram_config',
     'RecipientGroup': 'recipient_group',
     'UserNumberingRule': 'user_numbering_rule',
+    'DcPageTemplate': 'dc_page_template',
+    'DcSiteMapNode': 'dc_site_map_node',
     # 未來擴展
     # 'FormTemplate': 'form_template',
     # 'FormInstance': 'form_instance',
@@ -75,6 +77,24 @@ LIST_RBAC_ENFORCED_MODELS = {
     'TelegramConfig',
     'RecipientGroup',
     'UserNumberingRule',
+    'DcPageTemplate',
+    'DcSiteMapNode',
+}
+
+# 明確豁免平台 RBAC 檢查的 model（階段 B fail-closed 翻轉時的白名單依據）
+#
+# 這些 model 不註冊 MODEL_RESOURCE_TYPE_MAP、不進 LIST_RBAC_ENFORCED_MODELS。
+# 豁免必須有理由，禁止只因「加了會壞」就放進來——先確認閘門在哪裡。
+RBAC_EXEMPT_MODELS = {
+    # nocode_builder 子系統家族：閘門為模組合約 + 模組 ACL（@module_access_required）
+    # + 子系統自身的權限政策（site map 存取檢查、developer 檢查）。
+    # 端用戶 portal（module_access check_acl=False）與設計師流程（ACL）皆為
+    # 會員層級可達，疊加平台 {type}:read 會癱瘓 portal。
+    'DcSubSystem': 'nocode 模組 ACL + 子系統權限政策把關',
+    'DcCrudView': 'nocode 模組 ACL + 子系統權限政策把關',
+    'DcPageLayout': 'nocode 模組 ACL 把關；/p/<sc> 發佈頁為全登入用戶可達',
+    'DcSubSystemPage': 'nocode 模組 ACL + 子系統權限政策把關',
+    'DcBackground': 'nocode 模組 ACL 把關（設計師資源）',
 }
 
 logger = logging.getLogger(__name__)

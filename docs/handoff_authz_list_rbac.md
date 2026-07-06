@@ -18,7 +18,7 @@
 > **狀態更新 (2026-07-06 第三輪)**:第二批 10 個完成(HR/通知設定家族,全部呼叫端 @admin_required,零誤傷)。
 > - 已 enforced:JobLevel、JobTitle、Duty、WorkSchedule、ApprovalCategory、JobLevelApprovalLimit、SmtpConfig、TelegramConfig、RecipientGroup、UserNumberingRule(+首批 JobFamily、DutyCategory,共 12 個)。
 > - 批次大小改為**依關聯性分組**,不固定數量(用戶指示)。剩餘分組建議:
->   1. **Dc* 子系統家族(7 個)**:DcSubSystem、DcCrudView、DcPageLayout、DcSubSystemPage、DcPageTemplate、DcBackground、DcSiteMapNode -- 注意 portal_mode 可能有公開路徑,要逐端點確認
+>   1. ~~**Dc* 子系統家族(7 個)**~~ **已處理 (2026-07-06 第四輪)**:DcPageTemplate、DcSiteMapNode 已 enforced(呼叫端全 admin);DcSubSystem、DcCrudView、DcPageLayout、DcSubSystemPage、DcBackground 列入新的 `RBAC_EXEMPT_MODELS` 明確豁免清單(閘門為模組合約 + 模組 ACL + 子系統權限政策,端用戶 portal 與設計師流程皆會員層級可達,疊平台 RBAC 會癱瘓 portal)。豁免清單即 fail-closed 翻轉時的白名單依據。
 >   2. **員工自助類(2 個)**:Delegation、EmployeePosition -- EMPLOYEE 可達,需決定授權基線或逃生門
 >   3. **平台核心(3 個)**:Page、Form、UserRoleAssignment -- Page 涉及動態頁面解析,要確認一般用戶瀏覽路徑
 >   4. **已註冊未 enforced(6 個)**:User、Organization、OrganizationalUnit、Role、Module、MenuItem -- 呼叫端多、含 EMPLOYEE 可達路徑,逐端點盤點量大
