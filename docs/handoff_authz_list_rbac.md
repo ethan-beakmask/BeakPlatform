@@ -7,6 +7,14 @@
 > - `/units/groups` 端點也未接:它是 `@login_required` 且自帶「團長只看管理群組」縮限,接 department:read 會弄壞團長流程。
 > - 階段 B(fail-open 翻 fail-closed)未做,仍待另案討論。
 
+> **狀態更新 (2026-07-06 第二輪)**:階段 B 機制完成,採漸進推進。
+> - `list()`/`filter()` 新增 `check_permission=True` 參數:model 在 `LIST_RBAC_ENFORCED_MODELS` 集合內時自動檢查 `{resource_type}:read`,逃生門 `check_permission=False`。
+> - 首批範例:JobFamily(job_family)、DutyCategory(duty_category),已註冊 map + seed 權限代碼 + 驗證三身分。
+> - 新增可重複執行的 seed 腳本:`scripts/migrations/seed_resource_permissions.py <type> [--level ORG|SYSTEM|MODULE]`。
+> - **全域 fail-closed 尚未翻轉**:未在集合內的 model 仍 fail-open。剩餘 29 個 model 依「每批 5 個」節奏補做,每批流程:seed 權限代碼 -> 加入 MODEL_RESOURCE_TYPE_MAP 與 LIST_RBAC_ENFORCED_MODELS -> 盤點該 model 全部呼叫端身分可達性(EMPLOYEE 可達端點要先授權或加 check_permission=False) -> 三身分冒煙。全部完成後才評估把 `_get_resource_type() -> None` 改為拋例外。
+> - **SYSTEM 級資源(Organization/Contract 等)留到最後**:需先建 SYSTEM_ADMIN 角色並授 SYSTEM 權限(roles 表目前沒有此角色,[SEC-02] 已無 user_type 捷徑)。
+> - 剩餘 29 個 model 清單(依呼叫次數):DcSubSystem、WorkSchedule、JobLevel、Duty、JobTitle、DcPageLayout、SmtpConfig、UserNumberingRule、Page、DcCrudView、Contract、RecipientGroup、TelegramConfig、ApprovalCategory、Delegation、DcSubSystemPage、EmployeePosition、DcPageTemplate、JobLevelApprovalLimit、Form、UserRoleAssignment、DcBackground、DcSiteMapNode(其中 6 個已在 map 但未在 enforced 集合:User、Organization、OrganizationalUnit、Role、Module、MenuItem)。
+
 > 把這份文件**整段貼給下一次對話的 Claude**(在 `/opt/BeakPlatform-dev/` 開的對話)。
 > 這是既有安全稽核發現的結構性缺口之一,已壓縮成接手包。
 

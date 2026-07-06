@@ -32,11 +32,29 @@ MODEL_RESOURCE_TYPE_MAP = {
     'Role': 'role',
     'Module': 'module',
     'MenuItem': 'module_content',
+    'JobFamily': 'job_family',
+    'DutyCategory': 'duty_category',
     # 未來擴展
     # 'FormTemplate': 'form_template',
     # 'FormInstance': 'form_instance',
     # 'FlowDefinition': 'flow_definition',
     # 'FlowInstance': 'flow_instance',
+}
+
+# list()/filter() 預設 RBAC 檢查的啟用清單（階段 B 漸進推進）
+#
+# 列在這裡的 model，list()/filter() 未帶 require_permission 時
+# 自動檢查 '{resource_type}:read'。
+#
+# 新增 model 前置條件（缺一不可，否則連 ORG_ADMIN 都會被拒）：
+# 1. permissions 表已有該類型的權限代碼
+#    （scripts/migrations/seed_resource_permissions.py）
+# 2. 已加入上方 MODEL_RESOURCE_TYPE_MAP
+# 3. 已確認該 model 所有 list/filter 呼叫端的身分可達性
+#    （EMPLOYEE 可達的端點需先授權或加 check_permission=False）
+LIST_RBAC_ENFORCED_MODELS = {
+    'JobFamily',
+    'DutyCategory',
 }
 
 logger = logging.getLogger(__name__)
@@ -257,6 +275,7 @@ class ResourceGateway:
         limit: int = None,
         skip_tenant_filter: bool = False,
         require_permission: str = None,
+        check_permission: bool = True,
         **filters
     ) -> List[T]:
         """
@@ -268,13 +287,15 @@ class ResourceGateway:
             limit: 限制數量
             skip_tenant_filter: 是否跳過租戶過濾
             require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
+            check_permission: LIST_RBAC_ENFORCED_MODELS 內的 model 是否自動檢查 '{type}:read'
             **filters: 過濾條件
 
         Returns:
             List of Model instances
         """
-        if require_permission:
-            ResourceGateway._check_list_permission(require_permission)
+        ResourceGateway._check_collection_permission(
+            model_class, require_permission, check_permission
+        )
 
         tenant = get_current_tenant()
 
@@ -315,6 +336,7 @@ class ResourceGateway:
         order_by: str = None,
         skip_tenant_filter: bool = False,
         require_permission: str = None,
+        check_permission: bool = True,
         **filters
     ) -> Dict[str, Any]:
         """
@@ -327,6 +349,7 @@ class ResourceGateway:
             order_by: 排序欄位
             skip_tenant_filter: 是否跳過租戶過濾
             require_permission: 要求的權限代碼（如 'user:read'），未通過拋 PermissionDeniedError
+            check_permission: LIST_RBAC_ENFORCED_MODELS 內的 model 是否自動檢查 '{type}:read'
             **filters: 過濾條件
 
         Returns:
@@ -338,8 +361,9 @@ class ResourceGateway:
                 'pages': 5
             }
         """
-        if require_permission:
-            ResourceGateway._check_list_permission(require_permission)
+        ResourceGateway._check_collection_permission(
+            model_class, require_permission, check_permission
+        )
 
         tenant = get_current_tenant()
 
@@ -510,6 +534,30 @@ class ResourceGateway:
         if current_user and current_user.is_authenticated:
             return current_user
         return None
+
+    @staticmethod
+    def _check_collection_permission(
+        model_class: Type[T],
+        require_permission: Optional[str],
+        check_permission: bool
+    ) -> None:
+        """
+        集合查詢（list/filter）的權限檢查入口。
+
+        優先序：
+        1. require_permission 明確指定 -> 檢查該代碼
+        2. model 在 LIST_RBAC_ENFORCED_MODELS 且 check_permission=True
+           -> 自動檢查 '{resource_type}:read'
+        3. 其餘 -> 不檢查（fail-open，待階段 B 分批收斂）
+        """
+        if require_permission:
+            ResourceGateway._check_list_permission(require_permission)
+            return
+
+        if check_permission and model_class.__name__ in LIST_RBAC_ENFORCED_MODELS:
+            resource_type = ResourceGateway._get_resource_type(model_class)
+            if resource_type:
+                ResourceGateway._check_list_permission(f"{resource_type}:read")
 
     @staticmethod
     def _check_list_permission(permission_code: str) -> None:
