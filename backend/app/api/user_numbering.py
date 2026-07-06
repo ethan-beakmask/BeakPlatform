@@ -6,7 +6,7 @@
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
 
-from ..security.decorators import admin_required, login_required
+from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..models import UserNumberingRule, UsedUserNumber
 from ..models.user_numbering_rule import NumberingDefaultFor, NumberingUsageScope
@@ -285,7 +285,7 @@ def preview_from_config():
 # ============================================================
 
 @api_numbering_bp.route('/numbering/rules', methods=['GET'])
-@login_required
+@admin_required
 def get_available_rules():
     """
     取得可用的編號規則（用於新增用戶頁面）
@@ -322,7 +322,7 @@ def get_available_rules():
 
 
 @api_numbering_bp.route('/numbering/next', methods=['GET'])
-@login_required
+@admin_required
 def get_next_number():
     """取得下一個編號（預覽，不消耗）"""
     rule_code = request.args.get('rule')
@@ -354,7 +354,7 @@ def get_next_number():
 
 
 @api_numbering_bp.route('/numbering/consume', methods=['POST'])
-@login_required
+@admin_required
 def consume_number():
     """消耗編號（實際使用時呼叫）"""
     data = request.get_json()
@@ -415,7 +415,7 @@ def consume_number():
 
 
 @api_numbering_bp.route('/numbering/check', methods=['GET'])
-@login_required
+@admin_required
 def check_number_available():
     """檢查編號是否可用"""
     number = request.args.get('number', '').strip()

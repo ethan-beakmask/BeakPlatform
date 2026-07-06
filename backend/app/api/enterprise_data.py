@@ -2,7 +2,7 @@
 企業資料查詢 API（供流程設計器等模組使用）
 
 提供「可用設定」的唯讀查詢端點，與 enterprise_settings.py（管理用 CRUD）分離。
-權限層級：@login_required（一般登入用戶即可查詢）
+權限層級：@admin_required（企業設定屬管理範疇；呼叫端為 workflow node 設計器，本身即管理員頁面）
 
 端點：
 - GET /api/enterprise/data/settings/smtp/available        可用 SMTP 設定
@@ -13,7 +13,7 @@ from flask import Blueprint, jsonify
 from flask_login import current_user
 
 from ..models import SmtpConfig, TelegramConfig, RecipientGroup
-from ..security.decorators import login_required
+from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
 from ..constants import SYSTEM_ORG_CODE
 
@@ -25,7 +25,7 @@ api_enterprise_data = Blueprint(
 
 
 @api_enterprise_data.route('/smtp/available', methods=['GET'])
-@login_required
+@admin_required
 def available_smtp_configs():
     """列出當前企業可用的 SMTP 設定（啟用中）"""
     configs = ResourceGateway.filter(
@@ -61,7 +61,7 @@ def available_smtp_configs():
 
 
 @api_enterprise_data.route('/email-groups/available', methods=['GET'])
-@login_required
+@admin_required
 def available_email_groups():
     """列出可用的收件人群組（企業 + 系統級）"""
     org_code = current_user.org_secure_code
@@ -111,7 +111,7 @@ def available_email_groups():
 
 
 @api_enterprise_data.route('/telegram/available', methods=['GET'])
-@login_required
+@admin_required
 def available_telegram_configs():
     """列出當前企業可用的 Telegram 設定（啟用中）"""
     configs = ResourceGateway.filter(

@@ -95,9 +95,17 @@ class PageRoleGuard:
         permitted_items = cls._filter_by_user_type(matching_items, user_type)
 
         if not permitted_items:
-            # 有對應選單但用戶類型不匹配 → 沿用裝飾器處理
-            # （MenuPermission 不符的情況交由 sidebar 隱藏 + 裝飾器擋）
-            return None
+            # 雙鑰匙 Key1（MenuPermission / user_type）未通過：
+            # 此 URL 對應到選單，但用戶 user_type 在該選單無 MenuPermission。
+            # sidebar 隱藏只是「呈現」，不是存取控制；直接輸入 URL / appscan
+            # 掃描仍會抵達此路由，必須在此擋下，不可交由裝飾器（@login_required
+            # 無法表達選單層級的可見性）。
+            return (
+                f"User {user.username} (sc={user.secure_code}) "
+                f"denied access to {path} "
+                f"(matched_menus={[i.code for i in matching_items]}, "
+                f"user_type={user_type} has NO MenuPermission -- Key1 failed)"
+            )
 
         # 雙鑰匙檢查：用戶類型匹配的選單中，檢查角色需求
         org_sc = user.org_secure_code
