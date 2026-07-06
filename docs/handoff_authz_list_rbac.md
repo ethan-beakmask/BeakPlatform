@@ -19,10 +19,33 @@
 > - 已 enforced:JobLevel、JobTitle、Duty、WorkSchedule、ApprovalCategory、JobLevelApprovalLimit、SmtpConfig、TelegramConfig、RecipientGroup、UserNumberingRule(+首批 JobFamily、DutyCategory,共 12 個)。
 > - 批次大小改為**依關聯性分組**,不固定數量(用戶指示)。剩餘分組建議:
 >   1. ~~**Dc* 子系統家族(7 個)**~~ **已處理 (2026-07-06 第四輪)**:DcPageTemplate、DcSiteMapNode 已 enforced(呼叫端全 admin);DcSubSystem、DcCrudView、DcPageLayout、DcSubSystemPage、DcBackground 列入新的 `RBAC_EXEMPT_MODELS` 明確豁免清單(閘門為模組合約 + 模組 ACL + 子系統權限政策,端用戶 portal 與設計師流程皆會員層級可達,疊平台 RBAC 會癱瘓 portal)。豁免清單即 fail-closed 翻轉時的白名單依據。
->   2. **員工自助類(2 個)**:Delegation、EmployeePosition -- EMPLOYEE 可達,需決定授權基線或逃生門
->   3. **平台核心(3 個)**:Page、Form、UserRoleAssignment -- Page 涉及動態頁面解析,要確認一般用戶瀏覽路徑
->   4. **已註冊未 enforced(6 個)**:User、Organization、OrganizationalUnit、Role、Module、MenuItem -- 呼叫端多、含 EMPLOYEE 可達路徑,逐端點盤點量大
->   5. **SYSTEM 級(1 個)**:Contract -- 連同 Organization 的 enforced,需先建 SYSTEM_ADMIN 角色
+>   2. ~~員工自助類~~ ~~平台核心~~ ~~已註冊未 enforced~~ ~~SYSTEM 級~~ **全部完成,見下方最終狀態**
+
+> **最終狀態 (2026-07-06 第五輪) -- 階段 B 收尾完成**
+>
+> **Enforced(list/filter 自動檢查 {type}:read,共 24 個)**:
+> JobFamily、DutyCategory、JobLevel、JobTitle、Duty、WorkSchedule、ApprovalCategory、
+> JobLevelApprovalLimit、SmtpConfig、TelegramConfig、RecipientGroup、UserNumberingRule、
+> DcPageTemplate、DcSiteMapNode、Delegation、EmployeePosition、UserRoleAssignment、
+> User、Role、OrganizationalUnit、Module、MenuItem、Organization、Contract
+>
+> **明確豁免(RBAC_EXEMPT_MODELS,各附理由)**:DcSubSystem、DcCrudView、DcPageLayout、
+> DcSubSystemPage、DcBackground(nocode 模組 ACL 把關)、Page(page_permission_service 自身即閘門)。
+> Form 無實際 gateway 呼叫端(僅 docstring 範例),無需處理。
+>
+> **逃生門(check_permission=False,各附註解)**:
+> - `api/organizational_units.py` list_groups x2(團長分流縮限)
+> - `modules/form_workflow/api/fc_utils.py` get_org_tree(員工填單選簽核人)
+> - `api/contracts.py` list_my_contracts(contract:read 是 SYSTEM 級,org admin 看自己合約由 decorator+租戶過濾把關)
+>
+> **SYSTEM_ADMIN 角色已建置**:`scripts/migrations/seed_system_admin_role.py`
+> (角色+全權限授予+指派給 user_type=SYSTEM_ADMIN 帳號)。階段 A 擱置的
+> list_organizations 現已被 enforced 覆蓋,sysadmin 走 RBAC 通過。
+>
+> **唯一遺留**:全域 fail-closed 翻轉(`_get_resource_type() -> None` 改拋例外)
+> 尚未執行。目前所有「有 gateway 呼叫端的 model」都已 enforced 或明確豁免,
+> 翻轉只影響未來新增的 model(強迫開發者表態)。屬低風險小改動,
+> 可與 handoff_authz_api_guard.md 一併處理或另行指示。
 
 > 把這份文件**整段貼給下一次對話的 Claude**(在 `/opt/BeakPlatform-dev/` 開的對話)。
 > 這是既有安全稽核發現的結構性缺口之一,已壓縮成接手包。

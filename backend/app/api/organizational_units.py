@@ -612,11 +612,13 @@ def list_groups():
 
     if _is_admin(current_user):
         # Admin: 走原本的 list_units 邏輯
+        # check_permission=False: /groups 自帶 admin/團長分流縮限邏輯
         all_groups = ResourceGateway.filter(
             OrganizationalUnit,
             is_deleted=False,
             unit_type=UnitType.GROUP,
             order_by='sort_order',
+            check_permission=False,
         )
         if as_tree:
             root_groups = [u for u in all_groups if u.parent_secure_code is None]
@@ -632,11 +634,13 @@ def list_groups():
     if not managed_scs:
         return jsonify({'units': []}), 200
 
+    # check_permission=False: 團長只回傳自己管理的群組（下方過濾）
     managed_groups = ResourceGateway.filter(
         OrganizationalUnit,
         is_deleted=False,
         unit_type=UnitType.GROUP,
         order_by='sort_order',
+        check_permission=False,
     )
     # 只保留管理的群組 (展平為頂層)
     filtered = [u for u in managed_groups if u.secure_code in managed_scs]

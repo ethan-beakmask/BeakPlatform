@@ -125,11 +125,13 @@ def get_org_tree():
     org_sc = current_user.org_secure_code
 
     # 取得所有啟用部門
+    # check_permission=False: 員工填單選簽核人需要組織樹，閘門為模組合約
     departments = ResourceGateway.filter(
         OrganizationalUnit,
         is_deleted=False,
         unit_type=UnitType.DEPARTMENT,
         order_by='sort_order',
+        check_permission=False,
     )
 
     # 取得所有啟用的企業成員帳號

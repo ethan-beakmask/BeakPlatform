@@ -271,10 +271,13 @@ def list_my_contracts():
     GET /api/contracts/my
     """
     # 使用 ResourceGateway 的租戶過濾
+    # check_permission=False: contract:read 為 SYSTEM 級，企業管理員看自己
+    # 企業的合約由 @admin_required + 租戶過濾把關
     contracts = ResourceGateway.filter(
         Contract,
         order_by='-start_date',
-        is_deleted=False
+        is_deleted=False,
+        check_permission=False
     )
 
     return jsonify({

@@ -46,6 +46,10 @@ MODEL_RESOURCE_TYPE_MAP = {
     'UserNumberingRule': 'user_numbering_rule',
     'DcPageTemplate': 'dc_page_template',
     'DcSiteMapNode': 'dc_site_map_node',
+    'Delegation': 'delegation',
+    'EmployeePosition': 'employee_position',
+    'UserRoleAssignment': 'user_role_assignment',
+    'Contract': 'contract',
     # 未來擴展
     # 'FormTemplate': 'form_template',
     # 'FormInstance': 'form_instance',
@@ -79,6 +83,16 @@ LIST_RBAC_ENFORCED_MODELS = {
     'UserNumberingRule',
     'DcPageTemplate',
     'DcSiteMapNode',
+    'Delegation',
+    'EmployeePosition',
+    'UserRoleAssignment',
+    'User',
+    'Role',
+    'OrganizationalUnit',
+    'Module',
+    'MenuItem',
+    'Organization',
+    'Contract',
 }
 
 # 明確豁免平台 RBAC 檢查的 model（階段 B fail-closed 翻轉時的白名單依據）
@@ -95,6 +109,9 @@ RBAC_EXEMPT_MODELS = {
     'DcPageLayout': 'nocode 模組 ACL 把關；/p/<sc> 發佈頁為全登入用戶可達',
     'DcSubSystemPage': 'nocode 模組 ACL + 子系統權限政策把關',
     'DcBackground': 'nocode 模組 ACL 把關（設計師資源）',
+    # 動態頁面：閘門為 page_permission_service.check_page_access 本身，
+    # /p/<sc> 與 /api/pages 為全登入用戶可達，疊 {type}:read 會癱瘓動態頁面。
+    'Page': 'page_permission_service 自身即為閘門',
 }
 
 logger = logging.getLogger(__name__)
