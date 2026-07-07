@@ -36,35 +36,22 @@ def list_available_forms():
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     # 判斷是否可見測試表單（管理員 or 有 design.tryout 權限）
-    from app.platform.auth import has_permission, get_user_roles
+    from app.platform.auth import has_permission
     is_admin = (
         getattr(current_user, 'is_org_admin', False) or
         has_permission('form_workflow.design.tryout')
     )
 
     # =========================================================================
-    # 填寫權限判斷：硬編碼預設角色
+    # 填寫權限：共用 fill_permission_service（與 fc_fill submit 同一套判斷）
     # =========================================================================
-    HARDCODED_ROLE_CODES = {'FLOW_DESIGNER', 'FORM_DESIGNER'}
-    user_type = str(getattr(current_user, 'user_type', ''))
-    user_role_codes = {r['code'] for r in get_user_roles(current_user)}
-    is_hardcoded_allowed = (
-        user_type == 'SYSTEM_ADMIN' or
-        bool(user_role_codes & HARDCODED_ROLE_CODES)
+    from ..services.fill_permission_service import (
+        build_fill_permission_context, check_mapping_permission,
     )
-    is_external = (user_type == 'EXTERNAL')
+    perm_ctx = build_fill_permission_context(current_user, org.secure_code)
 
-    # =========================================================================
-    # 若非硬編碼角色，預載權限資料與用戶身份
-    # =========================================================================
     perm_map = {}  # mapping_secure_code -> [FwMappingPermission, ...]
-    user_dept_sc = None
-    user_dept_ancestors = set()  # 用戶部門所在的祖先鏈
-    user_group_scs = set()
-    user_group_ancestors = set()  # 用戶群組的祖先鏈（含自身）
-
-    if not is_hardcoded_allowed:
-        # 載入所有配對權限
+    if not perm_ctx['is_hardcoded']:
         all_perms = FwMappingPermission.query.filter_by(
             org_secure_code=org.secure_code,
             is_deleted=False
@@ -72,78 +59,9 @@ def list_available_forms():
         for p in all_perms:
             perm_map.setdefault(p.mapping_secure_code, []).append(p)
 
-        # 用戶主要部門
-        user_dept_sc = getattr(current_user, 'primary_unit_secure_code', None)
-
-        # 用戶所屬群組（透過 membership）
-        from app.models import UserUnitMembership, OrganizationalUnit
-        user_group_scs = set(
-            m.unit_secure_code for m in UserUnitMembership.query.filter_by(
-                user_secure_code=current_user.secure_code,
-                org_secure_code=org.secure_code,
-                is_deleted=False
-            ).join(
-                OrganizationalUnit,
-                OrganizationalUnit.secure_code == UserUnitMembership.unit_secure_code
-            ).filter(
-                OrganizationalUnit.unit_type == 'GROUP',
-                OrganizationalUnit.is_deleted == False
-            ).all()
-        )
-
-        # 建立部門祖先鏈（用於 include_children 判斷）
-        if user_dept_sc:
-            from app.models import OrganizationalUnit
-            _build_dept_ancestors(user_dept_sc, user_dept_ancestors, org.secure_code)
-
-        # 建立群組祖先鏈（用於群組 include_children 判斷）
-        for gsc in user_group_scs:
-            _build_group_ancestors(gsc, user_group_ancestors, org.secure_code)
-
     def _check_mapping_permission(mapping_sc):
         """檢查當前用戶是否有權填寫此配對的表單"""
-        if is_hardcoded_allowed:
-            return True
-
-        perms = perm_map.get(mapping_sc)
-        if not perms:
-            return False  # 無自訂規則，僅硬編碼角色可用
-
-        for p in perms:
-            if p.grant_type == 'user':
-                if is_external:
-                    continue  # EXTERNAL 不能透過 user 類型授權
-                if p.grant_target == current_user.secure_code:
-                    return True
-
-            elif p.grant_type == 'department':
-                if is_external:
-                    continue  # EXTERNAL 不能透過 department 授權
-                if not user_dept_sc:
-                    continue
-                if p.include_children:
-                    # 用戶部門在此部門的子樹中（grant_target 是祖先之一）
-                    if p.grant_target in user_dept_ancestors:
-                        return True
-                else:
-                    if p.grant_target == user_dept_sc:
-                        return True
-
-            elif p.grant_type == 'group':
-                if not user_group_scs:
-                    continue
-                if p.include_children:
-                    # grant_target 是用戶群組的祖先之一（含 __ORG_ROOT__）
-                    if p.grant_target in user_group_ancestors:
-                        return True
-                else:
-                    if p.grant_target == '__ORG_ROOT__':
-                        # 虛擬企業根（不含下層）-- 有任一群組成員身份即匹配
-                        return True
-                    elif p.grant_target in user_group_scs:
-                        return True
-
-        return False
+        return check_mapping_permission(perm_ctx, perm_map.get(mapping_sc))
 
     # 預先載入分類映射（category_secure_code -> parent info）
     from ..models import FwCategory
@@ -298,50 +216,3 @@ def list_available_forms():
         'data': result,
         'is_admin': is_admin
     })
-
-
-def _build_dept_ancestors(dept_sc, ancestors, org_sc):
-    """遞迴建立部門祖先鏈（含自身），用於 include_children 判斷"""
-    from app.models import OrganizationalUnit
-
-    visited = set()
-    current = dept_sc
-    while current and current not in visited:
-        visited.add(current)
-        ancestors.add(current)
-        unit = OrganizationalUnit.query.filter_by(
-            secure_code=current,
-            org_secure_code=org_sc,
-            is_deleted=False
-        ).first()
-        if not unit or not unit.parent_secure_code:
-            break
-        current = unit.parent_secure_code
-    # 加入最終的根部門
-    if current and current not in ancestors:
-        ancestors.add(current)
-    # 虛擬企業根 -- 讓 grant_target='__ORG_ROOT__' + include_children 匹配所有部門
-    ancestors.add('__ORG_ROOT__')
-
-
-def _build_group_ancestors(group_sc, ancestors, org_sc):
-    """遞迴建立群組祖先鏈（含自身），用於群組 include_children 判斷"""
-    from app.models import OrganizationalUnit
-
-    visited = set()
-    current = group_sc
-    while current and current not in visited:
-        visited.add(current)
-        ancestors.add(current)
-        unit = OrganizationalUnit.query.filter_by(
-            secure_code=current,
-            org_secure_code=org_sc,
-            is_deleted=False
-        ).first()
-        if not unit or not unit.parent_secure_code:
-            break
-        current = unit.parent_secure_code
-    if current and current not in ancestors:
-        ancestors.add(current)
-    # 虛擬企業根 -- 讓 grant_target='__ORG_ROOT__' + include_children 匹配所有群組
-    ancestors.add('__ORG_ROOT__')

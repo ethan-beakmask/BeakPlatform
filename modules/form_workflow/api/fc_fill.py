@@ -233,6 +233,14 @@ def submit_form():
             if published.status != 'Published':
                 return jsonify({'success': False, 'error': '此表單已停用'}), 400
 
+            # A-1：驗證填寫權限（與表單中心列表同一套 FwMappingPermission 判斷）
+            from ..services.fill_permission_service import user_can_fill_mapping
+            if not user_can_fill_mapping(
+                current_user, org.secure_code,
+                published.source_mapping_secure_code,
+            ):
+                return jsonify({'success': False, 'error': '您沒有填寫此表單的權限'}), 403
+
             # 標記為已使用
             published.mark_as_used()
 

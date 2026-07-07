@@ -36,6 +36,8 @@ files:
     - modules/form_workflow/api/backgrounds.py              # 工作流設計器底圖
     - modules/form_workflow/api/form_themes.py              # 表單主題
   service:     modules/form_workflow/services/              # workflow_engine/executor/node_runner + node_handlers/
+               # form_submit_service.py 送單核心（fc_fill 與外部發動閘道共用）
+               # fill_permission_service.py 填寫權限解析（fc_available 與 fc_fill submit 共用）
   model:       modules/form_workflow/models/
   template:    modules/form_workflow/templates/modules/form_workflow/
   js:

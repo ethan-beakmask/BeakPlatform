@@ -149,7 +149,11 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
 
 ## 七、遺留追蹤（不在本次範圍）
 
-- A-1：`/api/form-center/submit` 正式模式未驗 `FwMappingPermission`（session UI 路徑，另開工單）
+- A-1：~~`/api/form-center/submit` 正式模式未驗 `FwMappingPermission`~~
+  **已修（2026-07-08）**：權限解析抽為共用 `services/fill_permission_service.py`，
+  `fc_available`（列表可見性）與 `fc_fill` submit（送單）使用同一套判斷；
+  無權限送單回 403。E2E 驗證：授權用戶 201、未授權用戶 403、ORG_ADMIN
+  無授權記錄時同樣 403（與列表可見性一致，ORG_ADMIN 非硬編碼放行角色）。
 - P2：OdIntakeKey 遷移平台 ApiKey
 - P3：`api_key_action` 流程節點（workflow_node_definitions 新 node type + handler，FRONT-03 走 DB 定義）
 - 突發保護 B/C（`docs/handoff_burst_protection_ABC.md`）：executor 並發封頂、事件聚合
