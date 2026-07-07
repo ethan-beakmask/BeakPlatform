@@ -6,11 +6,16 @@ Seed 資源類型的標準 CRUD 權限代碼
 已存在（含軟刪除）的代碼會跳過，可重複執行。
 
 配合 ResourceGateway 階段 B 漸進推進：每批 model 註冊前先跑本腳本。
+
+注意：本腳本是開發期工具，只影響當前環境的 DB。跑完後必須把新增的
+權限代碼同步進編號 migration（參考 scripts/migrations/075_*.py 的格式），
+否則 prod 部署時權限代碼缺漏，LIST_RBAC_ENFORCED_MODELS 內的 model
+會全面拒絕存取。
 """
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
 
 ACTIONS = ['read', 'create', 'update', 'delete']
 

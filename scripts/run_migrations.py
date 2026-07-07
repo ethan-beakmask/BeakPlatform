@@ -105,6 +105,25 @@ def _number_sort_key(filename):
     return (1, 0, filename)
 
 
+# migration 檔必須以編號開頭（NNN_description.sql/.py）
+# 非編號檔案視為工具腳本，不納入追蹤與執行，僅在 --status/--scan 提出警告。
+# 歷史教訓：需要參數的工具腳本混進 migrations/ 會讓 --run 中途失敗。
+NUMBERED_PATTERN = re.compile(r'^\d+_')
+
+# 掃描時發現的非編號檔案（供各指令顯示警告）
+STRAY_FILES = []
+
+
+def print_stray_warnings():
+    """列出 migrations 目錄中的非編號檔案警告"""
+    if not STRAY_FILES:
+        return
+    print()
+    print("警告: 以下檔案不符合 NNN_ 編號規範，已略過（工具腳本請移到 scripts/）:")
+    for f in STRAY_FILES:
+        print(f"  - {f}")
+
+
 def get_all_migration_files():
     """
     掃描平台級與模組級 migration 檔案。
@@ -116,6 +135,7 @@ def get_all_migration_files():
       - filepath: 磁碟上的完整路徑
     """
     migrations = []
+    STRAY_FILES.clear()
 
     # --- 平台級 ---
     if os.path.isdir(PLATFORM_MIGRATIONS_DIR):
@@ -125,6 +145,9 @@ def get_all_migration_files():
             if f.startswith('__'):
                 continue
             if _is_excluded(f):
+                continue
+            if not NUMBERED_PATTERN.match(f):
+                STRAY_FILES.append(f"scripts/migrations/{f}")
                 continue
             migrations.append((f, os.path.join(PLATFORM_MIGRATIONS_DIR, f)))
 
@@ -140,6 +163,9 @@ def get_all_migration_files():
                 if f.startswith('__'):
                     continue
                 if _is_excluded(f):
+                    continue
+                if not NUMBERED_PATTERN.match(f):
+                    STRAY_FILES.append(f"modules/{module_name}/migrations/{f}")
                     continue
                 key = f"modules/{module_name}/{f}"
                 migrations.append((key, os.path.join(module_mig_dir, f)))
@@ -276,6 +302,8 @@ def cmd_status(conn):
     if total_pending == 0:
         print("\n全部已執行，無待處理項目。")
 
+    print_stray_warnings()
+
 
 def cmd_scan():
     """掃描所有 migration 檔案（不需 DB 連線）"""
@@ -297,6 +325,7 @@ def cmd_scan():
         print(f"  {key}")
 
     print(f"\n共 {len(all_files)} 個 migration 檔案")
+    print_stray_warnings()
 
 
 def cmd_run(conn):
@@ -335,6 +364,7 @@ def cmd_run(conn):
             sys.exit(1)
 
     print(f"\n完成。已執行 {success} 個 migration。")
+    print_stray_warnings()
 
 
 def cmd_mark_all(conn):

@@ -64,7 +64,7 @@ MODEL_RESOURCE_TYPE_MAP = {
 #
 # 新增 model 前置條件（缺一不可，否則連 ORG_ADMIN 都會被拒）：
 # 1. permissions 表已有該類型的權限代碼
-#    （scripts/migrations/seed_resource_permissions.py）
+#    （開發期跑 scripts/seed_resource_permissions.py，並同步進編號 migration，見 075）
 # 2. 已加入上方 MODEL_RESOURCE_TYPE_MAP
 # 3. 已確認該 model 所有 list/filter 呼叫端的身分可達性
 #    （EMPLOYEE 可達的端點需先授權或加 check_permission=False）
