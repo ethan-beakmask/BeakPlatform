@@ -12,9 +12,30 @@ description: 表單工作流模組（表單設計器、工作流設計器、表�
 
 files:
   module_root: modules/form_workflow/
-  route:       modules/form_workflow/routes.py
-  api:         modules/form_workflow/api.py
-  service:     modules/form_workflow/services/
+  route:       modules/form_workflow/web/__init__.py        # web_bp, url_prefix='/forms'
+  api:         # api/ 套件，各檔案註冊至對應 Blueprint
+    - modules/form_workflow/api/__init__.py                 # api_bp '/api/form-workflow' + Blueprint 匯總
+    - modules/form_workflow/api/template_routes.py          # 表單模板 CRUD
+    - modules/form_workflow/api/workflow_routes.py          # 工作流模板 CRUD + 樹系
+    - modules/form_workflow/api/instance_routes.py          # 表單實例與待簽核任務
+    - modules/form_workflow/api/forms.py                    # forms API (A6 前端相容)
+    - modules/form_workflow/api/workflows.py                # workflows API (A6 前端相容)
+    - modules/form_workflow/api/mappings.py                 # 表單-流程配對
+    - modules/form_workflow/api/mapping_permissions.py      # 配對填寫權限
+    - modules/form_workflow/api/form_center.py              # form_center_bp '/api/form-center'
+    - modules/form_workflow/api/fc_available.py             # 可填寫表單列表
+    - modules/form_workflow/api/fc_fill.py                  # 取表單定義 + submit 送出啟流程
+    - modules/form_workflow/api/fc_my_forms.py              # 我的表單
+    - modules/form_workflow/api/fc_pending.py               # 待簽核
+    - modules/form_workflow/api/fc_monitor.py               # 流程監控
+    - modules/form_workflow/api/fc_admin.py                 # 表單中心管理
+    - modules/form_workflow/api/fc_batch.py                 # 批次操作
+    - modules/form_workflow/api/fc_phrases.py               # 常用簽核片語
+    - modules/form_workflow/api/fc_utils.py                 # 共用工具
+    - modules/form_workflow/api/categories.py               # 表單分類
+    - modules/form_workflow/api/backgrounds.py              # 工作流設計器底圖
+    - modules/form_workflow/api/form_themes.py              # 表單主題
+  service:     modules/form_workflow/services/              # workflow_engine/executor/node_runner + node_handlers/
   model:       modules/form_workflow/models/
   template:    modules/form_workflow/templates/modules/form_workflow/
   js:
@@ -42,3 +63,6 @@ note: |
   此模組是平台最複雜的模組，包含表單設計器和工作流設計器。
   前端大量使用 FormIO、Cytoscape、Beak-Trellis。
   模組有自己的 models/、services/ 子目錄。
+  流程推進由 workflow_executor 背景執行緒輪詢 FwNodeExecutionQueue，
+  節點處理器在 services/node_handlers/（factory.py 註冊）。
+  程式化建單 API 指南：docs/integrations/quick_form_submit_api.md
