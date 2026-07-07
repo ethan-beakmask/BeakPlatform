@@ -38,6 +38,15 @@ def get_form_for_filling(secure_code):
     source = request.args.get('source', 'published')
 
     if source == 'mapping':
+        # 測試模式：需管理員或 design.tryout 權限（與 submit 測試模式一致）
+        from app.platform.auth import has_permission
+        can_tryout = (
+            getattr(current_user, 'is_org_admin', False) or
+            has_permission('form_workflow.design.tryout')
+        )
+        if not can_tryout:
+            return jsonify({'success': False, 'error': '需要試行設計稿權限'}), 403
+
         # 測試模式：從設計稿取得表單定義
         form_template = FwFormTemplate.query.filter_by(
             secure_code=secure_code,
@@ -81,6 +90,14 @@ def get_form_for_filling(secure_code):
 
         if not published:
             return jsonify({'success': False, 'error': '找不到指定的表單或已停用'}), 404
+
+        # 驗證填寫權限（與列表/送單同一套 FwMappingPermission 判斷），防 schema 洩漏
+        from ..services.fill_permission_service import user_can_fill_mapping
+        if not user_can_fill_mapping(
+            current_user, org.secure_code,
+            published.source_mapping_secure_code,
+        ):
+            return jsonify({'success': False, 'error': '您沒有填寫此表單的權限'}), 403
 
         form_snapshot = published.form_snapshot or {}
 
