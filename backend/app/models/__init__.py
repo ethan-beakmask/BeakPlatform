@@ -101,6 +101,9 @@ from .module_access_control import ModuleAccessControl, TargetType
 from .store_item import StoreItem
 from .store_installation import StoreInstallation
 
+# 平台級 API Key（外部系統 HMAC 認證）
+from .api_key import ApiKey
+
 # 時間管理（班表、排班）
 from .work_schedule import WorkSchedule, DEFAULT_WORK_SCHEDULES
 from .schedule_holiday import ScheduleHoliday, DEFAULT_TW_HOLIDAYS_2026
@@ -109,6 +112,8 @@ from .personal_schedule import PersonalSchedule
 from .schedule_adjustment import ScheduleAdjustment
 
 __all__ = [
+    # 平台級 API Key
+    'ApiKey',
     # 基礎
     'BaseModel',
     'TenantBaseModel',

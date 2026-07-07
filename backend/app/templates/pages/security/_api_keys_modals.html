@@ -1,0 +1,136 @@
+{# API Key 管理 - 模態框（建立/編輯、一次性 secret、暫停） #}
+
+{# ---- 建立 / 編輯 ---- #}
+<div class="ak-modal-overlay" x-show="showFormModal" x-cloak>
+    <div class="ak-modal">
+        <h3 x-text="editingSc ? '編輯 API Key' : '建立 API Key'"></h3>
+
+        <div class="ak-field">
+            <label>名稱 *</label>
+            <input type="text" x-model="form.name" placeholder="如：台北機房防火牆事件通報">
+        </div>
+        <div class="ak-field">
+            <label>使用者標籤</label>
+            <input type="text" x-model="form.consumer_label" placeholder="如：FW-01 (192.168.1.254)">
+            <div class="ak-hint">標示這把 Key 由哪個外部系統/裝置持有，發動的表單會以此顯示來源</div>
+        </div>
+        <div class="ak-field">
+            <label>說明</label>
+            <textarea x-model="form.description" rows="2"></textarea>
+        </div>
+        <div class="ak-field">
+            <label>使用期限</label>
+            <input type="date" x-model="form.expires_at">
+            <div class="ak-hint">留空 = 永久有效</div>
+        </div>
+        <div class="ak-field">
+            <label>來源 IP 白名單</label>
+            <textarea x-model="form.allowed_ips_text" rows="2"
+                      placeholder="一行一筆，支援 CIDR，如 192.168.1.254 或 10.0.0.0/24"></textarea>
+            <div class="ak-hint">留空 = 不鎖 IP（動態 IP 場景建議留空，改以暫停 Key 做處置）</div>
+        </div>
+
+        <div class="ak-field">
+            <label>授權範圍 - 表單分類（勾選父分類即涵蓋其子分類）</label>
+            <div class="ak-scope-box">
+                <template x-for="cat in categories" :key="cat.secure_code">
+                    <div class="ak-scope-item"
+                         :class="cat.parent_secure_code ? 'ak-scope-child' : 'ak-scope-parent'">
+                        <input type="checkbox" :value="cat.secure_code"
+                               x-model="form.scope_categories"
+                               :id="'akcat-' + cat.secure_code">
+                        <label :for="'akcat-' + cat.secure_code" style="margin:0;"
+                               x-text="cat.name"></label>
+                    </div>
+                </template>
+                <template x-if="categories.length === 0">
+                    <div class="ak-sub">（無分類資料）</div>
+                </template>
+            </div>
+        </div>
+
+        <div class="ak-field">
+            <label>授權範圍 - 個別表單（例外直綁）</label>
+            <div class="ak-scope-box">
+                <template x-for="pub in publishedForms" :key="pub.secure_code">
+                    <div class="ak-scope-item">
+                        <input type="checkbox" :value="pub.secure_code"
+                               x-model="form.scope_forms"
+                               :id="'akform-' + pub.secure_code">
+                        <label :for="'akform-' + pub.secure_code" style="margin:0;"
+                               x-text="pub.name"></label>
+                    </div>
+                </template>
+                <template x-if="publishedForms.length === 0">
+                    <div class="ak-sub">（無已發行表單）</div>
+                </template>
+            </div>
+        </div>
+
+        <div class="ak-field">
+            <label>綁定申請人（專用系統帳號）</label>
+            <select x-model="form.applicant_user_secure_code">
+                <option value="">不綁定（申請人顯示使用者標籤）</option>
+                <template x-for="u in users" :key="u.secure_code">
+                    <option :value="u.secure_code"
+                            x-text="(u.display_name || u.username) + ' (' + u.username + ')'"></option>
+                </template>
+            </select>
+            <div class="ak-hint">綁定後，發動的表單以此帳號為申請人，簽核鏈身分清楚</div>
+        </div>
+
+        <div class="ak-modal-actions">
+            <button class="btn" @click="showFormModal = false">取消</button>
+            <button class="btn btn-primary" @click="submitForm()"
+                    x-text="editingSc ? '儲存' : '建立'"></button>
+        </div>
+    </div>
+</div>
+
+{# ---- 一次性 secret 顯示 ---- #}
+<div class="ak-modal-overlay" x-show="showSecretModal" x-cloak>
+    <div class="ak-modal">
+        <h3>API Key 已建立</h3>
+        <div class="ak-secret-warn">
+            Secret 僅顯示這一次，關閉後無法再查看。請立即複製並安全交付給外部系統。
+        </div>
+        <template x-if="createdKey">
+            <div>
+                <div class="ak-secret-box">
+                    key_id: <span x-text="createdKey.key_id"></span><br>
+                    secret: <span x-text="createdKey.secret"></span>
+                </div>
+                <div class="ak-sub">
+                    簽章方式：HMAC-SHA256(secret, "{timestamp}\n{body}")，
+                    headers：X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature。
+                    詳見 docs/API_KEY_TRIGGER_SPEC.md。
+                </div>
+            </div>
+        </template>
+        <div class="ak-modal-actions">
+            <button class="btn" @click="copySecret()"
+                    x-text="secretCopied ? '已複製' : '複製'"></button>
+            <button class="btn btn-primary" @click="closeSecretModal()">我已保存，關閉</button>
+        </div>
+    </div>
+</div>
+
+{# ---- 暫停 ---- #}
+<div class="ak-modal-overlay" x-show="showSuspendModal" x-cloak>
+    <div class="ak-modal" style="width:460px;">
+        <h3>暫停 API Key</h3>
+        <p class="ak-sub" style="margin-top:0;">
+            暫停後外部系統立即無法使用此 Key（回 401），可隨時復原。
+            疑似 Key 遭盜用時的首選處置。
+        </p>
+        <div class="ak-field">
+            <label>暫停原因 *</label>
+            <textarea x-model="suspendReason" rows="2"
+                      placeholder="如：來源 IP 異常，疑似外洩，待查證"></textarea>
+        </div>
+        <div class="ak-modal-actions">
+            <button class="btn" @click="showSuspendModal = false">取消</button>
+            <button class="btn btn-primary" @click="submitSuspend()">確認暫停</button>
+        </div>
+    </div>
+</div>

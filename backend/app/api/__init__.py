@@ -98,6 +98,10 @@ def register_blueprints(app: Flask) -> None:
     from .security_center import security_center_bp
     app.register_blueprint(security_center_bp)
 
+    # API Key management (平台級 API Key 管理)
+    from .api_keys import api_keys_bp
+    app.register_blueprint(api_keys_bp)
+
     # Broadcasts (廣播系統)
     from .broadcasts import broadcasts_bp
     app.register_blueprint(broadcasts_bp)

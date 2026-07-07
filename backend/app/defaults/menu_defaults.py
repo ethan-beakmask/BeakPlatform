@@ -565,6 +565,17 @@ CORE_MENUS = [
         'required_level': 30,
         'is_shared': False,
     },
+    {
+        'code': 'api_key_manage',
+        'title': 'API Key 管理',
+        'parent_code': 'org_security',
+        'link_type': 'url',
+        'link_target': '/security/api-keys/',
+        'display_order': 3,
+        'depth': 1,
+        'required_level': 30,
+        'is_shared': False,
+    },
 
     # -- 說明 (platform_help) --
     {
@@ -682,6 +693,7 @@ MENU_ROLE_DEFAULTS = {
     'login_fail_monitor_org': ['ORG_ADMIN'],
     'org_rate_limits': ['ORG_ADMIN'],
     'alert_broadcasts_org': ['ORG_ADMIN'],
+    'api_key_manage': ['ORG_ADMIN'],
 
     # 規格制定模組（ORG_ADMIN + SPEC_DESIGNER）
     'spec_formulate': ['ORG_ADMIN', 'SPEC_DESIGNER'],

@@ -2,16 +2,12 @@
 表單中心 - 取得表單 + 送出表單
 """
 import logging
-import secrets
-from datetime import datetime
 
 from flask import jsonify, request
 from flask_login import current_user
 
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
-from app.models import UserNumberingRule
-from app.services.numbering_service import NumberingService
 from app import db, csrf
 
 from .form_center import form_center_bp
@@ -139,8 +135,7 @@ def submit_form():
     }
     """
     from ..models import (
-        FwPublishedFormWorkflow, FwFormInstance, FwWorkflowInstance,
-        FwNodeExecutionQueue, FwFormTemplate, FwWorkflowTemplate,
+        FwPublishedFormWorkflow, FwFormTemplate, FwWorkflowTemplate,
         FwFormWorkflowMapping
     )
 
@@ -164,9 +159,6 @@ def submit_form():
         return jsonify({'success': False, 'error': '缺少 published_secure_code 或 mapping_secure_code'}), 400
 
     try:
-        date_str = datetime.now().strftime('%Y%m%d')
-        from sqlalchemy import text
-
         if is_test_mode:
             # ============================================
             # 測試模式：使用設計稿（需管理員或 design.tryout 權限）
@@ -265,172 +257,48 @@ def submit_form():
 
             proc_prefix = 'PROC-'
 
-        # 生成表單序號（三層架構）
-        org_form_seq = None
+        # 序號配發 + 建實例 + 啟動流程（共用 service，與外部發動閘道一致）
+        from ..services.form_submit_service import (
+            allocate_serial_number, create_instance_and_start, SubmitError,
+        )
 
-        if is_test_mode:
-            # 測試模式：固定 TEST-YYYYMMDD-NNNN 格式
-            result = db.session.execute(
-                text("""
-                    SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d{4}$') AS INTEGER)), 0) + 1
-                    FROM fw_form_instances
-                    WHERE serial_number LIKE :pattern
-                """),
-                {'pattern': f'TEST-{date_str}-%'}
+        serial_number, org_form_seq = allocate_serial_number(
+            org.secure_code, is_test_mode,
+            published=(None if is_test_mode else published),
+        )
+
+        try:
+            form_instance, workflow_instance = create_instance_and_start(
+                org_secure_code=org.secure_code,
+                serial_number=serial_number,
+                org_form_seq=org_form_seq,
+                subject=subject,
+                form_data=form_data,
+                is_test=is_test_mode,
+                source_type='WEB',
+                source_ip=request.remote_addr,
+                form_name=form_name,
+                form_code=form_code,
+                form_version=form_version,
+                form_schema=form_schema,
+                form_builder_config=form_builder_config,
+                workflow_name=workflow_name,
+                workflow_version=workflow_version,
+                workflow_graph=workflow_graph,
+                source_form_template_id=source_form_template_id,
+                source_form_template_secure_code=source_form_template_secure_code,
+                source_workflow_template_id=source_workflow_template_id,
+                source_workflow_template_secure_code=source_workflow_template_secure_code,
+                published_sc=published_sc,
+                proc_prefix=proc_prefix,
+                applicant_secure_code=current_user.secure_code,
+                applicant_name=current_user.display_name or current_user.username,
+                applicant_username=current_user.username,
+                applicant_email=getattr(current_user, 'email', None),
+                applicant_dept=getattr(current_user, 'department_name', None),
             )
-            form_seq = result.scalar() or 1
-            serial_number = f"TEST-{date_str}-{str(form_seq).zfill(4)}"
-        else:
-            # 正式模式：透過萬用編號系統取得企業專屬格式
-            # 從 mapping 讀取編號規則（即時生效，不需重新發行）
-            form_rule = None
-            if published:
-                from modules.form_workflow.models import FwFormWorkflowMapping
-                mapping_obj = FwFormWorkflowMapping.query.filter_by(
-                    secure_code=published.source_mapping_secure_code,
-                    is_deleted=False
-                ).first()
-                if mapping_obj and mapping_obj.numbering_rule_secure_code:
-                    form_rule = UserNumberingRule.query.filter_by(
-                        secure_code=mapping_obj.numbering_rule_secure_code,
-                        org_secure_code=org.secure_code,
-                        is_active=True,
-                        is_deleted=False
-                    ).first()
-            if not form_rule:
-                form_rule = NumberingService.get_default_rule(
-                    org.secure_code, default_for='FORM'
-                )
-            if form_rule:
-                detail = NumberingService.get_next_number_with_detail(
-                    form_rule, consume=True
-                )
-                serial_number = detail['number']
-                # org_form_seq 獨立於編號規則，取企業層級最大值 +1
-                result = db.session.execute(
-                    text("""
-                        SELECT COALESCE(MAX(org_form_seq), 0) + 1
-                        FROM fw_form_instances
-                        WHERE org_secure_code = :osc
-                    """),
-                    {'osc': org.secure_code}
-                )
-                org_form_seq = result.scalar() or 1
-            else:
-                # 無規則 fallback：FORM-YYYYMMDD-NNNNN
-                result = db.session.execute(
-                    text("""
-                        SELECT COALESCE(MAX(CAST(SUBSTRING(serial_number FROM '\\d+$') AS INTEGER)), 0) + 1
-                        FROM fw_form_instances
-                        WHERE serial_number LIKE :pattern
-                    """),
-                    {'pattern': f'FORM-{date_str}-%'}
-                )
-                form_seq = result.scalar() or 1
-                serial_number = f"FORM-{date_str}-{str(form_seq).zfill(5)}"
-
-        # 建立表單實例
-        form_instance = FwFormInstance(
-            secure_code=secrets.token_urlsafe(16),
-            org_secure_code=org.secure_code,
-            form_template_id=source_form_template_id,
-            form_template_secure_code=source_form_template_secure_code,
-            published_secure_code=published_sc,
-            serial_number=serial_number,
-            org_form_seq=org_form_seq,
-            form_name=form_name,
-            form_code=form_code,
-            form_version=form_version,
-            applicant_secure_code=current_user.secure_code,
-            applicant_name=current_user.display_name or current_user.username,
-            applicant_username=current_user.username,
-            applicant_email=getattr(current_user, 'email', None),
-            applicant_dept=getattr(current_user, 'department_name', None),
-            subject=subject,
-            form_data=form_data,
-            schema_snapshot=form_schema,
-            builder_config=form_builder_config,
-            status='INITIAL',
-            source_type='WEB',
-            source_ip=request.remote_addr,
-            submitted_at=datetime.utcnow(),
-            is_test=is_test_mode,
-        )
-
-        db.session.add(form_instance)
-        db.session.flush()
-
-        # 生成流程執行編號
-        result = db.session.execute(
-            text("""
-                SELECT COALESCE(MAX(CAST(SUBSTRING(execution_code FROM '\\d{4}$') AS INTEGER)), 0) + 1
-                FROM fw_workflow_instances
-                WHERE execution_code LIKE :pattern
-            """),
-            {'pattern': f'{proc_prefix}{date_str}-%'}
-        )
-        proc_seq = result.scalar() or 1
-        execution_code = f"{proc_prefix}{date_str}-{str(proc_seq).zfill(4)}"
-
-        # 建立流程實例
-        workflow_instance = FwWorkflowInstance(
-            secure_code=secrets.token_urlsafe(16),
-            org_secure_code=org.secure_code,
-            form_instance_id=form_instance.id,
-            form_instance_secure_code=form_instance.secure_code,
-            workflow_template_id=source_workflow_template_id,
-            workflow_template_secure_code=source_workflow_template_secure_code,
-            published_secure_code=published_sc,
-            execution_code=execution_code,
-            workflow_name=workflow_name,
-            workflow_version=workflow_version,
-            graph_snapshot=workflow_graph,
-            status='RUNNING',
-            started_at=datetime.utcnow(),
-        )
-
-        db.session.add(workflow_instance)
-        db.session.flush()
-
-        # 更新表單實例的流程關聯
-        form_instance.workflow_instance_id = workflow_instance.id
-        form_instance.workflow_instance_secure_code = workflow_instance.secure_code
-
-        # 找到起始節點
-        nodes = workflow_graph.get('nodes', [])
-        start_node = None
-        for node in nodes:
-            node_id = node.get('id', '')
-            node_type = node.get('type', '')
-            if node_id.startswith('node-Start') or node_type in ('Start', 'START'):
-                start_node = node
-                break
-
-        if not start_node:
-            db.session.rollback()
-            return jsonify({'success': False, 'error': '流程中找不到起始節點'}), 400
-
-        # 將起始節點加入執行佇列
-        node_id = start_node.get('id')
-        node_config = start_node.get('config', {})
-        display_name = start_node.get('label') or start_node.get('data', {}).get('label') or '開始'
-
-        queue_item = FwNodeExecutionQueue(
-            secure_code=secrets.token_urlsafe(16),
-            org_secure_code=org.secure_code,
-            workflow_instance_secure_code=workflow_instance.secure_code,
-            form_instance_secure_code=form_instance.secure_code,
-            node_id=node_id,
-            node_type='Start',
-            node_name=display_name,
-            node_config=node_config,
-            status='PENDING',
-            priority=10,
-            scheduled_at=datetime.utcnow(),
-        )
-
-        db.session.add(queue_item)
-        db.session.commit()
+        except SubmitError as exc:
+            return jsonify({'success': False, 'error': str(exc)}), 400
 
         # SQL Sync：不在送出時同步，改在流程結束時由 workflow_engine 觸發
 

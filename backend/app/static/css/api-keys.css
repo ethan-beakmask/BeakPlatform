@@ -1,0 +1,93 @@
+/* API Key 管理頁面 (/security/api-keys/) */
+
+.ak-container { max-width: 1080px; margin: 0 auto; }
+
+.ak-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.ak-msg {
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+.ak-msg-ok  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.ak-msg-err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+.ak-table { width: 100%; border-collapse: collapse; background: #fff;
+            border: 1px solid #e5e7eb; font-size: 14px; }
+.ak-table th, .ak-table td {
+    text-align: left; padding: 8px 12px; border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+}
+.ak-table th { background: #f9fafb; color: #374151; font-weight: 600; }
+.ak-table code { font-size: 13px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+
+.ak-badge { display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 12px; white-space: nowrap; }
+.ak-badge-active    { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.ak-badge-suspended { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+.ak-sub { font-size: 12px; color: #6b7280; }
+
+.ak-actions button { margin-right: 6px; }
+.ak-btn-sm {
+    font-size: 12px; padding: 3px 8px; border: 1px solid #d1d5db;
+    border-radius: 3px; background: #f9fafb; cursor: pointer;
+}
+.ak-btn-sm:hover { background: #f3f4f6; }
+.ak-btn-danger { color: #991b1b; border-color: #fecaca; }
+
+/* Modal */
+.ak-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: flex-start; justify-content: center;
+    z-index: 1000; padding: 40px 16px; overflow-y: auto;
+}
+.ak-modal {
+    background: #fff; border-radius: 6px; width: 560px; max-width: 100%;
+    padding: 20px 24px;
+}
+.ak-modal h3 { margin: 0 0 16px 0; font-size: 17px; }
+
+.ak-field { margin-bottom: 12px; }
+.ak-field label { display: block; font-size: 13px; color: #374151; margin-bottom: 4px; }
+/* FRONT-05: 全寬規則排除 radio/checkbox */
+.ak-field input:not([type="radio"]):not([type="checkbox"]),
+.ak-field select,
+.ak-field textarea {
+    width: 100%; padding: 6px 10px; border: 1px solid #d1d5db;
+    border-radius: 4px; font-size: 14px; box-sizing: border-box;
+}
+.ak-field input:focus, .ak-field select:focus, .ak-field textarea:focus {
+    outline: none; border-color: #2563eb;
+}
+.ak-hint { font-size: 12px; color: #6b7280; margin-top: 3px; }
+
+.ak-scope-box {
+    max-height: 180px; overflow-y: auto; border: 1px solid #e5e7eb;
+    border-radius: 4px; padding: 8px 10px;
+}
+.ak-scope-item { display: flex; align-items: center; gap: 6px;
+                 padding: 2px 0; font-size: 13px; }
+.ak-scope-parent { font-weight: 600; }
+.ak-scope-child { padding-left: 18px; }
+
+.ak-modal-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;
+}
+
+/* 一次性 secret 顯示 */
+.ak-secret-box {
+    background: #1f2937; color: #f9fafb; border-radius: 4px;
+    padding: 12px 14px; font-family: monospace; font-size: 13px;
+    word-break: break-all; margin: 10px 0;
+}
+.ak-secret-warn {
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+    border-radius: 4px; padding: 10px 12px; font-size: 13px;
+}

@@ -61,6 +61,13 @@ def rate_limits():
     return render_template('pages/security/org_rate_limits.html')
 
 
+@security_center_bp.route('/api-keys/')
+@admin_required
+def api_keys():
+    """API Key 管理頁面(外部系統 HMAC 金鑰)"""
+    return render_template('pages/security/api_keys.html')
+
+
 @security_center_bp.route('/alert-broadcasts/')
 @admin_required
 def alert_broadcasts():

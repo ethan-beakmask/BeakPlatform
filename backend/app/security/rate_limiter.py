@@ -32,6 +32,37 @@ def key_func_from_intake_key() -> str:
     return f'od_intake_anon:{get_remote_address()}'
 
 
+def key_func_from_api_key() -> str:
+    """
+    平台級 API Key 端點(/api/trigger/*)專用 key_func。
+
+    優先用 X-BP-Key-Id header(per 外部系統),
+    缺值 fallback 來源 IP。
+    """
+    key_id = request.headers.get('X-BP-Key-Id') or None
+    if key_id:
+        return f'bp_apikey:{key_id}'
+    return f'bp_apikey_anon:{get_remote_address()}'
+
+
+def auth_failure_limit_kwargs() -> dict:
+    """
+    認證失敗限流(B-1 修復,規格: docs/API_KEY_TRIGGER_SPEC.md §5)。
+
+    per-key 限流的 bucket 取自未驗證的 header,攻擊者輪替假 key_id 可各自取得
+    獨立額度。此限流以來源 IP 為軸、僅對 401 回應扣次:
+      - 正常流量(2xx/4xx 業務錯誤)不扣,合法端不受影響
+      - 假 key_id / 錯簽章連續 401 -> 30 次/分鐘後直接 429
+
+    用法: @limiter.limit(**auth_failure_limit_kwargs())
+    """
+    return {
+        'limit_value': '30 per minute',
+        'key_func': lambda: f'auth_fail:{get_remote_address()}',
+        'deduct_when': lambda response: response.status_code == 401,
+    }
+
+
 def key_func_from_sa_id() -> str:
     """
     /api/open_defense/decisions 端點專用 key_func。

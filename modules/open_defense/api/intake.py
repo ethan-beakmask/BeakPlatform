@@ -11,7 +11,9 @@ from flask import request, jsonify, g
 
 from app import limiter
 from app.security.decorators import webhook_hmac_required
-from app.security.rate_limiter import key_func_from_intake_key
+from app.security.rate_limiter import (
+    key_func_from_intake_key, auth_failure_limit_kwargs,
+)
 
 from . import api_bp
 from ..schemas.intake import validate_intake_body, IntakeValidationError
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
     '100 per minute; 5000 per hour',
     key_func=key_func_from_intake_key,
 )
+@limiter.limit(**auth_failure_limit_kwargs())
 @webhook_hmac_required
 def intake():
     """事件接收 webhook(契約 §4)"""

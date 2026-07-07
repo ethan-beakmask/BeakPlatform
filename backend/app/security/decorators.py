@@ -360,6 +360,113 @@ def webhook_hmac_required(f):
     return decorated_function
 
 
+def api_key_hmac_required(f):
+    """
+    平台級 API Key HMAC 簽章驗證裝飾器(外部發動閘道用)。
+
+    規格: docs/API_KEY_TRIGGER_SPEC.md §2
+
+    必要 headers:
+      X-BP-Key-Id     : api key 公開識別碼(ak_ 開頭)
+      X-BP-Timestamp  : Unix 秒,±300 秒內有效
+      X-BP-Signature  : sha256=<hex(HMAC-SHA256(key_secret, "{ts}\n{body}"))>
+
+    驗證順序(先快後慢,失敗早返回):
+      1. headers 存在
+      2. timestamp 在容忍範圍(±300 sec)
+      3. key_id 對應 active(未暫停/撤銷/過期) ApiKey
+      4. allowed_ips 白名單(有設定才檢查)
+      5. 解密 secret -> compare_digest 驗章
+
+    失敗一律 401 auth_failed,不區分原因(避免探測)。
+
+    成功時注入:
+      g.api_key      = ApiKey 物件
+      g.api_key_org  = org_secure_code
+
+    被裝飾的 view function 自動視為 public_route(跳過全域認證攔截)。
+    """
+    f._public_route = True
+    f._api_key_hmac_required = True
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        key_id = request.headers.get('X-BP-Key-Id', '').strip()
+        timestamp = request.headers.get('X-BP-Timestamp', '').strip()
+        signature_header = request.headers.get('X-BP-Signature', '').strip()
+
+        if not key_id or not timestamp or not signature_header:
+            logger.warning(
+                'api_key_hmac: missing headers path=%s ip=%s',
+                request.path, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        from .hmac_verifier import is_timestamp_valid, verify_signature
+        if not is_timestamp_valid(timestamp):
+            logger.warning(
+                'api_key_hmac: timestamp out of range key_id=%s ts=%s',
+                key_id, timestamp,
+            )
+            return _webhook_error('auth_failed')
+
+        from ..services import api_key_service
+        key_record = api_key_service.lookup_active_key(key_id)
+        if key_record is None:
+            logger.warning(
+                'api_key_hmac: key not found/inactive key_id=%s ip=%s',
+                key_id, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        if not api_key_service.check_source_ip(key_record,
+                                               request.remote_addr):
+            logger.warning(
+                'api_key_hmac: source ip not allowed key_id=%s ip=%s',
+                key_id, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        try:
+            secret = api_key_service.decrypt_secret(key_record)
+        except Exception as exc:
+            logger.error(
+                'api_key_hmac: decrypt failed key_id=%s err=%s',
+                key_id, exc,
+            )
+            return _webhook_error('auth_failed')
+
+        body = request.get_data(cache=True) or b''
+        if not verify_signature(secret, timestamp, body, signature_header):
+            logger.warning(
+                'api_key_hmac: signature mismatch key_id=%s ip=%s',
+                key_id, request.remote_addr,
+            )
+            return _webhook_error('auth_failed')
+
+        g.api_key = key_record
+        g.api_key_org = key_record.org_secure_code
+        try:
+            api_key_service.touch_last_used(key_record)
+        except Exception as exc:
+            logger.warning('api_key_hmac: touch_last_used failed: %s', exc)
+
+        logger.info(
+            'api_key_hmac: verified key_id=%s org=%s path=%s',
+            key_id, key_record.org_secure_code, request.path,
+        )
+        return f(*args, **kwargs)
+
+    # CSRF exempt:外部系統呼叫,沒有 session,安全性由 HMAC + timestamp 取代。
+    try:
+        from .. import csrf
+        decorated_function = csrf.exempt(decorated_function)
+    except Exception as exc:
+        logger.warning('api_key_hmac: csrf.exempt 註冊失敗: %s', exc)
+
+    return decorated_function
+
+
 # =============================================================================
 # Service Account JWT 驗證(OpenDefense 執行端用)
 # =============================================================================
