@@ -416,6 +416,23 @@ if [ "$ACTION" = "update" ]; then
     sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install --upgrade pip -q
     sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/backend/requirements.txt" -q
 
+    # [2.5] 補齊舊版 .env 缺少的檔案加密設定（冪等）
+    if ! grep -q '^ENCRYPTION_MASTER_KEY=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        log_warn ".env 缺少 ENCRYPTION_MASTER_KEY，自動產生..."
+        NEW_EMK=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
+        {
+            echo ""
+            echo "# 檔案加密 (FILE-01) - AES-256-GCM Master Key，遺失將無法解密既有加密附件"
+            echo "ENCRYPTION_MASTER_KEY=$NEW_EMK"
+        } >> "$INSTALL_DIR/.env"
+    fi
+    if ! grep -q '^ENCRYPTED_STORAGE_DIR=' "$INSTALL_DIR/.env" 2>/dev/null; then
+        echo "ENCRYPTED_STORAGE_DIR=$INSTALL_DIR/backend/encrypted_storage" >> "$INSTALL_DIR/.env"
+    fi
+    mkdir -p "$INSTALL_DIR/backend/encrypted_storage"
+    chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
+    chmod 700 "$INSTALL_DIR/backend/encrypted_storage"
+
     # [3] 載入環境變數 + 執行 migrations
     log_step "3/6" "執行資料庫遷移..."
     # PostgreSQL 管理操作仍以 root 執行
@@ -608,6 +625,7 @@ log_step "5/9" "設定環境變數..."
 
 SYS_ORG_CODE=$(python3 -c "import secrets; print('sys-' + secrets.token_hex(6))")
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+ENCRYPTION_MASTER_KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())")
 
 cat > "$INSTALL_DIR/.env" << ENVEOF
 # BeakPlatform 環境設定
@@ -649,7 +667,15 @@ GUNICORN_THREADS=2
 
 # Session
 SESSION_COOKIE_SECURE=false
+
+# 檔案加密 (FILE-01) - AES-256-GCM Master Key，遺失將無法解密既有加密附件
+ENCRYPTION_MASTER_KEY=$ENCRYPTION_MASTER_KEY
+ENCRYPTED_STORAGE_DIR=$INSTALL_DIR/backend/encrypted_storage
 ENVEOF
+
+mkdir -p "$INSTALL_DIR/backend/encrypted_storage"
+chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/backend/encrypted_storage"
+chmod 700 "$INSTALL_DIR/backend/encrypted_storage"
 
 chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR/.env"
 chmod 600 "$INSTALL_DIR/.env"
