@@ -14,9 +14,10 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 
 from app import db
+from app.models.api_key import ApiKey
 from app.utils.security import generate_secure_code
 
-from ..models import OdIntakeEvent, OdIntakeKey, OdFormTemplateMapping
+from ..models import OdIntakeEvent, OdFormTemplateMapping
 
 logger = logging.getLogger(__name__)
 
@@ -248,12 +249,13 @@ def _create_form_instance_and_start_workflow(
 
 def process_intake(
     *,
-    intake_key: OdIntakeKey,
+    api_key: ApiKey,
     body: Dict[str, Any],
     source_ip: Optional[str] = None,
 ) -> Tuple[OdIntakeEvent, bool]:
     """
-    主處理函式。
+    主處理函式。P2 起收平台 ApiKey,source 白名單讀
+    scopes['od_intake']['source_systems']。
 
     Returns:
         (event_record, duplicate_flag)
@@ -263,7 +265,7 @@ def process_intake(
     correlation_id = body['correlation_id']
     source_system = body['source_system']
     event_class = body['event_class']
-    org_sc = intake_key.org_secure_code
+    org_sc = api_key.org_secure_code
 
     # 1. 冪等
     existing = OdIntakeEvent.query.filter_by(
@@ -271,11 +273,12 @@ def process_intake(
     ).first()
     if existing:
         logger.info('intake duplicate correlation_id=%s key=%s',
-                   correlation_id, intake_key.key_id)
+                   correlation_id, api_key.key_id)
         return existing, True
 
-    # 2. source 白名單
-    allowed = intake_key.allowed_source_systems or []
+    # 2. source 白名單(od_intake scope)
+    od_scope = (api_key.scopes or {}).get('od_intake') or {}
+    allowed = od_scope.get('source_systems') or []
     if source_system not in allowed:
         raise IntakeError(
             f'source_system {source_system!r} 不在 key 允許清單',
@@ -296,7 +299,7 @@ def process_intake(
         secure_code=generate_secure_code(),
         org_secure_code=org_sc,
         correlation_id=correlation_id,
-        intake_key_secure_code=intake_key.secure_code,
+        intake_key_secure_code=api_key.secure_code,  # P2 起為平台 ApiKey 的 SC
         source_system=source_system,
         event_class=event_class,
         severity_id=body.get('severity_id'),

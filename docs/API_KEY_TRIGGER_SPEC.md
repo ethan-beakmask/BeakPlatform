@@ -21,7 +21,7 @@
 | 階段 | 內容 | 狀態 |
 |------|------|------|
 | P1 | 平台 ApiKey 模型/服務 + `/security/api-keys` UI + 一般表單外部發動閘道 + B-1 限流修復 | 本次實作 |
-| P2 | open_defense 的 OdIntakeKey 遷移至平台 ApiKey（一次性 migration，intake 改讀平台 key） | 待排 |
+| P2 | open_defense 的 OdIntakeKey 遷移至平台 ApiKey（一次性 migration，intake 改讀平台 key） | 已完成（2026-07-08） |
 | P3 | 流程節點「API Key 處置」（`api_key_action`：suspend/resume，供資安流程機器處置疑似盜用） | 待排 |
 
 ## 一、資料模型：`api_keys`（平台層）
@@ -154,6 +154,19 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
   `fc_available`（列表可見性）與 `fc_fill` submit（送單）使用同一套判斷；
   無權限送單回 403。E2E 驗證：授權用戶 201、未授權用戶 403、ORG_ADMIN
   無授權記錄時同樣 403（與列表可見性一致，ORG_ADMIN 非硬編碼放行角色）。
-- P2：OdIntakeKey 遷移平台 ApiKey
+- P2：~~OdIntakeKey 遷移平台 ApiKey~~ **已完成（2026-07-08）**：
+  - migration `079_migrate_od_intake_keys.py`：secret 密文五欄位直搬、key_id 沿用
+    `ik_` 前綴（新發一律 `ak_`）、`allowed_source_systems` 收進
+    `scopes.od_intake.source_systems`、停用 key 轉 `suspended`
+  - `@webhook_hmac_required` 改讀平台 ApiKey，雙軌收頭 `X-BP-*`（優先）與
+    `X-OD-*`（deprecated），驗證核心與 `@api_key_hmac_required` 共用
+    （`_verify_platform_api_key`，含 allowed_ips 檢查）
+  - intake 端點加 `od_intake` scope 檢查（無 scope 403 `scope_denied`）
+  - OD 管理端 `/open-defense/intake-keys` 唯讀化（create/revoke 回 410），
+    `od_intake_keys` 表保留唯讀一個版本週期後刪除
+  - 平台 `/security/api-keys/` UI 支援 od_intake scope（來源系統清單編輯、
+    摘要顯示、未知 scope key 編輯時原樣保留）
+  - E2E 10/10 PASS（舊頭/新頭/原生 key 收單、source 403、scope 403、
+    錯簽章 401、暫停 401、冪等 duplicate、od key 打表單閘道遭拒）
 - P3：`api_key_action` 流程節點（workflow_node_definitions 新 node type + handler，FRONT-03 走 DB 定義）
 - 突發保護 B/C（`docs/handoff_burst_protection_ABC.md`）：executor 並發封頂、事件聚合

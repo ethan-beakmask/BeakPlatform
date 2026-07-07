@@ -10,7 +10,7 @@ from app.security.decorators import admin_required
 
 from . import admin_bp
 from ...models import (
-    OdDefenseDecision, OdIntakeEvent, OdIntakeKey, OdServiceAccount,
+    OdDefenseDecision, OdIntakeEvent, OdServiceAccount,
 )
 
 
@@ -45,8 +45,14 @@ def dashboard_stats():
         OdDefenseDecision.created_at >= today_start,
     ).count()
 
-    intake_keys_active = OdIntakeKey.query.filter_by(
-        org_secure_code=org_sc, is_active=True, is_deleted=False).count()
+    # P2 起 intake key 為平台 ApiKey(具 od_intake scope)
+    from app.models.api_key import ApiKey, STATUS_ACTIVE
+    intake_keys_active = ApiKey.query.filter(
+        ApiKey.org_secure_code == org_sc,
+        ApiKey.status == STATUS_ACTIVE,
+        ApiKey.is_deleted.is_(False),
+        ApiKey.scopes.has_key('od_intake'),
+    ).count()
 
     sa_active = OdServiceAccount.query.filter_by(
         org_secure_code=org_sc, is_active=True, is_deleted=False).count()

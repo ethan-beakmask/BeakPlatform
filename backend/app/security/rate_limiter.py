@@ -15,15 +15,16 @@ from flask_limiter.util import get_remote_address
 
 
 def _intake_key_id() -> Optional[str]:
-    """從 X-OD-Key-Id header 取 key_id"""
-    return request.headers.get('X-OD-Key-Id') or None
+    """取 key_id:X-BP-Key-Id 優先,fallback 舊契約 X-OD-Key-Id(deprecated)"""
+    return (request.headers.get('X-BP-Key-Id')
+            or request.headers.get('X-OD-Key-Id') or None)
 
 
 def key_func_from_intake_key() -> str:
     """
     /api/open_defense/intake 端點專用 key_func。
 
-    優先用 X-OD-Key-Id header(per intake source),
+    優先用 key_id header(per intake source,X-BP-* 或舊 X-OD-*),
     缺值 fallback 來源 IP(防匿名 flood,雖然 decorator 也會擋下)。
     """
     key_id = _intake_key_id()

@@ -54,7 +54,9 @@
                     allowed_ips_text: '',
                     scope_categories: [],
                     scope_forms: [],
+                    scope_od_sources_text: '',
                     applicant_user_secure_code: '',
+                    _extra_scopes: {},   // 未知 scope key 原樣保留，避免編輯時被覆寫
                 };
             },
 
@@ -121,9 +123,11 @@
                 const s = key.scopes || {};
                 const cats = (s.form_category || []).length;
                 const forms = (s.form || []).length;
+                const odSources = ((s.od_intake || {}).source_systems || []).length;
                 const parts = [];
                 if (cats) parts.push(`分類 x${cats}`);
                 if (forms) parts.push(`表單 x${forms}`);
+                if (odSources) parts.push(`資安事件來源 x${odSources}`);
                 return parts.length ? parts.join('、') : '（無授權範圍）';
             },
 
@@ -152,6 +156,11 @@
             openEdit(key) {
                 this.editingSc = key.secure_code;
                 const s = key.scopes || {};
+                const KNOWN_SCOPES = ['form_category', 'form', 'od_intake'];
+                const extra = {};
+                for (const k of Object.keys(s)) {
+                    if (!KNOWN_SCOPES.includes(k)) extra[k] = s[k];
+                }
                 this.form = {
                     name: key.name || '',
                     consumer_label: key.consumer_label || '',
@@ -160,7 +169,9 @@
                     allowed_ips_text: (key.allowed_ips || []).join('\n'),
                     scope_categories: [...(s.form_category || [])],
                     scope_forms: [...(s.form || [])],
+                    scope_od_sources_text: ((s.od_intake || {}).source_systems || []).join('\n'),
                     applicant_user_secure_code: key.applicant_user_secure_code || '',
+                    _extra_scopes: extra,
                 };
                 this.showFormModal = true;
             },
@@ -168,16 +179,23 @@
             buildPayload() {
                 const ips = this.form.allowed_ips_text
                     .split('\n').map(x => x.trim()).filter(Boolean);
+                const odSources = this.form.scope_od_sources_text
+                    .split('\n').map(x => x.trim()).filter(Boolean);
+                const scopes = {
+                    ...(this.form._extra_scopes || {}),
+                    form_category: this.form.scope_categories,
+                    form: this.form.scope_forms,
+                };
+                if (odSources.length) {
+                    scopes.od_intake = { source_systems: odSources };
+                }
                 return {
                     name: this.form.name,
                     consumer_label: this.form.consumer_label,
                     description: this.form.description,
                     expires_at: this.form.expires_at || null,
                     allowed_ips: ips.length ? ips : null,
-                    scopes: {
-                        form_category: this.form.scope_categories,
-                        form: this.form.scope_forms,
-                    },
+                    scopes: scopes,
                     applicant_user_secure_code: this.form.applicant_user_secure_code || null,
                 };
             },

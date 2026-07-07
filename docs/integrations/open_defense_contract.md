@@ -56,13 +56,19 @@ CrowdSec ─┘  (正規化)       │                                    │   
 
 ### 3.1 事件來源端 — HMAC Webhook 簽章
 
-每個事件來源端先向 BeakPlatform 申請一組 **Intake Key**:
+> **P2 遷移公告(2026-07-08)**:Intake Key 已併入平台級 API Key 體系,
+> 管理介面改為 `/security/api-keys/`(scope: `od_intake`)。
+> 既有 `ik_` 開頭的 key_id 與 secret **原樣沿用,整合方無需變更**;
+> 新申請的 key 一律為 `ak_` 開頭。
+> Headers 支援雙軌:平台標準 `X-BP-*`(建議)與舊 `X-OD-*`(deprecated,保留相容)。
+
+每個事件來源端先向 BeakPlatform 申請一組 **API Key**(於 `/security/api-keys/` 建立,勾 od_intake 來源):
 
 | 欄位 | 說明 |
 |---|---|
-| `key_id` | 公開識別碼,放在 HTTP header,例:`ik_a3f9c2e1` |
+| `key_id` | 公開識別碼,放在 HTTP header,例:`ak_a3f9c2e1`(舊 key 為 `ik_` 開頭) |
 | `secret` | 32-byte 隨機密鑰,**僅在建立時顯示一次**,後續無法再取得。整合方需自行妥善保管。 |
-| `allowed_source_systems` | 此 key 允許宣稱的 `source_system` 值清單 |
+| `scopes.od_intake.source_systems` | 此 key 允許宣稱的 `source_system` 值清單 |
 
 **簽章演算法:**
 
@@ -116,9 +122,12 @@ POST /api/open_defense/intake
 | Header | 範例 | 說明 |
 |---|---|---|
 | `Content-Type` | `application/json` | 必須 UTF-8 編碼 |
-| `X-OD-Key-Id` | `ik_a3f9c2e1` | Intake Key 識別碼 |
-| `X-OD-Timestamp` | `1762668000` | Unix 秒,**5 分鐘**內有效 |
-| `X-OD-Signature` | `sha256=abc123...` | HMAC-SHA256 簽章(見 §3.1) |
+| `X-BP-Key-Id` | `ak_a3f9c2e1` | API Key 識別碼(平台標準,建議) |
+| `X-BP-Timestamp` | `1762668000` | Unix 秒,**5 分鐘**內有效 |
+| `X-BP-Signature` | `sha256=abc123...` | HMAC-SHA256 簽章(見 §3.1) |
+
+舊 `X-OD-Key-Id` / `X-OD-Timestamp` / `X-OD-Signature` 三個 headers
+仍可使用(deprecated),簽章格式相同。兩組同時出現時以 `X-BP-*` 為準。
 
 ### 4.3 Request Body Schema(OCSF-aligned)
 
@@ -197,7 +206,7 @@ POST /api/open_defense/intake
 
 | 端點 | 計數軸 | 預設額度 |
 |---|---|---|
-| `POST /api/open_defense/intake` | per `key_id`(從 `X-OD-Key-Id` header) | 100 / min, 5000 / hour |
+| `POST /api/open_defense/intake` | per `key_id`(從 `X-BP-Key-Id` 或舊 `X-OD-Key-Id` header) | 100 / min, 5000 / hour |
 | `GET /api/open_defense/decisions` | per `sa_id`(從 JWT claim) | 60 / min, 3000 / hour, 50000 / day |
 | `PATCH /api/open_defense/decisions/<sc>` | per `sa_id` | 300 / min |
 | `POST /api/open_defense/sa/login` | per source IP | 10 / min(防憑證爆破) |

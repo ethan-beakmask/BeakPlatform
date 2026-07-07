@@ -68,6 +68,13 @@
         </div>
 
         <div class="ak-field">
+            <label>授權範圍 - 資安事件接收（OpenDefense intake，選填）</label>
+            <textarea x-model="form.scope_od_sources_text" rows="2"
+                      placeholder="允許的 source_system，每行一個（如 suricata、coraza）"></textarea>
+            <div class="ak-hint">填寫後此 Key 可推送資安事件至 /api/open_defense/intake，source_system 必須在此清單</div>
+        </div>
+
+        <div class="ak-field">
             <label>綁定申請人（專用系統帳號）</label>
             <select x-model="form.applicant_user_secure_code">
                 <option value="">不綁定（申請人顯示使用者標籤）</option>

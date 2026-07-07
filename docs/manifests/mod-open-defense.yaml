@@ -69,7 +69,12 @@ workflow_integration:
 
 note: |
   - 對外契約凍結於 docs/integrations/open_defense_contract.md v1.0,內部實作不得擅自偏離。
-  - intake_key 與 sa_secret 一律加密存 DB,沿用 crypto/key_manager 的 Org Key 架構,
+  - P2(2026-07-08):OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(api_keys 表,
+    scopes.od_intake)。intake 認證走 @webhook_hmac_required -> 平台 ApiKey,
+    雙軌收頭 X-BP-*(優先)/X-OD-*(deprecated)。od_intake_keys 表與
+    /open-defense/intake-keys 頁為唯讀遺留,保留一個版本週期後刪除。
+    金鑰管理改在 /security/api-keys/(security-center.yaml)。
+  - sa_secret 一律加密存 DB,沿用 crypto/key_manager 的 Org Key 架構,
     但金鑰用途為 HMAC/SA 驗證,**不得**與檔案加密金鑰共用同一 DEK。
   - od_defense_decisions 表的 status 流轉受限,執行端只能寫 picked_up/applied/partial/failed。
     expired/revoked 由 BeakPlatform 排程獨佔。

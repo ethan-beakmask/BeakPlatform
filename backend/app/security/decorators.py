@@ -259,26 +259,81 @@ def _webhook_error(code: str, status: int = 401):
     return jsonify({'error': code}), status
 
 
-def webhook_hmac_required(f):
+def _verify_platform_api_key(key_id: str, timestamp: str,
+                             signature_header: str, tag: str):
     """
-    HMAC 簽章驗證裝飾器(對外 webhook 入口用)。
-
-    對外契約: docs/integrations/open_defense_contract.md §3.1, §4.2
-
-    必要 headers:
-      X-OD-Key-Id     : intake key 公開識別碼
-      X-OD-Timestamp  : Unix 秒,±300 秒內有效
-      X-OD-Signature  : sha256=<hex(HMAC-SHA256(key_secret, "{ts}\n{body}"))>
+    平台 ApiKey HMAC 驗證核心(供 @api_key_hmac_required 與
+    @webhook_hmac_required 共用)。
 
     驗證順序(先快後慢,失敗早返回):
       1. headers 存在
       2. timestamp 在容忍範圍(±300 sec)
-      3. key_id 對應 active intake key
-      4. 解密 secret -> 計算 expected sig -> compare_digest
+      3. key_id 對應 active(未暫停/撤銷/過期) ApiKey
+      4. allowed_ips 白名單(有設定才檢查)
+      5. 解密 secret -> compare_digest 驗章
+
+    Returns:
+        ApiKey record;失敗回 None(呼叫端一律回 401 auth_failed)
+    """
+    if not key_id or not timestamp or not signature_header:
+        logger.warning('%s: missing headers path=%s ip=%s',
+                       tag, request.path, request.remote_addr)
+        return None
+
+    from .hmac_verifier import is_timestamp_valid, verify_signature
+    if not is_timestamp_valid(timestamp):
+        logger.warning('%s: timestamp out of range key_id=%s ts=%s',
+                       tag, key_id, timestamp)
+        return None
+
+    from ..services import api_key_service
+    key_record = api_key_service.lookup_active_key(key_id)
+    if key_record is None:
+        logger.warning('%s: key not found/inactive key_id=%s ip=%s',
+                       tag, key_id, request.remote_addr)
+        return None
+
+    if not api_key_service.check_source_ip(key_record, request.remote_addr):
+        logger.warning('%s: source ip not allowed key_id=%s ip=%s',
+                       tag, key_id, request.remote_addr)
+        return None
+
+    try:
+        secret = api_key_service.decrypt_secret(key_record)
+    except Exception as exc:
+        logger.error('%s: decrypt failed key_id=%s err=%s',
+                     tag, key_id, exc)
+        return None
+
+    body = request.get_data(cache=True) or b''
+    if not verify_signature(secret, timestamp, body, signature_header):
+        logger.warning('%s: signature mismatch key_id=%s ip=%s',
+                       tag, key_id, request.remote_addr)
+        return None
+
+    return key_record
+
+
+def webhook_hmac_required(f):
+    """
+    HMAC 簽章驗證裝飾器(對外 webhook 入口用,P2 起改讀平台 ApiKey)。
+
+    對外契約: docs/integrations/open_defense_contract.md §3.1, §4.2
+    規格: docs/API_KEY_TRIGGER_SPEC.md(P2:OdIntakeKey 遷移平台 ApiKey)
+
+    雙軌收頭(擇一,X-BP-* 優先):
+      X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature   (平台標準)
+      X-OD-Key-Id / X-OD-Timestamp / X-OD-Signature   (相容舊契約,deprecated)
+
+    簽章格式(兩組相同):
+      sha256=<hex(HMAC-SHA256(key_secret, "{ts}\n{body}"))>
+
+    驗證一律走平台 ApiKey(api_keys 表),舊 OdIntakeKey 已由
+    migration 079 遷入。失敗一律 401 auth_failed(不區分原因)。
 
     成功時注入:
-      g.intake_key      = OdIntakeKey 物件
-      g.intake_key_org  = org_secure_code
+      g.api_key         = ApiKey 物件
+      g.api_key_org     = org_secure_code
 
     被裝飾的 view function 自動視為 public_route(跳過全域認證攔截)。
     """
@@ -287,59 +342,27 @@ def webhook_hmac_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        key_id = request.headers.get('X-OD-Key-Id', '').strip()
-        timestamp = request.headers.get('X-OD-Timestamp', '').strip()
-        signature_header = request.headers.get('X-OD-Signature', '').strip()
+        key_id = request.headers.get('X-BP-Key-Id', '').strip()
+        if key_id:
+            timestamp = request.headers.get('X-BP-Timestamp', '').strip()
+            signature_header = request.headers.get('X-BP-Signature', '').strip()
+        else:
+            # 舊契約 headers(deprecated,保留相容)
+            key_id = request.headers.get('X-OD-Key-Id', '').strip()
+            timestamp = request.headers.get('X-OD-Timestamp', '').strip()
+            signature_header = request.headers.get('X-OD-Signature', '').strip()
 
-        if not key_id or not timestamp or not signature_header:
-            logger.warning(
-                'webhook_hmac: missing headers path=%s ip=%s',
-                request.path, request.remote_addr,
-            )
-            return _webhook_error('auth_failed')
-
-        from modules.open_defense.services.hmac_verifier import (
-            is_timestamp_valid, verify_signature,
-        )
-        if not is_timestamp_valid(timestamp):
-            logger.warning(
-                'webhook_hmac: timestamp out of range key_id=%s ts=%s',
-                key_id, timestamp,
-            )
-            return _webhook_error('auth_failed')
-
-        from modules.open_defense.services.intake_key_service import (
-            lookup_active_key, decrypt_secret, touch_last_used,
-        )
-        key_record = lookup_active_key(key_id)
+        key_record = _verify_platform_api_key(
+            key_id, timestamp, signature_header, 'webhook_hmac')
         if key_record is None:
-            logger.warning(
-                'webhook_hmac: key not found or inactive key_id=%s',
-                key_id,
-            )
             return _webhook_error('auth_failed')
 
+        g.api_key = key_record
+        g.api_key_org = key_record.org_secure_code
+
+        from ..services import api_key_service
         try:
-            secret = decrypt_secret(key_record)
-        except Exception as exc:
-            logger.error(
-                'webhook_hmac: decrypt failed key_id=%s err=%s',
-                key_id, exc,
-            )
-            return _webhook_error('auth_failed')
-
-        body = request.get_data(cache=True) or b''
-        if not verify_signature(secret, timestamp, body, signature_header):
-            logger.warning(
-                'webhook_hmac: signature mismatch key_id=%s ip=%s',
-                key_id, request.remote_addr,
-            )
-            return _webhook_error('auth_failed')
-
-        g.intake_key = key_record
-        g.intake_key_org = key_record.org_secure_code
-        try:
-            touch_last_used(key_record)
+            api_key_service.touch_last_used(key_record)
         except Exception as exc:
             logger.warning('webhook_hmac: touch_last_used failed: %s', exc)
 
@@ -395,57 +418,15 @@ def api_key_hmac_required(f):
         timestamp = request.headers.get('X-BP-Timestamp', '').strip()
         signature_header = request.headers.get('X-BP-Signature', '').strip()
 
-        if not key_id or not timestamp or not signature_header:
-            logger.warning(
-                'api_key_hmac: missing headers path=%s ip=%s',
-                request.path, request.remote_addr,
-            )
-            return _webhook_error('auth_failed')
-
-        from .hmac_verifier import is_timestamp_valid, verify_signature
-        if not is_timestamp_valid(timestamp):
-            logger.warning(
-                'api_key_hmac: timestamp out of range key_id=%s ts=%s',
-                key_id, timestamp,
-            )
-            return _webhook_error('auth_failed')
-
-        from ..services import api_key_service
-        key_record = api_key_service.lookup_active_key(key_id)
+        key_record = _verify_platform_api_key(
+            key_id, timestamp, signature_header, 'api_key_hmac')
         if key_record is None:
-            logger.warning(
-                'api_key_hmac: key not found/inactive key_id=%s ip=%s',
-                key_id, request.remote_addr,
-            )
-            return _webhook_error('auth_failed')
-
-        if not api_key_service.check_source_ip(key_record,
-                                               request.remote_addr):
-            logger.warning(
-                'api_key_hmac: source ip not allowed key_id=%s ip=%s',
-                key_id, request.remote_addr,
-            )
-            return _webhook_error('auth_failed')
-
-        try:
-            secret = api_key_service.decrypt_secret(key_record)
-        except Exception as exc:
-            logger.error(
-                'api_key_hmac: decrypt failed key_id=%s err=%s',
-                key_id, exc,
-            )
-            return _webhook_error('auth_failed')
-
-        body = request.get_data(cache=True) or b''
-        if not verify_signature(secret, timestamp, body, signature_header):
-            logger.warning(
-                'api_key_hmac: signature mismatch key_id=%s ip=%s',
-                key_id, request.remote_addr,
-            )
             return _webhook_error('auth_failed')
 
         g.api_key = key_record
         g.api_key_org = key_record.org_secure_code
+
+        from ..services import api_key_service
         try:
             api_key_service.touch_last_used(key_record)
         except Exception as exc:

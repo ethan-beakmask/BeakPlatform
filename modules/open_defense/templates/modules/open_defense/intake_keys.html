@@ -10,10 +10,11 @@
 
     <div class="od-header">
         <div>
-            <h1>事件接收金鑰</h1>
-            <p>外部安全堆疊(Suricata / Coraza / Falco / Vector 等)透過此金鑰簽章 webhook 推事件進入。</p>
+            <h1>事件接收金鑰(唯讀遺留)</h1>
+            <p>Intake key 已遷移至平台 API Key。建立/暫停/撤銷請至
+               <a href="{{ app_prefix }}/security/api-keys/">API Key 管理</a>(scope: od_intake)。
+               本頁僅供比對遷移前資料,將於下一版本移除。</p>
         </div>
-        <button class="btn btn-primary" @click="openCreate()">+ 新增金鑰</button>
     </div>
 
     <div class="od-section">
@@ -22,7 +23,7 @@
             <span x-text="`共 ${keys.length} 筆`" style="font-size:12px;color:#666;"></span>
         </div>
         <div x-show="loading" class="od-empty">載入中...</div>
-        <div x-show="!loading && keys.length===0" class="od-empty">尚無金鑰,點右上角新增</div>
+        <div x-show="!loading && keys.length===0" class="od-empty">無遷移前的遺留金鑰</div>
         <table x-show="!loading && keys.length>0" class="od-table">
             <thead>
                 <tr>
@@ -54,59 +55,11 @@
                         <td x-text="k.expires_at ? OD.formatTime(k.expires_at, 'short') : '永不'"></td>
                         <td x-text="k.last_used_at ? OD.formatTime(k.last_used_at, 'short') : '-'"></td>
                         <td x-text="OD.formatTime(k.created_at, 'short')"></td>
-                        <td class="od-actions">
-                            <button class="btn btn-sm btn-danger" @click="revoke(k)">撤銷</button>
-                        </td>
+                        <td class="od-actions"></td>
                     </tr>
                 </template>
             </tbody>
         </table>
-    </div>
-
-    <!-- 新增 Modal -->
-    <div class="modal-overlay" x-show="createModal" style="display:none;">
-        <div class="modal-content" style="width:520px;">
-            <div class="modal-header">
-                <h3>新增事件接收金鑰</h3>
-                <button class="modal-close" @click="closeCreate()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="od-field">
-                    <label>名稱 *</label>
-                    <input type="text" x-model="newKey.name" placeholder="如:外部 sec stack">
-                </div>
-                <div class="od-field">
-                    <label>允許的 source_system *(可複選)</label>
-                    <div class="od-chips">
-                        <template x-for="s in availableSources" :key="s">
-                            <span class="od-chip"
-                                  :class="newKey.sources.includes(s) ? 'selected' : ''"
-                                  @click="toggleSource(s)" x-text="s"></span>
-                        </template>
-                    </div>
-                    <div class="od-field-hint">至少選一個。對方推事件時 source_system 必須在此清單。</div>
-                </div>
-                <div class="od-field">
-                    <label>過期時間(選填)</label>
-                    <input type="datetime-local" x-model="newKey.expires_at">
-                    <div class="od-field-hint">空白 = 永不過期</div>
-                </div>
-                <div x-show="newSecret" class="od-secret-box">
-                    <h3>金鑰已建立 — 請立即複製 secret(僅顯示這一次)</h3>
-                    <div class="od-field"><label>key_id</label>
-                        <div class="od-secret-value" x-text="newKey.created_key_id"></div>
-                    </div>
-                    <div class="od-field"><label>secret_b64</label>
-                        <div class="od-secret-value" x-text="newSecret"></div>
-                    </div>
-                    <div class="od-secret-warn">關閉視窗後 secret 無法再取得。</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" @click="closeCreate()" x-text="newSecret ? '我已複製,關閉' : '取消'"></button>
-                <button class="btn btn-primary" x-show="!newSecret" @click="submit()">建立</button>
-            </div>
-        </div>
     </div>
 
 </div>

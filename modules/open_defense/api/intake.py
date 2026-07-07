@@ -30,37 +30,45 @@ logger = logging.getLogger(__name__)
 @limiter.limit(**auth_failure_limit_kwargs())
 @webhook_hmac_required
 def intake():
-    """事件接收 webhook(契約 §4)"""
-    # 1. parse JSON
+    """事件接收 webhook(契約 §4)。P2 起認證走平台 ApiKey(g.api_key)。"""
+    # 1. scope 授權:key 必須具備 od_intake scope
+    if not isinstance((g.api_key.scopes or {}).get('od_intake'), dict):
+        logger.warning(
+            'intake scope denied key=%s ip=%s',
+            g.api_key.key_id, request.remote_addr,
+        )
+        return jsonify({'error': 'scope_denied'}), 403
+
+    # 2. parse JSON
     try:
         body = request.get_json(force=True, silent=False)
     except Exception:
         return jsonify({'error': 'invalid_json'}), 400
 
-    # 2. schema 驗證
+    # 3. schema 驗證
     try:
         normalized = validate_intake_body(body)
     except IntakeValidationError as exc:
         logger.info(
             'intake schema rejected key=%s details=%s',
-            g.intake_key.key_id, exc.details,
+            g.api_key.key_id, exc.details,
         )
         return jsonify({
             'error': 'validation_error',
             'details': exc.details,
         }), 400
 
-    # 3. 處理(冪等 + 啟流程)
+    # 4. 處理(冪等 + 啟流程)
     try:
         event, is_dup = process_intake(
-            intake_key=g.intake_key,
+            api_key=g.api_key,
             body=normalized,
             source_ip=request.remote_addr,
         )
     except IntakeError as exc:
         logger.warning(
             'intake business error key=%s code=%s msg=%s',
-            g.intake_key.key_id, exc.code, exc,
+            g.api_key.key_id, exc.code, exc,
         )
         return jsonify({
             'error': exc.code,
