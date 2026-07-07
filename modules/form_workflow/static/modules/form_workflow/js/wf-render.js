@@ -694,6 +694,8 @@
                 'alert_broadcast': 'AlertBroadcast',
                 'subsystemprovision': 'SubSystemProvision',
                 'sub_system_provision': 'SubSystemProvision',
+                'apikeyaction': 'ApiKeyAction',
+                'api_key_action': 'ApiKeyAction',
             };
             return typeMap[type.toLowerCase()] || type;
         }

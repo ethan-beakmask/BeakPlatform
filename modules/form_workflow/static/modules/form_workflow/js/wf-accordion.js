@@ -87,7 +87,8 @@
                 'Branch': '條件路由',
                 'ParallelFork': '並行分支',
                 'ParallelJoin': '並行匯合',
-                'SubSystemProvision': '子系統配置'
+                'SubSystemProvision': '子系統配置',
+                'ApiKeyAction': 'API Key 處置'
             };
 
             const description = node.data('description') || '';
@@ -99,7 +100,7 @@
                 'FormAdapter', 'End', 'Converge', 'SqlExecutor',
                 'ParallelFork', 'ParallelJoin',
                 'NavbarBroadcast', 'AlertBroadcast',
-                'Abandon', 'SubSystemProvision'
+                'Abandon', 'SubSystemProvision', 'ApiKeyAction'
             ];
             const hasAdditionalSettings = nodesWithSettings.includes(type);
 
@@ -144,6 +145,7 @@
             if (type === 'End')                  info += renderEndPanel(node, nodeId);
             if (type === 'Abandon')              info += renderAbandonPanel(node, nodeId);
             if (type === 'SubSystemProvision')   info += renderSubSystemProvisionPanel(node, nodeId);
+            if (type === 'ApiKeyAction')         info += renderApiKeyActionPanel(node, nodeId);
             if (type === 'ParallelFork')         info += renderParallelForkPanel(node, nodeId);
             if (type === 'ParallelJoin')         info += renderParallelJoinPanel(node, nodeId);
 
@@ -183,6 +185,10 @@
             if (type === 'AlertBroadcast') {
                 const cfg = node.data('config') || {};
                 setTimeout(() => loadAlertBroadcastOptions(cfg.target_roles || [], cfg.target_departments || []), 100);
+            }
+            if (type === 'ApiKeyAction') {
+                const cfg = node.data('config') || {};
+                setTimeout(() => loadApiKeyActionKeys(cfg.key_source === 'static' ? (cfg.key_id || '') : ''), 100);
             }
             if (type === 'Branch') {
                 const cfg = node.data('config') || {};

@@ -22,7 +22,7 @@
 |------|------|------|
 | P1 | 平台 ApiKey 模型/服務 + `/security/api-keys` UI + 一般表單外部發動閘道 + B-1 限流修復 | 本次實作 |
 | P2 | open_defense 的 OdIntakeKey 遷移至平台 ApiKey（一次性 migration，intake 改讀平台 key） | 已完成（2026-07-08） |
-| P3 | 流程節點「API Key 處置」（`api_key_action`：suspend/resume，供資安流程機器處置疑似盜用） | 待排 |
+| P3 | 流程節點「API Key 處置」（`ApiKeyAction`：suspend/resume，供資安流程機器處置疑似盜用） | 已完成（2026-07-08） |
 
 ## 一、資料模型：`api_keys`（平台層）
 
@@ -168,5 +168,23 @@ X-BP-Signature:  sha256=<hex(HMAC-SHA256(secret, canonical))>
     摘要顯示、未知 scope key 編輯時原樣保留）
   - E2E 10/10 PASS（舊頭/新頭/原生 key 收單、source 403、scope 403、
     錯簽章 401、暫停 401、冪等 duplicate、od key 打表單閘道遭拒）
-- P3：`api_key_action` 流程節點（workflow_node_definitions 新 node type + handler，FRONT-03 走 DB 定義）
+- P3：~~`api_key_action` 流程節點~~ **已完成（2026-07-08）**：
+  - node type `ApiKeyAction`（分類「安全」，migration `080_seed_api_key_action_node.sql`
+    走 DB 定義，FRONT-03；`require_system_admin=false`，handler 強制租戶隔離）
+  - handler `api_key_action_handler.py`：action suspend/resume、
+    key 來源三種（trigger=發動本流程的 key / static=指定 key / variable=變數解析）、
+    暫停原因支援變數替換、冪等（已是目標狀態視為成功）、
+    僅本企業未撤銷 key 可處置
+  - 設計器面板 `wf-node-api-key-action.js`（指定 key 清單來自
+    `GET /api/workflows/data/org-api-keys`，不含 secret）
+  - Handler 單元測試 10/10 PASS（含跨租戶、冪等、變數替換、錯誤路徑）
+  - 順手修復三項既有問題：
+    1. `wf-node-alert-broadcast.js` 角色/部門清單 fetch 前綴錯誤
+       （`/api/form-workflow/data/` → `/api/workflows/data/`，原本 404 被 catch 吃掉）
+    2. `workflow_node_definitions.icon` 殘留舊部署前綴 `/bp/static/`（23 筆），
+       palette 圖示全部 404 破圖。DB 正規化為 `/static/...`，
+       API `get_node_definitions()` 回傳時以 `request.script_root` 補前綴
+    3. node-definitions 的 category_map 缺「安全」分類，DecisionWriter/ApiKeyAction
+       原會落入「基本節點」。後端補 `'安全': 'security'`，
+       前端 palette 補「安全管控」分類（排在系統專用之前）
 - 突發保護 B/C（`docs/handoff_burst_protection_ABC.md`）：executor 並發封頂、事件聚合

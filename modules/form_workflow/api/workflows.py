@@ -649,6 +649,7 @@ def get_node_definitions():
         '變數': 'data',
         '操作': 'operation',
         '整合': 'integration',
+        '安全': 'security',
         '系統': 'system_admin',
     }
 
@@ -667,10 +668,15 @@ def get_node_definitions():
         if category_key not in grouped:
             grouped[category_key] = []
 
+        # DB 存前綴無關路徑（/static/...），回傳時補上部署前綴
+        icon = node_def.icon or ''
+        if icon.startswith('/static/'):
+            icon = request.script_root + icon
+
         grouped[category_key].append({
             'type': node_def.node_type,
             'label': f'{node_def.display_name} ({node_def.node_type})',
-            'icon': node_def.icon or '',
+            'icon': icon,
             'description': node_def.description or ''
         })
 
@@ -1753,4 +1759,26 @@ def get_org_departments():
             'name': d.name,
             'full_path': d.full_path,
         } for d in departments]
+    })
+
+
+@workflows_bp.route('/data/org-api-keys')
+@module_access_required('form_workflow')
+def get_org_api_keys():
+    """取得企業 API Key 清單（用於 ApiKeyAction 節點選擇處置對象；不含 secret）"""
+    from app.services import api_key_service
+
+    org = get_current_org()
+    if not org:
+        return jsonify({'success': False, 'error': 'Organization not found'}), 400
+
+    keys = api_key_service.list_keys(org.secure_code)
+    return jsonify({
+        'success': True,
+        'keys': [{
+            'key_id': k.key_id,
+            'name': k.name,
+            'status': k.status,
+            'consumer_label': k.consumer_label,
+        } for k in keys]
     })

@@ -125,6 +125,7 @@ def register_builtin_handlers():
     from .navbar_broadcast_handler import NavbarBroadcastHandler
     from .alert_broadcast_handler import AlertBroadcastHandler
     from .decision_writer_handler import DecisionWriterHandler
+    from .api_key_action_handler import ApiKeyActionHandler
 
     # 流程控制
     NodeHandlerFactory.register('Start', StartHandler)
@@ -170,6 +171,9 @@ def register_builtin_handlers():
 
     # OpenDefense
     NodeHandlerFactory.register('DecisionWriter', DecisionWriterHandler)
+
+    # 安全（API Key 機器處置）
+    NodeHandlerFactory.register('ApiKeyAction', ApiKeyActionHandler)
 
 
 # 自動執行註冊

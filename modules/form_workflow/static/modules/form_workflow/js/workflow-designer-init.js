@@ -66,6 +66,7 @@ var CATEGORY_NAMES = {
     'data': '資料處理',
     'operation': '運算操作',
     'integration': '系統整合',
+    'security': '安全管控',
     'system_admin': '系統專用'
 };
 
@@ -78,6 +79,7 @@ var CATEGORY_ICONS = {
     'data': 'fas fa-database',
     'operation': 'fas fa-calculator',
     'integration': 'fas fa-plug',
+    'security': 'fas fa-lock',
     'system_admin': 'fas fa-shield-alt'
 };
 
@@ -94,7 +96,7 @@ async function loadNodeDefinitions() {
         container.innerHTML = '';
 
         var grouped = result.data;
-        var categoryOrder = ['basic', 'form', 'notification', 'flow_control', 'data', 'operation', 'integration', 'system_admin'];
+        var categoryOrder = ['basic', 'form', 'notification', 'flow_control', 'data', 'operation', 'integration', 'security', 'system_admin'];
 
         categoryOrder.forEach(function(categoryKey) {
             if (!grouped[categoryKey] || grouped[categoryKey].length === 0) {

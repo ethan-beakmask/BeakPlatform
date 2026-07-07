@@ -261,6 +261,24 @@
                     }
                     break;
                 }
+                case 'ApiKeyAction': {
+                    const akaAction = document.getElementById('akaAction');
+                    const akaSource = document.getElementById('akaKeySource');
+                    if (akaAction && akaSource) {
+                        config.action = akaAction.value;
+                        config.key_source = akaSource.value;
+                        if (akaSource.value === 'static') {
+                            config.key_id = document.getElementById('akaKeyStatic')?.value || '';
+                        } else if (akaSource.value === 'variable') {
+                            config.key_id = document.getElementById('akaKeyExpr')?.value?.trim() || '';
+                        } else {
+                            config.key_id = '';
+                        }
+                        config.reason = document.getElementById('akaReason')?.value?.trim() || '';
+                        changed = true;
+                    }
+                    break;
+                }
                 // Converge: 即時寫入 config，不需要在此處理
             }
 
