@@ -1,8 +1,13 @@
 # BeakPlatform 安裝手冊
 
-版本: 1.1
-日期: 2026-03-28
+版本: 1.2
+日期: 2026-07-07
 適用系統: Ubuntu 24.04 LTS
+
+> **建議優先使用自動安裝腳本 `scripts/install.sh`**（支援全新安裝與 update 冪等補齊），
+> 它會自動執行 `run_migrations.py --run`、`init_menus.py`、`flask module sync`，
+> 並產生 `ENCRYPTION_MASTER_KEY` 等必要金鑰。
+> 本手冊的手動步驟供腳本不適用或需逐步排錯時使用。
 
 ---
 
@@ -118,12 +123,22 @@ SECRET_KEY=<請更換為隨機字串>
 FLASK_ENV=development
 FLASK_DEBUG=1
 APP_PORT=8000
+
+# 檔案加密 (FILE-01) - AES-256-GCM，遺失 Master Key 將無法解密既有加密附件
+ENCRYPTION_MASTER_KEY=<必填，產生方式見下>
+ENCRYPTED_STORAGE_DIR=/opt/BeakPlatform/backend/encrypted_storage
 ```
 
 若需產生新的 SECRET_KEY:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+產生 ENCRYPTION_MASTER_KEY（`scripts/install.sh` 會自動產生並冪等補齊舊 .env）:
+
+```bash
+python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
 ```
 
 ---
@@ -206,26 +221,24 @@ EOF
 
 ### 3.3 執行平台 Migration
 
+Migration 統一由 `scripts/run_migrations.py` 管理（含 `.sql` 與 `.py` 兩種格式，
+強制 `NNN_` 編號；seed 類 migration 如權限/角色初始化是 `.py`，
+**禁止用 glob 逐檔 psql 的舊做法，會漏掉 .py seed**）:
+
 ```bash
-export PGPASSWORD=postgres123
+cd /opt/BeakPlatform
+source venv/bin/activate
+set -a && source .env && set +a
 
-# 逐一執行平台 migration (排除 deprecated 和 drop 腳本)
-for f in /opt/BeakPlatform/scripts/migrations/0*.sql; do
-    # 跳過 deprecated 檔案
-    [[ "$f" == *.deprecated ]] && continue
-    echo "--- Running $f ---"
-    psql -h localhost -U beakplatform -d beakplatform_dev -f "$f" 2>&1 | grep -E 'ERROR' || true
-done
+# 全新安裝: db.create_all() 已建好 ORM 結構，先標記既有 migration 為已套用
+python3 scripts/run_migrations.py --mark-all
 
-# 執行 backend migration
-for f in /opt/BeakPlatform/backend/migrations/0*.sql; do
-    echo "--- Running $f ---"
-    psql -h localhost -U beakplatform -d beakplatform_dev -f "$f" 2>&1 | grep -E 'ERROR' || true
-done
+# 之後（含升級）: 執行未套用的 migration
+python3 scripts/run_migrations.py --status
+python3 scripts/run_migrations.py --run
 ```
 
-> 註: 部分 migration 的 ERROR 是正常的 (如欄位或表已存在)。
-> db.create_all() 已建立所有 ORM 定義的結構，migration SQL 主要補充索引和資料。
+指令詳細說明見第 7 節。
 
 ### 3.4 初始化選單
 

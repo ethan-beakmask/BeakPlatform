@@ -1,175 +1,150 @@
-# 自動單 -- 程式觸發表單流程
+# 外部發動表單 -- 程式觸發表單流程（自動單）
 
 > 建立日期：2026-04-05
-> 狀態：規格草案
+> 最後更新：2026-07-07
+> 狀態：現況文件（已對照程式碼驗證）
 
 ## 概述
 
-「自動單」指由背景程式（非人工操作）自動發起的表單流程。
-典型場景：資安事件偵測後，程式依據風險判斷結果自動建立表單，走簽核或僅留存記錄。
+「外部發動表單」（自動單）指由程式（非人工 UI 操作）發起的表單流程，分兩類：
+
+| 類別 | 觸發路徑 | 認證 | 典型來源 |
+|------|---------|------|---------|
+| **一般表單** | 表單中心 Submit API（HTTP） | 平台帳號 session cookie | 內部自動化、排程程式、批次開單 |
+| **資安表單** | Open Defense Intake Webhook（HTTP） | HMAC-SHA256 簽章（Intake Key） | SIEM / Suricata / Coraza / Falco 等偵測端 |
+
+兩條路徑殊途同歸：建立 `FwFormInstance` + `FwWorkflowInstance`（status=RUNNING）+ Start 節點入 `FwNodeExecutionQueue`（status=PENDING），之後由 `workflow_executor` 背景執行緒（隨 Flask app 啟動，`modules/form_workflow/__init__.py`）輪詢推進。**送出成功後不需任何額外動作，流程自動跑。**
+
+完整的 HTTP 操作細節（curl 範例、欄位規格、錯誤碼）見 `docs/integrations/quick_form_submit_api.md`，本文件聚焦架構與選型。
 
 ---
 
 ## 應用場景範例
 
-**高權限帳號登入風險評估**
+**高權限帳號登入風險評估（資安表單）**
 
 ```
 SIEM / Log 偵測到高權限用戶登入
   |
   v
-背景程式比對：
+偵測端比對：
   - 是否有對應的申請記錄（變更單、維護申請）
-  - 是否在上班時間內
-  - 來源 IP 是否在白名單
-  - 是否為假日 / 非常規時段
+  - 是否在上班時間內 / 來源 IP 是否在白名單
   |
   v
-風險判斷
+風險判斷 → 以 OCSF 事件 POST 到 Intake Webhook
   |
-  +-- 低風險 --> 建立「自動單」僅留存記錄，流程自動結束
+  +-- 低風險 --> 流程模板條件分支 → End（僅留存記錄）
   |
-  +-- 中風險 --> 建立「自動單」通知管理者確認
+  +-- 中風險 --> 通知節點 → 管理者確認
   |
-  +-- 高風險 --> 建立「自動單」走緊急簽核流程
+  +-- 高風險 --> 緊急簽核流程
 ```
+
+風險分支邏輯放在**流程模板的條件節點**（依 `form_data` 欄位判斷），偵測端只負責送事件。
 
 ---
 
-## 觸發方式
+## 路徑一：一般表單 -- 表單中心 Submit API
 
-### 方式一：start_workflow() -- 有表單資料
+- **端點**：`POST /api/form-center/submit`（`modules/form_workflow/api/fc_fill.py`，`@csrf.exempt`）
+- **認證**：先 `POST /auth/login`（JSON）取得 session cookie，帳號格式 `username@domain_name`
+- **必要參數**：`published_secure_code`（正式）或 `mapping_secure_code`（測試）二選一 + `subject` + 選填 `form_data`
+- **序號**：由 NumberingService 自動編（`FORM-YYYYMMDD-NNNNN` / 流程 `PROC-YYYYMMDD-NNNN`）
+- **限制**：表單必須已發行（Published）；一般用戶僅能送 `fw_mapping_permissions` 授權的表單
+- 建議為自動化建立**專用系統帳號**，權限只授予目標表單
 
-先建立 `FwFormInstance`，再啟動流程。適用於需要填入偵測資料（IP、時間、帳號等）的場景。
+```python
+import requests
 
-**位置**: `modules/form_workflow/services/workflow_engine.py:67`
+BASE = 'http://192.168.0.16:7000/beakplatform'
+s = requests.Session()
+s.post(f'{BASE}/auth/login', json={'account': 'bot@acme.com.tw', 'password': '...'}).raise_for_status()
+r = s.post(f'{BASE}/api/form-center/submit', json={
+    'published_secure_code': '<published_sc>',
+    'subject': '自動化開單',
+    'form_data': {'field_a': 'value'},
+})
+print(r.json())  # data.execution_code 即流程編號
+```
+
+## 路徑二：資安表單 -- Open Defense Intake Webhook
+
+- **端點**：`POST /api/open_defense/intake`（`modules/open_defense/api/intake.py`）
+- **認證**：HMAC-SHA256（`X-OD-Key-Id` / `X-OD-Timestamp` / `X-OD-Signature`），簽章內容 `"{timestamp}\n{原始 body bytes}"`，5 分鐘時效
+- **前置設定**（UI 一次性）：建 Intake Key + 來源白名單；設 `event_class → form_template` mapping（`OdFormTemplateMapping`）；表單須已發行
+- **事件格式**：OCSF 子集，必填 `correlation_id`（冪等鍵）、`source_system`、`event_class`、`occurred_at`、`severity_id`、`finding.title`
+- **與路徑一差異**：申請人固定 `OpenDefense Webhook`（無平台帳號）、`source_type='WEBHOOK_OD'`、序號 `OD-YYYYMMDD-*`、`form_data` 由 `intake_service._build_form_data()` 從事件抽取（不可自由傳入）
+- 對外契約：`docs/integrations/open_defense_contract.md`
+
+## 選型
+
+| 判斷 | 用路徑 |
+|------|--------|
+| 觸發端是外部安全偵測系統、事件為 OCSF 形態 | 二（Webhook） |
+| 觸發端是平台內部/同主機自動化，要自由控制 form_data | 一（Submit API） |
+| 需要測試模式（不進正式資料） | 一（`mapping_secure_code`，序號 TEST-*） |
+
+---
+
+## 附錄：In-Process 直接呼叫（僅限平台內部程式）
+
+在 Flask app context 內可直接呼叫引擎，跳過 HTTP 層。**僅適用於平台自身的背景程式**（如排程節點、模組內部邏輯）；外部程式一律走上述 HTTP 路徑。
+
+### WorkflowEngine.start_workflow() -- 有表單資料
+
+**位置**：`modules/form_workflow/services/workflow_engine.py:67`
+
+自行建立 `FwFormInstance` 時注意（`modules/form_workflow/models/form_instance.py`）：
+
+- `serial_number` 為 **NOT NULL + unique**，必須自行編號（建議走 NumberingService，參考 `fc_fill.py` 的做法）
+- `form_data` 為 NOT NULL
+- `source_type` 現行已用值：`WEB`（表單中心）、`WEBHOOK_OD`（Open Defense）；自動程式建議自訂如 `SYSTEM` 並保持一致
+- `is_test` 參數預設為 `True`，正式單要明確傳 `is_test=False`
 
 ```python
 from modules.form_workflow.services.workflow_engine import WorkflowEngine
-from modules.form_workflow.models import FwFormInstance
-from app.extensions import db
 
-# 1. 建立表單實例
-form_instance = FwFormInstance(
-    org_secure_code='企業SC',
-    form_template_secure_code='表單模板SC',
-    applicant_secure_code='系統帳號SC',      # 觸發的系統帳號
-    applicant_name='資安自動偵測',
-    subject='高權限登入風險評估 - admin@10.0.0.5',
-    form_data={
-        'event_type': 'privileged_login',
-        'username': 'admin',
-        'source_ip': '10.0.0.5',
-        'login_time': '2026-04-05T02:30:00+08:00',
-        'risk_level': 'medium',
-        'risk_factors': ['非上班時間', '無對應申請記錄'],
-        'matched_rules': ['RULE-PLG-001'],
-    },
-    status='INITIAL',
-    source_type='SYSTEM',
-)
-db.session.add(form_instance)
-db.session.flush()
-
-# 2. 啟動流程
 workflow_instance = WorkflowEngine.start_workflow(
     form_instance_secure_code=form_instance.secure_code,
-    workflow_template_secure_code='流程模板SC',   # 可選，不給會自動查配對
-    is_test=False
+    workflow_template_secure_code='流程模板SC',  # 可選，不給則從 form_template 關聯查
+    is_test=False,
 )
 ```
 
-### 方式二：start_pure_workflow() -- 純流程、無表單模板
+### WorkflowEngine.start_pure_workflow() -- 純流程、無表單模板
 
-不需預先建表單，引擎自動建立記錄用的 FormInstance。適用於只走流程、不需要表單欄位的場景。
+**位置**：`modules/form_workflow/services/workflow_engine.py:201`
 
-**位置**: `modules/form_workflow/services/workflow_engine.py:201`
+引擎自動建立記錄用 FormInstance（`form_data={'_workflow_record': True}`），適用純通知/純審批。
 
 ```python
-from modules.form_workflow.services.workflow_engine import WorkflowEngine
-
 workflow_instance = WorkflowEngine.start_pure_workflow(
     workflow_template_secure_code='流程模板SC',
     org_secure_code='企業SC',
     applicant_secure_code='系統帳號SC',
-    applicant_name='資安自動偵測'
+    applicant_name='資安自動偵測',
 )
 ```
 
----
-
-## 觸發後的自動執行鏈
-
-```
-程式呼叫 start_workflow / start_pure_workflow
-  |
-  v
-建立 FwWorkflowInstance (status=RUNNING)
-建立 FwNodeExecutionQueue (status=PENDING, node_type=Start)
-db.session.commit()
-  |
-  v
-WorkflowExecutor (背景常駐，每 5 秒輪詢)
-  撈到 PENDING 節點
-  |
-  v
-node_runner.py (subprocess)
-  執行 Start 節點 -> 推進到下一節點
-  |
-  v
-依流程圖自動推進：
-  通知節點 / 簽核節點 / 條件分支 / 結束節點...
-```
-
----
-
-## 前提條件
-
 ### Flask App Context
-
-背景程式必須在 Flask app context 內執行（ORM 和 DB 需要）：
 
 ```python
 from backend.app import create_app
 
 app = create_app()
 with app.app_context():
-    # 在這裡呼叫 start_workflow / start_pure_workflow
-    ...
+    ...  # 在這裡呼叫引擎
 ```
 
-### 必要參數
+---
 
-| 參數 | 來源 | 說明 |
-|------|------|------|
-| `org_secure_code` | `organizations` 表 | 目標企業識別碼 |
-| `workflow_template_secure_code` | `fw_workflow_templates` 表 | 要觸發的流程模板 |
-| `form_template_secure_code` | `fw_form_templates` 表 | 表單模板（方式一需要） |
-| `applicant_secure_code` | `users` 表 | 系統帳號 SC（建議建立專用系統帳號） |
+## 流程模板設計要點（自動單共通）
 
-### 流程模板設計要點
-
-自動單的流程模板需要配合設計：
-
-- **條件節點**：根據 `form_data` 中的 `risk_level` 分支
-  - 低風險 -> End（僅記錄）
-  - 中/高風險 -> Approve 節點（通知管理者）
+- **條件節點**：依 `form_data` 中的風險欄位（如 `severity_id`、`risk_level`）分支
 - **簽核人**：可用 DYNAMIC assignee，由 form_data 帶入
-- **超時處理**：自動單建議設定 `timeout_action`，避免卡關
+- **超時處理**：自動單建議設定 `timeout_action`，避免無人值守時卡關
 
 ---
 
-## 方式選擇
-
-| | start_workflow | start_pure_workflow |
-|---|---|---|
-| 需要填入偵測資料 | O | X（form_data 僅 `_workflow_record: True`） |
-| 需要表單模板 | O | X |
-| 自動建立 FormInstance | X（自己建） | O |
-| 適用場景 | 資安事件帶完整上下文 | 純通知 / 純審批 |
-
-資安自動單通常選 **方式一**，因為需要在表單中呈現事件細節供審核者判讀。
-
----
-
-*最後更新：2026-04-05*
+*相關文件：`docs/integrations/quick_form_submit_api.md`（HTTP 操作細節）、`docs/integrations/open_defense_contract.md`（Webhook 對外契約）*

@@ -2,6 +2,10 @@
 
 > 狀態：**Deferred** — 已完成初步設計討論，未進入開發。
 > 建立日期：2026-02-07
+> 現況註記（2026-07-07）：已落地的前置基礎僅 `users.external_identity` 欄位
+> （migration `scripts/migrations/068_user_external_identity.py`，同企業內唯一，
+> 作為 AD UPN 跨站識別錨點）。OIDC/LDAP 登入、`OrgIdentityConfig`、
+> `auth_source` 均尚未實作。後續 SSO/AD 整合待建 Samba AD DC 測試環境。
 
 ---
 
