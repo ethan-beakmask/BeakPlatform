@@ -10,35 +10,20 @@
 - 用戶已目視確認設計器 palette「安全管控」分類與 ApiKeyAction 節點面板正常
 - 規格與進度：`docs/API_KEY_TRIGGER_SPEC.md`（P1/P2/P3 狀態都在 §階段規劃 與 §7）
 
-## 待辦（依優先序）
+## 已驗收（2026-07-11）
 
-### 1. ApiKeyAction 真實 executor E2E（收尾 P3）
+- **P3 ApiKeyAction E2E**：用戶以自建流程「API_KEY測試」驗證 ApiKeyAction 功能通過，驗收完成
+- **設計器「安全管控」分類**：用戶目視確認，驗收完成
 
-Handler 已用假 queue_item 測過 10 項情境，缺的是走真實背景 executor 的一次完整執行。SOP：
-
-1. 登入 `admin-ethanyu@beluga.com` / `ApiKeyTest2026`（JSON login 可自動化，見下方範例）
-2. 設計器 `/forms/workflows/<sc>` 找一條測試流程（如「弱點追蹤」`ktKgP3thmLF4coERXvUaYg`），
-   或建新流程：Start → ApiKeyAction → End
-3. ApiKeyAction 設定：動作=暫停、對象=指定 Key、挑一把 P2 E2E 測試 key
-   （如 `ak_d939f99a9d4c1eb3`，勿動 `ik_5ad9de314382ac38`，那是遷移後的正式 OD key）
-4. 送單觸發，等 executor 輪詢執行
-5. 驗證：
-   ```sql
-   -- key 應變 suspended、suspended_reason 有值
-   SELECT key_id, status, suspended_reason FROM api_keys WHERE key_id='ak_d939f99a9d4c1eb3';
-   -- 節點執行記錄
-   SELECT node_type, status, error_message FROM fw_node_execution_queue
-   ORDER BY id DESC LIMIT 5;
-   ```
-6. 測完把 key resume 回來（`/security/api-keys/` UI 或 SQL）
-
-自動化登入範例（curl）：
+自動化登入範例（curl，保留供後續 E2E 使用）：
 ```bash
 BASE=http://192.168.0.16:7000/beakplatform
 curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
   -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
 # 之後帶 -b cj.txt 打 API；表單版登入有三欄位防機器人機制，不要用
 ```
+
+## 待辦（依優先序）
 
 ### 2. 突發保護 B/C
 
