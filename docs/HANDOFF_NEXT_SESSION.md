@@ -3,12 +3,11 @@
 > 建立：2026-07-08 03:36（P3 完成當晚）
 > 用法：新 session 開場先讀本檔，再依優先序動工。做完的項目請從本檔刪除或標記。
 
-## 現況快照
+## 現況快照（2026-07-11 更新）
 
-- 本機 main 有 7 個 commit 未 push（P1 / A-1 / P2 / P3 全部），**用戶未下 push 指令前不要 push**
-- 最新 commit `0eca4c90`：P3 ApiKeyAction 流程節點完成，handler 單元測試 10/10 PASS
-- 用戶已目視確認設計器 palette「安全管控」分類與 ApiKeyAction 節點面板正常
+- P1 / A-1 / P2 / P3 已全部 push（Forgejo + GitHub 過濾推送皆完成），工作區乾淨
 - 規格與進度：`docs/API_KEY_TRIGGER_SPEC.md`（P1/P2/P3 狀態都在 §階段規劃 與 §7）
+- push 狀態確認指令：`git log origin/main..HEAD --oneline`（空 = 都推了）
 
 ## 已驗收（2026-07-11）
 
@@ -50,10 +49,13 @@ unit 檔（`/etc/systemd/system/beakplatform-dev-executor.service`）無任何�
 - C（intake 事件聚合）：新表 `od_intake_aggregations` + 改
   `modules/open_defense/services/intake_service.py` 的 `process_event()`，
   完成後更新 `docs/manifests/mod-open-defense.yaml`
+- migration 慣例：`scripts/migrations/` 下取現有最大編號 +1 的 `.sql` 檔（現到 080），
+  用 psql 套用：`PGPASSWORD=postgres123 psql -h localhost -U beakplatform -d beakplatform_dev -f <檔案>`
+- 動工前必讀規格全文（schema、window 策略、抽樣、驗證計畫都在裡面，本節只是索引）
 
 ### 3. DevTools 9222 連通排查（用戶主導，見下節）
 
-### 4. 下一版本週期的遺留清理（還沒到時間，勿現在做）
+### 4. 下一版本週期的遺留清理（勿現在做，啟動條件：用戶明確宣布進入下一版本週期）
 
 刪 `od_intake_keys` 表 + `/open-defense/intake-keys` 頁 + `intake_key_service.py`（規格 §7 P2 節有記）。
 
@@ -71,7 +73,10 @@ BeakDevF12 專案本身已廢棄（atom #4607），但 9222 CDP 鏈路是現行�
 （`net stop iphlpsvc && net start iphlpsvc` 後生效）。MCP 工具實測全通。
 開機自動復原已由 **BeakDevF12 自癒工具**解決（2026-07-11 部署，程式在 `/opt/BeakDevF12/`，
 Windows 端排程任務 `BeakDevF12-Repair` 每 5 分鐘自癒，詳見 atom #4823 後段）。
-待用戶下次重開機後最終驗收（Ubuntu 端 `curl -m 5 http://192.168.0.10:9222/json/version`）。
+待用戶下次重開機後最終驗收（待辦原子 #4826）：
+Ubuntu 端 `curl -m 5 http://192.168.0.10:9222/json/version` 拿到 JSON 即過（登入後最慢 5 分鐘）。
+失敗時請用戶在 Windows 跑 `C:\BeakDevF12\beakdevf12.ps1 status`（四環節哪環斷一目了然）、
+看 log `%LOCALAPPDATA%\BeakDevF12\beakdevf12.log`，手動修復 `beakdevf12.ps1 repair`（需管理員）。
 
 以下排查表保留供未來斷線時使用：
 
