@@ -13,7 +13,18 @@
 ## 已驗收（2026-07-11）
 
 - **P3 ApiKeyAction E2E**：用戶以自建流程「API_KEY測試」驗證 ApiKeyAction 功能通過，驗收完成
+  - 重驗方式：送單觸發「API_KEY測試」流程即可；handler 在
+    `modules/form_workflow/services/node_handlers/api_key_action_handler.py`
+  - 當時的 10/10 單元測試是臨時腳本、未入版控；正式重驗以 E2E 為準
 - **設計器「安全管控」分類**：用戶目視確認，驗收完成
+
+## BBN 知識原子取用方式（本檔引用的 #編號都這樣拿）
+
+MCP 工具 `mcp__beak_broodnest__note_get(atom_id=<編號>)`。本檔相關原子：
+- **#4608** DevTools CDP 鏈路部署程序（權威）
+- **#4823** 9222 連通排查現況
+- **#4609** F12 除錯標準 SOP
+- **#4607** BeakDevF12 專案（已 DEPRECATED，勿照做）
 
 自動化登入範例（curl，保留供後續 E2E 使用）：
 ```bash
@@ -25,9 +36,20 @@ curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json'
 
 ## 待辦（依優先序）
 
-### 2. 突發保護 B/C
+### 2. 突發保護 A/B/C
 
-規格：`docs/handoff_burst_protection_ABC.md`（A 已完成）。內容：executor 並發封頂、intake 事件聚合。
+規格：`docs/handoff_burst_protection_ABC.md`（起手檔案、schema、驗證計畫都在規格內）。
+
+**A 狀態更正（2026-07-11 實測）**：先前交接寫「A 已完成」，但
+`systemctl show beakplatform-dev-executor` 顯示 `MemoryMax=infinity`、
+unit 檔（`/etc/systemd/system/beakplatform-dev-executor.service`）無任何資源限制、無 drop-in
+→ **A 實際未生效，需重做**。屬 OS 層級變更，需用戶現場同意 + 先備份 unit 檔。
+
+- B（executor 並發封頂）：改 `backend/workflow_executor_main.py`，
+  `EXECUTOR_MAX_CONCURRENT` 環境變數預設 8，驗證 `pgrep -c node_runner` <= N
+- C（intake 事件聚合）：新表 `od_intake_aggregations` + 改
+  `modules/open_defense/services/intake_service.py` 的 `process_event()`，
+  完成後更新 `docs/manifests/mod-open-defense.yaml`
 
 ### 3. DevTools 9222 連通排查（用戶主導，見下節）
 
@@ -43,10 +65,12 @@ BeakDevF12 專案本身已廢棄（atom #4607），但 9222 CDP 鏈路是現行�
 架構：Windows(192.168.0.10) CDP Chrome listen 127.0.0.1:9222 → netsh portproxy 轉 LAN
 → Ubuntu 端 chrome-devtools-mcp `--browserUrl=http://192.168.0.10:9222`（user scope，已註冊）。
 
-### 2026-07-08 03:20 現況（未解，明天排查）
+### 2026-07-11 03:30 現況（未解，等用戶操作 Windows 端）
 
-用戶已用測試帳號啟動 Chrome，但 Ubuntu 端 `curl -m 5 http://192.168.0.10:9222/json/version`
-**timeout**（不是 refused）。研判方向：
+Ubuntu 端已確認：ping 192.168.0.10 通、MCP `chrome-devtools` 已註冊於 `~/.claude.json`（不用重註冊），
+但 `curl -m 5 http://192.168.0.10:9222/json/version` **timeout**（不是 refused）。
+問題在 Windows 端，最可能原因是 **portproxy 重開機後消失**（#4608 記載的已知陷阱），
+其次是 CDP Chrome 未以正確參數啟動。研判方向：
 
 | 癥狀 | 含義 | 檢查 |
 |------|------|------|
@@ -77,13 +101,12 @@ curl -m 5 http://192.168.0.10:9222/json/version      # 拿到 JSON 即通
 # 通了之後 MCP 工具（mcp__chrome-devtools__*）即可直接用，不用重註冊
 ```
 
-## 明天要討論的事（用戶指定）
+## 已處理（2026-07-11）
 
-**/upcom 交接品質改善**：用戶觀察到新對話開場常自己試誤猜很久（例：本 session 猜登入方式、
-猜 API 前綴 `/api/workflows/` vs `/api/form-workflow/`）。提案：以後交接時趁當前對話記憶完整，
-交接文件直接附上「可執行的範例程式 / 簡短 SOP」（登入 curl、驗證指令、關鍵路徑），
-而不是只寫敘述。本檔的 E2E SOP 與 DevTools 速查就是照這個想法先做的樣板，明天討論後
-決定是否納入 /upcom 固定格式。
+**/upcom 交接品質改善**：已完成，`~/.claude/commands/upcom.md` 改為五步驟：
+知識存檔 → 建待辦 → 交接品質（事實歸位 CLAUDE.md / 待辦附驗證過的指令 / codex 冷讀審核）
+→ 摘要 → commit+push（依專案 push 規範）。冷讀首選
+`codex exec --sandbox read-only`（本機 codex-cli 已登入可用），失敗退回 Claude subagent。
 
 ## 本 session 順手修掉的既有 bug（已 commit，供追溯）
 
