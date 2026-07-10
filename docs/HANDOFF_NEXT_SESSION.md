@@ -69,7 +69,9 @@ BeakDevF12 專案本身已廢棄（atom #4607），但 9222 CDP 鏈路是現行�
 
 根因：CDP Chrome 用錯 shell 語法沒掛上 CDP + portproxy 規則在但 iphlpsvc 未綁定
 （`net stop iphlpsvc && net start iphlpsvc` 後生效）。MCP 工具實測全通。
-**遺留待辦**：Windows 端 portproxy + CDP Chrome 開機自動啟動（重開機會斷，目前要手動重建）。
+開機自動復原已由 **BeakDevF12 自癒工具**解決（2026-07-11 部署，程式在 `/opt/BeakDevF12/`，
+Windows 端排程任務 `BeakDevF12-Repair` 每 5 分鐘自癒，詳見 atom #4823 後段）。
+待用戶下次重開機後最終驗收（Ubuntu 端 `curl -m 5 http://192.168.0.10:9222/json/version`）。
 
 以下排查表保留供未來斷線時使用：
 
