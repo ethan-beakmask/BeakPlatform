@@ -65,12 +65,13 @@ BeakDevF12 專案本身已廢棄（atom #4607），但 9222 CDP 鏈路是現行�
 架構：Windows(192.168.0.10) CDP Chrome listen 127.0.0.1:9222 → netsh portproxy 轉 LAN
 → Ubuntu 端 chrome-devtools-mcp `--browserUrl=http://192.168.0.10:9222`（user scope，已註冊）。
 
-### 2026-07-11 03:30 現況（未解，等用戶操作 Windows 端）
+### 2026-07-11 03:50 已解決（解決紀錄在 BBN atom #4823）
 
-Ubuntu 端已確認：ping 192.168.0.10 通、MCP `chrome-devtools` 已註冊於 `~/.claude.json`（不用重註冊），
-但 `curl -m 5 http://192.168.0.10:9222/json/version` **timeout**（不是 refused）。
-問題在 Windows 端，最可能原因是 **portproxy 重開機後消失**（#4608 記載的已知陷阱），
-其次是 CDP Chrome 未以正確參數啟動。研判方向：
+根因：CDP Chrome 用錯 shell 語法沒掛上 CDP + portproxy 規則在但 iphlpsvc 未綁定
+（`net stop iphlpsvc && net start iphlpsvc` 後生效）。MCP 工具實測全通。
+**遺留待辦**：Windows 端 portproxy + CDP Chrome 開機自動啟動（重開機會斷，目前要手動重建）。
+
+以下排查表保留供未來斷線時使用：
 
 | 癥狀 | 含義 | 檢查 |
 |------|------|------|
