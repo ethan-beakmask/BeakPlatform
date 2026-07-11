@@ -12,6 +12,7 @@ import logging
 import time
 from datetime import datetime
 from flask import Blueprint, request, jsonify, redirect, url_for, render_template, session, flash
+from flask_babel import gettext as _
 
 from flask_login import login_user, logout_user, current_user
 
@@ -44,26 +45,26 @@ auth_bp = Blueprint('auth', __name__)
 def _on_breach_redirect(endpoint):
     """Rate limit breach: flash 提示 + redirect 回 GET 頁面"""
     if request.is_json:
-        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
-    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+        return jsonify({'success': False, 'error': _('請求過於頻繁，請稍後再試')}), 429
+    flash(_('請求過於頻繁，請稍後再試。'), 'rate_limit')
     return redirect(url_for(endpoint))
 
 
 def _on_breach_with_domain(endpoint):
     """Rate limit breach: 含 domain_name 的 redirect"""
     if request.is_json:
-        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
+        return jsonify({'success': False, 'error': _('請求過於頻繁，請稍後再試')}), 429
     domain_name = request.view_args.get('domain_name', '')
-    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+    flash(_('請求過於頻繁，請稍後再試。'), 'rate_limit')
     return redirect(url_for(endpoint, domain_name=domain_name))
 
 
 def _on_breach_verify_reset():
     """Rate limit breach: verify-reset 頁面 redirect"""
     if request.is_json:
-        return jsonify({'success': False, 'error': '請求過於頻繁，請稍後再試'}), 429
+        return jsonify({'success': False, 'error': _('請求過於頻繁，請稍後再試')}), 429
     token = request.view_args.get('token', '')
-    flash('請求過於頻繁，請稍後再試。', 'rate_limit')
+    flash(_('請求過於頻繁，請稍後再試。'), 'rate_limit')
     return redirect(url_for('auth.verify_reset', token=token))
 
 
@@ -151,7 +152,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
             details=f'未知網域: {domain_name} (帳號: {username})',
             status_code=401,
         )
-        return error_response('帳號或密碼錯誤', 401)
+        return error_response(_('帳號或密碼錯誤'), 401)
 
     # 查詢用戶 (支援 username 和 email 登入)
     user = User.query.filter(
@@ -173,7 +174,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
             details=f'未知用戶: {username}@{domain_name}',
             status_code=401,
         )
-        return error_response('帳號或密碼錯誤', 401)
+        return error_response(_('帳號或密碼錯誤'), 401)
 
     # 帳號鎖定檢查
     is_locked, lock_error = PasswordPolicyService.check_account_lock(user)
@@ -204,7 +205,7 @@ def _do_login(username: str, domain_name: str, password: str, is_json: bool, log
             details=f'密碼錯誤: {username}@{domain_name} (失敗 {user.failed_login_count} 次)',
             status_code=401,
         )
-        return error_response(lock_msg or '帳號或密碼錯誤', 401)
+        return error_response(lock_msg or _('帳號或密碼錯誤'), 401)
 
     # 檢查是否可登入
     can_login, error_msg = user.can_login()
@@ -326,13 +327,13 @@ def login():
             return render_template('auth/login.html', error=message, login_type='shared'), status_code
 
     if not account:
-        return error_response('請輸入帳號和密碼', 400)
+        return error_response(_('請輸入帳號和密碼'), 400)
 
     # 解析帳號
     username, domain_name = _parse_account(account)
 
     if not username or not domain_name:
-        return error_response('請輸入正確的帳號格式 (username@domain)', 400)
+        return error_response(_('請輸入正確的帳號格式 (username@domain)'), 400)
 
     # 表單提交：透過三欄位機制解析密碼
     if sv_fields is not None:
@@ -356,12 +357,12 @@ def login():
                 f"[MINE] Mine field triggered on shared login: "
                 f"account={account} ip={request.remote_addr}"
             )
-            return error_response('帳號或密碼錯誤', 401)
+            return error_response(_('帳號或密碼錯誤'), 401)
 
         password = fields['password']
 
     if not password:
-        return error_response('請輸入帳號和密碼', 400)
+        return error_response(_('請輸入帳號和密碼'), 400)
 
     result = _do_login(username, domain_name, password, is_json)
     LoginSecurityService.enforce_delay(login_start)
@@ -430,7 +431,7 @@ def org_login(domain_name: str):
 
     if org is None:
         if is_json:
-            return jsonify({'error': '企業不存在或已停用'}), 404
+            return jsonify({'error': _('企業不存在或已停用')}), 404
         return redirect(url_for('auth.login'))
 
     if is_json:
@@ -465,7 +466,7 @@ def org_login(domain_name: str):
             ), status_code
 
     if not username:
-        return error_response('請輸入帳號和密碼', 400)
+        return error_response(_('請輸入帳號和密碼'), 400)
 
     # 表單提交：透過三欄位機制解析密碼
     if sv_fields is not None:
@@ -482,12 +483,12 @@ def org_login(domain_name: str):
                 f"[MINE] Mine field triggered on org login: "
                 f"user={username} domain={domain_name} ip={request.remote_addr}"
             )
-            return error_response('帳號或密碼錯誤', 401)
+            return error_response(_('帳號或密碼錯誤'), 401)
 
         password = fields['password']
 
     if not password:
-        return error_response('請輸入帳號和密碼', 400)
+        return error_response(_('請輸入帳號和密碼'), 400)
 
     result = _do_login(username, domain_name, password, is_json, login_type='org', org_for_template=org)
     LoginSecurityService.enforce_delay(login_start)
@@ -594,7 +595,7 @@ def org_public_login(domain_name: str):
 
     if org is None:
         if is_json:
-            return jsonify({'error': '企業不存在或已停用'}), 404
+            return jsonify({'error': _('企業不存在或已停用')}), 404
         return redirect(url_for('auth.login'))
 
     if is_json:
@@ -627,7 +628,7 @@ def org_public_login(domain_name: str):
         ), status_code
 
     if not email:
-        return error_response('請輸入 Email 和密碼', 400)
+        return error_response(_('請輸入 Email 和密碼'), 400)
 
     # 表單提交：透過三欄位機制解析密碼（vendor 獨立設定）
     if sv_fields is not None:
@@ -644,12 +645,12 @@ def org_public_login(domain_name: str):
                 f"[MINE] Mine field triggered on vendor login: "
                 f"email={email} domain={domain_name} ip={request.remote_addr}"
             )
-            return error_response('帳號或密碼錯誤', 401)
+            return error_response(_('帳號或密碼錯誤'), 401)
 
         password = fields['password']
 
     if not password:
-        return error_response('請輸入 Email 和密碼', 400)
+        return error_response(_('請輸入 Email 和密碼'), 400)
 
     # 查詢外部廠商帳號
     user = ResourceGateway.get_by(
@@ -663,15 +664,15 @@ def org_public_login(domain_name: str):
 
     if user is None:
         logger.warning(f"[AUTH] 外部廠商登入失敗 - 帳號不存在或非外部廠商: {email}")
-        return error_response('帳號或密碼錯誤', 401)
+        return error_response(_('帳號或密碼錯誤'), 401)
 
     if not user.is_active:
         logger.warning(f"[AUTH] 外部廠商登入失敗 - 帳號已停用: {email}")
-        return error_response('此帳號已停用', 403)
+        return error_response(_('此帳號已停用'), 403)
 
     if not user.check_password(password):
         logger.warning(f"[AUTH] 外部廠商登入失敗 - 密碼錯誤: {email}")
-        return error_response('帳號或密碼錯誤', 401)
+        return error_response(_('帳號或密碼錯誤'), 401)
 
     # 登入成功
     login_user(user, remember=False)
@@ -698,7 +699,7 @@ def org_public_login(domain_name: str):
     if is_json:
         return jsonify({
             'success': True,
-            'message': '登入成功',
+            'message': _('登入成功'),
             'redirect': url_for('main.dashboard')
         })
 
@@ -842,19 +843,19 @@ def change_password():
 
     # 驗證當前密碼
     if not current_user.check_password(current_password):
-        return error_response('目前密碼錯誤')
+        return error_response(_('目前密碼錯誤'))
 
     # 驗證新密碼長度
     if len(new_password) < MIN_PASSWORD_LENGTH:
-        return error_response(f'新密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
+        return error_response(_('新密碼長度至少 %(min_length)s 碼', min_length=MIN_PASSWORD_LENGTH))
 
     # 驗證兩次輸入一致
     if new_password != confirm_password:
-        return error_response('兩次輸入的新密碼不一致')
+        return error_response(_('兩次輸入的新密碼不一致'))
 
     # 驗證不能與原密碼相同
     if current_password == new_password:
-        return error_response('新密碼不能與目前密碼相同')
+        return error_response(_('新密碼不能與目前密碼相同'))
 
     # 更新密碼
     current_user.set_password(new_password)
@@ -878,9 +879,9 @@ def change_password():
     )
 
     if is_json:
-        return jsonify({'message': '密碼變更成功'}), 200
+        return jsonify({'message': _('密碼變更成功')}), 200
     else:
-        flash('密碼變更成功', 'success')
+        flash(_('密碼變更成功'), 'success')
         return redirect(url_for('main.dashboard'))
 
 
@@ -973,7 +974,7 @@ def _process_forgot_password(username: str, domain_name: str, login_type: str, o
             )
 
     # 一律顯示成功訊息 (防止帳號列舉)
-    flash('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證', 'success')
+    flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
 
     if login_type == 'org' and org:
         return redirect(url_for('auth.org_login', domain_name=domain_name))
@@ -1023,7 +1024,7 @@ def org_forgot_password(domain_name: str):
     username = request.form.get('username', '').strip()
 
     if not username:
-        flash('請輸入帳號', 'error')
+        flash(_('請輸入帳號'), 'error')
         return render_template(
             'auth/forgot_password.html',
             login_type='org',
@@ -1060,7 +1061,7 @@ def forgot_password():
     account = request.form.get('account', '').strip()
 
     if not account:
-        flash('請輸入帳號', 'error')
+        flash(_('請輸入帳號'), 'error')
         return render_template(
             'auth/forgot_password.html',
             login_type='shared'
@@ -1071,7 +1072,7 @@ def forgot_password():
 
     if not username or not domain_name:
         # 一律顯示成功訊息 (防止帳號列舉)
-        flash('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證', 'success')
+        flash(_('已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證'), 'success')
         return redirect(url_for('auth.login'))
 
     return _process_forgot_password(username, domain_name, 'shared')
@@ -1103,15 +1104,15 @@ def verify_reset(token: str):
     ).first()
 
     if reset_token is None:
-        flash('無效的驗證連結', 'error')
+        flash(_('無效的驗證連結'), 'error')
         return redirect(url_for('auth.login'))
 
     if reset_token.is_expired:
-        flash('驗證連結已過期，請重新申請', 'error')
+        flash(_('驗證連結已過期，請重新申請'), 'error')
         return redirect(url_for('auth.login'))
 
     if reset_token.temp_password_sent:
-        flash('此驗證連結已使用過', 'error')
+        flash(_('此驗證連結已使用過'), 'error')
         return redirect(url_for('auth.login'))
 
     # 查詢企業
@@ -1132,7 +1133,7 @@ def verify_reset(token: str):
     code = request.form.get('code', '').strip()
 
     if not code:
-        flash('請輸入驗證碼', 'error')
+        flash(_('請輸入驗證碼'), 'error')
         return render_template(
             'auth/verify_reset.html',
             token=token,
@@ -1141,7 +1142,7 @@ def verify_reset(token: str):
         ), 400
 
     if not reset_token.verify(code):
-        flash('驗證碼錯誤或已過期', 'error')
+        flash(_('驗證碼錯誤或已過期'), 'error')
         return render_template(
             'auth/verify_reset.html',
             token=token,
@@ -1184,7 +1185,7 @@ def verify_reset(token: str):
         reset_token.mark_temp_password_sent()
         db.session.commit()
 
-    flash('已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼', 'success')
+    flash(_('已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼'), 'success')
 
     # 導向對應的登入頁
     if org:
@@ -1210,12 +1211,12 @@ def _resolve_policy_org():
         org = Organization.query.filter_by(
             secure_code=org_code, is_deleted=False).first()
         if not org:
-            return None, (jsonify({'success': False, 'message': '找不到目標企業'}), 404)
+            return None, (jsonify({'success': False, 'message': _('找不到目標企業')}), 404)
         return org, None
 
     org = current_user.organization
     if not org:
-        return None, (jsonify({'success': False, 'message': '找不到企業'}), 404)
+        return None, (jsonify({'success': False, 'message': _('找不到企業')}), 404)
     return org, None
 
 
@@ -1291,7 +1292,7 @@ def validate_user_password():
 
     data = request.get_json()
     if not data or 'password' not in data:
-        return jsonify({'success': False, 'message': '請提供密碼'}), 400
+        return jsonify({'success': False, 'message': _('請提供密碼')}), 400
 
     password = data['password']
 

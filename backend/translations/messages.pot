@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-07 10:58+0800\n"
+"POT-Creation-Date: 2026-07-12 05:34+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,30 +17,1777 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/templates/auth/login.html:7 app/templates/auth/login.html:9
-#: app/templates/auth/login.html:18 app/templates/auth/login.html:20
-#: app/templates/auth/login.html:23 app/templates/auth/login.html:55
-#: app/templates/auth/login.html:83
+#: app/api/_ss_audit.py:79
+msgid "最小 -- 僅登入/登出與失敗嘗試"
+msgstr ""
+
+#: app/api/_ss_audit.py:80
+msgid "標準 -- 登入/登出 + 所有寫入操作 (預設)"
+msgstr ""
+
+#: app/api/_ss_audit.py:81
+msgid "詳細 -- 記錄所有請求 (含讀取，資料量大)"
+msgstr ""
+
+#: app/api/_ss_audit.py:99 app/api/_ss_audit.py:170 app/api/_ss_audit.py:239
+#: app/api/_ss_login_security.py:84 app/api/_ss_login_security.py:114
+#: app/api/security_center.py:421
+msgid "缺少 request body"
+msgstr ""
+
+#: app/api/_ss_audit.py:110
+#, python-format
+msgid "無效的稽核等級，允許值: %(values)s"
+msgstr ""
+
+#: app/api/_ss_audit.py:119
+msgid "保留天數至少 7 天"
+msgstr ""
+
+#: app/api/_ss_audit.py:131
+#, python-format
+msgid "稽核設定已更新: %(items)s"
+msgstr ""
+
+#: app/api/_ss_audit.py:179
+msgid "目錄檔案上限至少 1,000"
+msgstr ""
+
+#: app/api/_ss_audit.py:184
+msgid "目錄檔案上限不可超過 1,000,000"
+msgstr ""
+
+#: app/api/_ss_audit.py:198
+#, python-format
+msgid "檔案儲存設定已更新: %(items)s"
+msgstr ""
+
+#: app/api/_ss_audit.py:249
+#, python-format
+msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes, 5 per hour)"
+msgstr ""
+
+#: app/api/_ss_audit.py:264 app/api/security_center.py:461
+msgid "部分設定格式無效"
+msgstr ""
+
+#: app/api/_ss_audit.py:270
+msgid "未提供任何有效設定"
+msgstr ""
+
+#: app/api/_ss_audit.py:274
+#, python-format
+msgid "速率限制已更新: %(items)s"
+msgstr ""
+
+#: app/api/_ss_audit.py:301
+msgid "缺少 colors 欄位"
+msgstr ""
+
+#: app/api/_ss_audit.py:305
+msgid "colors 必須是物件"
+msgstr ""
+
+#: app/api/_ss_audit.py:315
+#, python-format
+msgid "%(key)s 的值 \"%(value)s\" 不是有效的 hex 色碼（格式: #RRGGBB）"
+msgstr ""
+
+#: app/api/_ss_audit.py:331
+msgid "選單配色已更新，重新整理頁面後生效"
+msgstr ""
+
+#: app/api/_ss_audit.py:345
+msgid "選單配色已重置為預設值，重新整理頁面後生效"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:86
+msgid "安裝路徑不可為空"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:93
+msgid "安裝路徑驗證失敗"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:149
+#, python-format
+msgid "已更新 %(count)s 項設定"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:188
+msgid "請填寫 Email"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:191
+msgid "請填寫應用程式密碼"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:201
+#, python-format
+msgid "E-MailRelay 目錄不存在: %(dir)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:220
+msgid "SMTP 認證設定已儲存"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:231
+msgid "無權限寫入 Auth 檔案，請檢查目錄權限"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:236 app/web/main.py:167
+#, python-format
+msgid "儲存失敗: %(error)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:262
+#, python-format
+msgid "Spool 目錄不存在: %(dir)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:269
+#, python-format
+msgid "Spool 目錄無寫入權限: %(dir)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:285
+msgid "請指定收件人或先設定 SMTP 認證"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:350
+#, python-format
+msgid "emailrelay-submit 失敗: %(error)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:356
+#, python-format
+msgid "測試郵件已發送至 %(recipient)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:367
+msgid "emailrelay-submit 執行逾時"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:373
+msgid "找不到 emailrelay-submit 工具，請確認 E-MailRelay 已安裝"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:379
+#, python-format
+msgid "發送測試郵件失敗: %(error)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:395
+#, python-format
+msgid "不支援的操作: %(action)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
+#: app/web/external_users.py:523 app/web/external_users.py:577
+#: app/web/external_users.py:619 app/web/org_admin_rescue.py:100
+#: app/web/org_admins.py:505 app/web/users.py:700
+#, python-format
+msgid "操作失敗: %(error)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:427
+#, python-format
+msgid "服務已 %(action)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:434
+msgid "操作逾時"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:501
+msgid "Auth 檔案尚未建立"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:515
+#, python-format
+msgid "Auth 檔案格式不正確，欄位數: %(count)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:530
+msgid "Base64 解碼失敗"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:541
+#, python-format
+msgid "不支援的認證類型: %(auth_type)s"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:556
+msgid "無權限讀取 Auth 檔案"
+msgstr ""
+
+#: app/api/_ss_emailrelay.py:563
+#, python-format
+msgid "讀取失敗: %(error)s"
+msgstr ""
+
+#: app/api/_ss_login_security.py:38
+#, python-format
+msgid "%(field)s 無效，允許值: %(allowed)s"
+msgstr ""
+
+#: app/api/_ss_login_security.py:92
+msgid "員工登入安全欄位預設已更新"
+msgstr ""
+
+#: app/api/_ss_login_security.py:122
+msgid "廠商登入安全欄位預設已更新"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:58 app/api/_ss_recipient_groups.py:120
+#: app/api/_ss_smtp.py:65 app/api/_ss_smtp.py:145 app/api/_ss_smtp.py:221
+#: app/api/_ss_telegram.py:57 app/api/_ss_telegram.py:121
+#: app/api/_ss_telegram.py:185 app/api/enterprise_settings.py:72
+#: app/api/enterprise_settings.py:117 app/api/enterprise_settings.py:218
+#: app/api/enterprise_settings.py:426 app/api/enterprise_settings.py:508
+#: app/api/enterprise_settings.py:586 app/api/enterprise_settings.py:693
+#: app/api/enterprise_settings.py:759 app/api/enterprise_settings.py:825
+#: app/api/enterprise_settings.py:914 app/api/enterprise_settings.py:978
+#: app/api/work_schedules.py:89 app/api/work_schedules.py:179
+#: app/api/work_schedules.py:348 app/api/work_schedules.py:423
+msgid "請提供資料"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:61 app/api/enterprise_settings.py:917
+msgid "請填寫群組名稱"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:83 app/api/enterprise_settings.py:939
+msgid "收件人群組已建立"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:98 app/api/_ss_recipient_groups.py:116
+#: app/api/_ss_recipient_groups.py:161 app/api/_ss_recipient_groups.py:187
+#: app/api/enterprise_settings.py:955 app/api/enterprise_settings.py:974
+#: app/api/enterprise_settings.py:1020 app/api/enterprise_settings.py:1048
+msgid "群組不存在"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:146 app/api/enterprise_settings.py:1004
+msgid "收件人群組已更新"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:169 app/api/enterprise_settings.py:1028
+msgid "收件人群組已刪除"
+msgstr ""
+
+#: app/api/_ss_recipient_groups.py:200
+msgid "系統級群組需手動指定收件人"
+msgstr ""
+
+#: app/api/_ss_smtp.py:71 app/api/_ss_smtp.py:226
+#: app/api/enterprise_settings.py:432 app/api/enterprise_settings.py:591
+#, python-format
+msgid "請填寫 %(field)s"
+msgstr ""
+
+#: app/api/_ss_smtp.py:108 app/api/enterprise_settings.py:469
+msgid "SMTP 設定已建立"
+msgstr ""
+
+#: app/api/_ss_smtp.py:123 app/api/_ss_smtp.py:141 app/api/_ss_smtp.py:191
+#: app/api/_ss_smtp.py:255 app/api/_ss_telegram.py:99
+#: app/api/_ss_telegram.py:117 app/api/_ss_telegram.py:161
+#: app/api/_ss_telegram.py:213 app/api/enterprise_settings.py:485
+#: app/api/enterprise_settings.py:504 app/api/enterprise_settings.py:555
+#: app/api/enterprise_settings.py:621 app/api/enterprise_settings.py:736
+#: app/api/enterprise_settings.py:755 app/api/enterprise_settings.py:800
+#: app/api/enterprise_settings.py:854
+msgid "設定不存在"
+msgstr ""
+
+#: app/api/_ss_smtp.py:176 app/api/enterprise_settings.py:539
+msgid "SMTP 設定已更新"
+msgstr ""
+
+#: app/api/_ss_smtp.py:199 app/api/enterprise_settings.py:563
+msgid "SMTP 設定已刪除"
+msgstr ""
+
+#: app/api/_ss_telegram.py:60 app/api/enterprise_settings.py:696
+msgid "請填寫設定名稱"
+msgstr ""
+
+#: app/api/_ss_telegram.py:63 app/api/_ss_telegram.py:188
+#: app/api/enterprise_settings.py:699 app/api/enterprise_settings.py:828
+msgid "請填寫 Bot Token"
+msgstr ""
+
+#: app/api/_ss_telegram.py:84 app/api/enterprise_settings.py:720
+msgid "Telegram 設定已建立"
+msgstr ""
+
+#: app/api/_ss_telegram.py:146 app/api/enterprise_settings.py:784
+msgid "Telegram 設定已更新"
+msgstr ""
+
+#: app/api/_ss_telegram.py:169 app/api/enterprise_settings.py:808
+msgid "Telegram 設定已刪除"
+msgstr ""
+
+#: app/api/api_keys.py:39
+msgid "expires_at 格式錯誤(需 ISO 8601)"
+msgstr ""
+
+#: app/api/api_keys.py:54
+msgid "綁定的系統帳號不存在或已停用"
+msgstr ""
+
+#: app/api/api_keys.py:104 app/api/api_keys.py:137 app/api/api_keys.py:157
+#: app/api/api_keys.py:172
+msgid "找不到指定的 API Key"
+msgstr ""
+
+#: app/api/api_keys.py:142
+msgid "請填寫暫停原因"
+msgstr ""
+
+#: app/api/auth.py:48 app/api/auth.py:56 app/api/auth.py:65
+msgid "請求過於頻繁，請稍後再試"
+msgstr ""
+
+#: app/api/auth.py:49 app/api/auth.py:58 app/api/auth.py:67
+msgid "請求過於頻繁，請稍後再試。"
+msgstr ""
+
+#: app/api/auth.py:155 app/api/auth.py:177 app/api/auth.py:208
+#: app/api/auth.py:360 app/api/auth.py:486 app/api/auth.py:648
+#: app/api/auth.py:667 app/api/auth.py:675
+msgid "帳號或密碼錯誤"
+msgstr ""
+
+#: app/api/auth.py:330 app/api/auth.py:365 app/api/auth.py:469
+#: app/api/auth.py:491
+msgid "請輸入帳號和密碼"
+msgstr ""
+
+#: app/api/auth.py:336
+msgid "請輸入正確的帳號格式 (username@domain)"
+msgstr ""
+
+#: app/api/auth.py:434 app/api/auth.py:598
+msgid "企業不存在或已停用"
+msgstr ""
+
+#: app/api/auth.py:631 app/api/auth.py:653
+msgid "請輸入 Email 和密碼"
+msgstr ""
+
+#: app/api/auth.py:671
+msgid "此帳號已停用"
+msgstr ""
+
+#: app/api/auth.py:702
+msgid "登入成功"
+msgstr ""
+
+#: app/api/auth.py:846 app/web/profile.py:57
+msgid "目前密碼錯誤"
+msgstr ""
+
+#: app/api/auth.py:850
+#, python-format
+msgid "新密碼長度至少 %(min_length)s 碼"
+msgstr ""
+
+#: app/api/auth.py:854
+msgid "兩次輸入的新密碼不一致"
+msgstr ""
+
+#: app/api/auth.py:858
+msgid "新密碼不能與目前密碼相同"
+msgstr ""
+
+#: app/api/auth.py:882 app/api/auth.py:884
+msgid "密碼變更成功"
+msgstr ""
+
+#: app/api/auth.py:977 app/api/auth.py:1075
+msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
+msgstr ""
+
+#: app/api/auth.py:1027 app/api/auth.py:1064
+msgid "請輸入帳號"
+msgstr ""
+
+#: app/api/auth.py:1107
+msgid "無效的驗證連結"
+msgstr ""
+
+#: app/api/auth.py:1111
+msgid "驗證連結已過期，請重新申請"
+msgstr ""
+
+#: app/api/auth.py:1115
+msgid "此驗證連結已使用過"
+msgstr ""
+
+#: app/api/auth.py:1136
+msgid "請輸入驗證碼"
+msgstr ""
+
+#: app/api/auth.py:1145
+msgid "驗證碼錯誤或已過期"
+msgstr ""
+
+#: app/api/auth.py:1188
+msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
+msgstr ""
+
+#: app/api/auth.py:1214
+msgid "找不到目標企業"
+msgstr ""
+
+#: app/api/auth.py:1219 app/api/enterprise_settings.py:54
+#: app/api/enterprise_settings.py:68 app/api/enterprise_settings.py:95
+#: app/api/enterprise_settings.py:113 app/api/enterprise_settings.py:192
+#: app/api/enterprise_settings.py:214 app/api/enterprise_settings.py:242
+#: app/api/enterprise_settings.py:262 app/api/enterprise_settings.py:301
+#: app/api/enterprise_settings.py:326 app/api/enterprise_settings.py:369
+#: app/api/files.py:142 app/api/files.py:224 app/api/files.py:390
+#: app/api/files.py:426 app/api/files.py:460 app/api/files.py:493
+#: app/api/files.py:528
+msgid "找不到企業"
+msgstr ""
+
+#: app/api/auth.py:1295 app/api/enterprise_settings.py:266
+msgid "請提供密碼"
+msgstr ""
+
+#: app/api/broadcasts.py:143 app/api/security_center.py:284
+msgid "找不到廣播"
+msgstr ""
+
+#: app/api/broadcasts.py:153
+msgid "已確認"
+msgstr ""
+
+#: app/api/broadcasts.py:167
+msgid "確認成功"
+msgstr ""
+
+#: app/api/code_service.py:143 app/api/code_service.py:187
+#: app/api/transliteration.py:38 app/api/transliteration.py:77
+#: app/api/transliteration.py:123
+msgid "請提供 JSON 資料"
+msgstr ""
+
+#: app/api/code_service.py:150 app/api/code_service.py:194
+#, python-format
+msgid "不支援的實體類型: %(entity_type)s"
+msgstr ""
+
+#: app/api/code_service.py:155 app/api/roles.py:90
+msgid "請提供名稱"
+msgstr ""
+
+#: app/api/code_service.py:199 app/api/roles.py:123
+msgid "請提供代碼"
+msgstr ""
+
+#: app/api/code_service.py:212
+#, python-format
+msgid "代碼 \"%(code)s\" 已存在（不區分大小寫）"
+msgstr ""
+
+#: app/api/conglomerates.py:60
+msgid "集團名稱為必填"
+msgstr ""
+
+#: app/api/conglomerates.py:63
+msgid "至少需要選擇兩家企業"
+msgstr ""
+
+#: app/api/conglomerates.py:84 app/api/conglomerates.py:276
+#: app/api/users.py:220 app/web/approval_categories.py:192
+#: app/web/delegations.py:152 app/web/external_users.py:321
+#: app/web/job_families.py:211 app/web/job_families.py:212
+#: app/web/job_levels.py:185 app/web/job_titles.py:270
+#: app/web/job_titles.py:271 app/web/menu.py:324 app/web/menu.py:391
+#: app/web/modules.py:120 app/web/org_admins.py:284 app/web/org_admins.py:453
+#: app/web/organizations.py:264 app/web/positions.py:149
+#: app/web/sys_accounts.py:171 app/web/sys_accounts.py:172 app/web/units.py:134
+#: app/web/users.py:414
+#, python-format
+msgid "建立失敗: %(error)s"
+msgstr ""
+
+#: app/api/conglomerates.py:98 app/api/conglomerates.py:146
+#: app/api/conglomerates.py:170 app/api/conglomerates.py:256
+msgid "集團不存在"
+msgstr ""
+
+#: app/api/conglomerates.py:193
+msgid "集團至少需要兩家企業"
+msgstr ""
+
+#: app/api/conglomerates.py:214 app/web/approval_categories.py:273
+#: app/web/delegations.py:242 app/web/external_users.py:443
+#: app/web/job_families.py:291 app/web/job_families.py:292
+#: app/web/job_levels.py:272 app/web/job_titles.py:349
+#: app/web/job_titles.py:350 app/web/menu.py:493 app/web/modules.py:180
+#: app/web/organizations.py:320 app/web/positions.py:244
+#: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:195
+#: app/web/users.py:606
+#, python-format
+msgid "更新失敗: %(error)s"
+msgstr ""
+
+#: app/api/conglomerates.py:259
+msgid "此集團已有共享資料庫"
+msgstr ""
+
+#: app/api/contracts.py:85 app/api/contracts.py:187 app/api/contracts.py:226
+msgid "合約不存在"
+msgstr ""
+
+#: app/api/contracts.py:112
+msgid "請提供合約資料"
+msgstr ""
+
+#: app/api/contracts.py:117 app/api/duties.py:99 app/api/duties.py:305
+#: app/api/organizations.py:133
+#, python-format
+msgid "缺少必要欄位: %(field)s"
+msgstr ""
+
+#: app/api/contracts.py:123 app/api/work_schedules.py:363
+msgid "日期格式錯誤，請使用 YYYY-MM-DD"
+msgstr ""
+
+#: app/api/contracts.py:143
+msgid "合約建立成功"
+msgstr ""
+
+#: app/api/contracts.py:152
+msgid "建立合約失敗"
+msgstr ""
+
+#: app/api/contracts.py:165
+msgid "合約建立後不可修改內容（稽核要求）。如需停用請使用停用功能，如需變更請建立新合約。"
+msgstr ""
+
+#: app/api/contracts.py:199
+msgid "合約已刪除"
+msgstr ""
+
+#: app/api/contracts.py:205
+msgid "刪除合約失敗"
+msgstr ""
+
+#: app/api/contracts.py:229
+msgid "合約已是停用狀態"
+msgstr ""
+
+#: app/api/contracts.py:240
+msgid "合約已停用"
+msgstr ""
+
+#: app/api/contracts.py:247
+msgid "停用合約失敗"
+msgstr ""
+
+#: app/api/contracts.py:258
+msgid "合約停用後不可再啟用（單向操作）。如需恢復服務，請建立新合約。"
+msgstr ""
+
+#: app/api/duties.py:71 app/api/duties.py:149 app/api/duties.py:193
+#: app/api/duties.py:323 app/api/duties.py:416
+msgid "職務分類不存在"
+msgstr ""
+
+#: app/api/duties.py:94
+msgid "請提供分類資料"
+msgstr ""
+
+#: app/api/duties.py:107 app/api/organizational_units.py:343
+#: app/api/roles.py:186 app/web/units.py:113
+#, python-format
+msgid "代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/api/duties.py:124
+msgid "職務分類建立成功"
+msgstr ""
+
+#: app/api/duties.py:131
+msgid "建立職務分類失敗"
+msgstr ""
+
+#: app/api/duties.py:153 app/api/duties.py:383
+#: app/api/organizational_units.py:405 app/api/organizational_units.py:1580
+#: app/api/organizations.py:211 app/api/roles.py:268
+msgid "請提供更新資料"
+msgstr ""
+
+#: app/api/duties.py:168
+msgid "職務分類更新成功"
+msgstr ""
+
+#: app/api/duties.py:175
+msgid "更新職務分類失敗"
+msgstr ""
+
+#: app/api/duties.py:204
+#, python-format
+msgid "此分類有 %(count)s 個職務使用中，請先刪除或移動職務"
+msgstr ""
+
+#: app/api/duties.py:213
+msgid "職務分類已刪除"
+msgstr ""
+
+#: app/api/duties.py:219
+msgid "刪除職務分類失敗"
+msgstr ""
+
+#: app/api/duties.py:276 app/api/duties.py:379 app/api/duties.py:461
+msgid "職務不存在"
+msgstr ""
+
+#: app/api/duties.py:300
+msgid "請提供職務資料"
+msgstr ""
+
+#: app/api/duties.py:314 app/api/duties.py:499
+msgid "部門不存在"
+msgstr ""
+
+#: app/api/duties.py:335
+#, python-format
+msgid "此部門的 %(category)s 分類已有名為「%(name)s」的職務"
+msgstr ""
+
+#: app/api/duties.py:354
+msgid "職務建立成功"
+msgstr ""
+
+#: app/api/duties.py:361
+msgid "建立職務失敗"
+msgstr ""
+
+#: app/api/duties.py:397
+#, python-format
+msgid "此部門的分類已有名為「%(name)s」的職務"
+msgstr ""
+
+#: app/api/duties.py:428
+#, python-format
+msgid "目標分類已有名為「%(name)s」的職務"
+msgstr ""
+
+#: app/api/duties.py:436
+msgid "職務更新成功"
+msgstr ""
+
+#: app/api/duties.py:443
+msgid "更新職務失敗"
+msgstr ""
+
+#: app/api/duties.py:471
+msgid "職務已刪除"
+msgstr ""
+
+#: app/api/duties.py:477
+msgid "刪除職務失敗"
+msgstr ""
+
+#: app/api/enterprise_settings.py:80 app/web/admin.py:84
+msgid "設定已儲存"
+msgstr ""
+
+#: app/api/enterprise_settings.py:133
+#, python-format
+msgid "%(field)s 無效，允許值: %(values)s"
+msgstr ""
+
+#: app/api/enterprise_settings.py:149
+msgid "登入安全欄位設定已儲存"
+msgstr ""
+
+#: app/api/enterprise_settings.py:226
+msgid "密碼政策已儲存"
+msgstr ""
+
+#: app/api/enterprise_settings.py:329
+msgid "請選擇圖片檔案"
+msgstr ""
+
+#: app/api/enterprise_settings.py:350
+msgid "Logo 上傳成功"
+msgstr ""
+
+#: app/api/enterprise_settings.py:360 app/api/files.py:174
+#, python-format
+msgid "上傳失敗: %(error)s"
+msgstr ""
+
+#: app/api/enterprise_settings.py:373
+msgid "尚未上傳 Logo"
+msgstr ""
+
+#: app/api/enterprise_settings.py:378
+msgid "Logo 已刪除"
+msgstr ""
+
+#: app/api/enterprise_settings.py:381 app/api/files.py:445
+#: app/web/approval_categories.py:332 app/web/delegations.py:294
+#: app/web/external_users.py:658 app/web/job_families.py:375
+#: app/web/job_families.py:376 app/web/job_levels.py:324
+#: app/web/job_titles.py:401 app/web/job_titles.py:402 app/web/menu.py:551
+#: app/web/modules.py:208 app/web/org_admins.py:543
+#: app/web/organizations.py:396 app/web/organizations.py:539
+#: app/web/positions.py:273 app/web/sys_accounts.py:315
+#: app/web/sys_accounts.py:316 app/web/units.py:229 app/web/users.py:668
+#, python-format
+msgid "刪除失敗: %(error)s"
+msgstr ""
+
+#: app/api/files.py:108
+msgid "警告"
+msgstr ""
+
+#: app/api/files.py:109
+msgid "違規下載！檔案下載連結只限一次性且限時下載"
+msgstr ""
+
+#: app/api/files.py:130
+msgid "未提供檔案"
+msgstr ""
+
+#: app/api/files.py:138
+msgid "未指定 context_type"
+msgstr ""
+
+#: app/api/files.py:159
+msgid "上傳成功"
+msgstr ""
+
+#: app/api/files.py:228 app/api/files.py:317 app/api/files.py:327
+#: app/api/files.py:394 app/api/files.py:430 app/api/files.py:464
+msgid "檔案不存在"
+msgstr ""
+
+#: app/api/files.py:239 app/api/files.py:405
+msgid "無此檔案的存取權限"
+msgstr ""
+
+#: app/api/files.py:252
+msgid "檔案異常！疑似竄改"
+msgstr ""
+
+#: app/api/files.py:270 app/api/files.py:306
+msgid "系統暫時無法處理下載"
+msgstr ""
+
+#: app/api/files.py:336 app/api/files.py:354
+msgid "檔案完整性驗證失敗，已通報管理員"
+msgstr ""
+
+#: app/api/files.py:344
+msgid "下載失敗，檔案異常"
+msgstr ""
+
+#: app/api/files.py:434
+msgid "只能刪除自己上傳的檔案"
+msgstr ""
+
+#: app/api/files.py:441
+msgid "檔案已標記刪除"
+msgstr ""
+
+#: app/api/files.py:467
+msgid "只能撤銷自己標記刪除的檔案"
+msgstr ""
+
+#: app/api/files.py:472
+msgid "已撤銷刪除"
+msgstr ""
+
+#: app/api/files.py:478 app/web/delegations.py:273
+#, python-format
+msgid "撤銷失敗: %(error)s"
+msgstr ""
+
+#: app/api/files.py:498
+msgid "未指定 context_id"
+msgstr ""
+
+#: app/api/lookup.py:56
+msgid "字串值不得超過 500 字元"
+msgstr ""
+
+#: app/api/lookup.py:62
+msgid "整數值格式錯誤"
+msgstr ""
+
+#: app/api/lookup.py:67
+msgid "小數值格式錯誤"
+msgstr ""
+
+#: app/api/lookup.py:70
+msgid "日期格式錯誤，應為 YYYY-MM-DD"
+msgstr ""
+
+#: app/api/lookup.py:74
+msgid "時間格式錯誤，應為 HH:MM"
+msgstr ""
+
+#: app/api/lookup.py:80
+msgid "日期時間格式錯誤，應為 YYYY-MM-DD HH:MM"
+msgstr ""
+
+#: app/api/lookup.py:112 app/api/lookup.py:311
+msgid "缺少 code"
+msgstr ""
+
+#: app/api/lookup.py:114
+msgid "缺少 name"
+msgstr ""
+
+#: app/api/lookup.py:127
+#, python-format
+msgid "類別代碼 %(code)s 與系統級類別衝突"
+msgstr ""
+
+#: app/api/lookup.py:132 app/web/approval_categories.py:152
+#, python-format
+msgid "類別代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/api/lookup.py:147
+msgid "已建立類別"
+msgstr ""
+
+#: app/api/lookup.py:168 app/api/lookup.py:176 app/api/lookup.py:190
+#: app/api/lookup.py:226 app/api/lookup.py:232 app/api/lookup.py:269
+#: app/api/lookup.py:277 app/api/lookup.py:297 app/api/lookup.py:304
+#: app/api/lookup.py:442 app/api/lookup.py:446
+#: app/web/approval_categories.py:214 app/web/approval_categories.py:215
+#: app/web/approval_categories.py:311 app/web/approval_categories.py:312
+#: app/web/approval_categories.py:350 app/web/approval_categories.py:420
+msgid "類別不存在"
+msgstr ""
+
+#: app/api/lookup.py:188
+msgid "系統級類別不可修改"
+msgstr ""
+
+#: app/api/lookup.py:201 app/api/lookup.py:381
+#: app/api/organizational_units.py:1606
+msgid "更新失敗"
+msgstr ""
+
+#: app/api/lookup.py:208 app/web/approval_categories.py:255
+#: app/web/approval_categories.py:269
+msgid "已更新類別"
+msgstr ""
+
+#: app/api/lookup.py:224
+msgid "系統級類別不可刪除"
+msgstr ""
+
+#: app/api/lookup.py:237
+msgid "請先停用類別後再刪除"
+msgstr ""
+
+#: app/api/lookup.py:241 app/api/lookup.py:419
+msgid "刪除失敗"
+msgstr ""
+
+#: app/api/lookup.py:243
+msgid "已刪除類別"
+msgstr ""
+
+#: app/api/lookup.py:295
+msgid "系統級類別不可新增選項"
+msgstr ""
+
+#: app/api/lookup.py:300
+msgid "此類別不允許新增選項"
+msgstr ""
+
+#: app/api/lookup.py:313
+msgid "缺少 label"
+msgstr ""
+
+#: app/api/lookup.py:317
+msgid "代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭"
+msgstr ""
+
+#: app/api/lookup.py:323
+#, python-format
+msgid "選項代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/api/lookup.py:346
+msgid "已新增選項"
+msgstr ""
+
+#: app/api/lookup.py:362
+msgid "系統級選項不可修改"
+msgstr ""
+
+#: app/api/lookup.py:364 app/api/lookup.py:404 app/api/lookup.py:410
+msgid "選項不存在"
+msgstr ""
+
+#: app/api/lookup.py:386
+msgid "已更新選項"
+msgstr ""
+
+#: app/api/lookup.py:402
+msgid "系統級選項不可刪除"
+msgstr ""
+
+#: app/api/lookup.py:415
+msgid "請先停用選項後再刪除"
+msgstr ""
+
+#: app/api/lookup.py:421
+msgid "已刪除選項"
+msgstr ""
+
+#: app/api/lookup.py:440
+msgid "系統級類別不可排序"
+msgstr ""
+
+#: app/api/lookup.py:451
+msgid "缺少 order 陣列"
+msgstr ""
+
+#: app/api/lookup.py:458
+msgid "排序已更新"
+msgstr ""
+
+#: app/api/menu.py:204 app/web/menu.py:526
+msgid "預設選單項目禁止刪除"
+msgstr ""
+
+#: app/api/menu.py:211
+#, python-format
+msgid "子項目中包含預設選單（%(names)s），請先將其移出"
+msgstr ""
+
+#: app/api/menu.py:481
+msgid "更新角色需求失敗"
+msgstr ""
+
+#: app/api/menu.py:505
+msgid "重置選單位置失敗"
+msgstr ""
+
+#: app/api/menu.py:528
+msgid "重置選單出廠值失敗"
+msgstr ""
+
+#: app/api/menu.py:553
+msgid "儲存選單出廠預設值失敗"
+msgstr ""
+
+#: app/api/menu.py:575
+msgid "匯出 SQL 失敗"
+msgstr ""
+
+#: app/api/module_access.py:89
+msgid "缺少 module_code"
+msgstr ""
+
+#: app/api/module_access.py:91
+#, python-format
+msgid "無效的 target_type: %(target_type)s"
+msgstr ""
+
+#: app/api/module_access.py:93
+msgid "缺少 target_secure_code"
+msgstr ""
+
+#: app/api/module_access.py:104
+msgid "此指派已存在"
+msgstr ""
+
+#: app/api/module_access.py:116
+msgid "已新增使用權指派"
+msgstr ""
+
+#: app/api/module_access.py:137
+msgid "記錄不存在"
+msgstr ""
+
+#: app/api/module_access.py:140
+msgid "已移除使用權指派"
+msgstr ""
+
+#: app/api/modules.py:119
+#, python-format
+msgid "模組代碼「%(code)s」已存在，請使用其他代碼"
+msgstr ""
+
+#: app/api/organizational_units.py:274 app/api/organizational_units.py:401
+#: app/api/organizational_units.py:490 app/api/organizational_units.py:672
+#: app/api/organizational_units.py:755 app/api/organizational_units.py:810
+#: app/api/organizational_units.py:864 app/api/organizational_units.py:973
+#: app/api/organizational_units.py:1051 app/api/organizational_units.py:1112
+#: app/api/organizational_units.py:1186 app/api/organizational_units.py:1294
+#: app/api/organizational_units.py:1368 app/api/organizational_units.py:1431
+#: app/api/organizational_units.py:1566 app/api/organizational_units.py:1630
+msgid "組織單位不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:298
+msgid "請提供單位資料"
+msgstr ""
+
+#: app/api/organizational_units.py:302 app/api/roles.py:165
+msgid "缺少必要欄位: name"
+msgstr ""
+
+#: app/api/organizational_units.py:319 app/api/roles.py:192
+#, python-format
+msgid "無法自動產生代碼: %(error)s"
+msgstr ""
+
+#: app/api/organizational_units.py:324
+msgid "代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文"
+msgstr ""
+
+#: app/api/organizational_units.py:328
+#, python-format
+msgid "代碼長度不可超過 50 字元（目前 %(length)s 字元）"
+msgstr ""
+
+#: app/api/organizational_units.py:330
+msgid "代碼長度至少 2 字元"
+msgstr ""
+
+#: app/api/organizational_units.py:332
+#, python-format
+msgid "名稱長度不可超過 255 字元（目前 %(length)s 字元）"
+msgstr ""
+
+#: app/api/organizational_units.py:334 app/api/work_schedules.py:185
+msgid "名稱不可為空"
+msgstr ""
+
+#: app/api/organizational_units.py:355 app/api/organizational_units.py:438
+msgid "父層單位不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:376
+msgid "組織單位建立成功"
+msgstr ""
+
+#: app/api/organizational_units.py:383
+msgid "建立組織單位失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:424 app/api/roles.py:288
+msgid "不能設定自己為父層"
+msgstr ""
+
+#: app/api/organizational_units.py:429 app/api/roles.py:292
+msgid "不能設定子層為父層"
+msgstr ""
+
+#: app/api/organizational_units.py:445
+msgid "不可在企業群組與外部廠商群組之間移動"
+msgstr ""
+
+#: app/api/organizational_units.py:461
+msgid "組織單位更新成功"
+msgstr ""
+
+#: app/api/organizational_units.py:468
+msgid "更新組織單位失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:494
+msgid "此為系統保留單位，不可刪除"
+msgstr ""
+
+#: app/api/organizational_units.py:534
+#, python-format
+msgid "此單位有 %(count)s 個子單位"
+msgstr ""
+
+#: app/api/organizational_units.py:542
+#, python-format
+msgid "此單位有 %(count)s 個成員"
+msgstr ""
+
+#: app/api/organizational_units.py:576
+msgid "組織單位已刪除"
+msgstr ""
+
+#: app/api/organizational_units.py:578
+#, python-format
+msgid "，%(count)s 位成員已移至未分配"
+msgstr ""
+
+#: app/api/organizational_units.py:587
+msgid "刪除組織單位失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:759 app/api/organizational_units.py:868
+#: app/api/organizational_units.py:1190 app/api/organizational_units.py:1435
+msgid "請提供用戶 ID"
+msgstr ""
+
+#: app/api/organizational_units.py:769 app/api/organizational_units.py:877
+#: app/api/organizational_units.py:982 app/api/organizational_units.py:1199
+#: app/api/organizational_units.py:1445 app/api/organizational_units.py:1679
+#: app/web/account_roles.py:280
+msgid "用戶不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:779 app/api/organizational_units.py:1491
+#: app/api/organizational_units.py:1527
+#, python-format
+msgid "已將 %(user)s 加入 %(unit)s"
+msgstr ""
+
+#: app/api/organizational_units.py:790
+msgid "加入部門失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:821
+msgid "用戶不存在或不屬於此部門"
+msgstr ""
+
+#: app/api/organizational_units.py:831
+#, python-format
+msgid "已將 %(user)s 從 %(unit)s 移除"
+msgstr ""
+
+#: app/api/organizational_units.py:837
+msgid "移除成員失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:887
+msgid "部門主管角色不存在，請聯繫系統管理員"
+msgstr ""
+
+#: app/api/organizational_units.py:936
+#, python-format
+msgid "已設定 %(user)s 為 %(unit)s 主管"
+msgstr ""
+
+#: app/api/organizational_units.py:950
+msgid "設定主管失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:992
+msgid "部門主管角色不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:1024
+#, python-format
+msgid "已移除 %(user)s 的 %(unit)s 主管角色"
+msgstr ""
+
+#: app/api/organizational_units.py:1030
+msgid "移除主管角色失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:1177 app/api/organizational_units.py:1285
+msgid "無效的職位類型"
+msgstr ""
+
+#: app/api/organizational_units.py:1209
+#, python-format
+msgid "%(position)s 角色不存在，請聯繫系統管理員"
+msgstr ""
+
+#: app/api/organizational_units.py:1240 app/api/organizational_units.py:1322
+msgid "主管"
+msgstr ""
+
+#: app/api/organizational_units.py:1241 app/api/organizational_units.py:1323
+msgid "副主管"
+msgstr ""
+
+#: app/api/organizational_units.py:1242 app/api/organizational_units.py:1324
+msgid "代理人(一)"
+msgstr ""
+
+#: app/api/organizational_units.py:1243 app/api/organizational_units.py:1325
+msgid "代理人(二)"
+msgstr ""
+
+#: app/api/organizational_units.py:1249
+#, python-format
+msgid "已設定 %(user)s 為 %(unit)s %(position)s"
+msgstr ""
+
+#: app/api/organizational_units.py:1263
+msgid "設定失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:1304
+#, python-format
+msgid "%(position)s 角色不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:1331
+#, python-format
+msgid "已移除 %(unit)s %(position)s"
+msgstr ""
+
+#: app/api/organizational_units.py:1337 app/api/organizational_units.py:1658
+msgid "移除失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:1357
+msgid "無權限存取此社群"
+msgstr ""
+
+#: app/api/organizational_units.py:1419 app/api/organizational_units.py:1554
+#: app/api/organizational_units.py:1620
+msgid "無權限管理此社群成員"
+msgstr ""
+
+#: app/api/organizational_units.py:1451
+msgid "外部人員不可加入企業群組"
+msgstr ""
+
+#: app/api/organizational_units.py:1461
+msgid "無效的成員類型"
+msgstr ""
+
+#: app/api/organizational_units.py:1473
+msgid "該用戶已是此單位的成員"
+msgstr ""
+
+#: app/api/organizational_units.py:1497 app/api/organizational_units.py:1534
+msgid "新增失敗"
+msgstr ""
+
+#: app/api/organizational_units.py:1576 app/api/organizational_units.py:1640
+msgid "成員關係不存在"
+msgstr ""
+
+#: app/api/organizational_units.py:1599
+msgid "更新成功"
+msgstr ""
+
+#: app/api/organizational_units.py:1652
+msgid "已移除成員關係"
+msgstr ""
+
+#: app/api/organizational_units.py:1714 app/api/organizations.py:206
+#: app/api/security_center.py:287
+msgid "無權限"
+msgstr ""
+
+#: app/api/organizations.py:81 app/api/organizations.py:102
+#: app/api/organizations.py:202 app/api/organizations.py:261
+#: app/api/organizations.py:312 app/api/security_center.py:395
+#: app/api/security_center.py:429
+msgid "企業不存在"
+msgstr ""
+
+#: app/api/organizations.py:128
+msgid "請提供企業資料"
+msgstr ""
+
+#: app/api/organizations.py:165
+msgid "企業建立成功"
+msgstr ""
+
+#: app/api/organizations.py:173
+msgid "預設密碼為 ChangeMe123! (如未指定)"
+msgstr ""
+
+#: app/api/organizations.py:183
+msgid "建立企業失敗"
+msgstr ""
+
+#: app/api/organizations.py:235
+msgid "企業更新成功"
+msgstr ""
+
+#: app/api/organizations.py:242
+msgid "更新企業失敗"
+msgstr ""
+
+#: app/api/organizations.py:265 app/web/organizations.py:357
+msgid "系統企業不可刪除"
+msgstr ""
+
+#: app/api/organizations.py:286
+msgid "企業已刪除"
+msgstr ""
+
+#: app/api/organizations.py:293
+msgid "刪除企業失敗"
+msgstr ""
+
+#: app/api/permission_central.py:144 app/web/account_roles.py:263
+#: app/web/account_roles.py:364
+msgid "缺少請求資料"
+msgstr ""
+
+#: app/api/permission_central.py:150
+msgid "缺少 role_secure_code"
+msgstr ""
+
+#: app/api/permission_central.py:153
+msgid "permission_secure_codes 必須是陣列"
+msgstr ""
+
+#: app/api/permission_central.py:185
+msgid "請先選擇企業"
+msgstr ""
+
+#: app/api/permission_central.py:214
+#, python-format
+msgid "匯出 SQL 失敗: %(error)s"
+msgstr ""
+
+#: app/api/permission_central.py:265
+msgid "未選擇檔案"
+msgstr ""
+
+#: app/api/permission_central.py:270
+#, python-format
+msgid "檔案格式無效: %(error)s"
+msgstr ""
+
+#: app/api/permission_central.py:275
+msgid "缺少匯入資料"
+msgstr ""
+
+#: app/api/permission_central.py:302
+msgid "無法確定企業"
+msgstr ""
+
+#: app/api/roles.py:70 app/api/roles.py:256 app/api/roles.py:340
+#: app/web/account_roles.py:289
+msgid "角色不存在"
+msgstr ""
+
+#: app/api/roles.py:161
+msgid "請提供角色資料"
+msgstr ""
+
+#: app/api/roles.py:182
+#, python-format
+msgid "代碼格式錯誤: %(error)s"
+msgstr ""
+
+#: app/api/roles.py:199 app/api/roles.py:301
+msgid "父層角色不存在"
+msgstr ""
+
+#: app/api/roles.py:210
+msgid "綁定的組織單位不存在"
+msgstr ""
+
+#: app/api/roles.py:234
+msgid "角色建立成功"
+msgstr ""
+
+#: app/api/roles.py:241
+msgid "建立角色失敗"
+msgstr ""
+
+#: app/api/roles.py:264
+#, python-format
+msgid "系統角色不允許修改 %(field)s 欄位"
+msgstr ""
+
+#: app/api/roles.py:316
+msgid "角色更新成功"
+msgstr ""
+
+#: app/api/roles.py:323
+msgid "更新角色失敗"
+msgstr ""
+
+#: app/api/roles.py:344
+msgid "系統角色不可刪除"
+msgstr ""
+
+#: app/api/roles.py:349
+msgid "此角色有子角色，請先刪除子角色"
+msgstr ""
+
+#: app/api/roles.py:370
+msgid "角色已刪除"
+msgstr ""
+
+#: app/api/roles.py:376
+msgid "刪除角色失敗"
+msgstr ""
+
+#: app/api/roles.py:391
+msgid "請提供要刪除的角色 ID 列表"
+msgstr ""
+
+#: app/api/roles.py:401
+#, python-format
+msgid "%(code)s: 角色不存在"
+msgstr ""
+
+#: app/api/roles.py:405
+#, python-format
+msgid "%(name)s: 系統角色不可刪除"
+msgstr ""
+
+#: app/api/roles.py:411
+#, python-format
+msgid "%(name)s: 有子角色，請先刪除子角色"
+msgstr ""
+
+#: app/api/roles.py:432
+#, python-format
+msgid "已刪除 %(count)s 個角色"
+msgstr ""
+
+#: app/api/roles.py:440
+msgid "批量刪除失敗"
+msgstr ""
+
+#: app/api/security_center.py:147
+msgid "未知網域"
+msgstr ""
+
+#: app/api/security_center.py:450
+#, python-format
+msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes)"
+msgstr ""
+
+#: app/api/security_center.py:470
+#, python-format
+msgid "已更新: %(items)s"
+msgstr ""
+
+#: app/api/security_center.py:472
+#, python-format
+msgid "已恢復系統預設: %(items)s"
+msgstr ""
+
+#: app/api/security_center.py:476
+msgid "無變更"
+msgstr ""
+
+#: app/api/store.py:100
+msgid "商品不存在"
+msgstr ""
+
+#: app/api/store.py:106
+msgid "此商品僅限系統企業安裝"
+msgstr ""
+
+#: app/api/store.py:117
+#, python-format
+msgid "已安裝 (v%(version)s)"
+msgstr ""
+
+#: app/api/store.py:139
+#, python-format
+msgid "已安裝 %(name)s v%(version)s"
+msgstr ""
+
+#: app/api/store.py:145
+#, python-format
+msgid "安裝失敗: %(error)s"
+msgstr ""
+
+#: app/api/transliteration.py:42
+msgid "請提供 name 參數"
+msgstr ""
+
+#: app/api/transliteration.py:81 app/api/transliteration.py:127
+msgid "請提供 text 參數"
+msgstr ""
+
+#: app/api/transliteration.py:133
+msgid "中文"
+msgstr ""
+
+#: app/api/transliteration.py:134
+msgid "日文"
+msgstr ""
+
+#: app/api/transliteration.py:135
+msgid "韓文"
+msgstr ""
+
+#: app/api/transliteration.py:136 app/api/transliteration.py:145
+msgid "未知"
+msgstr ""
+
+#: app/api/transliteration.py:137
+msgid "混合"
+msgstr ""
+
+#: app/api/user_numbering.py:43 app/api/user_numbering.py:114
+#: app/api/user_numbering.py:192
+msgid "(無法預覽)"
+msgstr ""
+
+#: app/api/user_numbering.py:59 app/api/user_numbering.py:153
+#: app/api/user_numbering.py:261 app/api/user_numbering.py:363
+msgid "無效的請求資料"
+msgstr ""
+
+#: app/api/user_numbering.py:73 app/api/user_numbering.py:159
+#: app/web/numbering.py:59 app/web/numbering.py:131
+msgid "規則名稱為必填"
+msgstr ""
+
+#: app/api/user_numbering.py:87 app/api/user_numbering.py:169
+#: app/web/numbering.py:80 app/web/numbering.py:153
+#, python-format
+msgid "規則名稱「%(name)s」已存在"
+msgstr ""
+
+#: app/api/user_numbering.py:119 app/web/numbering.py:104
+msgid "編號規則已建立"
+msgstr ""
+
+#: app/api/user_numbering.py:129 app/api/user_numbering.py:149
+#: app/api/user_numbering.py:207 app/api/user_numbering.py:229
+#: app/web/numbering.py:116 app/web/numbering.py:192
+msgid "找不到此規則"
+msgstr ""
+
+#: app/api/user_numbering.py:197 app/web/numbering.py:174
+msgid "編號規則已更新"
+msgstr ""
+
+#: app/api/user_numbering.py:210
+msgid "無法刪除預設規則，請先取消預設設定"
+msgstr ""
+
+#: app/api/user_numbering.py:219
+msgid "編號規則已刪除"
+msgstr ""
+
+#: app/api/user_numbering.py:232
+msgid "無法將停用的規則設為預設"
+msgstr ""
+
+#: app/api/user_numbering.py:251
+#, python-format
+msgid "已將「%(name)s」設為預設規則"
+msgstr ""
+
+#: app/api/user_numbering.py:280
+#, python-format
+msgid "預覽失敗: %(error)s"
+msgstr ""
+
+#: app/api/user_numbering.py:316
+msgid "(無法取得)"
+msgstr ""
+
+#: app/api/user_numbering.py:334 app/api/user_numbering.py:395
+msgid "找不到此規則或規則已停用"
+msgstr ""
+
+#: app/api/user_numbering.py:338 app/api/user_numbering.py:399
+msgid "尚未設定預設編號規則"
+msgstr ""
+
+#: app/api/user_numbering.py:353 app/api/user_numbering.py:414
+#, python-format
+msgid "無法產生編號: %(error)s"
+msgstr ""
+
+#: app/api/user_numbering.py:376
+#, python-format
+msgid "編號「%(number)s」已被使用"
+msgstr ""
+
+#: app/api/user_numbering.py:424
+msgid "請提供編號"
+msgstr ""
+
+#: app/api/users.py:107 app/web/org_admins.py:121
+msgid "本國姓名、英文姓名、帳號為必填"
+msgstr ""
+
+#: app/api/users.py:109 app/web/users.py:320
+msgid "用戶編號為必填"
+msgstr ""
+
+#: app/api/users.py:113 app/web/external_users.py:184
+#: app/web/external_users.py:365 app/web/org_admins.py:70
+#: app/web/org_admins.py:384 app/web/users.py:327 app/web/users.py:840
+msgid "找不到所屬企業"
+msgstr ""
+
+#: app/api/users.py:120 app/web/org_admins.py:141 app/web/sys_accounts.py:128
+#: app/web/users.py:338
+#, python-format
+msgid "帳號 %(username)s 已存在"
+msgstr ""
+
+#: app/api/users.py:127 app/web/org_admins.py:152 app/web/users.py:341
+#, python-format
+msgid "用戶編號 %(employee_id)s 已存在"
+msgstr ""
+
+#: app/api/users.py:139
+#, python-format
+msgid "找不到部門代碼 %(department_code)s"
+msgstr ""
+
+#: app/api/users.py:215 app/web/users.py:410
+#, python-format
+msgid "已建立用戶 %(name)s"
+msgstr ""
+
+#: app/api/users.py:262 app/web/org_admins.py:526 app/web/sys_accounts.py:277
+#: app/web/users.py:647
+msgid "不能刪除自己的帳號"
+msgstr ""
+
+#: app/api/users.py:266 app/web/users.py:652
+msgid "不能刪除自己綁定的企業成員帳號"
+msgstr ""
+
+#: app/api/users.py:270 app/web/users.py:657
+msgid "不能刪除企業原始管理員"
+msgstr ""
+
+#: app/api/work_schedules.py:95
+msgid "請輸入班表代碼"
+msgstr ""
+
+#: app/api/work_schedules.py:98
+msgid "請輸入班表名稱"
+msgstr ""
+
+#: app/api/work_schedules.py:103
+#, python-format
+msgid "班表代碼 \"%(code)s\" 已存在"
+msgstr ""
+
+#: app/api/work_schedules.py:108 app/api/work_schedules.py:194
+msgid "週間工時格式錯誤"
+msgstr ""
+
+#: app/api/work_schedules.py:131
+msgid "班表已建立"
+msgstr ""
+
+#: app/api/work_schedules.py:147 app/api/work_schedules.py:175
+#: app/api/work_schedules.py:229 app/api/work_schedules.py:269
+#: app/api/work_schedules.py:305 app/api/work_schedules.py:344
+#: app/api/work_schedules.py:410 app/api/work_schedules.py:462
+#: app/api/work_schedules.py:507 app/web/work_schedules.py:57
+msgid "班表不存在"
+msgstr ""
+
+#: app/api/work_schedules.py:207
+msgid "班表已更新"
+msgstr ""
+
+#: app/api/work_schedules.py:232
+msgid "預設班表不可刪除"
+msgstr ""
+
+#: app/api/work_schedules.py:244
+#, python-format
+msgid "此班表已指派給 %(count)s 位用戶，無法刪除"
+msgstr ""
+
+#: app/api/work_schedules.py:254
+msgid "班表已刪除"
+msgstr ""
+
+#: app/api/work_schedules.py:280
+#, python-format
+msgid "已將 \"%(name)s\" 設為預設班表"
+msgstr ""
+
+#: app/api/work_schedules.py:355
+msgid "請選擇日期"
+msgstr ""
+
+#: app/api/work_schedules.py:358 app/api/work_schedules.py:428
+msgid "類型必須是 HOLIDAY 或 WORKDAY"
+msgstr ""
+
+#: app/api/work_schedules.py:368
+msgid "補班日請設定工作時段"
+msgstr ""
+
+#: app/api/work_schedules.py:378
+#, python-format
+msgid "%(date)s 已設定過"
+msgstr ""
+
+#: app/api/work_schedules.py:394
+msgid "已新增"
+msgstr ""
+
+#: app/api/work_schedules.py:419 app/api/work_schedules.py:471
+msgid "假日不存在"
+msgstr ""
+
+#: app/api/work_schedules.py:446
+msgid "已更新"
+msgstr ""
+
+#: app/api/work_schedules.py:479
+msgid "已刪除"
+msgstr ""
+
+#: app/api/work_schedules.py:511
+msgid "請提供假日資料"
+msgstr ""
+
+#: app/api/work_schedules.py:578
+#, python-format
+msgid "已匯入 %(imported)s 筆，略過 %(skipped)s 筆"
+msgstr ""
+
+#: app/templates/auth/login.html:8 app/templates/auth/login.html:10
+#: app/templates/auth/login.html:126 app/templates/auth/login.html:130
+#: app/templates/auth/login.html:132 app/templates/auth/login.html:136
+#: app/templates/auth/login.html:202 app/templates/auth/login.html:258
 msgid "登入"
 msgstr ""
 
-#: app/templates/auth/login.html:43 app/templates/auth/login.html:70
-#: app/templates/pages/personal_settings.html:92
-#: app/templates/pages/users/list.html:40
+#: app/templates/auth/login.html:161 app/templates/auth/login.html:217
+#: app/templates/pages/personal_settings.html:35
+#: app/templates/pages/users/list.html:39
 msgid "帳號"
 msgstr ""
 
-#: app/templates/auth/login.html:49 app/templates/auth/login.html:77
-#: app/templates/pages/personal_settings.html:104
-msgid "密碼"
+#: app/templates/auth/login.html:172 app/templates/auth/login.html:182
+#: app/templates/auth/login.html:192 app/templates/auth/login.html:228
+#: app/templates/auth/login.html:238 app/templates/auth/login.html:248
+msgid "驗證碼"
 msgstr ""
 
-#: app/templates/auth/login.html:62 app/templates/auth/login.html:90
+#: app/templates/auth/login.html:209 app/templates/auth/login.html:265
 msgid "忘記密碼？"
 msgstr ""
 
-#: app/templates/auth/login.html:73
+#: app/templates/auth/login.html:223
 msgid "格式：帳號@企業網域"
+msgstr ""
+
+#: app/templates/errors/400.html:6 app/templates/errors/400.html:9
+msgid "錯誤請求"
+msgstr ""
+
+#: app/templates/errors/400.html:10
+msgid "伺服器無法處理此請求。"
+msgstr ""
+
+#: app/templates/errors/400.html:11
+msgid "返回首頁"
 msgstr ""
 
 #: app/templates/errors/401.html:6 app/templates/errors/401.html:9
@@ -76,6 +1823,18 @@ msgstr ""
 msgid "您要找的頁面不存在或已被移除。"
 msgstr ""
 
+#: app/templates/errors/429.html:6 app/templates/errors/429.html:9
+msgid "請求過於頻繁"
+msgstr ""
+
+#: app/templates/errors/429.html:10
+msgid "您的請求頻率過高，請稍後再試。"
+msgstr ""
+
+#: app/templates/errors/429.html:11
+msgid "返回上一頁"
+msgstr ""
+
 #: app/templates/errors/500.html:6 app/templates/errors/500.html:9
 msgid "伺服器錯誤"
 msgstr ""
@@ -84,12 +1843,122 @@ msgstr ""
 msgid "系統發生錯誤，請稍後再試。"
 msgstr ""
 
-#: app/templates/layouts/base.html:150
+#: app/templates/layouts/base.html:58
 msgid "登出"
 msgstr ""
 
-#: app/templates/layouts/base.html:184
+#: app/templates/layouts/base.html:88
 msgid "首頁"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:3
+#: app/templates/pages/account_roles.html:8
+msgid "帳號角色權限表"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:14
+msgid "全部類型"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:15
+#: app/templates/pages/menu/list.html:132
+msgid "企業管理員"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:16
+#: app/templates/pages/menu/list.html:136
+msgid "企業成員"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:17
+#: app/templates/pages/menu/list.html:140
+#: app/templates/pages/menu/list.html:152
+msgid "外部廠商"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:19
+msgid "搜尋姓名/帳號/編號"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:21
+msgid "搜尋"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:23
+msgid "清除篩選"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:25
+#, python-format
+msgid "共 %(count)d 筆"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:32
+#: app/templates/pages/users/list.html:38
+msgid "姓名"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:33
+msgid "帳號類型"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:34
+#: app/templates/pages/personal_settings.html:138
+#: app/templates/pages/users/list.html:40
+msgid "用戶編號"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:35
+#: app/templates/pages/users/list.html:41
+msgid "部門"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:36
+#: app/templates/pages/dashboard.html:61
+msgid "社群參與"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:37
+msgid "角色指派"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:99 app/web/numbering.py:201
+msgid "預設"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:104
+msgid "移除角色"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:110
+msgid "指派"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:118
+msgid "無符合條件的帳號"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:125
+msgid "指派角色給"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:128
+msgid "選擇角色"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:134
+#: app/templates/pages/menu/create.html:114
+#: app/templates/pages/menu/edit.html:118 app/templates/pages/menu/list.html:45
+#: app/templates/pages/menu/list.html:69 app/templates/pages/menu/list.html:89
+msgid "取消"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:138
+msgid "確認指派"
+msgstr ""
+
+#: app/templates/pages/account_roles.html:139
+msgid "處理中..."
 msgstr ""
 
 #: app/templates/pages/dashboard.html:3 app/templates/pages/dashboard.html:6
@@ -113,8 +1982,15 @@ msgid "建立您的企業成員帳號（需設定企業成員編號）"
 msgstr ""
 
 #: app/templates/pages/dashboard.html:18
-#, python-format
-msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
+msgid "前往"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:18 app/templates/pages/dashboard.html:29
+msgid "系統管理 / 企業管理員"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:18
+msgid "新增管理帳號"
 msgstr ""
 
 #: app/templates/pages/dashboard.html:19
@@ -126,8 +2002,11 @@ msgid "提示"
 msgstr ""
 
 #: app/templates/pages/dashboard.html:29
-#, python-format
-msgid "預設 admin 帳號容易被猜測攻擊，建議前往「%(link_start)s企業管理員%(link_end)s」頁面將其停用。"
+msgid "預設 admin 帳號容易被猜測攻擊，建議前往"
+msgstr ""
+
+#: app/templates/pages/dashboard.html:29
+msgid "將其停用。"
 msgstr ""
 
 #: app/templates/pages/dashboard.html:34
@@ -135,456 +2014,1708 @@ msgstr ""
 msgid "歡迎，%(name)s"
 msgstr ""
 
-#: app/templates/pages/dashboard.html:38
-msgid "快速連結"
-msgstr ""
-
-#: app/templates/pages/dashboard.html:40
-#: app/templates/pages/personal_settings.html:112
-msgid "個人資料"
-msgstr ""
-
-#: app/templates/pages/dashboard.html:42
-msgid "用戶管理"
-msgstr ""
-
 #: app/templates/pages/dashboard.html:43
-msgid "角色管理"
+msgid "待簽核"
 msgstr ""
 
-#: app/templates/pages/dashboard.html:44
-msgid "組織單位"
+#: app/templates/pages/dashboard.html:53
+msgid "我的社群"
 msgstr ""
 
-#: app/templates/pages/dashboard.html:47
-msgid "企業與合約管理"
+#: app/templates/pages/dashboard.html:65
+msgid "社群名稱"
 msgstr ""
 
-#: app/templates/pages/dashboard.html:48 app/templates/pages/menu/list.html:3
-#: app/templates/pages/menu/list.html:73
-msgid "選單管理"
-msgstr ""
-
-#: app/templates/pages/dashboard.html:49
-msgid "模組管理"
+#: app/templates/pages/dashboard.html:66
+msgid "位階"
 msgstr ""
 
 #: app/templates/pages/personal_settings.html:3
-#: app/templates/pages/personal_settings.html:76
+#: app/templates/pages/personal_settings.html:10
 msgid "個人設定"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:89
+#: app/templates/pages/personal_settings.html:30
 msgid "帳號資訊"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:96
+#: app/templates/pages/personal_settings.html:39
 msgid "主要 Email"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:100
+#: app/templates/pages/personal_settings.html:45
 msgid "顯示名稱"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:105
+#: app/templates/pages/personal_settings.html:49
+msgid "密碼"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:51
 msgid "變更密碼"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:115
+#: app/templates/pages/personal_settings.html:61
+msgid "個人資料"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:66
 msgid "英文姓名"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:123
+#: app/templates/pages/personal_settings.html:71
 msgid "本國姓名"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:127
+#: app/templates/pages/personal_settings.html:73
 msgid "本國語言姓名"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:131
+#: app/templates/pages/personal_settings.html:78
+#: app/templates/pages/personal_settings.html:137
 msgid "暱稱"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:140
+#: app/templates/pages/personal_settings.html:82
+msgid "企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:95
 msgid "聯絡方式"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:143
-msgid "備用 Email 1"
+#: app/templates/pages/personal_settings.html:100
+#: app/templates/pages/personal_settings.html:106
+msgid "備用 Email"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:148
+#: app/templates/pages/personal_settings.html:103
 msgid "系統通知專用（空白時自動使用主要 Email）"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:152
-msgid "備用 Email 2"
+#: app/templates/pages/personal_settings.html:113
+#: app/templates/pages/personal_settings.html:118
+msgid "手機"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:160
-msgid "手機號碼 1"
-msgstr ""
-
-#: app/templates/pages/personal_settings.html:168
-msgid "手機號碼 2"
-msgstr ""
-
-#: app/templates/pages/personal_settings.html:177
+#: app/templates/pages/personal_settings.html:129
 msgid "介面設定"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:180
-msgid "介面語言"
+#: app/templates/pages/personal_settings.html:134
+msgid "Navbar 顯示"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:189
-msgid "覆蓋企業預設語言設定"
+#: app/templates/pages/personal_settings.html:136
+msgid "跟隨企業設定"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:193
+#: app/templates/pages/personal_settings.html:139
+msgid "用戶編號 + 部門"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:141
+msgid "在公開場所使用時，可改為不含真名的顯示方式"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:144
+msgid "語言"
+msgstr ""
+
+#: app/templates/pages/personal_settings.html:154
 msgid "時區"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:196
+#: app/templates/pages/personal_settings.html:156
 msgid "使用企業預設"
 msgstr ""
 
-#: app/templates/pages/personal_settings.html:207
-msgid "覆蓋企業預設時區設定"
-msgstr ""
-
-#: app/templates/pages/personal_settings.html:213
+#: app/templates/pages/personal_settings.html:175
 msgid "儲存設定"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:3
-#: app/templates/pages/menu/create.html:8 app/templates/pages/menu/list.html:75
+#: app/templates/pages/menu/create.html:15
 msgid "新增選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:6 app/templates/pages/menu/edit.html:6
+#: app/templates/pages/menu/create.html:12
+#: app/templates/pages/menu/edit.html:11
 msgid "返回選單管理"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:22
-#: app/templates/pages/menu/edit.html:22
-msgid "選單代碼"
-msgstr ""
-
-#: app/templates/pages/menu/create.html:25
-msgid "唯一識別碼，只能使用小寫英文、數字、底線"
-msgstr ""
-
-#: app/templates/pages/menu/create.html:29
-#: app/templates/pages/menu/edit.html:26
+#: app/templates/pages/menu/create.html:33
+#: app/templates/pages/menu/edit.html:33
 msgid "選單標題 (繁中)"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:39
-#: app/templates/pages/menu/edit.html:36
-msgid "圖標"
-msgstr ""
-
-#: app/templates/pages/menu/create.html:42
-msgid "文字符號或 emoji"
+#: app/templates/pages/menu/create.html:40
+#: app/templates/pages/menu/edit.html:29
+msgid "選單代碼"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:46
-#: app/templates/pages/menu/edit.html:40
-msgid "父選單"
-msgstr ""
-
-#: app/templates/pages/menu/create.html:49
-#: app/templates/pages/menu/edit.html:43
-msgid "根層級"
+msgid "選填，留空自動產生。英文、數字、底線"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:57
-#: app/templates/pages/menu/edit.html:55 app/templates/pages/menu/list.html:87
-#: app/templates/pages/menu/list.html:153
-msgid "連結類型"
-msgstr ""
-
-#: app/templates/pages/menu/create.html:61
-#: app/templates/pages/menu/edit.html:59
-msgid "外部 URL"
+#: app/templates/pages/menu/edit.html:43
+msgid "圖示"
 msgstr ""
 
 #: app/templates/pages/menu/create.html:62
-#: app/templates/pages/menu/edit.html:60 app/templates/pages/menu/list.html:157
-msgid "動態頁面"
+#: app/templates/pages/menu/edit.html:48
+#: app/templates/partials/_icon_picker.html:5
+msgid "選擇圖示"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:63
-#: app/templates/pages/menu/edit.html:61
-msgid "區塊標題"
+#: app/templates/pages/menu/create.html:70
+#: app/templates/pages/menu/edit.html:56
+msgid "父選單"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:64
-#: app/templates/pages/menu/edit.html:62 app/templates/pages/menu/list.html:159
-msgid "分隔線"
+#: app/templates/pages/menu/create.html:73
+#: app/templates/pages/menu/edit.html:59
+msgid "根層級"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:69
-#: app/templates/pages/menu/edit.html:67 app/templates/pages/menu/list.html:88
-msgid "連結目標"
+#: app/templates/pages/menu/create.html:81
+#: app/templates/pages/menu/edit.html:71 app/templates/pages/menu/list.html:109
+msgid "連結類型"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:76
-#: app/templates/pages/menu/edit.html:71
+#: app/templates/pages/menu/create.html:86
+msgid "手動建立的選單僅能作為區塊標題，路由型選單由系統自動建立"
+msgstr ""
+
+#: app/templates/pages/menu/create.html:90
+#: app/templates/pages/menu/edit.html:87
 msgid "授權用戶類型"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:85
-#: app/templates/pages/menu/edit.html:80
+#: app/templates/pages/menu/create.html:99
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:89
-#: app/templates/pages/menu/edit.html:84
+#: app/templates/pages/menu/create.html:103
+#: app/templates/pages/menu/edit.html:103
 msgid "顯示順序"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:93
-#: app/templates/pages/menu/edit.html:88
+#: app/templates/pages/menu/create.html:107
+#: app/templates/pages/menu/edit.html:107
 msgid "預設展開"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:99
+#: app/templates/pages/menu/create.html:113
 msgid "建立選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/create.html:100
-#: app/templates/pages/menu/edit.html:99
-msgid "取消"
-msgstr ""
-
-#: app/templates/pages/menu/edit.html:3 app/templates/pages/menu/edit.html:8
+#: app/templates/pages/menu/edit.html:3 app/templates/pages/menu/edit.html:14
 msgid "編輯選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:23
+#: app/templates/pages/menu/edit.html:30
 msgid "不可變更"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:51
+#: app/templates/pages/menu/edit.html:67
 msgid "變更父選單會自動更新層級深度"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:92 app/templates/pages/menu/list.html:131
-#: app/templates/pages/users/list.html:57
-#: app/templates/pages/users/list.html:69
-msgid "啟用"
+#: app/templates/pages/menu/edit.html:75 app/templates/pages/menu/edit.html:83
+msgid "系統設定，不可變更"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:79
+msgid "連結目標"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:96
+msgid "鑰匙1: 勾選哪些用戶類型有「資格」看到此選單（平行關係，非繼承）"
 msgstr ""
 
 #: app/templates/pages/menu/edit.html:98
+msgid "此為模組選單，企業須有合約授權才會生效"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:111
+#: app/templates/pages/users/list.html:56
+#: app/templates/pages/users/list.html:67 app/web/external_users.py:612
+#: app/web/org_admin_rescue.py:96
+msgid "啟用"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:117
 msgid "儲存變更"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:106
-#: app/templates/pages/menu/edit.html:110
-msgid "刪除選單項目"
+#: app/templates/pages/menu/edit.html:122
+msgid "存取角色需求"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:107
-msgid "刪除此選單項目將連同子項目一起刪除。"
+#: app/templates/pages/menu/edit.html:123
+msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:108
-#: app/templates/pages/menu/list.html:137
-msgid "確定要刪除此選單項目嗎？子項目也會一併刪除。"
+#: app/templates/pages/menu/edit.html:128
+msgid "被授權的角色"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:81
-msgid "選單項目"
+#: app/templates/pages/menu/edit.html:134
+#: app/templates/pages/menu/edit.html:163
+msgid "角色名稱"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:86
+#: app/templates/pages/menu/edit.html:135
+#: app/templates/pages/menu/edit.html:164
 msgid "代碼"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:89
-msgid "排序"
+#: app/templates/pages/menu/edit.html:136
+#: app/templates/pages/menu/edit.html:165
+msgid "層級"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:90 app/templates/pages/users/list.html:43
-msgid "狀態"
+#: app/templates/pages/menu/edit.html:152
+msgid "尚未授權任何角色"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:124
-#: app/templates/pages/users/list.html:65
-msgid "編輯"
+#: app/templates/pages/menu/edit.html:156
+msgid "可選角色"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:133
-#: app/templates/pages/users/list.html:59
-#: app/templates/pages/users/list.html:69
-msgid "停用"
+#: app/templates/pages/menu/edit.html:181
+msgid "企業尚未建立角色"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:139
-#: app/templates/pages/users/list.html:76
-msgid "刪除"
+#: app/templates/pages/menu/edit.html:270
+#: app/templates/pages/menu/edit.html:275
+#: app/templates/pages/menu/edit.html:282
+msgid "刪除選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:147
+#: app/templates/pages/menu/edit.html:273
+msgid "無法刪除：子項目中包含預設選單（"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:273
+msgid "等共"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:273
+msgid "項"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:273
+msgid "），請先將其移出"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:278
+msgid "刪除此選單項目將連同子項目一起刪除。"
+msgstr ""
+
+#: app/templates/pages/menu/edit.html:280
+msgid "確定要刪除此選單項目嗎？子項目也會一併刪除。"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:3 app/templates/pages/menu/list.html:11
+msgid "選單管理"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:16
+msgid "全部展開"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:17
+msgid "全部收合"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:18
+msgid "新增根項目"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:19
+msgid "拖曳調整位置"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:21
+msgid "重置MENU項目位置"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:22
+msgid "設定目前組態成出廠值"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:23
+msgid "重置MENU所有設定成出廠值"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:31
+msgid "確認設定目前組態成出廠值"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:33
+msgid "此操作將把目前所有預設選單的設定儲存為出廠預設值，包含："
+msgstr ""
+
+#: app/templates/pages/menu/list.html:36 app/templates/pages/menu/list.html:60
+msgid "選單位置、排序、父子關係"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:37 app/templates/pages/menu/list.html:61
+msgid "標題、圖示、連結設定"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:38 app/templates/pages/menu/list.html:62
+msgid "用戶類型權限 (鑰匙1)"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:39 app/templates/pages/menu/list.html:63
+msgid "角色存取需求 (鑰匙2)"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:42
+msgid "儲存後，「重置MENU所有設定成出廠值」將以此快照為準。"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:46
+msgid "確認儲存"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:55
+msgid "確認重置所有選單設定"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:57
+msgid "此操作將把所有預設選單的設定還原成出廠值，包含："
+msgstr ""
+
+#: app/templates/pages/menu/list.html:66
+msgid "用戶自建選單不受影響。"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:70
+msgid "確認重置"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:79
+msgid "新增 MENU 根項目"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:80
+msgid "建立新選單，請輸入選單代碼(之後不可更改)(建議英文)(重覆會自動加尾號_01)"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:83
+msgid "標題"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:86
+msgid "例：監控管理"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:90
+msgid "建立"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:97
+msgid "儲存中..."
+msgstr ""
+
+#: app/templates/pages/menu/list.html:104
 msgid "尚無選單項目。"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:147
+#: app/templates/pages/menu/list.html:104
 msgid "建立第一個選單項目"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:151
-#: app/templates/pages/menu/list.html:167
-#: app/templates/pages/users/list.html:105
+#: app/templates/pages/menu/list.html:107
+#: app/templates/pages/menu/list.html:123
+#: app/templates/pages/users/list.html:103
 msgid "說明"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:155
+#: app/templates/pages/menu/list.html:111
 msgid "Flask 路由端點 或 URL 路徑 (以 / 開頭)"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:156
+#: app/templates/pages/menu/list.html:112
 msgid "外部網址"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:158
+#: app/templates/pages/menu/list.html:113
+msgid "動態頁面"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:114
 msgid "區塊標題 (不可點擊)"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:162
+#: app/templates/pages/menu/list.html:115
+msgid "分隔線"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:118
 msgid "用戶類型說明"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:166
+#: app/templates/pages/menu/list.html:122
 msgid "類型"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:172
+#: app/templates/pages/menu/list.html:128
 msgid "系統管理員"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:173
+#: app/templates/pages/menu/list.html:129
 msgid "SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:176
-msgid "企業管理員"
-msgstr ""
-
-#: app/templates/pages/menu/list.html:177
+#: app/templates/pages/menu/list.html:133
 msgid "各企業內最高權限帳號，可管理該企業的所有設定"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:180
-msgid "企業成員"
-msgstr ""
-
-#: app/templates/pages/menu/list.html:181
+#: app/templates/pages/menu/list.html:137
 msgid "企業內部企業成員帳號"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:184
-msgid "外部廠商"
-msgstr ""
-
-#: app/templates/pages/menu/list.html:185
+#: app/templates/pages/menu/list.html:141
 msgid "企業外部合作夥伴、客戶等，最小權限帳號"
 msgstr ""
 
-#: app/templates/pages/menu/list.html:189
+#: app/templates/pages/menu/list.html:145
 msgid "每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。"
 msgstr ""
 
-#: app/templates/pages/users/list.html:3 app/templates/pages/users/list.html:7
-msgid "一般用戶管理"
+#: app/templates/pages/menu/list.html:147
+msgid "底色說明"
 msgstr ""
 
-#: app/templates/pages/users/list.html:11
+#: app/templates/pages/menu/list.html:149
+msgid "紅底"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:149
+msgid "系統管理員專屬"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:150
+msgid "藍底"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:150
+msgid "企業管理員專屬"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:151
+msgid "黑底"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:151
+msgid "企業成員 / 固定選單"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:152
+msgid "黃底"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:153
+msgid "紫底"
+msgstr ""
+
+#: app/templates/pages/menu/list.html:153
+msgid "模組選單（權限由模組使用權控制）"
+msgstr ""
+
+#: app/templates/pages/users/list.html:3 app/templates/pages/users/list.html:8
+msgid "企業成員管理"
+msgstr ""
+
+#: app/templates/pages/users/list.html:12
 msgid "新增帳號"
 msgstr ""
 
-#: app/templates/pages/users/list.html:13
+#: app/templates/pages/users/list.html:14
 msgid "匯入CSV"
 msgstr ""
 
-#: app/templates/pages/users/list.html:14
+#: app/templates/pages/users/list.html:15
 msgid "下載範本"
 msgstr ""
 
-#: app/templates/pages/users/list.html:31
+#: app/templates/pages/users/list.html:30
 msgid "此頁面管理一般用戶帳號。"
 msgstr ""
 
-#: app/templates/pages/users/list.html:32
+#: app/templates/pages/users/list.html:31
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr ""
 
-#: app/templates/pages/users/list.html:39
-msgid "姓名"
-msgstr ""
-
-#: app/templates/pages/users/list.html:41
-msgid "用戶編號"
-msgstr ""
-
 #: app/templates/pages/users/list.html:42
-msgid "部門"
+msgid "狀態"
 msgstr ""
 
-#: app/templates/pages/users/list.html:44
+#: app/templates/pages/users/list.html:43
 msgid "建立時間"
 msgstr ""
 
-#: app/templates/pages/users/list.html:45
+#: app/templates/pages/users/list.html:44
 msgid "操作"
 msgstr ""
 
-#: app/templates/pages/users/list.html:64
-msgid "查看"
+#: app/templates/pages/users/list.html:58
+#: app/templates/pages/users/list.html:67 app/web/external_users.py:612
+#: app/web/org_admin_rescue.py:96
+msgid "停用"
 msgstr ""
 
-#: app/templates/pages/users/list.html:75
+#: app/templates/pages/users/list.html:63
+msgid "編輯"
+msgstr ""
+
+#: app/templates/pages/users/list.html:73
 #, python-format
 msgid "確定要刪除用戶「%(name)s」嗎？"
 msgstr ""
 
-#: app/templates/pages/users/list.html:91
+#: app/templates/pages/users/list.html:74
+msgid "刪除"
+msgstr ""
+
+#: app/templates/pages/users/list.html:89
 msgid "上一頁"
 msgstr ""
 
-#: app/templates/pages/users/list.html:93
+#: app/templates/pages/users/list.html:91
 #, python-format
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
 msgstr ""
 
-#: app/templates/pages/users/list.html:95
+#: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr ""
 
-#: app/templates/pages/users/list.html:101
+#: app/templates/pages/users/list.html:99
 msgid "尚無一般用戶帳號。"
 msgstr ""
 
-#: app/templates/pages/users/list.html:101
+#: app/templates/pages/users/list.html:99
 msgid "建立第一位用戶"
 msgstr ""
 
-#: app/templates/pages/users/list.html:107
+#: app/templates/pages/users/list.html:105
 msgid "此頁面只顯示一般用戶帳號"
 msgstr ""
 
-#: app/templates/pages/users/list.html:108
+#: app/templates/pages/users/list.html:106
 msgid "企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理"
 msgstr ""
 
-#: app/templates/pages/users/list.html:109
+#: app/templates/pages/users/list.html:107
 msgid "外部廠商帳號請至「帳號管理 > 外部廠商帳號」管理"
 msgstr ""
 
-#: app/templates/pages/users/list.html:110
+#: app/templates/pages/users/list.html:108
 msgid "停用的用戶無法登入系統"
+msgstr ""
+
+#: app/templates/partials/_icon_picker.html:7
+msgid "搜尋..."
+msgstr ""
+
+#: app/templates/partials/_icon_picker.html:8
+msgid "清除"
+msgstr ""
+
+#: app/templates/partials/_icon_picker.html:34
+msgid "無符合的圖示"
+msgstr ""
+
+#: app/web/account_roles.py:269 app/web/account_roles.py:370
+msgid "缺少必要參數"
+msgstr ""
+
+#: app/web/account_roles.py:304
+#, python-format
+msgid "用戶已擁有「%(role)s」角色"
+msgstr ""
+
+#: app/web/account_roles.py:335
+#, python-format
+msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
+msgstr ""
+
+#: app/web/account_roles.py:353
+#, python-format
+msgid "已將「%(role)s」指派給 %(user)s"
+msgstr ""
+
+#: app/web/account_roles.py:382
+msgid "找不到此角色指派"
+msgstr ""
+
+#: app/web/account_roles.py:397
+#, python-format
+msgid "已移除 %(user)s 的「%(role)s」角色"
+msgstr ""
+
+#: app/web/admin.py:26
+msgid "已過期"
+msgstr ""
+
+#: app/web/admin.py:33
+#, python-format
+msgid "%(n)s 年"
+msgstr ""
+
+#: app/web/admin.py:35
+#, python-format
+msgid "%(n)s 月"
+msgstr ""
+
+#: app/web/admin.py:36
+#, python-format
+msgid "%(n)s 日"
+msgstr ""
+
+#: app/web/approval_categories.py:128
+msgid "類別代碼為必填"
+msgstr ""
+
+#: app/web/approval_categories.py:130 app/web/approval_categories.py:228
+msgid "類別名稱為必填"
+msgstr ""
+
+#: app/web/approval_categories.py:137 app/web/approval_categories.py:235
+msgid "排序須為整數"
+msgstr ""
+
+#: app/web/approval_categories.py:174 app/web/approval_categories.py:188
+#, python-format
+msgid "已建立類別 %(name)s"
+msgstr ""
+
+#: app/web/approval_categories.py:198 app/web/approval_categories.py:424
+#: app/web/job_levels.py:422
+msgid "無效的請求"
+msgstr ""
+
+#: app/web/approval_categories.py:317 app/web/approval_categories.py:318
+msgid "系統預設類別不可刪除"
+msgstr ""
+
+#: app/web/approval_categories.py:327 app/web/approval_categories.py:329
+#, python-format
+msgid "已刪除類別 %(name)s"
+msgstr ""
+
+#: app/web/approval_categories.py:462
+msgid "已儲存核決上限"
+msgstr ""
+
+#: app/web/cg_databases.py:145
+msgid "(集團已刪除)"
+msgstr ""
+
+#: app/web/delegations.py:82
+msgid "請選擇授權人"
+msgstr ""
+
+#: app/web/delegations.py:84
+msgid "請選擇被授權人"
+msgstr ""
+
+#: app/web/delegations.py:86
+msgid "授權人和被授權人不能相同"
+msgstr ""
+
+#: app/web/delegations.py:88
+msgid "生效開始日期為必填"
+msgstr ""
+
+#: app/web/delegations.py:90
+msgid "生效結束日期為必填"
+msgstr ""
+
+#: app/web/delegations.py:99 app/web/delegations.py:198
+msgid "生效開始日期格式錯誤"
+msgstr ""
+
+#: app/web/delegations.py:105 app/web/delegations.py:204
+msgid "生效結束日期格式錯誤"
+msgstr ""
+
+#: app/web/delegations.py:108 app/web/delegations.py:207
+msgid "生效開始日期不能晚於結束日期"
+msgstr ""
+
+#: app/web/delegations.py:115 app/web/job_levels.py:121
+#: app/web/job_levels.py:239
+msgid "簽核金額上限不可為負數"
+msgstr ""
+
+#: app/web/delegations.py:117 app/web/delegations.py:214
+#: app/web/job_levels.py:123 app/web/job_levels.py:241
+msgid "簽核金額上限格式錯誤"
+msgstr ""
+
+#: app/web/delegations.py:148
+msgid "已建立代理授權"
+msgstr ""
+
+#: app/web/delegations.py:238
+msgid "已更新代理授權"
+msgstr ""
+
+#: app/web/delegations.py:269
+msgid "已撤銷代理授權"
+msgstr ""
+
+#: app/web/delegations.py:290
+msgid "已刪除代理授權"
+msgstr ""
+
+#: app/web/external_users.py:190
+msgid "尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。"
+msgstr ""
+
+#: app/web/external_users.py:219
+msgid "姓名、Email、密碼為必填"
+msgstr ""
+
+#: app/web/external_users.py:221 app/web/external_users.py:409
+msgid "請輸入有效的 Email 格式"
+msgstr ""
+
+#: app/web/external_users.py:226
+msgid "必須選擇歸屬群組"
+msgstr ""
+
+#: app/web/external_users.py:238
+#, python-format
+msgid "Email %(email)s 已存在"
+msgstr ""
+
+#: app/web/external_users.py:243
+msgid "找不到外部廠商預設編號規則，請先設定"
+msgstr ""
+
+#: app/web/external_users.py:254
+#, python-format
+msgid "產生編號失敗: %(error)s"
+msgstr ""
+
+#: app/web/external_users.py:270
+#, python-format
+msgid "找不到群組 %(code)s"
+msgstr ""
+
+#: app/web/external_users.py:316
+#, python-format
+msgid "已建立外部廠商 %(name)s（編號：%(employee_id)s）"
+msgstr ""
+
+#: app/web/external_users.py:341 app/web/external_users.py:374
+#: app/web/external_users.py:476 app/web/external_users.py:538
+#: app/web/external_users.py:592 app/web/external_users.py:634
+#: app/web/external_users.py:673
+msgid "此帳號不是外部廠商"
+msgstr ""
+
+#: app/web/external_users.py:407 app/web/sys_accounts.py:106
+msgid "Email 為必填"
+msgstr ""
+
+#: app/web/external_users.py:419
+#, python-format
+msgid "Email %(email)s 已被其他帳號使用"
+msgstr ""
+
+#: app/web/external_users.py:439
+#, python-format
+msgid "已更新外部廠商 %(name)s"
+msgstr ""
+
+#: app/web/external_users.py:481
+msgid "請選擇群組"
+msgstr ""
+
+#: app/web/external_users.py:493
+msgid "找不到群組"
+msgstr ""
+
+#: app/web/external_users.py:505
+#, python-format
+msgid "已是「%(name)s」的成員"
+msgstr ""
+
+#: app/web/external_users.py:520
+#, python-format
+msgid "已加入群組「%(name)s」"
+msgstr ""
+
+#: app/web/external_users.py:543
+msgid "參數錯誤"
+msgstr ""
+
+#: app/web/external_users.py:553
+msgid "找不到成員關係"
+msgstr ""
+
+#: app/web/external_users.py:565
+msgid "外部廠商必須至少屬於一個群組"
+msgstr ""
+
+#: app/web/external_users.py:574
+#, python-format
+msgid "已從群組「%(name)s」移除"
+msgstr ""
+
+#: app/web/external_users.py:615
+#, python-format
+msgid "（自動退出 %(g_count)s 個社群、解除 %(r_count)s 個角色）"
+msgstr ""
+
+#: app/web/external_users.py:616
+#, python-format
+msgid "已%(status)s外部廠商 %(name)s%(detail)s"
+msgstr ""
+
+#: app/web/external_users.py:655
+#, python-format
+msgid "已刪除外部廠商 %(name)s"
+msgstr ""
+
+#: app/web/external_users.py:679 app/web/main.py:197
+#: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582
+#: app/web/users.py:742
+msgid "請輸入新密碼"
+msgstr ""
+
+#: app/web/external_users.py:694
+#, python-format
+msgid "已變更 %(name)s 的密碼"
+msgstr ""
+
+#: app/web/external_users.py:697
+#, python-format
+msgid "密碼變更失敗: %(error)s"
+msgstr ""
+
+#: app/web/groups.py:42 app/web/groups.py:66
+msgid "無權限存取社群管理"
+msgstr ""
+
+#: app/web/hostconfig.py:168
+msgid "沒有已軟刪除的企業"
+msgstr ""
+
+#: app/web/hostconfig.py:226
+msgid "沒有需要刪除的資料"
+msgstr ""
+
+#: app/web/hostconfig.py:254
+#, python-format
+msgid "已刪除 %(count)s 個企業及其相關資料"
+msgstr ""
+
+#: app/web/hostconfig.py:798
+#, python-format
+msgid "已清除 %(count)s 筆標記刪除的記錄"
+msgstr ""
+
+#: app/web/hostconfig.py:799
+#, python-format
+msgid "，另清理 %(count)s 筆孤兒記錄"
+msgstr ""
+
+#: app/web/job_families.py:147 app/web/job_families.py:256
+msgid "職系名稱為必填"
+msgstr ""
+
+#: app/web/job_families.py:149
+msgid "職系類型無效"
+msgstr ""
+
+#: app/web/job_families.py:163 app/web/job_levels.py:137
+#: app/web/job_titles.py:220 app/web/menu.py:270 app/web/menu.py:355
+msgid "無法自動產生代碼，請手動輸入"
+msgstr ""
+
+#: app/web/job_families.py:169 app/web/job_families.py:262
+#: app/web/job_titles.py:226 app/web/job_titles.py:322
+msgid "排序順序須為整數"
+msgstr ""
+
+#: app/web/job_families.py:186 app/web/job_families.py:187
+#, python-format
+msgid "職系代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/web/job_families.py:205 app/web/job_families.py:206
+#, python-format
+msgid "已建立職系 %(name)s"
+msgstr ""
+
+#: app/web/job_families.py:232 app/web/job_families.py:313
+#: app/web/job_levels.py:463
+msgid "職系不存在"
+msgstr ""
+
+#: app/web/job_families.py:266
+msgid "不能將自己設為父職系"
+msgstr ""
+
+#: app/web/job_families.py:285 app/web/job_families.py:286
+msgid "已更新職系"
+msgstr ""
+
+#: app/web/job_families.py:319 app/web/job_families.py:320
+msgid "系統預設職系不可刪除"
+msgstr ""
+
+#: app/web/job_families.py:330
+#, python-format
+msgid "此職系有 %(count)s 個子職系，請先刪除子職系"
+msgstr ""
+
+#: app/web/job_families.py:341
+#, python-format
+msgid "此職系有 %(count)s 個職稱使用中，需連同職稱一併刪除"
+msgstr ""
+
+#: app/web/job_families.py:364
+#, python-format
+msgid "已刪除職系 %(name)s 及 %(count)s 個職稱"
+msgstr ""
+
+#: app/web/job_families.py:366
+#, python-format
+msgid "已刪除職系 %(name)s"
+msgstr ""
+
+#: app/web/job_levels.py:101 app/web/job_levels.py:219
+msgid "職等名稱為必填"
+msgstr ""
+
+#: app/web/job_levels.py:103 app/web/job_levels.py:221
+msgid "職等序號為必填"
+msgstr ""
+
+#: app/web/job_levels.py:111 app/web/job_levels.py:229
+msgid "職等序號須在 0-9999 之間"
+msgstr ""
+
+#: app/web/job_levels.py:113 app/web/job_levels.py:231
+msgid "職等序號須為整數"
+msgstr ""
+
+#: app/web/job_levels.py:153
+#, python-format
+msgid "職等代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/web/job_levels.py:177 app/web/job_levels.py:181
+#, python-format
+msgid "已建立職等 %(name)s"
+msgstr ""
+
+#: app/web/job_levels.py:201 app/web/job_levels.py:290
+#: app/web/job_levels.py:338 app/web/job_levels.py:449
+msgid "職等不存在"
+msgstr ""
+
+#: app/web/job_levels.py:264 app/web/job_levels.py:268
+msgid "已更新職等"
+msgstr ""
+
+#: app/web/job_levels.py:295
+msgid "系統預設職等不可刪除"
+msgstr ""
+
+#: app/web/job_levels.py:305
+#, python-format
+msgid "此職等有 %(count)s 個職稱使用中，請先移除關聯"
+msgstr ""
+
+#: app/web/job_levels.py:318 app/web/job_levels.py:320
+#, python-format
+msgid "已刪除職等 %(name)s"
+msgstr ""
+
+#: app/web/job_levels.py:429
+msgid "缺少職稱代碼"
+msgstr ""
+
+#: app/web/job_levels.py:439 app/web/job_titles.py:288
+#: app/web/job_titles.py:368
+msgid "職稱不存在"
+msgstr ""
+
+#: app/web/job_levels.py:470 app/web/units.py:191
+#, python-format
+msgid "已更新 %(name)s"
+msgstr ""
+
+#: app/web/job_titles.py:202 app/web/job_titles.py:312
+msgid "職稱名稱為必填"
+msgstr ""
+
+#: app/web/job_titles.py:204 app/web/job_titles.py:314
+msgid "請選擇職等"
+msgstr ""
+
+#: app/web/job_titles.py:206 app/web/job_titles.py:316
+msgid "請選擇職系"
+msgstr ""
+
+#: app/web/job_titles.py:241
+#, python-format
+msgid "職稱代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/web/job_titles.py:264 app/web/job_titles.py:265
+#, python-format
+msgid "已建立職稱 %(name)s"
+msgstr ""
+
+#: app/web/job_titles.py:343 app/web/job_titles.py:344
+msgid "已更新職稱"
+msgstr ""
+
+#: app/web/job_titles.py:372
+msgid "系統預設職稱不可刪除"
+msgstr ""
+
+#: app/web/job_titles.py:382
+#, python-format
+msgid "此職稱有 %(count)s 位企業成員使用中，請先移除關聯"
+msgstr ""
+
+#: app/web/job_titles.py:393
+#, python-format
+msgid "已刪除職稱 %(name)s"
+msgstr ""
+
+#: app/web/main.py:162
+msgid "個人設定已儲存"
+msgstr ""
+
+#: app/web/main.py:195
+msgid "目前密碼不正確"
+msgstr ""
+
+#: app/web/main.py:202
+msgid "新密碼與確認密碼不一致"
+msgstr ""
+
+#: app/web/main.py:210
+msgid "密碼已變更成功"
+msgstr ""
+
+#: app/web/main.py:215 app/web/profile.py:66
+#, python-format
+msgid "變更失敗: %(error)s"
+msgstr ""
+
+#: app/web/menu.py:273 app/web/menu.py:340 app/web/menu.py:446
+msgid "標題為必填"
+msgstr ""
+
+#: app/web/menu.py:275 app/web/menu.py:448
+msgid "請至少選擇一種用戶類型"
+msgstr ""
+
+#: app/web/menu.py:283
+#, python-format
+msgid "選單代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/web/menu.py:320
+#, python-format
+msgid "已建立選單項目 %(title)s"
+msgstr ""
+
+#: app/web/menu.py:388
+#, python-format
+msgid "已建立根項目「%(title)s」"
+msgstr ""
+
+#: app/web/menu.py:489
+msgid "已更新選單項目"
+msgstr ""
+
+#: app/web/menu.py:535
+#, python-format
+msgid " 等共 %(count)s 項"
+msgstr ""
+
+#: app/web/menu.py:536
+#, python-format
+msgid "無法刪除：子項目中包含預設選單（%(names)s），請先將其移出"
+msgstr ""
+
+#: app/web/menu.py:548
+#, python-format
+msgid "已刪除選單項目 %(title)s"
+msgstr ""
+
+#: app/web/modules.py:98
+msgid "模組代碼和名稱為必填"
+msgstr ""
+
+#: app/web/modules.py:103
+#, python-format
+msgid "模組代碼 %(code)s 已存在"
+msgstr ""
+
+#: app/web/modules.py:116
+#, python-format
+msgid "已建立模組 %(name)s"
+msgstr ""
+
+#: app/web/modules.py:155
+msgid "系統模組不可編輯"
+msgstr ""
+
+#: app/web/modules.py:166
+msgid "模組名稱為必填"
+msgstr ""
+
+#: app/web/modules.py:176
+msgid "已更新模組"
+msgstr ""
+
+#: app/web/modules.py:198
+msgid "系統模組不可刪除"
+msgstr ""
+
+#: app/web/modules.py:205
+#, python-format
+msgid "已刪除模組 %(name)s"
+msgstr ""
+
+#: app/web/numbering.py:197
+msgid "企業成員預設"
+msgstr ""
+
+#: app/web/numbering.py:198
+msgid "外部預設"
+msgstr ""
+
+#: app/web/numbering.py:199
+msgid "表單預設"
+msgstr ""
+
+#: app/web/numbering.py:202
+#, python-format
+msgid "無法刪除%(label)s規則，請先在編輯頁面取消預設設定"
+msgstr ""
+
+#: app/web/numbering.py:210
+#, python-format
+msgid "規則「%(name)s」已刪除"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:83 app/web/org_admin_rescue.py:121
+#: app/web/org_admins.py:557
+msgid "找不到該管理員"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:90 app/web/org_admins.py:493
+#: app/web/org_admins.py:533
+msgid "必須至少保留一個啟用的管理員"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:97
+#, python-format
+msgid "已%(status)s管理員 %(name)s"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:141 app/web/org_admins.py:130
+#: app/web/org_admins.py:587 app/web/sys_accounts.py:118
+#: app/web/sys_accounts.py:213 app/web/users.py:747
+msgid "兩次輸入的密碼不一致"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:175 app/web/org_admins.py:624
+#, python-format
+msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
+msgstr ""
+
+#: app/web/org_admin_rescue.py:178 app/web/org_admins.py:627
+#: app/web/users.py:758
+#, python-format
+msgid "重設密碼失敗: %(error)s"
+msgstr ""
+
+#: app/web/org_admins.py:123
+msgid "用戶編號為必填，且無可用的預設編號規則"
+msgstr ""
+
+#: app/web/org_admins.py:125 app/web/sys_accounts.py:114
+msgid "密碼為必填"
+msgstr ""
+
+#: app/web/org_admins.py:143 app/web/org_admins.py:401
+#, python-format
+msgid "管理員帳號 %(username)s 已存在"
+msgstr ""
+
+#: app/web/org_admins.py:274
+#, python-format
+msgid ""
+"初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 "
+"%(admin_username)s。原始管理員已停用。請使用新的管理員帳號登入。"
+msgstr ""
+
+#: app/web/org_admins.py:361
+msgid "請選擇要綁定的企業成員帳號"
+msgstr ""
+
+#: app/web/org_admins.py:363
+msgid "請輸入密碼"
+msgstr ""
+
+#: app/web/org_admins.py:378
+msgid "選擇的企業成員帳號無效"
+msgstr ""
+
+#: app/web/org_admins.py:380
+msgid "此企業成員已被其他管理員綁定"
+msgstr ""
+
+#: app/web/org_admins.py:443
+#, python-format
+msgid "，預設管理員 %(username)s 已自動停用"
+msgstr ""
+
+#: app/web/org_admins.py:447
+#, python-format
+msgid "已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s"
+msgstr ""
+
+#: app/web/org_admins.py:476 app/web/org_admins.py:521
+#: app/web/org_admins.py:562
+msgid "此帳號不是企業管理員"
+msgstr ""
+
+#: app/web/org_admins.py:481 app/web/sys_accounts.py:217 app/web/users.py:683
+msgid "不能停用自己的帳號"
+msgstr ""
+
+#: app/web/org_admins.py:486
+msgid "預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員"
+msgstr ""
+
+#: app/web/org_admins.py:500
+#, python-format
+msgid "已啟用管理員 %(name)s"
+msgstr ""
+
+#: app/web/org_admins.py:502
+#, python-format
+msgid "已停用管理員 %(name)s"
+msgstr ""
+
+#: app/web/org_admins.py:540
+#, python-format
+msgid "已刪除管理員 %(name)s"
+msgstr ""
+
+#: app/web/org_admins.py:567 app/web/users.py:722
+msgid "請使用「變更密碼」功能修改自己的密碼"
+msgstr ""
+
+#: app/web/org_databases.py:138 app/web/org_databases.py:244
+#: app/web/org_databases.py:293
+msgid "憑證解密失敗，請檢查伺服器環境設定"
+msgstr ""
+
+#: app/web/org_databases.py:343
+msgid "企業資料庫不存在"
+msgstr ""
+
+#: app/web/org_databases.py:382
+msgid "無效的表名格式"
+msgstr ""
+
+#: app/web/org_databases.py:392
+msgid "企業資料庫不存在，可能尚未建立或已被移除"
+msgstr ""
+
+#: app/web/org_databases.py:393
+#, python-format
+msgid "資料庫連線失敗: %(error)s"
+msgstr ""
+
+#: app/web/org_databases.py:400
+#, python-format
+msgid "資料表 %(table)s 不存在"
+msgstr ""
+
+#: app/web/org_databases.py:432
+#, python-format
+msgid "查詢失敗: %(error)s"
+msgstr ""
+
+#: app/web/org_databases.py:523
+msgid "無效表名"
+msgstr ""
+
+#: app/web/org_databases.py:527
+msgid "表不存在"
+msgstr ""
+
+#: app/web/organizations.py:143
+#, python-format
+msgid "%(y)s年%(m)s個月"
+msgstr ""
+
+#: app/web/organizations.py:143
+#, python-format
+msgid "%(m)s個月%(d)s天"
+msgstr ""
+
+#: app/web/organizations.py:146
+#, python-format
+msgid "已過期 %(y)s年%(m)s個月"
+msgstr ""
+
+#: app/web/organizations.py:146
+#, python-format
+msgid "已過期 %(m)s個月%(d)s天"
+msgstr ""
+
+#: app/web/organizations.py:218
+msgid "無法自動產生企業代碼，請手動輸入"
+msgstr ""
+
+#: app/web/organizations.py:221
+msgid "企業代碼、企業名稱、網域名稱為必填"
+msgstr ""
+
+#: app/web/organizations.py:223
+msgid "網域名稱只能包含字母、數字、連字號和點"
+msgstr ""
+
+#: app/web/organizations.py:225
+msgid "管理員密碼為必填"
+msgstr ""
+
+#: app/web/organizations.py:227
+msgid "管理員密碼長度至少 12 碼"
+msgstr ""
+
+#: app/web/organizations.py:256
+#, python-format
+msgid "已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s"
+msgstr ""
+
+#: app/web/organizations.py:295
+msgid "企業名稱為必填"
+msgstr ""
+
+#: app/web/organizations.py:313
+msgid "已更新企業資料"
+msgstr ""
+
+#: app/web/organizations.py:317
+msgid "帳號上限必須為正整數"
+msgstr ""
+
+#: app/web/organizations.py:388
+#, python-format
+msgid "已刪除企業 %(name)s（含 %(count)s 份合約）"
+msgstr ""
+
+#: app/web/organizations.py:391
+#, python-format
+msgid "已刪除企業 %(name)s"
+msgstr ""
+
+#: app/web/organizations.py:435
+#, python-format
+msgid "已新增合約 %(number)s"
+msgstr ""
+
+#: app/web/organizations.py:439
+#, python-format
+msgid "新增失敗: %(error)s"
+msgstr ""
+
+#: app/web/organizations.py:488
+#, python-format
+msgid "已停用合約 %(number)s"
+msgstr ""
+
+#: app/web/organizations.py:492
+#, python-format
+msgid "停用失敗: %(error)s"
+msgstr ""
+
+#: app/web/organizations.py:494
+msgid "合約建立後不可修改內容，如需變更請建立新合約"
+msgstr ""
+
+#: app/web/organizations.py:536
+#, python-format
+msgid "已刪除合約 %(number)s"
+msgstr ""
+
+#: app/web/platform_help.py:63 app/web/platform_help.py:71
+msgid "此頁面尚未提供說明文件"
+msgstr ""
+
+#: app/web/positions.py:103
+msgid "請選擇企業成員"
+msgstr ""
+
+#: app/web/positions.py:105
+msgid "請選擇職稱"
+msgstr ""
+
+#: app/web/positions.py:107
+msgid "請選擇部門"
+msgstr ""
+
+#: app/web/positions.py:114 app/web/positions.py:215
+msgid "生效日期格式錯誤"
+msgstr ""
+
+#: app/web/positions.py:121 app/web/positions.py:222
+msgid "失效日期格式錯誤"
+msgstr ""
+
+#: app/web/positions.py:145
+msgid "已建立職位指派"
+msgstr ""
+
+#: app/web/positions.py:240
+msgid "已更新職位"
+msgstr ""
+
+#: app/web/positions.py:269
+msgid "已刪除職位指派"
+msgstr ""
+
+#: app/web/profile.py:50
+msgid "所有欄位為必填"
+msgstr ""
+
+#: app/web/profile.py:52
+msgid "新密碼與確認密碼不符"
+msgstr ""
+
+#: app/web/profile.py:62
+msgid "已變更密碼"
+msgstr ""
+
+#: app/web/server_manage.py:104 app/web/server_manage.py:164
+#: app/web/server_manage.py:267
+msgid "Redis 連線失敗"
+msgstr ""
+
+#: app/web/server_manage.py:128
+msgid "pattern 過長"
+msgstr ""
+
+#: app/web/server_manage.py:190
+msgid "Key 不存在"
+msgstr ""
+
+#: app/web/sys_accounts.py:63 app/web/sys_accounts.py:88
+#: app/web/sys_accounts.py:89 app/web/sys_accounts.py:183
+#: app/web/sys_accounts.py:184 app/web/sys_accounts.py:259
+#: app/web/sys_accounts.py:260
+msgid "系統企業不存在"
+msgstr ""
+
+#: app/web/sys_accounts.py:101
+msgid "帳號為必填"
+msgstr ""
+
+#: app/web/sys_accounts.py:103
+msgid "帳號只能包含英數字和底線"
+msgstr ""
+
+#: app/web/sys_accounts.py:108
+msgid "Email 格式不正確"
+msgstr ""
+
+#: app/web/sys_accounts.py:111 app/web/sys_accounts.py:206
+msgid "顯示名稱為必填"
+msgstr ""
+
+#: app/web/sys_accounts.py:116 app/web/sys_accounts.py:211
+#, python-format
+msgid "密碼長度至少 %(min)s 碼"
+msgstr ""
+
+#: app/web/sys_accounts.py:136
+#, python-format
+msgid "Email %(email)s 已被使用"
+msgstr ""
+
+#: app/web/sys_accounts.py:162 app/web/sys_accounts.py:164
+#, python-format
+msgid "已建立系統管理員 %(username)s"
+msgstr ""
+
+#: app/web/sys_accounts.py:196 app/web/sys_accounts.py:272
+msgid "帳號不存在"
+msgstr ""
+
+#: app/web/sys_accounts.py:238 app/web/sys_accounts.py:240
+msgid "已更新帳號資料"
+msgstr ""
+
+#: app/web/sys_accounts.py:292
+msgid "至少需要保留一個啟用的系統管理員"
+msgstr ""
+
+#: app/web/sys_accounts.py:306 app/web/sys_accounts.py:308
+#, python-format
+msgid "已刪除系統管理員 %(username)s"
+msgstr ""
+
+#: app/web/units.py:103
+msgid "代碼和名稱為必填"
+msgstr ""
+
+#: app/web/units.py:130
+#, python-format
+msgid "已建立 %(name)s"
+msgstr ""
+
+#: app/web/units.py:176
+msgid "名稱為必填"
+msgstr ""
+
+#: app/web/units.py:218
+msgid "此單位有子單位，請先刪除子單位"
+msgstr ""
+
+#: app/web/units.py:225
+#, python-format
+msgid "已刪除 %(name)s"
+msgstr ""
+
+#: app/web/users.py:318
+msgid "英文姓名、本國姓名、帳號為必填"
+msgstr ""
+
+#: app/web/users.py:348 app/web/users.py:552
+#, python-format
+msgid "找不到部門代碼 %(code)s"
+msgstr ""
+
+#: app/web/users.py:499
+msgid "您沒有編輯權限"
+msgstr ""
+
+#: app/web/users.py:540
+msgid "本國姓名、英文姓名為必填"
+msgstr ""
+
+#: app/web/users.py:545
+#, python-format
+msgid "企業成員編號 %(employee_id)s 已存在"
+msgstr ""
+
+#: app/web/users.py:597
+msgid "已更新用戶資料"
+msgstr ""
+
+#: app/web/users.py:664
+#, python-format
+msgid "已刪除用戶 %(name)s"
+msgstr ""
+
+#: app/web/users.py:688
+msgid "不能停用自己綁定的企業成員帳號"
+msgstr ""
+
+#: app/web/users.py:695
+#, python-format
+msgid "已啟用用戶 %(name)s"
+msgstr ""
+
+#: app/web/users.py:697
+#, python-format
+msgid "已停用用戶 %(name)s"
+msgstr ""
+
+#: app/web/users.py:717
+msgid "找不到該用戶"
+msgstr ""
+
+#: app/web/users.py:727
+msgid "無權重設系統管理員的密碼"
+msgstr ""
+
+#: app/web/users.py:755
+#, python-format
+msgid "已重設 %(name)s 的密碼"
+msgstr ""
+
+#: app/web/users.py:831
+msgid "請選擇 CSV 檔案"
+msgstr ""
+
+#: app/web/users.py:835
+msgid "請上傳 CSV 格式檔案"
+msgstr ""
+
+#: app/web/users.py:859
+#, python-format
+msgid "第 %(row)s 列: %(error)s"
+msgstr ""
+
+#: app/web/users.py:864
+#, python-format
+msgid "成功匯入 %(count)s 位用戶"
+msgstr ""
+
+#: app/web/users.py:869
+#, python-format
+msgid "... 還有 %(count)s 個錯誤"
+msgstr ""
+
+#: app/web/users.py:875
+#, python-format
+msgid "匯入失敗: %(error)s"
+msgstr ""
+
+#: app/web/users.py:893
+#, python-format
+msgid "第 %(row)s 列: 帳號為必填"
+msgstr ""
+
+#: app/web/users.py:895
+#, python-format
+msgid "第 %(row)s 列: 密碼為必填"
+msgstr ""
+
+#: app/web/users.py:897
+#, python-format
+msgid "第 %(row)s 列: 姓名為必填"
+msgstr ""
+
+#: app/web/users.py:901
+#, python-format
+msgid "第 %(row)s 列: "
+msgstr ""
+
+#: app/web/users.py:908
+#, python-format
+msgid "第 %(row)s 列: 帳號 %(username)s 已存在"
+msgstr ""
+
+#: app/web/users.py:919
+#, python-format
+msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr ""
 

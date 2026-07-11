@@ -10,6 +10,7 @@ BeakMask System Accounts Management
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -59,7 +60,7 @@ def list_accounts():
     """系統管理員列表（左右分欄布局）"""
     sys_org = _get_system_org()
     if not sys_org:
-        flash('系統企業不存在', 'error')
+        flash(_('系統企業不存在'), 'error')
         return redirect(url_for('main.dashboard'))
 
     accounts = User.query.filter(
@@ -84,8 +85,8 @@ def create_account():
     sys_org = _get_system_org()
     if not sys_org:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
-        flash('系統企業不存在', 'error')
+            return jsonify({'success': False, 'errors': [_('系統企業不存在')]}), 400
+        flash(_('系統企業不存在'), 'error')
         return redirect(url_for('main.dashboard'))
 
     username = request.form.get('username', '').strip()
@@ -97,24 +98,24 @@ def create_account():
     # 驗證
     errors = []
     if not username:
-        errors.append('帳號為必填')
+        errors.append(_('帳號為必填'))
     elif not username.replace('_', '').isalnum():
-        errors.append('帳號只能包含英數字和底線')
+        errors.append(_('帳號只能包含英數字和底線'))
 
     if not email:
-        errors.append('Email 為必填')
+        errors.append(_('Email 為必填'))
     elif '@' not in email:
-        errors.append('Email 格式不正確')
+        errors.append(_('Email 格式不正確'))
 
     if not display_name:
-        errors.append('顯示名稱為必填')
+        errors.append(_('顯示名稱為必填'))
 
     if not password:
-        errors.append('密碼為必填')
+        errors.append(_('密碼為必填'))
     elif len(password) < MIN_PASSWORD_LENGTH:
-        errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
+        errors.append(_('密碼長度至少 %(min)s 碼', min=MIN_PASSWORD_LENGTH))
     elif password != confirm_password:
-        errors.append('兩次輸入的密碼不一致')
+        errors.append(_('兩次輸入的密碼不一致'))
 
     # 檢查帳號/Email 是否重複
     if username:
@@ -124,7 +125,7 @@ def create_account():
             User.is_deleted == False
         ).first()
         if existing:
-            errors.append(f'帳號 {username} 已存在')
+            errors.append(_('帳號 %(username)s 已存在', username=username))
 
     if email:
         existing = User.query.filter(
@@ -132,7 +133,7 @@ def create_account():
             User.is_deleted == False
         ).first()
         if existing:
-            errors.append(f'Email {email} 已被使用')
+            errors.append(_('Email %(email)s 已被使用', email=email))
 
     if errors:
         if _wants_json():
@@ -158,17 +159,17 @@ def create_account():
         logger.info(f"System admin created: {email} by {current_user.email}")
 
         if _wants_json():
-            return jsonify({'success': True, 'message': f'已建立系統管理員 {username}'})
+            return jsonify({'success': True, 'message': _('已建立系統管理員 %(username)s', username=username)})
 
-        flash(f'已建立系統管理員 {username}', 'success')
+        flash(_('已建立系統管理員 %(username)s', username=username), 'success')
         return redirect(url_for('sys_accounts.list_accounts'))
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create system admin: {e}")
         if _wants_json():
-            return jsonify({'success': False, 'errors': [f'建立失敗: {str(e)}']}), 500
-        flash(f'建立失敗: {str(e)}', 'error')
+            return jsonify({'success': False, 'errors': [_('建立失敗: %(error)s', error=str(e))]}), 500
+        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('sys_accounts.list_accounts'))
 
 
@@ -179,8 +180,8 @@ def edit_account(secure_code: str):
     sys_org = _get_system_org()
     if not sys_org:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
-        flash('系統企業不存在', 'error')
+            return jsonify({'success': False, 'errors': [_('系統企業不存在')]}), 400
+        flash(_('系統企業不存在'), 'error')
         return redirect(url_for('main.dashboard'))
 
     user = User.query.filter(
@@ -192,7 +193,7 @@ def edit_account(secure_code: str):
 
     if not user:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['帳號不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('帳號不存在')]}), 404
         abort(404)
 
     display_name = request.form.get('display_name', '').strip()
@@ -202,18 +203,18 @@ def edit_account(secure_code: str):
 
     errors = []
     if not display_name:
-        errors.append('顯示名稱為必填')
+        errors.append(_('顯示名稱為必填'))
 
     # 只有輸入新密碼時才驗證
     if new_password:
         if len(new_password) < MIN_PASSWORD_LENGTH:
-            errors.append(f'密碼長度至少 {MIN_PASSWORD_LENGTH} 碼')
+            errors.append(_('密碼長度至少 %(min)s 碼', min=MIN_PASSWORD_LENGTH))
         elif new_password != confirm_password:
-            errors.append('兩次輸入的密碼不一致')
+            errors.append(_('兩次輸入的密碼不一致'))
 
     # 不能停用自己
     if user.id == current_user.id and not is_active:
-        errors.append('不能停用自己的帳號')
+        errors.append(_('不能停用自己的帳號'))
 
     if errors:
         if _wants_json():
@@ -234,17 +235,17 @@ def edit_account(secure_code: str):
         db.session.commit()
 
         if _wants_json():
-            return jsonify({'success': True, 'message': '已更新帳號資料'})
+            return jsonify({'success': True, 'message': _('已更新帳號資料')})
 
-        flash('已更新帳號資料', 'success')
+        flash(_('已更新帳號資料'), 'success')
         return redirect(url_for('sys_accounts.list_accounts'))
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update system admin: {e}")
         if _wants_json():
-            return jsonify({'success': False, 'errors': [f'更新失敗: {str(e)}']}), 500
-        flash(f'更新失敗: {str(e)}', 'error')
+            return jsonify({'success': False, 'errors': [_('更新失敗: %(error)s', error=str(e))]}), 500
+        flash(_('更新失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('sys_accounts.list_accounts'))
 
 
@@ -255,8 +256,8 @@ def delete_account(secure_code: str):
     sys_org = _get_system_org()
     if not sys_org:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['系統企業不存在']}), 400
-        flash('系統企業不存在', 'error')
+            return jsonify({'success': False, 'errors': [_('系統企業不存在')]}), 400
+        flash(_('系統企業不存在'), 'error')
         return redirect(url_for('main.dashboard'))
 
     user = User.query.filter(
@@ -268,12 +269,12 @@ def delete_account(secure_code: str):
 
     if not user:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['帳號不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('帳號不存在')]}), 404
         abort(404)
 
     # 不能刪除自己
     if user.id == current_user.id:
-        msg = '不能刪除自己的帳號'
+        msg = _('不能刪除自己的帳號')
         if _wants_json():
             return jsonify({'success': False, 'errors': [msg]}), 400
         flash(msg, 'error')
@@ -288,7 +289,7 @@ def delete_account(secure_code: str):
     ).count()
 
     if count <= 1:
-        msg = '至少需要保留一個啟用的系統管理員'
+        msg = _('至少需要保留一個啟用的系統管理員')
         if _wants_json():
             return jsonify({'success': False, 'errors': [msg]}), 400
         flash(msg, 'error')
@@ -302,15 +303,15 @@ def delete_account(secure_code: str):
         logger.info(f"System admin deleted: {user.email} by {current_user.email}")
 
         if _wants_json():
-            return jsonify({'success': True, 'message': f'已刪除系統管理員 {user.username}'})
+            return jsonify({'success': True, 'message': _('已刪除系統管理員 %(username)s', username=user.username)})
 
-        flash(f'已刪除系統管理員 {user.username}', 'success')
+        flash(_('已刪除系統管理員 %(username)s', username=user.username), 'success')
         return redirect(url_for('sys_accounts.list_accounts'))
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete system admin: {e}")
         if _wants_json():
-            return jsonify({'success': False, 'errors': [f'刪除失敗: {str(e)}']}), 500
-        flash(f'刪除失敗: {str(e)}', 'error')
+            return jsonify({'success': False, 'errors': [_('刪除失敗: %(error)s', error=str(e))]}), 500
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('sys_accounts.list_accounts'))

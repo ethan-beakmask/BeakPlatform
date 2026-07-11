@@ -10,6 +10,7 @@ URL 安全設計：
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -97,9 +98,9 @@ def create_job_level():
         errors = []
 
         if not name:
-            errors.append('職等名稱為必填')
+            errors.append(_('職等名稱為必填'))
         if not level_order_str:
-            errors.append('職等序號為必填')
+            errors.append(_('職等序號為必填'))
 
         # 驗證 level_order
         level_order = None
@@ -107,9 +108,9 @@ def create_job_level():
             try:
                 level_order = int(level_order_str)
                 if level_order < 0 or level_order > 9999:
-                    errors.append('職等序號須在 0-9999 之間')
+                    errors.append(_('職等序號須在 0-9999 之間'))
             except ValueError:
-                errors.append('職等序號須為整數')
+                errors.append(_('職等序號須為整數'))
 
         # 驗證 approval_limit
         approval_limit = None
@@ -117,9 +118,9 @@ def create_job_level():
             try:
                 approval_limit = Decimal(approval_limit_str)
                 if approval_limit < 0:
-                    errors.append('簽核金額上限不可為負數')
+                    errors.append(_('簽核金額上限不可為負數'))
             except InvalidOperation:
-                errors.append('簽核金額上限格式錯誤')
+                errors.append(_('簽核金額上限格式錯誤'))
 
         # code 空白時自動產生
         if not code and name:
@@ -133,7 +134,7 @@ def create_job_level():
             try:
                 code = generator.generate(name, exists_checker=_exists)
             except ValueError:
-                errors.append('無法自動產生代碼，請手動輸入')
+                errors.append(_('無法自動產生代碼，請手動輸入'))
 
         if errors:
             if is_ajax:
@@ -149,7 +150,7 @@ def create_job_level():
             ).first()
 
             if existing:
-                msg = f'職等代碼 {code} 已存在'
+                msg = _('職等代碼 %(code)s 已存在', code=code)
                 if is_ajax:
                     return jsonify({'success': False, 'errors': [msg]}), 400
                 flash(msg, 'error')
@@ -173,15 +174,15 @@ def create_job_level():
                     if is_ajax:
                         return jsonify({
                             'success': True,
-                            'message': f'已建立職等 {name}',
+                            'message': _('已建立職等 %(name)s', name=name),
                             'data': _level_to_dict(job_level)
                         })
 
-                    flash(f'已建立職等 {name}', 'success')
+                    flash(_('已建立職等 %(name)s', name=name), 'success')
                     return redirect(url_for('job_levels.list_job_levels'))
                 except Exception as e:
                     db.session.rollback()
-                    msg = f'建立失敗: {str(e)}'
+                    msg = _('建立失敗: %(error)s', error=str(e))
                     if is_ajax:
                         return jsonify({'success': False, 'errors': [msg]}), 500
                     flash(msg, 'error')
@@ -197,7 +198,7 @@ def edit_job_level(secure_code: str):
         job_level = ResourceGateway.get(JobLevel, secure_code)
     except Exception:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['職等不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('職等不存在')]}), 404
         abort(404)
 
     if request.method == 'POST':
@@ -215,9 +216,9 @@ def edit_job_level(secure_code: str):
         errors = []
 
         if not name:
-            errors.append('職等名稱為必填')
+            errors.append(_('職等名稱為必填'))
         if not level_order_str:
-            errors.append('職等序號為必填')
+            errors.append(_('職等序號為必填'))
 
         # 驗證 level_order
         level_order = None
@@ -225,9 +226,9 @@ def edit_job_level(secure_code: str):
             try:
                 level_order = int(level_order_str)
                 if level_order < 0 or level_order > 9999:
-                    errors.append('職等序號須在 0-9999 之間')
+                    errors.append(_('職等序號須在 0-9999 之間'))
             except ValueError:
-                errors.append('職等序號須為整數')
+                errors.append(_('職等序號須為整數'))
 
         # 驗證 approval_limit
         approval_limit = None
@@ -235,9 +236,9 @@ def edit_job_level(secure_code: str):
             try:
                 approval_limit = Decimal(approval_limit_str)
                 if approval_limit < 0:
-                    errors.append('簽核金額上限不可為負數')
+                    errors.append(_('簽核金額上限不可為負數'))
             except InvalidOperation:
-                errors.append('簽核金額上限格式錯誤')
+                errors.append(_('簽核金額上限格式錯誤'))
 
         if errors:
             if is_ajax:
@@ -260,15 +261,15 @@ def edit_job_level(secure_code: str):
                 if is_ajax:
                     return jsonify({
                         'success': True,
-                        'message': '已更新職等',
+                        'message': _('已更新職等'),
                         'data': _level_to_dict(job_level)
                     })
 
-                flash('已更新職等', 'success')
+                flash(_('已更新職等'), 'success')
                 return redirect(url_for('job_levels.view_job_level', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                msg = f'更新失敗: {str(e)}'
+                msg = _('更新失敗: %(error)s', error=str(e))
                 if is_ajax:
                     return jsonify({'success': False, 'errors': [msg]}), 500
                 flash(msg, 'error')
@@ -286,12 +287,12 @@ def delete_job_level(secure_code: str):
         job_level = ResourceGateway.get(JobLevel, secure_code)
     except Exception:
         if is_ajax:
-            return jsonify({'success': False, 'errors': ['職等不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('職等不存在')]}), 404
         abort(404)
 
     # 系統預設不可刪除
     if job_level.is_system_default:
-        msg = '系統預設職等不可刪除'
+        msg = _('系統預設職等不可刪除')
         if is_ajax:
             return jsonify({'success': False, 'errors': [msg]}), 400
         flash(msg, 'error')
@@ -301,7 +302,7 @@ def delete_job_level(secure_code: str):
     if job_level.job_titles:
         active_titles = [t for t in job_level.job_titles if not t.is_deleted]
         if active_titles:
-            msg = f'此職等有 {len(active_titles)} 個職稱使用中，請先移除關聯'
+            msg = _('此職等有 %(count)s 個職稱使用中，請先移除關聯', count=len(active_titles))
             if is_ajax:
                 return jsonify({'success': False, 'errors': [msg]}), 400
             flash(msg, 'error')
@@ -314,13 +315,13 @@ def delete_job_level(secure_code: str):
         db.session.commit()
 
         if is_ajax:
-            return jsonify({'success': True, 'message': f'已刪除職等 {level_name}'})
+            return jsonify({'success': True, 'message': _('已刪除職等 %(name)s', name=level_name)})
 
-        flash(f'已刪除職等 {level_name}', 'success')
+        flash(_('已刪除職等 %(name)s', name=level_name), 'success')
         return redirect(url_for('job_levels.list_job_levels'))
     except Exception as e:
         db.session.rollback()
-        msg = f'刪除失敗: {str(e)}'
+        msg = _('刪除失敗: %(error)s', error=str(e))
         if is_ajax:
             return jsonify({'success': False, 'errors': [msg]}), 500
         flash(msg, 'error')
@@ -334,7 +335,7 @@ def check_usage(secure_code: str):
     try:
         job_level = ResourceGateway.get(JobLevel, secure_code)
     except Exception:
-        return jsonify({'success': False, 'errors': ['職等不存在']}), 404
+        return jsonify({'success': False, 'errors': [_('職等不存在')]}), 404
 
     active_titles = JobTitle.query.filter(
         JobTitle.job_level_secure_code == job_level.secure_code,
@@ -418,14 +419,14 @@ def update_title_position():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '無效的請求'}), 400
+        return jsonify({'success': False, 'error': _('無效的請求')}), 400
 
     title_code = data.get('title_secure_code')
     new_level_code = data.get('new_level_secure_code')
     new_family_code = data.get('new_family_secure_code')
 
     if not title_code:
-        return jsonify({'success': False, 'error': '缺少職稱代碼'}), 400
+        return jsonify({'success': False, 'error': _('缺少職稱代碼')}), 400
 
     # 驗證職稱存在且屬於當前企業
     title = ResourceGateway.get_by(
@@ -435,7 +436,7 @@ def update_title_position():
     )
 
     if not title:
-        return jsonify({'success': False, 'error': '職稱不存在'}), 404
+        return jsonify({'success': False, 'error': _('職稱不存在')}), 404
 
     # 驗證新職等存在
     if new_level_code:
@@ -445,7 +446,7 @@ def update_title_position():
             is_deleted=False
         )
         if not new_level:
-            return jsonify({'success': False, 'error': '職等不存在'}), 404
+            return jsonify({'success': False, 'error': _('職等不存在')}), 404
         title.job_level_secure_code = new_level_code
 
         # 依據目標職等的管理職屬性，自動同步 is_supervisor
@@ -459,14 +460,14 @@ def update_title_position():
             is_deleted=False
         )
         if not new_family:
-            return jsonify({'success': False, 'error': '職系不存在'}), 404
+            return jsonify({'success': False, 'error': _('職系不存在')}), 404
         title.job_family_secure_code = new_family_code
 
     try:
         db.session.commit()
         return jsonify({
             'success': True,
-            'message': f'已更新 {title.name}',
+            'message': _('已更新 %(name)s', name=title.name),
             'title': {
                 'secure_code': title.secure_code,
                 'name': title.name,

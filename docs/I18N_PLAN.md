@@ -81,19 +81,21 @@ JSON 字典範例 (`en.json`):
 
 ## 執行階段
 
-### Phase 0 - 基礎建設
+### Phase 0 - 基礎建設 ✅ (2026-07-12 完成)
 
-- [ ] 清理 `i18n.py`: 移除 zh-CN / ja，僅保留 zh-TW + en
-- [ ] 刪除 `translations/zh_CN/` 和 `translations/ja/`
-- [ ] 建立 `backend/app/static/js/i18n.js` (BkI18n + `__()`)
-- [ ] `base.html` 注入 locale 變數 + 載入 i18n.js + 非 zh-TW 時載入 en.json
-- [ ] 建立空的 `backend/app/static/i18n/en.json`
+- [x] 清理 `i18n.py`: 移除 zh-CN / ja，僅保留 zh-TW + en
+- [x] 刪除 `translations/zh_CN/`、`translations/zh_Hans_CN/` 和 `translations/ja/`
+- [x] 建立 `backend/app/static/js/i18n.js` (BkI18n + `__()`，含 `{n}` 佔位符插值)
+- [x] `base.html` 注入 locale 變數 + 載入 i18n.js + 非 zh-TW 時 fetch 對應 JSON 字典
+- [x] 建立空的 `backend/app/static/i18n/en.json`
+- [x] 額外：4 處介面語言下拉改由 `supported_languages` 動態產生（users create/edit、admin settings、employee create form）
 
-### Phase 1 - Platform Python 後端
+### Phase 1 - Platform Python 後端 ✅ (2026-07-12 完成)
 
-- [ ] `backend/app/web/*.py`: 所有 flash() 加 `_()` (17 檔 / 142 處)
-- [ ] `backend/app/api/*.py`: 所有 error_response 加 `_()` (20 檔 / 373 處)
-- [ ] `pybabel extract` + `pybabel update` + 翻譯 en/messages.po + `pybabel compile`
+- [x] `backend/app/web/*.py` 全 33 檔（跳過 dev.py）: flash/jsonify/abort user-facing 字串加 `_()`
+- [x] `backend/app/api/*.py` 全 33 檔: error/message 字串加 `_()`，f-string 改 `%(x)s` kwargs 插值
+- [x] `pybabel extract` + `update` + 翻譯 en/messages.po（832 條全數翻譯，含修正 75 條錯誤 fuzzy 配對）+ `compile`
+- 刻意跳過（包裹會壞邏輯或屬資料值）：`_ss_packages.py` 版本狀態字串（有字面比較）、`security_center.py`「未知用戶」（與 DB audit details 成對比較）、audit log、email 主旨/內文、DB seed 資料、模組層級 label dicts（留待後續 Phase 以 `_l()` 統一處理）
 
 ### Phase 2 - Platform HTML 模板
 
@@ -148,4 +150,4 @@ Phase 0 完成後即生效:
 
 ---
 
-*最後更新: 2026-03-26*
+*最後更新: 2026-07-12（Phase 0 + Phase 1 完成，「未來開發守則」已生效）*

@@ -10,6 +10,7 @@ BeakMask Organization Admin Rescue Web Routes
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
 from flask_login import current_user
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 from ..security.resource_gateway import ResourceGateway
@@ -79,24 +80,24 @@ def toggle_status(org_code: str, admin_code: str):
     ).first()
 
     if not admin:
-        flash('找不到該管理員', 'error')
+        flash(_('找不到該管理員'), 'error')
         return redirect(url_for('org_admin_rescue.list_admins', org_code=org_code))
 
     # 如果要停用，檢查是否為最後一個啟用的管理員
     if admin.is_active:
         active_count = _count_active_admins(org.secure_code)
         if active_count <= 1:
-            flash('必須至少保留一個啟用的管理員', 'error')
+            flash(_('必須至少保留一個啟用的管理員'), 'error')
             return redirect(url_for('org_admin_rescue.list_admins', org_code=org_code))
 
     try:
         admin.is_active = not admin.is_active
         db.session.commit()
-        status = '啟用' if admin.is_active else '停用'
-        flash(f'已{status}管理員 {admin.display_name}', 'success')
+        status = _('啟用') if admin.is_active else _('停用')
+        flash(_('已%(status)s管理員 %(name)s', status=status, name=admin.display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('org_admin_rescue.list_admins', org_code=org_code))
 
@@ -117,7 +118,7 @@ def reset_password(org_code: str, admin_code: str):
     ).first()
 
     if not admin:
-        flash('找不到該管理員', 'error')
+        flash(_('找不到該管理員'), 'error')
         return redirect(url_for('org_admin_rescue.list_admins', org_code=org_code))
 
     new_password = request.form.get('new_password', '').strip()
@@ -132,12 +133,12 @@ def reset_password(org_code: str, admin_code: str):
             user_secure_code=admin.secure_code)
 
     if not new_password:
-        flash('請輸入新密碼', 'error')
+        flash(_('請輸入新密碼'), 'error')
     elif not pw_valid:
         for err in pw_errors:
             flash(err, 'error')
     elif new_password != confirm_password:
-        flash('兩次輸入的密碼不一致', 'error')
+        flash(_('兩次輸入的密碼不一致'), 'error')
     else:
         try:
             admin.set_password(new_password)
@@ -171,9 +172,9 @@ def reset_password(org_code: str, admin_code: str):
                     reset_time=reset_time
                 )
 
-            flash(f'已重設 {admin.display_name} 的密碼，並通知所有企業管理員', 'success')
+            flash(_('已重設 %(name)s 的密碼，並通知所有企業管理員', name=admin.display_name), 'success')
         except Exception as e:
             db.session.rollback()
-            flash(f'重設密碼失敗: {str(e)}', 'error')
+            flash(_('重設密碼失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('org_admin_rescue.list_admins', org_code=org_code))

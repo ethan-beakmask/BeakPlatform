@@ -12,6 +12,18 @@
     <!-- 用戶時區 (供前端 JS 統一格式化) -->
     <script>window.__TIMEZONE = '{{ current_timezone|default("Asia/Taipei") }}';</script>
     <script src="{{ url_for('static', filename='js/timezone.js') }}"></script>
+    <!-- 前端 i18n (BkI18n + __()，非 zh-TW 時載入對應字典) -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script>
+    BkI18n.init('{{ _locale }}');
+    fetch('{{ url_for('static', filename='i18n/' + _locale + '.json') }}')
+        .then(function(r) { return r.ok ? r.json() : {}; })
+        .then(function(dict) { BkI18n.loadModule(dict); })
+        .catch(function() {});
+    </script>
+    {% endif %}
     <!-- 通用表格排序元件（須在 Alpine.js 之前載入，確保函式已定義） -->
     <script src="{{ url_for('static', filename='js/sortable-table.js') }}"></script>
     <!-- Alpine.js (本地) -->

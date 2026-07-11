@@ -202,11 +202,9 @@
                     <td>
                         <select x-model="settings.locale" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
-                            <option value="zh-TW">繁體中文 (zh-TW)</option>
-                            <option value="zh-CN">简体中文 (zh-CN)</option>
-                            <option value="en">English (en)</option>
-                            <option value="ja" disabled>日本語 (ja) - 尚未支援</option>
-                            <option value="ko" disabled>한국어 (ko) - 尚未支援</option>
+                            {% for code, name in supported_languages.items() %}
+                            <option value="{{ code }}">{{ name }} ({{ code }})</option>
+                            {% endfor %}
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
                             影響選單標題等介面元素的顯示語言（需重新整理頁面生效）

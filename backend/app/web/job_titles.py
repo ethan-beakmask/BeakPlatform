@@ -7,6 +7,7 @@ BeakMask Job Title Management Web Routes
 """
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -198,11 +199,11 @@ def create_job_title():
         errors = []
 
         if not name:
-            errors.append('職稱名稱為必填')
+            errors.append(_('職稱名稱為必填'))
         if not job_level_secure_code:
-            errors.append('請選擇職等')
+            errors.append(_('請選擇職等'))
         if not job_family_secure_code:
-            errors.append('請選擇職系')
+            errors.append(_('請選擇職系'))
 
         # code 空白時自動產生
         if not code and name:
@@ -216,13 +217,13 @@ def create_job_title():
             try:
                 code = generator.generate(name, exists_checker=_exists)
             except ValueError:
-                errors.append('無法自動產生代碼，請手動輸入')
+                errors.append(_('無法自動產生代碼，請手動輸入'))
 
         sort_order = 0
         try:
             sort_order = int(sort_order_str)
         except ValueError:
-            errors.append('排序順序須為整數')
+            errors.append(_('排序順序須為整數'))
 
         if errors:
             if _wants_json():
@@ -237,7 +238,7 @@ def create_job_title():
             ).first()
 
             if existing:
-                msg = f'職稱代碼 {code} 已存在'
+                msg = _('職稱代碼 %(code)s 已存在', code=code)
                 if _wants_json():
                     return jsonify({'success': False, 'errors': [msg]}), 400
                 flash(msg, 'error')
@@ -260,14 +261,14 @@ def create_job_title():
                     db.session.commit()
 
                     if _wants_json():
-                        return jsonify({'success': True, 'message': f'已建立職稱 {name}'})
-                    flash(f'已建立職稱 {name}', 'success')
+                        return jsonify({'success': True, 'message': _('已建立職稱 %(name)s', name=name)})
+                    flash(_('已建立職稱 %(name)s', name=name), 'success')
                     return redirect(url_for('job_titles.list_job_titles'))
                 except Exception as e:
                     db.session.rollback()
                     if _wants_json():
-                        return jsonify({'success': False, 'errors': [f'建立失敗: {str(e)}']}), 500
-                    flash(f'建立失敗: {str(e)}', 'error')
+                        return jsonify({'success': False, 'errors': [_('建立失敗: %(error)s', error=str(e))]}), 500
+                    flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/job_titles/create.html',
@@ -284,7 +285,7 @@ def edit_job_title(secure_code: str):
         job_title = ResourceGateway.get(JobTitle, secure_code)
     except Exception:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['職稱不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('職稱不存在')]}), 404
         abort(404)
 
     job_levels = ResourceGateway.filter(
@@ -308,17 +309,17 @@ def edit_job_title(secure_code: str):
         errors = []
 
         if not name:
-            errors.append('職稱名稱為必填')
+            errors.append(_('職稱名稱為必填'))
         if not job_level_secure_code:
-            errors.append('請選擇職等')
+            errors.append(_('請選擇職等'))
         if not job_family_secure_code:
-            errors.append('請選擇職系')
+            errors.append(_('請選擇職系'))
 
         sort_order = 0
         try:
             sort_order = int(sort_order_str)
         except ValueError:
-            errors.append('排序順序須為整數')
+            errors.append(_('排序順序須為整數'))
 
         if errors:
             if _wants_json():
@@ -339,14 +340,14 @@ def edit_job_title(secure_code: str):
 
                 db.session.commit()
                 if _wants_json():
-                    return jsonify({'success': True, 'message': '已更新職稱'})
-                flash('已更新職稱', 'success')
+                    return jsonify({'success': True, 'message': _('已更新職稱')})
+                flash(_('已更新職稱'), 'success')
                 return redirect(url_for('job_titles.view_job_title', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
                 if _wants_json():
-                    return jsonify({'success': False, 'errors': [f'更新失敗: {str(e)}']}), 500
-                flash(f'更新失敗: {str(e)}', 'error')
+                    return jsonify({'success': False, 'errors': [_('更新失敗: %(error)s', error=str(e))]}), 500
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/job_titles/edit.html',
@@ -364,11 +365,11 @@ def delete_job_title(secure_code: str):
         job_title = ResourceGateway.get(JobTitle, secure_code)
     except Exception:
         if _wants_json():
-            return jsonify({'success': False, 'errors': ['職稱不存在']}), 404
+            return jsonify({'success': False, 'errors': [_('職稱不存在')]}), 404
         abort(404)
 
     if job_title.is_system_default:
-        msg = '系統預設職稱不可刪除'
+        msg = _('系統預設職稱不可刪除')
         if _wants_json():
             return jsonify({'success': False, 'errors': [msg]}), 400
         flash(msg, 'error')
@@ -378,7 +379,7 @@ def delete_job_title(secure_code: str):
     if job_title.employees:
         active_employees = [e for e in job_title.employees if not e.is_deleted]
         if active_employees:
-            msg = f'此職稱有 {len(active_employees)} 位企業成員使用中，請先移除關聯'
+            msg = _('此職稱有 %(count)s 位企業成員使用中，請先移除關聯', count=len(active_employees))
             if _wants_json():
                 return jsonify({'success': False, 'errors': [msg]}), 400
             flash(msg, 'error')
@@ -389,7 +390,7 @@ def delete_job_title(secure_code: str):
         job_title.deleted_at = datetime.utcnow()
         db.session.commit()
 
-        msg = f'已刪除職稱 {job_title.name}'
+        msg = _('已刪除職稱 %(name)s', name=job_title.name)
         if _wants_json():
             return jsonify({'success': True, 'message': msg})
         flash(msg, 'success')
@@ -397,6 +398,6 @@ def delete_job_title(secure_code: str):
     except Exception as e:
         db.session.rollback()
         if _wants_json():
-            return jsonify({'success': False, 'errors': [f'刪除失敗: {str(e)}']}), 500
-        flash(f'刪除失敗: {str(e)}', 'error')
+            return jsonify({'success': False, 'errors': [_('刪除失敗: %(error)s', error=str(e))]}), 500
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('job_titles.edit_job_title', secure_code=secure_code))

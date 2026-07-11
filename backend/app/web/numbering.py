@@ -5,6 +5,7 @@
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user
+from flask_babel import gettext as _
 
 from ..security.decorators import admin_required
 from ..security.resource_gateway import ResourceGateway
@@ -55,7 +56,7 @@ def create_rule():
 
         # 驗證
         if not name:
-            flash('規則名稱為必填', 'error')
+            flash(_('規則名稱為必填'), 'error')
             return render_template('pages/admin/numbering/edit.html', rule=None)
 
         # 驗證 usage_scope
@@ -76,7 +77,7 @@ def create_rule():
             is_deleted=False
         ).first()
         if existing:
-            flash(f'規則名稱「{name}」已存在', 'error')
+            flash(_('規則名稱「%(name)s」已存在', name=name), 'error')
             return render_template('pages/admin/numbering/edit.html', rule=None)
 
         # 如果要設為預設，先取消同類型的其他預設
@@ -100,7 +101,7 @@ def create_rule():
         db.session.add(rule)
         db.session.commit()
 
-        flash('編號規則已建立', 'success')
+        flash(_('編號規則已建立'), 'success')
         return redirect(url_for('numbering.list_rules'))
 
     return render_template('pages/admin/numbering/edit.html', rule=None)
@@ -112,7 +113,7 @@ def edit_rule(secure_code):
     """編輯編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        flash('找不到此規則', 'error')
+        flash(_('找不到此規則'), 'error')
         return redirect(url_for('numbering.list_rules'))
 
     if request.method == 'POST':
@@ -127,7 +128,7 @@ def edit_rule(secure_code):
 
         # 驗證
         if not name:
-            flash('規則名稱為必填', 'error')
+            flash(_('規則名稱為必填'), 'error')
             return render_template('pages/admin/numbering/edit.html', rule=rule)
 
         # 驗證 usage_scope
@@ -149,7 +150,7 @@ def edit_rule(secure_code):
             UserNumberingRule.is_deleted == False
         ).first()
         if existing:
-            flash(f'規則名稱「{name}」已存在', 'error')
+            flash(_('規則名稱「%(name)s」已存在', name=name), 'error')
             return render_template('pages/admin/numbering/edit.html', rule=rule)
 
         # 如果要設為預設，先取消同類型的其他預設
@@ -170,7 +171,7 @@ def edit_rule(secure_code):
         rule.is_active = is_active
         db.session.commit()
 
-        flash('編號規則已更新', 'success')
+        flash(_('編號規則已更新'), 'success')
         return redirect(url_for('numbering.list_rules'))
 
     # 產生預覽
@@ -188,17 +189,17 @@ def delete_rule(secure_code):
     """刪除編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        flash('找不到此規則', 'error')
+        flash(_('找不到此規則'), 'error')
         return redirect(url_for('numbering.list_rules'))
 
     if rule.default_for:
         default_labels = {
-            'EMPLOYEE': '企業成員預設',
-            'EXTERNAL': '外部預設',
-            'FORM': '表單預設',
+            'EMPLOYEE': _('企業成員預設'),
+            'EXTERNAL': _('外部預設'),
+            'FORM': _('表單預設'),
         }
-        default_label = default_labels.get(rule.default_for, '預設')
-        flash(f'無法刪除{default_label}規則，請先在編輯頁面取消預設設定', 'error')
+        default_label = default_labels.get(rule.default_for, _('預設'))
+        flash(_('無法刪除%(label)s規則，請先在編輯頁面取消預設設定', label=default_label), 'error')
         return redirect(url_for('numbering.list_rules'))
 
     # 軟刪除
@@ -206,7 +207,7 @@ def delete_rule(secure_code):
     rule.deleted_at = db.func.now()
     db.session.commit()
 
-    flash(f'規則「{rule.name}」已刪除', 'success')
+    flash(_('規則「%(name)s」已刪除', name=rule.name), 'success')
     return redirect(url_for('numbering.list_rules'))
 
 

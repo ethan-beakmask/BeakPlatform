@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required, admin_required
 from ..security.resource_gateway import ResourceGateway
@@ -81,7 +82,7 @@ def get_contract(secure_code: str):
     )
 
     if not contract:
-        return jsonify({'error': '合約不存在'}), 404
+        return jsonify({'error': _('合約不存在')}), 404
 
     return jsonify({
         'contract': contract.to_dict(include_org=True)
@@ -108,18 +109,18 @@ def create_contract():
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供合約資料'}), 400
+        return jsonify({'error': _('請提供合約資料')}), 400
 
     required_fields = ['org_id', 'start_date', 'end_date']
     for field in required_fields:
         if field not in data:
-            return jsonify({'error': f'缺少必要欄位: {field}'}), 400
+            return jsonify({'error': _('缺少必要欄位: %(field)s', field=field)}), 400
 
     try:
         start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
         end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
     except ValueError:
-        return jsonify({'error': '日期格式錯誤，請使用 YYYY-MM-DD'}), 400
+        return jsonify({'error': _('日期格式錯誤，請使用 YYYY-MM-DD')}), 400
 
     try:
         modules_config = data.get('modules_config')
@@ -139,7 +140,7 @@ def create_contract():
         db.session.commit()
 
         return jsonify({
-            'message': '合約建立成功',
+            'message': _('合約建立成功'),
             'contract': contract.to_dict()
         }), 201
 
@@ -148,7 +149,7 @@ def create_contract():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create contract: {e}")
-        return jsonify({'error': '建立合約失敗'}), 500
+        return jsonify({'error': _('建立合約失敗')}), 500
 
 
 @contracts_bp.route('/<secure_code>', methods=['PUT'])
@@ -161,7 +162,7 @@ def update_contract(secure_code: str):
     PUT /api/contracts/<secure_code>
     """
     return jsonify({
-        'error': '合約建立後不可修改內容（稽核要求）。如需停用請使用停用功能，如需變更請建立新合約。'
+        'error': _('合約建立後不可修改內容（稽核要求）。如需停用請使用停用功能，如需變更請建立新合約。')
     }), 403
 
 
@@ -183,7 +184,7 @@ def delete_contract(secure_code: str):
     )
 
     if not contract:
-        return jsonify({'error': '合約不存在'}), 404
+        return jsonify({'error': _('合約不存在')}), 404
 
     try:
         contract.is_deleted = True
@@ -195,13 +196,13 @@ def delete_contract(secure_code: str):
         logger.info(f"Contract deleted: {contract.contract_number} by {current_user.email}")
 
         return jsonify({
-            'message': '合約已刪除'
+            'message': _('合約已刪除')
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete contract: {e}")
-        return jsonify({'error': '刪除合約失敗'}), 500
+        return jsonify({'error': _('刪除合約失敗')}), 500
 
 
 @contracts_bp.route('/<secure_code>/disable', methods=['PATCH'])
@@ -222,10 +223,10 @@ def disable_contract(secure_code: str):
     )
 
     if not contract:
-        return jsonify({'error': '合約不存在'}), 404
+        return jsonify({'error': _('合約不存在')}), 404
 
     if contract.status == ContractStatus.DISABLED:
-        return jsonify({'error': '合約已是停用狀態'}), 400
+        return jsonify({'error': _('合約已是停用狀態')}), 400
 
     try:
         contract.status = ContractStatus.DISABLED
@@ -236,14 +237,14 @@ def disable_contract(secure_code: str):
         logger.info(f"Contract disabled: {contract.contract_number} by {current_user.email}")
 
         return jsonify({
-            'message': '合約已停用',
+            'message': _('合約已停用'),
             'contract': contract.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to disable contract: {e}")
-        return jsonify({'error': '停用合約失敗'}), 500
+        return jsonify({'error': _('停用合約失敗')}), 500
 
 
 @contracts_bp.route('/<secure_code>/enable', methods=['PATCH'])
@@ -254,7 +255,7 @@ def enable_contract(secure_code: str):
     保留端點回傳明確錯誤訊息，避免前端或 API 呼叫端困惑。
     """
     return jsonify({
-        'error': '合約停用後不可再啟用（單向操作）。如需恢復服務，請建立新合約。'
+        'error': _('合約停用後不可再啟用（單向操作）。如需恢復服務，請建立新合約。')
     }), 403
 
 

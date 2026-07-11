@@ -6,6 +6,7 @@ Admin: 完整社群管理 (CRUD + 成員管理)
 Team leader (MANAGER/DEPUTY): 只能管理自己社群的成員
 """
 from flask import Blueprint, render_template, abort
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required
@@ -38,7 +39,7 @@ def group_settings():
     is_admin = _user_is_admin()
 
     if not is_admin and not _user_has_managed_groups():
-        abort(403, description='無權限存取社群管理')
+        abort(403, description=_('無權限存取社群管理'))
 
     org = current_user.organization
     conglomerate = org.conglomerate if org else None
@@ -62,7 +63,7 @@ def my_groups():
     is_admin = _user_is_admin()
 
     if not is_admin and not _user_has_managed_groups():
-        abort(403, description='無權限存取社群管理')
+        abort(403, description=_('無權限存取社群管理'))
 
     org = current_user.organization
     conglomerate = org.conglomerate if org else None

@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, login_required
@@ -67,7 +68,7 @@ def get_category(secure_code: str):
     )
 
     if not category:
-        return jsonify({'error': '職務分類不存在'}), 404
+        return jsonify({'error': _('職務分類不存在')}), 404
 
     return jsonify({
         'category': category.to_dict()
@@ -90,12 +91,12 @@ def create_category():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供分類資料'}), 400
+        return jsonify({'error': _('請提供分類資料')}), 400
 
     required_fields = ['code', 'name']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'error': f'缺少必要欄位: {field}'}), 400
+            return jsonify({'error': _('缺少必要欄位: %(field)s', field=field)}), 400
 
     # 檢查代碼是否重複
     if ResourceGateway.exists(
@@ -103,7 +104,7 @@ def create_category():
         code=data['code'].upper(),
         is_deleted=False
     ):
-        return jsonify({'error': f'代碼 {data["code"]} 已存在'}), 400
+        return jsonify({'error': _('代碼 %(code)s 已存在', code=data["code"])}), 400
 
     try:
         category = DutyCategory(
@@ -120,14 +121,14 @@ def create_category():
         logger.info(f"DutyCategory created: {category.code} by {current_user.email}")
 
         return jsonify({
-            'message': '職務分類建立成功',
+            'message': _('職務分類建立成功'),
             'category': category.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create duty category: {e}")
-        return jsonify({'error': '建立職務分類失敗'}), 500
+        return jsonify({'error': _('建立職務分類失敗')}), 500
 
 
 @duties_bp.route('/categories/<secure_code>', methods=['PUT'])
@@ -145,11 +146,11 @@ def update_category(secure_code: str):
     )
 
     if not category:
-        return jsonify({'error': '職務分類不存在'}), 404
+        return jsonify({'error': _('職務分類不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         if 'name' in data:
@@ -164,14 +165,14 @@ def update_category(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '職務分類更新成功',
+            'message': _('職務分類更新成功'),
             'category': category.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update duty category: {e}")
-        return jsonify({'error': '更新職務分類失敗'}), 500
+        return jsonify({'error': _('更新職務分類失敗')}), 500
 
 
 @duties_bp.route('/categories/<secure_code>', methods=['DELETE'])
@@ -189,7 +190,7 @@ def delete_category(secure_code: str):
     )
 
     if not category:
-        return jsonify({'error': '職務分類不存在'}), 404
+        return jsonify({'error': _('職務分類不存在')}), 404
 
     # 檢查是否有職務使用此分類
     duty_count = ResourceGateway.count(
@@ -200,7 +201,7 @@ def delete_category(secure_code: str):
 
     if duty_count > 0:
         return jsonify({
-            'error': f'此分類有 {duty_count} 個職務使用中，請先刪除或移動職務'
+            'error': _('此分類有 %(count)s 個職務使用中，請先刪除或移動職務', count=duty_count)
         }), 400
 
     try:
@@ -209,13 +210,13 @@ def delete_category(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '職務分類已刪除'
+            'message': _('職務分類已刪除')
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete duty category: {e}")
-        return jsonify({'error': '刪除職務分類失敗'}), 500
+        return jsonify({'error': _('刪除職務分類失敗')}), 500
 
 
 # =====================================================
@@ -272,7 +273,7 @@ def get_duty(secure_code: str):
     )
 
     if not duty:
-        return jsonify({'error': '職務不存在'}), 404
+        return jsonify({'error': _('職務不存在')}), 404
 
     return jsonify({
         'duty': duty.to_dict()
@@ -296,12 +297,12 @@ def create_duty():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供職務資料'}), 400
+        return jsonify({'error': _('請提供職務資料')}), 400
 
     required_fields = ['unit_secure_code', 'category_secure_code', 'name']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'error': f'缺少必要欄位: {field}'}), 400
+            return jsonify({'error': _('缺少必要欄位: %(field)s', field=field)}), 400
 
     # 驗證部門
     unit = ResourceGateway.get_by(
@@ -310,7 +311,7 @@ def create_duty():
         is_deleted=False
     )
     if not unit:
-        return jsonify({'error': '部門不存在'}), 400
+        return jsonify({'error': _('部門不存在')}), 400
 
     # 驗證分類
     category = ResourceGateway.get_by(
@@ -319,7 +320,7 @@ def create_duty():
         is_deleted=False
     )
     if not category:
-        return jsonify({'error': '職務分類不存在'}), 400
+        return jsonify({'error': _('職務分類不存在')}), 400
 
     # 檢查唯一性 (部門 + 分類 + 名稱)
     existing = ResourceGateway.get_by(
@@ -331,7 +332,7 @@ def create_duty():
     )
     if existing:
         return jsonify({
-            'error': f'此部門的 {category.name} 分類已有名為「{data["name"]}」的職務'
+            'error': _('此部門的 %(category)s 分類已有名為「%(name)s」的職務', category=category.name, name=data["name"])
         }), 400
 
     try:
@@ -350,14 +351,14 @@ def create_duty():
         logger.info(f"Duty created: {duty.name} in {unit.name} by {current_user.email}")
 
         return jsonify({
-            'message': '職務建立成功',
+            'message': _('職務建立成功'),
             'duty': duty.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create duty: {e}")
-        return jsonify({'error': '建立職務失敗'}), 500
+        return jsonify({'error': _('建立職務失敗')}), 500
 
 
 @duties_bp.route('/<secure_code>', methods=['PUT'])
@@ -375,11 +376,11 @@ def update_duty(secure_code: str):
     )
 
     if not duty:
-        return jsonify({'error': '職務不存在'}), 404
+        return jsonify({'error': _('職務不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         # 如果要更新名稱，需要檢查唯一性
@@ -393,7 +394,7 @@ def update_duty(secure_code: str):
             )
             if existing:
                 return jsonify({
-                    'error': f'此部門的分類已有名為「{data["name"]}」的職務'
+                    'error': _('此部門的分類已有名為「%(name)s」的職務', name=data["name"])
                 }), 400
             duty.name = data['name']
 
@@ -412,7 +413,7 @@ def update_duty(secure_code: str):
                 is_deleted=False
             )
             if not category:
-                return jsonify({'error': '職務分類不存在'}), 400
+                return jsonify({'error': _('職務分類不存在')}), 400
 
             # 檢查新分類下是否有同名職務
             existing = ResourceGateway.get_by(
@@ -424,7 +425,7 @@ def update_duty(secure_code: str):
             )
             if existing:
                 return jsonify({
-                    'error': f'目標分類已有名為「{duty.name}」的職務'
+                    'error': _('目標分類已有名為「%(name)s」的職務', name=duty.name)
                 }), 400
 
             duty.category_secure_code = data['category_secure_code']
@@ -432,14 +433,14 @@ def update_duty(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '職務更新成功',
+            'message': _('職務更新成功'),
             'duty': duty.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update duty: {e}")
-        return jsonify({'error': '更新職務失敗'}), 500
+        return jsonify({'error': _('更新職務失敗')}), 500
 
 
 @duties_bp.route('/<secure_code>', methods=['DELETE'])
@@ -457,7 +458,7 @@ def delete_duty(secure_code: str):
     )
 
     if not duty:
-        return jsonify({'error': '職務不存在'}), 404
+        return jsonify({'error': _('職務不存在')}), 404
 
     # TODO: 檢查是否有用戶使用此職務 (UserDuty 之後實作)
 
@@ -467,13 +468,13 @@ def delete_duty(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '職務已刪除'
+            'message': _('職務已刪除')
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete duty: {e}")
-        return jsonify({'error': '刪除職務失敗'}), 500
+        return jsonify({'error': _('刪除職務失敗')}), 500
 
 
 # =====================================================
@@ -495,7 +496,7 @@ def list_duties_by_unit(unit_secure_code: str):
         is_deleted=False
     )
     if not unit:
-        return jsonify({'error': '部門不存在'}), 404
+        return jsonify({'error': _('部門不存在')}), 404
 
     # 取得該部門的所有職務
     duties = ResourceGateway.filter(

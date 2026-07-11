@@ -9,6 +9,7 @@ BeakMask Delegation Management Web Routes
 from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -78,15 +79,15 @@ def create_delegation():
         errors = []
 
         if not delegator_secure_code:
-            errors.append('請選擇授權人')
+            errors.append(_('請選擇授權人'))
         if not delegate_secure_code:
-            errors.append('請選擇被授權人')
+            errors.append(_('請選擇被授權人'))
         if delegator_secure_code == delegate_secure_code:
-            errors.append('授權人和被授權人不能相同')
+            errors.append(_('授權人和被授權人不能相同'))
         if not effective_from_str:
-            errors.append('生效開始日期為必填')
+            errors.append(_('生效開始日期為必填'))
         if not effective_until_str:
-            errors.append('生效結束日期為必填')
+            errors.append(_('生效結束日期為必填'))
 
         effective_from = None
         effective_until = None
@@ -95,25 +96,25 @@ def create_delegation():
             try:
                 effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效開始日期格式錯誤')
+                errors.append(_('生效開始日期格式錯誤'))
 
         if effective_until_str:
             try:
                 effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效結束日期格式錯誤')
+                errors.append(_('生效結束日期格式錯誤'))
 
         if effective_from and effective_until and effective_from > effective_until:
-            errors.append('生效開始日期不能晚於結束日期')
+            errors.append(_('生效開始日期不能晚於結束日期'))
 
         approval_limit = None
         if delegation_type == DelegationType.APPROVAL and approval_limit_str:
             try:
                 approval_limit = Decimal(approval_limit_str)
                 if approval_limit < 0:
-                    errors.append('簽核金額上限不可為負數')
+                    errors.append(_('簽核金額上限不可為負數'))
             except InvalidOperation:
-                errors.append('簽核金額上限格式錯誤')
+                errors.append(_('簽核金額上限格式錯誤'))
 
         if errors:
             for err in errors:
@@ -144,11 +145,11 @@ def create_delegation():
                 db.session.add(delegation)
                 db.session.commit()
 
-                flash('已建立代理授權', 'success')
+                flash(_('已建立代理授權'), 'success')
                 return redirect(url_for('delegations.list_delegations'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'建立失敗: {str(e)}', 'error')
+                flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/delegations/create.html',
@@ -194,23 +195,23 @@ def edit_delegation(secure_code: str):
             try:
                 effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效開始日期格式錯誤')
+                errors.append(_('生效開始日期格式錯誤'))
 
         if effective_until_str:
             try:
                 effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效結束日期格式錯誤')
+                errors.append(_('生效結束日期格式錯誤'))
 
         if effective_from > effective_until:
-            errors.append('生效開始日期不能晚於結束日期')
+            errors.append(_('生效開始日期不能晚於結束日期'))
 
         approval_limit = None
         if delegation_type == DelegationType.APPROVAL and approval_limit_str:
             try:
                 approval_limit = Decimal(approval_limit_str)
             except InvalidOperation:
-                errors.append('簽核金額上限格式錯誤')
+                errors.append(_('簽核金額上限格式錯誤'))
 
         if errors:
             for err in errors:
@@ -234,11 +235,11 @@ def edit_delegation(secure_code: str):
                         delegation.status = DelegationStatus.ACTIVE
 
                 db.session.commit()
-                flash('已更新代理授權', 'success')
+                flash(_('已更新代理授權'), 'success')
                 return redirect(url_for('delegations.view_delegation', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/delegations/edit.html',
@@ -265,11 +266,11 @@ def revoke_delegation(secure_code: str):
         delegation.revoked_by = current_user.display_name
         delegation.revoke_reason = revoke_reason
         db.session.commit()
-        flash('已撤銷代理授權', 'success')
+        flash(_('已撤銷代理授權'), 'success')
         return redirect(url_for('delegations.view_delegation', secure_code=secure_code))
     except Exception as e:
         db.session.rollback()
-        flash(f'撤銷失敗: {str(e)}', 'error')
+        flash(_('撤銷失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('delegations.edit_delegation', secure_code=secure_code))
 
 
@@ -286,9 +287,9 @@ def delete_delegation(secure_code: str):
         delegation.is_deleted = True
         delegation.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash('已刪除代理授權', 'success')
+        flash(_('已刪除代理授權'), 'success')
         return redirect(url_for('delegations.list_delegations'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('delegations.edit_delegation', secure_code=secure_code))

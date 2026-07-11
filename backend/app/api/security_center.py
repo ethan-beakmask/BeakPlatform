@@ -13,6 +13,7 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, request, jsonify, g
+from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import func, extract, text
 
@@ -143,7 +144,7 @@ def login_failures():
         details = r.details or 'unknown'
         org_sc = r.org_secure_code
         org_info = org_map.get(org_sc, {})
-        org_name = org_info.get('name', '未知網域') if org_sc else '未知網域'
+        org_name = org_info.get('name', _('未知網域')) if org_sc else _('未知網域')
         org_domain = org_info.get('domain', '-') if org_sc else '-'
 
         # 解析 UA 簡要
@@ -280,10 +281,10 @@ def get_broadcast_acks(secure_code):
     ).first()
 
     if not item:
-        return jsonify({'success': False, 'message': '找不到廣播'}), 404
+        return jsonify({'success': False, 'message': _('找不到廣播')}), 404
 
     if not is_sys_admin and item.org_secure_code != org_code:
-        return jsonify({'success': False, 'message': '無權限'}), 403
+        return jsonify({'success': False, 'message': _('無權限')}), 403
 
     # 該廣播所屬企業
     broadcast_org = item.org_secure_code
@@ -391,7 +392,7 @@ def get_org_rate_limits():
     ).first()
 
     if not org:
-        return jsonify({'success': False, 'error': '企業不存在'}), 404
+        return jsonify({'success': False, 'error': _('企業不存在')}), 404
 
     return jsonify({
         'success': True,
@@ -417,7 +418,7 @@ def update_org_rate_limits():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '缺少 request body'}), 400
+        return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
     org = Organization.query.filter_by(
         secure_code=current_user.org_secure_code,
@@ -425,7 +426,7 @@ def update_org_rate_limits():
     ).first()
 
     if not org:
-        return jsonify({'success': False, 'error': '企業不存在'}), 404
+        return jsonify({'success': False, 'error': _('企業不存在')}), 404
 
     updated = []
     cleared = []
@@ -446,8 +447,8 @@ def update_org_rate_limits():
         value = str(value).strip()
         if not validate_rate_limit_string(value):
             errors.append(
-                f'{category}: 格式無效 "{value}"'
-                f' (正確格式如: 20 per 10 minutes)'
+                _('%(category)s: 格式無效 "%(value)s" (正確格式如: 20 per 10 minutes)',
+                  category=category, value=value)
             )
             continue
 
@@ -457,7 +458,7 @@ def update_org_rate_limits():
     if errors:
         return jsonify({
             'success': False,
-            'error': '部分設定格式無效',
+            'error': _('部分設定格式無效'),
             'details': errors,
         }), 400
 
@@ -466,11 +467,11 @@ def update_org_rate_limits():
 
     parts = []
     if updated:
-        parts.append(f'已更新: {", ".join(updated)}')
+        parts.append(_('已更新: %(items)s', items=', '.join(updated)))
     if cleared:
-        parts.append(f'已恢復系統預設: {", ".join(cleared)}')
+        parts.append(_('已恢復系統預設: %(items)s', items=', '.join(cleared)))
 
     return jsonify({
         'success': True,
-        'message': '; '.join(parts) if parts else '無變更',
+        'message': '; '.join(parts) if parts else _('無變更'),
     })

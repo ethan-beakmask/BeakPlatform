@@ -8,6 +8,7 @@ BeakMask Organization Management Web Routes
 import json
 from datetime import datetime, date
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import or_
 
@@ -139,10 +140,10 @@ def list_orgs():
                 today = date.today()
                 if latest >= today:
                     rd = relativedelta(latest, today)
-                    remaining = f"{rd.years}年{rd.months}個月" if rd.years > 0 else f"{rd.months}個月{rd.days}天"
+                    remaining = _('%(y)s年%(m)s個月', y=rd.years, m=rd.months) if rd.years > 0 else _('%(m)s個月%(d)s天', m=rd.months, d=rd.days)
                 else:
                     rd = relativedelta(today, latest)
-                    remaining = f"已過期 {rd.years}年{rd.months}個月" if rd.years > 0 else f"已過期 {rd.months}個月{rd.days}天"
+                    remaining = _('已過期 %(y)s年%(m)s個月', y=rd.years, m=rd.months) if rd.years > 0 else _('已過期 %(m)s個月%(d)s天', m=rd.months, d=rd.days)
 
                 contract_period = {
                     'start': earliest,
@@ -214,16 +215,16 @@ def create_org():
             try:
                 code = generator.generate(name, exists_checker=_exists)
             except ValueError:
-                flash('無法自動產生企業代碼，請手動輸入', 'error')
+                flash(_('無法自動產生企業代碼，請手動輸入'), 'error')
 
         if not code or not name or not domain_name:
-            flash('企業代碼、企業名稱、網域名稱為必填', 'error')
+            flash(_('企業代碼、企業名稱、網域名稱為必填'), 'error')
         elif not domain_name.replace('-', '').replace('.', '').isalnum():
-            flash('網域名稱只能包含字母、數字、連字號和點', 'error')
+            flash(_('網域名稱只能包含字母、數字、連字號和點'), 'error')
         elif not admin_password:
-            flash('管理員密碼為必填', 'error')
+            flash(_('管理員密碼為必填'), 'error')
         elif len(admin_password) < 12:
-            flash('管理員密碼長度至少 12 碼', 'error')
+            flash(_('管理員密碼長度至少 12 碼'), 'error')
         else:
             try:
                 from datetime import timedelta
@@ -252,14 +253,15 @@ def create_org():
                 db.session.commit()
 
                 admin_info = f'{admin_username}@{domain_name}'
-                flash(f'已建立企業 {name}（含 10 天試用合約），管理員帳號: {admin_info}', 'success')
+                flash(_('已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s',
+                        name=name, admin_info=admin_info), 'success')
                 return redirect(url_for('organizations.list_orgs'))
             except ValueError as e:
                 db.session.rollback()
                 flash(str(e), 'error')
             except Exception as e:
                 db.session.rollback()
-                flash(f'建立失敗: {str(e)}', 'error')
+                flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/organizations/create.html')
 
@@ -290,7 +292,7 @@ def edit_org(secure_code: str):
         address = request.form.get('address', '').strip() or None
 
         if not name:
-            flash('企業名稱為必填', 'error')
+            flash(_('企業名稱為必填'), 'error')
         else:
             try:
                 org.name = name
@@ -308,14 +310,14 @@ def edit_org(secure_code: str):
                 org.contact_phone = contact_phone
                 org.address = address
                 db.session.commit()
-                flash('已更新企業資料', 'success')
+                flash(_('已更新企業資料'), 'success')
                 return redirect(url_for('organizations.list_orgs'))
             except ValueError:
                 db.session.rollback()
-                flash('帳號上限必須為正整數', 'error')
+                flash(_('帳號上限必須為正整數'), 'error')
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     # 查詢未到期的有效合約（狀態 ACTIVE 且結束日期 >= 今天）
     today = date.today()
@@ -352,7 +354,7 @@ def delete_org(secure_code: str):
 
     # 系統企業不可刪除
     if org.is_system_org:
-        flash('系統企業不可刪除', 'error')
+        flash(_('系統企業不可刪除'), 'error')
         return redirect(url_for('organizations.edit_org', secure_code=secure_code))
 
     try:
@@ -382,14 +384,16 @@ def delete_org(secure_code: str):
         db.session.commit()
 
         contract_count = len(contracts)
-        msg = f'已刪除企業 {org.name}'
         if contract_count > 0:
-            msg += f'（含 {contract_count} 份合約）'
+            msg = _('已刪除企業 %(name)s（含 %(count)s 份合約）',
+                    name=org.name, count=contract_count)
+        else:
+            msg = _('已刪除企業 %(name)s', name=org.name)
         flash(msg, 'success')
         return redirect(url_for('organizations.list_orgs'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('organizations.edit_org', secure_code=secure_code))
 
 
@@ -428,11 +432,11 @@ def add_contract(org_secure_code: str):
             )
             db.session.add(contract)
             db.session.commit()
-            flash(f'已新增合約 {contract.contract_number}', 'success')
+            flash(_('已新增合約 %(number)s', number=contract.contract_number), 'success')
             return redirect(url_for('organizations.list_orgs', org=org.secure_code))
         except Exception as e:
             db.session.rollback()
-            flash(f'新增失敗: {str(e)}', 'error')
+            flash(_('新增失敗: %(error)s', error=str(e)), 'error')
 
     available_modules = [
         m for m in LookupService.get_items('INSTALLED_MODULES')
@@ -481,13 +485,13 @@ def edit_contract(org_secure_code: str, contract_secure_code: str):
                 contract.modified_by_secure_code = current_user.secure_code
                 contract.modified_at = datetime.utcnow()
                 db.session.commit()
-                flash(f'已停用合約 {contract.contract_number}', 'success')
+                flash(_('已停用合約 %(number)s', number=contract.contract_number), 'success')
                 return redirect(url_for('organizations.list_orgs', org=org.secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'停用失敗: {str(e)}', 'error')
+                flash(_('停用失敗: %(error)s', error=str(e)), 'error')
         else:
-            flash('合約建立後不可修改內容，如需變更請建立新合約', 'error')
+            flash(_('合約建立後不可修改內容，如需變更請建立新合約'), 'error')
 
     available_modules = [
         m for m in LookupService.get_items('INSTALLED_MODULES')
@@ -529,9 +533,9 @@ def delete_contract(org_secure_code: str, contract_secure_code: str):
         contract.is_deleted = True
         contract.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除合約 {contract.contract_number}', 'success')
+        flash(_('已刪除合約 %(number)s', number=contract.contract_number), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('organizations.list_orgs', org=org_secure_code))

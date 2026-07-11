@@ -16,6 +16,7 @@ import logging
 
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from flask_babel import gettext as _
 from flask import Blueprint, render_template, jsonify, abort
 
 from ..security.decorators import system_admin_required
@@ -141,7 +142,7 @@ def overview_data():
 
             entry.update({
                 'conglomerate_id': record.conglomerate_id,
-                'conglomerate_name': cg.name if cg else '(集團已刪除)',
+                'conglomerate_name': cg.name if cg else _('(集團已刪除)'),
                 'conglomerate_code': cg.code if cg else '-',
                 'conglomerate_active': cg.is_active if cg else False,
                 'conglomerate_secure_code': record.conglomerate_secure_code,

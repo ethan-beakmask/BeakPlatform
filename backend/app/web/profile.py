@@ -6,6 +6,7 @@ BeakMask Profile Web Routes
 此模組保留基本路由並重導到整合後的頁面
 """
 from flask import Blueprint, redirect, url_for, request, flash, render_template
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required
@@ -46,22 +47,22 @@ def change_password():
                 user_secure_code=current_user.secure_code)
 
         if not current_password or not new_password or not confirm_password:
-            flash('所有欄位為必填', 'error')
+            flash(_('所有欄位為必填'), 'error')
         elif new_password != confirm_password:
-            flash('新密碼與確認密碼不符', 'error')
+            flash(_('新密碼與確認密碼不符'), 'error')
         elif not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         elif not current_user.check_password(current_password):
-            flash('目前密碼錯誤', 'error')
+            flash(_('目前密碼錯誤'), 'error')
         else:
             try:
                 current_user.set_password(new_password)
                 db.session.commit()
-                flash('已變更密碼', 'success')
+                flash(_('已變更密碼'), 'success')
                 return redirect(url_for('profile.view'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'變更失敗: {str(e)}', 'error')
+                flash(_('變更失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/profile/password.html')

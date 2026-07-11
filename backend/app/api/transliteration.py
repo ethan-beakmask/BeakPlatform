@@ -5,6 +5,7 @@ Transliteration API
 提供 CJK（中日韓）文字轉羅馬字/拼音的功能。
 """
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 
 from ..security.decorators import login_required
 from ..services.transliteration_service import TransliterationService
@@ -34,11 +35,11 @@ def transliterate_name():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供 JSON 資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供 JSON 資料')}), 400
 
     name = data.get('name', '').strip()
     if not name:
-        return jsonify({'success': False, 'message': '請提供 name 參數'}), 400
+        return jsonify({'success': False, 'message': _('請提供 name 參數')}), 400
 
     result = TransliterationService.transliterate_name(name)
 
@@ -73,11 +74,11 @@ def transliterate_text():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供 JSON 資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供 JSON 資料')}), 400
 
     text = data.get('text', '').strip()
     if not text:
-        return jsonify({'success': False, 'message': '請提供 text 參數'}), 400
+        return jsonify({'success': False, 'message': _('請提供 text 參數')}), 400
 
     capitalize = data.get('capitalize', True)
     source_lang = data.get('source_lang')
@@ -119,21 +120,21 @@ def detect_language():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供 JSON 資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供 JSON 資料')}), 400
 
     text = data.get('text', '').strip()
     if not text:
-        return jsonify({'success': False, 'message': '請提供 text 參數'}), 400
+        return jsonify({'success': False, 'message': _('請提供 text 參數')}), 400
 
     lang = TransliterationService.detect_language(text)
 
     # 語言名稱對照
     lang_names = {
-        'zh': '中文',
-        'ja': '日文',
-        'ko': '韓文',
-        'unknown': '未知',
-        'mixed': '混合'
+        'zh': _('中文'),
+        'ja': _('日文'),
+        'ko': _('韓文'),
+        'unknown': _('未知'),
+        'mixed': _('混合')
     }
 
     return jsonify({
@@ -141,6 +142,6 @@ def detect_language():
         'data': {
             'text': text,
             'language': lang,
-            'language_name': lang_names.get(lang, '未知')
+            'language_name': lang_names.get(lang, _('未知'))
         }
     })

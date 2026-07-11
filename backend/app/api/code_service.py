@@ -7,6 +7,7 @@ BeakMask Code Service API
 """
 import logging
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from sqlalchemy import func
 
 from ..security.decorators import login_required
@@ -139,19 +140,19 @@ def generate_code():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供 JSON 資料'}), 400
+        return jsonify({'error': _('請提供 JSON 資料')}), 400
 
     entity_type = data.get('entity_type', '').strip()
     name = data.get('name', '').strip()
 
     if not entity_type or entity_type not in ENTITY_REGISTRY:
         return jsonify({
-            'error': f'不支援的實體類型: {entity_type}',
+            'error': _('不支援的實體類型: %(entity_type)s', entity_type=entity_type),
             'supported': list(ENTITY_REGISTRY.keys())
         }), 400
 
     if not name:
-        return jsonify({'error': '請提供名稱'}), 400
+        return jsonify({'error': _('請提供名稱')}), 400
 
     entity_config = ENTITY_REGISTRY[entity_type]
     generator = get_code_generator()
@@ -183,19 +184,19 @@ def validate_code():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供 JSON 資料'}), 400
+        return jsonify({'error': _('請提供 JSON 資料')}), 400
 
     entity_type = data.get('entity_type', '').strip()
     code = data.get('code', '').strip()
 
     if not entity_type or entity_type not in ENTITY_REGISTRY:
         return jsonify({
-            'error': f'不支援的實體類型: {entity_type}',
+            'error': _('不支援的實體類型: %(entity_type)s', entity_type=entity_type),
             'supported': list(ENTITY_REGISTRY.keys())
         }), 400
 
     if not code:
-        return jsonify({'error': '請提供代碼'}), 400
+        return jsonify({'error': _('請提供代碼')}), 400
 
     entity_config = ENTITY_REGISTRY[entity_type]
     generator = get_code_generator()
@@ -208,6 +209,6 @@ def validate_code():
 
     # 再做 case-insensitive 重複檢查
     if exists_checker(code):
-        return jsonify({'valid': False, 'error': f'代碼 "{code}" 已存在（不區分大小寫）'}), 200
+        return jsonify({'valid': False, 'error': _('代碼 "%(code)s" 已存在（不區分大小寫）', code=code)}), 200
 
     return jsonify({'valid': True}), 200

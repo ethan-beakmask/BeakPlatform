@@ -27,6 +27,7 @@ Telegram 設定:
 """
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db
@@ -50,7 +51,7 @@ def get_general_settings():
     """取得一般設定"""
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     return jsonify({
         'success': True,
@@ -64,11 +65,11 @@ def update_general_settings():
     """更新一般設定"""
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 更新設定
     org.set_settings(data)
@@ -76,7 +77,7 @@ def update_general_settings():
 
     return jsonify({
         'success': True,
-        'message': '設定已儲存',
+        'message': _('設定已儲存'),
         'data': org.get_settings()
     })
 
@@ -91,7 +92,7 @@ def _login_security_get(context: str):
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     config = LoginSecurityService.get_config(org, context)
     return jsonify({
@@ -109,11 +110,11 @@ def _login_security_put(context: str):
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     setting_key = f'login_security_{context}'
 
@@ -129,7 +130,7 @@ def _login_security_put(context: str):
             if val not in VALID_FIELDS:
                 return jsonify({
                     'success': False,
-                    'message': f'{k} 無效，允許值: {", ".join(VALID_FIELDS)}',
+                    'message': _('%(field)s 無效，允許值: %(values)s', field=k, values=", ".join(VALID_FIELDS)),
                 }), 400
             merged[k] = val
 
@@ -145,7 +146,7 @@ def _login_security_put(context: str):
 
     return jsonify({
         'success': True,
-        'message': '登入安全欄位設定已儲存',
+        'message': _('登入安全欄位設定已儲存'),
         'data': merged,
     })
 
@@ -188,7 +189,7 @@ def get_password_policy():
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     policy = PasswordPolicyService.get_policy(org.secure_code)
     has_smtp = PasswordPolicyService.has_smtp_configured(org.secure_code)
@@ -210,11 +211,11 @@ def update_password_policy():
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 更新密碼政策
     PasswordPolicyService.set_policy(org.secure_code, data)
@@ -222,7 +223,7 @@ def update_password_policy():
 
     return jsonify({
         'success': True,
-        'message': '密碼政策已儲存',
+        'message': _('密碼政策已儲存'),
         'data': {
             'policy': data,
             'has_smtp': has_smtp
@@ -238,7 +239,7 @@ def generate_password():
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     password = PasswordPolicyService.generate_password(org.secure_code)
 
@@ -258,11 +259,11 @@ def validate_password():
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     data = request.get_json()
     if not data or 'password' not in data:
-        return jsonify({'success': False, 'message': '請提供密碼'}), 400
+        return jsonify({'success': False, 'message': _('請提供密碼')}), 400
 
     password = data['password']
     user_secure_code = data.get('user_secure_code')  # 檢查歷史時需要
@@ -297,7 +298,7 @@ def get_logo_info():
     """取得企業 Logo 資訊"""
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_context_file(org.secure_code, 'org_logo')
     logo_url = record.serve_url if record else None
@@ -322,10 +323,10 @@ def upload_logo():
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     if 'logo' not in request.files:
-        return jsonify({'success': False, 'message': '請選擇圖片檔案'}), 400
+        return jsonify({'success': False, 'message': _('請選擇圖片檔案')}), 400
 
     file = request.files['logo']
 
@@ -346,7 +347,7 @@ def upload_logo():
 
         return jsonify({
             'success': True,
-            'message': 'Logo 上傳成功',
+            'message': _('Logo 上傳成功'),
             'data': {
                 'logo_url': record.serve_url
             }
@@ -356,7 +357,7 @@ def upload_logo():
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('上傳失敗: %(error)s', error=str(e))}), 500
 
 
 @api_enterprise_settings.route('/logo', methods=['DELETE'])
@@ -365,19 +366,19 @@ def delete_logo():
     """刪除企業 Logo"""
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_context_file(org.secure_code, 'org_logo')
     if not record:
-        return jsonify({'success': False, 'message': '尚未上傳 Logo'}), 400
+        return jsonify({'success': False, 'message': _('尚未上傳 Logo')}), 400
 
     try:
         file_service.delete_file(record)
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Logo 已刪除'})
+        return jsonify({'success': True, 'message': _('Logo 已刪除')})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('刪除失敗: %(error)s', error=str(e))}), 500
 
 
 # ==================== SMTP 設定 ====================
@@ -422,13 +423,13 @@ def create_smtp_config():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 必填欄位驗證
     required_fields = ['name', 'smtp_host', 'username', 'password', 'from_email']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'success': False, 'message': f'請填寫 {field}'}), 400
+            return jsonify({'success': False, 'message': _('請填寫 %(field)s', field=field)}), 400
 
     # 如果設為預設，取消其他預設
     if data.get('is_default'):
@@ -465,7 +466,7 @@ def create_smtp_config():
 
     return jsonify({
         'success': True,
-        'message': 'SMTP 設定已建立',
+        'message': _('SMTP 設定已建立'),
         'data': config.to_dict()
     }), 201
 
@@ -481,7 +482,7 @@ def get_smtp_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     return jsonify({
         'success': True,
@@ -500,11 +501,11 @@ def update_smtp_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 如果設為預設，取消其他預設
     if data.get('is_default') and not config.is_default:
@@ -535,7 +536,7 @@ def update_smtp_config(secure_code):
 
     return jsonify({
         'success': True,
-        'message': 'SMTP 設定已更新',
+        'message': _('SMTP 設定已更新'),
         'data': config.to_dict()
     })
 
@@ -551,7 +552,7 @@ def delete_smtp_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     config.is_deleted = True
     config.deleted_at = datetime.utcnow()
@@ -559,7 +560,7 @@ def delete_smtp_config(secure_code):
 
     return jsonify({
         'success': True,
-        'message': 'SMTP 設定已刪除'
+        'message': _('SMTP 設定已刪除')
     })
 
 
@@ -582,12 +583,12 @@ def test_smtp_connection():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     required_fields = ['smtp_host', 'smtp_port', 'username', 'password']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'success': False, 'message': f'請填寫 {field}'}), 400
+            return jsonify({'success': False, 'message': _('請填寫 %(field)s', field=field)}), 400
 
     result = SmtpConfig.test_connection(
         smtp_host=data['smtp_host'],
@@ -617,7 +618,7 @@ def test_saved_smtp_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     data = request.get_json() or {}
 
@@ -689,13 +690,13 @@ def create_telegram_config():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     if not data.get('name'):
-        return jsonify({'success': False, 'message': '請填寫設定名稱'}), 400
+        return jsonify({'success': False, 'message': _('請填寫設定名稱')}), 400
 
     if not data.get('bot_token'):
-        return jsonify({'success': False, 'message': '請填寫 Bot Token'}), 400
+        return jsonify({'success': False, 'message': _('請填寫 Bot Token')}), 400
 
     # 建立設定
     config = TelegramConfig(
@@ -716,7 +717,7 @@ def create_telegram_config():
 
     return jsonify({
         'success': True,
-        'message': 'Telegram 設定已建立',
+        'message': _('Telegram 設定已建立'),
         'data': config.to_dict()
     }), 201
 
@@ -732,7 +733,7 @@ def get_telegram_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     return jsonify({
         'success': True,
@@ -751,11 +752,11 @@ def update_telegram_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 更新欄位
     if 'name' in data:
@@ -780,7 +781,7 @@ def update_telegram_config(secure_code):
 
     return jsonify({
         'success': True,
-        'message': 'Telegram 設定已更新',
+        'message': _('Telegram 設定已更新'),
         'data': config.to_dict()
     })
 
@@ -796,7 +797,7 @@ def delete_telegram_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     config.is_deleted = True
     config.deleted_at = datetime.utcnow()
@@ -804,7 +805,7 @@ def delete_telegram_config(secure_code):
 
     return jsonify({
         'success': True,
-        'message': 'Telegram 設定已刪除'
+        'message': _('Telegram 設定已刪除')
     })
 
 
@@ -821,10 +822,10 @@ def test_telegram_connection():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     if not data.get('bot_token'):
-        return jsonify({'success': False, 'message': '請填寫 Bot Token'}), 400
+        return jsonify({'success': False, 'message': _('請填寫 Bot Token')}), 400
 
     result = TelegramConfig.test_connection(
         bot_token=data['bot_token'],
@@ -850,7 +851,7 @@ def test_saved_telegram_config(secure_code):
     )
 
     if not config:
-        return jsonify({'success': False, 'message': '設定不存在'}), 404
+        return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
     data = request.get_json() or {}
 
@@ -910,10 +911,10 @@ def create_recipient_group():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     if not data.get('name'):
-        return jsonify({'success': False, 'message': '請填寫群組名稱'}), 400
+        return jsonify({'success': False, 'message': _('請填寫群組名稱')}), 400
 
     # 建立群組
     group = RecipientGroup(
@@ -935,7 +936,7 @@ def create_recipient_group():
 
     return jsonify({
         'success': True,
-        'message': '收件人群組已建立',
+        'message': _('收件人群組已建立'),
         'data': group.to_dict(include_recipient_count=True)
     }), 201
 
@@ -951,7 +952,7 @@ def get_recipient_group(secure_code):
     )
 
     if not group:
-        return jsonify({'success': False, 'message': '群組不存在'}), 404
+        return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
     return jsonify({
         'success': True,
@@ -970,11 +971,11 @@ def update_recipient_group(secure_code):
     )
 
     if not group:
-        return jsonify({'success': False, 'message': '群組不存在'}), 404
+        return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 更新基本欄位
     if 'name' in data:
@@ -1000,7 +1001,7 @@ def update_recipient_group(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '收件人群組已更新',
+        'message': _('收件人群組已更新'),
         'data': group.to_dict(include_recipient_count=True)
     })
 
@@ -1016,7 +1017,7 @@ def delete_recipient_group(secure_code):
     )
 
     if not group:
-        return jsonify({'success': False, 'message': '群組不存在'}), 404
+        return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
     group.is_deleted = True
     group.deleted_at = datetime.utcnow()
@@ -1024,7 +1025,7 @@ def delete_recipient_group(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '收件人群組已刪除'
+        'message': _('收件人群組已刪除')
     })
 
 
@@ -1044,7 +1045,7 @@ def resolve_recipient_group(secure_code):
     )
 
     if not group:
-        return jsonify({'success': False, 'message': '群組不存在'}), 404
+        return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
     recipients = group.resolve_recipients()
 

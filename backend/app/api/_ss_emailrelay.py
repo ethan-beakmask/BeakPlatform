@@ -13,6 +13,7 @@ import os
 import base64
 import subprocess
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -82,14 +83,14 @@ def register(bp):
             if not new_dir:
                 return jsonify({
                     'success': False,
-                    'message': '安裝路徑不可為空'
+                    'message': _('安裝路徑不可為空')
                 }), 400
 
             is_valid, errors = _validate_install_dir(new_dir)
             if not is_valid:
                 return jsonify({
                     'success': False,
-                    'message': '安裝路徑驗證失敗',
+                    'message': _('安裝路徑驗證失敗'),
                     'errors': errors
                 }), 400
 
@@ -145,7 +146,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': f'已更新 {len(updated)} 項設定',
+            'message': _('已更新 %(count)s 項設定', count=len(updated)),
             'updated': updated
         })
 
@@ -184,10 +185,10 @@ def register(bp):
         password = data.get('password', '').strip()
 
         if not email:
-            return jsonify({'success': False, 'message': '請填寫 Email'}), 400
+            return jsonify({'success': False, 'message': _('請填寫 Email')}), 400
 
         if not password:
-            return jsonify({'success': False, 'message': '請填寫應用程式密碼'}), 400
+            return jsonify({'success': False, 'message': _('請填寫應用程式密碼')}), 400
 
         auth_file = _get_emailrelay_paths()['auth_file']
         auth_dir = os.path.dirname(auth_file)
@@ -197,7 +198,7 @@ def register(bp):
             if not os.path.exists(auth_dir):
                 return jsonify({
                     'success': False,
-                    'message': f'E-MailRelay 目錄不存在: {auth_dir}'
+                    'message': _('E-MailRelay 目錄不存在: %(dir)s', dir=auth_dir)
                 }), 400
 
             # Base64 編碼
@@ -216,7 +217,7 @@ def register(bp):
 
             return jsonify({
                 'success': True,
-                'message': 'SMTP 認證設定已儲存',
+                'message': _('SMTP 認證設定已儲存'),
                 'data': {
                     'email': email,
                     'file': auth_file,
@@ -227,12 +228,12 @@ def register(bp):
         except PermissionError:
             return jsonify({
                 'success': False,
-                'message': '無權限寫入 Auth 檔案，請檢查目錄權限'
+                'message': _('無權限寫入 Auth 檔案，請檢查目錄權限')
             }), 403
         except Exception as e:
             return jsonify({
                 'success': False,
-                'message': f'儲存失敗: {str(e)}'
+                'message': _('儲存失敗: %(error)s', error=str(e))
             }), 500
 
     @bp.route('/emailrelay/test', methods=['POST'])
@@ -258,14 +259,14 @@ def register(bp):
         if not os.path.exists(spool_dir):
             return jsonify({
                 'success': False,
-                'message': f'Spool 目錄不存在: {spool_dir}',
+                'message': _('Spool 目錄不存在: %(dir)s', dir=spool_dir),
                 'data': {'step': 'directory_check'}
             }), 400
 
         if not os.access(spool_dir, os.W_OK):
             return jsonify({
                 'success': False,
-                'message': f'Spool 目錄無寫入權限: {spool_dir}',
+                'message': _('Spool 目錄無寫入權限: %(dir)s', dir=spool_dir),
                 'data': {'step': 'directory_check'}
             }), 400
 
@@ -281,7 +282,7 @@ def register(bp):
         if not recipient:
             return jsonify({
                 'success': False,
-                'message': '請指定收件人或先設定 SMTP 認證',
+                'message': _('請指定收件人或先設定 SMTP 認證'),
                 'data': {'step': 'get_recipient'}
             }), 400
 
@@ -346,13 +347,13 @@ BeakPlatform System
             if result.returncode != 0:
                 return jsonify({
                     'success': False,
-                    'message': f'emailrelay-submit 失敗: {result.stderr}',
+                    'message': _('emailrelay-submit 失敗: %(error)s', error=result.stderr),
                     'data': {'step': 'submit', 'stderr': result.stderr}
                 }), 400
 
             return jsonify({
                 'success': True,
-                'message': f'測試郵件已發送至 {recipient}',
+                'message': _('測試郵件已發送至 %(recipient)s', recipient=recipient),
                 'data': {
                     'recipient': recipient,
                     'spool_dir': spool_dir,
@@ -363,19 +364,19 @@ BeakPlatform System
         except subprocess.TimeoutExpired:
             return jsonify({
                 'success': False,
-                'message': 'emailrelay-submit 執行逾時',
+                'message': _('emailrelay-submit 執行逾時'),
                 'data': {'step': 'submit'}
             }), 400
         except FileNotFoundError:
             return jsonify({
                 'success': False,
-                'message': '找不到 emailrelay-submit 工具，請確認 E-MailRelay 已安裝',
+                'message': _('找不到 emailrelay-submit 工具，請確認 E-MailRelay 已安裝'),
                 'data': {'step': 'submit'}
             }), 400
         except Exception as e:
             return jsonify({
                 'success': False,
-                'message': f'發送測試郵件失敗: {str(e)}',
+                'message': _('發送測試郵件失敗: %(error)s', error=str(e)),
                 'data': {'step': 'submit'}
             }), 500
 
@@ -391,7 +392,7 @@ BeakPlatform System
         if action not in ('start', 'stop', 'restart', 'status'):
             return jsonify({
                 'success': False,
-                'message': f'不支援的操作: {action}'
+                'message': _('不支援的操作: %(action)s', action=action)
             }), 400
 
         service_name = 'emailrelay'
@@ -415,7 +416,7 @@ BeakPlatform System
             if result.returncode != 0:
                 return jsonify({
                     'success': False,
-                    'message': f'操作失敗: {result.stderr}'
+                    'message': _('操作失敗: %(error)s', error=result.stderr)
                 }), 400
 
             # 取得新狀態
@@ -423,19 +424,19 @@ BeakPlatform System
 
             return jsonify({
                 'success': True,
-                'message': f'服務已 {action}',
+                'message': _('服務已 %(action)s', action=action),
                 'data': status
             })
 
         except subprocess.TimeoutExpired:
             return jsonify({
                 'success': False,
-                'message': '操作逾時'
+                'message': _('操作逾時')
             }), 400
         except Exception as e:
             return jsonify({
                 'success': False,
-                'message': f'操作失敗: {str(e)}'
+                'message': _('操作失敗: %(error)s', error=str(e))
             }), 500
 
 
@@ -497,7 +498,7 @@ def _read_emailrelay_auth() -> dict:
             'configured': False,
             'email': '',
             'password': '',
-            'message': 'Auth 檔案尚未建立'
+            'message': _('Auth 檔案尚未建立')
         }
 
     try:
@@ -511,7 +512,7 @@ def _read_emailrelay_auth() -> dict:
                 'configured': False,
                 'email': '',
                 'password': '',
-                'message': f'Auth 檔案格式不正確，欄位數: {len(parts)}'
+                'message': _('Auth 檔案格式不正確，欄位數: %(count)s', count=len(parts))
             }
 
         auth_type = parts[1]  # plain 或 plain:b
@@ -526,7 +527,7 @@ def _read_emailrelay_auth() -> dict:
                     'configured': False,
                     'email': '',
                     'password': '',
-                    'message': 'Base64 解碼失敗'
+                    'message': _('Base64 解碼失敗')
                 }
         elif auth_type == 'plain':
             # 純文字格式
@@ -537,7 +538,7 @@ def _read_emailrelay_auth() -> dict:
                 'configured': False,
                 'email': '',
                 'password': '',
-                'message': f'不支援的認證類型: {auth_type}'
+                'message': _('不支援的認證類型: %(auth_type)s', auth_type=auth_type)
             }
 
         return {
@@ -552,14 +553,14 @@ def _read_emailrelay_auth() -> dict:
             'configured': False,
             'email': '',
             'password': '',
-            'message': '無權限讀取 Auth 檔案'
+            'message': _('無權限讀取 Auth 檔案')
         }
     except Exception as e:
         return {
             'configured': False,
             'email': '',
             'password': '',
-            'message': f'讀取失敗: {str(e)}'
+            'message': _('讀取失敗: %(error)s', error=str(e))
         }
 
 

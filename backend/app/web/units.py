@@ -3,6 +3,7 @@ BeakMask Organizational Units Web Routes
 組織單位 (部門/群組) 網頁路由
 """
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -99,7 +100,7 @@ def create_unit():
         sort_order = int(request.form.get('sort_order', 0) or 0)
 
         if not code or not name:
-            flash('代碼和名稱為必填', 'error')
+            flash(_('代碼和名稱為必填'), 'error')
         else:
             # 檢查代碼是否重複
             existing = OrganizationalUnit.query.filter(
@@ -109,7 +110,7 @@ def create_unit():
             ).first()
 
             if existing:
-                flash(f'代碼 {code} 已存在', 'error')
+                flash(_('代碼 %(code)s 已存在', code=code), 'error')
             else:
                 try:
                     unit = OrganizationalUnit(
@@ -126,11 +127,11 @@ def create_unit():
                     db.session.add(unit)
                     db.session.commit()
 
-                    flash(f'已建立 {name}', 'success')
+                    flash(_('已建立 %(name)s', name=name), 'success')
                     return redirect(url_for('units.list_units'))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/units/create.html',
@@ -172,7 +173,7 @@ def edit_unit(secure_code: str):
         is_active = request.form.get('is_active') == '1'
 
         if not name:
-            flash('名稱為必填', 'error')
+            flash(_('名稱為必填'), 'error')
         else:
             try:
                 old_name = unit.name
@@ -187,11 +188,11 @@ def edit_unit(secure_code: str):
                     unit.update_children_paths()
 
                 db.session.commit()
-                flash(f'已更新 {name}', 'success')
+                flash(_('已更新 %(name)s', name=name), 'success')
                 return redirect(url_for('units.view_unit', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/units/edit.html',
@@ -214,16 +215,16 @@ def delete_unit(secure_code: str):
     # 檢查是否有子單位
     children = [c for c in unit.children if not c.is_deleted]
     if children:
-        flash('此單位有子單位，請先刪除子單位', 'error')
+        flash(_('此單位有子單位，請先刪除子單位'), 'error')
         return redirect(url_for('units.edit_unit', secure_code=secure_code))
 
     try:
         unit.is_deleted = True
         unit.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除 {unit.name}', 'success')
+        flash(_('已刪除 %(name)s', name=unit.name), 'success')
         return redirect(url_for('units.list_units'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('units.edit_unit', secure_code=secure_code))

@@ -5,6 +5,7 @@ BeakMask Menu Management Web Routes
 import json
 from datetime import datetime
 from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
+from flask_babel import gettext as _
 from flask_login import current_user
 from markupsafe import Markup
 
@@ -65,7 +66,7 @@ def flatten_menu_tree(items, depth=0):
 @system_admin_required
 def list_menu():
     """選單管理頁面"""
-    root_items, _ = get_menu_tree()
+    root_items, _unused = get_menu_tree()
     flat_items = flatten_menu_tree(root_items)
 
     # 取得所有顯示選單項目的權限矩陣
@@ -227,7 +228,7 @@ def _build_trellis_data(root_items, permission_matrix, module_menu_codes):
 @system_admin_required
 def create_menu():
     """新增選單項目頁面"""
-    root_items, _ = get_menu_tree()
+    root_items, _unused = get_menu_tree()
     parent_options = flatten_menu_tree(root_items)
 
     if request.method == 'POST':
@@ -266,12 +267,12 @@ def create_menu():
             try:
                 code = generator.generate(title, exists_checker=_exists)
             except ValueError:
-                flash('無法自動產生代碼，請手動輸入', 'error')
+                flash(_('無法自動產生代碼，請手動輸入'), 'error')
 
         if not code or not title:
-            flash('標題為必填', 'error')
+            flash(_('標題為必填'), 'error')
         elif not allowed_user_types:
-            flash('請至少選擇一種用戶類型', 'error')
+            flash(_('請至少選擇一種用戶類型'), 'error')
         else:
             # 檢查代碼是否重複 (case-insensitive)
             existing = MenuItem.query.filter(
@@ -279,7 +280,7 @@ def create_menu():
                 MenuItem.is_deleted == False
             ).first()
             if existing:
-                flash(f'選單代碼 {code} 已存在', 'error')
+                flash(_('選單代碼 %(code)s 已存在', code=code), 'error')
             else:
                 try:
                     # 計算深度
@@ -316,11 +317,11 @@ def create_menu():
 
                     db.session.commit()
 
-                    flash(f'已建立選單項目 {title}', 'success')
+                    flash(_('已建立選單項目 %(title)s', title=title), 'success')
                     return redirect(url_for('menu.list_menu'))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/menu/create.html',
@@ -336,7 +337,7 @@ def create_root_header():
     """快速建立根層級 header 項目（系統管理員分類用）"""
     title = request.form.get('title', '').strip()
     if not title:
-        flash('標題為必填', 'error')
+        flash(_('標題為必填'), 'error')
         return redirect(url_for('menu.list_menu'))
 
     # 自動產生 code
@@ -351,7 +352,7 @@ def create_root_header():
     try:
         code = generator.generate(title, exists_checker=_exists)
     except ValueError:
-        flash('無法自動產生代碼，請手動輸入', 'error')
+        flash(_('無法自動產生代碼，請手動輸入'), 'error')
         return redirect(url_for('menu.list_menu'))
 
     # display_order: 排到最前面（現有最小值 - 1）
@@ -384,10 +385,10 @@ def create_root_header():
         MenuService.set_menu_permissions(item.secure_code, ['SYSTEM_ADMIN'])
 
         db.session.commit()
-        flash(f'已建立根項目「{title}」', 'success')
+        flash(_('已建立根項目「%(title)s」', title=title), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'建立失敗: {str(e)}', 'error')
+        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('menu.list_menu'))
 
@@ -404,7 +405,7 @@ def edit_menu(secure_code: str):
     if not item:
         abort(404)
 
-    root_items, _ = get_menu_tree()
+    root_items, _unused = get_menu_tree()
     parent_options = flatten_menu_tree(root_items)
     # 排除自己及子孫作為可選的父項目
     descendants = item.get_descendants()
@@ -442,9 +443,9 @@ def edit_menu(secure_code: str):
             title_i18n['zh-CN'] = title_zh_cn
 
         if not title:
-            flash('標題為必填', 'error')
+            flash(_('標題為必填'), 'error')
         elif not allowed_user_types:
-            flash('請至少選擇一種用戶類型', 'error')
+            flash(_('請至少選擇一種用戶類型'), 'error')
         else:
             try:
                 item.title = title
@@ -485,11 +486,11 @@ def edit_menu(secure_code: str):
                 MenuService.set_menu_permissions(item.secure_code, allowed_user_types)
 
                 db.session.commit()
-                flash('已更新選單項目', 'success')
+                flash(_('已更新選單項目'), 'success')
                 return redirect(url_for('menu.list_menu'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     # 計算子孫中的預設項目（用於刪除區塊提示）
     protected_children = []
@@ -522,7 +523,7 @@ def delete_menu(secure_code: str):
         abort(404)
 
     if not item.is_user_created:
-        flash('預設選單項目禁止刪除', 'error')
+        flash(_('預設選單項目禁止刪除'), 'error')
         return redirect(url_for('menu.list_menu'))
 
     # 檢查子孫是否包含預設項目
@@ -531,8 +532,8 @@ def delete_menu(secure_code: str):
     if protected:
         names = '、'.join(d.title for d in protected[:5])
         if len(protected) > 5:
-            names += f' 等共 {len(protected)} 項'
-        flash(f'無法刪除：子項目中包含預設選單（{names}），請先將其移出', 'error')
+            names += _(' 等共 %(count)s 項', count=len(protected))
+        flash(_('無法刪除：子項目中包含預設選單（%(names)s），請先將其移出', names=names), 'error')
         return redirect(url_for('menu.list_menu'))
 
     try:
@@ -544,9 +545,9 @@ def delete_menu(secure_code: str):
         item.is_deleted = True
         item.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除選單項目 {item.title}', 'success')
+        flash(_('已刪除選單項目 %(title)s', title=item.title), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('menu.list_menu'))

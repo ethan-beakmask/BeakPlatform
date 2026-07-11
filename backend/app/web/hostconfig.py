@@ -8,6 +8,7 @@ BeakMask Host Config
 - 其他主機級操作
 """
 from flask import Blueprint, render_template, jsonify, request, redirect, url_for
+from flask_babel import gettext as _
 
 from app.security.decorators import system_admin_required
 from app import db
@@ -164,7 +165,7 @@ def hard_delete_preview():
                 'success': True,
                 'deleted_orgs': [],
                 'table_counts': [],
-                'message': '沒有已軟刪除的企業'
+                'message': _('沒有已軟刪除的企業')
             })
 
         # 取得各表預計刪除的筆數
@@ -180,7 +181,7 @@ def hard_delete_preview():
 
             try:
                 with db.session.begin_nested():
-                    count_sql, _ = _get_delete_sql(table_name, key_column, placeholders, parent_table)
+                    count_sql, _unused = _get_delete_sql(table_name, key_column, placeholders, parent_table)
                     count = db.session.execute(db.text(count_sql)).scalar()
                     if count > 0:
                         table_counts.append({
@@ -222,7 +223,7 @@ def hard_delete_execute():
         if not org_codes:
             return jsonify({
                 'success': True,
-                'message': '沒有需要刪除的資料',
+                'message': _('沒有需要刪除的資料'),
                 'deleted_counts': {}
             })
 
@@ -238,7 +239,7 @@ def hard_delete_execute():
 
             try:
                 with db.session.begin_nested():
-                    _, delete_sql = _get_delete_sql(table_name, key_column, placeholders, parent_table)
+                    _unused, delete_sql = _get_delete_sql(table_name, key_column, placeholders, parent_table)
                     result = db.session.execute(db.text(delete_sql))
                     if result.rowcount > 0:
                         deleted_counts[display_name] = result.rowcount
@@ -250,7 +251,7 @@ def hard_delete_execute():
 
         return jsonify({
             'success': True,
-            'message': f'已刪除 {len(org_codes)} 個企業及其相關資料',
+            'message': _('已刪除 %(count)s 個企業及其相關資料', count=len(org_codes)),
             'deleted_counts': deleted_counts
         })
     except Exception as e:
@@ -794,8 +795,8 @@ def purge_deleted_execute():
 
         return jsonify({
             'success': True,
-            'message': f'已清除 {total_deleted} 筆標記刪除的記錄'
-                       + (f'，另清理 {total_orphans} 筆孤兒記錄' if total_orphans > 0 else ''),
+            'message': _('已清除 %(count)s 筆標記刪除的記錄', count=total_deleted)
+                       + (_('，另清理 %(count)s 筆孤兒記錄', count=total_orphans) if total_orphans > 0 else ''),
             'results': results,
             'total_deleted': total_deleted,
             'total_orphans': total_orphans,

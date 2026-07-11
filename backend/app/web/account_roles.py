@@ -8,6 +8,7 @@ BeakPlatform Account Roles Overview
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -259,13 +260,13 @@ def assign_role():
     """指派角色給用戶"""
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '缺少請求資料'}), 400
+        return jsonify({'success': False, 'error': _('缺少請求資料')}), 400
 
     user_sc = data.get('user_secure_code')
     role_sc = data.get('role_secure_code')
 
     if not user_sc or not role_sc:
-        return jsonify({'success': False, 'error': '缺少必要參數'}), 400
+        return jsonify({'success': False, 'error': _('缺少必要參數')}), 400
 
     org_sc = current_user.org_secure_code
 
@@ -276,7 +277,7 @@ def assign_role():
         is_deleted=False,
     ).first()
     if not user:
-        return jsonify({'success': False, 'error': '用戶不存在'}), 404
+        return jsonify({'success': False, 'error': _('用戶不存在')}), 404
 
     # 驗證角色
     role = Role.query.filter_by(
@@ -285,7 +286,7 @@ def assign_role():
         is_deleted=False,
     ).first()
     if not role:
-        return jsonify({'success': False, 'error': '角色不存在'}), 404
+        return jsonify({'success': False, 'error': _('角色不存在')}), 404
 
     # 檢查重複（per-unit 角色需考慮 unit_secure_code）
     dup_query = UserRoleAssignment.query.filter(
@@ -300,7 +301,7 @@ def assign_role():
         )
     existing = dup_query.first()
     if existing:
-        return jsonify({'success': False, 'error': f'用戶已擁有「{role.name}」角色'}), 409
+        return jsonify({'success': False, 'error': _('用戶已擁有「%(role)s」角色', role=role.name)}), 409
 
     # 互斥群組檢查：同一 exclusive_group 的角色只能擇一
     if role.exclusive_group:
@@ -331,7 +332,7 @@ def assign_role():
         if conflict_role:
             return jsonify({
                 'success': False,
-                'error': f'無法指派「{role.name}」：與現有角色「{conflict_role.name}」互斥，請先移除後再指派',
+                'error': _('無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派', role=role.name, conflict=conflict_role.name),
             }), 409
 
     unit_sc = data.get('unit_secure_code')
@@ -349,7 +350,7 @@ def assign_role():
 
     return jsonify({
         'success': True,
-        'message': f'已將「{role.name}」指派給 {user.display_name}',
+        'message': _('已將「%(role)s」指派給 %(user)s', role=role.name, user=user.display_name),
     })
 
 
@@ -360,13 +361,13 @@ def revoke_role():
     """移除用戶的角色"""
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '缺少請求資料'}), 400
+        return jsonify({'success': False, 'error': _('缺少請求資料')}), 400
 
     user_sc = data.get('user_secure_code')
     role_sc = data.get('role_secure_code')
 
     if not user_sc or not role_sc:
-        return jsonify({'success': False, 'error': '缺少必要參數'}), 400
+        return jsonify({'success': False, 'error': _('缺少必要參數')}), 400
 
     org_sc = current_user.org_secure_code
 
@@ -378,7 +379,7 @@ def revoke_role():
     ).first()
 
     if not assignment:
-        return jsonify({'success': False, 'error': '找不到此角色指派'}), 404
+        return jsonify({'success': False, 'error': _('找不到此角色指派')}), 404
 
     role = Role.query.filter_by(secure_code=role_sc).first()
     user = User.query.filter_by(secure_code=user_sc).first()
@@ -393,5 +394,5 @@ def revoke_role():
 
     return jsonify({
         'success': True,
-        'message': f'已移除 {user_name} 的「{role_name}」角色',
+        'message': _('已移除 %(user)s 的「%(role)s」角色', user=user_name, role=role_name),
     })

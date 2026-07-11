@@ -21,6 +21,7 @@ System Settings - 稽核 / 檔案儲存 / 速率限制 / 選單配色 子模組
 """
 import re
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -75,9 +76,9 @@ def register(bp):
                 'audit_level': SystemSetting.get('audit_level', 'STANDARD'),
                 'audit_retention_days': SystemSetting.get('audit_retention_days', 90),
                 'levels': [
-                    {'value': 'MINIMAL', 'label': '最小 -- 僅登入/登出與失敗嘗試'},
-                    {'value': 'STANDARD', 'label': '標準 -- 登入/登出 + 所有寫入操作 (預設)'},
-                    {'value': 'VERBOSE', 'label': '詳細 -- 記錄所有請求 (含讀取，資料量大)'},
+                    {'value': 'MINIMAL', 'label': _('最小 -- 僅登入/登出與失敗嘗試')},
+                    {'value': 'STANDARD', 'label': _('標準 -- 登入/登出 + 所有寫入操作 (預設)')},
+                    {'value': 'VERBOSE', 'label': _('詳細 -- 記錄所有請求 (含讀取，資料量大)')},
                 ]
             }
         })
@@ -95,7 +96,7 @@ def register(bp):
         """
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': '缺少 request body'}), 400
+            return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
         from ..services.audit_service import AuditService, VALID_AUDIT_LEVELS
 
@@ -106,7 +107,8 @@ def register(bp):
             if level not in VALID_AUDIT_LEVELS:
                 return jsonify({
                     'success': False,
-                    'error': f'無效的稽核等級，允許值: {", ".join(sorted(VALID_AUDIT_LEVELS))}'
+                    'error': _('無效的稽核等級，允許值: %(values)s',
+                               values=', '.join(sorted(VALID_AUDIT_LEVELS)))
                 }), 400
             AuditService.set_audit_level(level)
             updated.append(f'audit_level={level}')
@@ -114,7 +116,7 @@ def register(bp):
         if 'audit_retention_days' in data:
             days = data['audit_retention_days']
             if not isinstance(days, int) or days < 7:
-                return jsonify({'success': False, 'error': '保留天數至少 7 天'}), 400
+                return jsonify({'success': False, 'error': _('保留天數至少 7 天')}), 400
             SystemSetting.set(
                 key='audit_retention_days',
                 value=days,
@@ -126,7 +128,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': f'稽核設定已更新: {", ".join(updated)}'
+            'message': _('稽核設定已更新: %(items)s', items=', '.join(updated))
         })
 
     # ==================== 檔案儲存 ====================
@@ -165,7 +167,7 @@ def register(bp):
         """
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': '缺少 request body'}), 400
+            return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
         updated = []
 
@@ -174,12 +176,12 @@ def register(bp):
             if not isinstance(limit, int) or limit < 1000:
                 return jsonify({
                     'success': False,
-                    'error': '目錄檔案上限至少 1,000'
+                    'error': _('目錄檔案上限至少 1,000')
                 }), 400
             if limit > 1000000:
                 return jsonify({
                     'success': False,
-                    'error': '目錄檔案上限不可超過 1,000,000'
+                    'error': _('目錄檔案上限不可超過 1,000,000')
                 }), 400
             SystemSetting.set(
                 key='encrypted_dir_file_limit',
@@ -193,7 +195,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': f'檔案儲存設定已更新: {", ".join(updated)}'
+            'message': _('檔案儲存設定已更新: %(items)s', items=', '.join(updated))
         })
 
     # ==================== 速率限制 ====================
@@ -234,7 +236,7 @@ def register(bp):
 
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': '缺少 request body'}), 400
+            return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
         updated = []
         errors = []
@@ -244,8 +246,8 @@ def register(bp):
                 value = str(data[category]).strip()
                 if not validate_rate_limit_string(value):
                     errors.append(
-                        f'{category}: 格式無效 "{value}"'
-                        f' (正確格式如: 20 per 10 minutes, 5 per hour)'
+                        _('%(category)s: 格式無效 "%(value)s" (正確格式如: 20 per 10 minutes, 5 per hour)',
+                          category=category, value=value)
                     )
                     continue
 
@@ -259,17 +261,17 @@ def register(bp):
         if errors:
             return jsonify({
                 'success': False,
-                'error': '部分設定格式無效',
+                'error': _('部分設定格式無效'),
                 'details': errors,
                 'updated': updated,
             }), 400
 
         if not updated:
-            return jsonify({'success': False, 'error': '未提供任何有效設定'}), 400
+            return jsonify({'success': False, 'error': _('未提供任何有效設定')}), 400
 
         return jsonify({
             'success': True,
-            'message': f'速率限制已更新: {", ".join(updated)}'
+            'message': _('速率限制已更新: %(items)s', items=', '.join(updated))
         })
 
     # ==================== 選單配色 ====================
@@ -296,11 +298,11 @@ def register(bp):
         """更新選單配色設定"""
         data = request.get_json()
         if not data or 'colors' not in data:
-            return jsonify({'success': False, 'error': '缺少 colors 欄位'}), 400
+            return jsonify({'success': False, 'error': _('缺少 colors 欄位')}), 400
 
         colors = data['colors']
         if not isinstance(colors, dict):
-            return jsonify({'success': False, 'error': 'colors 必須是物件'}), 400
+            return jsonify({'success': False, 'error': _('colors 必須是物件')}), 400
 
         hex_pattern = re.compile(r'^#[0-9a-fA-F]{6}$')
         cleaned = {}
@@ -310,7 +312,8 @@ def register(bp):
             if not hex_pattern.match(value):
                 return jsonify({
                     'success': False,
-                    'error': f'{key} 的值 "{value}" 不是有效的 hex 色碼（格式: #RRGGBB）'
+                    'error': _('%(key)s 的值 "%(value)s" 不是有效的 hex 色碼（格式: #RRGGBB）',
+                               key=key, value=value)
                 }), 400
             cleaned[key] = value.lower()
 
@@ -325,7 +328,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '選單配色已更新，重新整理頁面後生效'
+            'message': _('選單配色已更新，重新整理頁面後生效')
         })
 
     @bp.route('/menu-colors/reset', methods=['POST'])
@@ -339,5 +342,5 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '選單配色已重置為預設值，重新整理頁面後生效'
+            'message': _('選單配色已重置為預設值，重新整理頁面後生效')
         })

@@ -9,6 +9,7 @@ BeakMask Employee Position Management Web Routes
 """
 from datetime import datetime, date
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -99,25 +100,25 @@ def create_position():
         errors = []
 
         if not user_secure_code:
-            errors.append('請選擇企業成員')
+            errors.append(_('請選擇企業成員'))
         if not job_title_secure_code:
-            errors.append('請選擇職稱')
+            errors.append(_('請選擇職稱'))
         if not unit_secure_code:
-            errors.append('請選擇部門')
+            errors.append(_('請選擇部門'))
 
         effective_from = date.today()
         if effective_from_str:
             try:
                 effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效日期格式錯誤')
+                errors.append(_('生效日期格式錯誤'))
 
         effective_until = None
         if effective_until_str:
             try:
                 effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('失效日期格式錯誤')
+                errors.append(_('失效日期格式錯誤'))
 
         if errors:
             for err in errors:
@@ -141,11 +142,11 @@ def create_position():
                 db.session.add(position)
                 db.session.commit()
 
-                flash('已建立職位指派', 'success')
+                flash(_('已建立職位指派'), 'success')
                 return redirect(url_for('positions.list_positions'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'建立失敗: {str(e)}', 'error')
+                flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/positions/create.html',
@@ -211,14 +212,14 @@ def edit_position(secure_code: str):
             try:
                 effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('生效日期格式錯誤')
+                errors.append(_('生效日期格式錯誤'))
 
         effective_until = None
         if effective_until_str:
             try:
                 effective_until = datetime.strptime(effective_until_str, '%Y-%m-%d').date()
             except ValueError:
-                errors.append('失效日期格式錯誤')
+                errors.append(_('失效日期格式錯誤'))
 
         if errors:
             for err in errors:
@@ -236,11 +237,11 @@ def edit_position(secure_code: str):
                 position.is_active = is_active
 
                 db.session.commit()
-                flash('已更新職位', 'success')
+                flash(_('已更新職位'), 'success')
                 return redirect(url_for('positions.view_position', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/positions/edit.html',
@@ -265,9 +266,9 @@ def delete_position(secure_code: str):
         position.is_deleted = True
         position.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash('已刪除職位指派', 'success')
+        flash(_('已刪除職位指派'), 'success')
         return redirect(url_for('positions.list_positions'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('positions.edit_position', secure_code=secure_code))

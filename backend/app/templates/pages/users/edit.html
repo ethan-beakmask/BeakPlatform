@@ -256,9 +256,9 @@
                     {% if can_edit %}
                     <select id="interface_language" name="interface_language">
                         <option value="">-- 跟隨企業設定 --</option>
-                        <option value="zh-TW" {% if user.interface_language == 'zh-TW' %}selected{% endif %}>繁體中文 (zh-TW)</option>
-                        <option value="zh-CN" {% if user.interface_language == 'zh-CN' %}selected{% endif %}>简体中文 (zh-CN)</option>
-                        <option value="en" {% if user.interface_language == 'en' %}selected{% endif %}>English (en)</option>
+                        {% for code, name in supported_languages.items() %}
+                        <option value="{{ code }}" {% if user.interface_language == code %}selected{% endif %}>{{ name }} ({{ code }})</option>
+                        {% endfor %}
                     </select>
                     <div class="help-text">留空則跟隨企業設定</div>
                     {% else %}

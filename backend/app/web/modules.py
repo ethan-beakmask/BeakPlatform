@@ -10,6 +10,7 @@ import json
 from datetime import date, datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 from ..services.module_builder_service import ModuleBuilderService
@@ -94,12 +95,12 @@ def create_module():
         required_level = int(request.form.get('required_level', 2))
 
         if not code or not name:
-            flash('模組代碼和名稱為必填', 'error')
+            flash(_('模組代碼和名稱為必填'), 'error')
         else:
             # 檢查代碼是否已存在
             existing = Module.query.filter_by(code=code, is_deleted=False).first()
             if existing:
-                flash(f'模組代碼 {code} 已存在', 'error')
+                flash(_('模組代碼 %(code)s 已存在', code=code), 'error')
             else:
                 try:
                     module = ModuleBuilderService.create_module(
@@ -112,11 +113,11 @@ def create_module():
                         required_level=required_level,
                     )
                     db.session.commit()
-                    flash(f'已建立模組 {name}', 'success')
+                    flash(_('已建立模組 %(name)s', name=name), 'success')
                     return redirect(url_for('modules.view_module', secure_code=module.secure_code))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/modules/create.html')
 
@@ -151,7 +152,7 @@ def edit_module(secure_code: str):
         abort(404)
 
     if module.is_system_module:
-        flash('系統模組不可編輯', 'error')
+        flash(_('系統模組不可編輯'), 'error')
         return redirect(url_for('modules.view_module', secure_code=secure_code))
 
     if request.method == 'POST':
@@ -162,7 +163,7 @@ def edit_module(secure_code: str):
         is_active = request.form.get('is_active') == 'on'
 
         if not name:
-            flash('模組名稱為必填', 'error')
+            flash(_('模組名稱為必填'), 'error')
         else:
             try:
                 module.name = name
@@ -172,11 +173,11 @@ def edit_module(secure_code: str):
                 module.is_active = is_active
 
                 db.session.commit()
-                flash('已更新模組', 'success')
+                flash(_('已更新模組'), 'success')
                 return redirect(url_for('modules.view_module', secure_code=secure_code))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/modules/edit.html', module=module)
 
@@ -194,16 +195,16 @@ def delete_module(secure_code: str):
         abort(404)
 
     if module.is_system_module:
-        flash('系統模組不可刪除', 'error')
+        flash(_('系統模組不可刪除'), 'error')
         return redirect(url_for('modules.view_module', secure_code=secure_code))
 
     try:
         module.is_deleted = True
         module.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除模組 {module.name}', 'success')
+        flash(_('已刪除模組 %(name)s', name=module.name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('modules.list_modules'))

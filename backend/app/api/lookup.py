@@ -23,6 +23,7 @@ import logging
 import re
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required
@@ -52,31 +53,31 @@ def _extract_value_fields(data: dict) -> dict:
         if field == 'value_str':
             val = str(val)
             if len(val) > 500:
-                raise ValueError('字串值不得超過 500 字元')
+                raise ValueError(_('字串值不得超過 500 字元'))
             result[field] = val
         elif field == 'value_int':
             try:
                 result[field] = int(val)
             except (ValueError, TypeError):
-                raise ValueError('整數值格式錯誤')
+                raise ValueError(_('整數值格式錯誤'))
         elif field == 'value_decimal':
             try:
                 result[field] = round(float(val), 2)
             except (ValueError, TypeError):
-                raise ValueError('小數值格式錯誤')
+                raise ValueError(_('小數值格式錯誤'))
         elif field == 'value_date':
             if not re.match(r'^\d{4}-\d{2}-\d{2}$', str(val)):
-                raise ValueError('日期格式錯誤，應為 YYYY-MM-DD')
+                raise ValueError(_('日期格式錯誤，應為 YYYY-MM-DD'))
             result[field] = str(val)
         elif field == 'value_time':
             if not re.match(r'^\d{2}:\d{2}(:\d{2})?$', str(val)):
-                raise ValueError('時間格式錯誤，應為 HH:MM')
+                raise ValueError(_('時間格式錯誤，應為 HH:MM'))
             result[field] = str(val)
         elif field == 'value_datetime':
             # datetime-local 輸入格式: YYYY-MM-DDTHH:MM
             s = str(val).replace('T', ' ').replace('t', ' ')
             if not re.match(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$', s):
-                raise ValueError('日期時間格式錯誤，應為 YYYY-MM-DD HH:MM')
+                raise ValueError(_('日期時間格式錯誤，應為 YYYY-MM-DD HH:MM'))
             result[field] = s
     return result
 
@@ -108,9 +109,9 @@ def create_category():
     name = (data.get('name') or '').strip()
 
     if not code:
-        return jsonify({'success': False, 'error': '缺少 code'}), 400
+        return jsonify({'success': False, 'error': _('缺少 code')}), 400
     if not name:
-        return jsonify({'success': False, 'error': '缺少 name'}), 400
+        return jsonify({'success': False, 'error': _('缺少 name')}), 400
 
     # 代碼格式驗證
     generator = get_code_generator()
@@ -123,12 +124,12 @@ def create_category():
     # 檢查不與系統級 code 衝突
     sys_cat = LookupService.get_category(code)
     if sys_cat:
-        return jsonify({'success': False, 'error': f'類別代碼 {code} 與系統級類別衝突'}), 409
+        return jsonify({'success': False, 'error': _('類別代碼 %(code)s 與系統級類別衝突', code=code)}), 409
 
     # 檢查不與企業級 code 重複
     org_cat = LookupOrgService.get_category_by_code(org_sc, code)
     if org_cat:
-        return jsonify({'success': False, 'error': f'類別代碼 {code} 已存在'}), 409
+        return jsonify({'success': False, 'error': _('類別代碼 %(code)s 已存在', code=code)}), 409
 
     try:
         category = LookupOrgService.create_category(
@@ -143,7 +144,7 @@ def create_category():
         return jsonify({
             'success': True,
             'data': category,
-            'message': '已建立類別'
+            'message': _('已建立類別')
         }), 201
     except RuntimeError as e:
         logger.warning(f'[Lookup] create_category: {e}')
@@ -164,7 +165,7 @@ def get_category(secure_code):
     if sys_cat:
         # 系統級或屬於當前企業的主庫資料
         if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
-            return jsonify({'success': False, 'error': '類別不存在'}), 404
+            return jsonify({'success': False, 'error': _('類別不存在')}), 404
         return jsonify({'success': True, 'data': sys_cat.to_dict()})
 
     # 查 org DB
@@ -172,7 +173,7 @@ def get_category(secure_code):
     if org_cat:
         return jsonify({'success': True, 'data': org_cat})
 
-    return jsonify({'success': False, 'error': '類別不存在'}), 404
+    return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
 
 @lookup_bp.route('/categories/<secure_code>', methods=['PUT'])
@@ -184,9 +185,9 @@ def update_category(secure_code):
     location = LookupService.resolve_category_location(secure_code, org_sc)
 
     if location == 'system':
-        return jsonify({'success': False, 'error': '系統級類別不可修改'}), 403
+        return jsonify({'success': False, 'error': _('系統級類別不可修改')}), 403
     if location is None:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     # 企業級 -> org DB
     data = request.get_json() or {}
@@ -197,14 +198,14 @@ def update_category(secure_code):
                if k in ('name', 'name_i18n', 'description', 'is_hierarchical', 'is_active')}
         )
         if not updated:
-            return jsonify({'success': False, 'error': '更新失敗'}), 400
+            return jsonify({'success': False, 'error': _('更新失敗')}), 400
         # invalidate 合併快取
         cat_code = updated.get('code', '')
         LookupService._invalidate_cache(cat_code, org_sc)
         return jsonify({
             'success': True,
             'data': updated,
-            'message': '已更新類別'
+            'message': _('已更新類別')
         })
     except Exception as e:
         logger.exception('[Lookup] update_category error')
@@ -220,26 +221,26 @@ def delete_category(secure_code):
     location = LookupService.resolve_category_location(secure_code, org_sc)
 
     if location == 'system':
-        return jsonify({'success': False, 'error': '系統級類別不可刪除'}), 403
+        return jsonify({'success': False, 'error': _('系統級類別不可刪除')}), 403
     if location is None:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     try:
         # 先取類別資訊
         org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
         if not org_cat:
-            return jsonify({'success': False, 'error': '類別不存在'}), 404
+            return jsonify({'success': False, 'error': _('類別不存在')}), 404
         cat_code = org_cat.get('code', '')
 
         # 必須先停用才能刪除
         if org_cat.get('is_active', True):
-            return jsonify({'success': False, 'error': '請先停用類別後再刪除'}), 400
+            return jsonify({'success': False, 'error': _('請先停用類別後再刪除')}), 400
 
         success = LookupOrgService.delete_category(org_sc, secure_code)
         if not success:
-            return jsonify({'success': False, 'error': '刪除失敗'}), 400
+            return jsonify({'success': False, 'error': _('刪除失敗')}), 400
         LookupService._invalidate_cache(cat_code, org_sc)
-        return jsonify({'success': True, 'message': '已刪除類別'})
+        return jsonify({'success': True, 'message': _('已刪除類別')})
     except Exception as e:
         logger.exception('[Lookup] delete_category error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -265,7 +266,7 @@ def list_items(secure_code):
     sys_cat = LookupService.get_category_by_secure_code(secure_code)
     if sys_cat:
         if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
-            return jsonify({'success': False, 'error': '類別不存在'}), 404
+            return jsonify({'success': False, 'error': _('類別不存在')}), 404
         # 系統類別: 回主庫 items
         items = LookupService.get_all_items_merged(sys_cat.code, org_sc)
         return jsonify({'success': True, 'data': items})
@@ -273,7 +274,7 @@ def list_items(secure_code):
     # 查 org DB category
     org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
     if not org_cat:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     # 企業類別: 回 org DB items
     items = LookupOrgService.get_all_items(org_sc, org_cat['code'])
@@ -291,35 +292,35 @@ def create_item(secure_code):
     sys_cat = LookupService.get_category_by_secure_code(secure_code)
     if sys_cat:
         if sys_cat.is_system:
-            return jsonify({'success': False, 'error': '系統級類別不可新增選項'}), 403
+            return jsonify({'success': False, 'error': _('系統級類別不可新增選項')}), 403
         if sys_cat.org_secure_code and sys_cat.org_secure_code != org_sc:
-            return jsonify({'success': False, 'error': '類別不存在'}), 404
+            return jsonify({'success': False, 'error': _('類別不存在')}), 404
         # 主庫非系統級 category -- 這種情況在遷移後不應存在
         # 但為安全起見仍處理: 拒絕寫入
-        return jsonify({'success': False, 'error': '此類別不允許新增選項'}), 403
+        return jsonify({'success': False, 'error': _('此類別不允許新增選項')}), 403
 
     org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
     if not org_cat:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     data = request.get_json() or {}
     code = (data.get('code') or '').strip()
     label = (data.get('label') or '').strip()
 
     if not code:
-        return jsonify({'success': False, 'error': '缺少 code'}), 400
+        return jsonify({'success': False, 'error': _('缺少 code')}), 400
     if not label:
-        return jsonify({'success': False, 'error': '缺少 label'}), 400
+        return jsonify({'success': False, 'error': _('缺少 label')}), 400
 
     # 代碼格式驗證
     if not _CODE_PATTERN.match(code):
-        return jsonify({'success': False, 'error': '代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭'}), 400
+        return jsonify({'success': False, 'error': _('代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭')}), 400
 
     cat_code = org_cat['code']
 
     # 檢查重複
     if LookupOrgService.check_item_code_exists(org_sc, cat_code, code):
-        return jsonify({'success': False, 'error': f'選項代碼 {code} 已存在'}), 409
+        return jsonify({'success': False, 'error': _('選項代碼 %(code)s 已存在', code=code)}), 409
 
     try:
         value_fields = _extract_value_fields(data)
@@ -342,7 +343,7 @@ def create_item(secure_code):
         return jsonify({
             'success': True,
             'data': item,
-            'message': '已新增選項'
+            'message': _('已新增選項')
         }), 201
     except Exception as e:
         logger.exception('[Lookup] create_item error')
@@ -358,9 +359,9 @@ def update_item(secure_code):
     location = LookupService.resolve_item_location(secure_code, org_sc)
 
     if location == 'system':
-        return jsonify({'success': False, 'error': '系統級選項不可修改'}), 403
+        return jsonify({'success': False, 'error': _('系統級選項不可修改')}), 403
     if location is None:
-        return jsonify({'success': False, 'error': '選項不存在'}), 404
+        return jsonify({'success': False, 'error': _('選項不存在')}), 404
 
     # 企業級 -> org DB
     data = request.get_json() or {}
@@ -377,12 +378,12 @@ def update_item(secure_code):
             org_sc, secure_code, **base_fields
         )
         if not updated:
-            return jsonify({'success': False, 'error': '更新失敗'}), 400
+            return jsonify({'success': False, 'error': _('更新失敗')}), 400
         LookupService._invalidate_cache(updated.get('category_code', ''), org_sc)
         return jsonify({
             'success': True,
             'data': updated,
-            'message': '已更新選項'
+            'message': _('已更新選項')
         })
     except Exception as e:
         logger.exception('[Lookup] update_item error')
@@ -398,26 +399,26 @@ def delete_item(secure_code):
     location = LookupService.resolve_item_location(secure_code, org_sc)
 
     if location == 'system':
-        return jsonify({'success': False, 'error': '系統級選項不可刪除'}), 403
+        return jsonify({'success': False, 'error': _('系統級選項不可刪除')}), 403
     if location is None:
-        return jsonify({'success': False, 'error': '選項不存在'}), 404
+        return jsonify({'success': False, 'error': _('選項不存在')}), 404
 
     try:
         # 取得 item 資訊
         org_item = LookupOrgService.get_item_by_secure_code(org_sc, secure_code)
         if not org_item:
-            return jsonify({'success': False, 'error': '選項不存在'}), 404
+            return jsonify({'success': False, 'error': _('選項不存在')}), 404
         cat_code = org_item.get('category_code', '')
 
         # 後端也檢查：必須先停用才能刪除
         if org_item.get('is_active', True):
-            return jsonify({'success': False, 'error': '請先停用選項後再刪除'}), 400
+            return jsonify({'success': False, 'error': _('請先停用選項後再刪除')}), 400
 
         success = LookupOrgService.delete_item(org_sc, secure_code)
         if not success:
-            return jsonify({'success': False, 'error': '刪除失敗'}), 400
+            return jsonify({'success': False, 'error': _('刪除失敗')}), 400
         LookupService._invalidate_cache(cat_code, org_sc)
-        return jsonify({'success': True, 'message': '已刪除選項'})
+        return jsonify({'success': True, 'message': _('已刪除選項')})
     except RuntimeError as e:
         # 子選項仍啟用中等業務錯誤
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -436,25 +437,25 @@ def reorder_items(secure_code):
     # 定位 category
     location = LookupService.resolve_category_location(secure_code, org_sc)
     if location == 'system':
-        return jsonify({'success': False, 'error': '系統級類別不可排序'}), 403
+        return jsonify({'success': False, 'error': _('系統級類別不可排序')}), 403
     if location is None:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     org_cat = LookupOrgService.get_category_by_secure_code(org_sc, secure_code)
     if not org_cat:
-        return jsonify({'success': False, 'error': '類別不存在'}), 404
+        return jsonify({'success': False, 'error': _('類別不存在')}), 404
 
     data = request.get_json() or {}
     order_list = data.get('order', [])
     if not order_list:
-        return jsonify({'success': False, 'error': '缺少 order 陣列'}), 400
+        return jsonify({'success': False, 'error': _('缺少 order 陣列')}), 400
 
     cat_code = org_cat['code']
 
     try:
         LookupOrgService.reorder_items(org_sc, cat_code, order_list)
         LookupService._invalidate_cache(cat_code, org_sc)
-        return jsonify({'success': True, 'message': '排序已更新'})
+        return jsonify({'success': True, 'message': _('排序已更新')})
     except Exception as e:
         logger.exception('[Lookup] reorder_items error')
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -66,7 +67,7 @@ def get_role(secure_code: str):
     role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
 
     if not role:
-        return jsonify({'error': '角色不存在'}), 404
+        return jsonify({'error': _('角色不存在')}), 404
 
     return jsonify({
         'role': role.to_dict(include_children=True)
@@ -86,7 +87,7 @@ def generate_code():
     """
     data = request.get_json()
     if not data or not data.get('name'):
-        return jsonify({'error': '請提供名稱'}), 400
+        return jsonify({'error': _('請提供名稱')}), 400
 
     generator = get_code_generator()
 
@@ -119,7 +120,7 @@ def validate_code():
     """
     data = request.get_json()
     if not data or not data.get('code'):
-        return jsonify({'error': '請提供代碼'}), 400
+        return jsonify({'error': _('請提供代碼')}), 400
 
     generator = get_code_generator()
 
@@ -157,11 +158,11 @@ def create_role():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供角色資料'}), 400
+        return jsonify({'error': _('請提供角色資料')}), 400
 
     # 只有 name 是必填
     if not data.get('name'):
-        return jsonify({'error': '缺少必要欄位: name'}), 400
+        return jsonify({'error': _('缺少必要欄位: name')}), 400
 
     generator = get_code_generator()
 
@@ -178,24 +179,24 @@ def create_role():
         code = data['code'].strip()
         is_valid, error = generator.validate(code)
         if not is_valid:
-            return jsonify({'error': f'代碼格式錯誤: {error}'}), 400
+            return jsonify({'error': _('代碼格式錯誤: %(error)s', error=error)}), 400
 
         # 檢查重複 (case-insensitive)
         if exists_checker(code):
-            return jsonify({'error': f'代碼 {code} 已存在'}), 400
+            return jsonify({'error': _('代碼 %(code)s 已存在', code=code)}), 400
     else:
         # 自動產生代碼
         try:
             code = generator.generate(data['name'], exists_checker=exists_checker)
         except ValueError as e:
-            return jsonify({'error': f'無法自動產生代碼: {e}'}), 400
+            return jsonify({'error': _('無法自動產生代碼: %(error)s', error=e)}), 400
 
     # 檢查父層
     parent = None
     if data.get('parent_id'):
         parent = ResourceGateway.get_by(Role, secure_code=data['parent_id'], is_deleted=False)
         if not parent:
-            return jsonify({'error': '父層角色不存在'}), 400
+            return jsonify({'error': _('父層角色不存在')}), 400
 
     # 檢查綁定的組織單位
     bound_unit = None
@@ -206,7 +207,7 @@ def create_role():
             is_deleted=False
         )
         if not bound_unit:
-            return jsonify({'error': '綁定的組織單位不存在'}), 400
+            return jsonify({'error': _('綁定的組織單位不存在')}), 400
 
     try:
         role = Role(
@@ -230,14 +231,14 @@ def create_role():
         logger.info(f"Role created: {role.code} by {current_user.email}")
 
         return jsonify({
-            'message': '角色建立成功',
+            'message': _('角色建立成功'),
             'role': role.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create role: {e}")
-        return jsonify({'error': '建立角色失敗'}), 500
+        return jsonify({'error': _('建立角色失敗')}), 500
 
 
 @roles_bp.route('/<secure_code>', methods=['PUT'])
@@ -252,7 +253,7 @@ def update_role(secure_code: str):
     role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
 
     if not role:
-        return jsonify({'error': '角色不存在'}), 404
+        return jsonify({'error': _('角色不存在')}), 404
 
     # 系統角色只能修改部分欄位
     if role.is_system_role:
@@ -260,11 +261,11 @@ def update_role(secure_code: str):
         allowed_fields = ['description', 'sort_order', 'is_active']
         for key in data.keys():
             if key not in allowed_fields:
-                return jsonify({'error': f'系統角色不允許修改 {key} 欄位'}), 400
+                return jsonify({'error': _('系統角色不允許修改 %(field)s 欄位', field=key)}), 400
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         old_name = role.name
@@ -284,11 +285,11 @@ def update_role(secure_code: str):
         if 'parent_id' in data and not role.is_system_role:
             if data['parent_id']:
                 if data['parent_id'] == role.secure_code:
-                    return jsonify({'error': '不能設定自己為父層'}), 400
+                    return jsonify({'error': _('不能設定自己為父層')}), 400
 
                 descendants = role.get_descendants()
                 if any(d.secure_code == data['parent_id'] for d in descendants):
-                    return jsonify({'error': '不能設定子層為父層'}), 400
+                    return jsonify({'error': _('不能設定子層為父層')}), 400
 
                 parent = ResourceGateway.get_by(
                     Role,
@@ -297,7 +298,7 @@ def update_role(secure_code: str):
                 )
 
                 if not parent:
-                    return jsonify({'error': '父層角色不存在'}), 400
+                    return jsonify({'error': _('父層角色不存在')}), 400
 
                 role.parent_secure_code = parent.secure_code
             else:
@@ -312,14 +313,14 @@ def update_role(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '角色更新成功',
+            'message': _('角色更新成功'),
             'role': role.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update role: {e}")
-        return jsonify({'error': '更新角色失敗'}), 500
+        return jsonify({'error': _('更新角色失敗')}), 500
 
 
 @roles_bp.route('/<secure_code>', methods=['DELETE'])
@@ -336,16 +337,16 @@ def delete_role(secure_code: str):
     role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
 
     if not role:
-        return jsonify({'error': '角色不存在'}), 404
+        return jsonify({'error': _('角色不存在')}), 404
 
     # 系統角色不可刪除
     if role.is_system_role:
-        return jsonify({'error': '系統角色不可刪除'}), 400
+        return jsonify({'error': _('系統角色不可刪除')}), 400
 
     # 檢查是否有子角色
     children = [c for c in role.children if not c.is_deleted]
     if children:
-        return jsonify({'error': '此角色有子角色，請先刪除子角色'}), 400
+        return jsonify({'error': _('此角色有子角色，請先刪除子角色')}), 400
 
     # 檢查是否有用戶使用此角色
     assignments = ResourceGateway.filter(
@@ -366,13 +367,13 @@ def delete_role(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '角色已刪除'
+            'message': _('角色已刪除')
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete role: {e}")
-        return jsonify({'error': '刪除角色失敗'}), 500
+        return jsonify({'error': _('刪除角色失敗')}), 500
 
 
 @roles_bp.route('/batch-delete', methods=['POST'])
@@ -387,7 +388,7 @@ def batch_delete_roles():
     """
     data = request.get_json()
     if not data or not data.get('ids'):
-        return jsonify({'error': '請提供要刪除的角色 ID 列表'}), 400
+        return jsonify({'error': _('請提供要刪除的角色 ID 列表')}), 400
 
     ids = data['ids']
     deleted = 0
@@ -397,17 +398,17 @@ def batch_delete_roles():
         role = ResourceGateway.get_by(Role, secure_code=secure_code, is_deleted=False)
 
         if not role:
-            errors.append(f'{secure_code}: 角色不存在')
+            errors.append(_('%(code)s: 角色不存在', code=secure_code))
             continue
 
         if role.is_system_role:
-            errors.append(f'{role.name}: 系統角色不可刪除')
+            errors.append(_('%(name)s: 系統角色不可刪除', name=role.name))
             continue
 
         # 檢查是否有子角色
         children = [c for c in role.children if not c.is_deleted]
         if children:
-            errors.append(f'{role.name}: 有子角色，請先刪除子角色')
+            errors.append(_('%(name)s: 有子角色，請先刪除子角色', name=role.name))
             continue
 
         # 刪除相關指派
@@ -428,7 +429,7 @@ def batch_delete_roles():
     try:
         db.session.commit()
         return jsonify({
-            'message': f'已刪除 {deleted} 個角色',
+            'message': _('已刪除 %(count)s 個角色', count=deleted),
             'deleted': deleted,
             'errors': errors
         }), 200
@@ -436,7 +437,7 @@ def batch_delete_roles():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to batch delete roles: {e}")
-        return jsonify({'error': '批量刪除失敗'}), 500
+        return jsonify({'error': _('批量刪除失敗')}), 500
 
 
 # =====================================================

@@ -12,6 +12,7 @@ System Settings - Telegram 設定子模組
 """
 from datetime import datetime
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 from ..models import TelegramConfig
@@ -53,13 +54,13 @@ def register(bp):
         data = request.get_json()
 
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         if not data.get('name'):
-            return jsonify({'success': False, 'message': '請填寫設定名稱'}), 400
+            return jsonify({'success': False, 'message': _('請填寫設定名稱')}), 400
 
         if not data.get('bot_token'):
-            return jsonify({'success': False, 'message': '請填寫 Bot Token'}), 400
+            return jsonify({'success': False, 'message': _('請填寫 Bot Token')}), 400
 
         # 建立設定
         config = TelegramConfig(
@@ -80,7 +81,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'Telegram 設定已建立',
+            'message': _('Telegram 設定已建立'),
             'data': config.to_dict()
         }), 201
 
@@ -95,7 +96,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         return jsonify({
             'success': True,
@@ -113,11 +114,11 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         # 更新欄位
         if 'name' in data:
@@ -142,7 +143,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'Telegram 設定已更新',
+            'message': _('Telegram 設定已更新'),
             'data': config.to_dict()
         })
 
@@ -157,7 +158,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         config.is_deleted = True
         config.deleted_at = datetime.utcnow()
@@ -165,7 +166,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'Telegram 設定已刪除'
+            'message': _('Telegram 設定已刪除')
         })
 
     @bp.route('/telegram/test', methods=['POST'])
@@ -181,10 +182,10 @@ def register(bp):
         data = request.get_json()
 
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         if not data.get('bot_token'):
-            return jsonify({'success': False, 'message': '請填寫 Bot Token'}), 400
+            return jsonify({'success': False, 'message': _('請填寫 Bot Token')}), 400
 
         result = TelegramConfig.test_connection(
             bot_token=data['bot_token'],
@@ -209,7 +210,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         data = request.get_json() or {}
 

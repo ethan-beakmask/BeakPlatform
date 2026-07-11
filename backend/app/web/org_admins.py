@@ -11,6 +11,7 @@ BeakMask Enterprise Admin Management Web Routes
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user, logout_user
 
 from ..security.decorators import admin_required, login_required
@@ -66,7 +67,7 @@ def initial_setup():
 
     org = current_user.organization
     if not org:
-        flash('找不到所屬企業', 'error')
+        flash(_('找不到所屬企業'), 'error')
         return redirect(url_for('auth.login'))
 
     form_data = {}
@@ -117,16 +118,16 @@ def initial_setup():
 
         # 驗證必填欄位
         if not native_name or not english_name or not username:
-            flash('本國姓名、英文姓名、帳號為必填', 'error')
+            flash(_('本國姓名、英文姓名、帳號為必填'), 'error')
         elif not employee_id:
-            flash('用戶編號為必填，且無可用的預設編號規則', 'error')
+            flash(_('用戶編號為必填，且無可用的預設編號規則'), 'error')
         elif not password:
-            flash('密碼為必填', 'error')
+            flash(_('密碼為必填'), 'error')
         elif not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         elif password != confirm_password:
-            flash('兩次輸入的密碼不一致', 'error')
+            flash(_('兩次輸入的密碼不一致'), 'error')
         else:
             employee_email = f"{username}@{org.domain_name}"
             admin_username = f"admin-{username}"
@@ -137,9 +138,9 @@ def initial_setup():
             existing_adm = User.query.filter_by(email=admin_email, is_deleted=False).first()
 
             if existing_emp:
-                flash(f'帳號 {username} 已存在', 'error')
+                flash(_('帳號 %(username)s 已存在', username=username), 'error')
             elif existing_adm:
-                flash(f'管理員帳號 {admin_username} 已存在', 'error')
+                flash(_('管理員帳號 %(username)s 已存在', username=admin_username), 'error')
             else:
                 # 檢查企業成員編號唯一性
                 emp_id_exists = User.query.filter_by(
@@ -148,7 +149,7 @@ def initial_setup():
                     is_deleted=False
                 ).first()
                 if emp_id_exists:
-                    flash(f'用戶編號 {employee_id} 已存在', 'error')
+                    flash(_('用戶編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
                 else:
                     try:
                         # display_name 依企業設定
@@ -270,8 +271,9 @@ def initial_setup():
                         logout_user()
 
                         flash(
-                            f'初始設定完成。已建立企業成員帳號 {username} 與管理員帳號 {admin_username}。'
-                            f'原始管理員已停用。請使用新的管理員帳號登入。',
+                            _('初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 %(admin_username)s。'
+                              '原始管理員已停用。請使用新的管理員帳號登入。',
+                              username=username, admin_username=admin_username),
                             'success'
                         )
                         return redirect(url_for('auth.org_login', domain_name=org.domain_name))
@@ -279,7 +281,7 @@ def initial_setup():
                     except Exception as e:
                         db.session.rollback()
                         logger.error(f"[INITIAL-SETUP] Failed: {e}")
-                        flash(f'建立失敗: {str(e)}', 'error')
+                        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     # 取得預設編號規則的下一個建議值
     suggested_employee_id = None
@@ -356,9 +358,9 @@ def create_admin():
 
         # 驗證必填欄位
         if not bound_employee_code:
-            flash('請選擇要綁定的企業成員帳號', 'error')
+            flash(_('請選擇要綁定的企業成員帳號'), 'error')
         elif not password:
-            flash('請輸入密碼', 'error')
+            flash(_('請輸入密碼'), 'error')
         elif not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
@@ -373,13 +375,13 @@ def create_admin():
             ).first()
 
             if not bound_employee:
-                flash('選擇的企業成員帳號無效', 'error')
+                flash(_('選擇的企業成員帳號無效'), 'error')
             elif bound_employee.secure_code in bound_codes:
-                flash('此企業成員已被其他管理員綁定', 'error')
+                flash(_('此企業成員已被其他管理員綁定'), 'error')
             else:
                 org = current_user.organization
                 if not org:
-                    flash('找不到所屬企業', 'error')
+                    flash(_('找不到所屬企業'), 'error')
                 else:
                     # 從綁定企業成員帶入資料
                     username = bound_employee.username
@@ -396,7 +398,7 @@ def create_admin():
 
                     existing = User.query.filter_by(email=admin_email, is_deleted=False).first()
                     if existing:
-                        flash(f'管理員帳號 {admin_username} 已存在', 'error')
+                        flash(_('管理員帳號 %(username)s 已存在', username=admin_username), 'error')
                     else:
                         try:
                             user = User(
@@ -438,15 +440,17 @@ def create_admin():
                             disabled_msg = ''
                             if original_admin:
                                 original_admin.is_active = False
-                                disabled_msg = f'，預設管理員 {original_admin.username} 已自動停用'
+                                disabled_msg = _('，預設管理員 %(username)s 已自動停用', username=original_admin.username)
 
                             db.session.commit()
 
-                            flash(f'已建立管理員 {admin_username}（綁定企業成員：{bound_employee.display_name}）{disabled_msg}', 'success')
+                            flash(_('已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s',
+                                    admin=admin_username, employee=bound_employee.display_name,
+                                    extra=disabled_msg), 'success')
                             return redirect(url_for('org_admins.list_admins'))
                         except Exception as e:
                             db.session.rollback()
-                            flash(f'建立失敗: {str(e)}', 'error')
+                            flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
         # 保留表單資料供錯誤時回填
         form_data = {'bound_employee': bound_employee_code}
@@ -469,34 +473,36 @@ def toggle_status(secure_code: str):
 
     # 確認是企業管理員
     if admin.user_type != UserType.ORG_ADMIN:
-        flash('此帳號不是企業管理員', 'error')
+        flash(_('此帳號不是企業管理員'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 不能停用自己
     if admin.secure_code == current_user.secure_code:
-        flash('不能停用自己的帳號', 'error')
+        flash(_('不能停用自己的帳號'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 預設管理員帳號僅能由系統管理員啟用
     if not admin.is_active and admin.is_original_admin:
-        flash('預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員', 'error')
+        flash(_('預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 如果要停用，檢查是否為最後一個啟用的管理員
     if admin.is_active:
         active_count = _count_active_admins(current_user.org_secure_code)
         if active_count <= 1:
-            flash('必須至少保留一個啟用的管理員', 'error')
+            flash(_('必須至少保留一個啟用的管理員'), 'error')
             return redirect(url_for('org_admins.list_admins'))
 
     try:
         admin.is_active = not admin.is_active
         db.session.commit()
-        status = '啟用' if admin.is_active else '停用'
-        flash(f'已{status}管理員 {admin.display_name}', 'success')
+        if admin.is_active:
+            flash(_('已啟用管理員 %(name)s', name=admin.display_name), 'success')
+        else:
+            flash(_('已停用管理員 %(name)s', name=admin.display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('org_admins.list_admins'))
 
@@ -512,29 +518,29 @@ def delete_admin(secure_code: str):
 
     # 確認是企業管理員
     if admin.user_type != UserType.ORG_ADMIN:
-        flash('此帳號不是企業管理員', 'error')
+        flash(_('此帳號不是企業管理員'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 不能刪除自己
     if admin.secure_code == current_user.secure_code:
-        flash('不能刪除自己的帳號', 'error')
+        flash(_('不能刪除自己的帳號'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 檢查是否為最後一個啟用的管理員
     if admin.is_active:
         active_count = _count_active_admins(current_user.org_secure_code)
         if active_count <= 1:
-            flash('必須至少保留一個啟用的管理員', 'error')
+            flash(_('必須至少保留一個啟用的管理員'), 'error')
             return redirect(url_for('org_admins.list_admins'))
 
     try:
         admin.is_deleted = True
         admin.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除管理員 {admin.display_name}', 'success')
+        flash(_('已刪除管理員 %(name)s', name=admin.display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('org_admins.list_admins'))
 
@@ -548,17 +554,17 @@ def reset_password(secure_code: str):
     try:
         admin = ResourceGateway.get(User, secure_code)
     except Exception:
-        flash('找不到該管理員', 'error')
+        flash(_('找不到該管理員'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 確認是企業管理員
     if admin.user_type != UserType.ORG_ADMIN:
-        flash('此帳號不是企業管理員', 'error')
+        flash(_('此帳號不是企業管理員'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     # 不能重設自己的密碼（應使用個人密碼變更功能）
     if admin.secure_code == current_user.secure_code:
-        flash('請使用「變更密碼」功能修改自己的密碼', 'error')
+        flash(_('請使用「變更密碼」功能修改自己的密碼'), 'error')
         return redirect(url_for('org_admins.list_admins'))
 
     new_password = request.form.get('new_password', '').strip()
@@ -573,12 +579,12 @@ def reset_password(secure_code: str):
 
     # 驗證
     if not new_password:
-        flash('請輸入新密碼', 'error')
+        flash(_('請輸入新密碼'), 'error')
     elif not pw_valid:
         for err in pw_errors:
             flash(err, 'error')
     elif new_password != confirm_password:
-        flash('兩次輸入的密碼不一致', 'error')
+        flash(_('兩次輸入的密碼不一致'), 'error')
     else:
         try:
             admin.set_password(new_password)
@@ -615,9 +621,9 @@ def reset_password(secure_code: str):
                     reset_time=reset_time
                 )
 
-            flash(f'已重設 {admin.display_name} 的密碼，並通知所有企業管理員', 'success')
+            flash(_('已重設 %(name)s 的密碼，並通知所有企業管理員', name=admin.display_name), 'success')
         except Exception as e:
             db.session.rollback()
-            flash(f'重設密碼失敗: {str(e)}', 'error')
+            flash(_('重設密碼失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('org_admins.list_admins'))

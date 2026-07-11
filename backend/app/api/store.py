@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db
@@ -96,13 +97,13 @@ def install_item(item_sc):
     ).first()
 
     if not item:
-        return jsonify({'success': False, 'message': '商品不存在'}), 404
+        return jsonify({'success': False, 'message': _('商品不存在')}), 404
 
     # 檢查 scope
     from ..models.organization import Organization
     org = Organization.query.filter_by(secure_code=org_sc).first()
     if item.scope == 'platform' and (not org or not org.is_system_org):
-        return jsonify({'success': False, 'message': '此商品僅限系統企業安裝'}), 403
+        return jsonify({'success': False, 'message': _('此商品僅限系統企業安裝')}), 403
 
     # 檢查是否已安裝
     existing = StoreInstallation.query.filter(
@@ -113,7 +114,7 @@ def install_item(item_sc):
     if existing:
         return jsonify({
             'success': False,
-            'message': f'已安裝 (v{existing.installed_version})'
+            'message': _('已安裝 (v%(version)s)', version=existing.installed_version)
         }), 409
 
     # 執行安裝
@@ -135,13 +136,13 @@ def install_item(item_sc):
 
         return jsonify({
             'success': True,
-            'message': f'已安裝 {item.name} v{item.version}',
+            'message': _('已安裝 %(name)s v%(version)s', name=item.name, version=item.version),
             'data': result_summary,
         })
     except Exception as e:
         db.session.rollback()
         logger.error(f'Store install failed: {item.code} -> {org_sc}: {e}')
-        return jsonify({'success': False, 'message': f'安裝失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('安裝失敗: %(error)s', error=str(e))}), 500
 
 
 def _do_install(item: StoreItem, org_sc: str) -> dict:

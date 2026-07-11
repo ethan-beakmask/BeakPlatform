@@ -12,6 +12,7 @@ from decimal import Decimal
 
 import psycopg2
 from flask import Blueprint, render_template, abort, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db
@@ -134,7 +135,7 @@ def _get_org_db_list(org_secure_code=None):
                 'db_size_bytes': 0,
                 'table_count': 0,
                 'tables': [],
-                'error': '憑證解密失敗，請檢查伺服器環境設定',
+                'error': _('憑證解密失敗，請檢查伺服器環境設定'),
             }
         except Exception as e:
             stats = {
@@ -240,7 +241,7 @@ def system_org_stats(org_secure_code):
             'db_size_bytes': 0,
             'table_count': 0,
             'tables': [],
-            'error': '憑證解密失敗，請檢查伺服器環境設定',
+            'error': _('憑證解密失敗，請檢查伺服器環境設定'),
         }
     except Exception as e:
         stats = {
@@ -289,7 +290,7 @@ def org_view():
                 'db_size_bytes': 0,
                 'table_count': 0,
                 'tables': [],
-                'error': '憑證解密失敗，請檢查伺服器環境設定',
+                'error': _('憑證解密失敗，請檢查伺服器環境設定'),
             }
         except Exception as e:
             stats = {
@@ -339,7 +340,7 @@ def _get_org_dsn(org_secure_code):
         is_ready=True,
     ).first()
     if not odb:
-        abort(404, description='企業資料庫不存在')
+        abort(404, description=_('企業資料庫不存在'))
     return odb.get_admin_dsn()
 
 
@@ -378,7 +379,7 @@ def _serialize_value(val):
 def preview_table(table_name):
     """預覽企業 DB 指定表的前 100 筆資料"""
     if not _validate_table_name(table_name):
-        abort(400, description='無效的表名格式')
+        abort(400, description=_('無效的表名格式'))
 
     dsn = _get_org_dsn(current_user.org_secure_code)
 
@@ -388,15 +389,15 @@ def preview_table(table_name):
         err_msg = str(e).strip()
         logger.warning(f'Preview: DB connection failed: {err_msg}')
         if 'does not exist' in err_msg:
-            return jsonify({'error': '企業資料庫不存在，可能尚未建立或已被移除'})
-        return jsonify({'error': f'資料庫連線失敗: {err_msg}'})
+            return jsonify({'error': _('企業資料庫不存在，可能尚未建立或已被移除')})
+        return jsonify({'error': _('資料庫連線失敗: %(error)s', error=err_msg)})
 
     try:
         with conn.cursor() as cur:
             # 確認表存在
             if not _table_exists(cur, table_name):
                 conn.close()
-                return jsonify({'error': f'資料表 {table_name} 不存在'})
+                return jsonify({'error': _('資料表 %(table)s 不存在', table=table_name)})
 
             # 查欄位名稱與是否有 id 欄位
             cur.execute(
@@ -428,7 +429,7 @@ def preview_table(table_name):
             })
     except psycopg2.Error as e:
         logger.warning(f'Preview table {table_name} failed: {e}')
-        return jsonify({'error': f'查詢失敗: {str(e).strip()}'})
+        return jsonify({'error': _('查詢失敗: %(error)s', error=str(e).strip())})
     finally:
         conn.close()
 
@@ -519,11 +520,11 @@ def drop_tables():
             with conn.cursor() as cur:
                 for tname in table_names:
                     if not _validate_table_name(tname):
-                        results.append({'table': tname, 'dropped': False, 'reason': '無效表名'})
+                        results.append({'table': tname, 'dropped': False, 'reason': _('無效表名')})
                         continue
 
                     if not _table_exists(cur, tname):
-                        results.append({'table': tname, 'dropped': False, 'reason': '表不存在'})
+                        results.append({'table': tname, 'dropped': False, 'reason': _('表不存在')})
                         continue
 
                     # 標記主 DB 引用

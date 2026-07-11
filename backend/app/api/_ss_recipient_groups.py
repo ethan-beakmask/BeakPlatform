@@ -11,6 +11,7 @@ System Settings - 收件人群組子模組
 """
 from datetime import datetime
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 from ..models import RecipientGroup
@@ -54,10 +55,10 @@ def register(bp):
         data = request.get_json()
 
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         if not data.get('name'):
-            return jsonify({'success': False, 'message': '請填寫群組名稱'}), 400
+            return jsonify({'success': False, 'message': _('請填寫群組名稱')}), 400
 
         # 建立群組
         group = RecipientGroup(
@@ -79,7 +80,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '收件人群組已建立',
+            'message': _('收件人群組已建立'),
             'data': group.to_dict()
         }), 201
 
@@ -94,7 +95,7 @@ def register(bp):
         ).first()
 
         if not group:
-            return jsonify({'success': False, 'message': '群組不存在'}), 404
+            return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
         return jsonify({
             'success': True,
@@ -112,11 +113,11 @@ def register(bp):
         ).first()
 
         if not group:
-            return jsonify({'success': False, 'message': '群組不存在'}), 404
+            return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         # 更新基本欄位
         if 'name' in data:
@@ -142,7 +143,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '收件人群組已更新',
+            'message': _('收件人群組已更新'),
             'data': group.to_dict()
         })
 
@@ -157,7 +158,7 @@ def register(bp):
         ).first()
 
         if not group:
-            return jsonify({'success': False, 'message': '群組不存在'}), 404
+            return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
         group.is_deleted = True
         group.deleted_at = datetime.utcnow()
@@ -165,7 +166,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '收件人群組已刪除'
+            'message': _('收件人群組已刪除')
         })
 
     @bp.route('/recipient-groups/<secure_code>/resolve', methods=['GET'])
@@ -183,7 +184,7 @@ def register(bp):
         ).first()
 
         if not group:
-            return jsonify({'success': False, 'message': '群組不存在'}), 404
+            return jsonify({'success': False, 'message': _('群組不存在')}), 404
 
         # 系統級群組目前不支援自動解析（跨企業邏輯複雜）
         # 返回設定內容讓前端顯示
@@ -196,6 +197,6 @@ def register(bp):
                 'included_users': group.included_users,
                 'excluded_units': group.excluded_units,
                 'excluded_users': group.excluded_users,
-                'message': '系統級群組需手動指定收件人'
+                'message': _('系統級群組需手動指定收件人')
             }
         })

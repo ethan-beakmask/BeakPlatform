@@ -10,6 +10,7 @@ BeakMask External User Management Web Routes
 """
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -180,13 +181,13 @@ def create_external_user():
     """新增外部廠商"""
     org = current_user.organization
     if not org:
-        flash('找不到所屬企業', 'error')
+        flash(_('找不到所屬企業'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     # 檢查是否有外部專用預設編號規則
     default_rule = _get_default_external_rule(org.secure_code)
     if not default_rule:
-        flash('尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。', 'error')
+        flash(_('尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。'), 'error')
         return redirect(url_for('numbering.list_rules'))
 
     groups = _get_groups(org.secure_code)
@@ -215,14 +216,14 @@ def create_external_user():
 
         # 驗證必填欄位
         if not display_name or not email or not password:
-            flash('姓名、Email、密碼為必填', 'error')
+            flash(_('姓名、Email、密碼為必填'), 'error')
         elif '@' not in email:
-            flash('請輸入有效的 Email 格式', 'error')
+            flash(_('請輸入有效的 Email 格式'), 'error')
         elif not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         elif not group_code:
-            flash('必須選擇歸屬群組', 'error')
+            flash(_('必須選擇歸屬群組'), 'error')
         else:
             # 從 email 提取 username
             username = email.split('@')[0]
@@ -234,12 +235,12 @@ def create_external_user():
                 is_deleted=False
             ).first()
             if existing:
-                flash(f'Email {email} 已存在', 'error')
+                flash(_('Email %(email)s 已存在', email=email), 'error')
             else:
                 # 處理編號：自動使用預設規則
                 default_rule = _get_default_external_rule(org.secure_code)
                 if not default_rule:
-                    flash('找不到外部廠商預設編號規則，請先設定', 'error')
+                    flash(_('找不到外部廠商預設編號規則，請先設定'), 'error')
                     return render_template(
                         'pages/external-users/create.html',
                         form_data=form_data,
@@ -250,7 +251,7 @@ def create_external_user():
                 try:
                     employee_id = NumberingService.get_next_number(default_rule, consume=True)
                 except Exception as e:
-                    flash(f'產生編號失敗: {str(e)}', 'error')
+                    flash(_('產生編號失敗: %(error)s', error=str(e)), 'error')
                     return render_template(
                         'pages/external-users/create.html',
                         form_data=form_data,
@@ -266,7 +267,7 @@ def create_external_user():
                     is_deleted=False
                 ).first()
                 if not group:
-                    flash(f'找不到群組 {group_code}', 'error')
+                    flash(_('找不到群組 %(code)s', code=group_code), 'error')
                     return render_template(
                         'pages/external-users/create.html',
                         form_data=form_data,
@@ -312,12 +313,12 @@ def create_external_user():
 
                     db.session.commit()
 
-                    flash(f'已建立外部廠商 {display_name}（編號：{employee_id}）', 'success')
+                    flash(_('已建立外部廠商 %(name)s（編號：%(employee_id)s）', name=display_name, employee_id=employee_id), 'success')
                     return redirect(url_for('external_users.list_external_users'))
 
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'建立失敗: {str(e)}', 'error')
+                    flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/external-users/create.html',
@@ -337,7 +338,7 @@ def view_external_user(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     # 查詢群組歸屬
@@ -361,7 +362,7 @@ def edit_external_user(secure_code: str):
     """編輯外部廠商"""
     org = current_user.organization
     if not org:
-        flash('找不到所屬企業', 'error')
+        flash(_('找不到所屬企業'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     try:
@@ -370,7 +371,7 @@ def edit_external_user(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     # 查詢群組歸屬（含角色）
@@ -403,9 +404,9 @@ def edit_external_user(secure_code: str):
         new_notes = request.form.get('notes', '').strip()
 
         if not new_email:
-            flash('Email 為必填', 'error')
+            flash(_('Email 為必填'), 'error')
         elif '@' not in new_email:
-            flash('請輸入有效的 Email 格式', 'error')
+            flash(_('請輸入有效的 Email 格式'), 'error')
         else:
             # 檢查同企業內 email 是否與其他帳號重複
             existing = User.query.filter(
@@ -415,7 +416,7 @@ def edit_external_user(secure_code: str):
                 User.is_deleted == False
             ).first()
             if existing:
-                flash(f'Email {new_email} 已被其他帳號使用', 'error')
+                flash(_('Email %(email)s 已被其他帳號使用', email=new_email), 'error')
             else:
                 try:
                     old_email = user.email
@@ -435,11 +436,11 @@ def edit_external_user(secure_code: str):
                     _log_audit('UPDATE', user, f'編輯外部廠商: {", ".join(changes)}')
 
                     db.session.commit()
-                    flash(f'已更新外部廠商 {user.display_name}', 'success')
+                    flash(_('已更新外部廠商 %(name)s', name=user.display_name), 'success')
                     return redirect(url_for('external_users.list_external_users'))
                 except Exception as e:
                     db.session.rollback()
-                    flash(f'更新失敗: {str(e)}', 'error')
+                    flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/external-users/edit.html',
@@ -472,12 +473,12 @@ def add_to_group(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     group_code = request.form.get('group_code', '').strip()
     if not group_code:
-        flash('請選擇群組', 'error')
+        flash(_('請選擇群組'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     org = current_user.organization
@@ -489,7 +490,7 @@ def add_to_group(secure_code: str):
     ).first()
 
     if not group:
-        flash('找不到群組', 'error')
+        flash(_('找不到群組'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     # 檢查是否已加入
@@ -501,7 +502,7 @@ def add_to_group(secure_code: str):
     ).first()
 
     if existing:
-        flash(f'已是「{group.name}」的成員', 'error')
+        flash(_('已是「%(name)s」的成員', name=group.name), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     try:
@@ -516,10 +517,10 @@ def add_to_group(secure_code: str):
         db.session.add(membership)
         _log_audit('ADD_GROUP', user, f'加入群組: {group.name}')
         db.session.commit()
-        flash(f'已加入群組「{group.name}」', 'success')
+        flash(_('已加入群組「%(name)s」', name=group.name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
@@ -534,12 +535,12 @@ def remove_from_group(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     membership_code = request.form.get('membership_code', '').strip()
     if not membership_code:
-        flash('參數錯誤', 'error')
+        flash(_('參數錯誤'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     membership = UserUnitMembership.query.filter_by(
@@ -549,7 +550,7 @@ def remove_from_group(secure_code: str):
     ).first()
 
     if not membership:
-        flash('找不到成員關係', 'error')
+        flash(_('找不到成員關係'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     # 檢查是否還有其他群組（外部廠商必須至少屬於一個群組）
@@ -561,7 +562,7 @@ def remove_from_group(secure_code: str):
     ).count()
 
     if other_memberships == 0:
-        flash('外部廠商必須至少屬於一個群組', 'error')
+        flash(_('外部廠商必須至少屬於一個群組'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     try:
@@ -570,10 +571,10 @@ def remove_from_group(secure_code: str):
         membership.deleted_at = datetime.utcnow()
         _log_audit('REMOVE_GROUP', user, f'移除群組: {group_name}')
         db.session.commit()
-        flash(f'已從群組「{group_name}」移除', 'success')
+        flash(_('已從群組「%(name)s」移除', name=group_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
@@ -588,7 +589,7 @@ def toggle_status(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     try:
@@ -608,10 +609,14 @@ def toggle_status(secure_code: str):
                    f'狀態變更: {"啟用" if old_status else "停用"} → {status}{revoke_detail}')
 
         db.session.commit()
-        flash(f'已{status}外部廠商 {user.display_name}{revoke_detail}', 'success')
+        status_label = _('啟用') if user.is_active else _('停用')
+        revoke_detail_label = ''
+        if revoke_detail:
+            revoke_detail_label = _('（自動退出 %(g_count)s 個社群、解除 %(r_count)s 個角色）', g_count=g_count, r_count=r_count)
+        flash(_('已%(status)s外部廠商 %(name)s%(detail)s', status=status_label, name=user.display_name, detail=revoke_detail_label), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('external_users.list_external_users'))
 
@@ -626,7 +631,7 @@ def delete_external_user(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     try:
@@ -647,10 +652,10 @@ def delete_external_user(secure_code: str):
                    f'刪除外部廠商: {display_name} ({email}){revoke_detail}')
 
         db.session.commit()
-        flash(f'已刪除外部廠商 {display_name}', 'success')
+        flash(_('已刪除外部廠商 %(name)s', name=display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('external_users.list_external_users'))
 
@@ -665,13 +670,13 @@ def change_password(secure_code: str):
         abort(404)
 
     if user.user_type != UserType.EXTERNAL:
-        flash('此帳號不是外部廠商', 'error')
+        flash(_('此帳號不是外部廠商'), 'error')
         return redirect(url_for('external_users.list_external_users'))
 
     new_password = request.form.get('new_password', '').strip()
 
     if not new_password:
-        flash('請輸入新密碼', 'error')
+        flash(_('請輸入新密碼'), 'error')
         return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))
 
     pw_valid, pw_errors = PasswordPolicyService.validate_password(
@@ -686,9 +691,9 @@ def change_password(secure_code: str):
         user.set_password(new_password)
         _log_audit('CHANGE_PASSWORD', user, f'管理員變更密碼')
         db.session.commit()
-        flash(f'已變更 {user.display_name} 的密碼', 'success')
+        flash(_('已變更 %(name)s 的密碼', name=user.display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'密碼變更失敗: {str(e)}', 'error')
+        flash(_('密碼變更失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('external_users.edit_external_user', secure_code=secure_code))

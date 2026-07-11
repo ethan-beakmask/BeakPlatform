@@ -3,6 +3,7 @@ BeakMask Users API
 用戶管理路由
 """
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required, permission_required
@@ -103,27 +104,27 @@ def create_user():
 
     employee_id_raw = (data.get('employee_id') or '').strip()
     if not native_name or not english_name or not username:
-        return jsonify({'error': '本國姓名、英文姓名、帳號為必填'}), 400
+        return jsonify({'error': _('本國姓名、英文姓名、帳號為必填')}), 400
     if not employee_id_raw:
-        return jsonify({'error': '用戶編號為必填'}), 400
+        return jsonify({'error': _('用戶編號為必填')}), 400
 
     org = current_user.organization
     if not org:
-        return jsonify({'error': '找不到所屬企業'}), 400
+        return jsonify({'error': _('找不到所屬企業')}), 400
 
     email = f"{username}@{org.domain_name}"
 
     # 檢查帳號唯一性
     existing = User.query.filter_by(email=email, is_deleted=False).first()
     if existing:
-        return jsonify({'error': f'帳號 {username} 已存在'}), 409
+        return jsonify({'error': _('帳號 %(username)s 已存在', username=username)}), 409
 
     # 檢查用戶編號唯一性
     employee_id = employee_id_raw
     if employee_id:
         from ..web.users import _check_employee_id_unique
         if not _check_employee_id_unique(org.secure_code, employee_id):
-            return jsonify({'error': f'用戶編號 {employee_id} 已存在'}), 409
+            return jsonify({'error': _('用戶編號 %(employee_id)s 已存在', employee_id=employee_id)}), 409
 
     # 查找部門
     department_code = (data.get('department_code') or '').strip()
@@ -135,7 +136,7 @@ def create_user():
             is_deleted=False
         ).first()
         if not primary_unit:
-            return jsonify({'error': f'找不到部門代碼 {department_code}'}), 400
+            return jsonify({'error': _('找不到部門代碼 %(department_code)s', department_code=department_code)}), 400
 
     # 密碼：空白時自動產生
     if not password:
@@ -211,12 +212,12 @@ def create_user():
         db.session.commit()
 
         return jsonify({
-            'message': f'已建立用戶 {native_name}',
+            'message': _('已建立用戶 %(name)s', name=native_name),
             'user': user.to_dict()
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'error': _('建立失敗: %(error)s', error=str(e))}), 500
 
 
 @users_bp.route('/<secure_code>', methods=['PUT'])
@@ -258,15 +259,15 @@ def delete_user(secure_code: str):
 
     # 不能刪除自己
     if user.secure_code == current_user.secure_code:
-        return jsonify({'error': '不能刪除自己的帳號'}), 403
+        return jsonify({'error': _('不能刪除自己的帳號')}), 403
 
     # 不能刪除自己綁定的企業成員帳號
     if current_user.bound_employee_secure_code == user.secure_code:
-        return jsonify({'error': '不能刪除自己綁定的企業成員帳號'}), 403
+        return jsonify({'error': _('不能刪除自己綁定的企業成員帳號')}), 403
 
     # 不能刪除企業原始管理員
     if user.is_original_admin:
-        return jsonify({'error': '不能刪除企業原始管理員'}), 403
+        return jsonify({'error': _('不能刪除企業原始管理員')}), 403
 
     ResourceGateway.delete(user, soft=True)
     ResourceGateway.commit()

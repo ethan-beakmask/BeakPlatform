@@ -5,6 +5,7 @@ BeakMask Main Web Routes
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
@@ -158,12 +159,12 @@ def personal_settings():
             current_user.navbar_display = request.form.get('navbar_display', '').strip() or None
 
             db.session.commit()
-            flash('個人設定已儲存', 'success')
+            flash(_('個人設定已儲存'), 'success')
             return redirect(url_for('main.personal_settings'))
 
         except Exception as e:
             db.session.rollback()
-            flash(f'儲存失敗: {str(e)}', 'error')
+            flash(_('儲存失敗: %(error)s', error=str(e)), 'error')
 
     return render_template(
         'pages/personal_settings.html',
@@ -191,14 +192,14 @@ def change_password():
 
         # 驗證當前密碼
         if not current_user.check_password(current_password):
-            flash('目前密碼不正確', 'error')
+            flash(_('目前密碼不正確'), 'error')
         elif not new_password:
-            flash('請輸入新密碼', 'error')
+            flash(_('請輸入新密碼'), 'error')
         elif not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         elif new_password != confirm_password:
-            flash('新密碼與確認密碼不一致', 'error')
+            flash(_('新密碼與確認密碼不一致'), 'error')
         else:
             try:
                 current_user.set_password(new_password)
@@ -206,12 +207,12 @@ def change_password():
                 current_user.must_change_password = False
                 db.session.commit()
 
-                flash('密碼已變更成功', 'success')
+                flash(_('密碼已變更成功'), 'success')
                 return redirect(url_for('main.personal_settings'))
 
             except Exception as e:
                 db.session.rollback()
-                flash(f'變更失敗: {str(e)}', 'error')
+                flash(_('變更失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/change_password.html')
 

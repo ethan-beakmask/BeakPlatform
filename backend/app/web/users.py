@@ -11,6 +11,7 @@ import csv
 import io
 from datetime import datetime
 from flask import Blueprint, render_template, abort, request, flash, redirect, url_for, Response, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required
@@ -314,16 +315,16 @@ def create_user():
                 password, current_user.org_secure_code)
 
         if not english_name or not native_name or not username:
-            flash('英文姓名、本國姓名、帳號為必填', 'error')
+            flash(_('英文姓名、本國姓名、帳號為必填'), 'error')
         elif not employee_id:
-            flash('用戶編號為必填', 'error')
+            flash(_('用戶編號為必填'), 'error')
         elif password and not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         else:
             org = current_user.organization
             if not org:
-                flash('找不到所屬企業', 'error')
+                flash(_('找不到所屬企業'), 'error')
             else:
                 email = f"{username}@{org.domain_name}"
 
@@ -334,17 +335,17 @@ def create_user():
                 # 檢查帳號是否已存在
                 existing = User.query.filter_by(email=email, is_deleted=False).first()
                 if existing:
-                    flash(f'帳號 {username} 已存在', 'error')
+                    flash(_('帳號 %(username)s 已存在', username=username), 'error')
                 # 檢查用戶編號唯一性
                 elif not _check_employee_id_unique(org.secure_code, employee_id):
-                    flash(f'用戶編號 {employee_id} 已存在', 'error')
+                    flash(_('用戶編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
                 else:
                     # 查找部門
                     primary_unit = None
                     if department_code:
                         primary_unit = _find_department_by_code(org.secure_code, department_code)
                         if not primary_unit:
-                            flash(f'找不到部門代碼 {department_code}', 'error')
+                            flash(_('找不到部門代碼 %(code)s', code=department_code), 'error')
                             org_ctx = current_user.organization
                             return render_template(
                                 'pages/users/create.html',
@@ -406,11 +407,11 @@ def create_user():
 
                         db.session.commit()
 
-                        flash(f'已建立用戶 {native_name}', 'success')
+                        flash(_('已建立用戶 %(name)s', name=native_name), 'success')
                         return redirect(url_for('users.list_users'))
                     except Exception as e:
                         db.session.rollback()
-                        flash(f'建立失敗: {str(e)}', 'error')
+                        flash(_('建立失敗: %(error)s', error=str(e)), 'error')
 
     org = current_user.organization
     return render_template(
@@ -495,7 +496,7 @@ def edit_user(secure_code: str):
     if request.method == 'POST':
         # 如果不可編輯，拒絕 POST
         if not ctx['can_edit']:
-            flash('您沒有編輯權限', 'error')
+            flash(_('您沒有編輯權限'), 'error')
             return render_template('pages/users/edit.html', user=user, **ctx)
 
         # 取得表單資料
@@ -536,19 +537,19 @@ def edit_user(secure_code: str):
 
         # 驗證
         if not native_name or not english_name:
-            flash('本國姓名、英文姓名為必填', 'error')
+            flash(_('本國姓名、英文姓名為必填'), 'error')
         elif new_password and not pw_valid:
             for err in pw_errors:
                 flash(err, 'error')
         elif ctx['can_edit_org_info'] and not _check_employee_id_unique(user.org_secure_code, employee_id, exclude_user_id=user.id):
-            flash(f'企業成員編號 {employee_id} 已存在', 'error')
+            flash(_('企業成員編號 %(employee_id)s 已存在', employee_id=employee_id), 'error')
         else:
             # 查找部門（只有管理員可改）
             primary_unit = None
             if ctx['can_edit_org_info'] and department_code:
                 primary_unit = _find_department_by_code(user.org_secure_code, department_code)
                 if not primary_unit:
-                    flash(f'找不到部門代碼 {department_code}', 'error')
+                    flash(_('找不到部門代碼 %(code)s', code=department_code), 'error')
                     return render_template('pages/users/edit.html', user=user, **ctx)
 
             try:
@@ -593,7 +594,7 @@ def edit_user(secure_code: str):
                 user.mobile_phone_2 = mobile_phone_2
 
                 db.session.commit()
-                flash('已更新用戶資料', 'success')
+                flash(_('已更新用戶資料'), 'success')
 
                 # 編輯自己導向 dashboard，編輯他人導向用戶列表
                 if is_self:
@@ -602,7 +603,7 @@ def edit_user(secure_code: str):
                     return redirect(url_for('users.list_users'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'更新失敗: {str(e)}', 'error')
+                flash(_('更新失敗: %(error)s', error=str(e)), 'error')
 
     # 取得部門列表（給下拉選單用）
     departments = []
@@ -643,28 +644,28 @@ def delete_user(secure_code: str):
 
     # 不能刪除自己
     if user.secure_code == current_user.secure_code:
-        flash('不能刪除自己的帳號', 'error')
+        flash(_('不能刪除自己的帳號'), 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
     # 不能刪除自己綁定的企業成員帳號 (刪除後管理員將無法登入)
     if current_user.bound_employee_secure_code == user.secure_code:
-        flash('不能刪除自己綁定的企業成員帳號', 'error')
+        flash(_('不能刪除自己綁定的企業成員帳號'), 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
     # 不能刪除企業原始管理員
     if user.is_original_admin:
-        flash('不能刪除企業原始管理員', 'error')
+        flash(_('不能刪除企業原始管理員'), 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
     try:
         user.is_deleted = True
         user.deleted_at = datetime.utcnow()
         db.session.commit()
-        flash(f'已刪除用戶 {user.display_name}', 'success')
+        flash(_('已刪除用戶 %(name)s', name=user.display_name), 'success')
         return redirect(url_for('users.list_users'))
     except Exception as e:
         db.session.rollback()
-        flash(f'刪除失敗: {str(e)}', 'error')
+        flash(_('刪除失敗: %(error)s', error=str(e)), 'error')
         return redirect(url_for('users.edit_user', secure_code=secure_code))
 
 
@@ -679,22 +680,24 @@ def toggle_status(secure_code: str):
 
     # 不能停用自己
     if user.secure_code == current_user.secure_code:
-        flash('不能停用自己的帳號', 'error')
+        flash(_('不能停用自己的帳號'), 'error')
         return redirect(url_for('users.list_users'))
 
     # 不能停用自己綁定的企業成員帳號 (停用後管理員將無法登入)
     if current_user.bound_employee_secure_code == user.secure_code and user.is_active:
-        flash('不能停用自己綁定的企業成員帳號', 'error')
+        flash(_('不能停用自己綁定的企業成員帳號'), 'error')
         return redirect(url_for('users.list_users'))
 
     try:
         user.is_active = not user.is_active
         db.session.commit()
-        status = '啟用' if user.is_active else '停用'
-        flash(f'已{status}用戶 {user.display_name}', 'success')
+        if user.is_active:
+            flash(_('已啟用用戶 %(name)s', name=user.display_name), 'success')
+        else:
+            flash(_('已停用用戶 %(name)s', name=user.display_name), 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'操作失敗: {str(e)}', 'error')
+        flash(_('操作失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('users.list_users'))
 
@@ -711,17 +714,17 @@ def reset_password(secure_code: str):
     try:
         user = ResourceGateway.get(User, secure_code)
     except Exception:
-        flash('找不到該用戶', 'error')
+        flash(_('找不到該用戶'), 'error')
         return redirect(url_for('users.list_users'))
 
     # 不能重設自己的密碼（應使用個人密碼變更功能）
     if user.secure_code == current_user.secure_code:
-        flash('請使用「變更密碼」功能修改自己的密碼', 'error')
+        flash(_('請使用「變更密碼」功能修改自己的密碼'), 'error')
         return redirect(url_for('users.view_user', secure_code=secure_code))
 
     # 不能重設系統管理員的密碼（除非自己也是系統管理員）
     if user.user_type == UserType.SYSTEM_ADMIN and not current_user.is_system_admin:
-        flash('無權重設系統管理員的密碼', 'error')
+        flash(_('無權重設系統管理員的密碼'), 'error')
         return redirect(url_for('users.view_user', secure_code=secure_code))
 
     new_password = request.form.get('new_password', '').strip()
@@ -736,12 +739,12 @@ def reset_password(secure_code: str):
 
     # 驗證
     if not new_password:
-        flash('請輸入新密碼', 'error')
+        flash(_('請輸入新密碼'), 'error')
     elif not pw_valid:
         for err in pw_errors:
             flash(err, 'error')
     elif new_password != confirm_password:
-        flash('兩次輸入的密碼不一致', 'error')
+        flash(_('兩次輸入的密碼不一致'), 'error')
     else:
         try:
             user.set_password(new_password)
@@ -749,10 +752,10 @@ def reset_password(secure_code: str):
             # 可選：強制用戶下次登入時變更密碼
             # user.must_change_password = True
             db.session.commit()
-            flash(f'已重設 {user.display_name} 的密碼', 'success')
+            flash(_('已重設 %(name)s 的密碼', name=user.display_name), 'success')
         except Exception as e:
             db.session.rollback()
-            flash(f'重設密碼失敗: {str(e)}', 'error')
+            flash(_('重設密碼失敗: %(error)s', error=str(e)), 'error')
 
     return redirect(url_for('users.view_user', secure_code=secure_code))
 
@@ -825,16 +828,16 @@ def import_users():
     if request.method == 'POST':
         file = request.files.get('csv_file')
         if not file:
-            flash('請選擇 CSV 檔案', 'error')
+            flash(_('請選擇 CSV 檔案'), 'error')
             return render_template('pages/users/import.html')
 
         if not file.filename.endswith('.csv'):
-            flash('請上傳 CSV 格式檔案', 'error')
+            flash(_('請上傳 CSV 格式檔案'), 'error')
             return render_template('pages/users/import.html')
 
         org = current_user.organization
         if not org:
-            flash('找不到所屬企業', 'error')
+            flash(_('找不到所屬企業'), 'error')
             return render_template('pages/users/import.html')
 
         try:
@@ -853,23 +856,23 @@ def import_users():
                     else:
                         error_messages.append(result)
                 except Exception as e:
-                    error_messages.append(f'第 {row_num} 列: {str(e)}')
+                    error_messages.append(_('第 %(row)s 列: %(error)s', row=row_num, error=str(e)))
 
             db.session.commit()
 
             if success_count > 0:
-                flash(f'成功匯入 {success_count} 位用戶', 'success')
+                flash(_('成功匯入 %(count)s 位用戶', count=success_count), 'success')
             if error_messages:
                 for msg in error_messages[:10]:  # 只顯示前10個錯誤
                     flash(msg, 'error')
                 if len(error_messages) > 10:
-                    flash(f'... 還有 {len(error_messages) - 10} 個錯誤', 'error')
+                    flash(_('... 還有 %(count)s 個錯誤', count=len(error_messages) - 10), 'error')
 
             return redirect(url_for('users.list_users'))
 
         except Exception as e:
             db.session.rollback()
-            flash(f'匯入失敗: {str(e)}', 'error')
+            flash(_('匯入失敗: %(error)s', error=str(e)), 'error')
 
     return render_template('pages/users/import.html')
 
@@ -887,22 +890,22 @@ def _import_single_user(row: dict, org, row_num: int):
 
     # 必填欄位驗證
     if not username:
-        return f'第 {row_num} 列: 帳號為必填'
+        return _('第 %(row)s 列: 帳號為必填', row=row_num)
     if not password:
-        return f'第 {row_num} 列: 密碼為必填'
+        return _('第 %(row)s 列: 密碼為必填', row=row_num)
     if not display_name:
-        return f'第 {row_num} 列: 姓名為必填'
+        return _('第 %(row)s 列: 姓名為必填', row=row_num)
     pw_valid, pw_errors = PasswordPolicyService.validate_password(
         password, org.secure_code)
     if not pw_valid:
-        return f'第 {row_num} 列: ' + '、'.join(pw_errors)
+        return _('第 %(row)s 列: ', row=row_num) + '、'.join(pw_errors)
 
     email = f"{username}@{org.domain_name}"
 
     # 檢查帳號是否已存在
     existing = User.query.filter_by(email=email, is_deleted=False).first()
     if existing:
-        return f'第 {row_num} 列: 帳號 {username} 已存在'
+        return _('第 %(row)s 列: 帳號 %(username)s 已存在', row=row_num, username=username)
 
     # 選填欄位
     role = row.get('role', '').strip() or 'user'
@@ -913,7 +916,7 @@ def _import_single_user(row: dict, org, row_num: int):
 
     # 檢查企業成員編號唯一性
     if employee_id and not _check_employee_id_unique(org.secure_code, employee_id):
-        return f'第 {row_num} 列: 企業成員編號 {employee_id} 已存在'
+        return _('第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在', row=row_num, employee_id=employee_id)
 
     # 查找部門
     primary_unit = None

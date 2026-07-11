@@ -13,6 +13,7 @@ System Settings - SMTP 設定子模組
 """
 from datetime import datetime
 from flask import jsonify, request
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 from ..models import SmtpConfig
@@ -61,13 +62,13 @@ def register(bp):
         data = request.get_json()
 
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         # 必填欄位驗證
         required_fields = ['name', 'smtp_host', 'username', 'password', 'from_email']
         for field in required_fields:
             if not data.get(field):
-                return jsonify({'success': False, 'message': f'請填寫 {field}'}), 400
+                return jsonify({'success': False, 'message': _('請填寫 %(field)s', field=field)}), 400
 
         # 如果設為預設，取消其他預設
         if data.get('is_default'):
@@ -104,7 +105,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'SMTP 設定已建立',
+            'message': _('SMTP 設定已建立'),
             'data': config.to_dict()
         }), 201
 
@@ -119,7 +120,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         return jsonify({
             'success': True,
@@ -137,11 +138,11 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         # 如果設為預設，取消其他預設
         if data.get('is_default') and not config.is_default:
@@ -172,7 +173,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'SMTP 設定已更新',
+            'message': _('SMTP 設定已更新'),
             'data': config.to_dict()
         })
 
@@ -187,7 +188,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         config.is_deleted = True
         config.deleted_at = datetime.utcnow()
@@ -195,7 +196,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': 'SMTP 設定已刪除'
+            'message': _('SMTP 設定已刪除')
         })
 
     @bp.route('/smtp/test', methods=['POST'])
@@ -217,12 +218,12 @@ def register(bp):
         data = request.get_json()
 
         if not data:
-            return jsonify({'success': False, 'message': '請提供資料'}), 400
+            return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
         required_fields = ['smtp_host', 'smtp_port', 'username', 'password']
         for field in required_fields:
             if not data.get(field):
-                return jsonify({'success': False, 'message': f'請填寫 {field}'}), 400
+                return jsonify({'success': False, 'message': _('請填寫 %(field)s', field=field)}), 400
 
         result = SmtpConfig.test_connection(
             smtp_host=data['smtp_host'],
@@ -251,7 +252,7 @@ def register(bp):
         ).first()
 
         if not config:
-            return jsonify({'success': False, 'message': '設定不存在'}), 404
+            return jsonify({'success': False, 'message': _('設定不存在')}), 404
 
         data = request.get_json() or {}
 

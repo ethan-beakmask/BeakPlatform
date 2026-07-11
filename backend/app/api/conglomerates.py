@@ -5,6 +5,7 @@ BeakMask Conglomerate API
 僅限系統管理員存取
 """
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -56,10 +57,10 @@ def create_conglomerate():
     description = data.get('description', '').strip() or None
 
     if not name:
-        return jsonify({'error': '集團名稱為必填'}), 400
+        return jsonify({'error': _('集團名稱為必填')}), 400
 
     if len(org_secure_codes) < 2:
-        return jsonify({'error': '至少需要選擇兩家企業'}), 400
+        return jsonify({'error': _('至少需要選擇兩家企業')}), 400
 
     try:
         conglomerate, orgs = ConglomerateService.create_conglomerate(
@@ -80,7 +81,7 @@ def create_conglomerate():
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'error': _('建立失敗: %(error)s', error=str(e))}), 500
 
 
 @conglomerate_bp.route('/<secure_code>', methods=['GET'])
@@ -94,7 +95,7 @@ def get_conglomerate(secure_code: str):
     """
     conglomerate = ConglomerateService.get_conglomerate(secure_code)
     if not conglomerate:
-        return jsonify({'error': '集團不存在'}), 404
+        return jsonify({'error': _('集團不存在')}), 404
 
     orgs = Organization.query.filter_by(
         conglomerate_secure_code=secure_code,
@@ -142,7 +143,7 @@ def update_conglomerate(secure_code: str):
     )
 
     if not conglomerate:
-        return jsonify({'error': '集團不存在'}), 404
+        return jsonify({'error': _('集團不存在')}), 404
 
     db.session.commit()
 
@@ -166,7 +167,7 @@ def delete_conglomerate(secure_code: str):
     )
 
     if not success:
-        return jsonify({'error': '集團不存在'}), 404
+        return jsonify({'error': _('集團不存在')}), 404
 
     db.session.commit()
 
@@ -189,7 +190,7 @@ def update_members(secure_code: str):
     org_secure_codes = data.get('org_secure_codes', [])
 
     if len(org_secure_codes) < 2:
-        return jsonify({'error': '集團至少需要兩家企業'}), 400
+        return jsonify({'error': _('集團至少需要兩家企業')}), 400
 
     try:
         result = ConglomerateService.update_organization_memberships(
@@ -210,7 +211,7 @@ def update_members(secure_code: str):
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'更新失敗: {str(e)}'}), 500
+        return jsonify({'error': _('更新失敗: %(error)s', error=str(e))}), 500
 
 
 @conglomerate_bp.route('/<secure_code>/logs', methods=['GET'])
@@ -252,10 +253,10 @@ def provision_shared_db(secure_code: str):
         is_deleted=False,
     ).first()
     if not conglomerate:
-        return jsonify({'error': '集團不存在'}), 404
+        return jsonify({'error': _('集團不存在')}), 404
 
     if conglomerate.has_shared_db:
-        return jsonify({'error': '此集團已有共享資料庫'}), 400
+        return jsonify({'error': _('此集團已有共享資料庫')}), 400
 
     try:
         from modules.spec_formulate.services.schema.pg_table_manager import (
@@ -272,4 +273,4 @@ def provision_shared_db(secure_code: str):
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'error': _('建立失敗: %(error)s', error=str(e))}), 500

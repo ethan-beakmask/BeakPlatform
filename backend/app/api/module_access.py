@@ -11,6 +11,7 @@ BeakMask Module Access Control API
 import logging
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -85,11 +86,11 @@ def add_access():
     target_sc = data.get('target_secure_code', '').strip()
 
     if not module_code:
-        return jsonify({'success': False, 'error': '缺少 module_code'}), 400
+        return jsonify({'success': False, 'error': _('缺少 module_code')}), 400
     if target_type not in TargetType.ALL:
-        return jsonify({'success': False, 'error': f'無效的 target_type: {target_type}'}), 400
+        return jsonify({'success': False, 'error': _('無效的 target_type: %(target_type)s', target_type=target_type)}), 400
     if not target_sc:
-        return jsonify({'success': False, 'error': '缺少 target_secure_code'}), 400
+        return jsonify({'success': False, 'error': _('缺少 target_secure_code')}), 400
 
     try:
         record = ModuleAccessService.add_access(
@@ -100,7 +101,7 @@ def add_access():
         )
 
         if record is None:
-            return jsonify({'success': False, 'error': '此指派已存在'}), 409
+            return jsonify({'success': False, 'error': _('此指派已存在')}), 409
 
         db.session.commit()
 
@@ -112,7 +113,7 @@ def add_access():
         return jsonify({
             'success': True,
             'data': result,
-            'message': '已新增使用權指派'
+            'message': _('已新增使用權指派')
         })
 
     except ValueError as e:
@@ -133,10 +134,10 @@ def remove_access(secure_code):
             secure_code, current_user.org_secure_code
         )
         if not success:
-            return jsonify({'success': False, 'error': '記錄不存在'}), 404
+            return jsonify({'success': False, 'error': _('記錄不存在')}), 404
 
         db.session.commit()
-        return jsonify({'success': True, 'message': '已移除使用權指派'})
+        return jsonify({'success': True, 'message': _('已移除使用權指派')})
 
     except Exception as e:
         db.session.rollback()

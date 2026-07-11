@@ -13,6 +13,7 @@ import os
 
 import redis
 from flask import Blueprint, render_template, jsonify, request
+from flask_babel import gettext as _
 
 from ..security.decorators import system_admin_required
 
@@ -100,7 +101,7 @@ def api_redis_info():
 
     except redis.ConnectionError as e:
         logger.error('Redis 連線失敗: %s', e)
-        return jsonify({'ok': False, 'error': 'Redis 連線失敗'}), 503
+        return jsonify({'ok': False, 'error': _('Redis 連線失敗')}), 503
     except Exception as e:
         logger.error('Redis INFO 錯誤: %s', e)
         return jsonify({'ok': False, 'error': str(e)}), 500
@@ -124,7 +125,7 @@ def api_redis_keys():
 
     # 防止 pattern injection
     if len(pattern) > 100:
-        return jsonify({'ok': False, 'error': 'pattern 過長'}), 400
+        return jsonify({'ok': False, 'error': _('pattern 過長')}), 400
 
     try:
         r = _get_redis()
@@ -160,7 +161,7 @@ def api_redis_keys():
         })
 
     except redis.ConnectionError as e:
-        return jsonify({'ok': False, 'error': 'Redis 連線失敗'}), 503
+        return jsonify({'ok': False, 'error': _('Redis 連線失敗')}), 503
     except Exception as e:
         logger.error('Redis SCAN 錯誤: %s', e)
         return jsonify({'ok': False, 'error': str(e)}), 500
@@ -186,7 +187,7 @@ def api_redis_key_detail(key_name):
 
         if key_type == 'none':
             r.close()
-            return jsonify({'ok': False, 'error': 'Key 不存在'}), 404
+            return jsonify({'ok': False, 'error': _('Key 不存在')}), 404
 
         # 依型別取值（限制回傳大小）
         value = None
@@ -263,7 +264,7 @@ def api_redis_slowlog():
         return jsonify({'ok': True, 'entries': results})
 
     except redis.ConnectionError as e:
-        return jsonify({'ok': False, 'error': 'Redis 連線失敗'}), 503
+        return jsonify({'ok': False, 'error': _('Redis 連線失敗')}), 503
     except Exception as e:
         logger.error('Redis SLOWLOG 錯誤: %s', e)
         return jsonify({'ok': False, 'error': str(e)}), 500

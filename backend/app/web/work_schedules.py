@@ -6,6 +6,7 @@
 - /admin/settings/work-schedules/<code>/holidays - 共用月曆（假日管理）
 """
 from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -53,7 +54,7 @@ def schedule_holidays(secure_code):
     ).first()
 
     if not schedule:
-        flash('班表不存在', 'error')
+        flash(_('班表不存在'), 'error')
         return redirect(url_for('work_schedules.list_schedules'))
 
     # 取得年份參數，預設當年

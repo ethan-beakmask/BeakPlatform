@@ -9,6 +9,7 @@ import json
 from datetime import date
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, system_admin_required, login_required
@@ -22,17 +23,17 @@ admin_bp = Blueprint('admin', __name__)
 def _format_remaining(total_days: int) -> str:
     """將剩餘天數格式化為 X年Y月Z日"""
     if total_days < 0:
-        return '已過期'
+        return _('已過期')
     years = total_days // 365
     remainder = total_days % 365
     months = remainder // 30
     days = remainder % 30
     parts = []
     if years > 0:
-        parts.append(f'{years} 年')
+        parts.append(_('%(n)s 年', n=years))
     if months > 0:
-        parts.append(f'{months} 月')
-    parts.append(f'{days} 日')
+        parts.append(_('%(n)s 月', n=months))
+    parts.append(_('%(n)s 日', n=days))
     return ' '.join(parts)
 
 
@@ -80,7 +81,7 @@ def settings_general():
         org.set_setting('allow_user_self_edit', allow_user_self_edit)
         db.session.commit()
 
-        flash('設定已儲存', 'success')
+        flash(_('設定已儲存'), 'success')
         return redirect(url_for('admin.settings_general'))
 
     # 取得目前設定

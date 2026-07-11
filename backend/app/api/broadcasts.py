@@ -10,6 +10,7 @@
 """
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db, limiter
@@ -139,7 +140,7 @@ def acknowledge_broadcast(secure_code):
     ).first()
 
     if not item:
-        return jsonify({'success': False, 'message': '找不到廣播'}), 404
+        return jsonify({'success': False, 'message': _('找不到廣播')}), 404
 
     # 檢查是否已確認（幂等）
     existing = BroadcastAcknowledgment.query.filter_by(
@@ -149,7 +150,7 @@ def acknowledge_broadcast(secure_code):
     ).first()
 
     if existing:
-        return jsonify({'success': True, 'message': '已確認'})
+        return jsonify({'success': True, 'message': _('已確認')})
 
     from ..utils.security import generate_secure_code
 
@@ -163,7 +164,7 @@ def acknowledge_broadcast(secure_code):
     db.session.add(ack)
     db.session.commit()
 
-    return jsonify({'success': True, 'message': '確認成功'})
+    return jsonify({'success': True, 'message': _('確認成功')})
 
 
 def _user_in_target(user, target: dict) -> bool:

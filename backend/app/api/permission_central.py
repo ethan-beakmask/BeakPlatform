@@ -12,6 +12,7 @@ import json
 import logging
 
 from flask import Blueprint, request, jsonify, Response
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, system_admin_required
@@ -140,16 +141,16 @@ def update_role_permissions():
     """批量設定角色的 RBAC 權限（含存取控制）"""
     data = request.get_json()
     if not data:
-        return jsonify({'error': '缺少請求資料'}), 400
+        return jsonify({'error': _('缺少請求資料')}), 400
 
     role_secure_code = data.get('role_secure_code')
     permission_secure_codes = data.get('permission_secure_codes', [])
 
     if not role_secure_code:
-        return jsonify({'error': '缺少 role_secure_code'}), 400
+        return jsonify({'error': _('缺少 role_secure_code')}), 400
 
     if not isinstance(permission_secure_codes, list):
-        return jsonify({'error': 'permission_secure_codes 必須是陣列'}), 400
+        return jsonify({'error': _('permission_secure_codes 必須是陣列')}), 400
 
     org_code = _resolve_org_code()
     result = PermissionCentralService.set_role_permissions(
@@ -181,7 +182,7 @@ def save_factory_defaults():
     """
     org_code = _resolve_org_code()
     if not org_code:
-        return jsonify({'error': '請先選擇企業'}), 400
+        return jsonify({'error': _('請先選擇企業')}), 400
 
     result = PermissionCentralService.save_factory_defaults(
         org_secure_code=org_code,
@@ -210,7 +211,7 @@ def export_factory_sql():
             return jsonify({'error': result['error']}), 400
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({'error': f'匯出 SQL 失敗: {str(e)}'}), 500
+        return jsonify({'error': _('匯出 SQL 失敗: %(error)s', error=str(e))}), 500
 
 
 @permission_central_bp.route('/export', methods=['GET'])
@@ -261,17 +262,17 @@ def import_rbac():
     if request.files and 'file' in request.files:
         f = request.files['file']
         if not f.filename:
-            return jsonify({'error': '未選擇檔案'}), 400
+            return jsonify({'error': _('未選擇檔案')}), 400
         try:
             content = f.read().decode('utf-8')
             import_data = json.loads(content)
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
-            return jsonify({'error': f'檔案格式無效: {str(e)}'}), 400
+            return jsonify({'error': _('檔案格式無效: %(error)s', error=str(e))}), 400
     else:
         import_data = request.get_json()
 
     if not import_data:
-        return jsonify({'error': '缺少匯入資料'}), 400
+        return jsonify({'error': _('缺少匯入資料')}), 400
 
     org_code = _resolve_org_code()
     result = PermissionCentralService.import_rbac(
@@ -298,7 +299,7 @@ def restore_defaults():
     """
     org_code = _resolve_org_code()
     if not org_code:
-        return jsonify({'error': '無法確定企業'}), 400
+        return jsonify({'error': _('無法確定企業')}), 400
 
     result = PermissionCentralService.restore_defaults(
         org_secure_code=org_code,

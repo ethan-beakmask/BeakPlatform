@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from sqlalchemy import func
@@ -270,7 +271,7 @@ def get_unit(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     return jsonify({
         'unit': unit.to_dict(include_children=True, include_ancestors=True)
@@ -294,11 +295,11 @@ def create_unit():
     """
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供單位資料'}), 400
+        return jsonify({'error': _('請提供單位資料')}), 400
 
     # name 必填
     if 'name' not in data or not data['name'].strip():
-        return jsonify({'error': '缺少必要欄位: name'}), 400
+        return jsonify({'error': _('缺少必要欄位: name')}), 400
 
     name = data['name'].strip()
     code = data.get('code', '').strip()
@@ -315,22 +316,22 @@ def create_unit():
         try:
             code = generator.generate(name, exists_checker=_exists)
         except ValueError as e:
-            return jsonify({'error': f'無法自動產生代碼: {e}'}), 400
+            return jsonify({'error': _('無法自動產生代碼: %(error)s', error=e)}), 400
     else:
         # 驗證代碼格式：允許英文、數字、底線、連字號
         import re
         if not re.match(r'^[A-Za-z][A-Za-z0-9_-]*$', code):
-            return jsonify({'error': '代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文'}), 400
+            return jsonify({'error': _('代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文')}), 400
 
     # 驗證長度
     if len(code) > 50:
-        return jsonify({'error': f'代碼長度不可超過 50 字元（目前 {len(code)} 字元）'}), 400
+        return jsonify({'error': _('代碼長度不可超過 50 字元（目前 %(length)s 字元）', length=len(code))}), 400
     if len(code) < 2:
-        return jsonify({'error': '代碼長度至少 2 字元'}), 400
+        return jsonify({'error': _('代碼長度至少 2 字元')}), 400
     if len(name) > 255:
-        return jsonify({'error': f'名稱長度不可超過 255 字元（目前 {len(name)} 字元）'}), 400
+        return jsonify({'error': _('名稱長度不可超過 255 字元（目前 %(length)s 字元）', length=len(name))}), 400
     if len(name) < 1:
-        return jsonify({'error': '名稱不可為空'}), 400
+        return jsonify({'error': _('名稱不可為空')}), 400
 
     # 檢查代碼是否重複 (case-insensitive)
     existing = OrganizationalUnit.query.filter(
@@ -339,7 +340,7 @@ def create_unit():
         OrganizationalUnit.is_deleted == False
     ).first()
     if existing:
-        return jsonify({'error': f'代碼 {code} 已存在'}), 400
+        return jsonify({'error': _('代碼 %(code)s 已存在', code=code)}), 400
 
     # 檢查父層
     parent = None
@@ -351,7 +352,7 @@ def create_unit():
         )
 
         if not parent:
-            return jsonify({'error': '父層單位不存在'}), 400
+            return jsonify({'error': _('父層單位不存在')}), 400
 
     try:
         unit = OrganizationalUnit(
@@ -372,14 +373,14 @@ def create_unit():
         logger.info(f"Unit created: {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': '組織單位建立成功',
+            'message': _('組織單位建立成功'),
             'unit': unit.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create unit: {e}")
-        return jsonify({'error': '建立組織單位失敗'}), 500
+        return jsonify({'error': _('建立組織單位失敗')}), 500
 
 
 @units_bp.route('/<secure_code>', methods=['PUT'])
@@ -397,11 +398,11 @@ def update_unit(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         old_name = unit.name
@@ -420,12 +421,12 @@ def update_unit(secure_code: str):
             if data['parent_id']:
                 # 檢查不能設定自己為父層
                 if data['parent_id'] == unit.secure_code:
-                    return jsonify({'error': '不能設定自己為父層'}), 400
+                    return jsonify({'error': _('不能設定自己為父層')}), 400
 
                 # 檢查不能設定自己的子層為父層
                 descendants = unit.get_descendants()
                 if any(d.secure_code == data['parent_id'] for d in descendants):
-                    return jsonify({'error': '不能設定子層為父層'}), 400
+                    return jsonify({'error': _('不能設定子層為父層')}), 400
 
                 parent = ResourceGateway.get_by(
                     OrganizationalUnit,
@@ -434,14 +435,14 @@ def update_unit(secure_code: str):
                 )
 
                 if not parent:
-                    return jsonify({'error': '父層單位不存在'}), 400
+                    return jsonify({'error': _('父層單位不存在')}), 400
 
                 # 群組不可跨樹系移動（企業 <-> EXTERNAL_VENDORS）
                 if unit.unit_type == UnitType.GROUP:
                     src_ext = _is_in_external_tree(unit)
                     tgt_ext = _is_in_external_tree(parent)
                     if src_ext != tgt_ext:
-                        return jsonify({'error': '不可在企業群組與外部廠商群組之間移動'}), 400
+                        return jsonify({'error': _('不可在企業群組與外部廠商群組之間移動')}), 400
 
                 unit.parent_secure_code = parent.secure_code
             else:
@@ -457,14 +458,14 @@ def update_unit(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '組織單位更新成功',
+            'message': _('組織單位更新成功'),
             'unit': unit.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update unit: {e}")
-        return jsonify({'error': '更新組織單位失敗'}), 500
+        return jsonify({'error': _('更新組織單位失敗')}), 500
 
 
 @units_bp.route('/<secure_code>', methods=['DELETE'])
@@ -486,11 +487,11 @@ def delete_unit(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     # 系統保留單位不可刪除
     if unit.is_system_unit:
-        return jsonify({'error': '此為系統保留單位，不可刪除'}), 403
+        return jsonify({'error': _('此為系統保留單位，不可刪除')}), 403
 
     cascade = request.args.get('cascade', 'false').lower() == 'true'
     confirm_members = request.args.get('confirm_members', 'false').lower() == 'true'
@@ -530,7 +531,7 @@ def delete_unit(secure_code: str):
         # 有子單位但沒有 cascade
         if children_count > 0 and not cascade:
             return jsonify({
-                'error': f'此單位有 {children_count} 個子單位',
+                'error': _('此單位有 %(count)s 個子單位', count=children_count),
                 'children_count': children_count,
                 'need_cascade': True
             }), 400
@@ -538,7 +539,7 @@ def delete_unit(secure_code: str):
         # 有成員但沒有確認
         if members_count > 0 and not confirm_members:
             return jsonify({
-                'error': f'此單位有 {members_count} 個成員',
+                'error': _('此單位有 %(count)s 個成員', count=members_count),
                 'members_count': members_count,
                 'need_confirm_members': True
             }), 400
@@ -572,9 +573,9 @@ def delete_unit(secure_code: str):
 
         db.session.commit()
 
-        msg = '組織單位已刪除'
+        msg = _('組織單位已刪除')
         if members_count > 0:
-            msg += f'，{members_count} 位成員已移至未分配'
+            msg += _('，%(count)s 位成員已移至未分配', count=members_count)
 
         return jsonify({
             'message': msg
@@ -583,7 +584,7 @@ def delete_unit(secure_code: str):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete unit: {e}")
-        return jsonify({'error': '刪除組織單位失敗'}), 500
+        return jsonify({'error': _('刪除組織單位失敗')}), 500
 
 
 # =====================================================
@@ -668,7 +669,7 @@ def get_unit_members(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     from ..models.user import UserType
 
@@ -751,11 +752,11 @@ def add_member_to_unit(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     data = request.get_json()
     if not data or not data.get('user_id'):
-        return jsonify({'error': '請提供用戶 ID'}), 400
+        return jsonify({'error': _('請提供用戶 ID')}), 400
 
     # 需要動態 data['user_id'] 參數，無法使用 ResourceGateway
     user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -765,7 +766,7 @@ def add_member_to_unit(secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     try:
         user.primary_unit_secure_code = secure_code
@@ -775,7 +776,7 @@ def add_member_to_unit(secure_code: str):
         logger.info(f"User {user.email} added to unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已將 {user.display_name} 加入 {unit.name}',
+            'message': _('已將 %(user)s 加入 %(unit)s', user=user.display_name, unit=unit.name),
             'user': {
                 'id': user.secure_code,
                 'display_name': user.display_name,
@@ -786,7 +787,7 @@ def add_member_to_unit(secure_code: str):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to add member to unit: {e}")
-        return jsonify({'error': '加入部門失敗'}), 500
+        return jsonify({'error': _('加入部門失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/members/<user_secure_code>', methods=['DELETE'])
@@ -806,7 +807,7 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     # 需要多重動態參數比較，無法使用 ResourceGateway
     user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -817,7 +818,7 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在或不屬於此部門'}), 404
+        return jsonify({'error': _('用戶不存在或不屬於此部門')}), 404
 
     try:
         user.primary_unit_secure_code = None
@@ -827,13 +828,13 @@ def remove_member_from_unit(secure_code: str, user_secure_code: str):
         logger.info(f"User {user.email} removed from unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已將 {user.display_name} 從 {unit.name} 移除'
+            'message': _('已將 %(user)s 從 %(unit)s 移除', user=user.display_name, unit=unit.name)
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove member from unit: {e}")
-        return jsonify({'error': '移除成員失敗'}), 500
+        return jsonify({'error': _('移除成員失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/manager', methods=['POST'])
@@ -860,11 +861,11 @@ def set_unit_manager(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     data = request.get_json()
     if not data or not data.get('user_id'):
-        return jsonify({'error': '請提供用戶 ID'}), 400
+        return jsonify({'error': _('請提供用戶 ID')}), 400
 
     user = User.query.filter(
         User.secure_code == data['user_id'],
@@ -873,7 +874,7 @@ def set_unit_manager(secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     # 取得 DEPT_MANAGER 角色
     dept_manager_role = Role.query.filter(
@@ -883,7 +884,7 @@ def set_unit_manager(secure_code: str):
     ).first()
 
     if not dept_manager_role:
-        return jsonify({'error': '部門主管角色不存在，請聯繫系統管理員'}), 500
+        return jsonify({'error': _('部門主管角色不存在，請聯繫系統管理員')}), 500
 
     org_sc = current_user.org_secure_code
     dept_employee_role = _get_system_role(org_sc, 'DEPT_EMPLOYEE')
@@ -932,7 +933,7 @@ def set_unit_manager(secure_code: str):
         logger.info(f"User {user.email} set as manager of unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已設定 {user.display_name} 為 {unit.name} 主管',
+            'message': _('已設定 %(user)s 為 %(unit)s 主管', user=user.display_name, unit=unit.name),
             'user': {
                 'id': user.secure_code,
                 'display_name': user.display_name,
@@ -946,7 +947,7 @@ def set_unit_manager(secure_code: str):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to set unit manager: {e}")
-        return jsonify({'error': '設定主管失敗'}), 500
+        return jsonify({'error': _('設定主管失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/manager/<user_secure_code>', methods=['DELETE'])
@@ -969,7 +970,7 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     user = User.query.filter(
         User.secure_code == user_secure_code,
@@ -978,7 +979,7 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     # 取得 DEPT_MANAGER 角色
     dept_manager_role = Role.query.filter(
@@ -988,7 +989,7 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
     ).first()
 
     if not dept_manager_role:
-        return jsonify({'error': '部門主管角色不存在'}), 500
+        return jsonify({'error': _('部門主管角色不存在')}), 500
 
     org_sc = current_user.org_secure_code
 
@@ -1020,13 +1021,13 @@ def remove_unit_manager(secure_code: str, user_secure_code: str):
         logger.info(f"User {user.email} removed as manager of unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已移除 {user.display_name} 的 {unit.name} 主管角色'
+            'message': _('已移除 %(user)s 的 %(unit)s 主管角色', user=user.display_name, unit=unit.name)
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove unit manager: {e}")
-        return jsonify({'error': '移除主管角色失敗'}), 500
+        return jsonify({'error': _('移除主管角色失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/manager', methods=['GET'])
@@ -1047,7 +1048,7 @@ def get_unit_manager(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     # 取得 DEPT_MANAGER 角色
     dept_manager_role = Role.query.filter(
@@ -1108,7 +1109,7 @@ def get_unit_leadership(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     def get_user_by_role(role_code):
         role = Role.query.filter(
@@ -1173,7 +1174,7 @@ def set_unit_leadership(secure_code: str, position: str):
     }
 
     if position not in role_map:
-        return jsonify({'error': '無效的職位類型'}), 400
+        return jsonify({'error': _('無效的職位類型')}), 400
 
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
@@ -1182,11 +1183,11 @@ def set_unit_leadership(secure_code: str, position: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     data = request.get_json()
     if not data or not data.get('user_id'):
-        return jsonify({'error': '請提供用戶 ID'}), 400
+        return jsonify({'error': _('請提供用戶 ID')}), 400
 
     user = User.query.filter(
         User.secure_code == data['user_id'],
@@ -1195,7 +1196,7 @@ def set_unit_leadership(secure_code: str, position: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     role_code = role_map[position]
     role = Role.query.filter(
@@ -1205,7 +1206,7 @@ def set_unit_leadership(secure_code: str, position: str):
     ).first()
 
     if not role:
-        return jsonify({'error': f'{position} 角色不存在，請聯繫系統管理員'}), 500
+        return jsonify({'error': _('%(position)s 角色不存在，請聯繫系統管理員', position=position)}), 500
 
     try:
         # 將用戶加入部門（如果尚未加入）
@@ -1236,16 +1237,16 @@ def set_unit_leadership(secure_code: str, position: str):
         db.session.commit()
 
         position_names = {
-            'manager': '主管',
-            'deputy': '副主管',
-            'proxy1': '代理人(一)',
-            'proxy2': '代理人(二)'
+            'manager': _('主管'),
+            'deputy': _('副主管'),
+            'proxy1': _('代理人(一)'),
+            'proxy2': _('代理人(二)')
         }
 
         logger.info(f"User {user.email} set as {position} of unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已設定 {user.display_name} 為 {unit.name} {position_names[position]}',
+            'message': _('已設定 %(user)s 為 %(unit)s %(position)s', user=user.display_name, unit=unit.name, position=position_names[position]),
             'user': {
                 'id': user.secure_code,
                 'display_name': user.display_name,
@@ -1259,7 +1260,7 @@ def set_unit_leadership(secure_code: str, position: str):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to set unit leadership: {e}")
-        return jsonify({'error': '設定失敗'}), 500
+        return jsonify({'error': _('設定失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/leadership/<position>', methods=['DELETE'])
@@ -1281,7 +1282,7 @@ def remove_unit_leadership(secure_code: str, position: str):
     }
 
     if position not in role_map:
-        return jsonify({'error': '無效的職位類型'}), 400
+        return jsonify({'error': _('無效的職位類型')}), 400
 
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
@@ -1290,7 +1291,7 @@ def remove_unit_leadership(secure_code: str, position: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     role_code = role_map[position]
     role = Role.query.filter(
@@ -1300,7 +1301,7 @@ def remove_unit_leadership(secure_code: str, position: str):
     ).first()
 
     if not role:
-        return jsonify({'error': f'{position} 角色不存在'}), 500
+        return jsonify({'error': _('%(position)s 角色不存在', position=position)}), 500
 
     try:
         # 移除此部門的此角色
@@ -1318,22 +1319,22 @@ def remove_unit_leadership(secure_code: str, position: str):
         db.session.commit()
 
         position_names = {
-            'manager': '主管',
-            'deputy': '副主管',
-            'proxy1': '代理人(一)',
-            'proxy2': '代理人(二)'
+            'manager': _('主管'),
+            'deputy': _('副主管'),
+            'proxy1': _('代理人(一)'),
+            'proxy2': _('代理人(二)')
         }
 
         logger.info(f"Removed {position} from unit {unit.code} by {current_user.email}")
 
         return jsonify({
-            'message': f'已移除 {unit.name} {position_names[position]}'
+            'message': _('已移除 %(unit)s %(position)s', unit=unit.name, position=position_names[position])
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove unit leadership: {e}")
-        return jsonify({'error': '移除失敗'}), 500
+        return jsonify({'error': _('移除失敗')}), 500
 
 
 # =====================================================
@@ -1353,7 +1354,7 @@ def get_cross_members(secure_code: str):
     Admin 或 團長/副團長 可存取
     """
     if not _is_group_leader(current_user, secure_code):
-        return jsonify({'error': '無權限存取此社群'}), 403
+        return jsonify({'error': _('無權限存取此社群')}), 403
 
     # _is_group_leader 已做授權，不需 ResourceGateway 二次 permission check
     unit = ResourceGateway.get_by(
@@ -1364,7 +1365,7 @@ def get_cross_members(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     membership_type = request.args.get('type')
 
@@ -1415,7 +1416,7 @@ def add_cross_member(secure_code: str):
     Admin 或 團長/副團長 可存取
     """
     if not _is_group_leader(current_user, secure_code):
-        return jsonify({'error': '無權限管理此社群成員'}), 403
+        return jsonify({'error': _('無權限管理此社群成員')}), 403
 
     from datetime import date
 
@@ -1427,11 +1428,11 @@ def add_cross_member(secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     data = request.get_json()
     if not data or not data.get('user_id'):
-        return jsonify({'error': '請提供用戶 ID'}), 400
+        return jsonify({'error': _('請提供用戶 ID')}), 400
 
     # 驗證用戶
     user = User.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -1441,13 +1442,13 @@ def add_cross_member(secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     # EXTERNAL 用戶不可加入企業樹群組（僅限 GROUP 類型）
     if unit.unit_type == UnitType.GROUP:
         from ..models.user import UserType
         if user.user_type == UserType.EXTERNAL and not _is_in_external_tree(unit):
-            return jsonify({'error': '外部人員不可加入企業群組'}), 400
+            return jsonify({'error': _('外部人員不可加入企業群組')}), 400
 
     # 取得成員類型（部門用 DOTTED，社群用 MEMBER）
     if unit.is_department:
@@ -1457,7 +1458,7 @@ def add_cross_member(secure_code: str):
 
     # 驗證成員類型
     if membership_type not in [MembershipType.DOTTED, MembershipType.MEMBER]:
-        return jsonify({'error': '無效的成員類型'}), 400
+        return jsonify({'error': _('無效的成員類型')}), 400
 
     # 檢查是否已存在相同關係（包含已刪除的，因為唯一約束不考慮 is_deleted）
     existing = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -1469,7 +1470,7 @@ def add_cross_member(secure_code: str):
 
     if existing:
         if not existing.is_deleted:
-            return jsonify({'error': '該用戶已是此單位的成員'}), 400
+            return jsonify({'error': _('該用戶已是此單位的成員')}), 400
 
         # 恢復已刪除的記錄
         try:
@@ -1487,13 +1488,13 @@ def add_cross_member(secure_code: str):
             )
 
             return jsonify({
-                'message': f'已將 {user.display_name} 加入 {unit.name}',
+                'message': _('已將 %(user)s 加入 %(unit)s', user=user.display_name, unit=unit.name),
                 'membership': existing.to_dict()
             }), 201
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to restore cross member: {e}")
-            return jsonify({'error': '新增失敗'}), 500
+            return jsonify({'error': _('新增失敗')}), 500
 
     try:
         # 處理日期
@@ -1523,14 +1524,14 @@ def add_cross_member(secure_code: str):
         )
 
         return jsonify({
-            'message': f'已將 {user.display_name} 加入 {unit.name}',
+            'message': _('已將 %(user)s 加入 %(unit)s', user=user.display_name, unit=unit.name),
             'membership': membership.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to add cross member: {e}")
-        return jsonify({'error': '新增失敗'}), 500
+        return jsonify({'error': _('新增失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/cross-members/<membership_secure_code>', methods=['PUT'])
@@ -1550,7 +1551,7 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
     Admin 或 團長/副團長 可存取
     """
     if not _is_group_leader(current_user, secure_code):
-        return jsonify({'error': '無權限管理此社群成員'}), 403
+        return jsonify({'error': _('無權限管理此社群成員')}), 403
 
     from datetime import date
 
@@ -1562,7 +1563,7 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     membership = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
@@ -1572,11 +1573,11 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
     ).first()
 
     if not membership:
-        return jsonify({'error': '成員關係不存在'}), 404
+        return jsonify({'error': _('成員關係不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         if 'role_type' in data:
@@ -1595,14 +1596,14 @@ def update_cross_member(secure_code: str, membership_secure_code: str):
         )
 
         return jsonify({
-            'message': '更新成功',
+            'message': _('更新成功'),
             'membership': membership.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update cross member: {e}")
-        return jsonify({'error': '更新失敗'}), 500
+        return jsonify({'error': _('更新失敗')}), 500
 
 
 @units_bp.route('/<secure_code>/cross-members/<membership_secure_code>', methods=['DELETE'])
@@ -1616,7 +1617,7 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
     Admin 或 團長/副團長 可存取
     """
     if not _is_group_leader(current_user, secure_code):
-        return jsonify({'error': '無權限管理此社群成員'}), 403
+        return jsonify({'error': _('無權限管理此社群成員')}), 403
 
     unit = ResourceGateway.get_by(
         OrganizationalUnit,
@@ -1626,7 +1627,7 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
     )
 
     if not unit:
-        return jsonify({'error': '組織單位不存在'}), 404
+        return jsonify({'error': _('組織單位不存在')}), 404
 
     membership = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
         UserUnitMembership.org_secure_code == current_user.org_secure_code,
@@ -1636,7 +1637,7 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
     ).first()
 
     if not membership:
-        return jsonify({'error': '成員關係不存在'}), 404
+        return jsonify({'error': _('成員關係不存在')}), 404
 
     try:
         membership.is_deleted = True
@@ -1648,13 +1649,13 @@ def remove_cross_member(secure_code: str, membership_secure_code: str):
         )
 
         return jsonify({
-            'message': '已移除成員關係'
+            'message': _('已移除成員關係')
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to remove cross member: {e}")
-        return jsonify({'error': '移除失敗'}), 500
+        return jsonify({'error': _('移除失敗')}), 500
 
 
 @units_bp.route('/cross-members/by-user/<user_secure_code>', methods=['GET'])
@@ -1675,7 +1676,7 @@ def get_user_cross_memberships(user_secure_code: str):
     ).first()
 
     if not user:
-        return jsonify({'error': '用戶不存在'}), 404
+        return jsonify({'error': _('用戶不存在')}), 404
 
     # 查詢用戶的所有跨部門關係
     memberships = UserUnitMembership.query.filter(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -1710,7 +1711,7 @@ def list_group_member_candidates():
     if not _is_admin(current_user):
         managed_scs = _get_managed_group_scs(current_user)
         if not managed_scs:
-            return jsonify({'error': '無權限'}), 403
+            return jsonify({'error': _('無權限')}), 403
 
     per_page = request.args.get('per_page', 100, type=int)
     per_page = min(per_page, 1000)

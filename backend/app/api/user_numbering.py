@@ -4,6 +4,7 @@
 提供編號規則的 CRUD 操作和編號產生功能。
 """
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -39,7 +40,7 @@ def list_rules():
         try:
             data['preview'] = NumberingService.preview_numbers(rule, count=1)[0]
         except Exception:
-            data['preview'] = '(無法預覽)'
+            data['preview'] = _('(無法預覽)')
         result.append(data)
 
     return jsonify({
@@ -55,7 +56,7 @@ def create_rule():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'error': '無效的請求資料'}), 400
+        return jsonify({'success': False, 'error': _('無效的請求資料')}), 400
 
     name = data.get('name', '').strip()
     description = data.get('description', '').strip()
@@ -69,7 +70,7 @@ def create_rule():
 
     # 驗證
     if not name:
-        return jsonify({'success': False, 'error': '規則名稱為必填'}), 400
+        return jsonify({'success': False, 'error': _('規則名稱為必填')}), 400
 
     # 驗證元素配置
     valid, error = NumberingService.validate_elements(elements)
@@ -83,7 +84,7 @@ def create_rule():
         is_deleted=False
     ).first()
     if existing:
-        return jsonify({'success': False, 'error': f'規則名稱「{name}」已存在'}), 400
+        return jsonify({'success': False, 'error': _('規則名稱「%(name)s」已存在', name=name)}), 400
 
     # 如果要設為預設，先取消同類型的其他預設
     if default_for:
@@ -110,12 +111,12 @@ def create_rule():
     try:
         result['preview'] = NumberingService.preview_numbers(rule, count=1)[0]
     except Exception:
-        result['preview'] = '(無法預覽)'
+        result['preview'] = _('(無法預覽)')
 
     return jsonify({
         'success': True,
         'data': result,
-        'message': '編號規則已建立'
+        'message': _('編號規則已建立')
     }), 201
 
 
@@ -125,7 +126,7 @@ def get_rule(secure_code):
     """取得編號規則詳情"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        return jsonify({'success': False, 'error': '找不到此規則'}), 404
+        return jsonify({'success': False, 'error': _('找不到此規則')}), 404
 
     result = rule.to_dict()
     try:
@@ -145,17 +146,17 @@ def update_rule(secure_code):
     """更新編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        return jsonify({'success': False, 'error': '找不到此規則'}), 404
+        return jsonify({'success': False, 'error': _('找不到此規則')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '無效的請求資料'}), 400
+        return jsonify({'success': False, 'error': _('無效的請求資料')}), 400
 
     # 更新欄位
     if 'name' in data:
         name = data['name'].strip()
         if not name:
-            return jsonify({'success': False, 'error': '規則名稱為必填'}), 400
+            return jsonify({'success': False, 'error': _('規則名稱為必填')}), 400
 
         # 檢查名稱重複
         existing = UserNumberingRule.query.filter(
@@ -165,7 +166,7 @@ def update_rule(secure_code):
             UserNumberingRule.is_deleted == False
         ).first()
         if existing:
-            return jsonify({'success': False, 'error': f'規則名稱「{name}」已存在'}), 400
+            return jsonify({'success': False, 'error': _('規則名稱「%(name)s」已存在', name=name)}), 400
 
         rule.name = name
 
@@ -188,12 +189,12 @@ def update_rule(secure_code):
     try:
         result['preview'] = NumberingService.preview_numbers(rule, count=1)[0]
     except Exception:
-        result['preview'] = '(無法預覽)'
+        result['preview'] = _('(無法預覽)')
 
     return jsonify({
         'success': True,
         'data': result,
-        'message': '編號規則已更新'
+        'message': _('編號規則已更新')
     })
 
 
@@ -203,10 +204,10 @@ def delete_rule(secure_code):
     """刪除編號規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        return jsonify({'success': False, 'error': '找不到此規則'}), 404
+        return jsonify({'success': False, 'error': _('找不到此規則')}), 404
 
     if rule.default_for:
-        return jsonify({'success': False, 'error': '無法刪除預設規則，請先取消預設設定'}), 400
+        return jsonify({'success': False, 'error': _('無法刪除預設規則，請先取消預設設定')}), 400
 
     # 軟刪除
     rule.is_deleted = True
@@ -215,7 +216,7 @@ def delete_rule(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '編號規則已刪除'
+        'message': _('編號規則已刪除')
     })
 
 
@@ -225,10 +226,10 @@ def set_default_rule(secure_code):
     """設定為預設規則"""
     rule = ResourceGateway.get(UserNumberingRule, secure_code)
     if not rule:
-        return jsonify({'success': False, 'error': '找不到此規則'}), 404
+        return jsonify({'success': False, 'error': _('找不到此規則')}), 404
 
     if not rule.is_active:
-        return jsonify({'success': False, 'error': '無法將停用的規則設為預設'}), 400
+        return jsonify({'success': False, 'error': _('無法將停用的規則設為預設')}), 400
 
     # 從請求取得預設用途，預設為 EMPLOYEE
     data = request.get_json(silent=True) or {}
@@ -247,7 +248,7 @@ def set_default_rule(secure_code):
 
     return jsonify({
         'success': True,
-        'message': f'已將「{rule.name}」設為預設規則'
+        'message': _('已將「%(name)s」設為預設規則', name=rule.name)
     })
 
 
@@ -257,7 +258,7 @@ def preview_from_config():
     """從配置預覽編號（用於設計器即時預覽）"""
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '無效的請求資料'}), 400
+        return jsonify({'success': False, 'error': _('無效的請求資料')}), 400
 
     elements = data.get('elements', {})
     count = min(data.get('count', 10), 20)  # 最多 20 個
@@ -276,7 +277,7 @@ def preview_from_config():
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'預覽失敗: {str(e)}'
+            'error': _('預覽失敗: %(error)s', error=str(e))
         }), 500
 
 
@@ -312,7 +313,7 @@ def get_available_rules():
         try:
             data['preview'] = NumberingService.get_next_number(rule, consume=False)
         except Exception:
-            data['preview'] = '(無法取得)'
+            data['preview'] = _('(無法取得)')
         result.append(data)
 
     return jsonify({
@@ -330,11 +331,11 @@ def get_next_number():
     if rule_code:
         rule = ResourceGateway.get(UserNumberingRule, rule_code)
         if not rule or not rule.is_active:
-            return jsonify({'success': False, 'error': '找不到此規則或規則已停用'}), 404
+            return jsonify({'success': False, 'error': _('找不到此規則或規則已停用')}), 404
     else:
         rule = NumberingService.get_default_rule(current_user.org_secure_code)
         if not rule:
-            return jsonify({'success': False, 'error': '尚未設定預設編號規則'}), 404
+            return jsonify({'success': False, 'error': _('尚未設定預設編號規則')}), 404
 
     try:
         number = NumberingService.get_next_number(rule, consume=False)
@@ -349,7 +350,7 @@ def get_next_number():
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': f'無法產生編號: {str(e)}'
+            'error': _('無法產生編號: %(error)s', error=str(e))
         }), 500
 
 
@@ -359,7 +360,7 @@ def consume_number():
     """消耗編號（實際使用時呼叫）"""
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'error': '無效的請求資料'}), 400
+        return jsonify({'success': False, 'error': _('無效的請求資料')}), 400
 
     rule_code = data.get('rule')
     manual_number = data.get('number')  # 手動輸入的編號
@@ -372,7 +373,7 @@ def consume_number():
         if UsedUserNumber.is_number_used(current_user.org_secure_code, manual_number):
             return jsonify({
                 'success': False,
-                'error': f'編號「{manual_number}」已被使用'
+                'error': _('編號「%(number)s」已被使用', number=manual_number)
             }), 400
 
         # 記錄
@@ -391,11 +392,11 @@ def consume_number():
     if rule_code:
         rule = ResourceGateway.get(UserNumberingRule, rule_code)
         if not rule or not rule.is_active:
-            return jsonify({'success': False, 'error': '找不到此規則或規則已停用'}), 404
+            return jsonify({'success': False, 'error': _('找不到此規則或規則已停用')}), 404
     else:
         rule = NumberingService.get_default_rule(current_user.org_secure_code)
         if not rule:
-            return jsonify({'success': False, 'error': '尚未設定預設編號規則'}), 404
+            return jsonify({'success': False, 'error': _('尚未設定預設編號規則')}), 404
 
     try:
         number = NumberingService.get_next_number(rule, consume=True)
@@ -410,7 +411,7 @@ def consume_number():
         db.session.rollback()
         return jsonify({
             'success': False,
-            'error': f'無法產生編號: {str(e)}'
+            'error': _('無法產生編號: %(error)s', error=str(e))
         }), 500
 
 
@@ -420,7 +421,7 @@ def check_number_available():
     """檢查編號是否可用"""
     number = request.args.get('number', '').strip()
     if not number:
-        return jsonify({'success': False, 'error': '請提供編號'}), 400
+        return jsonify({'success': False, 'error': _('請提供編號')}), 400
 
     available = NumberingService.is_number_available(
         current_user.org_secure_code,

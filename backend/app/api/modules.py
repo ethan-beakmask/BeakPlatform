@@ -3,6 +3,7 @@ BeakMask Modules API
 模組管理 API (No-Code Builder)
 """
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required, system_admin_required
@@ -115,7 +116,7 @@ def create_module():
 
     # 檢查代碼是否已存在
     if ResourceGateway.exists(Module, code=data['code'], is_deleted=False):
-        return jsonify({'error': f'模組代碼「{data["code"]}」已存在，請使用其他代碼'}), 400
+        return jsonify({'error': _('模組代碼「%(code)s」已存在，請使用其他代碼', code=data['code'])}), 400
 
     # 建立模組
     module = ModuleBuilderService.create_module(

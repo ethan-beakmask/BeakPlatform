@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, date, timedelta
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, admin_required, system_admin_required
@@ -77,7 +78,7 @@ def get_current_organization():
     )
 
     if not org:
-        return jsonify({'error': '企業不存在'}), 404
+        return jsonify({'error': _('企業不存在')}), 404
 
     return jsonify({'organization': org.to_dict(include_contracts=True)}), 200
 
@@ -98,7 +99,7 @@ def get_organization(secure_code: str):
     )
 
     if not org:
-        return jsonify({'error': '企業不存在'}), 404
+        return jsonify({'error': _('企業不存在')}), 404
 
     return jsonify({'organization': org.to_dict(include_contracts=True)}), 200
 
@@ -124,12 +125,12 @@ def create_organization():
     data = request.get_json()
 
     if not data:
-        return jsonify({'error': '請提供企業資料'}), 400
+        return jsonify({'error': _('請提供企業資料')}), 400
 
     required_fields = ['code', 'name', 'domain_name', 'admin_password']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'error': f'缺少必要欄位: {field}'}), 400
+            return jsonify({'error': _('缺少必要欄位: %(field)s', field=field)}), 400
 
     try:
         org, admin_user = OrganizationService.create_organization(
@@ -161,7 +162,7 @@ def create_organization():
         db.session.commit()
 
         result = {
-            'message': '企業建立成功',
+            'message': _('企業建立成功'),
             'organization': org.to_dict()
         }
 
@@ -169,7 +170,7 @@ def create_organization():
             result['admin'] = {
                 'username': admin_user.username,
                 'email': admin_user.email,
-                'note': '預設密碼為 ChangeMe123! (如未指定)'
+                'note': _('預設密碼為 ChangeMe123! (如未指定)')
             }
 
         return jsonify(result), 201
@@ -179,7 +180,7 @@ def create_organization():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to create organization: {e}")
-        return jsonify({'error': '建立企業失敗'}), 500
+        return jsonify({'error': _('建立企業失敗')}), 500
 
 
 @organizations_bp.route('/<secure_code>', methods=['PUT'])
@@ -198,16 +199,16 @@ def update_organization(secure_code: str):
     )
 
     if not org:
-        return jsonify({'error': '企業不存在'}), 404
+        return jsonify({'error': _('企業不存在')}), 404
 
     # Check permission: org admin can only update their own org
     if not current_user.is_system_admin and org.secure_code != current_user.org_secure_code:
-        return jsonify({'error': '無權限'}), 403
+        return jsonify({'error': _('無權限')}), 403
 
     data = request.get_json()
 
     if not data:
-        return jsonify({'error': '請提供更新資料'}), 400
+        return jsonify({'error': _('請提供更新資料')}), 400
 
     try:
         # 系統管理員可更新的欄位
@@ -231,14 +232,14 @@ def update_organization(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '企業更新成功',
+            'message': _('企業更新成功'),
             'organization': org.to_dict()
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to update organization: {e}")
-        return jsonify({'error': '更新企業失敗'}), 500
+        return jsonify({'error': _('更新企業失敗')}), 500
 
 
 @organizations_bp.route('/<secure_code>', methods=['DELETE'])
@@ -257,11 +258,11 @@ def delete_organization(secure_code: str):
     )
 
     if not org:
-        return jsonify({'error': '企業不存在'}), 404
+        return jsonify({'error': _('企業不存在')}), 404
 
     # 系統企業不可刪除
     if org.is_system_org:
-        return jsonify({'error': '系統企業不可刪除'}), 400
+        return jsonify({'error': _('系統企業不可刪除')}), 400
 
     try:
         now = datetime.utcnow()
@@ -282,14 +283,14 @@ def delete_organization(secure_code: str):
         db.session.commit()
 
         return jsonify({
-            'message': '企業已刪除',
+            'message': _('企業已刪除'),
             'deleted_contracts': len(contracts)
         }), 200
 
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to delete organization: {e}")
-        return jsonify({'error': '刪除企業失敗'}), 500
+        return jsonify({'error': _('刪除企業失敗')}), 500
 
 
 @organizations_bp.route('/<secure_code>/stats', methods=['GET'])
@@ -308,7 +309,7 @@ def get_organization_stats(secure_code: str):
     )
 
     if not org:
-        return jsonify({'error': '企業不存在'}), 404
+        return jsonify({'error': _('企業不存在')}), 404
 
     return jsonify({
         'stats': {

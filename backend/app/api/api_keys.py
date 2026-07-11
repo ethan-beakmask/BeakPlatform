@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import admin_required
@@ -35,7 +36,7 @@ def _parse_expires_at(value):
     try:
         dt = datetime.fromisoformat(str(value))
     except ValueError:
-        raise ApiKeyError('expires_at 格式錯誤(需 ISO 8601)')
+        raise ApiKeyError(_('expires_at 格式錯誤(需 ISO 8601)'))
     return dt
 
 
@@ -50,7 +51,7 @@ def _validate_applicant(applicant_sc):
         is_active=True,
     ).first()
     if not user:
-        raise ApiKeyError('綁定的系統帳號不存在或已停用')
+        raise ApiKeyError(_('綁定的系統帳號不存在或已停用'))
     return user.secure_code
 
 
@@ -100,7 +101,7 @@ def update_api_key(secure_code):
     """更新 key 屬性(secret 不可改)"""
     record = _get_key_or_404(secure_code)
     if not record:
-        return jsonify({'success': False, 'error': '找不到指定的 API Key'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的 API Key')}), 404
 
     data = request.get_json() or {}
     kwargs = {}
@@ -133,12 +134,12 @@ def suspend_api_key(secure_code):
     """暫停 key(可復原)"""
     record = _get_key_or_404(secure_code)
     if not record:
-        return jsonify({'success': False, 'error': '找不到指定的 API Key'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的 API Key')}), 404
 
     data = request.get_json() or {}
     reason = (data.get('reason') or '').strip()
     if not reason:
-        return jsonify({'success': False, 'error': '請填寫暫停原因'}), 400
+        return jsonify({'success': False, 'error': _('請填寫暫停原因')}), 400
     try:
         api_key_service.suspend_key(
             record, reason, operator_secure_code=current_user.secure_code)
@@ -153,7 +154,7 @@ def resume_api_key(secure_code):
     """復原被暫停的 key"""
     record = _get_key_or_404(secure_code)
     if not record:
-        return jsonify({'success': False, 'error': '找不到指定的 API Key'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的 API Key')}), 404
     try:
         api_key_service.resume_key(
             record, operator_secure_code=current_user.secure_code)
@@ -168,7 +169,7 @@ def revoke_api_key(secure_code):
     """撤銷 key(不可復原)"""
     record = _get_key_or_404(secure_code)
     if not record:
-        return jsonify({'success': False, 'error': '找不到指定的 API Key'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的 API Key')}), 404
     api_key_service.revoke_key(
         record, operator_secure_code=current_user.secure_code)
     return jsonify({'success': True})

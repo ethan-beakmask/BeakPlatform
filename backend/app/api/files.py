@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 import redis
 from flask import Blueprint, jsonify, request, Response, g
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required, public_route
@@ -104,8 +105,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
        max-width: 600px; margin: 80px auto; padding: 20px; }
 </style></head>
 <body>
-<h1 style="color: #dc2626; font-size: 28px;">警告</h1>
-<p>違規下載！檔案下載連結只限一次性且限時下載</p>
+<h1 style="color: #dc2626; font-size: 28px;">""" + _('警告') + """</h1>
+<p>""" + _('違規下載！檔案下載連結只限一次性且限時下載') + """</p>
 </body></html>"""
     return html, status_code, {'Content-Type': 'text/html; charset=utf-8'}
 
@@ -126,7 +127,7 @@ def upload():
         node_id: 簽核關卡 ID (選填，表單附件用)
     """
     if 'file' not in request.files:
-        return jsonify({'success': False, 'message': '未提供檔案'}), 400
+        return jsonify({'success': False, 'message': _('未提供檔案')}), 400
 
     file = request.files['file']
     context_type = request.form.get('context_type', '').strip()
@@ -134,11 +135,11 @@ def upload():
     node_id = request.form.get('node_id', '').strip() or None
 
     if not context_type:
-        return jsonify({'success': False, 'message': '未指定 context_type'}), 400
+        return jsonify({'success': False, 'message': _('未指定 context_type')}), 400
 
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     try:
         record = file_service.upload_file(
@@ -155,7 +156,7 @@ def upload():
 
         return jsonify({
             'success': True,
-            'message': '上傳成功',
+            'message': _('上傳成功'),
             'data': {
                 'secure_code': record.secure_code,
                 'serve_url': record.serve_url,
@@ -170,7 +171,7 @@ def upload():
     except Exception as e:
         db.session.rollback()
         logger.exception("檔案上傳失敗")
-        return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('上傳失敗: %(error)s', error=str(e))}), 500
 
 
 # ── Serve (public) ───────────────────────────────────────────
@@ -220,11 +221,11 @@ def request_download_token(secure_code):
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
     if not record:
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
 
     # 物件級授權：這個用戶跟這個檔案有沒有關係
     if not file_service.can_access_file(current_user, record):
@@ -235,7 +236,7 @@ def request_download_token(secure_code):
             current_user.username, request.remote_addr,
         )
         _log_file_access(record, 'denied')
-        return jsonify({'success': False, 'message': '無此檔案的存取權限'}), 403
+        return jsonify({'success': False, 'message': _('無此檔案的存取權限')}), 403
 
     # 前置檢查：檔案存在 + 大小合理（微秒級，不讀檔）
     preflight = file_service.preflight_check(record)
@@ -248,7 +249,7 @@ def request_download_token(secure_code):
         )
         return jsonify({
             'success': False,
-            'message': '檔案異常！疑似竄改',
+            'message': _('檔案異常！疑似竄改'),
         }), 403
 
     # 產生 token 並���入 Redis
@@ -266,7 +267,7 @@ def request_download_token(secure_code):
         r.setex(f'{_DOWNLOAD_TOKEN_PREFIX}{token}', _DOWNLOAD_TOKEN_TTL, payload)
     except Exception as e:
         logger.exception("Redis 寫入下載 token 失敗")
-        return jsonify({'success': False, 'message': '系統暫時無法處理下載'}), 503
+        return jsonify({'success': False, 'message': _('系統暫時無法處理下載')}), 503
 
     # 稽核記錄在 token 申請時寫入（有完整身份資訊）
     _log_file_access(record, 'download')
@@ -302,7 +303,7 @@ def token_download(token):
         raw = r.eval(lua_get_del, 1, f'{_DOWNLOAD_TOKEN_PREFIX}{token}')
     except Exception as e:
         logger.exception("Redis 讀取下載 token 失敗")
-        return jsonify({'success': False, 'message': '系統暫時無法處理下載'}), 503
+        return jsonify({'success': False, 'message': _('系統暫時無法處理下載')}), 503
 
     if not raw:
         return _warn_page(410)
@@ -313,7 +314,7 @@ def token_download(token):
 
     record = file_service.get_file_by_sc(file_sc, org_sc=org_sc)
     if not record:
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
 
     try:
         data, mime_type, original_name = file_service.serve_file(record)
@@ -323,7 +324,7 @@ def token_download(token):
             file_sc, org_sc, record.storage_ref,
             payload.get('username', '?'), payload.get('ip', '?'),
         )
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
     except FileTamperError as e:
         logger.critical(
             "[SEC] 檔案大小異常！疑似竄改: file_sc=%s org=%s ref=%s "
@@ -332,7 +333,7 @@ def token_download(token):
             _get_disk_size(record), payload.get('username', '?'),
             payload.get('ip', '?'),
         )
-        return jsonify({'success': False, 'message': '檔案完整性驗證失敗，已通報管理員'}), 500
+        return jsonify({'success': False, 'message': _('檔案完整性驗證失敗，已通報管理員')}), 500
     except Exception as e:
         logger.error(
             "[SEC] 檔案解密失敗（可能被竄改）: file_sc=%s org=%s ref=%s "
@@ -340,7 +341,7 @@ def token_download(token):
             file_sc, org_sc, record.storage_ref, record.file_size,
             payload.get('username', '?'), payload.get('ip', '?'), e,
         )
-        return jsonify({'success': False, 'message': '下載失敗，檔案異常'}), 500
+        return jsonify({'success': False, 'message': _('下載失敗，檔案異常')}), 500
 
     # 完整性驗證：比對 SHA-256
     if not file_service.verify_file_integrity(record, data):
@@ -350,7 +351,7 @@ def token_download(token):
             file_sc, org_sc, original_name, record.file_hash,
             payload.get('username', '?'), payload.get('ip', '?'),
         )
-        return jsonify({'success': False, 'message': '檔案完整性驗證失敗，已通報管理員'}), 500
+        return jsonify({'success': False, 'message': _('檔案完整性驗證失敗，已通報管理員')}), 500
 
     return Response(
         data,
@@ -386,11 +387,11 @@ def meta(secure_code):
     """取得檔案 metadata"""
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
     if not record:
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
 
     # 物件級授權（同 download-token）
     if not file_service.can_access_file(current_user, record):
@@ -401,7 +402,7 @@ def meta(secure_code):
             current_user.username, request.remote_addr,
         )
         _log_file_access(record, 'denied')
-        return jsonify({'success': False, 'message': '無此檔案的存取權限'}), 403
+        return jsonify({'success': False, 'message': _('無此檔案的存取權限')}), 403
 
     return jsonify({
         'success': True,
@@ -422,26 +423,26 @@ def delete(secure_code):
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
     if not record:
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
 
     # 只有上傳者可以刪除
     if record.uploader_sc and record.uploader_sc != current_user.secure_code:
-        return jsonify({'success': False, 'message': '只能刪除自己上傳的檔案'}), 403
+        return jsonify({'success': False, 'message': _('只能刪除自己上傳的檔案')}), 403
 
     _log_file_access(record, 'delete')
 
     try:
         file_service.mark_pending_delete(record)
         db.session.commit()
-        return jsonify({'success': True, 'message': '檔案已標記刪除'})
+        return jsonify({'success': True, 'message': _('檔案已標記刪除')})
     except Exception as e:
         db.session.rollback()
         logger.exception("標記刪除失敗: %s", secure_code)
-        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('刪除失敗: %(error)s', error=str(e))}), 500
 
 
 # ── Revert single delete ──────────────────────────────────────
@@ -456,25 +457,25 @@ def revert_single_delete(secure_code):
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     record = file_service.get_file_by_sc(secure_code, org_sc=org.secure_code)
     if not record:
-        return jsonify({'success': False, 'message': '檔案不存在'}), 404
+        return jsonify({'success': False, 'message': _('檔案不存在')}), 404
 
     if record.uploader_sc and record.uploader_sc != current_user.secure_code:
-        return jsonify({'success': False, 'message': '只能撤銷自己標記刪除的檔案'}), 403
+        return jsonify({'success': False, 'message': _('只能撤銷自己標記刪除的檔案')}), 403
 
     try:
         file_service.revert_single_pending_delete(record)
         db.session.commit()
-        return jsonify({'success': True, 'message': '已撤銷刪除'})
+        return jsonify({'success': True, 'message': _('已撤銷刪除')})
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.exception("撤銷刪除失敗: %s", secure_code)
-        return jsonify({'success': False, 'message': f'撤銷失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('撤銷失敗: %(error)s', error=str(e))}), 500
 
 
 # ── Revert deletes ───────────────────────────────────────────
@@ -489,12 +490,12 @@ def revert_deletes():
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     data = request.get_json() or {}
     context_id = data.get('context_id')
     if not context_id:
-        return jsonify({'success': False, 'message': '未指定 context_id'}), 400
+        return jsonify({'success': False, 'message': _('未指定 context_id')}), 400
 
     try:
         file_service.revert_pending_deletes(org.secure_code, context_id)
@@ -524,7 +525,7 @@ def list_files():
     """
     org = current_user.organization
     if not org:
-        return jsonify({'success': False, 'message': '找不到企業'}), 404
+        return jsonify({'success': False, 'message': _('找不到企業')}), 404
 
     context_type = request.args.get('context_type')
     context_id = request.args.get('context_id')

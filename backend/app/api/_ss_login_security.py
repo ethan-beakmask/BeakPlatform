@@ -6,6 +6,7 @@ System Settings - 登入安全欄位子模組
 - PUT    /api/system-settings/login-security             更新系統預設
 """
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import system_admin_required
@@ -34,7 +35,7 @@ def register(bp):
             val = data.get(k)
             if val is not None:
                 if val not in VALID_FIELDS:
-                    return False, f'{k} 無效，允許值: {", ".join(VALID_FIELDS)}'
+                    return False, _('%(field)s 無效，允許值: %(allowed)s', field=k, allowed=", ".join(VALID_FIELDS))
                 config[k] = val
 
         if 'rescue_keyword' in data:
@@ -80,7 +81,7 @@ def register(bp):
         """更新員工登入安全欄位系統預設"""
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': '缺少 request body'}), 400
+            return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
         ok, err = _save_config('employee', data)
         if not ok:
@@ -88,7 +89,7 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '員工登入安全欄位預設已更新',
+            'message': _('員工登入安全欄位預設已更新'),
             'data': _get_defaults('employee'),
         })
 
@@ -110,7 +111,7 @@ def register(bp):
         """更新廠商登入安全欄位系統預設"""
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': '缺少 request body'}), 400
+            return jsonify({'success': False, 'error': _('缺少 request body')}), 400
 
         ok, err = _save_config('vendor', data)
         if not ok:
@@ -118,6 +119,6 @@ def register(bp):
 
         return jsonify({
             'success': True,
-            'message': '廠商登入安全欄位預設已更新',
+            'message': _('廠商登入安全欄位預設已更新'),
             'data': _get_defaults('vendor'),
         })

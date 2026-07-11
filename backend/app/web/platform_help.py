@@ -3,6 +3,7 @@ BeakPlatform Help Pages
 平台說明文件 + 頁內 [?] 按鈕對應的 per-page 說明
 """
 from flask import Blueprint, abort, jsonify, render_template, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from ..security.decorators import login_required
@@ -59,7 +60,7 @@ def api_page_doc():
         return jsonify({
             'found': False,
             'menu_code': None,
-            'message': '此頁面尚未提供說明文件',
+            'message': _('此頁面尚未提供說明文件'),
         })
 
     doc = help_service.load_doc(menu_code)
@@ -67,7 +68,7 @@ def api_page_doc():
         return jsonify({
             'found': False,
             'menu_code': menu_code,
-            'message': '此頁面尚未提供說明文件',
+            'message': _('此頁面尚未提供說明文件'),
         })
 
     user_type = str(current_user.user_type)

@@ -22,6 +22,7 @@
 """
 from datetime import datetime, date
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from .. import db
@@ -85,26 +86,26 @@ def create_schedule():
     data = request.get_json()
 
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     schedule_code = data.get('schedule_code', '').strip()
     name = data.get('name', '').strip()
 
     if not schedule_code:
-        return jsonify({'success': False, 'message': '請輸入班表代碼'}), 400
+        return jsonify({'success': False, 'message': _('請輸入班表代碼')}), 400
 
     if not name:
-        return jsonify({'success': False, 'message': '請輸入班表名稱'}), 400
+        return jsonify({'success': False, 'message': _('請輸入班表名稱')}), 400
 
     # 檢查代碼是否重複
     existing = ResourceGateway.get_by(WorkSchedule, schedule_code=schedule_code, is_deleted=False)
     if existing:
-        return jsonify({'success': False, 'message': f'班表代碼 "{schedule_code}" 已存在'}), 400
+        return jsonify({'success': False, 'message': _('班表代碼 "%(code)s" 已存在', code=schedule_code)}), 400
 
     # 驗證週間工時格式
     weekly_hours = data.get('weekly_hours', {})
     if not _validate_weekly_hours(weekly_hours):
-        return jsonify({'success': False, 'message': '週間工時格式錯誤'}), 400
+        return jsonify({'success': False, 'message': _('週間工時格式錯誤')}), 400
 
     # 如果設為預設，先取消其他預設
     is_default = data.get('is_default', False)
@@ -127,7 +128,7 @@ def create_schedule():
 
     return jsonify({
         'success': True,
-        'message': '班表已建立',
+        'message': _('班表已建立'),
         'data': schedule.to_dict()
     }), 201
 
@@ -143,7 +144,7 @@ def get_schedule(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     return jsonify({
         'success': True,
@@ -171,17 +172,17 @@ def update_schedule(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 更新欄位
     if 'name' in data:
         name = data['name'].strip()
         if not name:
-            return jsonify({'success': False, 'message': '名稱不可為空'}), 400
+            return jsonify({'success': False, 'message': _('名稱不可為空')}), 400
         schedule.name = name
 
     if 'timezone' in data:
@@ -190,7 +191,7 @@ def update_schedule(secure_code):
     if 'weekly_hours' in data:
         weekly_hours = data['weekly_hours']
         if not _validate_weekly_hours(weekly_hours):
-            return jsonify({'success': False, 'message': '週間工時格式錯誤'}), 400
+            return jsonify({'success': False, 'message': _('週間工時格式錯誤')}), 400
         schedule.weekly_hours = weekly_hours
 
     if 'description' in data:
@@ -203,7 +204,7 @@ def update_schedule(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '班表已更新',
+        'message': _('班表已更新'),
         'data': schedule.to_dict()
     })
 
@@ -225,10 +226,10 @@ def delete_schedule(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     if schedule.is_default:
-        return jsonify({'success': False, 'message': '預設班表不可刪除'}), 400
+        return jsonify({'success': False, 'message': _('預設班表不可刪除')}), 400
 
     # 檢查是否有用戶使用此班表
     from ..models import User
@@ -240,7 +241,7 @@ def delete_schedule(secure_code):
     if user_count > 0:
         return jsonify({
             'success': False,
-            'message': f'此班表已指派給 {user_count} 位用戶，無法刪除'
+            'message': _('此班表已指派給 %(count)s 位用戶，無法刪除', count=user_count)
         }), 400
 
     # 軟刪除
@@ -250,7 +251,7 @@ def delete_schedule(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '班表已刪除'
+        'message': _('班表已刪除')
     })
 
 
@@ -265,7 +266,7 @@ def set_default_schedule(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     # 取消其他預設
     _clear_default_schedule()
@@ -276,7 +277,7 @@ def set_default_schedule(secure_code):
 
     return jsonify({
         'success': True,
-        'message': f'已將 "{schedule.name}" 設為預設班表'
+        'message': _('已將 "%(name)s" 設為預設班表', name=schedule.name)
     })
 
 
@@ -301,7 +302,7 @@ def list_holidays(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     year = request.args.get('year', date.today().year, type=int)
 
@@ -340,31 +341,31 @@ def create_holiday(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     # 驗證必填欄位
     holiday_date_str = data.get('holiday_date')
     holiday_type = data.get('holiday_type', '').upper()
 
     if not holiday_date_str:
-        return jsonify({'success': False, 'message': '請選擇日期'}), 400
+        return jsonify({'success': False, 'message': _('請選擇日期')}), 400
 
     if holiday_type not in ('HOLIDAY', 'WORKDAY'):
-        return jsonify({'success': False, 'message': '類型必須是 HOLIDAY 或 WORKDAY'}), 400
+        return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY 或 WORKDAY')}), 400
 
     try:
         holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
     except ValueError:
-        return jsonify({'success': False, 'message': '日期格式錯誤，請使用 YYYY-MM-DD'}), 400
+        return jsonify({'success': False, 'message': _('日期格式錯誤，請使用 YYYY-MM-DD')}), 400
 
     # 補班日需要工作時段
     work_periods = data.get('work_periods')
     if holiday_type == 'WORKDAY' and not work_periods:
-        return jsonify({'success': False, 'message': '補班日請設定工作時段'}), 400
+        return jsonify({'success': False, 'message': _('補班日請設定工作時段')}), 400
 
     # 檢查日期是否重複
     existing = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
@@ -374,7 +375,7 @@ def create_holiday(secure_code):
     ).first()
 
     if existing:
-        return jsonify({'success': False, 'message': f'{holiday_date_str} 已設定過'}), 400
+        return jsonify({'success': False, 'message': _('%(date)s 已設定過', date=holiday_date_str)}), 400
 
     # 建立假日
     holiday = ScheduleHoliday(
@@ -390,7 +391,7 @@ def create_holiday(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '已新增',
+        'message': _('已新增'),
         'data': holiday.to_dict()
     }), 201
 
@@ -406,7 +407,7 @@ def update_holiday(secure_code, holiday_secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         secure_code=holiday_secure_code,
@@ -415,16 +416,16 @@ def update_holiday(secure_code, holiday_secure_code):
     ).first()
 
     if not holiday:
-        return jsonify({'success': False, 'message': '假日不存在'}), 404
+        return jsonify({'success': False, 'message': _('假日不存在')}), 404
 
     data = request.get_json()
     if not data:
-        return jsonify({'success': False, 'message': '請提供資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供資料')}), 400
 
     if 'holiday_type' in data:
         holiday_type = data['holiday_type'].upper()
         if holiday_type not in ('HOLIDAY', 'WORKDAY'):
-            return jsonify({'success': False, 'message': '類型必須是 HOLIDAY 或 WORKDAY'}), 400
+            return jsonify({'success': False, 'message': _('類型必須是 HOLIDAY 或 WORKDAY')}), 400
         holiday.holiday_type = holiday_type
 
         # 切換類型時調整 work_periods
@@ -442,7 +443,7 @@ def update_holiday(secure_code, holiday_secure_code):
 
     return jsonify({
         'success': True,
-        'message': '已更新',
+        'message': _('已更新'),
         'data': holiday.to_dict()
     })
 
@@ -458,7 +459,7 @@ def delete_holiday(secure_code, holiday_secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     holiday = ScheduleHoliday.query.filter_by(  # nosemgrep: beakplatform-direct-model-query-in-api
         secure_code=holiday_secure_code,
@@ -467,7 +468,7 @@ def delete_holiday(secure_code, holiday_secure_code):
     ).first()
 
     if not holiday:
-        return jsonify({'success': False, 'message': '假日不存在'}), 404
+        return jsonify({'success': False, 'message': _('假日不存在')}), 404
 
     holiday.is_deleted = True
     holiday.deleted_at = datetime.utcnow()
@@ -475,7 +476,7 @@ def delete_holiday(secure_code, holiday_secure_code):
 
     return jsonify({
         'success': True,
-        'message': '已刪除'
+        'message': _('已刪除')
     })
 
 
@@ -503,11 +504,11 @@ def batch_import_holidays(secure_code):
     )
 
     if not schedule:
-        return jsonify({'success': False, 'message': '班表不存在'}), 404
+        return jsonify({'success': False, 'message': _('班表不存在')}), 404
 
     data = request.get_json()
     if not data or 'holidays' not in data:
-        return jsonify({'success': False, 'message': '請提供假日資料'}), 400
+        return jsonify({'success': False, 'message': _('請提供假日資料')}), 400
 
     holidays_data = data['holidays']
     replace_year = data.get('replace_year', False)
@@ -574,7 +575,7 @@ def batch_import_holidays(secure_code):
 
     return jsonify({
         'success': True,
-        'message': f'已匯入 {imported} 筆，略過 {skipped} 筆',
+        'message': _('已匯入 %(imported)s 筆，略過 %(skipped)s 筆', imported=imported, skipped=skipped),
         'imported': imported,
         'skipped': skipped
     })

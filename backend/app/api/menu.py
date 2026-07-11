@@ -5,6 +5,7 @@ BeakMask Menu API
 import logging
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -200,14 +201,14 @@ def delete_menu_item(secure_code: str):
     menu_item = ResourceGateway.get(MenuItem, secure_code, check_permission=False)
 
     if not menu_item.is_user_created:
-        return jsonify({'error': '預設選單項目禁止刪除'}), 403
+        return jsonify({'error': _('預設選單項目禁止刪除')}), 403
 
     # 檢查子孫是否包含預設項目
     descendants = menu_item.get_descendants()
     protected = [d for d in descendants if not d.is_user_created]
     if protected:
         names = '、'.join(d.title for d in protected[:5])
-        return jsonify({'error': f'子項目中包含預設選單（{names}），請先將其移出'}), 400
+        return jsonify({'error': _('子項目中包含預設選單（%(names)s），請先將其移出', names=names)}), 400
 
     success = MenuService.delete_menu_item(menu_item, soft=True)
 
@@ -477,7 +478,7 @@ def set_menu_roles(secure_code: str):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to set menu roles: {e}")
-        return jsonify({'error': '更新角色需求失敗'}), 500
+        return jsonify({'error': _('更新角色需求失敗')}), 500
 
 
 # =============================================================================
@@ -501,7 +502,7 @@ def reset_menu_positions():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to reset menu positions: {e}")
-        return jsonify({'error': '重置選單位置失敗'}), 500
+        return jsonify({'error': _('重置選單位置失敗')}), 500
 
 
 @menu_bp.route('/reset-factory', methods=['POST'])
@@ -524,7 +525,7 @@ def reset_menu_factory():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to reset menu factory: {e}")
-        return jsonify({'error': '重置選單出廠值失敗'}), 500
+        return jsonify({'error': _('重置選單出廠值失敗')}), 500
 
 
 @menu_bp.route('/save-factory-defaults', methods=['POST'])
@@ -549,7 +550,7 @@ def save_menu_factory_defaults():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Failed to save menu factory defaults: {e}")
-        return jsonify({'error': '儲存選單出廠預設值失敗'}), 500
+        return jsonify({'error': _('儲存選單出廠預設值失敗')}), 500
 
 
 @menu_bp.route('/export-factory-sql', methods=['POST'])
@@ -571,4 +572,4 @@ def export_factory_sql():
         return jsonify(result), 200
     except Exception as e:
         logger.error(f"Failed to export factory SQL: {e}")
-        return jsonify({'error': '匯出 SQL 失敗'}), 500
+        return jsonify({'error': _('匯出 SQL 失敗')}), 500
