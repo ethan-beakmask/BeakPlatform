@@ -21,7 +21,7 @@
 用戶提到系統功能時，參照 `docs/GLOSSARY.md` 快速定位。
 
 用戶溝通慣例：
-- `/path/` — URL 路徑（如 `/menu/` = `http://192.168.0.16:7000/menu/`）
+- `/path/` — URL 路徑（如 `/menu/` = `http://192.168.0.16:7000/beakplatform/menu/`，**app 掛在 nginx 的 `/beakplatform` 前綴下，缺前綴會 404**）
 - `'名詞'` — 功能名稱或字串，多名詞時混用 `""` 區別
 - `[按鈕]` — UI 按鈕或超連結元素
 - `(URL)` — 從瀏覽器複製的完整 URL
@@ -558,6 +558,17 @@ new Date(record.created_at).toLocaleString('zh-TW')
 - **URL**: http://192.168.0.16:3000/
 - **Repo**: http://192.168.0.16:3000/forgejoadmin/BeakPlatform
 - **API Token**: `be6f8e52f155aa026ac12c5bd470114aa7c54333`
+
+### 開發測試登入（本開發機獨有）
+- **快速切換帳號（免密碼）**: `http://192.168.0.16:7000/beakplatform/dev/quick-login`，點帳號即登入
+- **用完必按該頁 [登出] 按鈕**（曾發生登出不乾淨，該按鈕即為補救設計）
+- SYSTEM_ADMIN 唯一帳號: `admin@system.local`（密碼不明，不要用猜的，會鎖定）
+- curl 自動化登入（E2E 用，JSON 版；表單版有防機器人三欄位，勿用）:
+  ```bash
+  BASE=http://192.168.0.16:7000/beakplatform
+  curl -s -c cj.txt -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
+    -d '{"account":"admin-ethanyu@beluga.com","password":"ApiKeyTest2026"}'
+  ```
 
 ### 服務啟動
 ```bash
