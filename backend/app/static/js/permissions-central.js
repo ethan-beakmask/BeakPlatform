@@ -44,7 +44,13 @@ function permissionCentral() {
         conflictFilters: {
             MISSING_PERMISSION_DEF: true,
             MENU_PERM_NO_RBAC: true,
-            ROLE_REQ_NO_HOLDER: false
+            ROLE_REQ_NO_HOLDER: false,
+            ROLE_REQ_ROLE_INACTIVE: true,
+            DUAL_KEY_NO_INTERSECTION: true,
+            ROLE_NO_PERMISSION: false,
+            STALE_ASSIGNMENT: true,
+            MENU_NO_ACCESS_CONTROL: true,
+            ORPHAN_PERMISSION: false
         },
 
         // RBAC 管理 modal 狀態
@@ -300,7 +306,8 @@ function permissionCentral() {
             return {
                 total: list.length,
                 errors: list.filter(c => c.severity === 'error').length,
-                warnings: list.filter(c => c.severity === 'warning').length
+                warnings: list.filter(c => c.severity === 'warning').length,
+                infos: list.filter(c => c.severity === 'info').length
             };
         },
 

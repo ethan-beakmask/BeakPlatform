@@ -533,6 +533,46 @@
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
                             角色無人持有
                         </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.ROLE_REQ_ROLE_INACTIVE"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-error" style="font-size: 11px;">error</span>
+                            選單要求的角色已停用
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.DUAL_KEY_NO_INTERSECTION"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                            雙鑰匙交集為空
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.STALE_ASSIGNMENT"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                            指派給停用帳號
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <input type="checkbox" x-model="conflictFilters.ROLE_NO_PERMISSION"
+                                   @change="_updateConflictCount()">
+                            <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                            角色無權限
+                        </label>
+                        <template x-if="isSystemAdmin">
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" x-model="conflictFilters.MENU_NO_ACCESS_CONTROL"
+                                       @change="_updateConflictCount()">
+                                <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
+                                選單無存取控制
+                            </label>
+                        </template>
+                        <template x-if="isSystemAdmin">
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" x-model="conflictFilters.ORPHAN_PERMISSION"
+                                       @change="_updateConflictCount()">
+                                <span class="perm-badge-info" style="font-size: 11px;">info</span>
+                                孤兒權限
+                            </label>
+                        </template>
                     </div>
                 </div>
 
@@ -545,6 +585,9 @@
                         </template>
                         <template x-if="filteredConflictSummary.warnings > 0">
                             <span class="perm-badge-warn" x-text="filteredConflictSummary.warnings + ' 警告'"></span>
+                        </template>
+                        <template x-if="filteredConflictSummary.infos > 0">
+                            <span class="perm-badge-info" x-text="filteredConflictSummary.infos + ' 提示'"></span>
                         </template>
                     </h3>
                 </div>
@@ -561,7 +604,7 @@
                             <tr>
                                 <th style="width:80px;">嚴重度</th>
                                 <th style="width:180px;">類型</th>
-                                <th>選單</th>
+                                <th>對象</th>
                                 <th>說明</th>
                                 <th style="width:100px;">操作</th>
                             </tr>
@@ -570,14 +613,15 @@
                             <template x-for="(c, idx) in filteredConflicts" :key="idx">
                                 <tr>
                                     <td>
-                                        <span :class="c.severity === 'error' ? 'perm-badge-error' : 'perm-badge-warn'"
-                                              x-text="c.severity === 'error' ? '錯誤' : '警告'"></span>
+                                        <span :class="c.severity === 'error' ? 'perm-badge-error' : (c.severity === 'info' ? 'perm-badge-info' : 'perm-badge-warn')"
+                                              x-text="c.severity === 'error' ? '錯誤' : (c.severity === 'info' ? '提示' : '警告')"></span>
                                     </td>
                                     <td><code x-text="c.type"></code></td>
-                                    <td x-text="c.menu_title"></td>
+                                    <td x-text="c.menu_title || c.role_name || c.permission_name || '-'"></td>
                                     <td x-text="c.message"></td>
                                     <td>
                                         <button type="button" class="btn btn-secondary btn-sm"
+                                                x-show="c.menu_secure_code"
                                                 @click="jumpToMenu(c.menu_secure_code)">查看</button>
                                     </td>
                                 </tr>

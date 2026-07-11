@@ -311,6 +311,17 @@ class PermissionCentralService:
         """
         偵測權限配置中的衝突與缺失
 
+        偵測類型：
+        - MISSING_PERMISSION_DEF (error): 選單要求的權限代碼不存在
+        - MENU_PERM_NO_RBAC (warning): 選單授權給 user_type 但無角色持有該權限
+        - ROLE_REQ_NO_HOLDER (warning): 選單要求角色但企業無人持有
+        - ROLE_REQ_ROLE_INACTIVE (error): 選單要求的角色已停用
+        - DUAL_KEY_NO_INTERSECTION (warning): 角色持有者層級與選單授權層級交集為空
+        - ROLE_NO_PERMISSION (warning): 角色已指派但無權限也非門禁角色
+        - STALE_ASSIGNMENT (warning): 角色指派指向停用/已刪除帳號
+        - MENU_NO_ACCESS_CONTROL (warning, 僅系統管理員): 啟用選單無任何 MenuPermission
+        - ORPHAN_PERMISSION (info, 僅系統管理員): 權限無角色引用也非選單門檻
+
         ORG_ADMIN 只偵測與自己企業相關的衝突
         """
         conflicts = []
@@ -389,7 +400,10 @@ class PermissionCentralService:
                                f'但沒有任何角色持有權限 {menu.required_permission}',
                 })
 
-        # --- 類型 2: 有 MenuRoleRequirement 但該角色無人持有 ---
+        # 已安裝模組代碼（模組選單另有模組 ACL 注入路徑，不經 MenuPermission）
+        installed_module_codes = cls._get_installed_module_codes()
+
+        # --- 類型 2/6/7: MenuRoleRequirement 相關（角色無人持有 / 角色已停用 / 雙鑰匙交集為空） ---
         role_reqs = MenuRoleRequirement.query.filter_by(
             org_secure_code=org_secure_code,
             is_deleted=False
@@ -408,6 +422,22 @@ class PermissionCentralService:
                 is_deleted=False
             ).first()
             if not role:
+                continue
+
+            # 類型 6: MRR 指向已停用角色 -- 選單變成無人可過的門
+            if not role.is_active:
+                conflicts.append({
+                    'type': 'ROLE_REQ_ROLE_INACTIVE',
+                    'severity': 'error',
+                    'menu_code': menu.code,
+                    'menu_title': menu.title,
+                    'menu_secure_code': menu.secure_code,
+                    'role_code': role.code,
+                    'role_name': role.name,
+                    'role_secure_code': role.secure_code,
+                    'message': f'選單 "{menu.title}" 要求角色 "{role.name}"，'
+                               f'但該角色已停用，無人能通過此門檻',
+                })
                 continue
 
             holder_count = db.session.query(
@@ -435,6 +465,184 @@ class PermissionCentralService:
                     'message': f'選單 "{menu.title}" 要求角色 "{role.name}"，'
                                f'但該企業無人持有此角色',
                 })
+                continue
+
+            # 類型 7: 雙鑰匙交集為空 -- 持有角色者的 user_type 全被 MenuPermission 擋在門外
+            # 模組選單另有模組 ACL 注入路徑（不經 MenuPermission），排除以免誤報
+            if cls._is_module_menu(menu.code, installed_module_codes):
+                continue
+            granted_types = {
+                mp.user_type for mp in MenuPermission.query.filter_by(
+                    menu_secure_code=rr.menu_secure_code,
+                    is_deleted=False
+                ).all()
+            }
+            if granted_types:
+                holder_types = {
+                    r[0] for r in db.session.query(User.user_type).join(
+                        UserRoleAssignment,
+                        UserRoleAssignment.user_secure_code == User.secure_code
+                    ).filter(
+                        UserRoleAssignment.role_secure_code == rr.role_secure_code,
+                        UserRoleAssignment.is_deleted == False,
+                        User.is_deleted == False,
+                        User.is_active == True,
+                        User.org_secure_code == org_secure_code
+                    ).distinct().all()
+                }
+                if holder_types and not (holder_types & granted_types):
+                    conflicts.append({
+                        'type': 'DUAL_KEY_NO_INTERSECTION',
+                        'severity': 'warning',
+                        'menu_code': menu.code,
+                        'menu_title': menu.title,
+                        'menu_secure_code': menu.secure_code,
+                        'role_code': role.code,
+                        'role_name': role.name,
+                        'role_secure_code': role.secure_code,
+                        'message': f'選單 "{menu.title}" 要求角色 "{role.name}"，'
+                                   f'但持有此角色者的層級 ({", ".join(sorted(holder_types))}) '
+                                   f'皆不在選單授權層級 ({", ".join(sorted(granted_types))}) 內，'
+                                   f'兩把鑰匙交集為空',
+                    })
+
+        # --- 類型 3: 角色已指派用戶但無任何權限（排除純門禁角色） ---
+        org_roles = Role.query.filter_by(
+            org_secure_code=org_secure_code,
+            is_deleted=False,
+            is_active=True
+        ).all()
+
+        assigned_role_codes = {
+            r[0] for r in db.session.query(
+                UserRoleAssignment.role_secure_code
+            ).join(
+                User, User.secure_code == UserRoleAssignment.user_secure_code
+            ).filter(
+                UserRoleAssignment.is_deleted == False,
+                User.is_deleted == False,
+                User.is_active == True,
+                User.org_secure_code == org_secure_code
+            ).distinct().all()
+        }
+        perm_holding_role_codes = {
+            r[0] for r in db.session.query(
+                RolePermission.role_secure_code
+            ).filter_by(is_deleted=False, is_active=True).distinct().all()
+        }
+        gate_role_codes = {
+            r[0] for r in db.session.query(
+                MenuRoleRequirement.role_secure_code
+            ).filter_by(is_deleted=False).distinct().all()
+        }
+
+        for role in org_roles:
+            sc = role.secure_code
+            if (sc in assigned_role_codes
+                    and sc not in perm_holding_role_codes
+                    and sc not in gate_role_codes):
+                conflicts.append({
+                    'type': 'ROLE_NO_PERMISSION',
+                    'severity': 'warning',
+                    'role_code': role.code,
+                    'role_name': role.name,
+                    'role_secure_code': sc,
+                    'message': f'角色 "{role.name}" 已指派給用戶，'
+                               f'但未持有任何 RBAC 權限，也未被任何選單引用為門禁',
+                })
+
+        # --- 類型 4: 角色指派指向停用/已刪除帳號 ---
+        stale_rows = db.session.query(
+            UserRoleAssignment.role_secure_code,
+            func.count(UserRoleAssignment.id)
+        ).join(
+            User, User.secure_code == UserRoleAssignment.user_secure_code
+        ).filter(
+            UserRoleAssignment.is_deleted == False,
+            User.org_secure_code == org_secure_code,
+            or_(User.is_deleted == True, User.is_active == False)
+        ).group_by(UserRoleAssignment.role_secure_code).all()
+
+        for role_sc, stale_count in stale_rows:
+            role = Role.query.filter_by(
+                secure_code=role_sc,
+                is_deleted=False
+            ).first()
+            if not role:
+                continue
+            conflicts.append({
+                'type': 'STALE_ASSIGNMENT',
+                'severity': 'warning',
+                'role_code': role.code,
+                'role_name': role.name,
+                'role_secure_code': role.secure_code,
+                'stale_count': stale_count,
+                'message': f'角色 "{role.name}" 有 {stale_count} 筆指派'
+                           f'指向已停用或已刪除的帳號，建議清理',
+            })
+
+        # --- 以下偵測涉及全域資料（選單/權限定義），僅系統管理員可見 ---
+        if is_system_admin:
+            # --- 類型 5: 啟用中選單無任何 MenuPermission（誰都看不到的死選單） ---
+            granted_menu_codes = {
+                r[0] for r in db.session.query(
+                    MenuPermission.menu_secure_code
+                ).filter_by(is_deleted=False).distinct().all()
+            }
+            # 模組選單可經模組 ACL 注入顯示，不強制要求 MenuPermission
+            active_menus = MenuItem.query.filter(
+                MenuItem.is_deleted == False,
+                MenuItem.is_active == True,
+                MenuItem.link_type.notin_(['divider', 'header'])
+            ).all()
+
+            for menu in active_menus:
+                if cls._is_module_menu(menu.code, installed_module_codes):
+                    continue
+                if menu.secure_code not in granted_menu_codes:
+                    conflicts.append({
+                        'type': 'MENU_NO_ACCESS_CONTROL',
+                        'severity': 'warning',
+                        'menu_code': menu.code,
+                        'menu_title': menu.title,
+                        'menu_secure_code': menu.secure_code,
+                        'message': f'選單 "{menu.title}" 啟用中但沒有任何 '
+                                   f'MenuPermission 授權，任何層級都看不到此選單',
+                    })
+
+            # --- 類型 8: 孤兒權限（無角色引用、也非選單門檻） ---
+            referenced_perm_scs = {
+                r[0] for r in db.session.query(
+                    RolePermission.permission_secure_code
+                ).filter_by(is_deleted=False, is_active=True).distinct().all()
+            }
+            menu_required_codes = {
+                r[0] for r in db.session.query(
+                    MenuItem.required_permission
+                ).filter(
+                    MenuItem.required_permission.isnot(None),
+                    MenuItem.required_permission != '',
+                    MenuItem.is_deleted == False
+                ).distinct().all()
+            }
+            all_perms = Permission.query.filter_by(
+                is_deleted=False,
+                is_active=True
+            ).all()
+
+            for perm in all_perms:
+                if (perm.secure_code not in referenced_perm_scs
+                        and perm.code not in menu_required_codes):
+                    conflicts.append({
+                        'type': 'ORPHAN_PERMISSION',
+                        'severity': 'info',
+                        'permission_code': perm.code,
+                        'permission_name': perm.name,
+                        'permission_secure_code': perm.secure_code,
+                        'message': f'權限 "{perm.name}" ({perm.code}) '
+                                   f'未被任何角色持有，也非任何選單的權限門檻'
+                                   f'（可能由程式碼直接檢查，或為待清理項目）',
+                    })
 
         return {
             'conflicts': conflicts,
@@ -442,6 +650,7 @@ class PermissionCentralService:
                 'total': len(conflicts),
                 'errors': len([c for c in conflicts if c['severity'] == 'error']),
                 'warnings': len([c for c in conflicts if c['severity'] == 'warning']),
+                'infos': len([c for c in conflicts if c['severity'] == 'info']),
             },
         }
 
@@ -671,6 +880,27 @@ class PermissionCentralService:
     # ==================================================================
     # 內部工具
     # ==================================================================
+
+    @classmethod
+    def _get_installed_module_codes(cls) -> Set[str]:
+        """取得已安裝模組代碼集合（比對規則與 _menu_module_filter 一致）"""
+        try:
+            from .lookup_service import LookupService
+            items = LookupService.get_items('INSTALLED_MODULES')
+            return {item['code'] for item in items}
+        except Exception as e:
+            logger.warning('_get_installed_module_codes failed: %s', e)
+            return set()
+
+    @classmethod
+    def _is_module_menu(cls, menu_code: str, module_codes: Set[str]) -> bool:
+        """判斷選單是否屬於已安裝模組（code == mc 或 code LIKE 'mc.%'）"""
+        if not menu_code:
+            return False
+        for mc in module_codes:
+            if menu_code == mc or menu_code.startswith(mc + '.'):
+                return True
+        return False
 
     @classmethod
     def _get_org_label(cls, org_secure_code: str) -> str:
