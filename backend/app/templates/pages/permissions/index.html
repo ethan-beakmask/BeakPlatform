@@ -618,7 +618,16 @@
                                     </td>
                                     <td><code x-text="c.type"></code></td>
                                     <td x-text="c.menu_title || c.role_name || c.permission_name || '-'"></td>
-                                    <td x-text="c.message"></td>
+                                    <td>
+                                        <div x-text="c.message"></div>
+                                        <div x-show="c.users && c.users.length"
+                                             style="margin-top: 4px; font-size: 12px; color: #666;">
+                                            相關帳號：
+                                            <template x-for="(u, ui) in (c.users || [])" :key="ui">
+                                                <span><span x-text="u.display_name + ' (' + u.username + (u.status ? '，' + u.status : '') + ')'"></span><span x-show="ui < c.users.length - 1">、</span></span>
+                                            </template>
+                                        </div>
+                                    </td>
                                     <td>
                                         <button type="button" class="btn btn-secondary btn-sm"
                                                 x-show="c.menu_secure_code"

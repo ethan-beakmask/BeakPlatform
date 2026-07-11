@@ -491,6 +491,9 @@ class PermissionCentralService:
                     ).distinct().all()
                 }
                 if holder_types and not (holder_types & granted_types):
+                    holder_users = cls._get_role_holder_users(
+                        rr.role_secure_code, org_secure_code
+                    )
                     conflicts.append({
                         'type': 'DUAL_KEY_NO_INTERSECTION',
                         'severity': 'warning',
@@ -500,6 +503,7 @@ class PermissionCentralService:
                         'role_code': role.code,
                         'role_name': role.name,
                         'role_secure_code': role.secure_code,
+                        'users': holder_users,
                         'message': f'選單 "{menu.title}" 要求角色 "{role.name}"，'
                                    f'但持有此角色者的層級 ({", ".join(sorted(holder_types))}) '
                                    f'皆不在選單授權層級 ({", ".join(sorted(granted_types))}) 內，'
@@ -547,6 +551,7 @@ class PermissionCentralService:
                     'role_code': role.code,
                     'role_name': role.name,
                     'role_secure_code': sc,
+                    'users': cls._get_role_holder_users(sc, org_secure_code),
                     'message': f'角色 "{role.name}" 已指派給用戶，'
                                f'但未持有任何 RBAC 權限，也未被任何選單引用為門禁',
                 })
@@ -554,16 +559,27 @@ class PermissionCentralService:
         # --- 類型 4: 角色指派指向停用/已刪除帳號 ---
         stale_rows = db.session.query(
             UserRoleAssignment.role_secure_code,
-            func.count(UserRoleAssignment.id)
+            User.username,
+            User.display_name,
+            User.is_deleted,
+            User.is_active
         ).join(
             User, User.secure_code == UserRoleAssignment.user_secure_code
         ).filter(
             UserRoleAssignment.is_deleted == False,
             User.org_secure_code == org_secure_code,
             or_(User.is_deleted == True, User.is_active == False)
-        ).group_by(UserRoleAssignment.role_secure_code).all()
+        ).all()
 
-        for role_sc, stale_count in stale_rows:
+        stale_by_role: Dict[str, List[Dict[str, str]]] = {}
+        for role_sc, username, display_name, u_deleted, u_active in stale_rows:
+            stale_by_role.setdefault(role_sc, []).append({
+                'username': username,
+                'display_name': display_name,
+                'status': '已刪除' if u_deleted else '已停用',
+            })
+
+        for role_sc, stale_users in stale_by_role.items():
             role = Role.query.filter_by(
                 secure_code=role_sc,
                 is_deleted=False
@@ -576,8 +592,9 @@ class PermissionCentralService:
                 'role_code': role.code,
                 'role_name': role.name,
                 'role_secure_code': role.secure_code,
-                'stale_count': stale_count,
-                'message': f'角色 "{role.name}" 有 {stale_count} 筆指派'
+                'stale_count': len(stale_users),
+                'users': stale_users,
+                'message': f'角色 "{role.name}" 有 {len(stale_users)} 筆指派'
                            f'指向已停用或已刪除的帳號，建議清理',
             })
 
@@ -880,6 +897,32 @@ class PermissionCentralService:
     # ==================================================================
     # 內部工具
     # ==================================================================
+
+    @classmethod
+    def _get_role_holder_users(
+        cls, role_secure_code: str, org_secure_code: str
+    ) -> List[Dict[str, str]]:
+        """取得持有指定角色的有效帳號清單（限定企業）"""
+        rows = db.session.query(
+            User.username, User.display_name, User.user_type
+        ).join(
+            UserRoleAssignment,
+            UserRoleAssignment.user_secure_code == User.secure_code
+        ).filter(
+            UserRoleAssignment.role_secure_code == role_secure_code,
+            UserRoleAssignment.is_deleted == False,
+            User.is_deleted == False,
+            User.is_active == True,
+            User.org_secure_code == org_secure_code
+        ).distinct().all()
+        return [
+            {
+                'username': r[0],
+                'display_name': r[1],
+                'user_type': str(r[2]),
+            }
+            for r in rows
+        ]
 
     @classmethod
     def _get_installed_module_codes(cls) -> Set[str]:
