@@ -48,7 +48,7 @@ class MenuFactoryMixin:
         重置選單項目位置（只還原 display_order / parent / depth）
 
         不影響權限、標題、icon 等其他設定。
-        用戶自建選單（is_user_created=True 且不在預設定義中）保持原位。
+        用戶自建選單（is_user_created=True）保持原位。
 
         Returns:
             {'updated': n, 'skipped': n}
@@ -64,6 +64,11 @@ class MenuFactoryMixin:
         for code, default in defaults.items():
             item = code_to_item.get(code)
             if not item:
+                skipped += 1
+                continue
+
+            # 用戶自建選單保持原位（即使 code 與內建 defaults 重疊）
+            if item.is_user_created:
                 skipped += 1
                 continue
 
@@ -109,7 +114,7 @@ class MenuFactoryMixin:
         覆蓋範圍：位置、標題、icon、link_type、link_target、
         is_expanded、is_active、is_shared、required_permission、
         MenuPermission（鑰匙 1）、MenuRoleRequirement（鑰匙 2）。
-        用戶自建選單（is_user_created=True 且不在預設定義中）不受影響。
+        用戶自建選單（is_user_created=True）不受影響。
 
         Returns:
             {'updated': n, 'skipped': n, 'permissions_reset': n,
@@ -132,6 +137,11 @@ class MenuFactoryMixin:
         for code, default in defaults.items():
             item = code_to_item.get(code)
             if not item:
+                skipped += 1
+                continue
+
+            # 用戶自建選單不受出廠重置影響（builtin fallback 也要守住）
+            if item.is_user_created:
                 skipped += 1
                 continue
 
