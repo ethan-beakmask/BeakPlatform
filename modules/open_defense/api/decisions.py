@@ -12,6 +12,7 @@ import logging
 from datetime import datetime
 
 from flask import request, jsonify, g
+from flask_babel import gettext as _
 
 from app import limiter
 from app.security.decorators import service_account_required
@@ -77,7 +78,7 @@ def list_decisions():
                 since = since.astimezone(tz=None).replace(tzinfo=None)
         except ValueError:
             return jsonify({'error': 'invalid_since',
-                           'message': 'since 必須為 ISO-8601 字串'}), 400
+                           'message': _('since 必須為 ISO-8601 字串')}), 400
 
     rows = list_decisions_for_sa(
         org_secure_code=sa.org_secure_code,

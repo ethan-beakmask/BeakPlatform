@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BeakPlatform 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-12 12:59+0800\n"
+"POT-Creation-Date: 2026-07-12 13:30+0800\n"
 "PO-Revision-Date: 2026-02-07 11:00+0800\n"
 "Last-Translator: \n"
 "Language: en\n"
@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
+"Generated-By: Babel 2.17.0\n"
 
 #: app/api/_ss_audit.py:79
 msgid "最小 -- 僅登入/登出與失敗嘗試"
@@ -64,7 +64,9 @@ msgstr "File storage settings updated: %(items)s"
 #: app/api/_ss_audit.py:249
 #, python-format
 msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes, 5 per hour)"
-msgstr "%(category)s: invalid format \"%(value)s\" (valid examples: 20 per 10 minutes, 5 per hour)"
+msgstr ""
+"%(category)s: invalid format \"%(value)s\" (valid examples: 20 per 10 "
+"minutes, 5 per hour)"
 
 #: app/api/_ss_audit.py:264 app/api/security_center.py:465
 msgid "部分設定格式無效"
@@ -290,13 +292,12 @@ msgid "SMTP 設定已建立"
 msgstr "SMTP settings created"
 
 #: app/api/_ss_smtp.py:123 app/api/_ss_smtp.py:141 app/api/_ss_smtp.py:191
-#: app/api/_ss_smtp.py:255 app/api/_ss_telegram.py:99
-#: app/api/_ss_telegram.py:117 app/api/_ss_telegram.py:161
-#: app/api/_ss_telegram.py:213 app/api/enterprise_settings.py:485
-#: app/api/enterprise_settings.py:504 app/api/enterprise_settings.py:555
-#: app/api/enterprise_settings.py:621 app/api/enterprise_settings.py:736
-#: app/api/enterprise_settings.py:755 app/api/enterprise_settings.py:800
-#: app/api/enterprise_settings.py:854
+#: app/api/_ss_smtp.py:255 app/api/_ss_telegram.py:99 app/api/_ss_telegram.py:117
+#: app/api/_ss_telegram.py:161 app/api/_ss_telegram.py:213
+#: app/api/enterprise_settings.py:485 app/api/enterprise_settings.py:504
+#: app/api/enterprise_settings.py:555 app/api/enterprise_settings.py:621
+#: app/api/enterprise_settings.py:736 app/api/enterprise_settings.py:755
+#: app/api/enterprise_settings.py:800 app/api/enterprise_settings.py:854
 msgid "設定不存在"
 msgstr "Settings not found"
 
@@ -354,14 +355,12 @@ msgstr "Too many requests. Please try again later"
 msgid "請求過於頻繁，請稍後再試。"
 msgstr "Too many requests. Please try again later."
 
-#: app/api/auth.py:155 app/api/auth.py:177 app/api/auth.py:208
-#: app/api/auth.py:360 app/api/auth.py:486 app/api/auth.py:648
-#: app/api/auth.py:667 app/api/auth.py:675
+#: app/api/auth.py:155 app/api/auth.py:177 app/api/auth.py:208 app/api/auth.py:360
+#: app/api/auth.py:486 app/api/auth.py:648 app/api/auth.py:667 app/api/auth.py:675
 msgid "帳號或密碼錯誤"
 msgstr "Incorrect account or password"
 
-#: app/api/auth.py:330 app/api/auth.py:365 app/api/auth.py:469
-#: app/api/auth.py:491
+#: app/api/auth.py:330 app/api/auth.py:365 app/api/auth.py:469 app/api/auth.py:491
 msgid "請輸入帳號和密碼"
 msgstr "Please enter account and password"
 
@@ -408,7 +407,9 @@ msgstr "Password changed successfully"
 
 #: app/api/auth.py:977 app/api/auth.py:1075
 msgid "已寄送密碼重設驗證信到您的信箱，請在 10 分鐘內完成驗證"
-msgstr "A password reset verification email has been sent. Please complete verification within 10 minutes"
+msgstr ""
+"A password reset verification email has been sent. Please complete "
+"verification within 10 minutes"
 
 #: app/api/auth.py:1027 app/api/auth.py:1064
 msgid "請輸入帳號"
@@ -436,7 +437,9 @@ msgstr "Verification code is incorrect or expired"
 
 #: app/api/auth.py:1188
 msgid "已寄送暫時密碼到您的信箱，請使用暫時密碼登入後變更密碼"
-msgstr "A temporary password has been sent to your email. Please log in with it and change your password"
+msgstr ""
+"A temporary password has been sent to your email. Please log in with it and "
+"change your password"
 
 #: app/api/auth.py:1214
 msgid "找不到目標企業"
@@ -502,11 +505,10 @@ msgstr "Conglomerate name is required"
 msgid "至少需要選擇兩家企業"
 msgstr "At least two organizations must be selected"
 
-#: app/api/conglomerates.py:84 app/api/conglomerates.py:276
-#: app/api/users.py:220 app/web/approval_categories.py:192
-#: app/web/delegations.py:152 app/web/external_users.py:321
-#: app/web/job_families.py:211 app/web/job_families.py:212
-#: app/web/job_levels.py:185 app/web/job_titles.py:270
+#: app/api/conglomerates.py:84 app/api/conglomerates.py:276 app/api/users.py:220
+#: app/web/approval_categories.py:192 app/web/delegations.py:152
+#: app/web/external_users.py:321 app/web/job_families.py:211
+#: app/web/job_families.py:212 app/web/job_levels.py:185 app/web/job_titles.py:270
 #: app/web/job_titles.py:271 app/web/menu.py:324 app/web/menu.py:391
 #: app/web/modules.py:120 app/web/org_admins.py:284 app/web/org_admins.py:453
 #: app/web/organizations.py:264 app/web/positions.py:149
@@ -528,11 +530,10 @@ msgstr "A conglomerate requires at least two organizations"
 #: app/api/conglomerates.py:214 app/web/approval_categories.py:273
 #: app/web/delegations.py:242 app/web/external_users.py:443
 #: app/web/job_families.py:291 app/web/job_families.py:292
-#: app/web/job_levels.py:272 app/web/job_titles.py:349
-#: app/web/job_titles.py:350 app/web/menu.py:493 app/web/modules.py:180
-#: app/web/organizations.py:320 app/web/positions.py:244
-#: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:195
-#: app/web/users.py:606
+#: app/web/job_levels.py:272 app/web/job_titles.py:349 app/web/job_titles.py:350
+#: app/web/menu.py:493 app/web/modules.py:180 app/web/organizations.py:320
+#: app/web/positions.py:244 app/web/sys_accounts.py:247
+#: app/web/sys_accounts.py:248 app/web/units.py:195 app/web/users.py:606
 #, python-format
 msgid "更新失敗: %(error)s"
 msgstr "Update failed: %(error)s"
@@ -569,7 +570,9 @@ msgstr "Failed to create contract"
 
 #: app/api/contracts.py:165
 msgid "合約建立後不可修改內容（稽核要求）。如需停用請使用停用功能，如需變更請建立新合約。"
-msgstr "Contracts cannot be modified after creation (audit requirement). Use the disable function to deactivate, or create a new contract for changes."
+msgstr ""
+"Contracts cannot be modified after creation (audit requirement). Use the "
+"disable function to deactivate, or create a new contract for changes."
 
 #: app/api/contracts.py:199
 msgid "合約已刪除"
@@ -593,7 +596,9 @@ msgstr "Failed to disable contract"
 
 #: app/api/contracts.py:258
 msgid "合約停用後不可再啟用（單向操作）。如需恢復服務，請建立新合約。"
-msgstr "A disabled contract cannot be re-enabled (one-way operation). To restore service, create a new contract."
+msgstr ""
+"A disabled contract cannot be re-enabled (one-way operation). To restore "
+"service, create a new contract."
 
 #: app/api/duties.py:71 app/api/duties.py:149 app/api/duties.py:193
 #: app/api/duties.py:323 app/api/duties.py:416
@@ -604,8 +609,8 @@ msgstr "Duty category not found"
 msgid "請提供分類資料"
 msgstr "Please provide category data"
 
-#: app/api/duties.py:107 app/api/organizational_units.py:343
-#: app/api/roles.py:186 app/web/units.py:113
+#: app/api/duties.py:107 app/api/organizational_units.py:343 app/api/roles.py:186
+#: app/web/units.py:113
 #, python-format
 msgid "代碼 %(code)s 已存在"
 msgstr "Code %(code)s already exists"
@@ -618,9 +623,9 @@ msgstr "Duty category created successfully"
 msgid "建立職務分類失敗"
 msgstr "Failed to create duty category"
 
-#: app/api/duties.py:153 app/api/duties.py:383
-#: app/api/organizational_units.py:405 app/api/organizational_units.py:1580
-#: app/api/organizations.py:211 app/api/roles.py:268
+#: app/api/duties.py:153 app/api/duties.py:383 app/api/organizational_units.py:405
+#: app/api/organizational_units.py:1580 app/api/organizations.py:211
+#: app/api/roles.py:268
 msgid "請提供更新資料"
 msgstr "Please provide update data"
 
@@ -660,7 +665,9 @@ msgstr "Department not found"
 #: app/api/duties.py:335
 #, python-format
 msgid "此部門的 %(category)s 分類已有名為「%(name)s」的職務"
-msgstr "The %(category)s category of this department already has a duty named \"%(name)s\""
+msgstr ""
+"The %(category)s category of this department already has a duty named "
+"\"%(name)s\""
 
 #: app/api/duties.py:354
 msgid "職務建立成功"
@@ -726,8 +733,7 @@ msgstr "Logo uploaded successfully"
 msgid "上傳失敗: %(error)s"
 msgstr "Upload failed: %(error)s"
 
-#: app/api/enterprise_settings.py:373
-#: app/templates/pages/admin/settings.html:91
+#: app/api/enterprise_settings.py:373 app/templates/pages/admin/settings.html:91
 msgid "尚未上傳 Logo"
 msgstr "No logo has been uploaded"
 
@@ -738,12 +744,12 @@ msgstr "Logo deleted"
 #: app/api/enterprise_settings.py:381 app/api/files.py:445
 #: app/web/approval_categories.py:332 app/web/delegations.py:294
 #: app/web/external_users.py:658 app/web/job_families.py:375
-#: app/web/job_families.py:376 app/web/job_levels.py:324
-#: app/web/job_titles.py:401 app/web/job_titles.py:402 app/web/menu.py:551
-#: app/web/modules.py:208 app/web/org_admins.py:543
-#: app/web/organizations.py:396 app/web/organizations.py:539
-#: app/web/positions.py:273 app/web/sys_accounts.py:315
-#: app/web/sys_accounts.py:316 app/web/units.py:229 app/web/users.py:668
+#: app/web/job_families.py:376 app/web/job_levels.py:324 app/web/job_titles.py:401
+#: app/web/job_titles.py:402 app/web/menu.py:551 app/web/modules.py:208
+#: app/web/org_admins.py:543 app/web/organizations.py:396
+#: app/web/organizations.py:539 app/web/positions.py:273
+#: app/web/sys_accounts.py:315 app/web/sys_accounts.py:316 app/web/units.py:229
+#: app/web/users.py:668
 #, python-format
 msgid "刪除失敗: %(error)s"
 msgstr "Delete failed: %(error)s"
@@ -867,10 +873,10 @@ msgstr "Category created"
 #: app/api/lookup.py:168 app/api/lookup.py:176 app/api/lookup.py:190
 #: app/api/lookup.py:226 app/api/lookup.py:232 app/api/lookup.py:269
 #: app/api/lookup.py:277 app/api/lookup.py:297 app/api/lookup.py:304
-#: app/api/lookup.py:442 app/api/lookup.py:446
-#: app/web/approval_categories.py:214 app/web/approval_categories.py:215
-#: app/web/approval_categories.py:311 app/web/approval_categories.py:312
-#: app/web/approval_categories.py:350 app/web/approval_categories.py:420
+#: app/api/lookup.py:442 app/api/lookup.py:446 app/web/approval_categories.py:214
+#: app/web/approval_categories.py:215 app/web/approval_categories.py:311
+#: app/web/approval_categories.py:312 app/web/approval_categories.py:350
+#: app/web/approval_categories.py:420
 msgid "類別不存在"
 msgstr "Category not found"
 
@@ -918,7 +924,9 @@ msgstr "Missing label"
 
 #: app/api/lookup.py:317
 msgid "代碼格式錯誤：只能包含英文、數字和底線，且必須以英文開頭"
-msgstr "Invalid code format: only letters, digits and underscores are allowed, and it must start with a letter"
+msgstr ""
+"Invalid code format: only letters, digits and underscores are allowed, and "
+"it must start with a letter"
 
 #: app/api/lookup.py:323
 #, python-format
@@ -1054,7 +1062,9 @@ msgstr "Failed to auto-generate code: %(error)s"
 
 #: app/api/organizational_units.py:324
 msgid "代碼只能包含英文字母、數字、底線(_)、連字號(-)，且開頭必須是英文"
-msgstr "Code may only contain letters, digits, underscores (_) and hyphens (-), and must start with a letter"
+msgstr ""
+"Code may only contain letters, digits, underscores (_) and hyphens (-), and "
+"must start with a letter"
 
 #: app/api/organizational_units.py:328
 #, python-format
@@ -1778,7 +1788,9 @@ msgstr "Change Password"
 
 #: app/templates/auth/change_password.html:14
 msgid "首次登入需要變更密碼才能繼續使用系統。"
-msgstr "When logging in for the first time, you need to change your password to continue using the system."
+msgstr ""
+"When logging in for the first time, you need to change your password to "
+"continue using the system."
 
 #: app/templates/auth/change_password.html:36
 #: app/templates/pages/change_password.html:27
@@ -1792,8 +1804,7 @@ msgstr "Current password"
 #: app/templates/pages/organizations/admins.html:114
 #: app/templates/pages/sys_accounts/edit.html:64
 #: app/templates/pages/sys_accounts/list.html:136
-#: app/templates/pages/users/edit.html:132
-#: app/templates/pages/users/view.html:188
+#: app/templates/pages/users/edit.html:132 app/templates/pages/users/view.html:188
 msgid "新密碼"
 msgstr "New password"
 
@@ -1870,9 +1881,9 @@ msgstr "Passwords match"
 #: app/templates/pages/job_titles/edit.html:113
 #: app/templates/pages/job_titles/list.html:129
 #: app/templates/pages/job_titles/list.html:215
-#: app/templates/pages/menu/create.html:114
-#: app/templates/pages/menu/edit.html:118 app/templates/pages/menu/list.html:45
-#: app/templates/pages/menu/list.html:69 app/templates/pages/menu/list.html:89
+#: app/templates/pages/menu/create.html:114 app/templates/pages/menu/edit.html:118
+#: app/templates/pages/menu/list.html:45 app/templates/pages/menu/list.html:69
+#: app/templates/pages/menu/list.html:89
 #: app/templates/pages/modules/create.html:65
 #: app/templates/pages/modules/edit.html:55
 #: app/templates/pages/modules/list.html:181
@@ -1890,25 +1901,21 @@ msgstr "Passwords match"
 #: app/templates/pages/profile/edit.html:39
 #: app/templates/pages/profile/password.html:43
 #: app/templates/pages/roles/create.html:176
-#: app/templates/pages/roles/edit.html:186
-#: app/templates/pages/roles/list.html:121
+#: app/templates/pages/roles/edit.html:186 app/templates/pages/roles/list.html:121
 #: app/templates/pages/security/_api_keys_modals.html:90
 #: app/templates/pages/security/_api_keys_modals.html:136
 #: app/templates/pages/sys_accounts/create.html:90
 #: app/templates/pages/sys_accounts/edit.html:99
 #: app/templates/pages/sys_accounts/list.html:283
-#: app/templates/pages/units/create.html:68
-#: app/templates/pages/units/edit.html:66
+#: app/templates/pages/units/create.html:68 app/templates/pages/units/edit.html:66
 #: app/templates/pages/users/create.html:23
-#: app/templates/pages/users/edit.html:340
-#: app/templates/pages/users/edit.html:342
+#: app/templates/pages/users/edit.html:340 app/templates/pages/users/edit.html:342
 #: app/templates/pages/users/import.html:183
 #: app/templates/pages/users/view.html:216
 msgid "取消"
 msgstr "Cancel"
 
-#: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:52
+#: app/templates/auth/change_password.html:86 app/templates/layouts/base.html:52
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr "Logout"
@@ -1925,7 +1932,9 @@ msgstr "Forgot password"
 
 #: app/templates/auth/forgot_password.html:29
 msgid "請輸入您的帳號，我們將寄送密碼重設驗證信到您的信箱。"
-msgstr "Please enter your account number and we will send a password reset verification letter to your mailbox."
+msgstr ""
+"Please enter your account number and we will send a password reset "
+"verification letter to your mailbox."
 
 #: app/templates/auth/forgot_password.html:36
 #: app/templates/auth/forgot_password.html:59 app/templates/auth/login.html:161
@@ -1943,8 +1952,7 @@ msgstr "Please enter your account number and we will send a password reset verif
 #: app/templates/pages/sys_accounts/list.html:55
 #: app/templates/pages/sys_accounts/list.html:100
 #: app/templates/pages/sys_accounts/list.html:231
-#: app/templates/pages/users/create.html:73
-#: app/templates/pages/users/edit.html:49
+#: app/templates/pages/users/create.html:73 app/templates/pages/users/edit.html:49
 #: app/templates/pages/users/list.html:39
 msgid "帳號"
 msgstr "Account"
@@ -2000,8 +2008,7 @@ msgstr "External Vendor Login"
 msgid "請輸入您的完整 Email 地址"
 msgstr "Please enter your complete Email address"
 
-#: app/templates/auth/verify_reset.html:8
-#: app/templates/auth/verify_reset.html:10
+#: app/templates/auth/verify_reset.html:8 app/templates/auth/verify_reset.html:10
 #: app/templates/auth/verify_reset.html:14
 msgid "驗證密碼重設"
 msgstr "Verify password reset"
@@ -2117,10 +2124,8 @@ msgstr "All types"
 #: app/templates/pages/modules/create.html:52
 #: app/templates/pages/platform_help/org_admin.html:46
 #: app/templates/pages/platform_help/org_admin.html:83
-#: app/templates/pages/profile/view.html:21
-#: app/templates/pages/users/edit.html:93
-#: app/templates/pages/users/edit.html:106
-#: app/templates/pages/users/view.html:41
+#: app/templates/pages/profile/view.html:21 app/templates/pages/users/edit.html:93
+#: app/templates/pages/users/edit.html:106 app/templates/pages/users/view.html:41
 msgid "企業管理員"
 msgstr "Organization Admin"
 
@@ -2141,11 +2146,9 @@ msgstr "Employee"
 #: app/templates/pages/external-users/view.html:23
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:35
 #: app/templates/pages/job_levels/create.html:110
-#: app/templates/pages/menu/list.html:140
-#: app/templates/pages/menu/list.html:152
+#: app/templates/pages/menu/list.html:140 app/templates/pages/menu/list.html:152
 #: app/templates/pages/platform_help/org_admin.html:56
-#: app/templates/pages/users/edit.html:92
-#: app/templates/pages/users/edit.html:107
+#: app/templates/pages/users/edit.html:92 app/templates/pages/users/edit.html:107
 msgid "外部廠商"
 msgstr "External Member"
 
@@ -2178,8 +2181,7 @@ msgstr "%(count)d records"
 #: app/templates/pages/roles/edit.html:149
 #: app/templates/pages/security/alert_broadcasts.html:142
 #: app/templates/pages/security/alert_broadcasts.html:170
-#: app/templates/pages/users/list.html:38
-#: app/templates/pages/users/view.html:30
+#: app/templates/pages/users/list.html:38 app/templates/pages/users/view.html:30
 msgid "姓名"
 msgstr "Name"
 
@@ -2193,10 +2195,8 @@ msgstr "Account type"
 #: app/templates/pages/admin/settings.html:223
 #: app/templates/pages/personal_settings.html:138
 #: app/templates/pages/users/create.html:122
-#: app/templates/pages/users/edit.html:172
-#: app/templates/pages/users/edit.html:239
-#: app/templates/pages/users/edit.html:246
-#: app/templates/pages/users/list.html:40
+#: app/templates/pages/users/edit.html:172 app/templates/pages/users/edit.html:239
+#: app/templates/pages/users/edit.html:246 app/templates/pages/users/list.html:40
 #: app/templates/pages/users/view.html:64
 msgid "用戶編號"
 msgstr "Employee ID"
@@ -2207,23 +2207,17 @@ msgstr "Employee ID"
 #: app/templates/pages/positions/list.html:19
 #: app/templates/pages/positions/view.html:44
 #: app/templates/pages/roles/create.html:110
-#: app/templates/pages/roles/edit.html:61
-#: app/templates/pages/roles/list.html:81
-#: app/templates/pages/roles/view.html:35
-#: app/templates/pages/units/create.html:3
+#: app/templates/pages/roles/edit.html:61 app/templates/pages/roles/list.html:81
+#: app/templates/pages/roles/view.html:35 app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
-#: app/templates/pages/units/create.html:67
-#: app/templates/pages/units/list.html:40
-#: app/templates/pages/units/view.html:27
-#: app/templates/pages/units/view.html:77
+#: app/templates/pages/units/create.html:67 app/templates/pages/units/list.html:40
+#: app/templates/pages/units/view.html:27 app/templates/pages/units/view.html:77
 #: app/templates/pages/users/create.html:153
-#: app/templates/pages/users/edit.html:183
-#: app/templates/pages/users/list.html:41
+#: app/templates/pages/users/edit.html:183 app/templates/pages/users/list.html:41
 msgid "部門"
 msgstr "Department"
 
-#: app/templates/pages/account_roles.html:36
-#: app/templates/pages/dashboard.html:61
+#: app/templates/pages/account_roles.html:36 app/templates/pages/dashboard.html:61
 msgid "社群參與"
 msgstr "Group Memberships"
 
@@ -2284,7 +2278,9 @@ msgstr "Security Warning"
 
 #: app/templates/pages/dashboard.html:13
 msgid "您目前使用的是預設 admin 帳號，此帳號容易被猜測攻擊。"
-msgstr "You are currently using the default admin account, which is vulnerable to brute-force attacks."
+msgstr ""
+"You are currently using the default admin account, which is vulnerable to "
+"brute-force attacks."
 
 #: app/templates/pages/dashboard.html:14
 msgid "建議步驟："
@@ -2316,7 +2312,9 @@ msgstr "Hint"
 
 #: app/templates/pages/dashboard.html:29
 msgid "預設 admin 帳號容易被猜測攻擊，建議前往"
-msgstr "The default admin account is vulnerable to guessing attacks. It is recommended to go to"
+msgstr ""
+"The default admin account is vulnerable to guessing attacks. It is "
+"recommended to go to"
 
 #: app/templates/pages/dashboard.html:29
 msgid "將其停用。"
@@ -2332,14 +2330,12 @@ msgid "待簽核"
 msgstr "Pending approval"
 
 #: app/templates/pages/admin/groups.html:3
-#: app/templates/pages/admin/groups.html:171
-#: app/templates/pages/dashboard.html:53
+#: app/templates/pages/admin/groups.html:171 app/templates/pages/dashboard.html:53
 msgid "我的社群"
 msgstr "My Groups"
 
 #: app/templates/pages/admin/groups.html:213
-#: app/templates/pages/admin/groups.html:251
-#: app/templates/pages/dashboard.html:65
+#: app/templates/pages/admin/groups.html:251 app/templates/pages/dashboard.html:65
 msgid "社群名稱"
 msgstr "Group name"
 
@@ -2357,8 +2353,7 @@ msgstr "Personal Settings"
 #: app/templates/pages/personal_settings.html:30
 #: app/templates/pages/sys_accounts/edit.html:116
 #: app/templates/pages/sys_accounts/list.html:182
-#: app/templates/pages/users/edit.html:46
-#: app/templates/pages/users/view.html:27
+#: app/templates/pages/users/edit.html:46 app/templates/pages/users/view.html:27
 msgid "帳號資訊"
 msgstr "Account Information"
 
@@ -2390,11 +2385,9 @@ msgstr "Password"
 
 #: app/templates/pages/admin/_employee_create_form.html:105
 #: app/templates/pages/personal_settings.html:61
-#: app/templates/pages/profile/view.html:3
-#: app/templates/pages/profile/view.html:6
+#: app/templates/pages/profile/view.html:3 app/templates/pages/profile/view.html:6
 #: app/templates/pages/users/create.html:178
-#: app/templates/pages/users/edit.html:219
-#: app/templates/pages/users/view.html:111
+#: app/templates/pages/users/edit.html:219 app/templates/pages/users/view.html:111
 msgid "個人資料"
 msgstr "Profile"
 
@@ -2402,8 +2395,7 @@ msgstr "Profile"
 #: app/templates/pages/admin/initial_setup.html:157
 #: app/templates/pages/admin/settings.html:220
 #: app/templates/pages/personal_settings.html:66
-#: app/templates/pages/users/create.html:51
-#: app/templates/pages/users/edit.html:65
+#: app/templates/pages/users/create.html:51 app/templates/pages/users/edit.html:65
 #: app/templates/pages/users/import.html:130
 #: app/templates/pages/users/view.html:114
 msgid "英文姓名"
@@ -2413,8 +2405,7 @@ msgstr "English Name"
 #: app/templates/pages/admin/initial_setup.html:150
 #: app/templates/pages/admin/settings.html:219
 #: app/templates/pages/personal_settings.html:71
-#: app/templates/pages/users/create.html:42
-#: app/templates/pages/users/edit.html:55
+#: app/templates/pages/users/create.html:42 app/templates/pages/users/edit.html:55
 #: app/templates/pages/users/import.html:135
 #: app/templates/pages/users/view.html:118
 msgid "本國姓名"
@@ -2430,8 +2421,7 @@ msgstr "Name in native language"
 #: app/templates/pages/personal_settings.html:78
 #: app/templates/pages/personal_settings.html:137
 #: app/templates/pages/users/create.html:181
-#: app/templates/pages/users/edit.html:222
-#: app/templates/pages/users/edit.html:238
+#: app/templates/pages/users/edit.html:222 app/templates/pages/users/edit.html:238
 #: app/templates/pages/users/edit.html:245
 #: app/templates/pages/users/import.html:140
 #: app/templates/pages/users/view.html:122
@@ -2440,13 +2430,15 @@ msgstr "Nickname"
 
 #: app/templates/pages/personal_settings.html:82
 msgid "企業管理員可在此設定暱稱，否則 Navbar 只會顯示加上隱私保護的名稱（企業預設對管理員不適用）"
-msgstr "Organization admins can set a nickname here; otherwise the navbar shows only a privacy-protected name (the organization default does not apply to admins)"
+msgstr ""
+"Organization admins can set a nickname here; otherwise the navbar shows only"
+" a privacy-protected name (the organization default does not apply to "
+"admins)"
 
 #: app/templates/pages/admin/_employee_create_form.html:127
 #: app/templates/pages/personal_settings.html:95
 #: app/templates/pages/users/create.html:222
-#: app/templates/pages/users/edit.html:291
-#: app/templates/pages/users/view.html:127
+#: app/templates/pages/users/edit.html:291 app/templates/pages/users/view.html:127
 msgid "聯絡方式"
 msgstr "Contact Information"
 
@@ -2478,22 +2470,22 @@ msgstr "Navbar display"
 #: app/templates/pages/personal_settings.html:136
 #: app/templates/pages/users/create.html:195
 #: app/templates/pages/users/create.html:208
-#: app/templates/pages/users/edit.html:248
-#: app/templates/pages/users/edit.html:265
+#: app/templates/pages/users/edit.html:248 app/templates/pages/users/edit.html:265
 #: app/templates/pages/users/edit.html:285
 msgid "跟隨企業設定"
 msgstr "Follow organization settings"
 
 #: app/templates/pages/personal_settings.html:139
-#: app/templates/pages/users/edit.html:240
-#: app/templates/pages/users/edit.html:247
+#: app/templates/pages/users/edit.html:240 app/templates/pages/users/edit.html:247
 msgid "用戶編號 + 部門"
 msgstr "User ID + Department"
 
 #: app/templates/pages/personal_settings.html:141
 #: app/templates/pages/users/edit.html:242
 msgid "在公開場所使用時，可改為不含真名的顯示方式"
-msgstr "When used in public places, you can switch to a display that hides your real name"
+msgstr ""
+"When used in public places, you can switch to a display that hides your real"
+" name"
 
 #: app/templates/pages/personal_settings.html:144
 msgid "語言"
@@ -2524,7 +2516,9 @@ msgstr "Assigned Department:"
 
 #: app/templates/pages/admin/_employee_create_form.html:7
 msgid "未選擇部門，建立後歸入「未分配企業成員」"
-msgstr "Department is not selected and will be classified into \"Unallocated Employee\" after creation."
+msgstr ""
+"Department is not selected and will be classified into \"Unallocated "
+"Employee\" after creation."
 
 #: app/templates/pages/admin/_employee_create_form.html:13
 #: app/templates/pages/users/create.html:39
@@ -2533,21 +2527,18 @@ msgstr "Required field"
 
 #: app/templates/pages/admin/_employee_create_form.html:32
 #: app/templates/pages/admin/initial_setup.html:166
-#: app/templates/pages/users/create.html:62
-#: app/templates/pages/users/edit.html:74
+#: app/templates/pages/users/create.html:62 app/templates/pages/users/edit.html:74
 msgid "自動翻譯"
 msgstr "Auto Translate"
 
 #: app/templates/pages/admin/_employee_create_form.html:33
 #: app/templates/pages/admin/initial_setup.html:167
-#: app/templates/pages/users/create.html:63
-#: app/templates/pages/users/edit.html:75
+#: app/templates/pages/users/create.html:63 app/templates/pages/users/edit.html:75
 msgid "翻譯中..."
 msgstr "Translating..."
 
 #: app/templates/pages/admin/_employee_create_form.html:37
-#: app/templates/pages/users/create.html:67
-#: app/templates/pages/users/edit.html:79
+#: app/templates/pages/users/create.html:67 app/templates/pages/users/edit.html:79
 msgid "偵測語言:"
 msgstr "Detection language:"
 
@@ -2596,8 +2587,7 @@ msgstr "Leave blank to automatically generate a strengthened password"
 #: app/templates/pages/sys_accounts/list.html:154
 #: app/templates/pages/sys_accounts/list.html:267
 #: app/templates/pages/users/create.html:117
-#: app/templates/pages/users/edit.html:159
-#: app/templates/pages/users/view.html:204
+#: app/templates/pages/users/edit.html:159 app/templates/pages/users/view.html:204
 msgid "密碼符合要求"
 msgstr "The password meets the requirements"
 
@@ -2644,8 +2634,7 @@ msgid "語系"
 msgstr "Language"
 
 #: app/templates/pages/admin/_employee_create_form.html:118
-#: app/templates/pages/users/edit.html:237
-#: app/templates/pages/users/edit.html:258
+#: app/templates/pages/users/edit.html:237 app/templates/pages/users/edit.html:258
 #: app/templates/pages/users/edit.html:274
 msgid "-- 跟隨企業設定 --"
 msgstr "-- Follow Organization settings --"
@@ -2677,8 +2666,15 @@ msgstr "Login security field settings"
 
 #: app/templates/pages/admin/_settings_login_security_section.html:7
 msgid "登入頁面有三個外觀一致的驗證碼欄位，可分別指定為密碼、地雷、救助用途。員工登入與廠商登入各自獨立設定，避免洩漏彼此的策略。"
-msgstr "The login page has three verification code fields with the same appearance, which can be designated for password, mine, and rescue purposes respectively. Employee login and External Vendor login are set up independently to avoid leaking each other's policies."
+msgstr ""
+"The login page has three verification code fields with the same appearance, "
+"which can be designated for password, mine, and rescue purposes "
+"respectively. Employee login and External Vendor login are set up "
+"independently to avoid leaking each other's policies."
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:49
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:25
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:24
 #: app/templates/pages/admin/_settings_login_security_section.html:10
 #: app/templates/pages/admin/_settings_recipients_section.html:15
 #: app/templates/pages/admin/_settings_smtp_section.html:15
@@ -2821,7 +2817,9 @@ msgstr "+ Add new group"
 
 #: app/templates/pages/admin/_settings_recipients_section.html:11
 msgid "設定系統通知的收件人群組，使用「備用 Email 1（系統通知專用）」作為通知信箱"
-msgstr "Set the recipient group for system notifications and use \"Standby Email 1 (for system notifications only)\" as the notification mailbox"
+msgstr ""
+"Set the recipient group for system notifications and use \"Standby Email 1 "
+"(for system notifications only)\" as the notification mailbox"
 
 #: app/templates/pages/admin/_settings_recipients_section.html:19
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:23
@@ -2853,8 +2851,7 @@ msgstr "Group name"
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:152
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:45
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:61
-#: app/templates/pages/menu/list.html:107
-#: app/templates/pages/menu/list.html:123
+#: app/templates/pages/menu/list.html:107 app/templates/pages/menu/list.html:123
 #: app/templates/pages/modules/create.html:71
 #: app/templates/pages/organizations/admins.html:162
 #: app/templates/pages/organizations/contract_form.html:36
@@ -2876,6 +2873,10 @@ msgstr "Notes"
 msgid "收件人數"
 msgstr "Number of recipients"
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:21
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:60
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:33
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:32
 #: app/templates/pages/admin/_settings_recipients_section.html:31
 #: app/templates/pages/admin/_settings_smtp_section.html:32
 #: app/templates/pages/admin/_settings_telegram_section.html:31
@@ -2920,12 +2921,9 @@ msgstr "Number of recipients"
 #: app/templates/pages/sys_accounts/edit.html:47
 #: app/templates/pages/sys_accounts/list.html:57
 #: app/templates/pages/sys_accounts/list.html:118
-#: app/templates/pages/units/edit.html:57
-#: app/templates/pages/units/list.html:28
-#: app/templates/pages/units/view.html:48
-#: app/templates/pages/users/edit.html:115
-#: app/templates/pages/users/edit.html:125
-#: app/templates/pages/users/list.html:42
+#: app/templates/pages/units/edit.html:57 app/templates/pages/units/list.html:28
+#: app/templates/pages/units/view.html:48 app/templates/pages/users/edit.html:115
+#: app/templates/pages/users/edit.html:125 app/templates/pages/users/list.html:42
 #: app/templates/pages/users/view.html:46
 msgid "狀態"
 msgstr "Status"
@@ -2949,11 +2947,9 @@ msgstr "Status"
 #: app/templates/pages/organizations/list.html:266
 #: app/templates/pages/permissions/index.html:609
 #: app/templates/pages/positions/list.html:25
-#: app/templates/pages/roles/edit.html:151
-#: app/templates/pages/roles/list.html:54
+#: app/templates/pages/roles/edit.html:151 app/templates/pages/roles/list.html:54
 #: app/templates/pages/security/api_keys.html:34
-#: app/templates/pages/units/list.html:29
-#: app/templates/pages/users/list.html:44
+#: app/templates/pages/units/list.html:29 app/templates/pages/users/list.html:44
 msgid "操作"
 msgstr "Actions"
 
@@ -2991,8 +2987,7 @@ msgstr "people"
 #: app/templates/pages/job_titles/edit.html:105
 #: app/templates/pages/job_titles/list.html:206
 #: app/templates/pages/job_titles/view.html:73
-#: app/templates/pages/menu/edit.html:111
-#: app/templates/pages/modules/edit.html:48
+#: app/templates/pages/menu/edit.html:111 app/templates/pages/modules/edit.html:48
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/organizations/admins.html:78
@@ -3006,12 +3001,9 @@ msgstr "people"
 #: app/templates/pages/sys_accounts/edit.html:54
 #: app/templates/pages/sys_accounts/list.html:120
 #: app/templates/pages/sys_accounts/list.html:124
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:118
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:56
-#: app/templates/pages/users/list.html:67
+#: app/templates/pages/units/list.html:42 app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:118 app/templates/pages/users/edit.html:127
+#: app/templates/pages/users/list.html:56 app/templates/pages/users/list.html:67
 #: app/templates/pages/users/view.html:48 app/web/external_users.py:612
 #: app/web/org_admin_rescue.py:96
 msgid "啟用"
@@ -3045,12 +3037,9 @@ msgstr "Active"
 #: app/templates/pages/positions/view.html:97
 #: app/templates/pages/sys_accounts/edit.html:55
 #: app/templates/pages/sys_accounts/list.html:125
-#: app/templates/pages/units/list.html:42
-#: app/templates/pages/units/view.html:49
-#: app/templates/pages/users/edit.html:119
-#: app/templates/pages/users/edit.html:127
-#: app/templates/pages/users/list.html:58
-#: app/templates/pages/users/list.html:67
+#: app/templates/pages/units/list.html:42 app/templates/pages/units/view.html:49
+#: app/templates/pages/users/edit.html:119 app/templates/pages/users/edit.html:127
+#: app/templates/pages/users/list.html:58 app/templates/pages/users/list.html:67
 #: app/templates/pages/users/view.html:48 app/web/external_users.py:612
 #: app/web/org_admin_rescue.py:96
 msgid "停用"
@@ -3076,8 +3065,7 @@ msgstr "Preview"
 #: app/templates/pages/hostconfig/_system_settings_section_smtp.html:53
 #: app/templates/pages/hostconfig/_system_settings_section_telegram.html:50
 #: app/templates/pages/job_families/view.html:10
-#: app/templates/pages/modules/view.html:16
-#: app/templates/pages/roles/list.html:96
+#: app/templates/pages/modules/view.html:16 app/templates/pages/roles/list.html:96
 #: app/templates/pages/roles/view.html:15
 #: app/templates/pages/security/api_keys.html:59
 #: app/templates/pages/users/list.html:63
@@ -3198,8 +3186,7 @@ msgstr "Close"
 #: app/templates/pages/admin/_settings_smtp_section.html:204
 #: app/templates/pages/admin/_settings_telegram_section.html:164
 #: app/templates/pages/admin/_settings_telegram_section.html:170
-#: app/templates/pages/roles/edit.html:174
-#: app/templates/pages/roles/edit.html:191
+#: app/templates/pages/roles/edit.html:174 app/templates/pages/roles/edit.html:191
 #: app/templates/pages/roles/list.html:125
 msgid "確認刪除"
 msgstr "Confirm deletion"
@@ -3241,6 +3228,8 @@ msgstr "No settings yet for SMTP"
 msgid "點擊「新增設定」開始建立"
 msgstr "Click \"Add Settings\" to start creating"
 
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:30
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:29
 #: app/templates/pages/admin/_settings_smtp_section.html:28
 #: app/templates/pages/admin/_settings_telegram_section.html:28
 #: app/templates/pages/approval_categories/list.html:94
@@ -3320,7 +3309,9 @@ msgstr "Use application password"
 
 #: app/templates/pages/admin/_settings_smtp_section.html:137
 msgid "如果您的 Gmail 帳號啟用了兩步驟驗證，需要使用應用程式密碼而非一般密碼。"
-msgstr "If you have two-step verification enabled on your Gmail account, you will need to use an application password instead of a regular password."
+msgstr ""
+"If you have two-step verification enabled on your Gmail account, you will "
+"need to use an application password instead of a regular password."
 
 #: app/templates/pages/admin/_settings_smtp_section.html:138
 msgid "前往設定應用程式密碼"
@@ -3422,10 +3413,8 @@ msgstr "For example: Alarm notification group"
 #: app/templates/pages/organizations/list.html:342
 #: app/templates/pages/organizations/list.html:393
 #: app/templates/pages/roles/create.html:152
-#: app/templates/pages/roles/edit.html:85
-#: app/templates/pages/roles/view.html:50
-#: app/templates/pages/units/create.html:54
-#: app/templates/pages/units/edit.html:49
+#: app/templates/pages/roles/edit.html:85 app/templates/pages/roles/view.html:50
+#: app/templates/pages/units/create.html:54 app/templates/pages/units/edit.html:49
 #: app/templates/pages/units/view.html:56
 msgid "描述"
 msgstr "Description"
@@ -3464,7 +3453,9 @@ msgstr "Department Settings"
 
 #: app/templates/pages/admin/departments.html:246
 msgid "[跨] 跨部門模式 -- 放開後以跨部門身份加入，不離開原部門"
-msgstr "[Cross] Cross Department mode -- after release, join as cross Department without leaving the original Department"
+msgstr ""
+"[Cross] Cross Department mode -- after release, join as cross Department "
+"without leaving the original Department"
 
 #: app/templates/pages/admin/departments.html:253
 msgid "組織架構"
@@ -3518,7 +3509,9 @@ msgstr "Ctrl + drag = cross-department"
 
 #: app/templates/pages/admin/departments.html:338
 msgid "從左側組織樹按住 Ctrl 拖曳人員至下方區域："
-msgstr "Hold down Ctrl and drag the person from the organization tree on the left to the area below:"
+msgstr ""
+"Hold down Ctrl and drag the person from the organization tree on the left to"
+" the area below:"
 
 #: app/templates/pages/admin/departments.html:339
 msgid "拖入主管欄 → 跨部門主管"
@@ -3577,8 +3570,7 @@ msgstr "Group classification"
 
 #: app/templates/pages/admin/groups.html:188
 #: app/templates/pages/roles/create.html:111
-#: app/templates/pages/roles/edit.html:62
-#: app/templates/pages/roles/list.html:82
+#: app/templates/pages/roles/edit.html:62 app/templates/pages/roles/list.html:82
 #: app/templates/pages/roles/view.html:36
 msgid "社群"
 msgstr "Group"
@@ -3604,7 +3596,9 @@ msgstr "Group code"
 
 #: app/templates/pages/admin/groups.html:224
 msgid "選填，留空自動產生。僅限英文、數字、底線、連字號"
-msgstr "Optional, leave blank to generate automatically. Only English, numbers, underscores, hyphens"
+msgstr ""
+"Optional, leave blank to generate automatically. Only English, numbers, "
+"underscores, hyphens"
 
 #: app/templates/pages/admin/groups.html:228
 msgid "父社群"
@@ -3661,7 +3655,10 @@ msgstr "Drag team members from the right"
 
 #: app/templates/pages/admin/groups.html:372
 msgid "拖入團長/副團長欄設為管理層 | 拖入團員欄成為一般成員 | 點 x 移除成員"
-msgstr "Drag into the leader/deputy leader column to set as management | Drag into the team members column to become a general member | Click x to remove members"
+msgstr ""
+"Drag into the leader/deputy leader column to set as management | Drag into "
+"the team members column to become a general member | Click x to remove "
+"members"
 
 #: app/templates/pages/admin/groups.html:383
 msgid "所有帳號"
@@ -3675,8 +3672,7 @@ msgstr "Search name/employee number..."
 msgid "無符合的帳號"
 msgstr "No matching account"
 
-#: app/templates/pages/admin/index.html:3
-#: app/templates/pages/admin/index.html:6
+#: app/templates/pages/admin/index.html:3 app/templates/pages/admin/index.html:6
 #: app/templates/pages/organizations/list.html:3
 #: app/templates/pages/organizations/list.html:25
 msgid "企業管理"
@@ -3748,7 +3744,9 @@ msgstr "Security setup steps"
 #: app/templates/pages/admin/initial_setup.html:127
 #, python-format
 msgid "預設管理員帳號 (%(account)s) 名稱易被猜測，必須完成以下設定後才能使用系統："
-msgstr "The default admin account (%(account)s) name is easy to guess. Complete the following setup before using the system:"
+msgstr ""
+"The default admin account (%(account)s) name is easy to guess. Complete the "
+"following setup before using the system:"
 
 #: app/templates/pages/admin/initial_setup.html:128
 msgid "1. 建立您的企業成員帳號"
@@ -3756,7 +3754,9 @@ msgstr "1. Create your Employee account"
 
 #: app/templates/pages/admin/initial_setup.html:129
 msgid "2. 系統自動產生對應的管理員帳號 (admin-帳號名稱) 並綁定"
-msgstr "2. The system automatically generates the corresponding administrator account (admin-account name) and binds it"
+msgstr ""
+"2. The system automatically generates the corresponding administrator "
+"account (admin-account name) and binds it"
 
 #: app/templates/pages/admin/initial_setup.html:130
 msgid "3. 預設管理員帳號自動停用"
@@ -3785,7 +3785,9 @@ msgstr "Enter number manually"
 
 #: app/templates/pages/admin/initial_setup.html:221
 msgid "此密碼同時用於企業成員帳號和管理員帳號"
-msgstr "This password is used for both the Employee account and the administrator account"
+msgstr ""
+"This password is used for both the Employee account and the administrator "
+"account"
 
 #: app/templates/pages/admin/initial_setup.html:234
 #: app/templates/pages/admin/org-admins/list.html:129
@@ -3836,7 +3838,9 @@ msgstr "Create an account and complete settings"
 #: app/templates/pages/admin/initial_setup.html:294
 #, python-format
 msgid "此頁面為企業初始化精靈，完成後預設管理員帳號 (%(username)s) 將自動停用。"
-msgstr "This page is the Organization initialization wizard. After completion, the default admin account (%(username)s) will be disabled automatically."
+msgstr ""
+"This page is the Organization initialization wizard. After completion, the "
+"default admin account (%(username)s) will be disabled automatically."
 
 #: app/templates/pages/admin/initial_setup.html:295
 msgid "如需協助，請聯繫系統管理員。"
@@ -3855,7 +3859,9 @@ msgstr "Module list (System Administrator)"
 #: app/templates/pages/admin/module_list.html:76
 #, python-format
 msgid "已安裝 %(modules)s 個模組。展開可查看各企業授權狀態。"
-msgstr "%(modules)s modules installed. Expand to view each Organization's license status."
+msgstr ""
+"%(modules)s modules installed. Expand to view each Organization's license "
+"status."
 
 #: app/templates/pages/admin/module_list.html:83
 #: app/templates/pages/admin/module_permissions.html:34
@@ -4026,7 +4032,9 @@ msgstr "Account limit"
 #: app/templates/pages/admin/settings.html:73
 #: app/templates/pages/organizations/list.html:201
 msgid "&infin; -- 開源的沒打算商業化，大家盡量用吧^_^"
-msgstr "&infin; -- Open source is not intended for commercialization, please use it as much as possible^_^"
+msgstr ""
+"&infin; -- Open source is not intended for commercialization, please use it "
+"as much as possible^_^"
 
 #: app/templates/pages/admin/settings.html:76
 #: app/templates/pages/admin/settings.html:82
@@ -4043,7 +4051,9 @@ msgstr "Logo will be displayed on the exclusive login page of Organization"
 
 #: app/templates/pages/admin/settings.html:117
 msgid "如需修改其他企業資訊，請聯繫系統管理員。"
-msgstr "If you need to modify other Organization information, please contact System Administrator."
+msgstr ""
+"If you need to modify other Organization information, please contact System "
+"Administrator."
 
 #: app/templates/pages/admin/settings.html:125
 msgid "隱藏可避免透過登入頁辨識企業身份"
@@ -4081,7 +4091,9 @@ msgstr "Allow general users to edit their own information in \"Personal Settings
 
 #: app/templates/pages/admin/settings.html:196
 msgid "關閉後，用戶只能檢視自己的資料但無法修改（密碼變更除外）"
-msgstr "After closing, users can only view their own information but cannot modify it (except for password changes)"
+msgstr ""
+"After closing, users can only view their own information but cannot modify "
+"it (except for password changes)"
 
 #: app/templates/pages/admin/settings.html:201
 msgid "企業常用語系"
@@ -4089,7 +4101,9 @@ msgstr "Organization Common Language System"
 
 #: app/templates/pages/admin/settings.html:210
 msgid "影響選單標題等介面元素的顯示語言（需重新整理頁面生效）"
-msgstr "Affects the display language of interface elements such as Menu titles (need to refresh the page to take effect)"
+msgstr ""
+"Affects the display language of interface elements such as Menu titles (need"
+" to refresh the page to take effect)"
 
 #: app/templates/pages/admin/settings.html:226
 msgid "決定系統中用戶名稱的顯示方式"
@@ -4117,7 +4131,9 @@ msgstr "(unsigned) -- firstlast"
 
 #: app/templates/pages/admin/settings.html:241
 msgid "建立帳號時，姓名之間使用的連接符號（帳號統一小寫）"
-msgstr "When creating an account, the connecting symbol used between names (account numbers should always be lowercase)"
+msgstr ""
+"When creating an account, the connecting symbol used between names (account "
+"numbers should always be lowercase)"
 
 #: app/templates/pages/admin/settings.html:246
 msgid "企業主要時區"
@@ -4125,11 +4141,15 @@ msgstr "Organization main time zone"
 
 #: app/templates/pages/admin/settings.html:259
 msgid "IANA 時區，影響系統時間顯示（管理員設定一次即可）"
-msgstr "IANA time zone, affects the system time display (the administrator can set it once)"
+msgstr ""
+"IANA time zone, affects the system time display (the administrator can set "
+"it once)"
 
 #: app/templates/pages/admin/settings.html:274
 msgid "設定密碼複雜度要求、歷史限制和登入失敗鎖定"
-msgstr "Set password complexity requirements, history limits, and failed login lockouts"
+msgstr ""
+"Set password complexity requirements, history limits, and failed login "
+"lockouts"
 
 #: app/templates/pages/admin/settings.html:284
 msgid "啟用密碼政策"
@@ -4137,7 +4157,9 @@ msgstr "Enable password policy"
 
 #: app/templates/pages/admin/settings.html:285
 msgid "（啟用後，所有密碼欄位將檢查複雜度要求）"
-msgstr "(When enabled, all password fields will be checked for complexity requirements)"
+msgstr ""
+"(When enabled, all password fields will be checked for complexity "
+"requirements)"
 
 #: app/templates/pages/admin/settings.html:292
 msgid "注意"
@@ -4145,7 +4167,9 @@ msgstr "Note"
 
 #: app/templates/pages/admin/settings.html:294
 msgid "尚未設定 SMTP，忘記密碼功能無法使用。請切換到「SMTP 郵件」分頁進行設定。"
-msgstr "SMTP has not been set up, and the forgotten password function cannot be used. Please switch to the \"SMTP Mail\" tab to set up."
+msgstr ""
+"SMTP has not been set up, and the forgotten password function cannot be "
+"used. Please switch to the \"SMTP Mail\" tab to set up."
 
 #: app/templates/pages/admin/settings.html:304
 msgid "最小長度"
@@ -4206,7 +4230,9 @@ msgstr "minutes, each lock time x"
 
 #: app/templates/pages/admin/settings.html:376
 msgid "例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）"
-msgstr "Example: Basic 15 minutes x 2, first lock 15 minutes, second lock 30 minutes, third lock 60 minutes... (up to 24 hours)"
+msgstr ""
+"Example: Basic 15 minutes x 2, first lock 15 minutes, second lock 30 "
+"minutes, third lock 60 minutes... (up to 24 hours)"
 
 #: app/templates/pages/admin/numbering/edit.html:3
 #: app/templates/pages/admin/numbering/edit.html:27
@@ -4259,7 +4285,10 @@ msgstr "Common numbers for both internal and external use"
 
 #: app/templates/pages/admin/numbering/edit.html:68
 msgid "內部專用：企業成員編號、公司資產 ／ 外部專用：廠商、訪客 ／ 內外都通用編號：門禁卡、跨公司資源"
-msgstr "Internally exclusive: Employee number, organization assets / Externally exclusive: vendors, visitors / Common internal and external numbers: access cards, cross-organization resources"
+msgstr ""
+"Internally exclusive: Employee number, organization assets / Externally "
+"exclusive: vendors, visitors / Common internal and external numbers: access "
+"cards, cross-organization resources"
 
 #: app/templates/pages/admin/numbering/edit.html:73
 msgid "編號長度"
@@ -4291,7 +4320,10 @@ msgstr "Form number default"
 
 #: app/templates/pages/admin/numbering/edit.html:91
 msgid "企業成員預設：新增企業成員帳號時自動使用 ／ 外部預設：新增外部廠商時自動使用 ／ 表單預設：表單送出時自動產生單號"
-msgstr "Employee default: automatically used when adding Employee account / External default: automatically used when adding External Vendor / Form default: automatically generate order number when the form is sent"
+msgstr ""
+"Employee default: automatically used when adding Employee account / External"
+" default: automatically used when adding External Vendor / Form default: "
+"automatically generate order number when the form is sent"
 
 #: app/templates/pages/admin/numbering/edit.html:102
 msgid "啟用此規則"
@@ -4316,7 +4348,9 @@ msgstr "heaven, earth, xuan, yellow"
 
 #: app/templates/pages/admin/numbering/edit.html:133
 msgid "序號滿時進位到下一個，最後一個滿時回到第一個"
-msgstr "When the serial number is full, it carries to the next one, and when the last one is full, it returns to the first one."
+msgstr ""
+"When the serial number is full, it carries to the next one, and when the "
+"last one is full, it returns to the first one."
 
 #: app/templates/pages/admin/numbering/edit.html:148
 msgid "公元年碼"
@@ -4463,15 +4497,13 @@ msgstr "Preview failed"
 #: app/templates/pages/job_levels/edit.html:86
 #: app/templates/pages/job_titles/edit.html:111
 #: app/templates/pages/job_titles/list.html:216
-#: app/templates/pages/menu/edit.html:117
-#: app/templates/pages/modules/edit.html:54
+#: app/templates/pages/menu/edit.html:117 app/templates/pages/modules/edit.html:54
 #: app/templates/pages/organizations/edit.html:146
 #: app/templates/pages/positions/edit.html:125
 #: app/templates/pages/profile/edit.html:38
 #: app/templates/pages/roles/edit.html:123
 #: app/templates/pages/sys_accounts/edit.html:98
-#: app/templates/pages/units/edit.html:65
-#: app/templates/pages/users/edit.html:338
+#: app/templates/pages/units/edit.html:65 app/templates/pages/users/edit.html:338
 msgid "儲存變更"
 msgstr "Save Changes"
 
@@ -4520,14 +4552,10 @@ msgstr "Universal for both inside and outside"
 
 #: app/templates/pages/admin/numbering/list.html:146
 #: app/templates/pages/delegations/view.html:52
-#: app/templates/pages/users/view.html:65
-#: app/templates/pages/users/view.html:73
-#: app/templates/pages/users/view.html:115
-#: app/templates/pages/users/view.html:119
-#: app/templates/pages/users/view.html:123
-#: app/templates/pages/users/view.html:131
-#: app/templates/pages/users/view.html:135
-#: app/templates/pages/users/view.html:139
+#: app/templates/pages/users/view.html:65 app/templates/pages/users/view.html:73
+#: app/templates/pages/users/view.html:115 app/templates/pages/users/view.html:119
+#: app/templates/pages/users/view.html:123 app/templates/pages/users/view.html:131
+#: app/templates/pages/users/view.html:135 app/templates/pages/users/view.html:139
 #: app/templates/pages/users/view.html:143
 msgid "未設定"
 msgstr "Not set"
@@ -4546,19 +4574,27 @@ msgstr "Each Organization can set multiple sets of numbering rules"
 
 #: app/templates/pages/admin/numbering/list.html:184
 msgid "「企業成員預設」規則會在新增企業成員帳號時自動使用"
-msgstr "The \"Employee Default\" rule will be automatically used when adding a Employee account"
+msgstr ""
+"The \"Employee Default\" rule will be automatically used when adding a "
+"Employee account"
 
 #: app/templates/pages/admin/numbering/list.html:185
 msgid "「外部預設」規則會在新增外部廠商時自動使用"
-msgstr "The \"External Default\" rule will be automatically used when adding External Vendor"
+msgstr ""
+"The \"External Default\" rule will be automatically used when adding "
+"External Vendor"
 
 #: app/templates/pages/admin/numbering/list.html:186
 msgid "「表單預設」規則會在表單送出時自動產生單號"
-msgstr "The \"Form Default\" rule will automatically generate an order number when the form is sent."
+msgstr ""
+"The \"Form Default\" rule will automatically generate an order number when "
+"the form is sent."
 
 #: app/templates/pages/admin/numbering/list.html:187
 msgid "編號元素可包含：前綴文字、序號、年碼、月碼、後綴文字"
-msgstr "Numbering elements can include: prefix text, serial number, year code, month code, suffix text"
+msgstr ""
+"Numbering elements can include: prefix text, serial number, year code, month"
+" code, suffix text"
 
 #: app/templates/pages/admin/numbering/list.html:188
 msgid "序號滿時會自動進位（前綴循環）"
@@ -4586,7 +4622,9 @@ msgstr "-- Please select Employee --"
 
 #: app/templates/pages/admin/org-admins/create.html:49
 msgid "管理員帳號將綁定此企業成員，企業成員停用時管理員也無法登入"
-msgstr "The administrator account will be bound to this Employee, and the administrator will not be able to log in when Employee is deactivated."
+msgstr ""
+"The administrator account will be bound to this Employee, and the "
+"administrator will not be able to log in when Employee is deactivated."
 
 #: app/templates/pages/admin/org-admins/create.html:57
 msgid "自動帶入綁定企業成員姓名"
@@ -4616,8 +4654,7 @@ msgstr "Automatically bring into the bound Employee notification mailbox"
 #: app/templates/pages/sys_accounts/edit.html:72
 #: app/templates/pages/sys_accounts/list.html:145
 #: app/templates/pages/sys_accounts/list.html:258
-#: app/templates/pages/users/edit.html:146
-#: app/templates/pages/users/view.html:195
+#: app/templates/pages/users/edit.html:146 app/templates/pages/users/view.html:195
 msgid "建議密碼"
 msgstr "Suggested password"
 
@@ -4631,7 +4668,9 @@ msgstr "Unable to create administrator"
 
 #: app/templates/pages/admin/org-admins/create.html:131
 msgid "目前沒有可綁定的企業成員帳號。請先建立至少一個具有企業成員編號的企業成員帳號。"
-msgstr "There is currently no Employee account that can be bound. Please create at least one Employee account with Employee number first."
+msgstr ""
+"There is currently no Employee account that can be bound. Please create at "
+"least one Employee account with Employee number first."
 
 #: app/templates/pages/admin/org-admins/create.html:134
 msgid "前往新增企業成員"
@@ -4646,7 +4685,9 @@ msgstr "Note:"
 
 #: app/templates/pages/admin/org-admins/create.html:141
 msgid "企業管理員擁有管理企業設定、用戶帳號的權限。請謹慎授予。"
-msgstr "Organization Admin has the authority to manage Organization settings and user accounts. Please grant with caution."
+msgstr ""
+"Organization Admin has the authority to manage Organization settings and "
+"user accounts. Please grant with caution."
 
 #: app/templates/pages/admin/org-admins/list.html:3
 #: app/templates/pages/admin/org-admins/list.html:15
@@ -4668,6 +4709,9 @@ msgstr "Currently active admins: %(count)s people"
 msgid "（必須至少保留一個啟用的管理員）"
 msgstr "(Must retain at least one enabled administrator)"
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:54
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:36
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:35
 #: app/templates/pages/admin/org-admins/list.html:43
 #: app/templates/pages/cg_databases/overview.html:186
 #: app/templates/pages/delegations/view.html:94
@@ -4678,12 +4722,10 @@ msgstr "(Must retain at least one enabled administrator)"
 #: app/templates/pages/organizations/contract_form.html:155
 #: app/templates/pages/organizations/list.html:214
 #: app/templates/pages/positions/view.html:104
-#: app/templates/pages/roles/edit.html:110
-#: app/templates/pages/roles/view.html:54
+#: app/templates/pages/roles/edit.html:110 app/templates/pages/roles/view.html:54
 #: app/templates/pages/sys_accounts/edit.html:119
 #: app/templates/pages/sys_accounts/list.html:185
-#: app/templates/pages/units/view.html:60
-#: app/templates/pages/users/list.html:43
+#: app/templates/pages/units/view.html:60 app/templates/pages/users/list.html:43
 #: app/templates/pages/users/view.html:52
 msgid "建立時間"
 msgstr "Created"
@@ -4703,8 +4745,7 @@ msgstr "Not bound"
 #: app/templates/pages/admin/org-admins/list.html:107
 #: app/templates/pages/organizations/admins.html:87
 #: app/templates/pages/organizations/admins.html:108
-#: app/templates/pages/users/view.html:22
-#: app/templates/pages/users/view.html:184
+#: app/templates/pages/users/view.html:22 app/templates/pages/users/view.html:184
 msgid "重設密碼"
 msgstr "reset password"
 
@@ -4746,7 +4787,9 @@ msgstr "At least one active administrator must remain"
 
 #: app/templates/pages/admin/org-admins/list.html:158
 msgid "預設的 admin 帳號可以停用，但需先建立其他管理員"
-msgstr "The default admin account can be deactivated, but other administrators must be created first"
+msgstr ""
+"The default admin account can be deactivated, but other administrators must "
+"be created first"
 
 #: app/templates/pages/admin/org-admins/list.html:159
 msgid "停用的管理員無法登入系統"
@@ -4758,7 +4801,10 @@ msgstr "binding mechanism"
 
 #: app/templates/pages/admin/org-admins/list.html:160
 msgid "：新增的管理員必須綁定一個有企業成員編號的企業成員帳號，當該企業成員帳號停用或刪除時，對應的管理員帳號也無法登入"
-msgstr ": The new administrator must be bound to a Employee account with a Employee number. When the Employee account is deactivated or deleted, the corresponding administrator account cannot log in."
+msgstr ""
+": The new administrator must be bound to a Employee account with a Employee "
+"number. When the Employee account is deactivated or deleted, the "
+"corresponding administrator account cannot log in."
 
 #: app/templates/pages/admin/time/holidays.html:3
 #, python-format
@@ -4830,16 +4876,14 @@ msgstr "Holiday/make-up work list"
 msgid "日期"
 msgstr "Date"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: app/templates/pages/admin/time/holidays.html:88
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:18
-#: app/templates/pages/menu/list.html:122
-#: app/templates/pages/modules/list.html:83
+#: app/templates/pages/menu/list.html:122 app/templates/pages/modules/list.html:83
 #: app/templates/pages/permissions/index.html:606
 #: app/templates/pages/positions/list.html:20
-#: app/templates/pages/roles/create.html:89
-#: app/templates/pages/roles/edit.html:52
-#: app/templates/pages/roles/list.html:50
-#: app/templates/pages/units/list.html:26
+#: app/templates/pages/roles/create.html:89 app/templates/pages/roles/edit.html:52
+#: app/templates/pages/roles/list.html:50 app/templates/pages/units/list.html:26
 msgid "類型"
 msgstr "Type"
 
@@ -4891,7 +4935,9 @@ msgstr "Cancel setting (restore Schedule default value)"
 
 #: app/templates/pages/admin/time/holidays.html:153
 msgid "勾選後將刪除範圍內的假日/補班設定"
-msgstr "If checked, the holiday/make-up work settings within the range will be deleted."
+msgstr ""
+"If checked, the holiday/make-up work settings within the range will be "
+"deleted."
 
 #: app/templates/pages/admin/time/holidays.html:159
 msgid "類型 *"
@@ -4966,11 +5012,15 @@ msgstr "Schedule defines the standard working time of Employee"
 
 #: app/templates/pages/admin/time/schedules.html:101
 msgid "「預設」班表會自動套用給未指定班表的企業成員"
-msgstr "\"Default\" Schedule will be automatically applied to Employee that does not specify Schedule"
+msgstr ""
+"\"Default\" Schedule will be automatically applied to Employee that does not"
+" specify Schedule"
 
 #: app/templates/pages/admin/time/schedules.html:102
 msgid "週間工時格式：HH:MM-HH:MM，可設定多個時段（如午休分隔）"
-msgstr "Weekly working hours format: HH:MM-HH:MM, multiple time periods can be set (such as lunch break separation)"
+msgstr ""
+"Weekly working hours format: HH:MM-HH:MM, multiple time periods can be set "
+"(such as lunch break separation)"
 
 #: app/templates/pages/admin/time/schedules.html:103
 msgid "留空或設為休表示休息日"
@@ -5078,8 +5128,7 @@ msgstr "Added Approval Authority category"
 #: app/templates/pages/job_families/view.html:9
 #: app/templates/pages/job_levels/create.html:11
 #: app/templates/pages/job_titles/create.html:11
-#: app/templates/pages/roles/create.html:8
-#: app/templates/pages/roles/edit.html:8
+#: app/templates/pages/roles/create.html:8 app/templates/pages/roles/edit.html:8
 #: app/templates/pages/sys_accounts/create.html:11
 #: app/templates/pages/sys_accounts/edit.html:11
 msgid "返回列表"
@@ -5264,7 +5313,9 @@ msgstr "Edit Category"
 #: app/templates/pages/approval_categories/limits.html:29
 #, python-format
 msgid "說明：設定各職等對於「%(name)s」的核決金額上限。0 表示無核決權限。"
-msgstr "Description: Set the Approval amount limit for each Job Level for \"%(name)s\". 0 means no Approval Authority."
+msgstr ""
+"Description: Set the Approval amount limit for each Job Level for "
+"\"%(name)s\". 0 means no Approval Authority."
 
 #: app/templates/pages/approval_categories/limits.html:37
 #: app/templates/pages/approval_categories/limits.html:98
@@ -5301,7 +5352,9 @@ msgstr "Job Family"
 
 #: app/templates/pages/approval_categories/list.html:73
 msgid "管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。"
-msgstr "Manage Approval Authority categories of various expenses and set different approval limits for each Job Level."
+msgstr ""
+"Manage Approval Authority categories of various expenses and set different "
+"approval limits for each Job Level."
 
 #: app/templates/pages/approval_categories/list.html:81
 msgid "新增類別"
@@ -5320,14 +5373,12 @@ msgstr "No category information yet"
 #: app/templates/pages/job_levels/list.html:218
 #: app/templates/pages/job_titles/list.html:76
 #: app/templates/pages/job_titles/list.html:152
-#: app/templates/pages/menu/edit.html:135
-#: app/templates/pages/menu/edit.html:164
+#: app/templates/pages/menu/edit.html:135 app/templates/pages/menu/edit.html:164
 #: app/templates/pages/modules/view.html:97
 #: app/templates/pages/permissions/index.html:168
 #: app/templates/pages/permissions/index.html:443
 #: app/templates/pages/platform_help/org_admin.html:35
-#: app/templates/pages/roles/list.html:48
-#: app/templates/pages/units/list.html:24
+#: app/templates/pages/roles/list.html:48 app/templates/pages/units/list.html:24
 msgid "代碼"
 msgstr "Code"
 
@@ -5336,8 +5387,7 @@ msgid "請從左側選擇類別進行編輯"
 msgstr "Please select a category from the left to edit"
 
 #: app/templates/pages/approval_categories/list.html:196
-#: app/templates/pages/menu/list.html:97
-#: app/templates/pages/roles/edit.html:124
+#: app/templates/pages/menu/list.html:97 app/templates/pages/roles/edit.html:124
 msgid "儲存中..."
 msgstr "Saving..."
 
@@ -5372,7 +5422,9 @@ msgstr "Approval amount matrix"
 
 #: app/templates/pages/approval_categories/list.html:300
 msgid "僅顯示啟用中的類別。左側職等固定，右側類別可水平捲動。"
-msgstr "Show only enabled categories. Job Level on the left is fixed, and the categories on the right can be scrolled horizontally."
+msgstr ""
+"Show only enabled categories. Job Level on the left is fixed, and the "
+"categories on the right can be scrolled horizontally."
 
 #: app/templates/pages/cg_databases/overview.html:3
 #: app/templates/pages/cg_databases/overview.html:77
@@ -5405,7 +5457,9 @@ msgstr "Conglomerate deactivated"
 
 #: app/templates/pages/cg_databases/overview.html:146
 msgid "此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。"
-msgstr "This database exists in PostgreSQL but has no corresponding fw_conglomerate_databases record."
+msgstr ""
+"This database exists in PostgreSQL but has no corresponding "
+"fw_conglomerate_databases record."
 
 #: app/templates/pages/cg_databases/overview.html:147
 msgid "可能是舊資料殘留或手動建立的資料庫。"
@@ -5413,7 +5467,9 @@ msgstr "It may be remnants of old data or a manually created database."
 
 #: app/templates/pages/cg_databases/overview.html:154
 msgid "fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。"
-msgstr "fw_conglomerate_databases has this record but the corresponding database cannot be found in PostgreSQL."
+msgstr ""
+"fw_conglomerate_databases has this record but the corresponding database "
+"cannot be found in PostgreSQL."
 
 #: app/templates/pages/cg_databases/overview.html:155
 msgid "可能已被手動刪除。"
@@ -5463,11 +5519,16 @@ msgstr "No memberOrganization"
 msgid "異動歷程"
 msgstr "Change process"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: app/templates/pages/cg_databases/overview.html:250
 #: app/templates/pages/server_manage/redis_monitor.html:216
 msgid "時間"
 msgstr "Time"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:32
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
 #: app/templates/pages/cg_databases/overview.html:250
 msgid "動作"
 msgstr "Action"
@@ -5492,7 +5553,10 @@ msgstr "Added Delegation"
 #: app/templates/pages/delegations/create.html:15
 #: app/templates/pages/delegations/list.html:13
 msgid "代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住"
-msgstr "Delegation is used as the Duty agent when the supervisor is on vacation/business trip to ensure that the sign-off process does not get stuck."
+msgstr ""
+"Delegation is used as the Duty agent when the supervisor is on "
+"vacation/business trip to ensure that the sign-off process does not get "
+"stuck."
 
 #: app/templates/pages/delegations/create.html:22
 #: app/templates/pages/delegations/edit.html:17
@@ -5541,7 +5605,9 @@ msgstr "Such as: 100000"
 
 #: app/templates/pages/delegations/create.html:70
 msgid "超過此金額需要原授權人或更高層簽核"
-msgstr "Amounts exceeding this amount require approval from the original authorizer or higher level"
+msgstr ""
+"Amounts exceeding this amount require approval from the original authorizer "
+"or higher level"
 
 #: app/templates/pages/delegations/create.html:74
 #: app/templates/pages/delegations/view.html:78
@@ -5692,8 +5758,7 @@ msgstr "[View]"
 #: app/templates/pages/job_titles/view.html:10
 #: app/templates/pages/positions/list.html:72
 #: app/templates/pages/positions/view.html:10
-#: app/templates/pages/units/list.html:45
-#: app/templates/pages/units/view.html:14
+#: app/templates/pages/units/list.html:45 app/templates/pages/units/view.html:14
 #: app/templates/pages/users/view.html:20
 msgid "[編輯]"
 msgstr "[edit]"
@@ -5863,14 +5928,10 @@ msgstr "belonging group"
 #: app/templates/pages/platform_help/org_admin.html:98
 #: app/templates/pages/platform_help/org_admin.html:127
 #: app/templates/pages/platform_help/org_admin.html:393
-#: app/templates/pages/profile/view.html:18
-#: app/templates/pages/roles/list.html:78
-#: app/templates/pages/roles/view.html:29
-#: app/templates/pages/users/edit.html:88
-#: app/templates/pages/users/edit.html:102
-#: app/templates/pages/users/view.html:38
-#: app/templates/pages/users/view.html:85
-#: app/templates/pages/users/view.html:153
+#: app/templates/pages/profile/view.html:18 app/templates/pages/roles/list.html:78
+#: app/templates/pages/roles/view.html:29 app/templates/pages/users/edit.html:88
+#: app/templates/pages/users/edit.html:102 app/templates/pages/users/view.html:38
+#: app/templates/pages/users/view.html:85 app/templates/pages/users/view.html:153
 msgid "角色"
 msgstr "Role"
 
@@ -5909,7 +5970,9 @@ msgstr "Tips:"
 
 #: app/templates/pages/external-users/edit.html:194
 msgid "外部廠商必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。"
-msgstr "External Vendor must belong to at least one group. If you need to change Role, please go to the \"Group Settings\" page."
+msgstr ""
+"External Vendor must belong to at least one group. If you need to change "
+"Role, please go to the \"Group Settings\" page."
 
 #: app/templates/pages/external-users/list.html:3
 #: app/templates/pages/external-users/list.html:7
@@ -5922,7 +5985,10 @@ msgstr "+ Added External Vendor"
 
 #: app/templates/pages/external-users/list.html:26
 msgid "：廠商、訪客、合作夥伴等非企業正式企業成員。需指定歸屬群組並使用外部專用編號。"
-msgstr ": Vendors, visitors, partners, etc. are not Organization officially Employee. It is necessary to specify the belonging group and use an external dedicated number."
+msgstr ""
+": Vendors, visitors, partners, etc. are not Organization officially "
+"Employee. It is necessary to specify the belonging group and use an external"
+" dedicated number."
 
 #: app/templates/pages/external-users/list.html:88
 msgid "尚無外部廠商帳號。"
@@ -5934,7 +6000,9 @@ msgstr "External Vendor uses the \"external-only\" numbering scheme"
 
 #: app/templates/pages/external-users/list.html:96
 msgid "如尚未建立外部專用編號，請先到「用戶編號規則」頁面建立"
-msgstr "If the external dedicated number has not been created yet, please go to the \"User Numbering Rules\" page to create one first."
+msgstr ""
+"If the external dedicated number has not been created yet, please go to the "
+"\"User Numbering Rules\" page to create one first."
 
 #: app/templates/pages/external-users/list.html:97
 msgid "停用的外部廠商無法登入系統"
@@ -5953,6 +6021,7 @@ msgstr "Deactivate account"
 msgid "啟用帳號"
 msgstr "Activate account"
 
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:34
 #: app/templates/pages/external-users/view.html:89
 #: app/templates/pages/security/alert_broadcasts.html:172
 #: app/templates/pages/sys_accounts/edit.html:123
@@ -6045,7 +6114,9 @@ msgstr "Audit settings"
 
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:4
 msgid "控制操作記錄的細粒度，記錄越詳細資料量越大。"
-msgstr "Control the fine-grainedness of operation records. The more detailed the records, the greater the amount of data."
+msgstr ""
+"Control the fine-grainedness of operation records. The more detailed the "
+"records, the greater the amount of data."
 
 #: app/templates/pages/hostconfig/_system_settings_section_audit.html:12
 msgid "記錄等級"
@@ -6126,7 +6197,9 @@ msgstr "E-MailRelay installation directory"
 
 #: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:18
 msgid "安裝目錄需包含 sbin/emailrelay-submit、spool/ 等子目錄"
-msgstr "The installation directory must contain subdirectories such as sbin/emailrelay-submit, spool/, etc."
+msgstr ""
+"The installation directory must contain subdirectories such as sbin"
+"/emailrelay-submit, spool/, etc."
 
 #: app/templates/pages/hostconfig/_system_settings_section_emailrelay.html:21
 msgid "儲存路徑"
@@ -6211,7 +6284,9 @@ msgstr "This path is controlled by the environment variable ENCRYPTED_STORAGE_DI
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:20
 msgid "如需修改，請調整 .env 檔案後重啟 Flask 服務。"
-msgstr "If you need to modify it, please adjust the.env file and restart the Flask service."
+msgstr ""
+"If you need to modify it, please adjust the.env file and restart the Flask "
+"service."
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:27
 msgid "目錄檔案數上限"
@@ -6223,11 +6298,16 @@ msgstr "Maximum number of files in a single directory"
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:34
 msgid "加密檔案按月份自動建立子目錄（如 202609/）。"
-msgstr "Encrypted files automatically create subdirectories by month (such as 202609/)."
+msgstr ""
+"Encrypted files automatically create subdirectories by month (such as "
+"202609/)."
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:35
 msgid "當單月目錄檔案數達到此上限，系統自動建立接續目錄（如 202609_2/）。"
-msgstr "When the number of directory files in a single month reaches this upper limit, the system automatically creates a continued directory (such as 202609_2/)."
+msgstr ""
+"When the number of directory files in a single month reaches this upper "
+"limit, the system automatically creates a continued directory (such as "
+"202609_2/)."
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:36
 msgid "有效範圍: 1,000 ~ 1,000,000，預設 100,000。"
@@ -6277,7 +6357,9 @@ msgstr "Linux (default)"
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:71
 msgid "超過 10 萬檔案後目錄操作性能明顯下降，dir_index 效率降低"
-msgstr "After more than 100,000 files, the directory operation performance decreases significantly, and the dir_index efficiency decreases."
+msgstr ""
+"After more than 100,000 files, the directory operation performance decreases"
+" significantly, and the dir_index efficiency decreases."
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:75
 msgid "Linux (RHEL/CentOS 預設)"
@@ -6285,11 +6367,15 @@ msgstr "Linux (RHEL/CentOS default)"
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:77
 msgid "B+ tree 目錄結構，大量檔案下性能優於 ext4"
-msgstr "B+ tree directory structure, performance is better than ext4 for a large number of files"
+msgstr ""
+"B+ tree directory structure, performance is better than ext4 for a large "
+"number of files"
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:83
 msgid "B-tree 結構，適合中等規模，超過 20 萬後建議分目錄"
-msgstr "B-tree structure, suitable for medium scale, it is recommended to sub-directory after more than 200,000"
+msgstr ""
+"B-tree structure, suitable for medium scale, it is recommended to sub-"
+"directory after more than 200,000"
 
 #: app/templates/pages/hostconfig/_system_settings_section_filestorage.html:89
 msgid "超過 10 萬後檔案總管與 dir 指令回應遲緩"
@@ -6305,7 +6391,9 @@ msgstr "Login security field (system default)"
 
 #: app/templates/pages/hostconfig/_system_settings_section_loginsecurity.html:5
 msgid "設定所有企業的登入安全欄位預設值。企業可在各自的設定中覆蓋。"
-msgstr "Sets the default login security fields for all Organization. Organization can be overridden in their respective settings."
+msgstr ""
+"Sets the default login security fields for all Organization. Organization "
+"can be overridden in their respective settings."
 
 #: app/templates/pages/hostconfig/_system_settings_section_loginsecurity.html:6
 msgid "員工登入與廠商登入各自獨立設定。"
@@ -6332,7 +6420,9 @@ msgstr "Menu color matching"
 
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:4
 msgid "調整主選單列與選單管理頁面的權限著色。儲存後重新整理頁面生效。"
-msgstr "Adjust the permission coloring of the main Menu column and Menu management page. It will take effect after refreshing the page after saving."
+msgstr ""
+"Adjust the permission coloring of the main Menu column and Menu management "
+"page. It will take effect after refreshing the page after saving."
 
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:19
 msgid "底色"
@@ -6346,10 +6436,8 @@ msgstr "Text"
 #: app/templates/pages/menu/list.html:128
 #: app/templates/pages/modules/create.html:51
 #: app/templates/pages/platform_help/org_admin.html:41
-#: app/templates/pages/profile/view.html:20
-#: app/templates/pages/users/edit.html:95
-#: app/templates/pages/users/edit.html:105
-#: app/templates/pages/users/view.html:40
+#: app/templates/pages/profile/view.html:20 app/templates/pages/users/edit.html:95
+#: app/templates/pages/users/edit.html:105 app/templates/pages/users/view.html:40
 msgid "系統管理員"
 msgstr "System Admin"
 
@@ -6410,7 +6498,9 @@ msgstr "Kit version"
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:4
 msgid "系統服務、Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。"
-msgstr "Version comparison of system services, Python back-end package and front-end vendor package (for viewing only)."
+msgstr ""
+"Version comparison of system services, Python back-end package and front-end"
+" vendor package (for viewing only)."
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:17
 msgid "查詢時間:"
@@ -6475,19 +6565,27 @@ msgstr "Required version"
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:154
 msgid "系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得"
-msgstr "The system service version is obtained from GitHub, the Python package is obtained from PyPI, and the front-end package is obtained from npm Registry"
+msgstr ""
+"The system service version is obtained from GitHub, the Python package is "
+"obtained from PyPI, and the front-end package is obtained from npm Registry"
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:155
 msgid "查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新"
-msgstr "Query results are cached for 30 minutes. Click \"Requery\" to force a refresh."
+msgstr ""
+"Query results are cached for 30 minutes. Click \"Requery\" to force a "
+"refresh."
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:156
 msgid "封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作"
-msgstr "In a closed network environment, the online version will display \"unable to check\", which does not affect system operation."
+msgstr ""
+"In a closed network environment, the online version will display \"unable to"
+" check\", which does not affect system operation."
 
 #: app/templates/pages/hostconfig/_system_settings_section_packages.html:157
 msgid "此頁面僅供版本檢視，不提供線上升級功能"
-msgstr "This page is for version viewing only and does not provide online upgrade function"
+msgstr ""
+"This page is for version viewing only and does not provide online upgrade "
+"function"
 
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:3
 msgid "認證速率限制"
@@ -6495,11 +6593,15 @@ msgstr "Authentication rate limit"
 
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:4
 msgid "控制登入與密碼重設的 POST 嘗試頻率上限，防止暴力破解攻擊。GET 請求不計數。"
-msgstr "Control the upper limit on the frequency of POST attempts for login and password reset to prevent brute force attacks. GET requests are not counted."
+msgstr ""
+"Control the upper limit on the frequency of POST attempts for login and "
+"password reset to prevent brute force attacks. GET requests are not counted."
 
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:5
 msgid "限制以「帳號 + IP」為單位，各企業獨立計算。"
-msgstr "The limit is based on \"account + IP\" and is calculated independently for each Organization."
+msgstr ""
+"The limit is based on \"account + IP\" and is calculated independently for "
+"each Organization."
 
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:23
 msgid "目前使用"
@@ -6544,11 +6646,16 @@ msgstr "Up to 100 times per day"
 
 #: app/templates/pages/hostconfig/_system_settings_section_ratelimit.html:56
 msgid "修改後即時生效，不需重啟服務。限制以「帳號 + 來源 IP」為計數單位，同企業不同帳號互不影響。"
-msgstr "Modifications will take effect immediately without restarting the service. The limit is based on \"account + source IP\" as the counting unit, and different accounts with Organization will not affect each other."
+msgstr ""
+"Modifications will take effect immediately without restarting the service. "
+"The limit is based on \"account + source IP\" as the counting unit, and "
+"different accounts with Organization will not affect each other."
 
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:4
 msgid "系統級收件人群組，供流程節點批次發送通知使用。"
-msgstr "System-level recipient group, used by process nodes to send notifications in batches."
+msgstr ""
+"System-level recipient group, used by process nodes to send notifications in"
+" batches."
 
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:13
 msgid "收件人群組列表"
@@ -6560,7 +6667,9 @@ msgstr "Add new group"
 
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:63
 msgid "系統級收件人群組用於跨企業的系統通知"
-msgstr "System-level recipient groups are used for system notifications across Organization"
+msgstr ""
+"System-level recipient groups are used for system notifications across "
+"Organization"
 
 #: app/templates/pages/hostconfig/_system_settings_section_recipients.html:64
 msgid "可指定多個收件人 Email 或用戶 ID"
@@ -6599,7 +6708,9 @@ msgstr "Data Maintenance"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:12
 msgid "企業資料的永久刪除與清理，僅限系統管理員操作"
-msgstr "Permanent deletion and cleaning of Organization data, only for System Administrator operations"
+msgstr ""
+"Permanent deletion and cleaning of Organization data, only for System "
+"Administrator operations"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:17
 #: app/templates/pages/hostconfig/index.html:26
@@ -6609,7 +6720,9 @@ msgstr "Hard delete Organization that has been soft deleted"
 #: app/templates/pages/hostconfig/data_maintenance.html:18
 #: app/templates/pages/hostconfig/index.html:27
 msgid "永久刪除所有已軟刪除的企業及其相關資料（無法復原）"
-msgstr "Permanently delete all soft-deleted Organization and related data (unrecoverable)"
+msgstr ""
+"Permanently delete all soft-deleted Organization and related data "
+"(unrecoverable)"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:25
 #: app/templates/pages/hostconfig/index.html:34
@@ -6639,6 +6752,7 @@ msgstr "Information sheets involved:"
 msgid "資料表"
 msgstr "Table"
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:43
 #: app/templates/pages/hostconfig/data_maintenance.html:45
 #: app/templates/pages/hostconfig/data_maintenance.html:100
 #: app/templates/pages/hostconfig/index.html:54
@@ -6653,8 +6767,7 @@ msgstr "Perform a hard delete"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:61
 #: app/templates/pages/hostconfig/index.html:70
-#: app/templates/pages/roles/edit.html:192
-#: app/templates/pages/roles/list.html:126
+#: app/templates/pages/roles/edit.html:192 app/templates/pages/roles/list.html:126
 msgid "刪除中..."
 msgstr "Deleting..."
 
@@ -6666,7 +6779,9 @@ msgstr "Clear data marked for deletion"
 #: app/templates/pages/hostconfig/data_maintenance.html:73
 #: app/templates/pages/hostconfig/index.html:82
 msgid "永久刪除各表中 is_deleted=true 的記錄（無法復原）"
-msgstr "Permanently delete the records of is_deleted=true in each table (unrecoverable)"
+msgstr ""
+"Permanently delete the records of is_deleted=true in each table "
+"(unrecoverable)"
 
 #: app/templates/pages/hostconfig/data_maintenance.html:77
 #: app/templates/pages/hostconfig/index.html:86
@@ -6792,7 +6907,9 @@ msgstr "-- None (root Job Family) --"
 
 #: app/templates/pages/job_families/create.html:75
 msgid "子職系可選擇歸屬的上層職系"
-msgstr "The child Job Family can choose the upper layer Job Family to which it belongs."
+msgstr ""
+"The child Job Family can choose the upper layer Job Family to which it "
+"belongs."
 
 #: app/templates/pages/job_families/create.html:82
 msgid "職系的詳細說明"
@@ -6804,10 +6921,8 @@ msgstr "Detailed description of Job Family"
 #: app/templates/pages/job_titles/create.html:106
 #: app/templates/pages/job_titles/edit.html:92
 #: app/templates/pages/roles/create.html:161
-#: app/templates/pages/roles/edit.html:98
-#: app/templates/pages/units/create.html:58
-#: app/templates/pages/units/edit.html:53
-#: app/templates/pages/units/view.html:52
+#: app/templates/pages/roles/edit.html:98 app/templates/pages/units/create.html:58
+#: app/templates/pages/units/edit.html:53 app/templates/pages/units/view.html:52
 msgid "排序順序"
 msgstr "Sort Order"
 
@@ -6837,7 +6952,9 @@ msgstr "This Job Family has %(count)s Job Title in use."
 
 #: app/templates/pages/job_families/edit.html:107
 msgid "請選擇：連同職稱一併刪除，或取消並先處理職稱。"
-msgstr "Please choose: delete together with Job Title, or cancel and process Job Title first."
+msgstr ""
+"Please choose: delete together with Job Title, or cancel and process Job "
+"Title first."
 
 #: app/templates/pages/job_families/edit.html:114
 msgid "確認刪除職系及職稱"
@@ -6853,7 +6970,10 @@ msgstr "Click on column to edit"
 
 #: app/templates/pages/job_families/list.html:44
 msgid "說明：職系代表職涯發展軌道。管理職 = 帶人主管；專業職 = 不帶人的專業人員。"
-msgstr "Explanation: Job Family represents career development track. Managerial = supervisor who leads people; professional = professional who does not lead people."
+msgstr ""
+"Explanation: Job Family represents career development track. Managerial = "
+"supervisor who leads people; professional = professional who does not lead "
+"people."
 
 #: app/templates/pages/job_families/list.html:52
 #, python-format
@@ -6883,8 +7003,7 @@ msgstr "Job Family details"
 #: app/templates/pages/job_titles/list.html:190
 #: app/templates/pages/job_titles/view.html:64
 #: app/templates/pages/roles/create.html:136
-#: app/templates/pages/roles/edit.html:70
-#: app/templates/pages/roles/list.html:52
+#: app/templates/pages/roles/edit.html:70 app/templates/pages/roles/list.html:52
 msgid "管理職"
 msgstr "management position"
 
@@ -6915,8 +7034,7 @@ msgstr "Yes (cannot be deleted)"
 #: app/templates/pages/job_titles/view.html:77
 #: app/templates/pages/modules/view.html:51
 #: app/templates/pages/positions/view.html:68
-#: app/templates/pages/roles/edit.html:78
-#: app/templates/pages/roles/view.html:43
+#: app/templates/pages/roles/edit.html:78 app/templates/pages/roles/view.html:43
 #: app/templates/pages/roles/view.html:47
 msgid "否"
 msgstr "No"
@@ -6953,7 +7071,9 @@ msgstr "Job Level Code"
 
 #: app/templates/pages/job_levels/create.html:39
 msgid "選填，留空自動產生。建議格式：L + 序號，如 L100, L150"
-msgstr "Optional, leave blank to generate automatically. Recommended format: L + serial number, such as L100, L150"
+msgstr ""
+"Optional, leave blank to generate automatically. Recommended format: L + "
+"serial number, such as L100, L150"
 
 #: app/templates/pages/job_levels/create.html:47
 #: app/templates/pages/job_levels/list.html:226
@@ -6972,7 +7092,9 @@ msgstr "Such as 150"
 
 #: app/templates/pages/job_levels/create.html:58
 msgid "數字越大職等越高。使用等距跳號：0, 100, 200... 900"
-msgstr "The larger the number, the higher Job Level is. Use equidistant jump numbers: 0, 100, 200... 900"
+msgstr ""
+"The larger the number, the higher Job Level is. Use equidistant jump "
+"numbers: 0, 100, 200... 900"
 
 #: app/templates/pages/job_levels/create.html:63
 #: app/templates/pages/job_levels/edit.html:51
@@ -7135,6 +7257,7 @@ msgstr "Please select Job Level from the left"
 msgid "編輯職等:"
 msgstr "Edit Job Level:"
 
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:80
 #: app/templates/pages/job_levels/list.html:130
 #: app/templates/pages/job_levels/list.html:214
 #: app/templates/pages/job_titles/list.html:72
@@ -7166,7 +7289,9 @@ msgstr "Optional, recommended format: L + serial number (such as L100)"
 
 #: app/templates/pages/job_levels/list.html:232
 msgid "數字越大職等越高 (0-9999)，等距跳號: 0, 100, 200...900"
-msgstr "The larger the number, the higher Job Level (0-9999), equidistant jump numbers: 0, 100, 200...900"
+msgstr ""
+"The larger the number, the higher Job Level (0-9999), equidistant jump "
+"numbers: 0, 100, 200...900"
 
 #: app/templates/pages/job_levels/matrix.html:54
 msgid "(管理職)"
@@ -7211,15 +7336,13 @@ msgstr "%(name)s - Job Level Details"
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/modules/view.html:51
 #: app/templates/pages/positions/list.html:60
-#: app/templates/pages/roles/edit.html:78
-#: app/templates/pages/roles/view.html:43
+#: app/templates/pages/roles/edit.html:78 app/templates/pages/roles/view.html:43
 #: app/templates/pages/roles/view.html:47
 msgid "是"
 msgstr "Yes"
 
 #: app/templates/pages/job_levels/view.html:55
-#: app/templates/pages/roles/edit.html:114
-#: app/templates/pages/roles/view.html:58
+#: app/templates/pages/roles/edit.html:114 app/templates/pages/roles/view.html:58
 #: app/templates/pages/units/view.html:64
 msgid "更新時間"
 msgstr "Update time"
@@ -7338,7 +7461,9 @@ msgstr "Click on the Job Title column to edit it"
 
 #: app/templates/pages/job_titles/list.html:44
 msgid "說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。"
-msgstr "Explanation: Job Title = the specific combination of Job Level + Job Family. Displayed in groups according to Job Family."
+msgstr ""
+"Explanation: Job Title = the specific combination of Job Level + Job Family."
+" Displayed in groups according to Job Family."
 
 #: app/templates/pages/job_titles/list.html:52
 #, python-format
@@ -7382,23 +7507,19 @@ msgstr "Yes (bring someone)"
 msgid "擁有此職稱的企業成員"
 msgstr "Employee that owns this Job Title"
 
-#: app/templates/pages/menu/create.html:3
-#: app/templates/pages/menu/create.html:15
+#: app/templates/pages/menu/create.html:3 app/templates/pages/menu/create.html:15
 msgid "新增選單項目"
 msgstr "Add Menu Item"
 
-#: app/templates/pages/menu/create.html:12
-#: app/templates/pages/menu/edit.html:11
+#: app/templates/pages/menu/create.html:12 app/templates/pages/menu/edit.html:11
 msgid "返回選單管理"
 msgstr "Back to Menu Management"
 
-#: app/templates/pages/menu/create.html:33
-#: app/templates/pages/menu/edit.html:33
+#: app/templates/pages/menu/create.html:33 app/templates/pages/menu/edit.html:33
 msgid "選單標題 (繁中)"
 msgstr "Menu Title (Traditional Chinese)"
 
-#: app/templates/pages/menu/create.html:40
-#: app/templates/pages/menu/edit.html:29
+#: app/templates/pages/menu/create.html:40 app/templates/pages/menu/edit.html:29
 msgid "選單代碼"
 msgstr "Menu Code"
 
@@ -7406,39 +7527,35 @@ msgstr "Menu Code"
 msgid "選填，留空自動產生。英文、數字、底線"
 msgstr "Optional; leave blank to auto-generate. Letters, digits, underscores"
 
-#: app/templates/pages/menu/create.html:57
-#: app/templates/pages/menu/edit.html:43
+#: app/templates/pages/menu/create.html:57 app/templates/pages/menu/edit.html:43
 msgid "圖示"
 msgstr "Icon"
 
-#: app/templates/pages/menu/create.html:62
-#: app/templates/pages/menu/edit.html:48
+#: app/templates/pages/menu/create.html:62 app/templates/pages/menu/edit.html:48
 #: app/templates/partials/_icon_picker.html:5
 msgid "選擇圖示"
 msgstr "Select icon"
 
-#: app/templates/pages/menu/create.html:70
-#: app/templates/pages/menu/edit.html:56
+#: app/templates/pages/menu/create.html:70 app/templates/pages/menu/edit.html:56
 msgid "父選單"
 msgstr "Parent Menu"
 
-#: app/templates/pages/menu/create.html:73
-#: app/templates/pages/menu/edit.html:59
+#: app/templates/pages/menu/create.html:73 app/templates/pages/menu/edit.html:59
 msgid "根層級"
 msgstr "Root Level"
 
-#: app/templates/pages/menu/create.html:81
-#: app/templates/pages/menu/edit.html:71 app/templates/pages/menu/list.html:109
-#: app/templates/pages/modules/view.html:98
+#: app/templates/pages/menu/create.html:81 app/templates/pages/menu/edit.html:71
+#: app/templates/pages/menu/list.html:109 app/templates/pages/modules/view.html:98
 msgid "連結類型"
 msgstr "Link Type"
 
 #: app/templates/pages/menu/create.html:86
 msgid "手動建立的選單僅能作為區塊標題，路由型選單由系統自動建立"
-msgstr "Manually created menus can only serve as section headers; route menus are created automatically by the system"
+msgstr ""
+"Manually created menus can only serve as section headers; route menus are "
+"created automatically by the system"
 
-#: app/templates/pages/menu/create.html:90
-#: app/templates/pages/menu/edit.html:87
+#: app/templates/pages/menu/create.html:90 app/templates/pages/menu/edit.html:87
 msgid "授權用戶類型"
 msgstr "Authorized User Types"
 
@@ -7446,15 +7563,13 @@ msgstr "Authorized User Types"
 msgid "勾選可看見此選單的用戶類型（平行關係，非繼承）"
 msgstr "Select user types that can see this menu (parallel, not inherited)"
 
-#: app/templates/pages/menu/create.html:103
-#: app/templates/pages/menu/edit.html:103
+#: app/templates/pages/menu/create.html:103 app/templates/pages/menu/edit.html:103
 #: app/templates/pages/modules/edit.html:44
 #: app/templates/pages/modules/view.html:58
 msgid "顯示順序"
 msgstr "Display Order"
 
-#: app/templates/pages/menu/create.html:107
-#: app/templates/pages/menu/edit.html:107
+#: app/templates/pages/menu/create.html:107 app/templates/pages/menu/edit.html:107
 msgid "預設展開"
 msgstr "Expand by Default"
 
@@ -7466,8 +7581,7 @@ msgstr "Create Menu Item"
 msgid "編輯選單項目"
 msgstr "Edit Menu Item"
 
-#: app/templates/pages/menu/edit.html:30
-#: app/templates/pages/modules/edit.html:29
+#: app/templates/pages/menu/edit.html:30 app/templates/pages/modules/edit.html:29
 #: app/templates/pages/sys_accounts/edit.html:33
 #: app/templates/pages/sys_accounts/edit.html:37
 #: app/templates/pages/sys_accounts/list.html:101
@@ -7488,11 +7602,15 @@ msgstr "Link Target"
 
 #: app/templates/pages/menu/edit.html:96
 msgid "鑰匙1: 勾選哪些用戶類型有「資格」看到此選單（平行關係，非繼承）"
-msgstr "Key 1: check which user types are eligible to see this menu (parallel, not inherited)"
+msgstr ""
+"Key 1: check which user types are eligible to see this menu (parallel, not "
+"inherited)"
 
 #: app/templates/pages/menu/edit.html:98
 msgid "此為模組選單，企業須有合約授權才會生效"
-msgstr "This is a module menu; it takes effect only if the organization has a licensed contract"
+msgstr ""
+"This is a module menu; it takes effect only if the organization has a "
+"licensed contract"
 
 #: app/templates/pages/menu/edit.html:122
 msgid "存取角色需求"
@@ -7500,23 +7618,23 @@ msgstr "Access Role Requirements"
 
 #: app/templates/pages/menu/edit.html:123
 msgid "鑰匙2: 必須設定角色。未設定角色的選單，任何人（含管理員）都無法透過 URL 存取。用戶必須持有至少一個指定角色，否則強制登出。"
-msgstr "Key 2: roles must be configured. A menu without roles cannot be accessed by anyone (including admins) via URL. Users must hold at least one designated role or they are forcibly logged out."
+msgstr ""
+"Key 2: roles must be configured. A menu without roles cannot be accessed by "
+"anyone (including admins) via URL. Users must hold at least one designated "
+"role or they are forcibly logged out."
 
 #: app/templates/pages/menu/edit.html:128
 msgid "被授權的角色"
 msgstr "Authorized roles"
 
-#: app/templates/pages/menu/edit.html:134
-#: app/templates/pages/menu/edit.html:163
+#: app/templates/pages/menu/edit.html:134 app/templates/pages/menu/edit.html:163
 #: app/templates/pages/permissions/index.html:442
-#: app/templates/pages/roles/create.html:35
-#: app/templates/pages/roles/edit.html:39
+#: app/templates/pages/roles/create.html:35 app/templates/pages/roles/edit.html:39
 #: app/templates/pages/roles/view.html:24
 msgid "角色名稱"
 msgstr "Role name"
 
-#: app/templates/pages/menu/edit.html:136
-#: app/templates/pages/menu/edit.html:165
+#: app/templates/pages/menu/edit.html:136 app/templates/pages/menu/edit.html:165
 #: app/templates/pages/permissions/index.html:229
 #: app/templates/pages/permissions/index.html:275
 #: app/templates/pages/units/view.html:44
@@ -7535,8 +7653,7 @@ msgstr "Available roles"
 msgid "企業尚未建立角色"
 msgstr "The organization has not created any roles"
 
-#: app/templates/pages/menu/edit.html:270
-#: app/templates/pages/menu/edit.html:275
+#: app/templates/pages/menu/edit.html:270 app/templates/pages/menu/edit.html:275
 #: app/templates/pages/menu/edit.html:282
 msgid "刪除選單項目"
 msgstr "Delete Menu Item"
@@ -7596,7 +7713,9 @@ msgstr "Confirm saving current configuration as factory defaults"
 
 #: app/templates/pages/menu/list.html:33
 msgid "此操作將把目前所有預設選單的設定儲存為出廠預設值，包含："
-msgstr "This operation will save all current default menu settings as factory defaults, including:"
+msgstr ""
+"This operation will save all current default menu settings as factory "
+"defaults, including:"
 
 #: app/templates/pages/menu/list.html:36 app/templates/pages/menu/list.html:60
 msgid "選單位置、排序、父子關係"
@@ -7616,7 +7735,9 @@ msgstr "Role access requirements (Key 2)"
 
 #: app/templates/pages/menu/list.html:42
 msgid "儲存後，「重置MENU所有設定成出廠值」將以此快照為準。"
-msgstr "After saving, \"Reset all MENU settings to factory defaults\" will use this snapshot."
+msgstr ""
+"After saving, \"Reset all MENU settings to factory defaults\" will use this "
+"snapshot."
 
 #: app/templates/pages/menu/list.html:46
 #: app/templates/pages/permissions/index.html:70
@@ -7629,7 +7750,9 @@ msgstr "Confirm resetting all menu settings"
 
 #: app/templates/pages/menu/list.html:57
 msgid "此操作將把所有預設選單的設定還原成出廠值，包含："
-msgstr "This operation will restore all default menu settings to factory defaults, including:"
+msgstr ""
+"This operation will restore all default menu settings to factory defaults, "
+"including:"
 
 #: app/templates/pages/menu/list.html:66
 msgid "用戶自建選單不受影響。"
@@ -7645,7 +7768,9 @@ msgstr "Add MENU root item"
 
 #: app/templates/pages/menu/list.html:80
 msgid "建立新選單，請輸入選單代碼(之後不可更改)(建議英文)(重覆會自動加尾號_01)"
-msgstr "Create a new menu. Enter a menu code (cannot be changed later) (English recommended) (duplicates get a _01 suffix automatically)"
+msgstr ""
+"Create a new menu. Enter a menu code (cannot be changed later) (English "
+"recommended) (duplicates get a _01 suffix automatically)"
 
 #: app/templates/pages/menu/list.html:83
 msgid "標題"
@@ -7655,8 +7780,8 @@ msgstr "Title"
 msgid "例：監控管理"
 msgstr "e.g. Monitoring Management"
 
-#: app/templates/pages/menu/list.html:90
-#: app/templates/pages/units/create.html:67
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:112
+#: app/templates/pages/menu/list.html:90 app/templates/pages/units/create.html:67
 msgid "建立"
 msgstr "Create"
 
@@ -7694,7 +7819,9 @@ msgstr "User Type Description"
 
 #: app/templates/pages/menu/list.html:129
 msgid "SYSTEM.local 的管理員，負責系統級設定，不可存取其他企業資料"
-msgstr "Admin of SYSTEM.local, manages system-level settings, cannot access other organization data"
+msgstr ""
+"Admin of SYSTEM.local, manages system-level settings, cannot access other "
+"organization data"
 
 #: app/templates/pages/menu/list.html:133
 msgid "各企業內最高權限帳號，可管理該企業的所有設定"
@@ -7710,7 +7837,9 @@ msgstr "External partners, clients, etc. with minimal privileges"
 
 #: app/templates/pages/menu/list.html:145
 msgid "每種用戶類型是「平行」的，不是繼承關係。系統管理員只能看到為其開放的選單。"
-msgstr "User types are parallel, not hierarchical. System admins can only see menus opened to them."
+msgstr ""
+"User types are parallel, not hierarchical. System admins can only see menus "
+"opened to them."
 
 #: app/templates/pages/menu/list.html:147
 msgid "底色說明"
@@ -7768,7 +7897,9 @@ msgstr "No-Code Builder - Define function modules and page structure"
 
 #: app/templates/pages/modules/create.html:32
 msgid "只能使用小寫英文、數字、底線 (例: members)"
-msgstr "Only lowercase English, numbers, and underscores can be used (example: members)"
+msgstr ""
+"Only lowercase English, numbers, and underscores can be used (example: "
+"members)"
 
 #: app/templates/pages/modules/create.html:37
 msgid "例: 會員系統"
@@ -7793,10 +7924,8 @@ msgid "選單權限等級"
 msgstr "Menu authority level"
 
 #: app/templates/pages/modules/create.html:53
-#: app/templates/pages/profile/view.html:22
-#: app/templates/pages/users/edit.html:91
-#: app/templates/pages/users/edit.html:108
-#: app/templates/pages/users/view.html:42
+#: app/templates/pages/profile/view.html:22 app/templates/pages/users/edit.html:91
+#: app/templates/pages/users/edit.html:108 app/templates/pages/users/view.html:42
 msgid "一般用戶"
 msgstr "Regular User"
 
@@ -7810,7 +7939,9 @@ msgstr "Create Module"
 
 #: app/templates/pages/modules/create.html:72
 msgid "建立模組後將自動產生以下預設頁面結構："
-msgstr "After creating the module, the following default page structure will be automatically generated:"
+msgstr ""
+"After creating the module, the following default page structure will be "
+"automatically generated:"
 
 #: app/templates/pages/modules/create.html:74
 msgid "列表頁"
@@ -7869,7 +8000,9 @@ msgstr "Add new assignment"
 
 #: app/templates/pages/modules/list.html:77
 msgid "未設定任何指派時，所有人皆可使用此模組。設定後僅指派對象可使用。"
-msgstr "This mod is available to everyone when no assignments are set. After setting, only the assigned object can use it."
+msgstr ""
+"This mod is available to everyone when no assignments are set. After "
+"setting, only the assigned object can use it."
 
 #: app/templates/pages/modules/list.html:103
 msgid "尚未設定使用權指派（所有人皆可使用）"
@@ -7907,10 +8040,8 @@ msgstr "Select type"
 #: app/templates/pages/modules/list.html:157
 #: app/templates/pages/units/create.html:3
 #: app/templates/pages/units/create.html:11
-#: app/templates/pages/units/create.html:67
-#: app/templates/pages/units/list.html:40
-#: app/templates/pages/units/view.html:27
-#: app/templates/pages/units/view.html:77
+#: app/templates/pages/units/create.html:67 app/templates/pages/units/list.html:40
+#: app/templates/pages/units/view.html:27 app/templates/pages/units/view.html:77
 msgid "群組"
 msgstr "group"
 
@@ -8061,7 +8192,9 @@ msgstr "No independent database has been established yet"
 
 #: app/templates/pages/org_databases/monitor.html:169
 msgid "您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。"
-msgstr "Your Organization has not yet established an independent database. Please enable SQL synchronization in form version management."
+msgstr ""
+"Your Organization has not yet established an independent database. Please "
+"enable SQL synchronization in form version management."
 
 #: app/templates/pages/org_databases/monitor.html:207
 #: app/templates/pages/roles/list.html:27
@@ -8139,19 +8272,27 @@ msgstr "This Organization does not yet have an administrator account."
 
 #: app/templates/pages/organizations/admins.html:164
 msgid "此頁面供系統管理員管理特定企業的管理員帳號"
-msgstr "This page is for System Administrator to manage the administrator account of a specific Organization"
+msgstr ""
+"This page is for System Administrator to manage the administrator account of"
+" a specific Organization"
 
 #: app/templates/pages/organizations/admins.html:165
 msgid "可啟用/停用管理員帳號，但必須至少保留一個啟用的管理員"
-msgstr "Administrator accounts can be enabled/deactivated, but at least one administrator must remain enabled"
+msgstr ""
+"Administrator accounts can be enabled/deactivated, but at least one "
+"administrator must remain enabled"
 
 #: app/templates/pages/organizations/admins.html:166
 msgid "重設密碼後會通知該企業所有管理員（含停用帳號）"
-msgstr "After resetting the password, all administrators of the Organization will be notified (including deactivated accounts)"
+msgstr ""
+"After resetting the password, all administrators of the Organization will be"
+" notified (including deactivated accounts)"
 
 #: app/templates/pages/organizations/admins.html:167
 msgid "適用於企業管理員全部離職或忘記密碼的救援情境"
-msgstr "Applicable to rescue situations where all Organization Admin have resigned or forgotten their passwords"
+msgstr ""
+"Applicable to rescue situations where all Organization Admin have resigned "
+"or forgotten their passwords"
 
 #: app/templates/pages/organizations/contract_form.html:3
 #: app/templates/pages/organizations/contract_form.html:10
@@ -8247,15 +8388,21 @@ msgstr "Deactivate this Contract"
 
 #: app/templates/pages/organizations/contract_form.html:184
 msgid "合約建立後不可修改內容（稽核要求）。"
-msgstr "The content of Contract cannot be modified after it is created (audit requirement)."
+msgstr ""
+"The content of Contract cannot be modified after it is created (audit "
+"requirement)."
 
 #: app/templates/pages/organizations/contract_form.html:185
 msgid "如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。"
-msgstr "To deactivate, press the button below. It cannot be reactivated after deactivation. If you need to change, please create a new Contract."
+msgstr ""
+"To deactivate, press the button below. It cannot be reactivated after "
+"deactivation. If you need to change, please create a new Contract."
 
 #: app/templates/pages/organizations/contract_form.html:195
 msgid "此合約已停用，不可再啟用。如需恢復服務，請建立新合約。"
-msgstr "This Contract has been disabled and cannot be enabled again. If you need to restore service, please create a new Contract."
+msgstr ""
+"This Contract has been disabled and cannot be enabled again. If you need to "
+"restore service, please create a new Contract."
 
 #: app/templates/pages/organizations/create.html:3
 #: app/templates/pages/organizations/create.html:15
@@ -8278,7 +8425,9 @@ msgstr "Optional, leave blank to generate automatically. Such as ACME, DEMO_CORP
 
 #: app/templates/pages/organizations/create.html:55
 msgid "多語言顯示用，如不填則使用企業名稱"
-msgstr "For multi-language display, if left blank, the name Organization will be used."
+msgstr ""
+"For multi-language display, if left blank, the name Organization will be "
+"used."
 
 #: app/templates/pages/organizations/create.html:59
 #: app/templates/pages/organizations/edit.html:46
@@ -8289,7 +8438,9 @@ msgstr "Domain name"
 
 #: app/templates/pages/organizations/create.html:64
 msgid "例: example.com (用於登入帳號，如 admin@example.com，會自動轉小寫)"
-msgstr "Example: example.com (used to log in to the account, such as admin@example.com, it will be automatically converted to lowercase)"
+msgstr ""
+"Example: example.com (used to log in to the account, such as "
+"admin@example.com, it will be automatically converted to lowercase)"
 
 #: app/templates/pages/organizations/create.html:65
 msgid "不可使用公共信箱 Domain (如 gmail.com, yahoo.com)"
@@ -8319,7 +8470,9 @@ msgstr "Organization code and domain name cannot be changed after they are creat
 
 #: app/templates/pages/organizations/edit.html:62
 msgid "多語言顯示用，不填則使用企業名稱"
-msgstr "For multi-language display, if left blank, the name Organization will be used."
+msgstr ""
+"For multi-language display, if left blank, the name Organization will be "
+"used."
 
 #: app/templates/pages/organizations/edit.html:68
 #: app/templates/pages/organizations/list.html:193
@@ -8344,7 +8497,9 @@ msgstr "blacklist"
 #: app/templates/pages/organizations/edit.html:79
 #, python-format
 msgid "目前已使用 %(count)s 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^"
-msgstr "Currently, %(count)s accounts have been used -- open source is not intended for commercialization, please use it as much as possible^_^"
+msgstr ""
+"Currently, %(count)s accounts have been used -- open source is not intended "
+"for commercialization, please use it as much as possible^_^"
 
 #: app/templates/pages/organizations/edit.html:91
 #, python-format
@@ -8358,7 +8513,9 @@ msgstr "Belongs to Conglomerate"
 
 #: app/templates/pages/organizations/edit.html:98
 msgid "集團設定請至企業管理列表頁操作"
-msgstr "For Conglomerate settings, please go to the Organization management list page."
+msgstr ""
+"For Conglomerate settings, please go to the Organization management list "
+"page."
 
 #: app/templates/pages/organizations/edit.html:112
 msgid "聯絡資訊"
@@ -8389,7 +8546,9 @@ msgstr "Dangerous operation"
 
 #: app/templates/pages/organizations/edit.html:159
 msgid "刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。"
-msgstr "Deleting this Organization will not be possible to recover, and all related information (account, Contract, settings) will be marked for deletion."
+msgstr ""
+"Deleting this Organization will not be possible to recover, and all related "
+"information (account, Contract, settings) will be marked for deletion."
 
 #: app/templates/pages/organizations/edit.html:165
 msgid "刪除企業"
@@ -8403,6 +8562,9 @@ msgstr "+ New"
 msgid "搜尋企業名稱/網域"
 msgstr "Search for Organization name/domain"
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:23
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:34
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:49
 #: app/templates/pages/organizations/list.html:32
 #: app/templates/pages/permissions/index.html:211
 #: app/templates/pages/store/index.html:16
@@ -8547,7 +8709,9 @@ msgstr "View details and Contract management"
 
 #: app/templates/pages/organizations/list.html:335
 msgid "合約建立後不可修改內容（稽核要求）。如需變更請建立新合約。"
-msgstr "The content of Contract cannot be modified after it is created (audit requirement). If you need to change, please create a new Contract."
+msgstr ""
+"The content of Contract cannot be modified after it is created (audit "
+"requirement). If you need to change, please create a new Contract."
 
 #: app/templates/pages/organizations/list.html:362
 msgid "此合約已停用，不可再啟用"
@@ -8589,19 +8753,27 @@ msgstr "Confirm the factory settings"
 
 #: app/templates/pages/permissions/index.html:61
 msgid "此操作將把目前所選企業的系統角色 RBAC 權限配置儲存為出廠預設值。"
-msgstr "This operation will save the system Role RBAC permission configuration of the currently selected Organization as the factory default value."
+msgstr ""
+"This operation will save the system Role RBAC permission configuration of "
+"the currently selected Organization as the factory default value."
 
 #: app/templates/pages/permissions/index.html:64
 msgid "生成安裝用 SQL（新安裝的用戶將自動取得這些預設值）"
-msgstr "Generate SQL for installation (newly installed users will automatically obtain these default values)"
+msgstr ""
+"Generate SQL for installation (newly installed users will automatically "
+"obtain these default values)"
 
 #: app/templates/pages/permissions/index.html:65
 msgid "僅在角色完全沒有權限時才套用（升級不會覆蓋既有設定）"
-msgstr "It is only applied when Role has no permission at all (the upgrade will not overwrite the existing settings)"
+msgstr ""
+"It is only applied when Role has no permission at all (the upgrade will not "
+"overwrite the existing settings)"
 
 #: app/templates/pages/permissions/index.html:66
 msgid "企業可使用「恢復 RBAC 預設權限」手動套用"
-msgstr "Organization can be manually applied using \"Restore RBAC default permissions\""
+msgstr ""
+"Organization can be manually applied using \"Restore RBAC default "
+"permissions\""
 
 #: app/templates/pages/permissions/index.html:79
 msgid "確認恢復 RBAC 預設權限"
@@ -8609,15 +8781,21 @@ msgstr "Confirm to restore RBAC default permissions"
 
 #: app/templates/pages/permissions/index.html:81
 msgid "RBAC 完全覆蓋：自行新增的權限配置不會保留，已刪除的預設權限會再出現。"
-msgstr "RBAC Full coverage: Self-added permission configurations will not be retained, and deleted default permissions will reappear."
+msgstr ""
+"RBAC Full coverage: Self-added permission configurations will not be "
+"retained, and deleted default permissions will reappear."
 
 #: app/templates/pages/permissions/index.html:82
 msgid "請務必先使用「匯出 RBAC 權限」備份目前設定。"
-msgstr "Please be sure to use \"Export RBAC Permissions\" to back up the current settings."
+msgstr ""
+"Please be sure to use \"Export RBAC Permissions\" to back up the current "
+"settings."
 
 #: app/templates/pages/permissions/index.html:85
 msgid "此操作將以系統出廠預設值覆蓋本企業所有系統角色的 RBAC 權限。"
-msgstr "This operation will overwrite the RBAC permissions of all systems Role of this Organization with the system factory default values."
+msgstr ""
+"This operation will overwrite the RBAC permissions of all systems Role of "
+"this Organization with the system factory default values."
 
 #: app/templates/pages/permissions/index.html:89
 msgid "確認恢復"
@@ -8625,7 +8803,9 @@ msgstr "Confirm recovery"
 
 #: app/templates/pages/permissions/index.html:97
 msgid "請先選擇企業，才能查看該企業的角色與權限配置。"
-msgstr "Please select Organization first to view the Role and permission configuration of this Organization."
+msgstr ""
+"Please select Organization first to view the Role and permission "
+"configuration of this Organization."
 
 #: app/templates/pages/permissions/index.html:104
 msgid "角色視角"
@@ -8694,6 +8874,8 @@ msgstr "permission code"
 msgid "無 -- 此角色未持有任何 RBAC 權限"
 msgstr "None -- This Role does not hold any RBAC permissions"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:62
 #: app/templates/pages/permissions/index.html:276
 msgid "來源"
 msgstr "Source"
@@ -8821,6 +9003,8 @@ msgstr "Detection results"
 msgid "未偵測到權限衝突或缺失（或所有類型已隱藏）"
 msgstr "No conflicting or missing permissions detected (or all types are hidden)"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:58
 #: app/templates/pages/permissions/index.html:605
 msgid "嚴重度"
 msgstr "Severity"
@@ -8851,7 +9035,9 @@ msgstr "Platform Description - Employee"
 #: app/templates/pages/platform_help/external.html:9
 #: app/templates/pages/platform_help/system_admin.html:9
 msgid "以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的"
-msgstr "The following are the operation instructions for each function page. You can also directly click on the lower right corner of any page"
+msgstr ""
+"The following are the operation instructions for each function page. You can"
+" also directly click on the lower right corner of any page"
 
 #: app/templates/pages/platform_help/employee.html:10
 #: app/templates/pages/platform_help/external.html:10
@@ -8877,7 +9063,9 @@ msgstr "Platform Description - Organization Admin"
 
 #: app/templates/pages/platform_help/org_admin.html:13
 msgid "本文件說明 BeakPlatform 的帳號等級、角色、權限架構與安全機制，供企業管理員參考。"
-msgstr "This document describes the account level of BeakPlatform, Role, permission structure and security mechanism, for reference by Organization Admin."
+msgstr ""
+"This document describes the account level of BeakPlatform, Role, permission "
+"structure and security mechanism, for reference by Organization Admin."
 
 #: app/templates/pages/platform_help/org_admin.html:17
 msgid "帳號等級與角色"
@@ -8901,28 +9089,44 @@ msgstr "Account Level (User Type)"
 
 #: app/templates/pages/platform_help/org_admin.html:30
 msgid "每個帳號有且只有一個等級，決定此人在系統中的基本身分與可見範圍。"
-msgstr "Each account has one and only one level, which determines the person's basic status and visibility in the system."
+msgstr ""
+"Each account has one and only one level, which determines the person's basic"
+" status and visibility in the system."
 
 #: app/templates/pages/platform_help/org_admin.html:43
 #, python-format
 msgid "平台維運人員，隸屬特殊企業 %(SYSTEM_ORG_CODE)s。管理所有企業、主機設定、模組商店。不參與各企業內的業務操作。"
-msgstr "Platform maintenance personnel, subordinate to special Organization %(SYSTEM_ORG_CODE)s. Manage all Organization, console settings, and module stores. Do not participate in the business operations within each Organization."
+msgstr ""
+"Platform maintenance personnel, subordinate to special Organization "
+"%(SYSTEM_ORG_CODE)s. Manage all Organization, console settings, and module "
+"stores. Do not participate in the business operations within each "
+"Organization."
 
 #: app/templates/pages/platform_help/org_admin.html:48
 msgid "企業內最高管理者。管理本企業的組織架構、帳號、角色、選單、模組設定。天生持有本企業內所有非系統級權限。"
-msgstr "The top manager in Organization. Manage the organizational structure, account, Role, Menu, and module settings of this Organization. Naturally holds all non-system level permissions in this Organization."
+msgstr ""
+"The top manager in Organization. Manage the organizational structure, "
+"account, Role, Menu, and module settings of this Organization. Naturally "
+"holds all non-system level permissions in this Organization."
 
 #: app/templates/pages/platform_help/org_admin.html:53
 msgid "企業內一般使用者。可見範圍由管理員透過選單授權和角色指派決定。"
-msgstr "General users in Organization. The visible range is determined by the administrator through Menu authorization and Role assignment."
+msgstr ""
+"General users in Organization. The visible range is determined by the "
+"administrator through Menu authorization and Role assignment."
 
 #: app/templates/pages/platform_help/org_admin.html:58
 msgid "非本企業人員（供應商、顧問等）。可見範圍最小，由管理員明確開放。"
-msgstr "Non-Organization personnel (suppliers, consultants, etc.). The visible range is the smallest and is explicitly opened by the administrator."
+msgstr ""
+"Non-Organization personnel (suppliers, consultants, etc.). The visible range"
+" is the smallest and is explicitly opened by the administrator."
 
 #: app/templates/pages/platform_help/org_admin.html:64
 msgid "等級之間互相獨立，不是「企業管理員 = 企業成員 + 更多權限」的關係。各等級看到的選單和功能由管理員分別配置。"
-msgstr "The levels are independent of each other and are not related to \"Organization Admin = Employee + more permissions\". The Menu and functions seen at each level are configured separately by the administrator."
+msgstr ""
+"The levels are independent of each other and are not related to "
+"\"Organization Admin = Employee + more permissions\". The Menu and functions"
+" seen at each level are configured separately by the administrator."
 
 #: app/templates/pages/platform_help/org_admin.html:69
 msgid "預設角色"
@@ -8930,7 +9134,9 @@ msgstr "Default Role"
 
 #: app/templates/pages/platform_help/org_admin.html:70
 msgid "系統內建以下角色，企業管理員可在 /roles/ 自行增減角色。"
-msgstr "The system has the following Role built-in. Organization Admin can be added or deleted by yourself in /roles/."
+msgstr ""
+"The system has the following Role built-in. Organization Admin can be added "
+"or deleted by yourself in /roles/."
 
 #: app/templates/pages/platform_help/org_admin.html:72
 msgid "企業級角色"
@@ -8947,7 +9153,9 @@ msgstr "Responsibilities"
 
 #: app/templates/pages/platform_help/org_admin.html:84
 msgid "管理企業設定、組織架構、帳號、角色、模組配置"
-msgstr "Manage Organization settings, organizational structure, accounts, Role, and module configurations"
+msgstr ""
+"Manage Organization settings, organizational structure, accounts, Role, and "
+"module configurations"
 
 #: app/templates/pages/platform_help/org_admin.html:87
 msgid "表單流程管理者"
@@ -8963,7 +9171,9 @@ msgstr "Module level Role"
 
 #: app/templates/pages/platform_help/org_admin.html:94
 msgid "控制模組（如子系統開發模組）的存取層級，具有繼承關係。"
-msgstr "The access level of control modules (such as subsystem development modules) has an inheritance relationship."
+msgstr ""
+"The access level of control modules (such as subsystem development modules) "
+"has an inheritance relationship."
 
 #: app/templates/pages/platform_help/org_admin.html:105
 msgid "模組管理員"
@@ -8996,7 +9206,9 @@ msgstr "Member level Role"
 
 #: app/templates/pages/platform_help/org_admin.html:123
 msgid "組織架構中的職務角色，用於流程簽核與組織管理。"
-msgstr "Duty Role in the organization structure, used for workflow approval and organization management."
+msgstr ""
+"Duty Role in the organization structure, used for workflow approval and "
+"organization management."
 
 #: app/templates/pages/platform_help/org_admin.html:132
 #: app/templates/pages/positions/create.html:74
@@ -9064,7 +9276,10 @@ msgstr "Role inheritance:"
 
 #: app/templates/pages/platform_help/org_admin.html:144
 msgid "部分角色會自動包含下級角色的權限。例如「模組作者」自動擁有「模組讀者」的所有權限。繼承關係在 /roles/ 頁面可查看。"
-msgstr "Some Roles will automatically include the permissions of subordinate Roles. For example, \"Mod Author\" automatically has all the permissions of \"Mod Reader\". The inheritance relationship can be viewed on the /roles/ page."
+msgstr ""
+"Some Roles will automatically include the permissions of subordinate Roles. "
+"For example, \"Mod Author\" automatically has all the permissions of \"Mod "
+"Reader\". The inheritance relationship can be viewed on the /roles/ page."
 
 #: app/templates/pages/platform_help/org_admin.html:156
 msgid "權限管理概觀"
@@ -9072,7 +9287,10 @@ msgstr "Permissions Management Overview"
 
 #: app/templates/pages/platform_help/org_admin.html:157
 msgid "平台的權限分散在多個層面，各有不同的控制目標。企業管理員可透過「權限管理」(/permissions/) 進行統一檢視與管理。"
-msgstr "The authority of the platform is scattered at multiple levels, each with different control objectives. Organization Admin can be viewed and managed uniformly through \"Permissions Management\" (/permissions/)."
+msgstr ""
+"The authority of the platform is scattered at multiple levels, each with "
+"different control objectives. Organization Admin can be viewed and managed "
+"uniformly through \"Permissions Management\" (/permissions/)."
 
 #: app/templates/pages/platform_help/org_admin.html:162
 msgid "權限層"
@@ -9094,7 +9312,9 @@ msgstr "Menu visibility"
 
 #: app/templates/pages/platform_help/org_admin.html:171
 msgid "哪個帳號等級能看到哪些選單項目（如：企業成員能看到「表單中心」）"
-msgstr "Which account level can see which Menu items (for example: Employee can see the \"Form Center\")"
+msgstr ""
+"Which account level can see which Menu items (for example: Employee can see "
+"the \"Form Center\")"
 
 #: app/templates/pages/platform_help/org_admin.html:174
 #: app/templates/pages/platform_help/org_admin.html:418
@@ -9107,7 +9327,9 @@ msgstr "/menu/ (Role column)"
 
 #: app/templates/pages/platform_help/org_admin.html:176
 msgid "選單項目需要持有哪些角色才能存取（如：需要「表單流程管理者」角色）"
-msgstr "Which Role do you need to hold to access the Menu project (for example: \"Form Process Manager\" Role is required)"
+msgstr ""
+"Which Role do you need to hold to access the Menu project (for example: "
+"\"Form Process Manager\" Role is required)"
 
 #: app/templates/pages/platform_help/org_admin.html:179
 msgid "角色權限 (RBAC)"
@@ -9115,7 +9337,9 @@ msgstr "Role permissions (RBAC)"
 
 #: app/templates/pages/platform_help/org_admin.html:181
 msgid "角色持有哪些具體操作權限（如：角色「表單流程管理者」持有 form_workflow.template.view）"
-msgstr "What specific operation permissions does Role hold (for example: Role \"form process manager\" holds form_workflow.template.view)"
+msgstr ""
+"What specific operation permissions does Role hold (for example: Role \"form"
+" process manager\" holds form_workflow.template.view)"
 
 #: app/templates/pages/platform_help/org_admin.html:184
 #: app/templates/pages/platform_help/org_admin.html:217
@@ -9129,7 +9353,9 @@ msgstr "program definition"
 
 #: app/templates/pages/platform_help/org_admin.html:186
 msgid "選單的最低權限要求（如：選單「表單範本」要求使用者持有 form_workflow.template.view）"
-msgstr "Minimum permission requirements for Menu (for example: Menu \"form template\" requires users to hold form_workflow.template.view)"
+msgstr ""
+"Minimum permission requirements for Menu (for example: Menu \"form "
+"template\" requires users to hold form_workflow.template.view)"
 
 #: app/templates/pages/platform_help/org_admin.html:189
 msgid "帳號角色指派"
@@ -9137,7 +9363,9 @@ msgstr "Account number Role assigned"
 
 #: app/templates/pages/platform_help/org_admin.html:191
 msgid "哪些帳號持有哪些角色（如：張三擁有「表單流程管理者」角色）"
-msgstr "Which accounts hold which Role (for example: Zhang San owns \"Form Process Manager\" Role)"
+msgstr ""
+"Which accounts hold which Role (for example: Zhang San owns \"Form Process "
+"Manager\" Role)"
 
 #: app/templates/pages/platform_help/org_admin.html:198
 msgid "選單可見性 vs. 存取權限"
@@ -9173,7 +9401,9 @@ msgstr "page access"
 
 #: app/templates/pages/platform_help/org_admin.html:223
 msgid "使用者持有該頁面所需的角色（由選單角色需求決定）"
-msgstr "The user has the Role required for this page (determined by Menu Role requirements)"
+msgstr ""
+"The user has the Role required for this page (determined by Menu Role "
+"requirements)"
 
 #: app/templates/pages/platform_help/org_admin.html:227
 msgid "操作權限"
@@ -9181,7 +9411,9 @@ msgstr "Operation permission"
 
 #: app/templates/pages/platform_help/org_admin.html:228
 msgid "使用者的角色擁有該操作所需的 RBAC 權限（如：建立、編輯、刪除）"
-msgstr "The user's Role has the RBAC permissions required for this operation (such as: create, edit, delete)"
+msgstr ""
+"The user's Role has the RBAC permissions required for this operation (such "
+"as: create, edit, delete)"
 
 #: app/templates/pages/platform_help/org_admin.html:234
 msgid "常見問題："
@@ -9189,7 +9421,10 @@ msgstr "FAQ:"
 
 #: app/templates/pages/platform_help/org_admin.html:234
 msgid "如果企業成員反映「選單看得到但點進去沒權限」，通常是步驟 1 通過但步驟 3 或 4 未配置。請至 /permissions/ 檢查衝突偵測結果。"
-msgstr "If Employee reflects \"Menu can see it but has no permission to click in\", it usually means that step 1 is passed but step 3 or 4 is not configured. Please go to /permissions/ to check the conflict detection results."
+msgstr ""
+"If Employee reflects \"Menu can see it but has no permission to click in\", "
+"it usually means that step 1 is passed but step 3 or 4 is not configured. "
+"Please go to /permissions/ to check the conflict detection results."
 
 #: app/templates/pages/platform_help/org_admin.html:239
 msgid "企業管理員的天生權限"
@@ -9197,7 +9432,10 @@ msgstr "The natural authority of Organization Admin"
 
 #: app/templates/pages/platform_help/org_admin.html:240
 msgid "企業管理員（ORG_ADMIN）天生持有本企業內所有「企業級」和「模組級」權限，無需透過角色指派。"
-msgstr "Organization Admin (ORG_ADMIN) naturally holds all \"Organization level\" and \"module level\" permissions in this Organization, and does not need to be assigned through Role."
+msgstr ""
+"Organization Admin (ORG_ADMIN) naturally holds all \"Organization level\" "
+"and \"module level\" permissions in this Organization, and does not need to "
+"be assigned through Role."
 
 #: app/templates/pages/platform_help/org_admin.html:241
 msgid "這代表："
@@ -9205,15 +9443,21 @@ msgstr "This means:"
 
 #: app/templates/pages/platform_help/org_admin.html:243
 msgid "企業管理員不需要被加入任何角色就能操作所有企業內功能"
-msgstr "Organization Admin does not need to be added to any Role to operate all functions in Organization"
+msgstr ""
+"Organization Admin does not need to be added to any Role to operate all "
+"functions in Organization"
 
 #: app/templates/pages/platform_help/org_admin.html:244
 msgid "在 /permissions/ 的衝突偵測中，僅授權給 ORG_ADMIN 的選單不會被標記為缺少 RBAC 權限"
-msgstr "In conflict detection of /permissions/, Menu authorized only to ORG_ADMIN will not be marked as missing the RBAC permission"
+msgstr ""
+"In conflict detection of /permissions/, Menu authorized only to ORG_ADMIN "
+"will not be marked as missing the RBAC permission"
 
 #: app/templates/pages/platform_help/org_admin.html:245
 msgid "但「系統級」權限仍保留給系統管理員，企業管理員無法取得"
-msgstr "However, \"system-level\" permissions are still reserved for System Administrator, and Organization Admin cannot obtain them."
+msgstr ""
+"However, \"system-level\" permissions are still reserved for System "
+"Administrator, and Organization Admin cannot obtain them."
 
 #: app/templates/pages/platform_help/org_admin.html:250
 msgid "權限管理建議流程"
@@ -9221,7 +9465,9 @@ msgstr "Permissions Management Recommendation Process"
 
 #: app/templates/pages/platform_help/org_admin.html:251
 msgid "新增一個需要權限控制的功能時，建議依以下順序操作："
-msgstr "When adding a function that requires permission control, it is recommended to operate in the following order:"
+msgstr ""
+"When adding a function that requires permission control, it is recommended "
+"to operate in the following order:"
 
 #: app/templates/pages/platform_help/org_admin.html:253
 msgid "-- 設定選單可見性（勾選哪些帳號等級能看到）"
@@ -9237,7 +9483,9 @@ msgstr "-- Configure the required RBAC permissions for Role"
 
 #: app/templates/pages/platform_help/org_admin.html:256
 msgid "-- 使用衝突偵測功能確認配置完整"
-msgstr "-- Use the conflict detection function to confirm that the configuration is complete"
+msgstr ""
+"-- Use the conflict detection function to confirm that the configuration is "
+"complete"
 
 #: app/templates/pages/platform_help/org_admin.html:268
 msgid "安全防護架構"
@@ -9245,7 +9493,10 @@ msgstr "Security protection architecture"
 
 #: app/templates/pages/platform_help/org_admin.html:269
 msgid "平台採用多層防護設計，每一層獨立運作，即使某一層被繞過，後續層仍然保護系統。"
-msgstr "The platform adopts a multi-layer protection design, with each layer operating independently. Even if one layer is bypassed, subsequent layers will still protect the system."
+msgstr ""
+"The platform adopts a multi-layer protection design, with each layer "
+"operating independently. Even if one layer is bypassed, subsequent layers "
+"will still protect the system."
 
 #: app/templates/pages/platform_help/org_admin.html:274
 msgid "層"
@@ -9265,7 +9516,9 @@ msgstr "Global authentication interception"
 
 #: app/templates/pages/platform_help/org_admin.html:284
 msgid "所有請求必須先通過身分驗證，未登入者一律阻擋"
-msgstr "All requests must pass identity verification first, and those who are not logged in will be blocked."
+msgstr ""
+"All requests must pass identity verification first, and those who are not "
+"logged in will be blocked."
 
 #: app/templates/pages/platform_help/org_admin.html:285
 msgid "導向登入頁面"
@@ -9277,7 +9530,9 @@ msgstr "Routing level check"
 
 #: app/templates/pages/platform_help/org_admin.html:290
 msgid "各頁面依功能要求不同的帳號等級（如管理員專用頁面）"
-msgstr "Each page has different account levels according to functional requirements (such as administrator-specific pages)"
+msgstr ""
+"Each page has different account levels according to functional requirements "
+"(such as administrator-specific pages)"
 
 #: app/templates/pages/platform_help/org_admin.html:291
 msgid "403 拒絕存取"
@@ -9301,7 +9556,9 @@ msgstr "Resource permission check"
 
 #: app/templates/pages/platform_help/org_admin.html:302
 msgid "驗證使用者是否有權執行特定操作（讀取、建立、編輯、刪除）"
-msgstr "Verify that the user has permission to perform a specific operation (read, create, edit, delete)"
+msgstr ""
+"Verify that the user has permission to perform a specific operation (read, "
+"create, edit, delete)"
 
 #: app/templates/pages/platform_help/org_admin.html:303
 msgid "403 拒絕操作"
@@ -9313,7 +9570,9 @@ msgstr "Organization data isolation"
 
 #: app/templates/pages/platform_help/org_admin.html:308
 msgid "每筆資料查詢都強制加入企業識別碼過濾，A 企業看不到 B 企業的資料"
-msgstr "Every data query is forced to add the Organization identification code filter. A Organization cannot see the data of B Organization."
+msgstr ""
+"Every data query is forced to add the Organization identification code "
+"filter. A Organization cannot see the data of B Organization."
 
 #: app/templates/pages/platform_help/org_admin.html:309
 msgid "資料不可見"
@@ -9333,7 +9592,11 @@ msgstr "Default administrator account"
 
 #: app/templates/pages/platform_help/org_admin.html:327
 msgid "企業建立時自動產生 admin 帳號。建議盡快建立個人管理員帳號後停用此預設帳號，儀表板會持續提醒。"
-msgstr "The admin account is automatically generated when Organization is created. It is recommended to create a personal administrator account as soon as possible and then deactivate this default account. The dashboard will continue to remind you."
+msgstr ""
+"The admin account is automatically generated when Organization is created. "
+"It is recommended to create a personal administrator account as soon as "
+"possible and then deactivate this default account. The dashboard will "
+"continue to remind you."
 
 #: app/templates/pages/platform_help/org_admin.html:330
 msgid "帳號停用 vs 刪除"
@@ -9341,7 +9604,10 @@ msgstr "Account deactivation vs deletion"
 
 #: app/templates/pages/platform_help/org_admin.html:331
 msgid "停用（is_active=false）：帳號無法登入但資料保留，可隨時恢復。刪除（is_deleted=true）：軟刪除，資料保留但完全不可見。"
-msgstr "Deactivated (is_active=false): The account cannot be logged in but the data is retained and can be restored at any time. Delete (is_deleted=true): Soft delete, the data is retained but completely invisible."
+msgstr ""
+"Deactivated (is_active=false): The account cannot be logged in but the data "
+"is retained and can be restored at any time. Delete (is_deleted=true): Soft "
+"delete, the data is retained but completely invisible."
 
 #: app/templates/pages/platform_help/org_admin.html:334
 msgid "URL 安全識別碼"
@@ -9349,7 +9615,10 @@ msgstr "URL security code"
 
 #: app/templates/pages/platform_help/org_admin.html:335
 msgid "所有資源在 URL 中使用隨機產生的安全識別碼（secure_code），而非可猜測的流水號，防止未授權的資料存取。"
-msgstr "All resources use randomly generated security identifiers (secure_code) in URLs instead of guessable serial numbers to prevent unauthorized data access."
+msgstr ""
+"All resources use randomly generated security identifiers (secure_code) in "
+"URLs instead of guessable serial numbers to prevent unauthorized data "
+"access."
 
 #: app/templates/pages/platform_help/org_admin.html:338
 #: app/templates/pages/platform_help/org_admin.html:448
@@ -9358,7 +9627,9 @@ msgstr "Audit log"
 
 #: app/templates/pages/platform_help/org_admin.html:339
 msgid "重要操作（登入、權限變更、資料異動）自動記錄稽核日誌，供事後追溯。"
-msgstr "Important operations (login, permission changes, data changes) are automatically recorded in audit logs for subsequent tracing."
+msgstr ""
+"Important operations (login, permission changes, data changes) are "
+"automatically recorded in audit logs for subsequent tracing."
 
 #: app/templates/pages/platform_help/org_admin.html:346
 msgid "模組存取控制"
@@ -9366,7 +9637,9 @@ msgstr "module access control"
 
 #: app/templates/pages/platform_help/org_admin.html:347
 msgid "模組（如表單流程、子系統開發）的存取受額外控制："
-msgstr "Access to modules (such as form processes, subsystem development) is subject to additional controls:"
+msgstr ""
+"Access to modules (such as form processes, subsystem development) is subject"
+" to additional controls:"
 
 #: app/templates/pages/platform_help/org_admin.html:351
 msgid "控制層"
@@ -9378,7 +9651,9 @@ msgstr "Contract verification"
 
 #: app/templates/pages/platform_help/org_admin.html:358
 msgid "企業必須持有該模組的有效合約才能使用。合約過期後模組不可見。"
-msgstr "Organization must hold a valid Contract of this module to use it. After Contract expires, the module will not be visible."
+msgstr ""
+"Organization must hold a valid Contract of this module to use it. After "
+"Contract expires, the module will not be visible."
 
 #: app/templates/pages/platform_help/org_admin.html:361
 msgid "模組 ACL"
@@ -9386,7 +9661,10 @@ msgstr "Module ACL"
 
 #: app/templates/pages/platform_help/org_admin.html:362
 msgid "企業管理員在 /admin/module-users/ 設定哪些企業成員可存取哪些模組。企業管理員本身自動擁有所有模組的存取權。"
-msgstr "Organization Admin sets which Employee can access which modules in /admin/module-users/. Organization Admin itself automatically has access rights to all modules."
+msgstr ""
+"Organization Admin sets which Employee can access which modules in /admin"
+"/module-users/. Organization Admin itself automatically has access rights to"
+" all modules."
 
 #: app/templates/pages/platform_help/org_admin.html:376
 msgid "名詞對照表"
@@ -9406,11 +9684,15 @@ msgstr "Account Level"
 
 #: app/templates/pages/platform_help/org_admin.html:390
 msgid "帳號的基本身分分類：系統管理員、企業管理員、企業成員、外部廠商"
-msgstr "Basic classification of accounts: System Administrator, Organization Admin, Employee, External Vendor"
+msgstr ""
+"Basic classification of accounts: System Administrator, Organization Admin, "
+"Employee, External Vendor"
 
 #: app/templates/pages/platform_help/org_admin.html:395
 msgid "可被指派給帳號的職務或功能身分，一個帳號可持有多個角色"
-msgstr "Duty or functional identity that can be assigned to an account, and one account can hold multiple Role"
+msgstr ""
+"Duty or functional identity that can be assigned to an account, and one "
+"account can hold multiple Role"
 
 #: app/templates/pages/platform_help/org_admin.html:398
 msgid "角色繼承"
@@ -9422,11 +9704,16 @@ msgstr "The child Role automatically has all the permissions of the parent Role"
 
 #: app/templates/pages/platform_help/org_admin.html:405
 msgid "可被授予角色的具體操作能力（如：檢視表單範本、編輯流程）"
-msgstr "Can be granted the specific operational capabilities of Role (such as: viewing form templates, editing processes)"
+msgstr ""
+"Can be granted the specific operational capabilities of Role (such as: "
+"viewing form templates, editing processes)"
 
 #: app/templates/pages/platform_help/org_admin.html:410
 msgid "基於角色的存取控制。權限不直接授予帳號，而是授予角色，帳號透過持有角色間接獲得權限"
-msgstr "Access control based on Role. Permissions are not granted directly to the account, but to Role. The account obtains permissions indirectly by holding Role."
+msgstr ""
+"Access control based on Role. Permissions are not granted directly to the "
+"account, but to Role. The account obtains permissions indirectly by holding "
+"Role."
 
 #: app/templates/pages/platform_help/org_admin.html:415
 msgid "控制哪些帳號等級能看到哪些選單項目"
@@ -9438,7 +9725,9 @@ msgstr "Control which Roles are required to access a specific Menu page"
 
 #: app/templates/pages/platform_help/org_admin.html:425
 msgid "選單項目設定的最低權限代碼，使用者必須持有該權限才能看到選單"
-msgstr "The lowest permission code set by the Menu project. Users must have this permission to see Menu"
+msgstr ""
+"The lowest permission code set by the Menu project. Users must have this "
+"permission to see Menu"
 
 #: app/templates/pages/platform_help/org_admin.html:428
 msgid "企業隔離"
@@ -9446,7 +9735,9 @@ msgstr "Organization isolation"
 
 #: app/templates/pages/platform_help/org_admin.html:430
 msgid "不同企業的資料完全隔離，互不可見"
-msgstr "The data of different Organization are completely isolated and invisible to each other."
+msgstr ""
+"The data of different Organization are completely isolated and invisible to "
+"each other."
 
 #: app/templates/pages/platform_help/org_admin.html:433
 msgid "安全識別碼"
@@ -9454,23 +9745,34 @@ msgstr "Security ID"
 
 #: app/templates/pages/platform_help/org_admin.html:435
 msgid "系統內部用於識別資源的隨機字串，取代可猜測的流水號"
-msgstr "A random string used within the system to identify resources, replacing guessable serial numbers."
+msgstr ""
+"A random string used within the system to identify resources, replacing "
+"guessable serial numbers."
 
 #: app/templates/pages/platform_help/org_admin.html:440
 msgid "掛載在平台上的獨立功能單元（如表單流程、子系統開發），透過合約授權使用"
-msgstr "Independent functional units (such as form processes and subsystem development) mounted on the platform can be used through Contract authorization"
+msgstr ""
+"Independent functional units (such as form processes and subsystem "
+"development) mounted on the platform can be used through Contract "
+"authorization"
 
 #: app/templates/pages/platform_help/org_admin.html:445
 msgid "企業與模組之間的授權關係，包含有效期限"
-msgstr "The authorization relationship between Organization and the module, including the validity period"
+msgstr ""
+"The authorization relationship between Organization and the module, "
+"including the validity period"
 
 #: app/templates/pages/platform_help/org_admin.html:450
 msgid "系統自動記錄的操作歷史，用於事後追溯與合規"
-msgstr "The system automatically records the operation history for subsequent traceability and compliance."
+msgstr ""
+"The system automatically records the operation history for subsequent "
+"traceability and compliance."
 
 #: app/templates/pages/platform_help/org_admin.html:455
 msgid "/permissions/ 中的功能，自動檢查權限配置是否有遺漏或矛盾"
-msgstr "The function in /permissions/ automatically checks whether there are any omissions or contradictions in the permission configuration."
+msgstr ""
+"The function in /permissions/ automatically checks whether there are any "
+"omissions or contradictions in the permission configuration."
 
 #: app/templates/pages/platform_help/page_doc.html:3
 #, python-format
@@ -9677,8 +9979,7 @@ msgid "&lt; 返回個人資料"
 msgstr "&lt; Return to personal information"
 
 #: app/templates/pages/profile/edit.html:28
-#: app/templates/pages/profile/view.html:14
-#: app/templates/pages/users/view.html:34
+#: app/templates/pages/profile/view.html:14 app/templates/pages/users/view.html:34
 msgid "帳號 (Email)"
 msgstr "Account (Email)"
 
@@ -9780,8 +10081,7 @@ msgid "了解更多"
 msgstr "Learn more"
 
 #: app/templates/pages/roles/create.html:3
-#: app/templates/pages/roles/create.html:11
-#: app/templates/pages/roles/list.html:18
+#: app/templates/pages/roles/create.html:11 app/templates/pages/roles/list.html:18
 msgid "新增角色"
 msgstr "Add Role"
 
@@ -9809,8 +10109,7 @@ msgstr "Such as: project manager, business supervisor"
 msgid "輸入名稱後會自動產生代碼建議"
 msgstr "Code suggestions will automatically be generated after entering the name."
 
-#: app/templates/pages/roles/create.html:48
-#: app/templates/pages/roles/edit.html:30
+#: app/templates/pages/roles/create.html:48 app/templates/pages/roles/edit.html:30
 #: app/templates/pages/roles/view.html:20
 msgid "角色代碼"
 msgstr "Role Code"
@@ -9830,66 +10129,76 @@ msgstr "Suggested code:"
 
 #: app/templates/pages/roles/create.html:82
 msgid "格式：大寫英文、數字、底線，開頭必須是英文。如 PROJECT_MANAGER"
-msgstr "Format: uppercase English, numbers, underline, the beginning must be in English. Such as PROJECT_MANAGER"
+msgstr ""
+"Format: uppercase English, numbers, underline, the beginning must be in "
+"English. Such as PROJECT_MANAGER"
 
-#: app/templates/pages/roles/create.html:94
-#: app/templates/pages/roles/edit.html:53
+#: app/templates/pages/roles/create.html:94 app/templates/pages/roles/edit.html:53
 msgid "角色 (通用)"
 msgstr "Role (general)"
 
-#: app/templates/pages/roles/create.html:95
-#: app/templates/pages/roles/edit.html:53
+#: app/templates/pages/roles/create.html:95 app/templates/pages/roles/edit.html:53
 msgid "職位 (部門專用)"
 msgstr "Position (exclusively for Department)"
 
 #: app/templates/pages/roles/create.html:98
 msgid "職位用於部門內職務（如主管、專員），角色用於通用權限（如表單審核者）"
-msgstr "Positions are used for Duty within Department (such as supervisors, specialists), and Role are used for general permissions (such as form reviewers)"
+msgstr ""
+"Positions are used for Duty within Department (such as supervisors, "
+"specialists), and Role are used for general permissions (such as form "
+"reviewers)"
 
 #: app/templates/pages/roles/create.html:99
 msgid "外部廠商只能指派角色，不能擔任職位"
 msgstr "External Vendor can only assign Role and cannot hold positions"
 
 #: app/templates/pages/roles/create.html:106
-#: app/templates/pages/roles/edit.html:58
-#: app/templates/pages/roles/list.html:51
+#: app/templates/pages/roles/edit.html:58 app/templates/pages/roles/list.html:51
 #: app/templates/pages/roles/view.html:32
 msgid "適用範圍"
 msgstr "Scope of application"
 
 #: app/templates/pages/roles/create.html:109
-#: app/templates/pages/roles/edit.html:60
-#: app/templates/pages/roles/list.html:80
+#: app/templates/pages/roles/edit.html:60 app/templates/pages/roles/list.html:80
 #: app/templates/pages/roles/view.html:34
 msgid "全企業"
 msgstr "Full Organization"
 
 #: app/templates/pages/roles/create.html:112
-#: app/templates/pages/roles/edit.html:63
-#: app/templates/pages/roles/list.html:83
+#: app/templates/pages/roles/edit.html:63 app/templates/pages/roles/list.html:83
 #: app/templates/pages/roles/view.html:37
 msgid "外部人員"
 msgstr "outsiders"
 
 #: app/templates/pages/roles/create.html:116
 msgid "此角色可在企業任何地方指派（如：表單審核者、公告管理員）"
-msgstr "This Role can be assigned anywhere in Organization (such as: form reviewer, announcement administrator)"
+msgstr ""
+"This Role can be assigned anywhere in Organization (such as: form reviewer, "
+"announcement administrator)"
 
 #: app/templates/pages/roles/create.html:119
 msgid "此角色只能在部門內指派（如：部門主管、部門秘書）"
-msgstr "This Role can only be assigned within Department (for example: Department supervisor, Department secretary)"
+msgstr ""
+"This Role can only be assigned within Department (for example: Department "
+"supervisor, Department secretary)"
 
 #: app/templates/pages/roles/create.html:122
 msgid "此角色只能在社群內指派（如：社群團長、專案召集人）"
-msgstr "This Role can only be assigned within Group (for example: Group team leader, project convener)"
+msgstr ""
+"This Role can only be assigned within Group (for example: Group team leader,"
+" project convener)"
 
 #: app/templates/pages/roles/create.html:125
 msgid "此角色僅限外部人員（非雇傭關係，受限存取）"
-msgstr "This Role is limited to external personnel (non-employment relationship, limited access)"
+msgstr ""
+"This Role is limited to external personnel (non-employment relationship, "
+"limited access)"
 
 #: app/templates/pages/roles/create.html:129
 msgid "註：這是角色的「指派範圍」，不是權限範圍。權限需另外設定。"
-msgstr "Note: This is the \"assignment scope\" of Role, not the authority scope. Permissions need to be set separately."
+msgstr ""
+"Note: This is the \"assignment scope\" of Role, not the authority scope. "
+"Permissions need to be set separately."
 
 #: app/templates/pages/roles/create.html:142
 #: app/templates/pages/roles/edit.html:75
@@ -9939,8 +10248,7 @@ msgstr "System Role cannot modify the name"
 msgid "使用此角色的用戶"
 msgstr "Users using this Role"
 
-#: app/templates/pages/roles/edit.html:142
-#: app/templates/pages/roles/list.html:90
+#: app/templates/pages/roles/edit.html:142 app/templates/pages/roles/list.html:90
 #, python-format
 msgid "%(count)s 人"
 msgstr "%(count)s people"
@@ -9949,8 +10257,7 @@ msgstr "%(count)s people"
 msgid "目前沒有用戶使用此角色"
 msgstr "There are currently no users using this Role"
 
-#: app/templates/pages/roles/edit.html:178
-#: app/templates/pages/roles/list.html:115
+#: app/templates/pages/roles/edit.html:178 app/templates/pages/roles/list.html:115
 msgid "警告："
 msgstr "Warning:"
 
@@ -9960,7 +10267,9 @@ msgstr "This Role currently has"
 
 #: app/templates/pages/roles/edit.html:178
 msgid "位用戶使用中。刪除後這些用戶將失去此角色的權限。"
-msgstr "Currently in use by users. After deletion, these users will lose the permissions of this Role."
+msgstr ""
+"Currently in use by users. After deletion, these users will lose the "
+"permissions of this Role."
 
 #: app/templates/pages/roles/edit.html:182
 #, python-format
@@ -9979,8 +10288,7 @@ msgstr "Delete Selected"
 msgid "使用中"
 msgstr "In use"
 
-#: app/templates/pages/roles/list.html:78
-#: app/templates/pages/roles/view.html:29
+#: app/templates/pages/roles/list.html:78 app/templates/pages/roles/view.html:29
 msgid "職位"
 msgstr "Position"
 
@@ -10014,7 +10322,9 @@ msgstr "Among them"
 
 #: app/templates/pages/roles/list.html:115
 msgid "個角色有用戶使用中。刪除後這些用戶將失去相應角色的權限。"
-msgstr "There are users using Role. After deletion, these users will lose the corresponding permissions of Role."
+msgstr ""
+"There are users using Role. After deletion, these users will lose the "
+"corresponding permissions of Role."
 
 #: app/templates/pages/roles/view.html:3
 msgid "角色詳情"
@@ -10054,7 +10364,9 @@ msgstr "Such as: FW-01 (192.168.1.254)"
 
 #: app/templates/pages/security/_api_keys_modals.html:15
 msgid "標示這把 Key 由哪個外部系統/裝置持有，發動的表單會以此顯示來源"
-msgstr "Indicates which external system/device this Key is held by. The launched form will display the source accordingly."
+msgstr ""
+"Indicates which external system/device this Key is held by. The launched "
+"form will display the source accordingly."
 
 #: app/templates/pages/security/_api_keys_modals.html:22
 msgid "使用期限"
@@ -10074,11 +10386,15 @@ msgstr "One line per line, supports CIDR, such as 192.168.1.254 or 10.0.0.0/24"
 
 #: app/templates/pages/security/_api_keys_modals.html:30
 msgid "留空 = 不鎖 IP（動態 IP 場景建議留空，改以暫停 Key 做處置）"
-msgstr "Leave it blank = do not lock the IP (it is recommended to leave it blank in dynamic IP scenarios, and suspend the Key for processing instead)"
+msgstr ""
+"Leave it blank = do not lock the IP (it is recommended to leave it blank in "
+"dynamic IP scenarios, and suspend the Key for processing instead)"
 
 #: app/templates/pages/security/_api_keys_modals.html:34
 msgid "授權範圍 - 表單分類（勾選父分類即涵蓋其子分類）"
-msgstr "Authorization Scope - Form Category (Check the parent category to cover its subcategories)"
+msgstr ""
+"Authorization Scope - Form Category (Check the parent category to cover its "
+"subcategories)"
 
 #: app/templates/pages/security/_api_keys_modals.html:47
 msgid "（無分類資料）"
@@ -10094,7 +10410,9 @@ msgstr "(No issued form)"
 
 #: app/templates/pages/security/_api_keys_modals.html:71
 msgid "授權範圍 - 資安事件接收（OpenDefense intake，選填）"
-msgstr "Authorization scope - information security incident reception (OpenDefense intake, optional)"
+msgstr ""
+"Authorization scope - information security incident reception (OpenDefense "
+"intake, optional)"
 
 #: app/templates/pages/security/_api_keys_modals.html:73
 msgid "允許的 source_system，每行一個（如 suricata、coraza）"
@@ -10102,7 +10420,9 @@ msgstr "Allowed source_system, one per line (e.g. suricata, coraza)"
 
 #: app/templates/pages/security/_api_keys_modals.html:74
 msgid "填寫後此 Key 可推送資安事件至 /api/open_defense/intake，source_system 必須在此清單"
-msgstr "After filling in, this Key can push information security events to /api/open_defense/intake, source_system must be in this list"
+msgstr ""
+"After filling in, this Key can push information security events to "
+"/api/open_defense/intake, source_system must be in this list"
 
 #: app/templates/pages/security/_api_keys_modals.html:78
 msgid "綁定申請人（專用系統帳號）"
@@ -10114,7 +10434,9 @@ msgstr "Not bound (applicant displays user tag)"
 
 #: app/templates/pages/security/_api_keys_modals.html:86
 msgid "綁定後，發動的表單以此帳號為申請人，簽核鏈身分清楚"
-msgstr "After binding, the form launched will use this account as the applicant, and the identity of the approval chain will be clear."
+msgstr ""
+"After binding, the form launched will use this account as the applicant, and"
+" the identity of the approval chain will be clear."
 
 #: app/templates/pages/security/_api_keys_modals.html:100
 msgid "API Key 已建立"
@@ -10122,12 +10444,19 @@ msgstr "API Key has been established"
 
 #: app/templates/pages/security/_api_keys_modals.html:102
 msgid "Secret 僅顯示這一次，關閉後無法再查看。請立即複製並安全交付給外部系統。"
-msgstr "The Secret is only displayed once and cannot be viewed again after closing. Please copy immediately and securely deliver to an external system."
+msgstr ""
+"The Secret is only displayed once and cannot be viewed again after closing. "
+"Please copy immediately and securely deliver to an external system."
 
 #: app/templates/pages/security/_api_keys_modals.html:111
 #, python-brace-format
-msgid "簽章方式：HMAC-SHA256(secret, \"{timestamp}\\n{body}\")，headers：X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature。詳見 docs/API_KEY_TRIGGER_SPEC.md。"
-msgstr "Signature method: HMAC-SHA256(secret, \"{timestamp}\\n{body}\"), headers: X-BP-Key-Id / X-BP-Timestamp / X-BP-Signature. See docs/API_KEY_TRIGGER_SPEC.md for details."
+msgid ""
+"簽章方式：HMAC-SHA256(secret, \"{timestamp}\\n{body}\")，headers：X-BP-Key-Id / X"
+"-BP-Timestamp / X-BP-Signature。詳見 docs/API_KEY_TRIGGER_SPEC.md。"
+msgstr ""
+"Signature method: HMAC-SHA256(secret, \"{timestamp}\\n{body}\"), headers: X"
+"-BP-Key-Id / X-BP-Timestamp / X-BP-Signature. See "
+"docs/API_KEY_TRIGGER_SPEC.md for details."
 
 #: app/templates/pages/security/_api_keys_modals.html:118
 msgid "我已保存，關閉"
@@ -10139,7 +10468,10 @@ msgstr "Suspend API Key"
 
 #: app/templates/pages/security/_api_keys_modals.html:128
 msgid "暫停後外部系統立即無法使用此 Key（回 401），可隨時復原。疑似 Key 遭盜用時的首選處置。"
-msgstr "After the suspension, the external system cannot use this Key immediately (returns to 401), and can be restored at any time. The first choice when the Key is suspected to have been stolen."
+msgstr ""
+"After the suspension, the external system cannot use this Key immediately "
+"(returns to 401), and can be restored at any time. The first choice when the"
+" Key is suspected to have been stolen."
 
 #: app/templates/pages/security/_api_keys_modals.html:131
 msgid "暫停原因"
@@ -10147,7 +10479,9 @@ msgstr "Suspension Reason"
 
 #: app/templates/pages/security/_api_keys_modals.html:133
 msgid "如：來源 IP 異常，疑似外洩，待查證"
-msgstr "For example: the source IP is abnormal and is suspected to be leaked. It needs to be verified."
+msgstr ""
+"For example: the source IP is abnormal and is suspected to be leaked. It "
+"needs to be verified."
 
 #: app/templates/pages/security/_api_keys_modals.html:137
 msgid "確認暫停"
@@ -10225,6 +10559,7 @@ msgstr "All members have signed in"
 msgid "尚無緊急廣播記錄"
 msgstr "No emergency broadcast recorded yet"
 
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:15
 #: app/templates/pages/security/api_keys.html:3
 #: app/templates/pages/security/api_keys.html:13
 msgid "API Key 管理"
@@ -10232,7 +10567,10 @@ msgstr "API Key management"
 
 #: app/templates/pages/security/api_keys.html:15
 msgid "外部系統以 HMAC 簽章發動表單流程的專屬金鑰。每個外部系統/裝置一把 Key，來源清楚可稽核。"
-msgstr "Exclusive key for external systems to launch form processes with HMAC signatures. Each external system/device has a key, and the source is clear and auditable."
+msgstr ""
+"Exclusive key for external systems to launch form processes with HMAC "
+"signatures. Each external system/device has a key, and the source is clear "
+"and auditable."
 
 #: app/templates/pages/security/api_keys.html:18
 msgid "建立 API Key"
@@ -10254,6 +10592,7 @@ msgstr "IP lock"
 msgid "期限"
 msgstr "term"
 
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:35
 #: app/templates/pages/security/api_keys.html:32
 msgid "最後使用"
 msgstr "last used"
@@ -10266,6 +10605,8 @@ msgstr "Suspend"
 msgid "復原"
 msgstr "Restore"
 
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:100
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:64
 #: app/templates/pages/security/api_keys.html:66
 msgid "撤銷"
 msgstr "Revoke"
@@ -10311,6 +10652,7 @@ msgstr "total number of failures"
 msgid "涉及帳號"
 msgstr "Account involved"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: app/templates/pages/security/login_failures.html:102
 msgid "來源 IP"
 msgstr "Source IP"
@@ -10341,7 +10683,9 @@ msgstr "Rate limit setting"
 
 #: app/templates/pages/security/org_rate_limits.html:56
 msgid "設定本企業認證頁面的 POST 嘗試頻率上限。未設定時使用系統預設值。"
-msgstr "Set the upper limit of POST attempt frequency for this Organization authentication page. If not set, the system default will be used."
+msgstr ""
+"Set the upper limit of POST attempt frequency for this Organization "
+"authentication page. If not set, the system default will be used."
 
 #: app/templates/pages/security/org_rate_limits.html:71
 msgid "(企業自訂)"
@@ -10369,13 +10713,18 @@ msgstr "Save"
 
 #: app/templates/pages/security/org_rate_limits.html:109
 msgid "限制以「帳號 + 來源 IP」計算，同企業不同帳號互不影響。清空欄位並儲存即可恢復系統預設。"
-msgstr "The limit is calculated based on \"account + source IP\", and different accounts with Organization will not affect each other. Clear the field and save to restore the system defaults."
+msgstr ""
+"The limit is calculated based on \"account + source IP\", and different "
+"accounts with Organization will not affect each other. Clear the field and "
+"save to restore the system defaults."
 
 #: app/templates/pages/server_manage/redis_monitor.html:3
 #: app/templates/pages/server_manage/redis_monitor.html:14
 msgid "Redis 監看"
 msgstr "Redis Monitor"
 
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:16
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:16
 #: app/templates/pages/server_manage/redis_monitor.html:20
 #: app/templates/pages/server_manage/redis_monitor.html:201
 msgid "重新整理"
@@ -10453,8 +10802,7 @@ msgstr "instructions"
 msgid "Redis INFO 完整輸出（結構化顯示）"
 msgstr "Redis INFO complete output (structured display)"
 
-#: app/templates/pages/store/index.html:3
-#: app/templates/pages/store/index.html:11
+#: app/templates/pages/store/index.html:3 app/templates/pages/store/index.html:11
 msgid "內部商場"
 msgstr "internal mall"
 
@@ -10538,7 +10886,9 @@ msgstr "Delete Account"
 #: app/templates/pages/sys_accounts/edit.html:108
 #: app/templates/pages/sys_accounts/list.html:203
 msgid "刪除此系統管理員帳號將無法復原，請謹慎操作。"
-msgstr "Deleting this System Administrator account will not be possible to recover, please proceed with caution."
+msgstr ""
+"Deleting this System Administrator account will not be possible to recover, "
+"please proceed with caution."
 
 #: app/templates/pages/sys_accounts/edit.html:127
 msgid "密碼變更時間"
@@ -10591,8 +10941,7 @@ msgstr "Login format: username@%(org_code)s"
 msgid "可使用任何 Email (含 Gmail 等公共信箱)"
 msgstr "Any Email (including Gmail and other public mailboxes) can be used"
 
-#: app/templates/pages/units/create.html:7
-#: app/templates/pages/units/view.html:7
+#: app/templates/pages/units/create.html:7 app/templates/pages/units/view.html:7
 msgid "&lt; 返回組織單位列表"
 msgstr "&lt; returns the list of organizational units"
 
@@ -10606,10 +10955,11 @@ msgstr "For example: SALES, HR, IT"
 
 #: app/templates/pages/units/create.html:33
 msgid "代碼會自動轉為大寫，建議使用英文縮寫"
-msgstr "The code will be automatically converted to uppercase, and it is recommended to use English abbreviations."
+msgstr ""
+"The code will be automatically converted to uppercase, and it is recommended"
+" to use English abbreviations."
 
-#: app/templates/pages/units/create.html:37
-#: app/templates/pages/units/edit.html:32
+#: app/templates/pages/units/create.html:37 app/templates/pages/units/edit.html:32
 msgid "單位名稱 *"
 msgstr "Unit name *"
 
@@ -10617,14 +10967,12 @@ msgstr "Unit name *"
 msgid "例如: 業務部、人力資源部"
 msgstr "For example: Business Department, Human Resources Department"
 
-#: app/templates/pages/units/create.html:41
-#: app/templates/pages/units/edit.html:36
+#: app/templates/pages/units/create.html:41 app/templates/pages/units/edit.html:36
 #: app/templates/pages/units/view.html:34
 msgid "上層單位"
 msgstr "Upper unit"
 
-#: app/templates/pages/units/create.html:44
-#: app/templates/pages/units/edit.html:39
+#: app/templates/pages/units/create.html:44 app/templates/pages/units/edit.html:39
 #: app/templates/pages/units/view.html:39
 msgid "(根層級)"
 msgstr "(Root level)"
@@ -10642,8 +10990,7 @@ msgstr "Edit %(name)s"
 msgid "&lt; 返回單位詳情"
 msgstr "&lt; Return to unit details"
 
-#: app/templates/pages/units/edit.html:28
-#: app/templates/pages/units/view.html:18
+#: app/templates/pages/units/edit.html:28 app/templates/pages/units/view.html:18
 msgid "單位代碼"
 msgstr "Unit Code"
 
@@ -10655,8 +11002,7 @@ msgstr "(Cannot be modified)"
 msgid "啟用此單位"
 msgstr "Enable this organization"
 
-#: app/templates/pages/units/edit.html:72
-#: app/templates/pages/units/edit.html:76
+#: app/templates/pages/units/edit.html:72 app/templates/pages/units/edit.html:76
 msgid "刪除單位"
 msgstr "Delete Unit"
 
@@ -10745,15 +11091,18 @@ msgstr "Formal name used on documents and procedures"
 
 #: app/templates/pages/users/create.html:69
 msgid "帳號與 Email 的名稱來源，非 CJK 姓名可直接輸入"
-msgstr "The source of the account number and Email, non-CJK names can be entered directly"
+msgstr ""
+"The source of the account number and Email, non-CJK names can be entered "
+"directly"
 
 #: app/templates/pages/users/create.html:107
 msgid "留空將自動產生強化密碼（後續透過通知信件寄送）"
-msgstr "Leave this blank and a strengthened password will be automatically generated (sent via notification email later)"
+msgstr ""
+"Leave this blank and a strengthened password will be automatically generated"
+" (sent via notification email later)"
 
 #: app/templates/pages/users/create.html:150
-#: app/templates/pages/users/edit.html:169
-#: app/templates/pages/users/view.html:61
+#: app/templates/pages/users/edit.html:169 app/templates/pages/users/view.html:61
 msgid "組織資訊"
 msgstr "Organization information"
 
@@ -10772,11 +11121,15 @@ msgstr "Select Department"
 
 #: app/templates/pages/users/create.html:173
 msgid "選擇用戶所屬部門（點擊展開組織樹）"
-msgstr "Select Department to which the user belongs (click to expand the organization tree)"
+msgstr ""
+"Select Department to which the user belongs (click to expand the "
+"organization tree)"
 
 #: app/templates/pages/users/create.html:187
 msgid "預設遮罩處理本國姓名，避免螢幕旁的窺視者識別身份或推測登入帳號"
-msgstr "The default mask handles national names to prevent peepers next to the screen from identifying the identity or guessing the login account"
+msgstr ""
+"The default mask handles national names to prevent peepers next to the "
+"screen from identifying the identity or guessing the login account"
 
 #: app/templates/pages/users/create.html:200
 #: app/templates/pages/users/create.html:217
@@ -10791,7 +11144,9 @@ msgstr "Leave blank to use account number Email"
 
 #: app/templates/pages/users/create.html:228
 msgid "系統通知發送地址，留空自動使用帳號 Email"
-msgstr "System notification sending address, leave it blank to automatically use the account number Email"
+msgstr ""
+"System notification sending address, leave it blank to automatically use the"
+" account number Email"
 
 #: app/templates/pages/users/create.html:232
 #: app/templates/pages/users/import.html:150
@@ -10822,8 +11177,7 @@ msgstr "Edit User - %(name)s"
 msgid "&lt; 返回首頁"
 msgstr "&lt; Return to home page"
 
-#: app/templates/pages/users/edit.html:19
-#: app/templates/pages/users/import.html:69
+#: app/templates/pages/users/edit.html:19 app/templates/pages/users/import.html:69
 #: app/templates/pages/users/view.html:12
 msgid "&lt; 返回用戶列表"
 msgstr "&lt; Return to user list"
@@ -10834,7 +11188,10 @@ msgstr "Edit user"
 
 #: app/templates/pages/users/edit.html:38
 msgid "企業管理員已關閉「允許用戶修改個人資料」功能，目前您只能檢視資料。如需修改請聯繫管理員。"
-msgstr "Organization Admin has turned off the \"Allow users to modify personal information\" function. Currently you can only view the information. If you need to modify it, please contact the administrator."
+msgstr ""
+"Organization Admin has turned off the \"Allow users to modify personal "
+"information\" function. Currently you can only view the information. If you "
+"need to modify it, please contact the administrator."
 
 #: app/templates/pages/users/edit.html:51
 msgid "帳號不可變更"
@@ -10862,7 +11219,9 @@ msgstr "Used to calculate working hours"
 
 #: app/templates/pages/users/edit.html:226
 msgid "遮罩處理的姓名，避免螢幕旁的窺視者識別身份或推測登入帳號"
-msgstr "Masked names to prevent prying eyes at the screen from identifying the identity or guessing the login account"
+msgstr ""
+"Masked names to prevent prying eyes at the screen from identifying the "
+"identity or guessing the login account"
 
 #: app/templates/pages/users/edit.html:283
 msgid "留空則使用企業預設時區"
@@ -10942,6 +11301,7 @@ msgstr "Start importing"
 msgid "企業成員管理"
 msgstr "Employee Management"
 
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:16
 #: app/templates/pages/users/list.html:12
 msgid "新增帳號"
 msgstr "Add Account"
@@ -10960,7 +11320,9 @@ msgstr "This page manages regular user accounts."
 
 #: app/templates/pages/users/list.html:31
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
-msgstr "Organization admins should be managed in \"Organization Admin Accounts\", external members in \"External Member Accounts\"."
+msgstr ""
+"Organization admins should be managed in \"Organization Admin Accounts\", "
+"external members in \"External Member Accounts\"."
 
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
@@ -10989,11 +11351,15 @@ msgstr "This page only shows regular user accounts"
 
 #: app/templates/pages/users/list.html:106
 msgid "企業管理員帳號請至「帳號管理 > 企業管理員帳號」管理"
-msgstr "Organization admin accounts should be managed in \"Account Management > Organization Admin Accounts\""
+msgstr ""
+"Organization admin accounts should be managed in \"Account Management > "
+"Organization Admin Accounts\""
 
 #: app/templates/pages/users/list.html:107
 msgid "外部廠商帳號請至「帳號管理 > 外部廠商帳號」管理"
-msgstr "External member accounts should be managed in \"Account Management > External Member Accounts\""
+msgstr ""
+"External member accounts should be managed in \"Account Management > "
+"External Member Accounts\""
 
 #: app/templates/pages/users/list.html:108
 msgid "停用的用戶無法登入系統"
@@ -11052,7 +11418,9 @@ msgstr "The user already has the \"%(role)s\" role"
 #: app/web/account_roles.py:335
 #, python-format
 msgid "無法指派「%(role)s」：與現有角色「%(conflict)s」互斥，請先移除後再指派"
-msgstr "Cannot assign \"%(role)s\": mutually exclusive with existing role \"%(conflict)s\". Please remove it first"
+msgstr ""
+"Cannot assign \"%(role)s\": mutually exclusive with existing role "
+"\"%(conflict)s\". Please remove it first"
 
 #: app/web/account_roles.py:353
 #, python-format
@@ -11154,13 +11522,12 @@ msgstr "Invalid effective end date format"
 msgid "生效開始日期不能晚於結束日期"
 msgstr "Effective start date cannot be later than the end date"
 
-#: app/web/delegations.py:115 app/web/job_levels.py:121
-#: app/web/job_levels.py:239
+#: app/web/delegations.py:115 app/web/job_levels.py:121 app/web/job_levels.py:239
 msgid "簽核金額上限不可為負數"
 msgstr "Approval amount limit cannot be negative"
 
-#: app/web/delegations.py:117 app/web/delegations.py:214
-#: app/web/job_levels.py:123 app/web/job_levels.py:241
+#: app/web/delegations.py:117 app/web/delegations.py:214 app/web/job_levels.py:123
+#: app/web/job_levels.py:241
 msgid "簽核金額上限格式錯誤"
 msgstr "Invalid approval amount limit format"
 
@@ -11182,7 +11549,9 @@ msgstr "Delegation deleted"
 
 #: app/web/external_users.py:190
 msgid "尚未設定「外部廠商」預設編號規則，請先到「用戶編號規則」頁面設定。"
-msgstr "No default numbering rule for \"External Vendors\" has been set. Please configure it on the \"User Numbering Rules\" page first."
+msgstr ""
+"No default numbering rule for \"External Vendors\" has been set. Please "
+"configure it on the \"User Numbering Rules\" page first."
 
 #: app/web/external_users.py:219
 msgid "姓名、Email、密碼為必填"
@@ -11203,7 +11572,9 @@ msgstr "Email %(email)s already exists"
 
 #: app/web/external_users.py:243
 msgid "找不到外部廠商預設編號規則，請先設定"
-msgstr "Default numbering rule for external vendors not found. Please configure it first"
+msgstr ""
+"Default numbering rule for external vendors not found. Please configure it "
+"first"
 
 #: app/web/external_users.py:254
 #, python-format
@@ -11292,8 +11663,7 @@ msgid "已刪除外部廠商 %(name)s"
 msgstr "External vendor %(name)s deleted"
 
 #: app/web/external_users.py:679 app/web/main.py:223
-#: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582
-#: app/web/users.py:742
+#: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582 app/web/users.py:742
 msgid "請輸入新密碼"
 msgstr "Please enter a new password"
 
@@ -11342,8 +11712,8 @@ msgstr "Job family name is required"
 msgid "職系類型無效"
 msgstr "Invalid job family type"
 
-#: app/web/job_families.py:163 app/web/job_levels.py:137
-#: app/web/job_titles.py:220 app/web/menu.py:270 app/web/menu.py:355
+#: app/web/job_families.py:163 app/web/job_levels.py:137 app/web/job_titles.py:220
+#: app/web/menu.py:270 app/web/menu.py:355
 msgid "無法自動產生代碼，請手動輸入"
 msgstr "Failed to auto-generate code. Please enter it manually"
 
@@ -11387,7 +11757,9 @@ msgstr "This job family has %(count)s child families. Please delete them first"
 #: app/web/job_families.py:341
 #, python-format
 msgid "此職系有 %(count)s 個職稱使用中，需連同職稱一併刪除"
-msgstr "This job family has %(count)s job titles in use; they must be deleted together"
+msgstr ""
+"This job family has %(count)s job titles in use; they must be deleted "
+"together"
 
 #: app/web/job_families.py:364
 #, python-format
@@ -11425,8 +11797,8 @@ msgstr "Job level code %(code)s already exists"
 msgid "已建立職等 %(name)s"
 msgstr "Job level %(name)s created"
 
-#: app/web/job_levels.py:201 app/web/job_levels.py:290
-#: app/web/job_levels.py:338 app/web/job_levels.py:449
+#: app/web/job_levels.py:201 app/web/job_levels.py:290 app/web/job_levels.py:338
+#: app/web/job_levels.py:449
 msgid "職等不存在"
 msgstr "Job level not found"
 
@@ -11437,7 +11809,9 @@ msgstr "Job level updated"
 #: app/web/job_levels.py:305
 #, python-format
 msgid "此職等有 %(count)s 個職稱使用中，請先移除關聯"
-msgstr "This job level has %(count)s job titles in use. Please remove the associations first"
+msgstr ""
+"This job level has %(count)s job titles in use. Please remove the "
+"associations first"
 
 #: app/web/job_levels.py:318 app/web/job_levels.py:320
 #, python-format
@@ -11448,8 +11822,7 @@ msgstr "Job level %(name)s deleted"
 msgid "缺少職稱代碼"
 msgstr "Missing job title code"
 
-#: app/web/job_levels.py:439 app/web/job_titles.py:288
-#: app/web/job_titles.py:368
+#: app/web/job_levels.py:439 app/web/job_titles.py:288 app/web/job_titles.py:368
 msgid "職稱不存在"
 msgstr "Job title not found"
 
@@ -11491,7 +11864,9 @@ msgstr "System default job titles cannot be deleted"
 #: app/web/job_titles.py:382
 #, python-format
 msgid "此職稱有 %(count)s 位企業成員使用中，請先移除關聯"
-msgstr "This job title is used by %(count)s employees. Please remove the associations first"
+msgstr ""
+"This job title is used by %(count)s employees. Please remove the "
+"associations first"
 
 #: app/web/job_titles.py:393
 #, python-format
@@ -11554,7 +11929,9 @@ msgstr " and %(count)s items in total"
 #: app/web/menu.py:536
 #, python-format
 msgid "無法刪除：子項目中包含預設選單（%(names)s），請先將其移出"
-msgstr "Cannot delete: child items contain default menus (%(names)s). Please move them out first"
+msgstr ""
+"Cannot delete: child items contain default menus (%(names)s). Please move "
+"them out first"
 
 #: app/web/menu.py:548
 #, python-format
@@ -11599,7 +11976,9 @@ msgstr "Module %(name)s deleted"
 #: app/web/numbering.py:202
 #, python-format
 msgid "無法刪除%(label)s規則，請先在編輯頁面取消預設設定"
-msgstr "Cannot delete the %(label)s rule. Please unset it as default on the edit page first"
+msgstr ""
+"Cannot delete the %(label)s rule. Please unset it as default on the edit "
+"page first"
 
 #: app/web/numbering.py:210
 #, python-format
@@ -11627,8 +12006,7 @@ msgstr "The passwords do not match"
 msgid "已重設 %(name)s 的密碼，並通知所有企業管理員"
 msgstr "Password of %(name)s reset; all organization admins notified"
 
-#: app/web/org_admin_rescue.py:178 app/web/org_admins.py:627
-#: app/web/users.py:758
+#: app/web/org_admin_rescue.py:178 app/web/org_admins.py:627 app/web/users.py:758
 #, python-format
 msgid "重設密碼失敗: %(error)s"
 msgstr "Password reset failed: %(error)s"
@@ -11648,8 +12026,13 @@ msgstr "Administrator account %(username)s already exists"
 
 #: app/web/org_admins.py:274
 #, python-format
-msgid "初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 %(admin_username)s。原始管理員已停用。請使用新的管理員帳號登入。"
-msgstr "Initial setup complete. Employee account %(username)s and administrator account %(admin_username)s created. The original administrator has been disabled. Please log in with the new administrator account."
+msgid ""
+"初始設定完成。已建立企業成員帳號 %(username)s 與管理員帳號 "
+"%(admin_username)s。原始管理員已停用。請使用新的管理員帳號登入。"
+msgstr ""
+"Initial setup complete. Employee account %(username)s and administrator "
+"account %(admin_username)s created. The original administrator has been "
+"disabled. Please log in with the new administrator account."
 
 #: app/web/org_admins.py:361
 msgid "請選擇要綁定的企業成員帳號"
@@ -11677,8 +12060,7 @@ msgstr ", default administrator %(username)s automatically disabled"
 msgid "已建立管理員 %(admin)s（綁定企業成員：%(employee)s）%(extra)s"
 msgstr "Administrator %(admin)s created (bound employee: %(employee)s)%(extra)s"
 
-#: app/web/org_admins.py:476 app/web/org_admins.py:521
-#: app/web/org_admins.py:562
+#: app/web/org_admins.py:476 app/web/org_admins.py:521 app/web/org_admins.py:562
 msgid "此帳號不是企業管理員"
 msgstr "This account is not an organization administrator"
 
@@ -11688,7 +12070,9 @@ msgstr "You cannot disable your own account"
 
 #: app/web/org_admins.py:486
 msgid "預設管理員帳號僅能由系統管理員啟用，請聯繫系統管理員"
-msgstr "The default administrator account can only be enabled by a system administrator. Please contact one"
+msgstr ""
+"The default administrator account can only be enabled by a system "
+"administrator. Please contact one"
 
 #: app/web/org_admins.py:500
 #, python-format
@@ -11712,7 +12096,9 @@ msgstr "Please use the \"Change Password\" function to change your own password"
 #: app/web/org_databases.py:138 app/web/org_databases.py:244
 #: app/web/org_databases.py:293
 msgid "憑證解密失敗，請檢查伺服器環境設定"
-msgstr "Credential decryption failed. Please check the server environment configuration"
+msgstr ""
+"Credential decryption failed. Please check the server environment "
+"configuration"
 
 #: app/web/org_databases.py:343
 msgid "企業資料庫不存在"
@@ -11724,7 +12110,9 @@ msgstr "Invalid table name format"
 
 #: app/web/org_databases.py:392
 msgid "企業資料庫不存在，可能尚未建立或已被移除"
-msgstr "Organization database not found; it may not have been created or has been removed"
+msgstr ""
+"Organization database not found; it may not have been created or has been "
+"removed"
 
 #: app/web/org_databases.py:393
 #, python-format
@@ -11792,7 +12180,9 @@ msgstr "Administrator password must be at least 12 characters"
 #: app/web/organizations.py:256
 #, python-format
 msgid "已建立企業 %(name)s（含 10 天試用合約），管理員帳號: %(admin_info)s"
-msgstr "Organization %(name)s created (with a 10-day trial contract). Administrator account: %(admin_info)s"
+msgstr ""
+"Organization %(name)s created (with a 10-day trial contract). Administrator "
+"account: %(admin_info)s"
 
 #: app/web/organizations.py:295
 msgid "企業名稱為必填"
@@ -11838,7 +12228,9 @@ msgstr "Disable failed: %(error)s"
 
 #: app/web/organizations.py:494
 msgid "合約建立後不可修改內容，如需變更請建立新合約"
-msgstr "Contracts cannot be modified after creation. Create a new contract for changes"
+msgstr ""
+"Contracts cannot be modified after creation. Create a new contract for "
+"changes"
 
 #: app/web/organizations.py:536
 #, python-format
@@ -12099,11 +12491,460 @@ msgstr "Row %(row)s: account %(username)s already exists"
 msgid "第 %(row)s 列: 企業成員編號 %(employee_id)s 已存在"
 msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
 
+#: ../modules/open_defense/api/decisions.py:81
+msgid "since 必須為 ISO-8601 字串"
+msgstr "since must be an ISO-8601 string"
+
+#: ../modules/open_defense/api/admin/decisions.py:86
+#, python-format
+msgid "只能撤銷 applied 狀態的決策(目前 %(status)s)"
+msgstr "Only decisions in applied status can be revoked (current: %(status)s)"
+
+#: ../modules/open_defense/api/admin/decisions.py:91
+msgid "unblock 決策無需再撤銷"
+msgstr "Unblock decisions do not need to be revoked again"
+
+#: ../modules/open_defense/api/admin/decisions.py:95
+msgid "人工手動撤銷"
+msgstr "Manual revocation"
+
+#: ../modules/open_defense/api/admin/intake_keys.py:17
+msgid "Intake key 已遷移至平台 API Key,請至 /security/api-keys/ 管理(scope: od_intake)"
+msgstr ""
+"Intake keys have been migrated to platform API Keys. Manage them at "
+"/security/api-keys/ (scope: od_intake)"
+
+#: ../modules/open_defense/schemas/intake.py:48
+msgid "body 必須為 JSON object"
+msgstr "body must be a JSON object"
+
+#: ../modules/open_defense/schemas/intake.py:54
+#: ../modules/open_defense/schemas/intake.py:60
+#: ../modules/open_defense/schemas/intake.py:91
+msgid "必填,字串"
+msgstr "required, string"
+
+#: ../modules/open_defense/schemas/intake.py:56
+msgid "長度 > 64"
+msgstr "length > 64"
+
+#: ../modules/open_defense/schemas/intake.py:62
+msgid "長度 > 50"
+msgstr "length > 50"
+
+#: ../modules/open_defense/schemas/intake.py:67
+#, python-format
+msgid "必須為 %(classes)s 之一"
+msgstr "must be one of %(classes)s"
+
+#: ../modules/open_defense/schemas/intake.py:71
+msgid "必填,ISO-8601 UTC 字串"
+msgstr "required, ISO-8601 UTC string"
+
+#: ../modules/open_defense/schemas/intake.py:75
+msgid "必填,int 0-6"
+msgstr "required, int 0-6"
+
+#: ../modules/open_defense/schemas/intake.py:77
+msgid "必須在 0-6 範圍"
+msgstr "must be in the 0-6 range"
+
+#: ../modules/open_defense/schemas/intake.py:82
+msgid "若提供須為 0-100 int"
+msgstr "if provided, must be an int from 0 to 100"
+
+#: ../modules/open_defense/schemas/intake.py:87
+msgid "必填,object"
+msgstr "required, object"
+
+#: ../modules/open_defense/schemas/intake.py:93
+msgid "長度 > 200"
+msgstr "length > 200"
+
+#: ../modules/open_defense/schemas/intake.py:99
+#: ../modules/open_defense/schemas/intake.py:102
+msgid "必須為 object"
+msgstr "must be an object"
+
+#: ../modules/open_defense/schemas/intake.py:108
+#, python-format
+msgid "event_class=%(event_class)s 時必填"
+msgstr "required when event_class=%(event_class)s"
+
+#: ../modules/open_defense/schemas/intake.py:113
+#: ../modules/open_defense/schemas/intake.py:116
+msgid "若提供須為 object"
+msgstr "if provided, must be an object"
+
+#: ../modules/open_defense/services/decision_service.py:35
+#, python-format
+msgid "action 不合法: %(action)r"
+msgstr "Invalid action: %(action)r"
+
+#: ../modules/open_defense/services/decision_service.py:37
+#, python-format
+msgid "target_type 不合法: %(target_type)r"
+msgstr "Invalid target_type: %(target_type)r"
+
+#: ../modules/open_defense/services/decision_service.py:39
+msgid "target_value 不可為空"
+msgstr "target_value cannot be empty"
+
+#: ../modules/open_defense/services/decision_service.py:41
+msgid "target_value 過長(>500)"
+msgstr "target_value is too long (>500)"
+
+#: ../modules/open_defense/services/decision_service.py:43
+#, python-format
+msgid "decided_via 不合法: %(decided_via)r"
+msgstr "Invalid decided_via: %(decided_via)r"
+
+#: ../modules/open_defense/services/decision_service.py:45
+#, python-format
+msgid "severity 不合法: %(severity)r"
+msgstr "Invalid severity: %(severity)r"
+
+#: ../modules/open_defense/services/decision_service.py:74
+#: ../modules/open_defense/services/intake_key_service.py:52
+#: ../modules/open_defense/services/service_account_service.py:116
+msgid "org_secure_code 必填"
+msgstr "org_secure_code is required"
+
+#: ../modules/open_defense/services/decision_service.py:79
+msgid "ttl_seconds 必須 > 0,或不傳"
+msgstr "ttl_seconds must be > 0 or omitted"
+
+#: ../modules/open_defense/services/decision_service.py:235
+#, python-format
+msgid "禁止由執行端寫入 %(target_status)r"
+msgstr "Executors are forbidden to write %(target_status)r"
+
+#: ../modules/open_defense/services/decision_service.py:240
+#, python-format
+msgid "不合法的目標狀態 %(target_status)r"
+msgstr "Invalid target status %(target_status)r"
+
+#: ../modules/open_defense/services/decision_service.py:250
+msgid "決策不存在或不屬於本 SA 的 org"
+msgstr "Decision does not exist or does not belong to this service account org"
+
+#: ../modules/open_defense/services/decision_service.py:256
+#, python-format
+msgid "從 %(status)r 不可轉至任何狀態(已結案)"
+msgstr "Cannot transition from %(status)r to any status (closed)"
+
+#: ../modules/open_defense/services/decision_service.py:261
+#, python-format
+msgid "不可從 %(status)r 轉至 %(target_status)r"
+msgstr "Cannot transition from %(status)r to %(target_status)r"
+
+#: ../modules/open_defense/services/decision_service.py:285
+msgid "決策已被其他執行端搶先拾起"
+msgstr "Decision was already picked up by another executor"
+
+#: ../modules/open_defense/services/intake_key_service.py:54
+#: ../modules/open_defense/services/service_account_service.py:118
+msgid "name 必填"
+msgstr "name is required"
+
+#: ../modules/open_defense/services/intake_key_service.py:56
+msgid "allowed_source_systems 必須為非空 list"
+msgstr "allowed_source_systems must be a non-empty list"
+
+#: ../modules/open_defense/services/intake_service.py:125
+#, python-format
+msgid "form template %(form_template_sc)s 不存在或不屬於本企業"
+msgstr ""
+"Form template %(form_template_sc)s does not exist or does not belong to this"
+" organization"
+
+#: ../modules/open_defense/services/intake_service.py:138
+#, python-format
+msgid "form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行"
+msgstr ""
+"Form template %(form_template_sc)s has no Published version. Publish it in "
+"the form designer first"
+
+#: ../modules/open_defense/services/intake_service.py:160
+msgid "工作流模板缺 Start 節點"
+msgstr "Workflow template is missing a Start node"
+
+#: ../modules/open_defense/services/intake_service.py:241
+msgid "開始"
+msgstr "Start"
+
+#: ../modules/open_defense/services/intake_service.py:287
+#, python-format
+msgid "source_system %(source_system)r 不在 key 允許清單"
+msgstr "source_system %(source_system)r is not in the key allowlist"
+
+#: ../modules/open_defense/services/intake_service.py:296
+#, python-format
+msgid ""
+"event_class %(event_class)r 在本企業無對應 form_template,請至 /open-defense/intake-"
+"keys 設定 mapping"
+msgstr ""
+"event_class %(event_class)r has no mapped form_template in this "
+"organization. Configure the mapping at /open-defense/intake-keys"
+
+#: ../modules/open_defense/services/intake_service.py:348
+#, python-format
+msgid "啟動 workflow 失敗: %(error)s"
+msgstr "Failed to start workflow: %(error)s"
+
+#: ../modules/open_defense/services/service_account_service.py:121
+msgid "allowed_enforcement_points 必須為 list"
+msgstr "allowed_enforcement_points must be a list"
+
+#: ../modules/open_defense/services/service_account_service.py:206
+#: ../modules/open_defense/services/service_account_service.py:226
+msgid "sa_id 或 secret 錯誤"
+msgstr "sa_id or secret is incorrect"
+
+#: ../modules/open_defense/services/service_account_service.py:211
+#, python-format
+msgid "帳號鎖定中,解鎖時間 %(unlock_time)s"
+msgstr "Account is locked. Unlock time: %(unlock_time)s"
+
+#: ../modules/open_defense/services/service_account_service.py:220
+msgid "secret 格式錯誤"
+msgstr "Invalid secret format"
+
+#: ../modules/open_defense/services/service_account_service.py:263
+msgid "token 為空"
+msgstr "token is empty"
+
+#: ../modules/open_defense/services/service_account_service.py:272
+msgid "token 已過期"
+msgstr "token has expired"
+
+#: ../modules/open_defense/services/service_account_service.py:274
+#, python-format
+msgid "token 無效: %(error)s"
+msgstr "Invalid token: %(error)s"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:2
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:13
+msgid "OpenDefense 儀表板"
+msgstr "OpenDefense Dashboard"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:14
+msgid "對外整合的安全堆疊狀態 / 決策流轉 / 金鑰管理總覽。"
+msgstr ""
+"Overview of external security stack status, decision flow, and key "
+"management."
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:22
+msgid "待執行(pending)"
+msgstr "Pending execution (pending)"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:26
+msgid "處理中(picked_up)"
+msgstr "In progress (picked_up)"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:30
+msgid "已落地(applied)"
+msgstr "Applied (applied)"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:34
+msgid "失敗(failed)"
+msgstr "Failed (failed)"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:38
+msgid "過期(expired)"
+msgstr "Expired (expired)"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:42
+msgid "今日收到事件"
+msgstr "Events received today"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:46
+msgid "今日簽發決策"
+msgstr "Decisions issued today"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:50
+msgid "啟用金鑰"
+msgstr "Active keys"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:54
+msgid "啟用執行端帳號"
+msgstr "Active executor accounts"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:60
+msgid "最近事件"
+msgstr "Recent events"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:61
+msgid "尚無事件"
+msgstr "No events yet"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
+msgid "國家"
+msgstr "Country"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:80
+msgid "待執行決策"
+msgstr "Pending decisions"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:81
+msgid "無待執行決策"
+msgstr "No pending decisions"
+
+#: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:56
+msgid "目標"
+msgstr "Target"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:2
+msgid "決策列表 - OpenDefense"
+msgstr "Decision List - OpenDefense"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:13
+msgid "防禦決策"
+msgstr "Defense Decisions"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:14
+msgid "所有經本平台簽發的決策。pending = 等執行端拉取;applied = 已落地;expired/revoked = 已結束。"
+msgstr ""
+"All decisions issued by this platform. pending = waiting for executor "
+"pickup; applied = enforced; expired/revoked = ended."
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:41
+msgid "目標包含"
+msgstr "Target contains"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:42
+msgid "如 203.0"
+msgstr "e.g. 203.0"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:50
+msgid "無資料"
+msgstr "No data"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:61
+msgid "執行方"
+msgstr "Executor"
+
+#: ../modules/open_defense/templates/modules/open_defense/decisions.html:83
+msgid "永久"
+msgstr "Permanent"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:2
+msgid "事件接收金鑰 - OpenDefense"
+msgstr "Intake Keys - OpenDefense"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:13
+msgid "事件接收金鑰(唯讀遺留)"
+msgstr "Intake Keys (read-only legacy)"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:14
+msgid "Intake key 已遷移至平台 API Key。建立/暫停/撤銷請至"
+msgstr ""
+"Intake keys have been migrated to platform API Keys. Create, suspend, and "
+"revoke them at"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:16
+msgid "本頁僅供比對遷移前資料,將於下一版本移除。"
+msgstr ""
+"This page is only for comparing pre-migration data and will be removed in "
+"the next version."
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:22
+msgid "金鑰列表"
+msgstr "Key List"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:26
+msgid "無遷移前的遺留金鑰"
+msgstr "No pre-migration legacy keys"
+
+#: ../modules/open_defense/templates/modules/open_defense/intake_keys.html:34
+msgid "過期"
+msgstr "Expired"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:2
+msgid "執行端帳號 - OpenDefense"
+msgstr "Executor Accounts - OpenDefense"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:13
+msgid "執行端帳號(Service Accounts)"
+msgstr "Executor Accounts (Service Accounts)"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:14
+msgid "外部執行端(CrowdSec / nftables / Cloudflare bridge 等)以此登入取得 JWT,拉取決策後落地實施。"
+msgstr ""
+"External executors (CrowdSec, nftables, Cloudflare bridge, etc.) use these "
+"accounts to obtain JWTs, pull decisions, and enforce them."
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:21
+msgid "帳號列表"
+msgstr "Account List"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:25
+msgid "尚無帳號,點右上角新增"
+msgstr "No accounts yet. Use Add in the upper right."
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:33
+msgid "失敗次數"
+msgstr "Failed attempts"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:63
+msgid "解鎖"
+msgstr "Unlock"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:75
+msgid "新增執行端帳號"
+msgstr "Add Executor Account"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:81
+msgid "如:sec-vm CrowdSec executor"
+msgstr "e.g. sec-vm CrowdSec executor"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:84
+msgid "SA ID 提示(選填)"
+msgstr "SA ID hint (optional)"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:85
+msgid "如:executor_secvm_01"
+msgstr "e.g. executor_secvm_01"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:86
+msgid "最終 sa_id 為"
+msgstr "Final sa_id is"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:86
+msgid "。空白則自動產生隨機 ID。"
+msgstr ". Leave blank to generate a random ID automatically."
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:89
+msgid "允許的 enforcement_points(可複選)"
+msgstr "Allowed enforcement_points (multiple selection)"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:97
+msgid "空白 = 允許拉取所有 EP 的決策。建議只勾本帳號實際會處理的。"
+msgstr ""
+"Blank = allow pulling decisions for all EPs. Select only what this account "
+"actually handles."
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:100
+msgid "帳號已建立 — 請立即複製 secret(僅顯示這一次)"
+msgstr "Account created - copy the secret now (shown only once)"
+
+#: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:107
+msgid "關閉視窗後 secret 無法再取得。"
+msgstr "The secret cannot be retrieved after this window is closed."
+
 #~ msgid "前往「%(link_start)s新增企業管理員%(link_end)s」，建立正式管理員並綁定該企業成員帳號"
-#~ msgstr "Go to \"%(link_start)sAdd Organization Admin%(link_end)s\" to create an admin and bind the employee account"
+#~ msgstr ""
+#~ "Go to \"%(link_start)sAdd Organization "
+#~ "Admin%(link_end)s\" to create an admin and"
+#~ " bind the employee account"
 
 #~ msgid "預設 admin 帳號容易被猜測攻擊，建議前往「%(link_start)s企業管理員%(link_end)s」頁面將其停用。"
-#~ msgstr "The default admin account is vulnerable to brute-force attacks. Please go to \"%(link_start)sOrganization Admins%(link_end)s\" to disable it."
+#~ msgstr ""
+#~ "The default admin account is vulnerable "
+#~ "to brute-force attacks. Please go to"
+#~ " \"%(link_start)sOrganization Admins%(link_end)s\" to "
+#~ "disable it."
 
 #~ msgid "快速連結"
 #~ msgstr "Quick Links"
@@ -12172,28 +13013,46 @@ msgstr "Row %(row)s: employee ID %(employee_id)s already exists"
 #~ msgstr "Are you sure you want to delete admin \"%(name)s\"?"
 
 #~ msgid "確定要刪除類別「%(name)s」嗎？此操作無法復原。"
-#~ msgstr "Are you sure you want to delete category \"%(name)s\"? This action cannot be undone."
+#~ msgstr ""
+#~ "Are you sure you want to delete "
+#~ "category \"%(name)s\"? This action cannot "
+#~ "be undone."
 
 #~ msgid "確定要刪除職系「%(name)s」及其 %(count)s 個職稱嗎？"
-#~ msgstr "Are you sure you want to delete Job Family \"%(name)s\" and its %(count)s Job Titles?"
+#~ msgstr ""
+#~ "Are you sure you want to delete "
+#~ "Job Family \"%(name)s\" and its %(count)s"
+#~ " Job Titles?"
 
 #~ msgid "確定要刪除職系「%(name)s」嗎？"
 #~ msgstr "Are you sure you want to delete Job Family \"%(name)s\"?"
 
 #~ msgid "確定要刪除此選單項目嗎？子項目也會一併刪除。"
-#~ msgstr "Are you sure you want to delete this menu item? Child items will also be deleted."
+#~ msgstr ""
+#~ "Are you sure you want to delete "
+#~ "this menu item? Child items will also"
+#~ " be deleted."
 
 #~ msgid "確定要刪除此模組嗎？相關頁面和選單也會一併刪除。"
-#~ msgstr "Are you sure you want to delete this mod? Related pages and Menu will also be deleted."
+#~ msgstr ""
+#~ "Are you sure you want to delete "
+#~ "this mod? Related pages and Menu will"
+#~ " also be deleted."
 
 #~ msgid "確定要%(action)s管理員「%(name)s」嗎？"
 #~ msgstr "Are you sure you want to %(action)s admin \"%(name)s\"?"
 
 #~ msgid "確定要停用合約「%(number)s」嗎？停用後不可復原。"
-#~ msgstr "Are you sure you want to disable Contract \"%(number)s\"? It cannot be restored after disabling."
+#~ msgstr ""
+#~ "Are you sure you want to disable "
+#~ "Contract \"%(number)s\"? It cannot be "
+#~ "restored after disabling."
 
 #~ msgid "確定要刪除企業「%(name)s」嗎？此操作無法復原。"
-#~ msgstr "Are you sure you want to delete Organization \"%(name)s\"? This action cannot be undone."
+#~ msgstr ""
+#~ "Are you sure you want to delete "
+#~ "Organization \"%(name)s\"? This action cannot "
+#~ "be undone."
 
 #~ msgid "generatedCode || '留空則自動產生'"
 #~ msgstr "generatedCode || 'Leave blank to automatically generate'"

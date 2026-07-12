@@ -13,6 +13,8 @@ import secrets
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 
+from flask_babel import gettext as _
+
 from app import db
 from app.models.api_key import ApiKey
 from app.utils.security import generate_secure_code
@@ -120,7 +122,8 @@ def _create_form_instance_and_start_workflow(
     ).first()
     if not template:
         raise IntakeError(
-            f'form template {form_template_sc} 不存在或不屬於本企業',
+            _('form template %(form_template_sc)s 不存在或不屬於本企業',
+              form_template_sc=form_template_sc),
             code='template_not_found', status=500,
         )
 
@@ -132,8 +135,8 @@ def _create_form_instance_and_start_workflow(
     ).order_by(FwPublishedFormWorkflow.published_at.desc()).first()
     if not published:
         raise IntakeError(
-            f'form template {form_template_sc} 尚無 Published 版本,'
-            f'請先在表單設計器發行',
+            _('form template %(form_template_sc)s 尚無 Published 版本,請先在表單設計器發行',
+              form_template_sc=form_template_sc),
             code='form_not_published', status=422,
         )
 
@@ -154,7 +157,7 @@ def _create_form_instance_and_start_workflow(
             break
     if not start_node:
         raise IntakeError(
-            '工作流模板缺 Start 節點',
+            _('工作流模板缺 Start 節點'),
             code='workflow_no_start', status=500,
         )
 
@@ -235,7 +238,7 @@ def _create_form_instance_and_start_workflow(
         node_type='Start',
         node_name=(start_node.get('label')
                   or start_node.get('data', {}).get('label')
-                  or '開始'),
+                  or _('開始')),
         node_config=start_node.get('config', {}),
         status='PENDING',
         priority=10,
@@ -281,7 +284,8 @@ def process_intake(
     allowed = od_scope.get('source_systems') or []
     if source_system not in allowed:
         raise IntakeError(
-            f'source_system {source_system!r} 不在 key 允許清單',
+            _('source_system %(source_system)r 不在 key 允許清單',
+              source_system=source_system),
             code='source_not_allowed', status=403,
         )
 
@@ -289,8 +293,8 @@ def process_intake(
     template_sc = _lookup_form_template(org_sc, event_class)
     if not template_sc:
         raise IntakeError(
-            f'event_class {event_class!r} 在本企業無對應 form_template,'
-            f'請至 /open-defense/intake-keys 設定 mapping',
+            _('event_class %(event_class)r 在本企業無對應 form_template,請至 /open-defense/intake-keys 設定 mapping',
+              event_class=event_class),
             code='no_mapping', status=422,
         )
 
@@ -341,7 +345,7 @@ def process_intake(
         db.session.rollback()
         logger.exception('intake workflow start failed')
         raise IntakeError(
-            f'啟動 workflow 失敗: {exc}',
+            _('啟動 workflow 失敗: %(error)s', error=exc),
             code='workflow_start_failed', status=500,
         )
 

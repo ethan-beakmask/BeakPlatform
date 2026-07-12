@@ -18,6 +18,7 @@ from typing import Optional, List, Tuple, Dict, Any
 
 import bcrypt
 import jwt as pyjwt
+from flask_babel import gettext as _
 
 from app import db
 from app.utils.security import generate_secure_code
@@ -112,12 +113,12 @@ def create_service_account(
         (record, plaintext_secret_b64)  -- plaintext 只在建立時顯示一次
     """
     if not org_secure_code:
-        raise ServiceAccountError('org_secure_code 必填', code='invalid_org')
+        raise ServiceAccountError(_('org_secure_code 必填'), code='invalid_org')
     if not name or not name.strip():
-        raise ServiceAccountError('name 必填', code='invalid_name')
+        raise ServiceAccountError(_('name 必填'), code='invalid_name')
     if not isinstance(allowed_enforcement_points, list):
         raise ServiceAccountError(
-            'allowed_enforcement_points 必須為 list', code='invalid_eps')
+            _('allowed_enforcement_points 必須為 list'), code='invalid_eps')
 
     secret_bytes = secrets.token_bytes(SECRET_BYTES)
     secret_hash = bcrypt.hashpw(secret_bytes, bcrypt.gensalt()).decode('ascii')
@@ -202,12 +203,13 @@ def authenticate(sa_id: str, secret_b64: str,
         # 為避免 timing 洩漏 sa_id 是否存在,做一次假 bcrypt 計算
         bcrypt.checkpw(b'_dummy_secret_padding_', bcrypt.hashpw(
             b'_dummy', bcrypt.gensalt()))
-        raise ServiceAccountError('sa_id 或 secret 錯誤',
+        raise ServiceAccountError(_('sa_id 或 secret 錯誤'),
                                   code='invalid_credentials')
 
     if _is_locked(record, now):
         raise ServiceAccountError(
-            f'帳號鎖定中,解鎖時間 {record.lock_until.isoformat()}',
+            _('帳號鎖定中,解鎖時間 %(unlock_time)s',
+              unlock_time=record.lock_until.isoformat()),
             code='locked',
         )
 
@@ -215,13 +217,13 @@ def authenticate(sa_id: str, secret_b64: str,
         secret_bytes = base64.urlsafe_b64decode(secret_b64)
     except Exception:
         _record_failed_login(record)
-        raise ServiceAccountError('secret 格式錯誤',
+        raise ServiceAccountError(_('secret 格式錯誤'),
                                   code='invalid_credentials')
 
     if not bcrypt.checkpw(secret_bytes,
                           record.secret_hash.encode('ascii')):
         _record_failed_login(record)
-        raise ServiceAccountError('sa_id 或 secret 錯誤',
+        raise ServiceAccountError(_('sa_id 或 secret 錯誤'),
                                   code='invalid_credentials')
 
     _record_success_login(record, source_ip)
@@ -258,7 +260,7 @@ def decode_jwt(token: str) -> Dict[str, Any]:
     過期 / 簽章錯 / 格式錯都拋 ServiceAccountError。
     """
     if not token:
-        raise ServiceAccountError('token 為空', code='token_missing')
+        raise ServiceAccountError(_('token 為空'), code='token_missing')
     try:
         return pyjwt.decode(
             token, _get_jwt_secret(),
@@ -267,6 +269,6 @@ def decode_jwt(token: str) -> Dict[str, Any]:
             options={'require': ['exp', 'iat', 'sub']},
         )
     except pyjwt.ExpiredSignatureError:
-        raise ServiceAccountError('token 已過期', code='token_expired')
+        raise ServiceAccountError(_('token 已過期'), code='token_expired')
     except pyjwt.InvalidTokenError as exc:
-        raise ServiceAccountError(f'token 無效: {exc}', code='token_invalid')
+        raise ServiceAccountError(_('token 無效: %(error)s', error=exc), code='token_invalid')

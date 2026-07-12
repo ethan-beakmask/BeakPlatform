@@ -11,6 +11,8 @@ import secrets
 from datetime import datetime
 from typing import Optional, List, Tuple
 
+from flask_babel import gettext as _
+
 from app import db
 from app.crypto.key_manager import KeyManager
 from app.utils.security import generate_secure_code
@@ -47,11 +49,11 @@ def create_intake_key(
         (record, plaintext_secret_b64)  -- plaintext 只在建立時顯示一次,後續無法還原
     """
     if not org_secure_code:
-        raise IntakeKeyError('org_secure_code 必填')
+        raise IntakeKeyError(_('org_secure_code 必填'))
     if not name or not name.strip():
-        raise IntakeKeyError('name 必填')
+        raise IntakeKeyError(_('name 必填'))
     if not isinstance(allowed_source_systems, list) or not allowed_source_systems:
-        raise IntakeKeyError('allowed_source_systems 必須為非空 list')
+        raise IntakeKeyError(_('allowed_source_systems 必須為非空 list'))
 
     secret = secrets.token_bytes(SECRET_BYTES)
     encrypted = KeyManager.encrypt_file(org_secure_code, secret)

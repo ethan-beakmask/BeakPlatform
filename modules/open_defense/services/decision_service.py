@@ -9,6 +9,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
+from flask_babel import gettext as _
+
 from app import db
 from app.utils.security import generate_secure_code
 
@@ -30,17 +32,17 @@ class DecisionValidationError(ValueError):
 def _validate(action: str, target_type: str, target_value: str,
               decided_via: str, severity: Optional[str]) -> None:
     if action not in VALID_ACTIONS:
-        raise DecisionValidationError(f'action 不合法: {action!r}')
+        raise DecisionValidationError(_('action 不合法: %(action)r', action=action))
     if target_type not in VALID_TARGET_TYPES:
-        raise DecisionValidationError(f'target_type 不合法: {target_type!r}')
+        raise DecisionValidationError(_('target_type 不合法: %(target_type)r', target_type=target_type))
     if not target_value or not target_value.strip():
-        raise DecisionValidationError('target_value 不可為空')
+        raise DecisionValidationError(_('target_value 不可為空'))
     if len(target_value) > 500:
-        raise DecisionValidationError('target_value 過長(>500)')
+        raise DecisionValidationError(_('target_value 過長(>500)'))
     if decided_via not in VALID_DECIDED_VIA:
-        raise DecisionValidationError(f'decided_via 不合法: {decided_via!r}')
+        raise DecisionValidationError(_('decided_via 不合法: %(decided_via)r', decided_via=decided_via))
     if severity is not None and severity not in VALID_SEVERITIES:
-        raise DecisionValidationError(f'severity 不合法: {severity!r}')
+        raise DecisionValidationError(_('severity 不合法: %(severity)r', severity=severity))
 
 
 def create_decision(
@@ -69,12 +71,12 @@ def create_decision(
     API 從登入企業取)。本函式不從 g 自動推斷,避免跨租戶汙染。
     """
     if not org_secure_code:
-        raise DecisionValidationError('org_secure_code 必填')
+        raise DecisionValidationError(_('org_secure_code 必填'))
 
     _validate(action, target_type, target_value, decided_via, severity)
 
     if ttl_seconds is not None and ttl_seconds <= 0:
-        raise DecisionValidationError('ttl_seconds 必須 > 0,或不傳')
+        raise DecisionValidationError(_('ttl_seconds 必須 > 0,或不傳'))
 
     decided_at = datetime.utcnow()
     expires_at = (
@@ -230,12 +232,12 @@ def update_decision_status(
     """
     if target_status in FORBIDDEN_TARGET_STATUSES:
         raise DecisionStatusError(
-            f'禁止由執行端寫入 {target_status!r}',
+            _('禁止由執行端寫入 %(target_status)r', target_status=target_status),
             code='forbidden_status', status=403,
         )
     if target_status not in {'picked_up', 'applied', 'partial', 'failed'}:
         raise DecisionStatusError(
-            f'不合法的目標狀態 {target_status!r}',
+            _('不合法的目標狀態 %(target_status)r', target_status=target_status),
             code='invalid_status', status=400,
         )
 
@@ -245,18 +247,19 @@ def update_decision_status(
     )
     if record is None:
         raise DecisionStatusError(
-            '決策不存在或不屬於本 SA 的 org',
+            _('決策不存在或不屬於本 SA 的 org'),
             code='not_found', status=404,
         )
 
     if record.status not in ALLOWED_TRANSITIONS:
         raise DecisionStatusError(
-            f'從 {record.status!r} 不可轉至任何狀態(已結案)',
+            _('從 %(status)r 不可轉至任何狀態(已結案)', status=record.status),
             code='not_transitionable', status=409,
         )
     if target_status not in ALLOWED_TRANSITIONS[record.status]:
         raise DecisionStatusError(
-            f'不可從 {record.status!r} 轉至 {target_status!r}',
+            _('不可從 %(status)r 轉至 %(target_status)r',
+              status=record.status, target_status=target_status),
             code='invalid_transition', status=409,
         )
 
@@ -279,7 +282,7 @@ def update_decision_status(
         db.session.commit()
         if rowcount == 0:
             raise DecisionStatusError(
-                '決策已被其他執行端搶先拾起',
+                _('決策已被其他執行端搶先拾起'),
                 code='race_lost', status=409,
             )
         db.session.refresh(record)

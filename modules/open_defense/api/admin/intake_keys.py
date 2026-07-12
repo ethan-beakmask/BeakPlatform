@@ -5,6 +5,7 @@ OdIntakeKey 已由 migration 079 遷移至平台 ApiKey(scopes.od_intake),
 本表保留唯讀一個版本週期後刪除(規格: docs/API_KEY_TRIGGER_SPEC.md P2)。
 """
 from flask import jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app.security.decorators import admin_required
@@ -12,8 +13,8 @@ from app.security.decorators import admin_required
 from . import admin_bp
 from ...models import OdIntakeKey
 
-MIGRATED_MSG = ('Intake key 已遷移至平台 API Key,'
-                '請至 /security/api-keys/ 管理(scope: od_intake)')
+def _migrated_msg():
+    return _('Intake key 已遷移至平台 API Key,請至 /security/api-keys/ 管理(scope: od_intake)')
 
 
 @admin_bp.route('/intake-keys', methods=['GET'])
@@ -27,17 +28,17 @@ def list_intake_keys():
     return jsonify({
         'keys': [r.to_dict() for r in rows],
         'readonly': True,
-        'migrated_message': MIGRATED_MSG,
+        'migrated_message': _migrated_msg(),
     })
 
 
 @admin_bp.route('/intake-keys', methods=['POST'])
 @admin_required
 def create_intake_key_api():
-    return jsonify({'error': 'migrated', 'message': MIGRATED_MSG}), 410
+    return jsonify({'error': 'migrated', 'message': _migrated_msg()}), 410
 
 
 @admin_bp.route('/intake-keys/<secure_code>', methods=['DELETE'])
 @admin_required
 def revoke_intake_key_api(secure_code):
-    return jsonify({'error': 'migrated', 'message': MIGRATED_MSG}), 410
+    return jsonify({'error': 'migrated', 'message': _migrated_msg()}), 410

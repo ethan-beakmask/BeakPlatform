@@ -2,6 +2,7 @@
 from datetime import datetime
 
 from flask import request, jsonify
+from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy import or_
 
@@ -82,16 +83,16 @@ def revoke_decision_admin(secure_code):
     if record.status != 'applied':
         return jsonify({
             'error': 'not_revocable',
-            'message': f'只能撤銷 applied 狀態的決策(目前 {record.status})',
+            'message': _('只能撤銷 applied 狀態的決策(目前 %(status)s)', status=record.status),
         }), 409
     if record.action == 'unblock':
         return jsonify({
             'error': 'not_revocable',
-            'message': 'unblock 決策無需再撤銷',
+            'message': _('unblock 決策無需再撤銷'),
         }), 400
 
     body = request.get_json(force=True, silent=True) or {}
-    reason = (body.get('reason') or '').strip() or '人工手動撤銷'
+    reason = (body.get('reason') or '').strip() or _('人工手動撤銷')
 
     now = datetime.utcnow()
     unblock = OdDefenseDecision(
