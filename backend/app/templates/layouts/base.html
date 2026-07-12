@@ -40,6 +40,38 @@
 </head>
 <body>
     {% if current_user.is_authenticated %}
+    {% macro render_menu_item(item) %}
+        {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
+        {% set item_class = _menu_color_class(item) %}
+
+        {% if item.children %}
+        <div class="bk-menu-dropdown">
+            <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }} &#9662;</span>
+            <div class="bk-menu-dropdown-content">
+                {% for child in item.children %}
+                {% set child_class = _menu_color_class(child) %}
+                <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
+                    {% if child.icon %}<i class="{{ child.icon }}"></i> {% endif %}{{ child.title }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
+            {% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }}
+        </a>
+        {% endif %}
+    {% endmacro %}
+
+    {% set menu_groups = namespace(primary=[], admin=[]) %}
+    {% for item in nav_menu %}
+        {% if item.bg_level == 'admin' and not item.is_cross_level %}
+            {% set _ = menu_groups.admin.append(item) %}
+        {% else %}
+            {% set _ = menu_groups.primary.append(item) %}
+        {% endif %}
+    {% endfor %}
+
     <!-- Fixed Top Bar -->
     <div class="bk-topbar-fixed">
         <!-- Navbar -->
@@ -56,32 +88,22 @@
 
         <!-- Menu Bar (動態選單) -->
         <div class="bk-menubar">
-            {% for item in nav_menu %}
-                {# 權限顏色 class 由後端 bg_level + is_cross_level 決定 #}
-                {% set item_class = _menu_color_class(item) %}
-
-                {% if item.children %}
-                <div class="bk-menu-dropdown">
-                    <span class="bk-menu-trigger {{ item_class }}">{% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }} &#9662;</span>
-                    <div class="bk-menu-dropdown-content">
-                        {% for child in item.children %}
-                        {% set child_class = _menu_color_class(child) %}
-                        <a href="{{ child.href or '#' }}"{% if child.open_in_new_tab %} target="_blank"{% endif %} class="{{ child_class }}">
-                            {% if child.icon %}<i class="{{ child.icon }}"></i> {% endif %}{{ child.title }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% else %}
-                <a href="{{ item.href or '#' }}"{% if item.open_in_new_tab %} target="_blank"{% endif %} class="{{ item_class }}">
-                    {% if item.icon %}<i class="{{ item.icon }}"></i> {% endif %}{{ item.title }}
-                </a>
-                {% endif %}
+            {% for item in menu_groups.primary %}
+                {{ render_menu_item(item) }}
             {% else %}
+                {% if not nav_menu %}
             <!-- 無選單資料時的 fallback -->
             <a href="{{ url_for('main.dashboard') }}">{{ _('首頁') }}</a>
+                {% endif %}
             {% endfor %}
         </div>
+        {% if menu_groups.admin %}
+        <div class="bk-menubar bk-menubar-admin">
+            {% for item in menu_groups.admin %}
+                {{ render_menu_item(item) }}
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 

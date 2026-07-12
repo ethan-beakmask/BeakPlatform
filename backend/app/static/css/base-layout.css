@@ -97,6 +97,10 @@ input::placeholder, textarea::placeholder {
     font-size: 14px;
     line-height: 1.5;
 }
+.bk-menubar-admin {
+    background: var(--menubar-bg);
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
 .bk-menubar a {
     color: #ccc;
     text-decoration: none;
