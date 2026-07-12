@@ -20,7 +20,7 @@
                                placeholder="20 per 10 minutes">
                         <template x-if="cat.source !== 'db'">
                             <span style="font-size: 12px; color: #0369a1;">
-                                ({{ _('目前使用') }}<span x-text="cat.source === 'env' ? '環境變數' : '預設值'"></span>)
+                                ({{ _('目前使用') }}<span x-text="cat.source === 'env' ? __('環境變數') : __('預設值')"></span>)
                             </span>
                         </template>
                         <template x-if="cat.source === 'db'">

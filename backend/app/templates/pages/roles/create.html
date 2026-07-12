@@ -50,7 +50,7 @@
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="text" x-model="formData.code" maxlength="50"
                                @input.debounce.300ms="validateCode"
-                               :placeholder="{{ _('generatedCode || \'留空則自動產生\'') }}"
+                               :placeholder="generatedCode || __('留空則自動產生')"
                                style="width: 100%; text-transform: uppercase;"
                                :style="codeError ? 'border-color: #dc2626;' : ''">
                         <button type="button" @click="useGeneratedCode"

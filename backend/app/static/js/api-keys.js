@@ -72,10 +72,10 @@
                     if (data.success) {
                         this.keys = data.data;
                     } else {
-                        this.flash(data.error || '載入失敗', true);
+                        this.flash(data.error || __('載入失敗'), true);
                     }
                 } catch (e) {
-                    this.flash('載入失敗: ' + e.message, true);
+                    this.flash(__('載入失敗: {message}', {message: e.message}), true);
                 }
                 this.loading = false;
             },
@@ -125,14 +125,14 @@
                 const forms = (s.form || []).length;
                 const odSources = ((s.od_intake || {}).source_systems || []).length;
                 const parts = [];
-                if (cats) parts.push(`分類 x${cats}`);
-                if (forms) parts.push(`表單 x${forms}`);
-                if (odSources) parts.push(`資安事件來源 x${odSources}`);
-                return parts.length ? parts.join('、') : '（無授權範圍）';
+                if (cats) parts.push(__('分類 x{count}', {count: cats}));
+                if (forms) parts.push(__('表單 x{count}', {count: forms}));
+                if (odSources) parts.push(__('資安事件來源 x{count}', {count: odSources}));
+                return parts.length ? parts.join('、') : __('（無授權範圍）');
             },
 
             statusLabel(status) {
-                return { active: '啟用中', suspended: '已暫停', revoked: '已撤銷' }[status] || status;
+                return { active: __('啟用中'), suspended: __('已暫停'), revoked: __('已撤銷') }[status] || status;
             },
 
             fmtTime(iso) {
@@ -141,7 +141,7 @@
             },
 
             fmtDate(iso) {
-                if (!iso) return '永久';
+                if (!iso) return __('永久');
                 return iso.slice(0, 10);
             },
 
@@ -202,7 +202,7 @@
 
             async submitForm() {
                 if (!this.form.name.trim()) {
-                    this.flash('請填寫名稱', true);
+                    this.flash(__('請填寫名稱'), true);
                     return;
                 }
                 const payload = this.buildPayload();
@@ -218,7 +218,7 @@
                         });
                     }
                     if (!data.success) {
-                        this.flash(data.error || '儲存失敗', true);
+                        this.flash(data.error || __('儲存失敗'), true);
                         return;
                     }
                     this.showFormModal = false;
@@ -228,11 +228,11 @@
                         this.secretCopied = false;
                         this.showSecretModal = true;
                     } else {
-                        this.flash('已更新');
+                        this.flash(__('已更新'));
                     }
                     await this.load();
                 } catch (e) {
-                    this.flash('儲存失敗: ' + e.message, true);
+                    this.flash(__('儲存失敗: {message}', {message: e.message}), true);
                 }
             },
 
@@ -244,7 +244,7 @@
                     await navigator.clipboard.writeText(text);
                     this.secretCopied = true;
                 } catch (e) {
-                    this.flash('複製失敗，請手動選取', true);
+                    this.flash(__('複製失敗，請手動選取'), true);
                 }
             },
 
@@ -263,7 +263,7 @@
 
             async submitSuspend() {
                 if (!this.suspendReason.trim()) {
-                    this.flash('請填寫暫停原因', true);
+                    this.flash(__('請填寫暫停原因'), true);
                     return;
                 }
                 const data = await api(
@@ -271,10 +271,10 @@
                     { method: 'POST', body: JSON.stringify({ reason: this.suspendReason }) });
                 if (data.success) {
                     this.showSuspendModal = false;
-                    this.flash('已暫停');
+                    this.flash(__('已暫停'));
                     await this.load();
                 } else {
-                    this.flash(data.error || '暫停失敗', true);
+                    this.flash(data.error || __('暫停失敗'), true);
                 }
             },
 
@@ -283,25 +283,25 @@
                     '/api/security/api-keys/' + key.secure_code + '/resume',
                     { method: 'POST', body: JSON.stringify({}) });
                 if (data.success) {
-                    this.flash('已復原');
+                    this.flash(__('已復原'));
                     await this.load();
                 } else {
-                    this.flash(data.error || '復原失敗', true);
+                    this.flash(data.error || __('復原失敗'), true);
                 }
             },
 
             async revoke(key) {
-                if (!confirm('撤銷後不可復原，外部系統將立即無法使用此 Key。確定撤銷「' + key.name + '」？')) {
+                if (!confirm(__('撤銷後不可復原，外部系統將立即無法使用此 Key。確定撤銷「{name}」？', {name: key.name}))) {
                     return;
                 }
                 const data = await api(
                     '/api/security/api-keys/' + key.secure_code,
                     { method: 'DELETE' });
                 if (data.success) {
-                    this.flash('已撤銷');
+                    this.flash(__('已撤銷'));
                     await this.load();
                 } else {
-                    this.flash(data.error || '撤銷失敗', true);
+                    this.flash(data.error || __('撤銷失敗'), true);
                 }
             },
         };

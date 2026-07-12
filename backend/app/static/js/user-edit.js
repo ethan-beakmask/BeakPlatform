@@ -8,7 +8,7 @@ function passwordForm() {
         showPassword: false,
         passwordErrors: [],
         passwordChecked: false,
-        passwordRequirements: '載入中...',
+        passwordRequirements: __('載入中...'),
         validateTimer: null,
 
         // 姓名與翻譯
@@ -16,7 +16,7 @@ function passwordForm() {
         englishName: __userEditConfig.englishName || '',
         transliterating: false,
         detectedLang: '',
-        langNames: { 'zh': '中文', 'ja': '日文', 'ko': '韓文', 'unknown': '未知', 'mixed': '混合' },
+        langNames: { 'zh': __('中文'), 'ja': __('日文'), 'ko': __('韓文'), 'unknown': __('未知'), 'mixed': __('混合') },
 
         async init() {
             await this.loadRequirements();
@@ -29,18 +29,18 @@ function passwordForm() {
                     const data = await response.json();
                     if (data.success && data.data.policy.enabled) {
                         const p = data.data.policy;
-                        let reqs = [`長度至少 ${p.min_length} 個字元`];
-                        if (p.require_uppercase) reqs.push('包含大寫字母');
-                        if (p.require_lowercase) reqs.push('包含小寫字母');
-                        if (p.require_digit) reqs.push('包含數字');
-                        if (p.require_special) reqs.push('包含特殊符號');
-                        this.passwordRequirements = reqs.join('、') + '（留空則不變更）';
+                        let reqs = [__('長度至少 {min} 個字元', {min: p.min_length})];
+                        if (p.require_uppercase) reqs.push(__('包含大寫字母'));
+                        if (p.require_lowercase) reqs.push(__('包含小寫字母'));
+                        if (p.require_digit) reqs.push(__('包含數字'));
+                        if (p.require_special) reqs.push(__('包含特殊符號'));
+                        this.passwordRequirements = reqs.join('、') + __('（留空則不變更）');
                     } else {
-                        this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+                        this.passwordRequirements = __('密碼長度至少 8 個字元（留空則不變更）');
                     }
                 }
             } catch (err) {
-                this.passwordRequirements = '密碼長度至少 8 個字元（留空則不變更）';
+                this.passwordRequirements = __('密碼長度至少 8 個字元（留空則不變更）');
             }
         },
 

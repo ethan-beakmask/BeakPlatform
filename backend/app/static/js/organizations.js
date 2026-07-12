@@ -88,11 +88,11 @@ function orgManager() {
 
         async createConglomerate() {
             if (!this.newConglomerateName.trim()) {
-                alert('請輸入集團名稱');
+                alert(__('請輸入集團名稱'));
                 return;
             }
             if (this.selectedOrgs.length < 2) {
-                alert('請選擇至少兩家企業');
+                alert(__('請選擇至少兩家企業'));
                 return;
             }
 
@@ -107,13 +107,13 @@ function orgManager() {
                 });
                 const data = await resp.json();
                 if (resp.ok) {
-                    alert('已建立集團: ' + data.conglomerate.name);
+                    alert(__('已建立集團: ') + data.conglomerate.name);
                     location.reload();
                 } else {
-                    alert(data.error || '建立失敗');
+                    alert(data.error || __('建立失敗'));
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                alert(__('建立失敗: ') + e.message);
             }
         },
 
@@ -130,16 +130,16 @@ function orgManager() {
                     this.editingConglomerate = data.conglomerate;
                     this.selectedOrgs = data.organizations.map(o => o.secure_code);
                 } else {
-                    alert(data.error || '載入失敗');
+                    alert(data.error || __('載入失敗'));
                 }
             } catch (e) {
-                alert('載入失敗: ' + e.message);
+                alert(__('載入失敗: ') + e.message);
             }
         },
 
         async updateConglomerate() {
             if (!this.editingConglomerate || this.selectedOrgs.length < 2) {
-                alert('請選擇至少兩家企業');
+                alert(__('請選擇至少兩家企業'));
                 return;
             }
             const conglomerateId = this.editingConglomerate.secure_code;
@@ -155,20 +155,20 @@ function orgManager() {
                     body: JSON.stringify({ org_secure_codes: this.selectedOrgs })
                 });
                 if (resp.ok) {
-                    alert('已更新集團');
+                    alert(__('已更新集團'));
                     location.reload();
                 } else {
                     const data = await resp.json();
-                    alert(data.error || '更新失敗');
+                    alert(data.error || __('更新失敗'));
                 }
             } catch (e) {
-                alert('更新失敗: ' + e.message);
+                alert(__('更新失敗: ') + e.message);
             }
         },
 
         async dissolveConglomerate() {
             if (!this.editingConglomerate) return;
-            if (!confirm('確定要解散集團「' + this.editingConglomerate.name + '」嗎？')) return;
+            if (!confirm(__('確定要解散集團「') + this.editingConglomerate.name + __('」嗎？'))) return;
 
             const conglomerateId = this.editingConglomerate.secure_code;
             try {
@@ -177,20 +177,20 @@ function orgManager() {
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 if (resp.ok) {
-                    alert('已解散集團');
+                    alert(__('已解散集團'));
                     location.reload();
                 } else {
                     const data = await resp.json();
-                    alert(data.error || '解散失敗');
+                    alert(data.error || __('解散失敗'));
                 }
             } catch (e) {
-                alert('解散失敗: ' + e.message);
+                alert(__('解散失敗: ') + e.message);
             }
         },
 
         async provisionSharedDb() {
             if (!this.editingConglomerate) return;
-            if (!confirm('確定要為集團「' + this.editingConglomerate.name + '」建立共享資料庫嗎？')) return;
+            if (!confirm(__('確定要為集團「') + this.editingConglomerate.name + __('」建立共享資料庫嗎？'))) return;
 
             const sc = this.editingConglomerate.secure_code;
             try {
@@ -202,12 +202,12 @@ function orgManager() {
                 if (resp.ok) {
                     this.editingConglomerate.has_shared_db = true;
                     this.editingConglomerate.shared_db_name = data.db_name;
-                    alert('共享資料庫建立成功: ' + data.db_name);
+                    alert(__('共享資料庫建立成功: ') + data.db_name);
                 } else {
-                    alert(data.error || '建立失敗');
+                    alert(data.error || __('建立失敗'));
                 }
             } catch (e) {
-                alert('建立失敗: ' + e.message);
+                alert(__('建立失敗: ') + e.message);
             }
         },
 
@@ -303,17 +303,17 @@ function orgManager() {
                     };
                     this.contractModal.show = true;
                 } else {
-                    alert(data.error || '載入失敗');
+                    alert(data.error || __('載入失敗'));
                 }
             } catch (e) {
-                alert('載入失敗: ' + e.message);
+                alert(__('載入失敗: ') + e.message);
             }
         },
 
         async saveContract() {
             const form = this.contractModal.form;
             if (!form.start_date || !form.end_date) {
-                this.showContractMessage('請填寫開始和結束日期', true);
+                this.showContractMessage(__('請填寫開始和結束日期'), true);
                 return;
             }
 
@@ -340,16 +340,16 @@ function orgManager() {
                 if (resp.ok) {
                     location.reload();
                 } else {
-                    this.showContractMessage(data.error || data.message || '儲存失敗', true);
+                    this.showContractMessage(data.error || data.message || __('儲存失敗'), true);
                 }
             } catch (e) {
-                this.showContractMessage('儲存失敗: ' + e.message, true);
+                this.showContractMessage(__('儲存失敗: ') + e.message, true);
             }
         },
 
         async disableContract() {
             if (!this.contractModal.editing) return;
-            if (!confirm('確定要停用此合約嗎？停用後不可再啟用，如需恢復服務請建立新合約。')) return;
+            if (!confirm(__('確定要停用此合約嗎？停用後不可再啟用，如需恢復服務請建立新合約。'))) return;
 
             try {
                 const resp = await fetch(window.__BP + '/api/contracts/' + this.contractModal.editing + '/disable', {
@@ -360,10 +360,10 @@ function orgManager() {
                 if (resp.ok) {
                     location.reload();
                 } else {
-                    this.showContractMessage(data.error || '停用失敗', true);
+                    this.showContractMessage(data.error || __('停用失敗'), true);
                 }
             } catch (e) {
-                this.showContractMessage('停用失敗: ' + e.message, true);
+                this.showContractMessage(__('停用失敗: ') + e.message, true);
             }
         },
 

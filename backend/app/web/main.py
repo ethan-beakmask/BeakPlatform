@@ -17,6 +17,32 @@ logger = logging.getLogger(__name__)
 main_bp = Blueprint('main', __name__)
 
 
+@main_bp.route('/i18n/<locale>.js')
+@public_route
+def i18n_dict_js(locale):
+    """前端 i18n 字典（阻塞式 script 載入，避免 Alpine 渲染搶先於字典）
+
+    來源：static/i18n/<locale>.json，包成 BkI18n.init() 呼叫回傳。
+    """
+    import json
+    import os
+    import re
+    from flask import current_app, Response
+
+    if not re.fullmatch(r'[A-Za-z]{2}(-[A-Za-z]{2,8})?', locale):
+        abort(404)
+    path = os.path.join(current_app.static_folder, 'i18n', f'{locale}.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        data = {}
+    body = "BkI18n.init(%s, %s);" % (json.dumps(locale), json.dumps(data, ensure_ascii=False))
+    resp = Response(body, mimetype='application/javascript; charset=utf-8')
+    resp.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return resp
+
+
 @main_bp.route('/')
 @public_route
 def index():

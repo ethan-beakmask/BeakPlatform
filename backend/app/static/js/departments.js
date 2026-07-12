@@ -253,7 +253,7 @@ function departmentManager() {
                     if (this.showPeopleInTree) await this.loadAllPeople();
                 }
             } catch (err) {
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
             }
         },
 
@@ -428,12 +428,12 @@ function departmentManager() {
                         body: JSON.stringify({ parent_id: parentId })
                     });
                     if (res.ok) {
-                        this.showToast('部門已移動', 'success');
+                        this.showToast(__('部門已移動'), 'success');
                     } else {
                         var data = await res.json();
-                        this.showToast(data.error || '移動失敗', 'error');
+                        this.showToast(data.error || __('移動失敗'), 'error');
                     }
-                } catch (e) { this.showToast('移動失敗', 'error'); }
+                } catch (e) { this.showToast(__('移動失敗'), 'error'); }
                 await this._refreshAll();
             } else if (node.data.type === 'person') {
                 var targetNode = this._tree._model.getNode(newParentId);
@@ -517,14 +517,14 @@ function departmentManager() {
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    this.showToast('部門建立成功', 'success');
+                    this.showToast(__('部門建立成功'), 'success');
                     this.isCreating = false;
                     await this._refreshAll();
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
-            } catch (err) { this.showToast('建立失敗', 'error'); }
+            } catch (err) { this.showToast(__('建立失敗'), 'error'); }
         },
 
         async updateDepartment() {
@@ -536,13 +536,13 @@ function departmentManager() {
                     body: JSON.stringify({ name: this.formData.name, parent_id: this.formData.parent_id || null })
                 });
                 if (res.ok) {
-                    this.showToast('更新成功', 'success');
+                    this.showToast(__('更新成功'), 'success');
                     await this._refreshAll();
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                 }
-            } catch (err) { this.showToast('更新失敗', 'error'); }
+            } catch (err) { this.showToast(__('更新失敗'), 'error'); }
         },
 
         async deleteDepartment() {
@@ -564,13 +564,13 @@ function departmentManager() {
                 var res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
                 var data = await res.json();
                 if (res.ok) {
-                    this.showToast(data.message || '刪除成功', 'success');
+                    this.showToast(data.message || __('刪除成功'), 'success');
                     this.selectedDept = null;
                     await this._refreshAll();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
-            } catch (err) { this.showToast('刪除失敗', 'error'); }
+            } catch (err) { this.showToast(__('刪除失敗'), 'error'); }
         },
 
         findDeptById(id) {
@@ -620,7 +620,7 @@ function departmentManager() {
 
         async removeCrossMember(cm) {
             if (!this.selectedDept) return;
-            var userName = cm.user?.native_name || cm.user?.display_name || '此人員';
+            var userName = cm.user?.native_name || cm.user?.display_name || __('此人員');
             if (!confirm('\u78BA\u5B9A\u79FB\u9664 ' + userName + ' \u7684\u8DE8\u90E8\u9580\u95DC\u4FC2\uFF1F')) return;
             try {
                 var res = await fetch(window.__BP + '/api/units/' + this.selectedDept.id + '/cross-members/' + cm.id, {
@@ -628,7 +628,7 @@ function departmentManager() {
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
                 if (res.ok) {
-                    this.showToast('已移除跨部門關係', 'success');
+                    this.showToast(__('已移除跨部門關係'), 'success');
                     await Promise.all([
                         this.loadLeadership(this.selectedDept.id),
                         this.loadCrossMembers(this.selectedDept.id)
@@ -636,9 +636,9 @@ function departmentManager() {
                     this._mergeCrossToProxy();
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '移除失敗', 'error');
+                    this.showToast(data.error || __('移除失敗'), 'error');
                 }
-            } catch (err) { this.showToast('移除失敗', 'error'); }
+            } catch (err) { this.showToast(__('移除失敗'), 'error'); }
         },
 
         async removeCrossIfExists(userId) {
@@ -770,11 +770,11 @@ function departmentManager() {
             if (res.ok) {
                 var data = await res.json();
                 await this.removeCrossIfExists(person.id);
-                this.showToast(data.message || '已設定', 'success');
+                this.showToast(data.message || __('已設定'), 'success');
                 await this._refreshAll();
             } else {
                 var errData = await res.json().catch(() => ({}));
-                this.showToast(errData.error || '操作失敗', 'error');
+                this.showToast(errData.error || __('操作失敗'), 'error');
             }
             this.clearDrag();
         },
@@ -817,17 +817,17 @@ function departmentManager() {
                     await this._apiDelete(window.__BP + '/api/units/' + oldDeptId + '/members/' + person.id);
                     await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
                     await this.removeCrossIfExists(person.id);
-                    this.showToast('已調至此部門', 'success');
+                    this.showToast(__('已調至此部門'), 'success');
                 } else {
-                    this.showToast('已移除管理層角色', 'success');
+                    this.showToast(__('已移除管理層角色'), 'success');
                 }
             } else if (this.draggedLeader) {
                 await this._apiDelete(window.__BP + '/api/units/' + this.selectedDept.id + '/leadership/' + this.draggedLeaderType);
-                this.showToast('已移除管理層角色', 'success');
+                this.showToast(__('已移除管理層角色'), 'success');
             } else if (this.draggedUser) {
                 await this._apiPost(window.__BP + '/api/units/' + this.selectedDept.id + '/members', { user_id: person.id });
                 await this.removeCrossIfExists(person.id);
-                this.showToast('已加入部門', 'success');
+                this.showToast(__('已加入部門'), 'success');
             }
 
             await this._refreshAll();
@@ -856,7 +856,7 @@ function departmentManager() {
             }
 
             await this._apiDelete(window.__BP + '/api/units/' + deptId + '/members/' + person.id);
-            this.showToast('已移出部門', 'success');
+            this.showToast(__('已移出部門'), 'success');
             await this._refreshAll();
             this.clearDrag();
         },
@@ -883,10 +883,10 @@ function departmentManager() {
             });
             if (res.ok) {
                 var data = await res.json();
-                this.showToast(data.message || '已新增跨部門人員', 'success');
+                this.showToast(data.message || __('已新增跨部門人員'), 'success');
             } else {
                 var errData = await res.json().catch(function() { return {}; });
-                this.showToast(errData.error || '新增跨部門失敗', 'error');
+                this.showToast(errData.error || __('新增跨部門失敗'), 'error');
             }
         },
 
@@ -968,7 +968,7 @@ function departmentManager() {
                 if (e.ctrlKey && !self.draggedUser) {
                     var sourceDeptId = self._dragData.deptId || self.selectedDept?.id;
                     if (sourceDeptId === targetId) {
-                        self.showToast('無法對同部門設定跨部門', 'error');
+                        self.showToast(__('無法對同部門設定跨部門'), 'error');
                         self.clearDrag();
                         return;
                     }
@@ -988,7 +988,7 @@ function departmentManager() {
                 }
                 await self._apiPost(window.__BP + '/api/units/' + targetId + '/members', { user_id: person.id });
                 var targetDept = self.findDeptById(targetId);
-                self.showToast('已調至 ' + (targetDept?.name || targetId), 'success');
+                self.showToast(__('已調至 {name}', {name: (targetDept?.name || targetId)}), 'success');
                 await self._refreshAll();
                 self.clearDrag();
             });
@@ -1023,7 +1023,7 @@ function departmentManager() {
             if (targetDeptId && targetDeptId !== 'root') {
                 await this._apiPost(window.__BP + '/api/units/' + targetDeptId + '/members', { user_id: personId });
                 var dept = this.findDeptById(targetDeptId);
-                this.showToast('已調至 ' + (dept?.name || targetDeptId), 'success');
+                this.showToast(__('已調至 {name}', {name: (dept?.name || targetDeptId)}), 'success');
             }
             await this._refreshAll();
         },

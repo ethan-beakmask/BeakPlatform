@@ -22,7 +22,7 @@ function schedulesApp() {
         messageType: '',
         copyToOthers: false,
         timeOptions: times,
-        dayNames: { mon: '一', tue: '二', wed: '三', thu: '四', fri: '五', sat: '六', sun: '日' },
+        dayNames: { mon: __('一'), tue: __('二'), wed: __('三'), thu: __('四'), fri: __('五'), sat: __('六'), sun: __('日') },
         form: { schedule_code: '', name: '', timezone: 'Asia/Taipei', weekly_hours: {}, description: '', is_default: false },
         dayConfig: {
             mon: { isWorkday: 'true', startTime: '09:00', endTime: '18:00', breaks: [{ start: '12:00', end: '13:00' }] },
@@ -158,7 +158,7 @@ function schedulesApp() {
 
         async saveSchedule() {
             if (!this.form.schedule_code || !this.form.name) {
-                this.showMessage('請填寫必填欄位', 'error');
+                this.showMessage(__('請填寫必填欄位'), 'error');
                 return;
             }
             this.form.weekly_hours = this.dayConfigToWeeklyHours();
@@ -174,7 +174,7 @@ function schedulesApp() {
                 const result = await response.json();
                 if (result.success) { window.location.reload(); }
                 else { this.showMessage(result.message, 'error'); }
-            } catch (error) { this.showMessage('操作失敗: ' + error.message, 'error'); }
+            } catch (error) { this.showMessage(__('操作失敗: ') + error.message, 'error'); }
             finally { this.saving = false; }
         },
 
@@ -187,11 +187,11 @@ function schedulesApp() {
                 const result = await response.json();
                 if (result.success) { this.showMessage(result.message, 'success'); await this.loadSchedules(); }
                 else { this.showMessage(result.message, 'error'); }
-            } catch (error) { this.showMessage('操作失敗: ' + error.message, 'error'); }
+            } catch (error) { this.showMessage(__('操作失敗: ') + error.message, 'error'); }
         },
 
         async deleteSchedule(schedule) {
-            if (!confirm(`確定要刪除班表「${schedule.name}」嗎？`)) return;
+            if (!confirm(__('確定要刪除班表「{name}」嗎？', {name: schedule.name}))) return;
             try {
                 const response = await fetch(`${window.__BP}/api/admin/work-schedules/${schedule.id}`, {
                     method: 'DELETE',
@@ -200,7 +200,7 @@ function schedulesApp() {
                 const result = await response.json();
                 if (result.success) { this.showMessage(result.message, 'success'); await this.loadSchedules(); }
                 else { this.showMessage(result.message, 'error'); }
-            } catch (error) { this.showMessage('操作失敗: ' + error.message, 'error'); }
+            } catch (error) { this.showMessage(__('操作失敗: ') + error.message, 'error'); }
         },
 
         async loadSchedules() {
@@ -218,7 +218,7 @@ function schedulesApp() {
         },
 
         formatDaySchedule(periods) {
-            if (!periods || periods.length === 0) return '休';
+            if (!periods || periods.length === 0) return __('休');
             const result = [];
             const firstStart = periods[0].split('-')[0];
             const lastEnd = periods[periods.length - 1].split('-')[1];
@@ -229,7 +229,7 @@ function schedulesApp() {
                 const nextStart = periods[i + 1].split('-')[0];
                 if (currEnd < nextStart) breaks.push(`${currEnd}~${nextStart}`);
             }
-            if (breaks.length > 0) result.push(`<div style="font-size:10px;color:#888;">休: ${breaks.join(', ')}</div>`);
+            if (breaks.length > 0) result.push(`<div style="font-size:10px;color:#888;">${__('休: {breaks}', {breaks: breaks.join(', ')})}</div>`);
             return result.join('');
         }
     };

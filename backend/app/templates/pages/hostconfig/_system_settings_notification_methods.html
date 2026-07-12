@@ -29,7 +29,7 @@
                     this.smtp.configs = data.data;
                 }
             } catch (e) {
-                this.showMessage('smtp', '載入失敗: ' + e.message, true);
+                this.showMessage('smtp', __('載入失敗: {message}', {message: e.message}), true);
             }
             this.loading.smtp = false;
         },
@@ -53,7 +53,7 @@
                     this.smtp.showModal = true;
                 }
             } catch (e) {
-                this.showMessage('smtp', '載入設定失敗: ' + e.message, true);
+                this.showMessage('smtp', __('載入設定失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -89,12 +89,12 @@
                 }
                 this.showMessage('smtp', data.message, !data.success);
             } catch (e) {
-                this.showMessage('smtp', '儲存失敗: ' + e.message, true);
+                this.showMessage('smtp', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
         async testSmtpConfig(secureCode) {
-            const recipient = prompt('輸入測試收件人 Email（可留空只測連線）:');
+            const recipient = prompt(__('輸入測試收件人 Email（可留空只測連線）:'));
             try {
                 const res = await fetch(`${API_BASE}/smtp/${secureCode}/test`, {
                     method: 'POST',
@@ -107,12 +107,12 @@
                 const data = await res.json();
                 this.showMessage('smtp', data.message, !data.success);
             } catch (e) {
-                this.showMessage('smtp', '測試失敗: ' + e.message, true);
+                this.showMessage('smtp', __('測試失敗: {message}', {message: e.message}), true);
             }
         },
 
         async deleteSmtpConfig(secureCode) {
-            if (!confirm('確定要刪除此 SMTP 設定？')) return;
+            if (!confirm(__('確定要刪除此 SMTP 設定？'))) return;
             try {
                 const res = await fetch(`${API_BASE}/smtp/${secureCode}`, {
                     method: 'DELETE',
@@ -124,7 +124,7 @@
                 }
                 this.showMessage('smtp', data.message, !data.success);
             } catch (e) {
-                this.showMessage('smtp', '刪除失敗: ' + e.message, true);
+                this.showMessage('smtp', __('刪除失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -151,7 +151,7 @@
                     this.telegram.configs = data.data;
                 }
             } catch (e) {
-                this.showMessage('telegram', '載入失敗: ' + e.message, true);
+                this.showMessage('telegram', __('載入失敗: {message}', {message: e.message}), true);
             }
             this.loading.telegram = false;
         },
@@ -182,7 +182,7 @@
                     this.telegram.showModal = true;
                 }
             } catch (e) {
-                this.showMessage('telegram', '載入設定失敗: ' + e.message, true);
+                this.showMessage('telegram', __('載入設定失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -233,7 +233,7 @@
                 }
                 this.showMessage('telegram', data.message, !data.success);
             } catch (e) {
-                this.showMessage('telegram', '儲存失敗: ' + e.message, true);
+                this.showMessage('telegram', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -250,12 +250,12 @@
                 const data = await res.json();
                 this.showMessage('telegram', data.message, !data.success);
             } catch (e) {
-                this.showMessage('telegram', '測試失敗: ' + e.message, true);
+                this.showMessage('telegram', __('測試失敗: {message}', {message: e.message}), true);
             }
         },
 
         async deleteTelegramConfig(secureCode) {
-            if (!confirm('確定要刪除此 Telegram 設定？')) return;
+            if (!confirm(__('確定要刪除此 Telegram 設定？'))) return;
             try {
                 const res = await fetch(`${API_BASE}/telegram/${secureCode}`, {
                     method: 'DELETE',
@@ -267,7 +267,7 @@
                 }
                 this.showMessage('telegram', data.message, !data.success);
             } catch (e) {
-                this.showMessage('telegram', '刪除失敗: ' + e.message, true);
+                this.showMessage('telegram', __('刪除失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -293,7 +293,7 @@
                     this.recipients.groups = data.data;
                 }
             } catch (e) {
-                this.showMessage('recipients', '載入失敗: ' + e.message, true);
+                this.showMessage('recipients', __('載入失敗: {message}', {message: e.message}), true);
             }
             this.loading.recipients = false;
         },
@@ -354,12 +354,12 @@
                 }
                 this.showMessage('recipients', data.message, !data.success);
             } catch (e) {
-                this.showMessage('recipients', '儲存失敗: ' + e.message, true);
+                this.showMessage('recipients', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
         async deleteRecipientGroup(secureCode) {
-            if (!confirm('確定要刪除此收件人群組？')) return;
+            if (!confirm(__('確定要刪除此收件人群組？'))) return;
             try {
                 const res = await fetch(`${API_BASE}/recipient-groups/${secureCode}`, {
                     method: 'DELETE',
@@ -371,7 +371,7 @@
                 }
                 this.showMessage('recipients', data.message, !data.success);
             } catch (e) {
-                this.showMessage('recipients', '刪除失敗: ' + e.message, true);
+                this.showMessage('recipients', __('刪除失敗: {message}', {message: e.message}), true);
             }
         },
 

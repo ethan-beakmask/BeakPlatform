@@ -13,8 +13,8 @@
     function buildButton() {
         const btn = document.createElement('button');
         btn.className = 'bk-help-btn';
-        btn.title = '本頁說明';
-        btn.setAttribute('aria-label', '本頁說明');
+        btn.title = __('本頁說明');
+        btn.setAttribute('aria-label', __('本頁說明'));
         btn.innerHTML = '<i class="ri-question-line"></i>';
         btn.addEventListener('click', openModal);
         document.body.appendChild(btn);
@@ -32,11 +32,11 @@
         overlay.innerHTML = `
             <div class="bk-help-modal" role="dialog" aria-modal="true">
                 <div class="bk-help-modal-header">
-                    <div class="bk-help-modal-title">載入說明中...</div>
-                    <button type="button" class="bk-help-modal-close" aria-label="關閉">&times;</button>
+                    <div class="bk-help-modal-title">${__('載入說明中...')}</div>
+                    <button type="button" class="bk-help-modal-close" aria-label="${__('關閉')}">&times;</button>
                 </div>
                 <div class="bk-help-modal-body">
-                    <div class="bk-help-empty">載入中...</div>
+                    <div class="bk-help-empty">${__('載入中...')}</div>
                 </div>
                 <div class="bk-help-footer"></div>
             </div>
@@ -60,32 +60,32 @@
             const data = await resp.json();
 
             if (!data.found) {
-                titleEl.textContent = '本頁說明';
+                titleEl.textContent = __('本頁說明');
                 bodyEl.innerHTML = `
                     <div class="bk-help-empty">
-                        <p>${escapeHtml(data.message || '此頁面尚未提供說明文件')}</p>
+                        <p>${escapeHtml(data.message || __('此頁面尚未提供說明文件'))}</p>
                     </div>
                 `;
-                footerEl.innerHTML = `<a href="${BP}/help/">查看完整說明文件</a>`;
+                footerEl.innerHTML = `<a href="${BP}/help/">${__('查看完整說明文件')}</a>`;
                 return;
             }
 
-            titleEl.textContent = data.title || '本頁說明';
+            titleEl.textContent = data.title || __('本頁說明');
             const sectionsHtml = (data.sections || []).map(sec => {
                 const tag = sec.audience && sec.audience !== '*'
-                    ? `<div class="bk-help-audience-tag">適用：${escapeHtml(sec.audience)}</div>`
+                    ? `<div class="bk-help-audience-tag">${__('適用：{audience}', {audience: escapeHtml(sec.audience)})}</div>`
                     : '';
                 return `<div class="bk-help-section">${tag}${sec.html}</div>`;
             }).join('');
-            bodyEl.innerHTML = sectionsHtml || '<div class="bk-help-empty">內容為空</div>';
+            bodyEl.innerHTML = sectionsHtml || `<div class="bk-help-empty">${__('內容為空')}</div>`;
             footerEl.innerHTML = `
-                <a href="${BP}/help/page/${encodeURIComponent(data.menu_code)}" target="_blank">在新視窗開啟完整版</a>
+                <a href="${BP}/help/page/${encodeURIComponent(data.menu_code)}" target="_blank">${__('在新視窗開啟完整版')}</a>
                 &nbsp;|&nbsp;
-                <a href="${BP}/help/">所有說明文件</a>
+                <a href="${BP}/help/">${__('所有說明文件')}</a>
             `;
         } catch (err) {
-            titleEl.textContent = '載入失敗';
-            bodyEl.innerHTML = `<div class="bk-help-empty">載入說明時發生錯誤：${escapeHtml(err.message || err)}</div>`;
+            titleEl.textContent = __('載入失敗');
+            bodyEl.innerHTML = `<div class="bk-help-empty">${__('載入說明時發生錯誤：{message}', {message: escapeHtml(err.message || err)})}</div>`;
         }
     }
 

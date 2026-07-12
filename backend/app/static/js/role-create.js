@@ -92,7 +92,7 @@ function roleCreateForm() {
                 }
             } catch (e) {
                 console.error('Validate code error:', e);
-                this.codeError = '驗證失敗';
+                this.codeError = __('驗證失敗');
             }
         },
 
@@ -132,11 +132,11 @@ function roleCreateForm() {
                 if (resp.ok) {
                     window.location.href = __ROLE_CONFIG.listUrl;
                 } else {
-                    this.submitError = data.error || '建立失敗';
+                    this.submitError = data.error || __('建立失敗');
                 }
             } catch (e) {
                 console.error('Submit error:', e);
-                this.submitError = '網路錯誤，請稍後再試';
+                this.submitError = __('網路錯誤，請稍後再試');
             } finally {
                 this.isSubmitting = false;
             }

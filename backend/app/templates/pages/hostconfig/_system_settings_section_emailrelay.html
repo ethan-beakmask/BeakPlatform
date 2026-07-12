@@ -31,7 +31,7 @@
                 <div class="status-indicator"
                      :class="emailrelay.service.running ? 'status-running' : 'status-stopped'">
                     <span class="status-dot"></span>
-                    <span x-text="emailrelay.service.running ? '運行中' : '已停止'"></span>
+                    <span x-text="emailrelay.service.running ? __('運行中') : __('已停止')"></span>
                     <span x-show="emailrelay.service.version" style="color:#888"
                           x-text="'v' + emailrelay.service.version"></span>
                 </div>

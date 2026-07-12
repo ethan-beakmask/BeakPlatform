@@ -5,7 +5,7 @@
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 if (!res.ok) {
-                    this.message.menuColors = '載入選單配色失敗 (HTTP ' + res.status + ')';
+                    this.message.menuColors = __('載入選單配色失敗 (HTTP {status})', {status: res.status});
                     this.message.menuColorsError = true;
                     return;
                 }
@@ -16,7 +16,7 @@
                     this.menuColors.saved = JSON.stringify(data.data.colors);
                 }
             } catch (e) {
-                this.message.menuColors = '載入選單配色失敗: ' + e.message;
+                this.message.menuColors = __('載入選單配色失敗: {message}', {message: e.message});
                 this.message.menuColorsError = true;
             }
         },
@@ -32,7 +32,7 @@
                     body: JSON.stringify({ colors: this.menuColors.colors })
                 });
                 if (!res.ok) {
-                    this.message.menuColors = '儲存失敗 (HTTP ' + res.status + ')';
+                    this.message.menuColors = __('儲存失敗 (HTTP {status})', {status: res.status});
                     this.message.menuColorsError = true;
                     return;
                 }
@@ -43,24 +43,24 @@
                     this.menuColors.saved = JSON.stringify(this.menuColors.colors);
                     this._applyMenuColors(this.menuColors.colors);
                 } else {
-                    this.message.menuColors = data.error || '儲存失敗';
+                    this.message.menuColors = data.error || __('儲存失敗');
                     this.message.menuColorsError = true;
                 }
             } catch (e) {
-                this.message.menuColors = '儲存失敗: ' + e.message;
+                this.message.menuColors = __('儲存失敗: {message}', {message: e.message});
                 this.message.menuColorsError = true;
             }
         },
 
         async resetMenuColors() {
-            if (!confirm('確定要重置所有選單配色為預設值？')) return;
+            if (!confirm(__('確定要重置所有選單配色為預設值？'))) return;
             try {
                 const res = await fetch(`${API_BASE}/menu-colors/reset`, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken }
                 });
                 if (!res.ok) {
-                    this.message.menuColors = '重置失敗 (HTTP ' + res.status + ')';
+                    this.message.menuColors = __('重置失敗 (HTTP {status})', {status: res.status});
                     this.message.menuColorsError = true;
                     return;
                 }
@@ -72,11 +72,11 @@
                     this.message.menuColorsError = false;
                     this._applyMenuColors(this.menuColors.colors);
                 } else {
-                    this.message.menuColors = data.error || '重置失敗';
+                    this.message.menuColors = data.error || __('重置失敗');
                     this.message.menuColorsError = true;
                 }
             } catch (e) {
-                this.message.menuColors = '重置失敗: ' + e.message;
+                this.message.menuColors = __('重置失敗: {message}', {message: e.message});
                 this.message.menuColorsError = true;
             }
         },

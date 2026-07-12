@@ -130,11 +130,11 @@ function orgRateLimits() {
                 if (data.success) {
                     this.categories = data.data.categories;
                 } else {
-                    this.msg = data.error || '載入失敗';
+                    this.msg = data.error || __('載入失敗');
                     this.msgErr = true;
                 }
             } catch (e) {
-                this.msg = '載入失敗: ' + e.message;
+                this.msg = __('載入失敗: {message}', {message: e.message});
                 this.msgErr = true;
             }
             this.loading = false;
@@ -158,7 +158,7 @@ function orgRateLimits() {
                     this.msgErr = false;
                     await this.load();
                 } else {
-                    let errMsg = data.error || '儲存失敗';
+                    let errMsg = data.error || __('儲存失敗');
                     if (data.details) {
                         errMsg += ': ' + data.details.join(', ');
                     }
@@ -166,7 +166,7 @@ function orgRateLimits() {
                     this.msgErr = true;
                 }
             } catch (e) {
-                this.msg = '儲存失敗: ' + e.message;
+                this.msg = __('儲存失敗: {message}', {message: e.message});
                 this.msgErr = true;
             }
         }

@@ -94,7 +94,7 @@
                             </template>
                         </td>
                         <td style="text-align:right;" x-text="level.level_order"></td>
-                        <td style="text-align:center;" x-text="level.is_manager_level ? '是' : '-'"></td>
+                        <td style="text-align:center;" x-text="level.is_manager_level ? __('是') : '-'"></td>
                     </tr>
                 </template>
             </tbody>
@@ -179,7 +179,7 @@
                 <!-- 按鈕列 -->
                 <div class="btn-row">
                     <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="editSaving">
-                        <span x-text="editSaving ? '儲存中...' : '儲存'"></span>
+                        <span x-text="editSaving ? __('儲存中...') : __('儲存')"></span>
                     </button>
                     <template x-if="!selected.is_system_default">
                         <button type="button" class="btn btn-danger" @click="submitDelete()">
@@ -254,7 +254,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" @click="closeCreateModal()">{{ _('取消') }}</button>
                 <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="createSaving">
-                    <span x-text="createSaving ? '建立中...' : '建立職等'"></span>
+                    <span x-text="createSaving ? __('建立中...') : __('建立職等')"></span>
                 </button>
             </div>
         </div>

@@ -89,7 +89,7 @@
                 <form method="POST"
                       action="{{ url_for('org_admin_rescue.toggle_status', org_code=org.secure_code, admin_code=admin.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('{{ _('確定要%(action)s管理員「%(name)s」嗎？', action=(_('停用') if admin.is_active else _('啟用')), name=admin.display_name) }}')">
+                      onsubmit="return confirm(__('確定要{action}管理員「{name}」嗎？', {action: {% if admin.is_active %}__('停用'){% else %}__('啟用'){% endif %}, name: {{ admin.display_name|tojson|forceescape }} }))">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-reset-pwd" style="color: var(--color-primary);">
                         {% if admin.is_active %}{{ _('停用') }}{% else %}{{ _('啟用') }}{% endif %}
@@ -117,7 +117,7 @@
                        x-model="password" @input="validatePassword()"
                        required minlength="8" autocomplete="new-password">
                 <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
-                        x-text="showPassword ? '隱藏' : '顯示'"></button>
+                        x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                 <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
             </div>
             <p class="help-text" x-text="passwordRequirements"></p>

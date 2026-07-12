@@ -44,7 +44,7 @@
                     </td>
                     <td x-text="scopeSummary(key)"></td>
                     <td>
-                        <span x-text="(key.allowed_ips && key.allowed_ips.length) ? key.allowed_ips.join(', ') : '不鎖'"></span>
+                        <span x-text="(key.allowed_ips && key.allowed_ips.length) ? key.allowed_ips.join(', ') : __('不鎖')"></span>
                     </td>
                     <td x-text="fmtDate(key.expires_at)"></td>
                     <td x-text="fmtTime(key.last_used_at)"></td>

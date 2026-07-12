@@ -54,14 +54,14 @@ function logoSettings() {
 
                 if (data.success) {
                     this.logoUrl = data.data.logo_url + '?t=' + Date.now();  // 避免快取
-                    this.message = 'Logo 上傳成功';
+                    this.message = __('Logo 上傳成功');
                     this.messageType = 'success';
                 } else {
-                    this.message = data.message || '上傳失敗';
+                    this.message = data.message || __('上傳失敗');
                     this.messageType = 'error';
                 }
             } catch (err) {
-                this.message = '上傳失敗: ' + err.message;
+                this.message = __('上傳失敗: ') + err.message;
                 this.messageType = 'error';
             } finally {
                 this.uploading = false;
@@ -71,7 +71,7 @@ function logoSettings() {
         },
 
         async deleteLogo() {
-            if (!confirm('確定要刪除企業 Logo 嗎？')) return;
+            if (!confirm(__('確定要刪除企業 Logo 嗎？'))) return;
 
             try {
                 const response = await fetch(window.__BP + '/api/admin/settings/logo', {
@@ -85,14 +85,14 @@ function logoSettings() {
 
                 if (data.success) {
                     this.logoUrl = null;
-                    this.message = 'Logo 已刪除';
+                    this.message = __('Logo 已刪除');
                     this.messageType = 'success';
                 } else {
-                    this.message = data.message || '刪除失敗';
+                    this.message = data.message || __('刪除失敗');
                     this.messageType = 'error';
                 }
             } catch (err) {
-                this.message = '刪除失敗: ' + err.message;
+                this.message = __('刪除失敗: ') + err.message;
                 this.messageType = 'error';
             }
             setTimeout(() => { this.message = ''; }, 3000);
@@ -143,14 +143,14 @@ function generalSettings() {
 
                 const data = await response.json();
                 if (data.success) {
-                    this.saveMessage = '設定已儲存';
+                    this.saveMessage = __('設定已儲存');
                     setTimeout(() => { this.saveMessage = ''; }, 2000);
                 } else {
-                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                    alert(__('儲存失敗: ') + (data.message || __('未知錯誤')));
                 }
             } catch (err) {
                 console.error('儲存設定失敗:', err);
-                alert('儲存失敗: ' + err.message);
+                alert(__('儲存失敗: ') + err.message);
             }
         }
     };
@@ -204,14 +204,14 @@ function loginBrandingSettings() {
 
                 const data = await response.json();
                 if (data.success) {
-                    this.saveMessage = '設定已儲存';
+                    this.saveMessage = __('設定已儲存');
                     setTimeout(() => { this.saveMessage = ''; }, 2000);
                 } else {
-                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                    alert(__('儲存失敗: ') + (data.message || __('未知錯誤')));
                 }
             } catch (err) {
                 console.error('儲存設定失敗:', err);
-                alert('儲存失敗: ' + err.message);
+                alert(__('儲存失敗: ') + err.message);
             }
         }
     };
@@ -267,14 +267,14 @@ function passwordPolicySettings() {
                 const data = await response.json();
                 if (data.success) {
                     this.hasSmtp = data.data.has_smtp;
-                    this.saveMessage = '設定已儲存';
+                    this.saveMessage = __('設定已儲存');
                     setTimeout(() => { this.saveMessage = ''; }, 2000);
                 } else {
-                    alert('儲存失敗: ' + (data.message || '未知錯誤'));
+                    alert(__('儲存失敗: ') + (data.message || __('未知錯誤')));
                 }
             } catch (err) {
                 console.error('儲存密碼政策失敗:', err);
-                alert('儲存失敗: ' + err.message);
+                alert(__('儲存失敗: ') + err.message);
             }
         }
     };

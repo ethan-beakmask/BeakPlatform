@@ -2,7 +2,7 @@
     <div x-show="smtp.showModal" x-cloak class="modal-overlay">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3 x-text="smtp.editing ? '編輯 SMTP 設定' : '新增 SMTP 設定'"></h3>
+                <h3 x-text="smtp.editing ? __('編輯 SMTP 設定') : __('新增 SMTP 設定')"></h3>
                 <button class="modal-close" @click="smtp.showModal = false">&times;</button>
             </div>
 
@@ -58,7 +58,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label x-text="smtp.editing ? '密碼（留空保持不變）' : '密碼 *'"></label>
+                    <label x-text="smtp.editing ? __('密碼（留空保持不變）') : __('密碼 *')"></label>
                     <input type="password" x-model="smtp.form.password" :required="!smtp.editing" placeholder="{{ _('應用程式密碼') }}">
                     <div class="form-hint" x-show="smtp.form.provider_type === 'gmail'">
                         {{ _('Gmail 請使用「應用程式密碼」，格式如 xxxx xxxx xxxx xxxx') }}
@@ -97,7 +97,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @click="smtp.showModal = false">{{ _('取消') }}</button>
-                    <button type="submit" class="btn btn-primary" x-text="smtp.editing ? '儲存' : '新增'"></button>
+                    <button type="submit" class="btn btn-primary" x-text="smtp.editing ? __('儲存') : __('新增')"></button>
                 </div>
             </form>
         </div>
@@ -107,7 +107,7 @@
     <div x-show="telegram.showModal" x-cloak class="modal-overlay">
         <div class="modal-content modal-lg">
             <div class="modal-header">
-                <h3 x-text="telegram.editing ? '編輯 Telegram 設定' : '新增 Telegram 設定'"></h3>
+                <h3 x-text="telegram.editing ? __('編輯 Telegram 設定') : __('新增 Telegram 設定')"></h3>
                 <button class="modal-close" @click="telegram.showModal = false">&times;</button>
             </div>
 
@@ -162,7 +162,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @click="telegram.showModal = false">{{ _('取消') }}</button>
-                    <button type="submit" class="btn btn-primary" x-text="telegram.editing ? '儲存' : '新增'"></button>
+                    <button type="submit" class="btn btn-primary" x-text="telegram.editing ? __('儲存') : __('新增')"></button>
                 </div>
             </form>
         </div>
@@ -172,7 +172,7 @@
     <div x-show="recipients.showModal" x-cloak class="modal-overlay">
         <div class="modal-content modal-md">
             <div class="modal-header">
-                <h3 x-text="recipients.editing ? '編輯收件人群組' : '新增收件人群組'"></h3>
+                <h3 x-text="recipients.editing ? __('編輯收件人群組') : __('新增收件人群組')"></h3>
                 <button class="modal-close" @click="recipients.showModal = false">&times;</button>
             </div>
 
@@ -209,7 +209,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @click="recipients.showModal = false">{{ _('取消') }}</button>
-                    <button type="submit" class="btn btn-primary" x-text="recipients.editing ? '儲存' : '新增'"></button>
+                    <button type="submit" class="btn btn-primary" x-text="recipients.editing ? __('儲存') : __('新增')"></button>
                 </div>
             </form>
         </div>

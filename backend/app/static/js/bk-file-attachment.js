@@ -116,7 +116,7 @@ class BkFileAttachment {
     async flush(contextId) {
         const cid = contextId || this.config.contextId;
         if (!cid) {
-            return { success: 0, errors: ['flush: 缺少 contextId'] };
+            return { success: 0, errors: [__('flush: 缺少 contextId')] };
         }
         if (this._pendingFiles.length === 0) {
             return { success: 0, errors: [] };
@@ -144,10 +144,10 @@ class BkFileAttachment {
                 if (data.success) {
                     successCount++;
                 } else {
-                    errors.push(file.name + ': ' + (data.message || '上傳失敗'));
+                    errors.push(file.name + ': ' + (data.message || __('上傳失敗')));
                 }
             } catch (e) {
-                errors.push(file.name + ': ' + (e.message || '上傳失敗'));
+                errors.push(file.name + ': ' + (e.message || __('上傳失敗')));
             }
         }
 
@@ -192,12 +192,12 @@ class BkFileAttachment {
         dropContent.className = 'bkfa-dropzone-content';
         dropContent.innerHTML =
             '<i class="fas fa-cloud-upload-alt bkfa-dropzone-icon"></i>'
-            + '<span class="bkfa-dropzone-text">拖拉檔案至此，或</span>';
+            + __('<span class="bkfa-dropzone-text">拖拉檔案至此，或</span>');
 
         const uploadBtn = document.createElement('button');
         uploadBtn.type = 'button';
         uploadBtn.className = 'bkfa-upload-btn';
-        uploadBtn.innerHTML = '<i class="fas fa-paperclip"></i> 選擇檔案';
+        uploadBtn.innerHTML = __('<i class="fas fa-paperclip"></i> 選擇檔案');
         uploadBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             fileInput.click();
@@ -213,7 +213,7 @@ class BkFileAttachment {
                 parts.push(this.config.allowedExts.map(e => '.' + e).join(', '));
             }
             if (this.config.maxFileSize > 0) {
-                parts.push('上限 ' + this._formatSize(this.config.maxFileSize));
+                parts.push(__('上限 ') + this._formatSize(this.config.maxFileSize));
             }
             hint.textContent = parts.join(' | ');
             dropContent.appendChild(hint);
@@ -312,9 +312,9 @@ class BkFileAttachment {
         // thead
         const thead = document.createElement('thead');
         thead.innerHTML = '<tr>'
-            + '<th>檔案名稱</th>'
-            + '<th style="width:80px;text-align:right;">大小</th>'
-            + '<th style="width:100px;text-align:center;">操作</th>'
+            + __('<th>檔案名稱</th>')
+            + __('<th style="width:80px;text-align:right;">大小</th>')
+            + __('<th style="width:100px;text-align:center;">操作</th>')
             + '</tr>';
         table.appendChild(thead);
 
@@ -354,7 +354,7 @@ class BkFileAttachment {
             if (isPendingUpload) {
                 // 暫存檔案：顯示「待上傳」標籤 + 移除按鈕
                 const tag = document.createElement('span');
-                tag.textContent = '待上傳';
+                tag.textContent = __('待上傳');
                 tag.style.cssText = 'font-size:10px;color:#3b82f6;margin-right:4px;';
                 tdActions.appendChild(tag);
 
@@ -362,14 +362,14 @@ class BkFileAttachment {
                     const rmBtn = document.createElement('button');
                     rmBtn.type = 'button';
                     rmBtn.className = 'bkfa-action-btn bkfa-del-btn';
-                    rmBtn.title = '移除';
+                    rmBtn.title = __('移除');
                     rmBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
                     rmBtn.addEventListener('click', () => this._removePending(f._pendingIdx));
                     tdActions.appendChild(rmBtn);
                 }
             } else if (isPendingDelete) {
                 const tag = document.createElement('span');
-                tag.textContent = '待確認刪除';
+                tag.textContent = __('待確認刪除');
                 tag.style.cssText = 'font-size:10px;color:#9ca3af;margin-right:4px;';
                 tdActions.appendChild(tag);
 
@@ -377,7 +377,7 @@ class BkFileAttachment {
                     const undoBtn = document.createElement('button');
                     undoBtn.type = 'button';
                     undoBtn.className = 'bkfa-action-btn';
-                    undoBtn.title = '撤銷刪除';
+                    undoBtn.title = __('撤銷刪除');
                     undoBtn.innerHTML = '<i class="ri-arrow-go-back-line"></i>';
                     undoBtn.addEventListener('click', () => this._revertDelete(f.secure_code));
                     tdActions.appendChild(undoBtn);
@@ -386,7 +386,7 @@ class BkFileAttachment {
                 const dlBtn = document.createElement('button');
                 dlBtn.type = 'button';
                 dlBtn.className = 'bkfa-action-btn';
-                dlBtn.title = '下載';
+                dlBtn.title = __('下載');
                 dlBtn.innerHTML = '<i class="ri-download-2-line"></i>';
                 dlBtn.addEventListener('click', () => this._downloadFile(f.secure_code));
                 tdActions.appendChild(dlBtn);
@@ -398,7 +398,7 @@ class BkFileAttachment {
                         const delBtn = document.createElement('button');
                         delBtn.type = 'button';
                         delBtn.className = 'bkfa-action-btn bkfa-del-btn';
-                        delBtn.title = '刪除';
+                        delBtn.title = __('刪除');
                         delBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
                         delBtn.addEventListener('click', () => this._deleteFile(f.secure_code));
                         tdActions.appendChild(delBtn);
@@ -435,12 +435,12 @@ class BkFileAttachment {
             if (allowed.length > 0 && !allowed.includes(ext)) {
                 errors.push({
                     name: name,
-                    reason: '不支援的檔案格式 (.' + (ext || '無副檔名') + ')',
+                    reason: __('不支援的檔案格式 (.') + (ext || __('無副檔名')) + ')',
                 });
             } else if (maxSize > 0 && file.size > maxSize) {
                 errors.push({
                     name: name,
-                    reason: '檔案過大 (' + this._formatSize(file.size) + ')，上限 ' + this._formatSize(maxSize),
+                    reason: __('檔案過大 (') + this._formatSize(file.size) + __(')，上限 ') + this._formatSize(maxSize),
                 });
             }
         }
@@ -457,7 +457,7 @@ class BkFileAttachment {
         const totalCount = this.files.length + this._pendingFiles.length;
         const remaining = this.config.maxFiles - totalCount;
         if (remaining <= 0) {
-            this._showModal('上傳限制', '已達檔案數量上限 (' + this.config.maxFiles + ' 個)');
+            this._showModal(__('上傳限制'), __('已達檔案數量上限 (') + this.config.maxFiles + __(' 個)'));
             return;
         }
 
@@ -474,13 +474,13 @@ class BkFileAttachment {
             const allowed = this.config.allowedExts;
             const maxSize = this.config.maxFileSize;
             if (allowed.length > 0) {
-                detail += '<div style="margin-top:8px;font-size:12px;color:#6b7280;">允許格式: ' + allowed.map(e => '.' + e).join(', ') + '</div>';
+                detail += __('<div style="margin-top:8px;font-size:12px;color:#6b7280;">允許格式: ') + allowed.map(e => '.' + e).join(', ') + '</div>';
             }
             if (maxSize > 0) {
-                detail += '<div style="font-size:12px;color:#6b7280;">大小上限: ' + this._formatSize(maxSize) + '</div>';
+                detail += __('<div style="font-size:12px;color:#6b7280;">大小上限: ') + this._formatSize(maxSize) + '</div>';
             }
 
-            this._showModal('附件上傳失敗', '<ul style="margin-bottom:0;">' + lines + '</ul>' + detail);
+            this._showModal(__('附件上傳失敗'), '<ul style="margin-bottom:0;">' + lines + '</ul>' + detail);
             this._els.fileInput.value = '';
             return;
         }
@@ -492,14 +492,14 @@ class BkFileAttachment {
             }
             this._els.fileInput.value = '';
             this._renderList();
-            this._showStatus(toProcess.length + ' 個檔案已加入', false);
+            this._showStatus(toProcess.length + __(' 個檔案已加入'), false);
             return;
         }
 
         // === 即時上傳模式 ===
         this.uploading = true;
         this._els.uploadBtn.disabled = true;
-        this._showStatus('上傳中...', false);
+        this._showStatus(__('上傳中...'), false);
 
         let successCount = 0;
         let lastError = '';
@@ -528,10 +528,10 @@ class BkFileAttachment {
                         this.config.onUpload(data.data);
                     }
                 } else {
-                    lastError = data.message || '上傳失敗';
+                    lastError = data.message || __('上傳失敗');
                 }
             } catch (e) {
-                lastError = e.message || '上傳失敗';
+                lastError = e.message || __('上傳失敗');
             }
         }
 
@@ -541,10 +541,10 @@ class BkFileAttachment {
 
         if (successCount > 0) {
             await this.refresh();
-            this._showStatus(successCount + ' 個檔案上傳成功', false);
+            this._showStatus(successCount + __(' 個檔案上傳成功'), false);
         }
         if (lastError) {
-            this._showModal('上傳失敗', this._escHtml(lastError));
+            this._showModal(__('上傳失敗'), this._escHtml(lastError));
         }
     }
 
@@ -559,17 +559,17 @@ class BkFileAttachment {
             if (data.success && data.url) {
                 window.location.href = data.url;
             } else {
-                this._showModal('下載失敗', this._escHtml(data.message || '無法取得下載連結'));
+                this._showModal(__('下載失敗'), this._escHtml(data.message || __('無法取得下載連結')));
             }
         } catch (e) {
-            this._showModal('下載失敗', this._escHtml(e.message || '網路錯誤'));
+            this._showModal(__('下載失敗'), this._escHtml(e.message || __('網路錯誤')));
         }
     }
 
     // ===== Delete =====
 
     async _deleteFile(fileSc) {
-        if (!confirm('確定要刪除此附件？')) return;
+        if (!confirm(__('確定要刪除此附件？'))) return;
 
         try {
             const res = await fetch(window.__BP + '/api/files/' + fileSc, { method: 'DELETE' });
@@ -580,10 +580,10 @@ class BkFileAttachment {
                 }
                 await this.refresh();
             } else {
-                this._showStatus(data.message || '刪除失敗', true);
+                this._showStatus(data.message || __('刪除失敗'), true);
             }
         } catch (e) {
-            this._showStatus(e.message || '刪除失敗', true);
+            this._showStatus(e.message || __('刪除失敗'), true);
         }
     }
 
@@ -595,12 +595,12 @@ class BkFileAttachment {
             const data = await res.json();
             if (data.success) {
                 await this.refresh();
-                this._showStatus('已撤銷刪除', false);
+                this._showStatus(__('已撤銷刪除'), false);
             } else {
-                this._showStatus(data.message || '撤銷失敗', true);
+                this._showStatus(data.message || __('撤銷失敗'), true);
             }
         } catch (e) {
-            this._showStatus(e.message || '撤銷失敗', true);
+            this._showStatus(e.message || __('撤銷失敗'), true);
         }
     }
 
@@ -630,7 +630,7 @@ class BkFileAttachment {
                 +   '</div>'
                 +   '<div class="bkfa-modal-body"></div>'
                 +   '<div class="bkfa-modal-footer">'
-                +     '<button type="button" class="bkfa-modal-btn">關閉</button>'
+                +     __('<button type="button" class="bkfa-modal-btn">關閉</button>')
                 +   '</div>'
                 + '</div>'
                 + '</div>';

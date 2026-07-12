@@ -35,7 +35,7 @@
         </form>
         <form method="POST" action="{{ url_for('external_users.delete_external_user', secure_code=user.secure_code) }}"
               style="display: inline;"
-              onsubmit="return confirm('確定要刪除此外部廠商嗎？')">
+              onsubmit="return confirm(__('確定要刪除此外部廠商嗎？'))">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger" style="margin-left: 8px;">
                 {{ _('刪除') }}

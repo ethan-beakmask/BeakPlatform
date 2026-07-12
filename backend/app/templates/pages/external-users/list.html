@@ -73,7 +73,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
                 <a href="#" class="text-danger" style="margin-left: 8px;"
-                   onclick="event.preventDefault(); if(confirm('確定要刪除外部廠商「{{ user.display_name }}」嗎？')) document.getElementById('delete-{{ user.secure_code }}').submit();">
+                   onclick="event.preventDefault(); if(confirm(__('確定要刪除外部廠商「{name}」嗎？', {name: {{ user.display_name|tojson|forceescape }} }))) document.getElementById('delete-{{ user.secure_code }}').submit();">
                     {{ _('刪除') }}
                 </a>
                 <form id="delete-{{ user.secure_code }}" method="POST" action="{{ url_for('external_users.delete_external_user', secure_code=user.secure_code) }}" style="display: none;">

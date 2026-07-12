@@ -44,7 +44,7 @@
                             <td x-text="Object.keys(config.channels || {}).length"></td>
                             <td>
                                 <span :class="'badge ' + (config.is_active ? 'badge-success' : 'badge-danger')"
-                                      x-text="config.is_active ? '啟用' : '停用'"></span>
+                                      x-text="config.is_active ? __('啟用') : __('停用')"></span>
                             </td>
                             <td class="actions">
                                 <button class="btn btn-secondary" @click="editTelegramConfig(config)">{{ _('編輯') }}</button>

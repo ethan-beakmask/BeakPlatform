@@ -224,6 +224,9 @@ def register_context_processors(app: Flask) -> None:
                 pass
         return {'menu_color_overrides': None}
 
+    # Jinja2 自訂 test：value 是否包含於序列（selectattr(..., 'contains', x) 用）
+    app.jinja_env.tests['contains'] = lambda seq, value: value in (seq or ())
+
     @app.context_processor
     def inject_i18n():
         """將 i18n 相關資料注入到所有模板"""

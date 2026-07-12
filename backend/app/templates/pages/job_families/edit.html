@@ -110,7 +110,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="cascade_delete" value="true">
     <button type="submit" class="btn btn-danger"
-            onclick="return confirm('{{ _('確定要刪除職系「%(name)s」及其 %(count)s 個職稱嗎？', name=job_family.name, count=confirm_cascade) }}');">
+            onclick="return confirm(__('確定要刪除職系「{name}」及其 {count} 個職稱嗎？', {name: {{ job_family.name|tojson|forceescape }}, count: {{ confirm_cascade|tojson|forceescape }} }));">
         {{ _('確認刪除職系及職稱') }}
     </button>
 </form>
@@ -120,7 +120,7 @@
 </a>
 {% else %}
 <form method="POST" action="{{ url_for('job_families.delete_job_family', secure_code=job_family.secure_code) }}"
-      onsubmit="return confirm('{{ _('確定要刪除職系「%(name)s」嗎？', name=job_family.name) }}');">
+      onsubmit="return confirm(__('確定要刪除職系「{name}」嗎？', {name: {{ job_family.name|tojson|forceescape }} }));">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">
         {{ _('刪除此職系') }}

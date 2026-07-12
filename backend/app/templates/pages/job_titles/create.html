@@ -33,7 +33,7 @@
             <th style="text-align: left;">{{ _('職稱代碼') }}</th>
             <td>
                 <input type="text" name="code" maxlength="30" x-ref="codeField"
-                       :placeholder="_ci_generatedCode || '留空自動產生'" style="width: 100%;"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')" style="width: 100%;"
                        x-model="codeval"
                        @input.debounce.500ms="ciValidateCode(codeval)">
                 <div style="font-size: 0.8em; color: #666;">{{ _('選填，留空自動產生。如 MGR, PM, SR_ENG') }}</div>

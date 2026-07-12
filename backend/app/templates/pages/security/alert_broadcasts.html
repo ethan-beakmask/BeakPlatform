@@ -182,7 +182,7 @@
                                           x-text="' / ' + u.dept_name"
                                           style="color: #6b7280;"></span>
                                 </td>
-                                <td x-text="u.last_login_at ? BkTime.format(u.last_login_at, 'short') : '從未登入'"></td>
+                                <td x-text="u.last_login_at ? BkTime.format(u.last_login_at, 'short') : __('從未登入')"></td>
                             </tr>
                         </template>
                     </tbody>

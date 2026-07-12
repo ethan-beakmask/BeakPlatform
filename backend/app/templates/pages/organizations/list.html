@@ -38,7 +38,7 @@
             </div>
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="btn btn-secondary btn-sm" @click="toggleConglomerateMode()"
-                        x-text="conglomerateMode ? '取消集團設定' : '集團設定'"></button>
+                        x-text="conglomerateMode ? __('取消集團設定') : __('集團設定')"></button>
             </div>
         </div>
 
@@ -240,15 +240,15 @@
                         <button type="button" class="btn btn-sm"
                                 :class="contractStatusFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
                                 @click="contractStatusFilter = 'all'"
-                                x-text="'全部 (' + contracts.length + ')'"></button>
+                                x-text="__('全部 ({count})', {count: contracts.length})"></button>
                         <button type="button" class="btn btn-sm"
                                 :class="contractStatusFilter === 'active' ? 'btn-primary' : 'btn-secondary'"
                                 @click="contractStatusFilter = 'active'"
-                                x-text="'有效 (' + contracts.filter(c => c.status === 'ACTIVE' && c.is_active).length + ')'"></button>
+                                x-text="__('有效 ({count})', {count: contracts.filter(c => c.status === 'ACTIVE' && c.is_active).length})"></button>
                         <button type="button" class="btn btn-sm"
                                 :class="contractStatusFilter === 'inactive' ? 'btn-primary' : 'btn-secondary'"
                                 @click="contractStatusFilter = 'inactive'"
-                                x-text="'無效 (' + contracts.filter(c => c.status === 'DISABLED' || c.is_expired || !c.is_active).length + ')'"></button>
+                                x-text="__('無效 ({count})', {count: contracts.filter(c => c.status === 'DISABLED' || c.is_expired || !c.is_active).length})"></button>
                     </div>
                     <table class="contract-table">
                         <thead>
@@ -320,7 +320,7 @@
     <div x-show="contractModal.show" x-cloak class="modal-overlay">
         <div class="modal-content modal-md">
             <div class="modal-header">
-                <h3 x-text="contractModal.editing ? '檢視合約' : '新增合約'"></h3>
+                <h3 x-text="contractModal.editing ? __('檢視合約') : __('新增合約')"></h3>
                 <button class="modal-close" @click="contractModal.show = false">&times;</button>
             </div>
 

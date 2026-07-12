@@ -104,10 +104,14 @@ JSON 字典範例 (`en.json`):
 - [x] 冒煙測試：en 用戶模板渲染英文、zh-TW 不受影響
 - 註：頁面上殘留中文有兩類且皆屬預期 — (1) Alpine x-text JS 表達式（Phase 3）、(2) 選單標題來自 DB title_i18n 動態資料（不在程式 i18n 範圍）
 
-### Phase 3 - Platform JS
+### Phase 3 - Platform JS ✅ (2026-07-12 完成)
 
-- [ ] 44 檔，~250 user-facing 字串改用 `__()`
-- [ ] 對應填入 `backend/app/static/i18n/en.json`
+- [x] 靜態 JS 52 檔 + 模板 `<script>`/`_methods.html` partial/Alpine 表達式，user-facing 字串改用 `__()`
+- [x] `en.json` 497 條字典翻譯完成
+- [x] 字典載入改為阻塞式路由 `/i18n/<locale>.js`（main.py `i18n_dict_js`），避免 Alpine 渲染搶先於 async fetch
+- [x] 實測：en 模式選單管理頁按鈕與 JS 動態訊息（Position reset）皆英文
+- 修復附帶問題：msgid 裸 `%` 造成 500（flask_babel 一律做 % 插值，settings.html 改 `%%`）、`selectattr('contains')` 缺自訂 test（既有 bug，app 註冊 `contains`）、「未知網域」跨層字串比對改 `org_unknown` 布林旗標、選單標題 title_i18n 回填 72 筆英文
+- 待辦：menu_defaults.py（新裝 seed）尚未帶英文選單標題
 
 ### Phase 4 - 模組 Python + 模板
 

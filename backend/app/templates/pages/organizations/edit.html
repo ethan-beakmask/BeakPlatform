@@ -160,7 +160,7 @@
         </p>
         <form method="POST"
               action="{{ url_for('organizations.delete_org', secure_code=organization.secure_code) }}"
-              onsubmit="return confirm('{{ _('確定要刪除企業「%(name)s」嗎？此操作無法復原。', name=organization.name) }}');">
+              onsubmit="return confirm(__('確定要刪除企業「{name}」嗎？此操作無法復原。', {name: {{ organization.name|tojson|forceescape }} }));">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger">{{ _('刪除企業') }}</button>
         </form>
@@ -183,11 +183,11 @@ function orgEditForm() {
 
         handleSubmit(event) {
             if (this.originalActive && this.isActive === 'false' && this.hasActiveContracts) {
-                let msg = `此企業尚有 ${this.activeContractCount} 份未到期合約`;
+                let msg = __('此企業尚有 {count} 份未到期合約', {count: this.activeContractCount});
                 if (this.latestContractEnd) {
-                    msg += `（最晚到期日: ${this.latestContractEnd}）`;
+                    msg += __('（最晚到期日: {date}）', {date: this.latestContractEnd});
                 }
-                msg += `\n\n停用後該企業用戶將無法登入。\n確定要停用嗎？`;
+                msg += __('\n\n停用後該企業用戶將無法登入。\n確定要停用嗎？');
 
                 if (!confirm(msg)) {
                     event.preventDefault();

@@ -88,7 +88,7 @@
                 </form>
                 <form method="POST" action="{{ url_for('org_admins.delete_admin', secure_code=admin.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('{{ _('確定要刪除管理員「%(name)s」嗎？', name=admin.display_name) }}')">
+                      onsubmit="return confirm(__('確定要刪除管理員「{name}」嗎？', {name: {{ admin.display_name|tojson|forceescape }} }))">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-reset-pwd" style="color: var(--color-danger);">{{ _('刪除') }}</button>
                 </form>
@@ -114,7 +114,7 @@
                        x-model="password" @input="validatePassword()"
                        required minlength="8" autocomplete="new-password">
                 <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
-                        x-text="showPassword ? '隱藏' : '顯示'"></button>
+                        x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                 <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
             </div>
             <p class="help-text" x-text="passwordRequirements"></p>

@@ -12,7 +12,7 @@ function rescueResetPasswordForm() {
         showPassword: false,
         passwordErrors: [],
         passwordChecked: false,
-        passwordRequirements: '載入中...',
+        passwordRequirements: __('載入中...'),
         validateTimer: null,
         formAction: '',
 
@@ -43,18 +43,18 @@ function rescueResetPasswordForm() {
                     const data = await response.json();
                     if (data.success && data.data.policy.enabled) {
                         const p = data.data.policy;
-                        let reqs = ['長度至少 ' + p.min_length + ' 個字元'];
-                        if (p.require_uppercase) reqs.push('包含大寫字母');
-                        if (p.require_lowercase) reqs.push('包含小寫字母');
-                        if (p.require_digit) reqs.push('包含數字');
-                        if (p.require_special) reqs.push('包含特殊符號');
+                        let reqs = [__('長度至少 ') + p.min_length + __(' 個字元')];
+                        if (p.require_uppercase) reqs.push(__('包含大寫字母'));
+                        if (p.require_lowercase) reqs.push(__('包含小寫字母'));
+                        if (p.require_digit) reqs.push(__('包含數字'));
+                        if (p.require_special) reqs.push(__('包含特殊符號'));
                         this.passwordRequirements = reqs.join('、');
                     } else {
-                        this.passwordRequirements = '密碼長度至少 8 個字元';
+                        this.passwordRequirements = __('密碼長度至少 8 個字元');
                     }
                 }
             } catch (err) {
-                this.passwordRequirements = '密碼長度至少 8 個字元';
+                this.passwordRequirements = __('密碼長度至少 8 個字元');
             }
         },
 

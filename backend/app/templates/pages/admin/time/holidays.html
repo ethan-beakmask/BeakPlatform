@@ -129,7 +129,7 @@
         <div class="modal-overlay">
             <div class="modal-content modal-sm">
                 <div class="modal-header">
-                    <h3 x-text="editingHoliday ? '編輯假日設定' : '假日/補班設定'"></h3>
+                    <h3 x-text="editingHoliday ? __('編輯假日設定') : __('假日/補班設定')"></h3>
                     <button class="close-btn" @click="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
@@ -184,7 +184,7 @@
                             :style="form.cancelMode ? 'background: #dc2626' : ''"
                             @click="saveHoliday()"
                             :disabled="saving">
-                        <span x-text="saving ? '處理中...' : (form.cancelMode ? '確認取消設定' : '儲存')"></span>
+                        <span x-text="saving ? __('處理中...') : (form.cancelMode ? __('確認取消設定') : __('儲存'))"></span>
                     </button>
                 </div>
             </div>

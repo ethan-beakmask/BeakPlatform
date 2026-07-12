@@ -49,11 +49,11 @@ function purgeDeletedManager() {
                         this.orgs = data.orgs;
                     }
                 } else {
-                    this.resultMessage = '掃描失敗: ' + data.message;
+                    this.resultMessage = __('掃描失敗: ') + data.message;
                     this.resultSuccess = false;
                 }
             } catch (err) {
-                this.resultMessage = '掃描失敗: ' + err.message;
+                this.resultMessage = __('掃描失敗: ') + err.message;
                 this.resultSuccess = false;
             }
             this.scanning = false;
@@ -61,7 +61,7 @@ function purgeDeletedManager() {
         },
 
         async executePurge() {
-            var scopeLabel = this.scope === 'all' ? '全系統' : this.scope;
+            var scopeLabel = this.scope === 'all' ? __('全系統') : this.scope;
             if (this.scope !== 'all') {
                 for (var i = 0; i < this.orgs.length; i++) {
                     if (this.orgs[i].secure_code === this.scope) {
@@ -72,9 +72,9 @@ function purgeDeletedManager() {
             }
 
             if (!confirm(
-                '確定要永久清除「' + scopeLabel + '」中所有標記刪除的記錄嗎？\n\n' +
-                '共 ' + this.totalCount + ' 筆記錄將被永久刪除。\n' +
-                '此操作無法復原！'
+                __('確定要永久清除「') + scopeLabel + __('」中所有標記刪除的記錄嗎？\n\n') +
+                __('共 ') + this.totalCount + __(' 筆記錄將被永久刪除。\n') +
+                __('此操作無法復原！')
             )) {
                 return;
             }
@@ -100,11 +100,11 @@ function purgeDeletedManager() {
                     this.resultMessage = successMsg;
                 } else {
                     this.resultSuccess = false;
-                    this.resultMessage = '清除失敗: ' + data.message;
+                    this.resultMessage = __('清除失敗: ') + data.message;
                 }
             } catch (err) {
                 this.resultSuccess = false;
-                this.resultMessage = '清除失敗: ' + err.message;
+                this.resultMessage = __('清除失敗: ') + err.message;
             }
             this.executing = false;
         }
@@ -128,11 +128,11 @@ function hardDeleteManager() {
                     this.deletedOrgs = data.deleted_orgs || [];
                     this.tableCounts = data.table_counts || [];
                 } else {
-                    this.resultMessage = '載入失敗: ' + data.message;
+                    this.resultMessage = __('載入失敗: ') + data.message;
                     this.resultSuccess = false;
                 }
             } catch (err) {
-                this.resultMessage = '載入失敗: ' + err.message;
+                this.resultMessage = __('載入失敗: ') + err.message;
                 this.resultSuccess = false;
             }
             this.loading = false;
@@ -140,7 +140,7 @@ function hardDeleteManager() {
 
         async executeHardDelete() {
             var orgNames = this.deletedOrgs.map(function(o) { return o.name; }).join(', ');
-            if (!confirm('確定要永久刪除以下企業及其所有資料嗎？\n\n' + orgNames + '\n\n此操作無法復原！')) {
+            if (!confirm(__('確定要永久刪除以下企業及其所有資料嗎？\n\n') + orgNames + __('\n\n此操作無法復原！'))) {
                 return;
             }
 
@@ -160,20 +160,20 @@ function hardDeleteManager() {
                     this.resultSuccess = true;
                     var msg = data.message;
                     if (data.deleted_counts && Object.keys(data.deleted_counts).length > 0) {
-                        msg += '\n\n刪除明細:\n';
+                        msg += __('\n\n刪除明細:\n');
                         for (var table in data.deleted_counts) {
-                            msg += '- ' + table + ': ' + data.deleted_counts[table] + ' 筆\n';
+                            msg += '- ' + table + ': ' + data.deleted_counts[table] + __(' 筆\n');
                         }
                     }
                     this.resultMessage = msg;
                     await this.loadPreview();
                 } else {
                     this.resultSuccess = false;
-                    this.resultMessage = '刪除失敗: ' + data.message;
+                    this.resultMessage = __('刪除失敗: ') + data.message;
                 }
             } catch (err) {
                 this.resultSuccess = false;
-                this.resultMessage = '刪除失敗: ' + err.message;
+                this.resultMessage = __('刪除失敗: ') + err.message;
             }
             this.executing = false;
         }

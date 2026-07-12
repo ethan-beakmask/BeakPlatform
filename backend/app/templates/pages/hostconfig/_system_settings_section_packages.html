@@ -16,7 +16,7 @@
                     <span>
                         {{ _('查詢時間:') }} <span x-text="packages.cachedAt.replace('T', ' ').substring(0, 19)"></span>
                         <span x-show="packages.cached" style="color: #f59e0b;">{{ _('（快取）') }}</span>
-                        <span style="color: #888;" x-text="'（耗時 ' + packages.durationMs + 'ms）'"></span>
+                        <span style="color: #888;" x-text="__('（耗時 {ms}ms）', {ms: packages.durationMs})"></span>
                     </span>
                 </template>
             </div>
@@ -32,11 +32,11 @@
     <!-- 統計摘要 -->
     <template x-if="packages.stats.total > 0">
         <div class="settings-card" style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <span class="badge badge-success" x-text="'最新 ' + packages.stats.up_to_date"></span>
-            <span class="badge badge-warning" x-text="'小版本更新 ' + packages.stats.minor_update"></span>
-            <span class="badge badge-danger" x-text="'大版本更新 ' + packages.stats.major_update"></span>
-            <span class="badge badge-secondary" x-text="'無法檢查 ' + packages.stats.check_failed"></span>
-            <span style="color: #888; font-size: 13px;" x-text="'共 ' + packages.stats.total + ' 個套件'"></span>
+            <span class="badge badge-success" x-text="__('最新 {count}', {count: packages.stats.up_to_date})"></span>
+            <span class="badge badge-warning" x-text="__('小版本更新 {count}', {count: packages.stats.minor_update})"></span>
+            <span class="badge badge-danger" x-text="__('大版本更新 {count}', {count: packages.stats.major_update})"></span>
+            <span class="badge badge-secondary" x-text="__('無法檢查 {count}', {count: packages.stats.check_failed})"></span>
+            <span style="color: #888; font-size: 13px;" x-text="__('共 {count} 個套件', {count: packages.stats.total})"></span>
         </div>
     </template>
 

@@ -184,7 +184,7 @@
     {{ _('合約建立後不可修改內容（稽核要求）。') }}<br>
     {{ _('如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。') }}
 </p>
-<form method="POST" onsubmit="return confirm('{{ _('確定要停用合約「%(number)s」嗎？停用後不可復原。', number=contract.contract_number) }}')">
+<form method="POST" onsubmit="return confirm(__('確定要停用合約「{number}」嗎？停用後不可復原。', {number: {{ contract.contract_number|tojson|forceescape }} }))">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="disable">
     <button type="submit" class="btn btn-danger">

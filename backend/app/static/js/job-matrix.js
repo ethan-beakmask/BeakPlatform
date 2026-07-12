@@ -38,11 +38,11 @@ var __MATRIX_CONFIG = window.__MATRIX_CONFIG || {};
                 showToast(data.message, 'success');
                 return data.title;
             } else {
-                showToast('更新失敗: ' + data.error, 'error');
+                showToast(__('更新失敗: ') + data.error, 'error');
                 return null;
             }
         } catch (err) {
-            showToast('請求失敗: ' + err.message, 'error');
+            showToast(__('請求失敗: ') + err.message, 'error');
             return null;
         }
     }

@@ -105,7 +105,7 @@
         var header = document.createElement('div');
         header.style.cssText = 'padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;'
             + 'justify-content:space-between;align-items:center;flex-shrink:0;';
-        header.innerHTML = '<span style="font-weight:600;font-size:15px;">選擇人員</span>';
+        header.innerHTML = __('<span style="font-weight:600;font-size:15px;">選擇人員</span>');
         var closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.textContent = 'X';
@@ -119,7 +119,7 @@
         searchBar.style.cssText = 'padding:8px 16px;border-bottom:1px solid #f3f4f6;flex-shrink:0;';
         var searchInput = document.createElement('input');
         searchInput.type = 'text';
-        searchInput.placeholder = '搜尋姓名...';
+        searchInput.placeholder = __('搜尋姓名...');
         searchInput.id = 'user-picker-search';
         searchInput.style.cssText = 'width:100%;padding:6px 10px;border:1px solid #d1d5db;'
             + 'border-radius:4px;font-size:13px;outline:none;';
@@ -135,7 +135,7 @@
         footer.style.cssText = 'padding:10px 16px;border-top:1px solid #e5e7eb;text-align:right;flex-shrink:0;';
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.textContent = '取消';
+        cancelBtn.textContent = __('取消');
         cancelBtn.style.cssText = 'padding:6px 16px;border:1px solid #d1d5db;background:#fff;'
             + 'border-radius:4px;cursor:pointer;font-size:13px;';
         cancelBtn.onclick = function () { _closeModal(); };
@@ -180,13 +180,13 @@
     function _loadTree() {
         var container = document.getElementById('user-picker-tree-container');
         if (!container) return;
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;">載入中...</div>';
+        container.innerHTML = __('<div style="text-align:center;padding:20px;color:#9ca3af;">載入中...</div>');
 
         fetchOrgTree().then(function (data) {
             _fullTreeData = data;
             _renderTree(data);
         }).catch(function (err) {
-            container.innerHTML = '<div style="text-align:center;padding:20px;color:#dc2626;">載入失敗: '
+            container.innerHTML = __('<div style="text-align:center;padding:20px;color:#dc2626;">載入失敗: ')
                 + escapeHtml(err.message) + '</div>';
         });
     }
@@ -326,7 +326,7 @@
         static schema(...extend) {
             return FieldComponent.schema({
                 type: 'userPicker',
-                label: '人員選擇',
+                label: __('人員選擇'),
                 key: 'user_picker',
                 input: true,
                 tableView: true,
@@ -336,7 +336,7 @@
 
         static get builderInfo() {
             return {
-                title: '人員選擇',
+                title: __('人員選擇'),
                 group: 'custom',
                 icon: 'fa fa-user',
                 weight: 10,
@@ -349,15 +349,15 @@
                 {
                     key: 'display',
                     components: [
-                        { key: 'label', type: 'textfield', label: '欄位標籤', input: true, weight: 0 },
-                        { key: 'key', type: 'textfield', label: '欄位 Key', input: true, weight: 10 },
-                        { key: 'description', type: 'textfield', label: '說明文字', input: true, weight: 20 },
+                        { key: 'label', type: 'textfield', label: __('欄位標籤'), input: true, weight: 0 },
+                        { key: 'key', type: 'textfield', label: __('欄位 Key'), input: true, weight: 10 },
+                        { key: 'description', type: 'textfield', label: __('說明文字'), input: true, weight: 20 },
                     ],
                 },
                 {
                     key: 'validation',
                     components: [
-                        { key: 'validate.required', type: 'checkbox', label: '必填', input: true, weight: 0 },
+                        { key: 'validate.required', type: 'checkbox', label: __('必填'), input: true, weight: 0 },
                     ],
                 },
             ]);
@@ -388,7 +388,7 @@
         render() {
             var value = this.dataValue || '';
             var displayText = this._pickerDisplayName
-                || (value ? '載入中...' : '(未選擇)');
+                || (value ? __('載入中...') : __('(未選擇)'));
             if (this._pickerUsername && this._pickerDisplayName !== this._pickerUsername) {
                 displayText += ' (' + this._pickerUsername + ')';
             }
@@ -406,7 +406,7 @@
             if (!this.options.readOnly && !this.component.disabled) {
                 tpl += '<button type="button" ref="userPickerBtn" class="btn btn-sm btn-outline-secondary" '
                     + 'style="white-space:nowrap;padding:5px 12px;font-size:13px;">'
-                    + '<i class="fas fa-sitemap" style="margin-right:4px;"></i>選擇</button>';
+                    + __('<i class="fas fa-sitemap" style="margin-right:4px;"></i>選擇</button>');
             }
 
             tpl += '</div>';
@@ -475,7 +475,7 @@
                 if (this._pickerDeptName) text += ' / ' + this._pickerDeptName;
                 return text;
             }
-            return value ? '載入中...' : '(未選擇)';
+            return value ? __('載入中...') : __('(未選擇)');
         }
 
         _setSelectedUser(person) {
@@ -488,7 +488,7 @@
 
         _updateDisplay() {
             if (this.refs.userPickerName) {
-                var nameText = this._pickerDisplayName || this.dataValue || '(未選擇)';
+                var nameText = this._pickerDisplayName || this.dataValue || __('(未選擇)');
                 if (this._pickerUsername && this._pickerDisplayName && this._pickerDisplayName !== this._pickerUsername) {
                     nameText += ' (' + this._pickerUsername + ')';
                 }

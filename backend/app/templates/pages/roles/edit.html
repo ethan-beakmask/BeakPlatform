@@ -233,14 +233,14 @@ function roleEditForm() {
                 const data = await resp.json();
 
                 if (resp.ok) {
-                    this.successMsg = '儲存成功';
+                    this.successMsg = __('儲存成功');
                     setTimeout(() => this.successMsg = '', 3000);
                 } else {
-                    this.errorMsg = data.error || '儲存失敗';
+                    this.errorMsg = data.error || __('儲存失敗');
                 }
             } catch (e) {
                 console.error('Submit error:', e);
-                this.errorMsg = '網路錯誤，請稍後再試';
+                this.errorMsg = __('網路錯誤，請稍後再試');
             } finally {
                 this.isSubmitting = false;
             }
@@ -266,12 +266,12 @@ function roleEditForm() {
                     window.location.href = '{{ url_for("roles.list_roles") }}';
                 } else {
                     this.showDeleteModal = false;
-                    this.errorMsg = data.error || '刪除失敗';
+                    this.errorMsg = data.error || __('刪除失敗');
                 }
             } catch (e) {
                 console.error('Delete error:', e);
                 this.showDeleteModal = false;
-                this.errorMsg = '網路錯誤，請稍後再試';
+                this.errorMsg = __('網路錯誤，請稍後再試');
             } finally {
                 this.isDeleting = false;
             }

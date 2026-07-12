@@ -21,7 +21,7 @@
         <template x-if="roles.length > 0">
             <div class="page-actions">
                 <button type="button" @click="toggleAll()" class="btn btn-secondary btn-sm">
-                    <span x-text="allSelected ? '取消全選' : '全選'"></span>
+                    <span x-text="allSelected ? __('取消全選') : __('全選')"></span>
                 </button>
                 <button type="button" @click="invertSelection()" class="btn btn-secondary btn-sm">
                     {{ _('反選') }}

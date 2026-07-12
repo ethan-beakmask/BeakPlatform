@@ -221,7 +221,11 @@ def login_failures():
 
         # 帳號統計
         if details not in account_stats:
-            account_stats[details] = {'count': 0, 'ips': [], 'type': fail_type, 'org_name': org_name}
+            account_stats[details] = {
+                'count': 0, 'ips': [], 'type': fail_type, 'org_name': org_name,
+                # 穩定旗標供前端判斷（org_name 已隨語系翻譯，不可拿來比對）
+                'org_unknown': (not org_sc) or (org_sc not in org_map),
+            }
         account_stats[details]['count'] += 1
         if ip not in account_stats[details]['ips']:
             account_stats[details]['ips'].append(ip)

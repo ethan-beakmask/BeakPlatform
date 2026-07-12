@@ -56,7 +56,7 @@ function userCreateMixin(config) {
         // 翻譯功能
         uc_transliterating: false,
         uc_detectedLang: '',
-        uc_langNames: { 'zh': '中文', 'ja': '日文', 'ko': '韓文', 'unknown': '未知', 'mixed': '混合' },
+        uc_langNames: { 'zh': __('中文'), 'ja': __('日文'), 'ko': __('韓文'), 'unknown': __('未知'), 'mixed': __('混合') },
 
         // 用戶編號
         uc_rules: [],

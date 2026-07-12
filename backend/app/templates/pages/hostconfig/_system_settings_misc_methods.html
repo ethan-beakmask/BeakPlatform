@@ -11,7 +11,7 @@
                     this.audit.levels = data.data.levels;
                 }
             } catch (e) {
-                this.message.audit = '載入稽核設定失敗: ' + e.message;
+                this.message.audit = __('載入稽核設定失敗: {message}', {message: e.message});
                 this.message.auditError = true;
             }
         },
@@ -34,11 +34,11 @@
                     this.message.audit = data.message;
                     this.message.auditError = false;
                 } else {
-                    this.message.audit = data.error || '儲存失敗';
+                    this.message.audit = data.error || __('儲存失敗');
                     this.message.auditError = true;
                 }
             } catch (e) {
-                this.message.audit = '儲存失敗: ' + e.message;
+                this.message.audit = __('儲存失敗: {message}', {message: e.message});
                 this.message.auditError = true;
             }
         },
@@ -55,11 +55,11 @@
                     this.message.ratelimit = '';
                     this.message.ratelimitError = false;
                 } else {
-                    this.message.ratelimit = data.error || '載入失敗';
+                    this.message.ratelimit = data.error || __('載入失敗');
                     this.message.ratelimitError = true;
                 }
             } catch (e) {
-                this.message.ratelimit = '載入速率限制設定失敗: ' + e.message;
+                this.message.ratelimit = __('載入速率限制設定失敗: {message}', {message: e.message});
                 this.message.ratelimitError = true;
             }
         },
@@ -82,7 +82,7 @@
                     this.message.ratelimitError = false;
                     await this.loadRateLimitSettings();
                 } else {
-                    let errMsg = data.error || '儲存失敗';
+                    let errMsg = data.error || __('儲存失敗');
                     if (data.details) {
                         errMsg += ': ' + data.details.join(', ');
                     }
@@ -90,7 +90,7 @@
                     this.message.ratelimitError = true;
                 }
             } catch (e) {
-                this.message.ratelimit = '儲存失敗: ' + e.message;
+                this.message.ratelimit = __('儲存失敗: {message}', {message: e.message});
                 this.message.ratelimitError = true;
             }
         },
@@ -108,11 +108,11 @@
                     this.message.fileStorage = '';
                     this.message.fileStorageError = false;
                 } else {
-                    this.message.fileStorage = data.error || '載入失敗';
+                    this.message.fileStorage = data.error || __('載入失敗');
                     this.message.fileStorageError = true;
                 }
             } catch (e) {
-                this.message.fileStorage = '載入檔案儲存設定失敗: ' + e.message;
+                this.message.fileStorage = __('載入檔案儲存設定失敗: {message}', {message: e.message});
                 this.message.fileStorageError = true;
             }
         },
@@ -134,11 +134,11 @@
                     this.message.fileStorage = data.message;
                     this.message.fileStorageError = false;
                 } else {
-                    this.message.fileStorage = data.error || '儲存失敗';
+                    this.message.fileStorage = data.error || __('儲存失敗');
                     this.message.fileStorageError = true;
                 }
             } catch (e) {
-                this.message.fileStorage = '儲存失敗: ' + e.message;
+                this.message.fileStorage = __('儲存失敗: {message}', {message: e.message});
                 this.message.fileStorageError = true;
             }
         },

@@ -95,19 +95,19 @@ function roleListManager() {
                     this.resultIsError = false;
                     this.resultMsg = data.message;
                     if (data.errors && data.errors.length > 0) {
-                        this.resultMsg += '。部分失敗：' + data.errors.join(', ');
+                        this.resultMsg += __('。部分失敗：') + data.errors.join(', ');
                         this.resultIsError = true;
                     }
                     setTimeout(function() { location.reload(); }, 1500);
                 } else {
                     this.resultIsError = true;
-                    this.resultMsg = data.error || '刪除失敗';
+                    this.resultMsg = data.error || __('刪除失敗');
                 }
             } catch (e) {
                 console.error('Batch delete error:', e);
                 this.showBatchDeleteModal = false;
                 this.resultIsError = true;
-                this.resultMsg = '網路錯誤，請稍後再試';
+                this.resultMsg = __('網路錯誤，請稍後再試');
             } finally {
                 this.isDeleting = false;
             }

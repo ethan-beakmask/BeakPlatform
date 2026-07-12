@@ -149,7 +149,7 @@
                                 <span class="perm-badge-org" x-text="roleData.role.org_label"></span>
                                 <span x-text="roleData.role.name"></span>
                                 <span class="text-muted" x-text="'(' + roleData.role.code + ')'"></span>
-                                <span class="perm-badge-info" x-text="'持有者: ' + roleData.user_count + ' 人'"></span>
+                                <span class="perm-badge-info" x-text="__('持有者: {count} 人', {count: roleData.user_count})"></span>
                             </h3>
                         </div>
 
@@ -197,7 +197,7 @@
                                 {{ _('RBAC 權限 (RolePermission)') }}
                                 <button type="button" class="btn btn-primary btn-sm"
                                         @click="enterPermEditor()"
-                                        x-text="showPermEditor ? '取消編輯' : '編輯權限'"></button>
+                                        x-text="showPermEditor ? __('取消編輯') : __('編輯權限')"></button>
                             </h4>
 
                             <!-- 權限編輯器 -->
@@ -253,9 +253,9 @@
                                         <button type="button" class="btn btn-primary"
                                                 @click="saveRolePermissions()"
                                                 :disabled="saving">
-                                            <span x-text="saving ? '儲存中...' : '儲存變更'"></span>
+                                            <span x-text="saving ? __('儲存中...') : __('儲存變更')"></span>
                                         </button>
-                                        <span class="text-muted" x-text="'已選 ' + editingPerms.length + ' 個權限'"></span>
+                                        <span class="text-muted" x-text="__('已選 {count} 個權限', {count: editingPerms.length})"></span>
                                     </div>
                                 </div>
                             </template>
@@ -450,7 +450,7 @@
                                                 <td x-text="r.name"></td>
                                                 <td><code x-text="r.code"></code></td>
                                                 <td>
-                                                    <span x-text="r.holder_count + ' 人'"
+                                                    <span x-text="__('{count} 人', {count: r.holder_count})"
                                                           :class="{ 'text-warn': r.holder_count === 0 }"></span>
                                                 </td>
                                             </tr>
@@ -579,15 +579,15 @@
                 <div class="perm-section">
                     <h3 class="perm-section-title">
                         {{ _('偵測結果') }}
-                        <span class="perm-badge-info" x-text="'共 ' + filteredConflictSummary.total + ' 項'"></span>
+                        <span class="perm-badge-info" x-text="__('共 {count} 項', {count: filteredConflictSummary.total})"></span>
                         <template x-if="filteredConflictSummary.errors > 0">
-                            <span class="perm-badge-error" x-text="filteredConflictSummary.errors + ' 錯誤'"></span>
+                            <span class="perm-badge-error" x-text="__('{count} 錯誤', {count: filteredConflictSummary.errors})"></span>
                         </template>
                         <template x-if="filteredConflictSummary.warnings > 0">
-                            <span class="perm-badge-warn" x-text="filteredConflictSummary.warnings + ' 警告'"></span>
+                            <span class="perm-badge-warn" x-text="__('{count} 警告', {count: filteredConflictSummary.warnings})"></span>
                         </template>
                         <template x-if="filteredConflictSummary.infos > 0">
-                            <span class="perm-badge-info" x-text="filteredConflictSummary.infos + ' 提示'"></span>
+                            <span class="perm-badge-info" x-text="__('{count} 提示', {count: filteredConflictSummary.infos})"></span>
                         </template>
                     </h3>
                 </div>
@@ -614,7 +614,7 @@
                                 <tr>
                                     <td>
                                         <span :class="c.severity === 'error' ? 'perm-badge-error' : (c.severity === 'info' ? 'perm-badge-info' : 'perm-badge-warn')"
-                                              x-text="c.severity === 'error' ? '錯誤' : (c.severity === 'info' ? '提示' : '警告')"></span>
+                                              x-text="c.severity === 'error' ? __('錯誤') : (c.severity === 'info' ? __('提示') : __('警告'))"></span>
                                     </td>
                                     <td><code x-text="c.type"></code></td>
                                     <td x-text="c.menu_title || c.role_name || c.permission_name || '-'"></td>

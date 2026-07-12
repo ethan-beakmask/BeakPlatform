@@ -58,7 +58,7 @@
                     {% if mod.authorized %}
                     <button class="mp-manage-btn"
                             @click="toggleACL('{{ mod.code }}', '{{ mod.label }}')">
-                        <span x-text="expandedModule === '{{ mod.code }}' ? '收合' : '管理使用者'"></span>
+                        <span x-text="expandedModule === '{{ mod.code }}' ? __('收合') : __('管理使用者')"></span>
                     </button>
                     {% else %}
                     <span style="color: #999; font-size: 12px;">-</span>

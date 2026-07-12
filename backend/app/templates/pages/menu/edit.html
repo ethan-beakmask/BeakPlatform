@@ -248,15 +248,15 @@ function menuRoleManager() {
                 });
                 var data = await resp.json();
                 if (resp.ok && data.success) {
-                    this.roleMessage = '角色需求已更新';
+                    this.roleMessage = __('角色需求已更新');
                     this.roleMessageType = 'success';
                     await this.loadRoles();
                 } else {
-                    this.roleMessage = '更新失敗: ' + (data.error || resp.status);
+                    this.roleMessage = __('更新失敗: {message}', {message: data.error || resp.status});
                     this.roleMessageType = 'error';
                 }
             } catch (e) {
-                this.roleMessage = '更新失敗: ' + e.message;
+                this.roleMessage = __('更新失敗: {message}', {message: e.message});
                 this.roleMessageType = 'error';
             }
             var self = this;
@@ -277,7 +277,7 @@ function menuRoleManager() {
 <div class="alert alert-error" style="margin-top:8px;">
     {{ _('刪除此選單項目將連同子項目一起刪除。') }}
 </div>
-<form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm('{{ _('確定要刪除此選單項目嗎？子項目也會一併刪除。') }}');">
+<form method="POST" action="{{ url_for('menu.delete_menu', secure_code=item.secure_code) }}" onsubmit="return confirm(__('確定要刪除此選單項目嗎？子項目也會一併刪除。'));">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">{{ _('刪除選單項目') }}</button>
 </form>

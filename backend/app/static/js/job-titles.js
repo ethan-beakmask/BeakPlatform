@@ -75,7 +75,7 @@ function jobTitlesManager() {
                 columns: [
                     {
                         id: 'code',
-                        label: '代碼',
+                        label: __('代碼'),
                         width: '100px',
                         sortable: true,
                         renderer: function(value, row) {
@@ -85,7 +85,7 @@ function jobTitlesManager() {
                     },
                     {
                         id: 'name_en',
-                        label: '英文名稱',
+                        label: __('英文名稱'),
                         width: '180px',
                         sortable: true,
                         renderer: function(value, row) {
@@ -95,7 +95,7 @@ function jobTitlesManager() {
                     },
                     {
                         id: 'job_level_text',
-                        label: '職等',
+                        label: __('職等'),
                         width: '160px',
                         sortable: true,
                         renderer: function(value, row) {
@@ -105,20 +105,20 @@ function jobTitlesManager() {
                     },
                     {
                         id: 'is_supervisor',
-                        label: '管理職',
+                        label: __('管理職'),
                         width: '70px',
                         renderer: function(value, row) {
                             if (row && row.data && row.data._isFamily) return '';
-                            return value ? '<span style="color:#0066cc;">是</span>' : '-';
+                            return value ? __('<span style="color:#0066cc;">是</span>') : '-';
                         }
                     },
                     {
                         id: 'is_active',
-                        label: '狀態',
+                        label: __('狀態'),
                         width: '60px',
                         renderer: function(value, row) {
                             if (row && row.data && row.data._isFamily) return '';
-                            return value ? '啟用' : '<span style="color:#999;">停用</span>';
+                            return value ? __('啟用') : __('<span style="color:#999;">停用</span>');
                         }
                     }
                 ],
@@ -180,12 +180,12 @@ function jobTitlesManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    self.formErrors = result.errors || ['操作失敗'];
+                    self.formErrors = result.errors || [__('操作失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         },
@@ -241,12 +241,12 @@ function jobTitlesManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    self.formErrors = result.errors || ['操作失敗'];
+                    self.formErrors = result.errors || [__('操作失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         },
@@ -255,7 +255,7 @@ function jobTitlesManager() {
 
         submitDelete: function() {
             var name = this.editForm.name;
-            if (!confirm('確定要刪除職稱「' + name + '」嗎？')) return;
+            if (!confirm(__('確定要刪除職稱「') + name + __('」嗎？'))) return;
             if (this.submitting) return;
 
             this.formErrors = [];
@@ -276,12 +276,12 @@ function jobTitlesManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    self.formErrors = result.errors || ['刪除失敗'];
+                    self.formErrors = result.errors || [__('刪除失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         }

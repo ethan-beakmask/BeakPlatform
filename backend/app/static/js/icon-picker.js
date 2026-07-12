@@ -3,7 +3,7 @@
 var ICON_CATEGORIES = [
     {
         name: 'business',
-        label: '商業',
+        label: __('商業'),
         icons: [
             'ri-briefcase-line', 'ri-building-line', 'ri-building-2-line',
             'ri-store-line', 'ri-bank-line', 'ri-money-dollar-circle-line',
@@ -15,7 +15,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'people',
-        label: '人員',
+        label: __('人員'),
         icons: [
             'ri-user-line', 'ri-user-3-line', 'ri-team-line',
             'ri-group-line', 'ri-group-2-line', 'ri-admin-line',
@@ -25,7 +25,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'tech',
-        label: '資訊',
+        label: __('資訊'),
         icons: [
             'ri-database-line', 'ri-database-2-line', 'ri-server-line',
             'ri-code-line', 'ri-terminal-box-line', 'ri-cpu-line',
@@ -37,7 +37,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'security',
-        label: '安全',
+        label: __('安全'),
         icons: [
             'ri-shield-line', 'ri-shield-check-line', 'ri-shield-keyhole-line',
             'ri-lock-line', 'ri-lock-2-line', 'ri-key-line',
@@ -48,7 +48,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'document',
-        label: '文件',
+        label: __('文件'),
         icons: [
             'ri-file-line', 'ri-file-text-line', 'ri-file-list-line',
             'ri-file-copy-line', 'ri-folder-line', 'ri-folder-open-line',
@@ -60,7 +60,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'communication',
-        label: '通訊',
+        label: __('通訊'),
         icons: [
             'ri-mail-line', 'ri-mail-send-line', 'ri-chat-3-line',
             'ri-message-2-line', 'ri-phone-line', 'ri-notification-line',
@@ -70,7 +70,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'general',
-        label: '一般',
+        label: __('一般'),
         icons: [
             'ri-home-line', 'ri-dashboard-line', 'ri-star-line',
             'ri-heart-line', 'ri-flag-line', 'ri-calendar-line',
@@ -86,7 +86,7 @@ var ICON_CATEGORIES = [
     },
     {
         name: 'layout',
-        label: '介面',
+        label: __('介面'),
         icons: [
             'ri-layout-line', 'ri-layout-grid-line', 'ri-table-line',
             'ri-gallery-view', 'ri-kanban-view', 'ri-mind-map',

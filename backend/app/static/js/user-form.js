@@ -48,7 +48,7 @@ function userForm() {
         // 翻譯功能
         transliterating: false,
         detectedLang: '',
-        langNames: { 'zh': '中文', 'ja': '日文', 'ko': '韓文', 'unknown': '未知', 'mixed': '混合' },
+        langNames: { 'zh': __('中文'), 'ja': __('日文'), 'ko': __('韓文'), 'unknown': __('未知'), 'mixed': __('混合') },
 
         // 用戶編號
         rules: [],
@@ -309,7 +309,7 @@ function userForm() {
             if (this._deptTree) { this._deptTree.destroy(); this._deptTree = null; }
 
             if (this._deptTreeData.length === 0) {
-                container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;">尚無部門</div>';
+                container.innerHTML = __('<div style="padding:20px;color:#888;text-align:center;">尚無部門</div>');
                 return;
             }
 

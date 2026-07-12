@@ -87,7 +87,7 @@
                     </div>
                     <button type="button" @click="showPassword = !showPassword"
                             style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
-                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                     <button type="button" @click="generatePassword()"
                             style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         {{ _('建議密碼') }}
@@ -154,7 +154,7 @@
                 {% if current_groups|length > 1 %}
                 <form method="POST" action="{{ url_for('external_users.remove_from_group', secure_code=user.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('確定要從「{{ group.unit.name }}」移除嗎？')">
+                      onsubmit="return confirm(__('確定要從「{name}」移除嗎？', {name: {{ group.unit.name|tojson|forceescape }} }))">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="membership_code" value="{{ group.membership_code }}">
                     <button type="submit" class="btn-remove">{{ _('移除') }}</button>

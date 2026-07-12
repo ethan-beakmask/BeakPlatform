@@ -22,7 +22,7 @@ function loginSecuritySettings() {
         },
 
         fieldLabel(f) {
-            const map = { sv_1: '驗證碼 1', sv_2: '驗證碼 2', sv_3: '驗證碼 3' };
+            const map = { sv_1: __('驗證碼 1'), sv_2: __('驗證碼 2'), sv_3: __('驗證碼 3') };
             return map[f] || f;
         },
 
@@ -57,7 +57,7 @@ function loginSecuritySettings() {
             const cfg = this[context];
             const fields = new Set([cfg.password_field, cfg.mine_field, cfg.rescue_field]);
             if (fields.size < 3) {
-                this.errorMessage = '密碼、地雷、救助欄位不能重複指派';
+                this.errorMessage = __('密碼、地雷、救助欄位不能重複指派');
                 return;
             }
 
@@ -77,14 +77,14 @@ function loginSecuritySettings() {
                 );
                 const data = await resp.json();
                 if (data.success) {
-                    this.saveMessage = '設定已儲存';
+                    this.saveMessage = __('設定已儲存');
                     setTimeout(() => { this.saveMessage = ''; }, 2000);
                 } else {
-                    this.errorMessage = data.message || '儲存失敗';
+                    this.errorMessage = data.message || __('儲存失敗');
                     setTimeout(() => { this.errorMessage = ''; }, 4000);
                 }
             } catch (e) {
-                this.errorMessage = '儲存失敗: ' + e.message;
+                this.errorMessage = __('儲存失敗: ') + e.message;
                 setTimeout(() => { this.errorMessage = ''; }, 4000);
             }
         },

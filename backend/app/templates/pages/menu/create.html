@@ -41,7 +41,7 @@
             <td>
                 <input type="text" id="code" name="code" class="form-control" style="max-width:300px;" x-ref="codeField"
                        x-model="codeval"
-                       :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')"
                        @input.debounce.500ms="ciValidateCode(codeval)">
                 <div class="help-text">{{ _('選填，留空自動產生。英文、數字、底線') }}</div>
                 {% include "partials/_code_input.html" %}

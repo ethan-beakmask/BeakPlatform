@@ -128,12 +128,12 @@ function menuTreeManager() {
                         sortable: false,
                         resizable: false,
                         renderer: function(val, node) {
-                            return '<a href="' + window.__BP + '/menu/' + node.id + '/edit">[編輯]</a>';
+                            return '<a href="' + window.__BP + '/menu/' + node.id + '/edit">' + __('[編輯]') + '</a>';
                         }
                     },
                     {
                         id: 'perm_sys',
-                        label: '系統',
+                        label: __('系統'),
                         width: '36px',
                         sortable: false,
                         resizable: false,
@@ -141,7 +141,7 @@ function menuTreeManager() {
                     },
                     {
                         id: 'perm_org',
-                        label: '企業',
+                        label: __('企業'),
                         width: '36px',
                         sortable: false,
                         resizable: false,
@@ -149,7 +149,7 @@ function menuTreeManager() {
                     },
                     {
                         id: 'perm_emp',
-                        label: '企業成員',
+                        label: __('企業成員'),
                         width: '36px',
                         sortable: false,
                         resizable: false,
@@ -157,7 +157,7 @@ function menuTreeManager() {
                     },
                     {
                         id: 'perm_ext',
-                        label: '外部',
+                        label: __('外部'),
                         width: '36px',
                         sortable: false,
                         resizable: false,
@@ -165,21 +165,21 @@ function menuTreeManager() {
                     },
                     {
                         id: 'code',
-                        label: '代碼',
+                        label: __('代碼'),
                         width: '280px',
                         sortable: false,
                         resizable: false
                     },
                     {
                         id: 'link_type',
-                        label: '類型',
+                        label: __('類型'),
                         width: '60px',
                         sortable: false,
                         resizable: false
                     },
                     {
                         id: 'link_target',
-                        label: '連結目標',
+                        label: __('連結目標'),
                         width: '360px',
                         sortable: false,
                         resizable: false,
@@ -190,13 +190,13 @@ function menuTreeManager() {
                     },
                     {
                         id: 'is_active',
-                        label: '狀態',
+                        label: __('狀態'),
                         width: '50px',
                         sortable: false,
                         resizable: false,
                         renderer: function(val) {
-                            if (val === true) return '<span class="mt-status-active">啟用</span>';
-                            return '<span class="mt-status-inactive">停用</span>';
+                            if (val === true) return '<span class="mt-status-active">' + __('啟用') + '</span>';
+                            return __('<span class="mt-status-inactive">停用</span>');
                         }
                     }
                 ],
@@ -247,14 +247,14 @@ function menuTreeManager() {
                 });
                 var data = await resp.json();
                 if (resp.ok && data.success) {
-                    this.message = '順序已儲存';
+                    this.message = __('順序已儲存');
                     this.messageType = 'success';
                 } else {
-                    this.message = '儲存失敗: ' + (data.error || resp.status);
+                    this.message = __('儲存失敗: ') + (data.error || resp.status);
                     this.messageType = 'error';
                 }
             } catch (e) {
-                this.message = '儲存失敗: ' + e.message;
+                this.message = __('儲存失敗: ') + e.message;
                 this.messageType = 'error';
             }
 
@@ -278,15 +278,15 @@ function menuTreeManager() {
                 });
                 var data = await resp.json();
                 if (resp.ok && data.success) {
-                    this.message = '位置已重置 (' + data.updated + ' 項更新)';
+                    this.message = __('位置已重置 (') + data.updated + __(' 項更新)');
                     this.messageType = 'success';
                     setTimeout(function() { location.reload(); }, 800);
                 } else {
-                    this.message = '重置失敗: ' + (data.error || resp.status);
+                    this.message = __('重置失敗: ') + (data.error || resp.status);
                     this.messageType = 'error';
                 }
             } catch (e) {
-                this.message = '重置失敗: ' + e.message;
+                this.message = __('重置失敗: ') + e.message;
                 this.messageType = 'error';
             }
 
@@ -309,17 +309,17 @@ function menuTreeManager() {
                 var data = await resp.json();
                 if (resp.ok && data.success) {
                     var roleReqMsg = data.role_requirements_reset
-                        ? ', ' + data.role_requirements_reset + ' 筆角色需求'
+                        ? ', ' + data.role_requirements_reset + __(' 筆角色需求')
                         : '';
-                    this.message = '出廠值已重置 (' + data.updated + ' 項更新' + roleReqMsg + ')';
+                    this.message = __('出廠值已重置 (') + data.updated + __(' 項更新') + roleReqMsg + ')';
                     this.messageType = 'success';
                     setTimeout(function() { location.reload(); }, 800);
                 } else {
-                    this.message = '重置失敗: ' + (data.error || resp.status);
+                    this.message = __('重置失敗: ') + (data.error || resp.status);
                     this.messageType = 'error';
                 }
             } catch (e) {
-                this.message = '重置失敗: ' + e.message;
+                this.message = __('重置失敗: ') + e.message;
                 this.messageType = 'error';
             }
 
@@ -341,14 +341,14 @@ function menuTreeManager() {
                 });
                 var data = await resp.json();
                 if (resp.ok) {
-                    this.message = data.message + ' (' + data.count + ' 項)';
+                    this.message = data.message + ' (' + data.count + __(' 項)');
                     this.messageType = 'success';
                 } else {
-                    this.message = '儲存失敗: ' + (data.error || resp.status);
+                    this.message = __('儲存失敗: ') + (data.error || resp.status);
                     this.messageType = 'error';
                 }
             } catch (e) {
-                this.message = '儲存失敗: ' + e.message;
+                this.message = __('儲存失敗: ') + e.message;
                 this.messageType = 'error';
             }
 

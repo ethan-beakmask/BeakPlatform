@@ -120,7 +120,7 @@
 <hr style="margin-top: 40px;">
 <h3 style="color: #c00;">{{ _('危險區域') }}</h3>
 <form method="POST" action="{{ url_for('job_titles.delete_job_title', secure_code=job_title.secure_code) }}"
-      onsubmit="return confirm('確定要刪除職稱「{{ job_title.name }}」嗎？');">
+      onsubmit="return confirm(__('確定要刪除職稱「{name}」嗎？', {name: {{ job_title.name|tojson|forceescape }} }));">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" style="background: #c00; color: white; border: none; padding: 8px 16px;">
         {{ _('刪除此職稱') }}

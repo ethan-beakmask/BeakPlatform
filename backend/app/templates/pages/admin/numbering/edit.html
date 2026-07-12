@@ -419,7 +419,7 @@ function numberingEditor() {
         validateForm(event) {
             const name = document.getElementById('name').value.trim();
             if (!name) {
-                alert('請輸入規則名稱');
+                alert(__('請輸入規則名稱'));
                 event.preventDefault();
                 return false;
             }
@@ -511,10 +511,10 @@ function numberingEditor() {
                 if (result.success) {
                     this.previewList = result.data;
                 } else {
-                    this.previewError = result.error || '未知錯誤';
+                    this.previewError = result.error || __('未知錯誤');
                 }
             } catch (e) {
-                this.previewError = '無法連線伺服器';
+                this.previewError = __('無法連線伺服器');
             } finally {
                 this.previewLoading = false;
             }

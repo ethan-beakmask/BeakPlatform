@@ -79,7 +79,7 @@ const API = {
 
             // Handle forbidden
             if (response.status === 403) {
-                throw new Error('您沒有權限執行此操作');
+                throw new Error(__('您沒有權限執行此操作'));
             }
 
             return response;
@@ -156,7 +156,7 @@ const Utils = {
 };
 
 // Confirm dialog
-function confirmDialog(message = '確定要執行此操作嗎？') {
+function confirmDialog(message = __('確定要執行此操作嗎？')) {
     return new Promise((resolve) => {
         if (confirm(message)) {
             resolve(true);

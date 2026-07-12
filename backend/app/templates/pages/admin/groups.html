@@ -172,7 +172,7 @@
 
 <script>
 window.__GROUPS_CONFIG = {
-    orgName: {{ (organization.name if organization else '企業') | tojson }},
+    orgName: {% if organization %}{{ organization.name|tojson }}{% else %}__('企業'){% endif %},
     isAdmin: {{ 'true' if is_admin else 'false' }}
 };
 </script>
@@ -197,7 +197,7 @@ window.__GROUPS_CONFIG = {
 
     <!-- 中間：詳情 -->
     <div class="grp-detail-panel">
-        <div class="panel-header-bar" x-text="isCreating ? '新增社群' : (selectedGroup ? selectedGroup.name : '社群詳情')"></div>
+        <div class="panel-header-bar" x-text="isCreating ? __('新增社群') : (selectedGroup ? selectedGroup.name : __('社群詳情'))"></div>
         <div class="panel-body">
             <template x-if="!selectedGroup && !isCreating">
                 <div class="empty-message">{{ _('請從左側選擇社群') }}</div>
@@ -206,7 +206,7 @@ window.__GROUPS_CONFIG = {
                 <div>
                     <!-- 編輯區 -->
                     <div class="grp-edit-section">
-                        <div class="section-title" x-text="isCreating ? '新增社群' : '社群資訊'"></div>
+                        <div class="section-title" x-text="isCreating ? __('新增社群') : __('社群資訊')"></div>
                         <template x-if="isAdmin && (isCreating || selectedGroup)">
                             <form @submit.prevent="isCreating ? createGroup() : updateGroup()">
                                 <div class="form-row">
@@ -219,7 +219,7 @@ window.__GROUPS_CONFIG = {
                                     <label>{{ _('社群代碼') }}</label>
                                     <input type="text" x-model="formData.code" :disabled="!isCreating"
                                            maxlength="50" pattern="[A-Za-z0-9_\-]+"
-                                           :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}"
+                                           :placeholder="_ci_generatedCode || __('留空自動產生')"
                                            @input.debounce.500ms="ciValidateCode(formData.code)">
                                     <div class="field-hint">{{ _('選填，留空自動產生。僅限英文、數字、底線、連字號') }}</div>
                                     {% include "partials/_code_input.html" %}
@@ -239,7 +239,7 @@ window.__GROUPS_CONFIG = {
                                     <div class="field-hint">{{ _('選填，最多 500 字元') }}</div>
                                 </div>
                                 <div class="btn-group">
-                                    <button type="submit" class="btn btn-primary" x-text="isCreating ? '建立' : '儲存'"></button>
+                                    <button type="submit" class="btn btn-primary" x-text="isCreating ? __('建立') : __('儲存')"></button>
                                     <button type="button" class="btn btn-secondary" @click="cancelEdit()">{{ _('取消') }}</button>
                                     <button type="button" class="btn btn-danger" x-show="!isCreating && selectedGroup && !selectedGroup.is_system_unit" @click="deleteGroup()">{{ _('刪除') }}</button>
                                 </div>
@@ -263,7 +263,7 @@ window.__GROUPS_CONFIG = {
                     <div x-show="selectedGroup">
                         <div class="grp-staff-header">
                             <span>{{ _('社群成員') }}</span>
-                            <span style="font-weight:normal;color:#888;font-size:11px;" x-text="'共 '+totalCount+' 人'"></span>
+                            <span style="font-weight:normal;color:#888;font-size:11px;" x-text="__('共 {count} 人', {count: totalCount})"></span>
                         </div>
                         <div class="grp-staff-layout">
                             <!-- 左: 團長+代理人(一) / 副團長+代理人(二) -->

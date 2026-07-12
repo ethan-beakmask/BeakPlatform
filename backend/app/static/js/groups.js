@@ -228,7 +228,7 @@ function groupManager() {
                     if (this.showPeopleInTree) await this.loadAllPeople();
                 }
             } catch (err) {
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
             }
         },
 
@@ -534,12 +534,12 @@ function groupManager() {
                         body: JSON.stringify({ parent_id: parentId })
                     });
                     if (res.ok) {
-                        this.showToast('社群已移動', 'success');
+                        this.showToast(__('社群已移動'), 'success');
                     } else {
                         var data = await res.json();
-                        this.showToast(data.error || '移動失敗', 'error');
+                        this.showToast(data.error || __('移動失敗'), 'error');
                     }
-                } catch (e) { this.showToast('移動失敗', 'error'); }
+                } catch (e) { this.showToast(__('移動失敗'), 'error'); }
                 await this._refreshAll();
             } else {
                 // 人員節點或非 admin: 還原
@@ -607,14 +607,14 @@ function groupManager() {
                     })
                 });
                 if (res.ok) {
-                    this.showToast('社群建立成功', 'success');
+                    this.showToast(__('社群建立成功'), 'success');
                     this.isCreating = false;
                     await this._refreshAll();
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
-            } catch (err) { this.showToast('建立失敗', 'error'); }
+            } catch (err) { this.showToast(__('建立失敗'), 'error'); }
         },
 
         async updateGroup() {
@@ -630,19 +630,19 @@ function groupManager() {
                     })
                 });
                 if (res.ok) {
-                    this.showToast('更新成功', 'success');
+                    this.showToast(__('更新成功'), 'success');
                     await this._refreshAll();
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                 }
-            } catch (err) { this.showToast('更新失敗', 'error'); }
+            } catch (err) { this.showToast(__('更新失敗'), 'error'); }
         },
 
         async deleteGroup() {
             if (!this.selectedGroup) return;
             if (this.selectedGroup.is_system_unit) {
-                this.showToast('系統保留群組不可刪除', 'error');
+                this.showToast(__('系統保留群組不可刪除'), 'error');
                 return;
             }
             try {
@@ -662,13 +662,13 @@ function groupManager() {
                 var res = await fetch(url, { method: 'DELETE', headers: { 'X-CSRFToken': getCsrfToken() } });
                 var data = await res.json();
                 if (res.ok) {
-                    this.showToast(data.message || '刪除成功', 'success');
+                    this.showToast(data.message || __('刪除成功'), 'success');
                     this.selectedGroup = null;
                     await this._refreshAll();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
-            } catch (err) { this.showToast('刪除失敗', 'error'); }
+            } catch (err) { this.showToast(__('刪除失敗'), 'error'); }
         },
 
         findGroupById: function(id) {
@@ -753,7 +753,7 @@ function groupManager() {
                 dragUserType = this.draggedLeader.user_type;
             }
             if (dragUserType === 'EXTERNAL' && !this._isGroupInExternalVendors(this.selectedGroup.id)) {
-                this.showToast('外部人員不可加入企業群組', 'error');
+                this.showToast(__('外部人員不可加入企業群組'), 'error');
                 this.clearDrag();
                 return;
             }
@@ -781,10 +781,10 @@ function groupManager() {
                         body: JSON.stringify({ role_type: roleType })
                     });
                     if (res.ok) {
-                        this.showToast('角色已更新', 'success');
+                        this.showToast(__('角色已更新'), 'success');
                     } else {
                         var errData = await res.json();
-                        this.showToast(errData.error || '更新失敗', 'error');
+                        this.showToast(errData.error || __('更新失敗'), 'error');
                     }
                 } else {
                     // 新增成員
@@ -794,10 +794,10 @@ function groupManager() {
                         body: JSON.stringify({ user_id: userId, role_type: roleType })
                     });
                     if (res2.ok) {
-                        this.showToast('已加入社群', 'success');
+                        this.showToast(__('已加入社群'), 'success');
                     } else {
                         var errData2 = await res2.json();
-                        this.showToast(errData2.error || '加入失敗', 'error');
+                        this.showToast(errData2.error || __('加入失敗'), 'error');
                     }
                 }
 
@@ -807,7 +807,7 @@ function groupManager() {
                     this.buildTree();
                 }
             } catch (err) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
 
             this.clearDrag();
@@ -816,7 +816,7 @@ function groupManager() {
         // 移除管理層成員
         async removeMember(leader, type) {
             if (!this.selectedGroup || !leader) return;
-            var userName = leader.native_name || leader.display_name || '此成員';
+            var userName = leader.native_name || leader.display_name || __('此成員');
             if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
@@ -825,7 +825,7 @@ function groupManager() {
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
                 if (res.ok) {
-                    this.showToast('已移出社群', 'success');
+                    this.showToast(__('已移出社群'), 'success');
                     await this.loadMembers(this.selectedGroup.id);
                     if (this.showPeopleInTree) {
                         await this._refreshGroupPeople(this.selectedGroup.id);
@@ -833,15 +833,15 @@ function groupManager() {
                     }
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '移除失敗', 'error');
+                    this.showToast(data.error || __('移除失敗'), 'error');
                 }
-            } catch (err) { this.showToast('移除失敗', 'error'); }
+            } catch (err) { this.showToast(__('移除失敗'), 'error'); }
         },
 
         // 移除團員
         async removeMemberDirect(member) {
             if (!this.selectedGroup) return;
-            var userName = member.user?.native_name || member.user?.display_name || '此成員';
+            var userName = member.user?.native_name || member.user?.display_name || __('此成員');
             if (!confirm('\u78BA\u5B9A\u5C07 ' + userName + ' \u79FB\u51FA\u793E\u7FA4\uFF1F')) return;
 
             try {
@@ -850,7 +850,7 @@ function groupManager() {
                     headers: { 'X-CSRFToken': getCsrfToken() }
                 });
                 if (res.ok) {
-                    this.showToast('已移出社群', 'success');
+                    this.showToast(__('已移出社群'), 'success');
                     await this.loadMembers(this.selectedGroup.id);
                     if (this.showPeopleInTree) {
                         await this._refreshGroupPeople(this.selectedGroup.id);
@@ -858,9 +858,9 @@ function groupManager() {
                     }
                 } else {
                     var data = await res.json();
-                    this.showToast(data.error || '移除失敗', 'error');
+                    this.showToast(data.error || __('移除失敗'), 'error');
                 }
-            } catch (err) { this.showToast('移除失敗', 'error'); }
+            } catch (err) { this.showToast(__('移除失敗'), 'error'); }
         },
 
         // ==================== 右側面板 -> Tree 拖入 (admin) ====================
@@ -910,7 +910,7 @@ function groupManager() {
                 var userType = self.draggedUser.user_type;
                 var targetIsExt = self._isInExternalTree(targetId);
                 if (userType === 'EXTERNAL' && !targetIsExt) {
-                    self.showToast('外部人員不可加入企業群組', 'error');
+                    self.showToast(__('外部人員不可加入企業群組'), 'error');
                     self.clearDrag();
                     return;
                 }
@@ -924,12 +924,12 @@ function groupManager() {
                     });
                     if (res.ok) {
                         var group = self.findGroupById(targetId);
-                        self.showToast('已加入 ' + (group?.name || targetId), 'success');
+                        self.showToast(__('已加入 {name}', {name: (group?.name || targetId)}), 'success');
                     } else {
                         var errData = await res.json();
-                        self.showToast(errData.error || '加入失敗', 'error');
+                        self.showToast(errData.error || __('加入失敗'), 'error');
                     }
-                } catch (err) { self.showToast('加入失敗', 'error'); }
+                } catch (err) { self.showToast(__('加入失敗'), 'error'); }
 
                 // 如果拖入的社群是當前選取的社群，重新載入成員
                 if (self.selectedGroup && self.selectedGroup.id === targetId) {

@@ -12,9 +12,9 @@ function cgdbOverview() {
             const total = this.databases.length;
             const orphans = this.databases.filter(d => d.is_orphan).length;
             const ghosts = this.databases.filter(d => d.is_ghost_record).length;
-            let text = total + ' 個資料庫';
-            if (orphans > 0) text += ', ' + orphans + ' 個孤兒';
-            if (ghosts > 0) text += ', ' + ghosts + ' 個記錄無對應 DB';
+            let text = total + __(' 個資料庫');
+            if (orphans > 0) text += ', ' + orphans + __(' 個孤兒');
+            if (ghosts > 0) text += ', ' + ghosts + __(' 個記錄無對應 DB');
             return text;
         },
 

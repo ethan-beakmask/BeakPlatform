@@ -31,7 +31,7 @@
                 attrs: [
                     { attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }
                 ],
-                content: '請設定表單名稱',
+                content: __('請設定表單名稱'),
                 key: 'formTitle',
                 input: false,
                 tableView: false,
@@ -40,7 +40,7 @@
 
         static get builderInfo() {
             return {
-                title: '表單名稱',
+                title: __('表單名稱'),
                 group: 'custom',
                 icon: 'fas fa-heading',
                 weight: 20,

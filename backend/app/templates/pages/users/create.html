@@ -97,7 +97,7 @@
                     </div>
                     <button type="button" @click="showPassword = !showPassword"
                             style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
-                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                     <button type="button" @click="useSuggestedPassword()"
                             style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         {{ _('使用建議密碼') }}
@@ -251,7 +251,7 @@
 window.__USER_FORM_CONFIG = {
     formData: {{ form_data | tojson | safe if form_data else '{}' }},
     orgSettings: {{ org_settings | tojson | safe if org_settings is defined else '{}' }},
-    orgName: '{{ organization.name if organization else "企業" }}'
+    orgName: {% if organization %}{{ organization.name|tojson }}{% else %}__('企業'){% endif %}
 };
 </script>
 <script src="{{ url_for('static', filename='vendor/beak-trellis/beak-tree-model.js') }}"></script>

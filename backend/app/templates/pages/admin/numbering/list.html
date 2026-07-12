@@ -160,7 +160,7 @@
                 {% if not rule.default_for %}
                 <form method="POST" action="{{ url_for('numbering.delete_rule', secure_code=rule.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('{{ _('確定要刪除規則「%(name)s」嗎？', name=rule.name) }}')">
+                      onsubmit="return confirm(__('確定要刪除規則「{name}」嗎？', {name: {{ rule.name|tojson|forceescape }} }))">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="danger">{{ _('刪除') }}</button>
                 </form>

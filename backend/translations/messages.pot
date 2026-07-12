@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 10:39+0800\n"
+"POT-Creation-Date: 2026-07-12 12:59+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,7 +31,7 @@ msgstr ""
 
 #: app/api/_ss_audit.py:99 app/api/_ss_audit.py:170 app/api/_ss_audit.py:239
 #: app/api/_ss_login_security.py:84 app/api/_ss_login_security.py:114
-#: app/api/security_center.py:421
+#: app/api/security_center.py:425
 msgid "缺少 request body"
 msgstr ""
 
@@ -67,7 +67,7 @@ msgstr ""
 msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes, 5 per hour)"
 msgstr ""
 
-#: app/api/_ss_audit.py:264 app/api/security_center.py:461
+#: app/api/_ss_audit.py:264 app/api/security_center.py:465
 msgid "部分設定格式無效"
 msgstr ""
 
@@ -135,7 +135,7 @@ msgstr ""
 msgid "無權限寫入 Auth 檔案，請檢查目錄權限"
 msgstr ""
 
-#: app/api/_ss_emailrelay.py:236 app/web/main.py:167
+#: app/api/_ss_emailrelay.py:236 app/web/main.py:193
 #, python-format
 msgid "儲存失敗: %(error)s"
 msgstr ""
@@ -459,7 +459,7 @@ msgstr ""
 msgid "請提供密碼"
 msgstr ""
 
-#: app/api/broadcasts.py:143 app/api/security_center.py:284
+#: app/api/broadcasts.py:143 app/api/security_center.py:288
 msgid "找不到廣播"
 msgstr ""
 
@@ -1287,14 +1287,14 @@ msgid "已移除成員關係"
 msgstr ""
 
 #: app/api/organizational_units.py:1714 app/api/organizations.py:206
-#: app/api/security_center.py:287 app/templates/pages/job_titles/view.html:41
+#: app/api/security_center.py:291 app/templates/pages/job_titles/view.html:41
 msgid "無權限"
 msgstr ""
 
 #: app/api/organizations.py:81 app/api/organizations.py:102
 #: app/api/organizations.py:202 app/api/organizations.py:261
-#: app/api/organizations.py:312 app/api/security_center.py:395
-#: app/api/security_center.py:429
+#: app/api/organizations.py:312 app/api/security_center.py:399
+#: app/api/security_center.py:433
 msgid "企業不存在"
 msgstr ""
 
@@ -1465,22 +1465,22 @@ msgstr ""
 msgid "未知網域"
 msgstr ""
 
-#: app/api/security_center.py:450
+#: app/api/security_center.py:454
 #, python-format
 msgid "%(category)s: 格式無效 \"%(value)s\" (正確格式如: 20 per 10 minutes)"
 msgstr ""
 
-#: app/api/security_center.py:470
+#: app/api/security_center.py:474
 #, python-format
 msgid "已更新: %(items)s"
 msgstr ""
 
-#: app/api/security_center.py:472
+#: app/api/security_center.py:476
 #, python-format
 msgid "已恢復系統預設: %(items)s"
 msgstr ""
 
-#: app/api/security_center.py:476
+#: app/api/security_center.py:480
 msgid "無變更"
 msgstr ""
 
@@ -1909,7 +1909,7 @@ msgid "取消"
 msgstr ""
 
 #: app/templates/auth/change_password.html:86
-#: app/templates/layouts/base.html:58
+#: app/templates/layouts/base.html:52
 #: app/templates/pages/admin/initial_setup.html:298
 msgid "登出"
 msgstr ""
@@ -2088,7 +2088,7 @@ msgstr ""
 msgid "系統發生錯誤，請稍後再試。"
 msgstr ""
 
-#: app/templates/layouts/base.html:88
+#: app/templates/layouts/base.html:82
 msgid "首頁"
 msgstr ""
 
@@ -2997,7 +2997,6 @@ msgstr ""
 #: app/templates/pages/modules/view.html:55
 #: app/templates/pages/modules/view.html:82
 #: app/templates/pages/organizations/admins.html:78
-#: app/templates/pages/organizations/admins.html:92
 #: app/templates/pages/organizations/admins.html:95
 #: app/templates/pages/organizations/edit.html:87
 #: app/templates/pages/organizations/list.html:188
@@ -3038,7 +3037,6 @@ msgstr ""
 #: app/templates/pages/org_databases/monitor.html:43
 #: app/templates/pages/org_databases/monitor.html:68
 #: app/templates/pages/organizations/admins.html:80
-#: app/templates/pages/organizations/admins.html:92
 #: app/templates/pages/organizations/admins.html:95
 #: app/templates/pages/organizations/edit.html:88
 #: app/templates/pages/organizations/list.html:125
@@ -3338,10 +3336,6 @@ msgstr ""
 msgid "密碼 *"
 msgstr ""
 
-#: app/templates/pages/admin/_settings_smtp_section.html:153
-msgid "isEditing ? '(不修改請留空)' : ''"
-msgstr ""
-
 #: app/templates/pages/admin/_settings_smtp_section.html:160
 msgid "寄件人信箱 *"
 msgstr ""
@@ -3501,15 +3495,6 @@ msgstr ""
 #: app/templates/pages/admin/departments.html:294
 #: app/templates/pages/users/import.html:125
 msgid "部門代碼"
-msgstr ""
-
-#: app/templates/pages/admin/departments.html:297
-#: app/templates/pages/admin/groups.html:222
-#: app/templates/pages/job_families/create.html:36
-#: app/templates/pages/job_levels/create.html:36
-#: app/templates/pages/menu/create.html:44
-#: app/templates/pages/organizations/create.html:44
-msgid "_ci_generatedCode || '留空自動產生'"
 msgstr ""
 
 #: app/templates/pages/admin/departments.html:299
@@ -4188,7 +4173,8 @@ msgid "包含數字 (0-9)"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:333
-msgid "包含特殊符號 (!@#$%^&* 等)"
+#, python-format
+msgid "包含特殊符號 (!@#$%%^&* 等)"
 msgstr ""
 
 #: app/templates/pages/admin/settings.html:341
@@ -4547,11 +4533,6 @@ msgstr ""
 msgid "未設定"
 msgstr ""
 
-#: app/templates/pages/admin/numbering/list.html:163
-#, python-format
-msgid "確定要刪除規則「%(name)s」嗎？"
-msgstr ""
-
 #: app/templates/pages/admin/numbering/list.html:175
 msgid "尚未建立任何編號規則"
 msgstr ""
@@ -4726,11 +4707,6 @@ msgstr ""
 #: app/templates/pages/users/view.html:22
 #: app/templates/pages/users/view.html:184
 msgid "重設密碼"
-msgstr ""
-
-#: app/templates/pages/admin/org-admins/list.html:91
-#, python-format
-msgid "確定要刪除管理員「%(name)s」嗎？"
 msgstr ""
 
 #: app/templates/pages/admin/org-admins/list.html:96
@@ -5264,11 +5240,6 @@ msgstr ""
 #: app/templates/pages/positions/edit.html:134
 #: app/templates/pages/users/edit.html:350
 msgid "危險區域"
-msgstr ""
-
-#: app/templates/pages/approval_categories/edit.html:98
-#, python-format
-msgid "確定要刪除類別「%(name)s」嗎？此操作無法復原。"
 msgstr ""
 
 #: app/templates/pages/approval_categories/edit.html:101
@@ -6869,18 +6840,8 @@ msgstr ""
 msgid "請選擇：連同職稱一併刪除，或取消並先處理職稱。"
 msgstr ""
 
-#: app/templates/pages/job_families/edit.html:113
-#, python-format
-msgid "確定要刪除職系「%(name)s」及其 %(count)s 個職稱嗎？"
-msgstr ""
-
 #: app/templates/pages/job_families/edit.html:114
 msgid "確認刪除職系及職稱"
-msgstr ""
-
-#: app/templates/pages/job_families/edit.html:123
-#, python-format
-msgid "確定要刪除職系「%(name)s」嗎？"
 msgstr ""
 
 #: app/templates/pages/job_families/edit.html:126
@@ -7601,10 +7562,6 @@ msgstr ""
 msgid "刪除此選單項目將連同子項目一起刪除。"
 msgstr ""
 
-#: app/templates/pages/menu/edit.html:280
-msgid "確定要刪除此選單項目嗎？子項目也會一併刪除。"
-msgstr ""
-
 #: app/templates/pages/menu/list.html:16
 msgid "全部展開"
 msgstr ""
@@ -7893,11 +7850,6 @@ msgstr ""
 msgid "刪除此模組將連同相關頁面和選單一起刪除。"
 msgstr ""
 
-#: app/templates/pages/modules/edit.html:63
-#: app/templates/pages/modules/view.html:118
-msgid "確定要刪除此模組嗎？相關頁面和選單也會一併刪除。"
-msgstr ""
-
 #: app/templates/pages/modules/list.html:12
 #: app/templates/pages/modules/list.html:20
 msgid "模組管理"
@@ -8182,11 +8134,6 @@ msgstr ""
 msgid "請立即啟用至少一個管理員帳號"
 msgstr ""
 
-#: app/templates/pages/organizations/admins.html:92
-#, python-format
-msgid "確定要%(action)s管理員「%(name)s」嗎？"
-msgstr ""
-
 #: app/templates/pages/organizations/admins.html:158
 msgid "此企業尚無管理員帳號。"
 msgstr ""
@@ -8305,11 +8252,6 @@ msgstr ""
 
 #: app/templates/pages/organizations/contract_form.html:185
 msgid "如需停用，請按下方按鈕。停用後不可再啟用，如需變更請建立新合約。"
-msgstr ""
-
-#: app/templates/pages/organizations/contract_form.html:187
-#, python-format
-msgid "確定要停用合約「%(number)s」嗎？停用後不可復原。"
 msgstr ""
 
 #: app/templates/pages/organizations/contract_form.html:195
@@ -8448,11 +8390,6 @@ msgstr ""
 
 #: app/templates/pages/organizations/edit.html:159
 msgid "刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。"
-msgstr ""
-
-#: app/templates/pages/organizations/edit.html:163
-#, python-format
-msgid "確定要刪除企業「%(name)s」嗎？此操作無法復原。"
 msgstr ""
 
 #: app/templates/pages/organizations/edit.html:165
@@ -9879,10 +9816,6 @@ msgstr ""
 msgid "角色代碼"
 msgstr ""
 
-#: app/templates/pages/roles/create.html:53
-msgid "generatedCode || '留空則自動產生'"
-msgstr ""
-
 #: app/templates/pages/roles/create.html:59
 msgid "使用建議"
 msgstr ""
@@ -10610,10 +10543,6 @@ msgstr ""
 msgid "刪除此系統管理員帳號將無法復原，請謹慎操作。"
 msgstr ""
 
-#: app/templates/pages/sys_accounts/edit.html:110
-msgid "確定要刪除此系統管理員嗎？"
-msgstr ""
-
 #: app/templates/pages/sys_accounts/edit.html:127
 msgid "密碼變更時間"
 msgstr ""
@@ -11036,11 +10965,6 @@ msgstr ""
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr ""
 
-#: app/templates/pages/users/list.html:73
-#, python-format
-msgid "確定要刪除用戶「%(name)s」嗎？"
-msgstr ""
-
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
 msgstr ""
@@ -11370,7 +11294,7 @@ msgstr ""
 msgid "已刪除外部廠商 %(name)s"
 msgstr ""
 
-#: app/web/external_users.py:679 app/web/main.py:197
+#: app/web/external_users.py:679 app/web/main.py:223
 #: app/web/org_admin_rescue.py:136 app/web/org_admins.py:582
 #: app/web/users.py:742
 msgid "請輸入新密碼"
@@ -11577,23 +11501,23 @@ msgstr ""
 msgid "已刪除職稱 %(name)s"
 msgstr ""
 
-#: app/web/main.py:162
+#: app/web/main.py:188
 msgid "個人設定已儲存"
 msgstr ""
 
-#: app/web/main.py:195
+#: app/web/main.py:221
 msgid "目前密碼不正確"
 msgstr ""
 
-#: app/web/main.py:202
+#: app/web/main.py:228
 msgid "新密碼與確認密碼不一致"
 msgstr ""
 
-#: app/web/main.py:210
+#: app/web/main.py:236
 msgid "密碼已變更成功"
 msgstr ""
 
-#: app/web/main.py:215 app/web/profile.py:66
+#: app/web/main.py:241 app/web/profile.py:66
 #, python-format
 msgid "變更失敗: %(error)s"
 msgstr ""

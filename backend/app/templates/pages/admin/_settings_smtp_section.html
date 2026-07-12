@@ -78,7 +78,7 @@
                  style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
                 <div style="background: white; padding: 24px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? '編輯 SMTP 設定' : '新增 SMTP 設定'"></h3>
+                        <h3 style="margin: 0; font-size: 18px;" x-text="isEditing ? __('編輯 SMTP 設定') : __('新增 SMTP 設定')"></h3>
                         <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
                     </div>
 
@@ -150,7 +150,7 @@
                                 <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('密碼 *') }}</label>
                                 <input type="password" x-model="formData.password" :required="!isEditing"
                                        style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
-                                       :placeholder="{{ _('isEditing ? \'(不修改請留空)\' : \'\'') }}">
+                                       :placeholder="isEditing ? __('(不修改請留空)') : ''">
                             </div>
                         </div>
 
@@ -184,7 +184,7 @@
                                     style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
                             <button type="submit"
                                     style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
-                                <span x-text="isEditing ? '儲存' : '建立'"></span>
+                                <span x-text="isEditing ? __('儲存') : __('建立')"></span>
                             </button>
                         </div>
                     </form>

@@ -53,18 +53,18 @@ function sysAccountsManager() {
                     var data = await response.json();
                     if (data.success && data.data.policy.enabled) {
                         var p = data.data.policy;
-                        var reqs = ['長度至少 ' + p.min_length + ' 個字元'];
-                        if (p.require_uppercase) reqs.push('包含大寫字母');
-                        if (p.require_lowercase) reqs.push('包含小寫字母');
-                        if (p.require_digit) reqs.push('包含數字');
-                        if (p.require_special) reqs.push('包含特殊符號');
+                        var reqs = [__('長度至少 ') + p.min_length + __(' 個字元')];
+                        if (p.require_uppercase) reqs.push(__('包含大寫字母'));
+                        if (p.require_lowercase) reqs.push(__('包含小寫字母'));
+                        if (p.require_digit) reqs.push(__('包含數字'));
+                        if (p.require_special) reqs.push(__('包含特殊符號'));
                         this.passwordRequirements = reqs.join(', ');
                     } else {
-                        this.passwordRequirements = '密碼長度至少 12 個字元';
+                        this.passwordRequirements = __('密碼長度至少 12 個字元');
                     }
                 }
             } catch (err) {
-                this.passwordRequirements = '密碼長度至少 12 個字元';
+                this.passwordRequirements = __('密碼長度至少 12 個字元');
             }
         },
 
@@ -199,11 +199,11 @@ function sysAccountsManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    this.formErrors = result.errors || ['操作失敗'];
+                    this.formErrors = result.errors || [__('操作失敗')];
                     this.submitting = false;
                 }
             } catch (e) {
-                this.formErrors = ['網路錯誤'];
+                this.formErrors = [__('網路錯誤')];
                 this.submitting = false;
             }
         },
@@ -236,11 +236,11 @@ function sysAccountsManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    this.formErrors = result.errors || ['操作失敗'];
+                    this.formErrors = result.errors || [__('操作失敗')];
                     this.submitting = false;
                 }
             } catch (e) {
-                this.formErrors = ['網路錯誤'];
+                this.formErrors = [__('網路錯誤')];
                 this.submitting = false;
             }
         },
@@ -249,7 +249,7 @@ function sysAccountsManager() {
 
         async submitDelete() {
             if (!this.selected || this.selected.is_self) return;
-            if (!confirm('確定要刪除系統管理員「' + this.selected.username + '」嗎？此操作無法復原。')) return;
+            if (!confirm(__('確定要刪除系統管理員「') + this.selected.username + __('」嗎？此操作無法復原。'))) return;
             if (this.submitting) return;
             this.formErrors = [];
             this.submitting = true;
@@ -268,11 +268,11 @@ function sysAccountsManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    this.formErrors = result.errors || ['刪除失敗'];
+                    this.formErrors = result.errors || [__('刪除失敗')];
                     this.submitting = false;
                 }
             } catch (e) {
-                this.formErrors = ['網路錯誤'];
+                this.formErrors = [__('網路錯誤')];
                 this.submitting = false;
             }
         },

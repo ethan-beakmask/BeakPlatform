@@ -140,7 +140,7 @@
                         </div>
                         <button type="button" @click="showPassword = !showPassword"
                                 style="padding: 6px 10px; background: #f3f4f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;"
-                                x-text="showPassword ? '隱藏' : '顯示'"></button>
+                                x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                         <button type="button" @click="generatePassword()"
                                 style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
                             {{ _('建議密碼') }}
@@ -349,7 +349,7 @@
     <div class="danger-zone">
         <h3>{{ _('危險區域') }}</h3>
         <p>{{ _('刪除此用戶將無法復原，請謹慎操作。') }}</p>
-        <form method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" onsubmit="return confirm('確定要刪除用戶「{{ user.display_name }}」嗎？此操作無法復原！');">
+        <form method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" onsubmit="return confirm(__('確定要刪除用戶「{name}」嗎？此操作無法復原！', {name: {{ user.display_name|tojson|forceescape }} }));">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit">{{ _('刪除用戶') }}</button>
         </form>

@@ -19,10 +19,10 @@
                     this.packages.durationMs = data.data.check_duration_ms || 0;
                     this.packages.stats = this._calcPackageStats();
                 } else {
-                    this.showMessage('packages', data.message || '載入失敗', true);
+                    this.showMessage('packages', data.message || __('載入失敗'), true);
                 }
             } catch (e) {
-                this.showMessage('packages', '載入失敗: ' + e.message, true);
+                this.showMessage('packages', __('載入失敗: {message}', {message: e.message}), true);
             }
             this.loading.packages = false;
         },
@@ -51,11 +51,11 @@
 
         getStatusLabel(status) {
             const map = {
-                'up_to_date': '最新',
-                'minor_update': '小版本更新',
-                'major_update': '大版本更新',
-                'check_failed': '無法檢查',
-                'custom': '平台自製',
+                'up_to_date': __('最新'),
+                'minor_update': __('小版本更新'),
+                'major_update': __('大版本更新'),
+                'check_failed': __('無法檢查'),
+                'custom': __('平台自製'),
             };
-            return map[status] || '未知';
+            return map[status] || __('未知');
         },

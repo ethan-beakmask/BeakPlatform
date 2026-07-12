@@ -16,7 +16,7 @@
                     this.emailrelay.from_name = data.data.from_name || '';
                 }
             } catch (e) {
-                this.showMessage('emailrelay', '載入設定失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('載入設定失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -44,7 +44,7 @@
                     this.showMessage('emailrelay', msg, true);
                 }
             } catch (e) {
-                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -64,7 +64,7 @@
                 const data = await res.json();
                 this.showMessage('emailrelay', data.message, !data.success);
             } catch (e) {
-                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -84,7 +84,7 @@
                 const data = await res.json();
                 this.showMessage('emailrelay', data.message, !data.success);
             } catch (e) {
-                this.showMessage('emailrelay', '儲存失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('儲存失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -103,7 +103,7 @@
                 const data = await res.json();
                 this.showMessage('emailrelay', data.message, !data.success);
             } catch (e) {
-                this.showMessage('emailrelay', '發送失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('發送失敗: {message}', {message: e.message}), true);
             }
         },
 
@@ -120,8 +120,8 @@
                 if (data.success && data.data) {
                     this.emailrelay.service = data.data;
                 }
-                this.showMessage('emailrelay', data.message || `服務已 ${action}`, !data.success);
+                this.showMessage('emailrelay', data.message || __('服務已 {action}', {action: action}), !data.success);
             } catch (e) {
-                this.showMessage('emailrelay', '操作失敗: ' + e.message, true);
+                this.showMessage('emailrelay', __('操作失敗: {message}', {message: e.message}), true);
             }
         },

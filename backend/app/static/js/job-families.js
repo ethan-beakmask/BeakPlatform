@@ -71,13 +71,13 @@ function jobFamiliesManager() {
                 columns: [
                     {
                         id: 'code',
-                        label: '代碼',
+                        label: __('代碼'),
                         width: '100px',
                         sortable: true
                     },
                     {
                         id: 'name_en',
-                        label: '英文名稱',
+                        label: __('英文名稱'),
                         width: '150px',
                         sortable: true,
                         renderer: function(value) {
@@ -86,28 +86,28 @@ function jobFamiliesManager() {
                     },
                     {
                         id: 'family_type',
-                        label: '類型',
+                        label: __('類型'),
                         width: '100px',
                         sortable: true,
                         renderer: function(value) {
                             if (value === 'MANAGER') {
-                                return '<span style="color:#0066cc;">管理職</span>';
+                                return __('<span style="color:#0066cc;">管理職</span>');
                             }
-                            return '<span style="color:#009933;">專業職</span>';
+                            return __('<span style="color:#009933;">專業職</span>');
                         }
                     },
                     {
                         id: 'sort_order',
-                        label: '排序',
+                        label: __('排序'),
                         width: '60px',
                         sortable: true
                     },
                     {
                         id: 'is_active',
-                        label: '狀態',
+                        label: __('狀態'),
                         width: '60px',
                         renderer: function(value) {
-                            return value ? '啟用' : '<span style="color:#999;">停用</span>';
+                            return value ? __('啟用') : __('<span style="color:#999;">停用</span>');
                         }
                     }
                 ],
@@ -163,12 +163,12 @@ function jobFamiliesManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    self.formErrors = result.errors || ['操作失敗'];
+                    self.formErrors = result.errors || [__('操作失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         },
@@ -222,12 +222,12 @@ function jobFamiliesManager() {
                 if (result.success) {
                     location.reload();
                 } else {
-                    self.formErrors = result.errors || ['操作失敗'];
+                    self.formErrors = result.errors || [__('操作失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         },
@@ -237,8 +237,8 @@ function jobFamiliesManager() {
         submitDelete: function(cascadeDelete) {
             var name = this.editForm.name;
             var msg = cascadeDelete
-                ? '確定要刪除職系「' + name + '」及其所有職稱嗎？此操作無法復原。'
-                : '確定要刪除職系「' + name + '」嗎？';
+                ? __('確定要刪除職系「') + name + __('」及其所有職稱嗎？此操作無法復原。')
+                : __('確定要刪除職系「') + name + __('」嗎？');
 
             if (!confirm(msg)) return;
             if (this.submitting) return;
@@ -267,16 +267,16 @@ function jobFamiliesManager() {
                     // 後端回傳需要連動刪除確認
                     self.submitting = false;
                     var count = result.title_count || 0;
-                    if (confirm('此職系有 ' + count + ' 個職稱使用中，確定要連同職稱一併刪除嗎？')) {
+                    if (confirm(__('此職系有 ') + count + __(' 個職稱使用中，確定要連同職稱一併刪除嗎？'))) {
                         self.submitDelete(true);
                     }
                 } else {
-                    self.formErrors = result.errors || ['刪除失敗'];
+                    self.formErrors = result.errors || [__('刪除失敗')];
                     self.submitting = false;
                 }
             })
             .catch(function() {
-                self.formErrors = ['網路錯誤'];
+                self.formErrors = [__('網路錯誤')];
                 self.submitting = false;
             });
         }

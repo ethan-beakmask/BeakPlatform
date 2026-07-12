@@ -3,7 +3,7 @@
 {# ---- 建立 / 編輯 ---- #}
 <div class="ak-modal-overlay" x-show="showFormModal" x-cloak>
     <div class="ak-modal">
-        <h3 x-text="editingSc ? '編輯 API Key' : '建立 API Key'"></h3>
+        <h3 x-text="editingSc ? __('編輯 API Key') : __('建立 API Key')"></h3>
 
         <div class="ak-field">
             <label>{{ _('名稱') }} *</label>
@@ -89,7 +89,7 @@
         <div class="ak-modal-actions">
             <button class="btn" @click="showFormModal = false">{{ _('取消') }}</button>
             <button class="btn btn-primary" @click="submitForm()"
-                    x-text="editingSc ? '儲存' : '建立'"></button>
+                    x-text="editingSc ? __('儲存') : __('建立')"></button>
         </div>
     </div>
 </div>
@@ -114,7 +114,7 @@
         </template>
         <div class="ak-modal-actions">
             <button class="btn" @click="copySecret()"
-                    x-text="secretCopied ? '已複製' : '複製'"></button>
+                    x-text="secretCopied ? __('已複製') : __('複製')"></button>
             <button class="btn btn-primary" @click="closeSecretModal()">{{ _('我已保存，關閉') }}</button>
         </div>
     </div>

@@ -71,7 +71,7 @@ function telegramManager() {
                     this.showModal = true;
                 }
             } catch (error) {
-                alert('載入設定失敗：' + error.message);
+                alert(__('載入設定失敗：') + error.message);
             }
         },
 
@@ -128,10 +128,10 @@ function telegramManager() {
                     this.closeModal();
                     await this.loadConfigs();
                 } else {
-                    alert(result.message || '操作失敗');
+                    alert(result.message || __('操作失敗'));
                 }
             } catch (error) {
-                alert('操作失敗：' + error.message);
+                alert(__('操作失敗：') + error.message);
             }
         },
 
@@ -141,16 +141,16 @@ function telegramManager() {
 
             var chatId = null;
             if (channelNames.length === 0) {
-                alert('此設定沒有頻道，請先新增頻道');
+                alert(__('此設定沒有頻道，請先新增頻道'));
                 return;
             } else if (channelNames.length === 1) {
                 chatId = channels[channelNames[0]];
             } else {
-                var choice = prompt('選擇測試頻道 (' + channelNames.join(', ') + ')：', config.default_channel || channelNames[0]);
+                var choice = prompt(__('選擇測試頻道 (') + channelNames.join(', ') + ')：', config.default_channel || channelNames[0]);
                 if (!choice) return;
                 chatId = channels[choice];
                 if (!chatId) {
-                    alert('找不到該頻道');
+                    alert(__('找不到該頻道'));
                     return;
                 }
             }
@@ -168,7 +168,7 @@ function telegramManager() {
                 var result = await response.json();
                 alert(result.message);
             } catch (error) {
-                alert('測試失敗：' + error.message);
+                alert(__('測試失敗：') + error.message);
             }
         },
 
@@ -194,10 +194,10 @@ function telegramManager() {
                     this.configToDelete = null;
                     await this.loadConfigs();
                 } else {
-                    alert(result.message || '刪除失敗');
+                    alert(result.message || __('刪除失敗'));
                 }
             } catch (error) {
-                alert('刪除失敗：' + error.message);
+                alert(__('刪除失敗：') + error.message);
             }
         }
     };

@@ -104,14 +104,14 @@
 <h3 class="text-danger">{{ _('危險區域') }}</h3>
 <div style="display: flex; gap: 20px;">
     <form method="POST" action="{{ url_for('delegations.revoke_delegation', secure_code=delegation.secure_code) }}"
-          onsubmit="return confirm('確定要撤銷此代理授權嗎？');">
+          onsubmit="return confirm(__('確定要撤銷此代理授權嗎？'));">
         <input type="hidden" name="revoke_reason" value="由管理員手動撤銷">
         <button type="submit" class="btn btn-warning">
             {{ _('撤銷授權') }}
         </button>
     </form>
     <form method="POST" action="{{ url_for('delegations.delete_delegation', secure_code=delegation.secure_code) }}"
-          onsubmit="return confirm('確定要刪除此代理授權紀錄嗎？');">
+          onsubmit="return confirm(__('確定要刪除此代理授權紀錄嗎？'));">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-danger">
             {{ _('刪除紀錄') }}

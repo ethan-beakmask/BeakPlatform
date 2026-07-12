@@ -18,14 +18,14 @@
     <div class="odb-sidebar">
         <div class="odb-sidebar-header">
             <h2>{{ _('企業獨立資料庫管理') }}</h2>
-            <div class="odb-sidebar-summary" x-text="orgs.length + ' 個企業資料庫'"></div>
+            <div class="odb-sidebar-summary" x-text="__('{count} 個企業資料庫', {count: orgs.length})"></div>
             <input type="text" class="odb-search" x-model="search"
                    placeholder="{{ _('搜尋企業名稱或 domain...') }}">
             <div class="odb-sort-bar">
                 {{ _('排序:') }}
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('id')}" @click="toggleSort('id')" x-text="'編號' + sortIcon('id')">{{ _('編號') }}</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('tables')}" @click="toggleSort('tables')" x-text="'資料表' + sortIcon('tables')">{{ _('資料表') }}</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('size')}" @click="toggleSort('size')" x-text="'容量' + sortIcon('size')">{{ _('容量') }}</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('id')}" @click="toggleSort('id')" x-text="__('編號') + sortIcon('id')">{{ _('編號') }}</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('tables')}" @click="toggleSort('tables')" x-text="__('資料表') + sortIcon('tables')">{{ _('資料表') }}</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('size')}" @click="toggleSort('size')" x-text="__('容量') + sortIcon('size')">{{ _('容量') }}</button>
             </div>
         </div>
         <div class="odb-sidebar-list">
@@ -76,7 +76,7 @@
 
                 {# 錯誤 #}
                 <template x-if="currentOrg.dataError && !currentOrg.dataLoading">
-                    <div class="odb-error" x-text="'載入失敗: ' + currentOrg.dataError"></div>
+                    <div class="odb-error" x-text="__('載入失敗: {message}', {message: currentOrg.dataError})"></div>
                 </template>
 
                 {# 有 DB：顯示統計 #}
@@ -100,14 +100,14 @@
                                     <td>{{ _('總大小') }}</td>
                                     <td x-text="currentOrg.data.db_size_display"></td>
                                     <td>{{ _('密碼輪換') }}</td>
-                                    <td x-text="currentOrg.data.last_rotation || '尚未輪換'"></td>
+                                    <td x-text="currentOrg.data.last_rotation || __('尚未輪換')"></td>
                                 </tr>
                             </table>
                         </div>
 
                         {# 連線錯誤 #}
                         <template x-if="currentOrg.data.stats && currentOrg.data.stats.error">
-                            <div class="odb-error" x-text="'連線失敗: ' + currentOrg.data.stats.error"></div>
+                            <div class="odb-error" x-text="__('連線失敗: {message}', {message: currentOrg.data.stats.error})"></div>
                         </template>
 
                         {# 資料表清單 #}
@@ -117,8 +117,8 @@
                                     <tr>
                                         <th class="col-num">#</th>
                                         <th class="col-name">{{ _('資料表名稱') }}</th>
-                                        <th class="col-rows col-sortable" @click="toggleTableSort('rows')" x-text="'筆數' + tableSortIcon('rows')"></th>
-                                        <th class="col-size col-sortable" @click="toggleTableSort('size')" x-text="'總大小' + tableSortIcon('size')"></th>
+                                        <th class="col-rows col-sortable" @click="toggleTableSort('rows')" x-text="__('筆數') + tableSortIcon('rows')"></th>
+                                        <th class="col-size col-sortable" @click="toggleTableSort('size')" x-text="__('總大小') + tableSortIcon('size')"></th>
                                         <th class="col-size">{{ _('索引大小') }}</th>
                                     </tr>
                                 </thead>
@@ -136,7 +136,7 @@
                                 <tfoot>
                                     <tr>
                                         <td></td>
-                                        <td class="col-name"><strong x-text="'合計 (' + currentOrg.data.stats.table_count + ' 表)'"></strong></td>
+                                        <td class="col-name"><strong x-text="__('合計 ({count} 表)', {count: currentOrg.data.stats.table_count})"></strong></td>
                                         <td class="col-rows"><strong x-text="formatNumber(currentOrg.data.stats.total_rows)"></strong></td>
                                         <td class="col-size"><strong x-text="currentOrg.data.stats.total_bytes_display"></strong></td>
                                         <td class="col-size"><strong x-text="currentOrg.data.stats.total_index_display"></strong></td>
@@ -193,7 +193,7 @@
                     <td>{{ _('總大小') }}</td>
                     <td x-text="dbInfo.db_size_display"></td>
                     <td>{{ _('密碼輪換') }}</td>
-                    <td x-text="dbInfo.last_rotation || '尚未輪換'"></td>
+                    <td x-text="dbInfo.last_rotation || __('尚未輪換')"></td>
                 </tr>
             </table>
         </div>
@@ -202,20 +202,20 @@
         <div class="odb-table-toolbar">
             <label class="odb-toolbar-check">
                 <input type="checkbox" :checked="isAllSelected" @change="selectAll()">
-                <span x-text="tables.length + ' 個資料表'"></span>
+                <span x-text="__('{count} 個資料表', {count: tables.length})"></span>
             </label>
             <button class="odb-btn-invert" @click="invertSelection()">{{ _('反選') }}</button>
             <button class="odb-btn-danger" :disabled="selectedCount === 0"
-                    @click="startDelete()" x-text="'刪除選取 (' + selectedCount + ')'"></button>
+                    @click="startDelete()" x-text="__('刪除選取 ({count})', {count: selectedCount})"></button>
             <span class="odb-toolbar-spacer"></span>
             <span class="odb-toolbar-sort">
                 {{ _('排序:') }}
                 <button class="odb-sort-btn" :class="{'active': listSortBy === 'name_asc' || listSortBy === 'name_desc'}"
-                        @click="toggleListSort('name')" x-text="'表名' + listSortIcon('name')"></button>
+                        @click="toggleListSort('name')" x-text="__('表名') + listSortIcon('name')"></button>
                 <button class="odb-sort-btn" :class="{'active': listSortBy === 'rows_desc' || listSortBy === 'rows_asc'}"
-                        @click="toggleListSort('rows')" x-text="'筆數' + listSortIcon('rows')"></button>
+                        @click="toggleListSort('rows')" x-text="__('筆數') + listSortIcon('rows')"></button>
                 <button class="odb-sort-btn" :class="{'active': listSortBy === 'size_desc' || listSortBy === 'size_asc'}"
-                        @click="toggleListSort('size')" x-text="'容量' + listSortIcon('size')"></button>
+                        @click="toggleListSort('size')" x-text="__('容量') + listSortIcon('size')"></button>
             </span>
         </div>
 
@@ -228,7 +228,7 @@
                 <div class="odb-table-item" :class="{'active': selectedTable === t.name}">
                     <input type="checkbox" :checked="selected[t.name]" @change="toggleSelect(t.name)">
                     <span class="odb-table-name" @click="previewTable(t.name)" x-text="t.name"></span>
-                    <span class="odb-table-stat" x-text="formatNumber(t.row_count) + ' 筆'"></span>
+                    <span class="odb-table-stat" x-text="__('{count} 筆', {count: formatNumber(t.row_count)})"></span>
                     <span class="odb-table-stat" x-text="t.total_display"></span>
                 </div>
             </template>
@@ -244,7 +244,7 @@
             <div class="odb-detail-loading">{{ _('載入中...') }}</div>
         </template>
         <template x-if="selectedTable && !previewLoading && previewError">
-            <div class="odb-error" x-text="'預覽失敗: ' + previewError"></div>
+            <div class="odb-error" x-text="__('預覽失敗: {message}', {message: previewError})"></div>
         </template>
         <template x-if="selectedTable && !previewLoading && preview">
             <div class="odb-detail-split">
@@ -252,7 +252,7 @@
                 <div class="odb-split-top" :style="'height:' + splitPct + '%'">
                     <div class="odb-preview-header">
                         <strong x-text="selectedTable"></strong>
-                        <span x-text="'(共 ' + formatNumber(preview.total_count) + ' 筆，顯示前 100 筆)'"></span>
+                        <span x-text="__('(共 {count} 筆，顯示前 100 筆)', {count: formatNumber(preview.total_count)})"></span>
                     </div>
                     <div class="odb-preview-wrap">
                         <table class="odb-preview-table">
@@ -321,7 +321,7 @@
         <div class="odb-modal-overlay">
             <div class="odb-modal">
                 <div class="odb-modal-header">
-                    <strong x-text="'即將刪除 ' + selectedNames.length + ' 個資料表'"></strong>
+                    <strong x-text="__('即將刪除 {count} 個資料表', {count: selectedNames.length})"></strong>
                 </div>
                 <div class="odb-modal-body">
                     <template x-if="deleteChecking">
@@ -365,7 +365,7 @@
                     <button class="odb-btn-cancel" @click="deleteModal = false" :disabled="deleting">{{ _('取消') }}</button>
                     <button class="odb-btn-danger" @click="confirmDelete()"
                             :disabled="deleteChecking || deleting"
-                            x-text="deleting ? '刪除中...' : '確認刪除'"></button>
+                            x-text="deleting ? __('刪除中...') : __('確認刪除')"></button>
                 </div>
             </div>
         </div>

@@ -148,7 +148,7 @@ function odbSystemView() {
 
         orgStats(org) {
             if (!org.data || !org.data.stats) return '--';
-            return org.data.stats.table_count + ' 表 / ' + org.data.db_size_display;
+            return org.data.stats.table_count + __(' 表 / ') + org.data.db_size_display;
         },
 
         get sortedTables() {
@@ -401,7 +401,7 @@ function odbOrgView() {
                         return resp.json();
                     }
                     // 非 JSON 回應（如 HTML 錯誤頁）
-                    throw new Error('伺服器回應異常 (HTTP ' + resp.status + ')');
+                    throw new Error(__('伺服器回應異常 (HTTP ') + resp.status + ')');
                 })
                 .then(function(data) {
                     if (data.error) {
@@ -421,7 +421,7 @@ function odbOrgView() {
         getTableRowCount(name) {
             for (var i = 0; i < this.tables.length; i++) {
                 if (this.tables[i].name === name) {
-                    return '(' + formatNumber(this.tables[i].row_count) + ' 筆)';
+                    return '(' + formatNumber(this.tables[i].row_count) + __(' 筆)');
                 }
             }
             return '';
@@ -448,7 +448,7 @@ function odbOrgView() {
                 self.deleteRefs = data.references || {};
             })
             .catch(function(err) {
-                alert('檢查引用失敗: ' + err.message);
+                alert(__('檢查引用失敗: ') + err.message);
                 self.deleteModal = false;
             })
             .finally(function() {
@@ -472,13 +472,13 @@ function odbOrgView() {
             })
             .then(function(data) {
                 if (data.error) {
-                    alert('刪除失敗: ' + data.error);
+                    alert(__('刪除失敗: ') + data.error);
                 } else {
                     location.reload();
                 }
             })
             .catch(function(err) {
-                alert('刪除失敗: ' + err.message);
+                alert(__('刪除失敗: ') + err.message);
             })
             .finally(function() {
                 self.deleting = false;

@@ -98,7 +98,7 @@
                             <button type="button" @click="document.getElementById('logo-upload').click()"
                                     :disabled="uploading"
                                     style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                <span x-text="uploading ? '上傳中...' : (logoUrl ? '更換 Logo' : '上傳 Logo')"></span>
+                                <span x-text="uploading ? __('上傳中...') : (logoUrl ? __('更換 Logo') : __('上傳 Logo'))"></span>
                             </button>
                             <span style="color: #666; font-size: 12px;">{{ _('支援 PNG, JPG, GIF, SVG, WebP（最大 2MB）') }}</span>
                         </div>
@@ -330,7 +330,7 @@
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" x-model="policy.require_special" @change="savePolicy()">
-                                        <span>{{ _('包含特殊符號 (!@#$%^&* 等)') }}</span>
+                                        <span>{{ _('包含特殊符號 (!@#$%%^&* 等)') }}</span>
                                     </label>
                                 </div>
                             </td>

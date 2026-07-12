@@ -57,7 +57,7 @@ window.__LF_CONFIG = {
             </label>
             <span class="text-muted" style="margin-left: auto; font-size: 12px;"
                   x-show="data && _summary.total !== data.summary.total"
-                  x-text="data ? '(已過濾 ' + (data.summary.total - _summary.total) + ' 筆)' : ''"></span>
+                  x-text="data ? __('(已過濾 {count} 筆)', {count: data.summary.total - _summary.total}) : ''"></span>
         </div>
     </div>
 
@@ -223,7 +223,7 @@ window.__LF_CONFIG = {
                                     <span class="lf-tag" :class="typeTag(s.type)[1]" x-text="typeTag(s.type)[0]"></span>
                                 </td>
                                 <td style="font-size:11px" x-text="s.detail"></td>
-                                <td :class="s.org_name === '未知網域' ? 'lf-org-null' : 'lf-org-name'" x-text="s.org_name"></td>
+                                <td :class="s.org_unknown ? 'lf-org-null' : 'lf-org-name'" x-text="s.org_name"></td>
                                 <td x-html="s.ips.map(ip => '<span class=\'lf-ip\'>' + ip + '</span>').join('<br>')"></td>
                                 <td>
                                     <span x-text="s.count"></span>

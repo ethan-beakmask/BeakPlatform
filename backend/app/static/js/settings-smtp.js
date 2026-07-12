@@ -115,7 +115,7 @@ function smtpManager() {
                     this.showModal = true;
                 }
             } catch (error) {
-                alert('載入設定失敗：' + error.message);
+                alert(__('載入設定失敗：') + error.message);
             }
         },
 
@@ -149,16 +149,16 @@ function smtpManager() {
                     this.closeModal();
                     await this.loadConfigs();
                 } else {
-                    alert(result.message || '操作失敗');
+                    alert(result.message || __('操作失敗'));
                 }
             } catch (error) {
-                alert('操作失敗：' + error.message);
+                alert(__('操作失敗：') + error.message);
             }
         },
 
         async testConfig(config) {
-            if (!confirm('要發送測試郵件嗎？')) return;
-            var recipient = prompt('請輸入測試收件人信箱：');
+            if (!confirm(__('要發送測試郵件嗎？'))) return;
+            var recipient = prompt(__('請輸入測試收件人信箱：'));
             if (!recipient) return;
 
             try {
@@ -177,7 +177,7 @@ function smtpManager() {
                     await this.loadConfigs();
                 }
             } catch (error) {
-                alert('測試失敗：' + error.message);
+                alert(__('測試失敗：') + error.message);
             }
         },
 
@@ -203,10 +203,10 @@ function smtpManager() {
                     this.configToDelete = null;
                     await this.loadConfigs();
                 } else {
-                    alert(result.message || '刪除失敗');
+                    alert(result.message || __('刪除失敗'));
                 }
             } catch (error) {
-                alert('刪除失敗：' + error.message);
+                alert(__('刪除失敗：') + error.message);
             }
         }
     };

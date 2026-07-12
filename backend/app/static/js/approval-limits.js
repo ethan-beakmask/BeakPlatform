@@ -7,7 +7,7 @@ async function saveLimits() {
     var msg = document.getElementById('save-message');
 
     btn.disabled = true;
-    btn.textContent = '儲存中...';
+    btn.textContent = __('儲存中...');
     msg.textContent = '';
     msg.className = '';
 
@@ -37,14 +37,14 @@ async function saveLimits() {
             return;
         } else {
             msg.className = 'msg-error';
-            msg.textContent = '儲存失敗: ' + data.error;
+            msg.textContent = __('儲存失敗: ') + data.error;
         }
     } catch (err) {
         msg.className = 'msg-error';
-        msg.textContent = '請求失敗: ' + err.message;
+        msg.textContent = __('請求失敗: ') + err.message;
     }
 
     btn.disabled = false;
-    btn.textContent = '儲存變更';
+    btn.textContent = __('儲存變更');
     setTimeout(function() { msg.textContent = ''; }, 3000);
 }

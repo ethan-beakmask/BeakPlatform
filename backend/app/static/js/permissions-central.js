@@ -62,10 +62,10 @@ function permissionCentral() {
 
         // 常數
         userTypeLabels: {
-            'SYSTEM_ADMIN': '系統管理員',
-            'ORG_ADMIN': '企業管理員',
-            'EMPLOYEE': '企業成員',
-            'EXTERNAL': '外部廠商'
+            'SYSTEM_ADMIN': __('系統管理員'),
+            'ORG_ADMIN': __('企業管理員'),
+            'EMPLOYEE': __('企業成員'),
+            'EXTERNAL': __('外部廠商')
         },
 
         async init() {
@@ -179,7 +179,7 @@ function permissionCentral() {
                 this.roleData = await res.json();
             } catch (e) {
                 console.error('Failed to load role view:', e);
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
             } finally {
                 this.roleLoading = false;
             }
@@ -234,11 +234,11 @@ function permissionCentral() {
                     this.showPermEditor = false;
                     await this.loadRoleView();
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
                 console.error('Failed to save permissions:', e);
-                this.showToast('儲存失敗', 'error');
+                this.showToast(__('儲存失敗'), 'error');
             } finally {
                 this.saving = false;
             }
@@ -286,7 +286,7 @@ function permissionCentral() {
                 this.menuData = await res.json();
             } catch (e) {
                 console.error('Failed to load menu view:', e);
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
             } finally {
                 this.menuLoading = false;
             }
@@ -328,7 +328,7 @@ function permissionCentral() {
                 this._updateConflictCount();
             } catch (e) {
                 console.error('Failed to load conflicts:', e);
-                this.showToast('偵測失敗', 'error');
+                this.showToast(__('偵測失敗'), 'error');
             } finally {
                 this.conflictsLoading = false;
             }
@@ -386,15 +386,14 @@ function permissionCentral() {
                 var data = await res.json();
                 if (res.ok) {
                     this.showToast(
-                        data.message + ' (' + data.roles_count + ' 角色, ' +
-                        data.permissions_count + ' 權限)', 'success'
+                        __('{message} ({roles} 角色, {permissions} 權限)', {message: data.message, roles: data.roles_count, permissions: data.permissions_count}), 'success'
                     );
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
                 console.error('Failed to save factory defaults:', e);
-                this.showToast('儲存失敗', 'error');
+                this.showToast(__('儲存失敗'), 'error');
             }
         },
 
@@ -404,7 +403,7 @@ function permissionCentral() {
                 var res = await fetch(url);
                 if (!res.ok) {
                     var data = await res.json();
-                    this.showToast(data.error || '匯出失敗', 'error');
+                    this.showToast(data.error || __('匯出失敗'), 'error');
                     return;
                 }
                 // 觸發瀏覽器下載
@@ -419,10 +418,10 @@ function permissionCentral() {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(a.href);
-                this.showToast('匯出完成', 'success');
+                this.showToast(__('匯出完成'), 'success');
             } catch (e) {
                 console.error('Failed to export RBAC:', e);
-                this.showToast('匯出失敗', 'error');
+                this.showToast(__('匯出失敗'), 'error');
             }
         },
 
@@ -453,11 +452,11 @@ function permissionCentral() {
                         }
                     }
                 } else {
-                    this.showToast(data.error || '匯入失敗', 'error');
+                    this.showToast(data.error || __('匯入失敗'), 'error');
                 }
             } catch (e) {
                 console.error('Failed to import RBAC:', e);
-                this.showToast('匯入失敗', 'error');
+                this.showToast(__('匯入失敗'), 'error');
             }
         },
 
@@ -472,8 +471,13 @@ function permissionCentral() {
                 var data = await res.json();
                 if (res.ok) {
                     this.showToast(
-                        data.message + ' (' + data.roles_restored + ' 角色, +' +
-                        data.added + ' -' + data.removed + ')', 'success'
+                        __('{message} ({roles} 角色, +{added} -{removed})', {
+                            message: data.message,
+                            roles: data.roles_restored,
+                            added: data.added,
+                            removed: data.removed
+                        }),
+                        'success'
                     );
                     // 重新載入資料
                     await this._loadOrgData();
@@ -481,11 +485,11 @@ function permissionCentral() {
                         await this.loadRoleView();
                     }
                 } else {
-                    this.showToast(data.error || '恢復失敗', 'error');
+                    this.showToast(data.error || __('恢復失敗'), 'error');
                 }
             } catch (e) {
                 console.error('Failed to restore defaults:', e);
-                this.showToast('恢復失敗', 'error');
+                this.showToast(__('恢復失敗'), 'error');
             }
         },
 

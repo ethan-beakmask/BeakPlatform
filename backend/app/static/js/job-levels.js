@@ -80,12 +80,12 @@ function jobLevelsManager() {
         // 提交新增
         async submitCreate() {
             if (!this.createForm.name.trim()) {
-                this.createMessage = '職等名稱為必填';
+                this.createMessage = __('職等名稱為必填');
                 this.createMessageType = 'error';
                 return;
             }
             if (this.createForm.level_order === '' || this.createForm.level_order === null) {
-                this.createMessage = '職等序號為必填';
+                this.createMessage = __('職等序號為必填');
                 this.createMessageType = 'error';
                 return;
             }
@@ -125,11 +125,11 @@ function jobLevelsManager() {
                     this.showCreateModal = false;
                     this.selectLevel(newLevel);
                 } else {
-                    this.createMessage = (data.errors || ['建立失敗']).join(', ');
+                    this.createMessage = (data.errors || [__('建立失敗')]).join(', ');
                     this.createMessageType = 'error';
                 }
             } catch (err) {
-                this.createMessage = '網路錯誤: ' + err.message;
+                this.createMessage = __('網路錯誤: ') + err.message;
                 this.createMessageType = 'error';
             } finally {
                 this.createSaving = false;
@@ -141,7 +141,7 @@ function jobLevelsManager() {
             if (!this.selected) return;
 
             if (!this.editForm.name.trim()) {
-                this.editMessage = '職等名稱為必填';
+                this.editMessage = __('職等名稱為必填');
                 this.editMessageType = 'error';
                 return;
             }
@@ -156,16 +156,16 @@ function jobLevelsManager() {
                     const checkData = await checkResp.json();
                     if (checkData.success && checkData.count > 0) {
                         const titleList = checkData.titles.join(', ');
-                        const msg = '此職等有 ' + checkData.count + ' 個啟用中的職稱引用:\n' +
+                        const msg = __('此職等有 ') + checkData.count + __(' 個啟用中的職稱引用:\n') +
                                     titleList + '\n\n' +
-                                    '停用後可能影響簽核流程，確定要停用嗎?';
+                                    __('停用後可能影響簽核流程，確定要停用嗎?');
                         if (!confirm(msg)) {
                             this.editForm.is_active = true;
                             return;
                         }
                     }
                 } catch (err) {
-                    this.editMessage = '檢查引用失敗: ' + err.message;
+                    this.editMessage = __('檢查引用失敗: ') + err.message;
                     this.editMessageType = 'error';
                     return;
                 }
@@ -209,15 +209,15 @@ function jobLevelsManager() {
                     // 重新排序（level_order 可能變了）
                     this.levels.sort((a, b) => b.level_order - a.level_order);
 
-                    this.editMessage = '已儲存';
+                    this.editMessage = __('已儲存');
                     this.editMessageType = 'success';
                     setTimeout(() => { this.editMessage = ''; }, 2000);
                 } else {
-                    this.editMessage = (data.errors || ['更新失敗']).join(', ');
+                    this.editMessage = (data.errors || [__('更新失敗')]).join(', ');
                     this.editMessageType = 'error';
                 }
             } catch (err) {
-                this.editMessage = '網路錯誤: ' + err.message;
+                this.editMessage = __('網路錯誤: ') + err.message;
                 this.editMessageType = 'error';
             } finally {
                 this.editSaving = false;
@@ -229,7 +229,7 @@ function jobLevelsManager() {
             if (!this.selected) return;
             if (this.selected.is_system_default) return;
 
-            if (!confirm('確定要刪除職等「' + this.selected.name + '」嗎？此操作無法復原。')) {
+            if (!confirm(__('確定要刪除職等「') + this.selected.name + __('」嗎？此操作無法復原。'))) {
                 return;
             }
 
@@ -250,11 +250,11 @@ function jobLevelsManager() {
                     this.selected = null;
                     this.editMessage = '';
                 } else {
-                    this.editMessage = (data.errors || ['刪除失敗']).join(', ');
+                    this.editMessage = (data.errors || [__('刪除失敗')]).join(', ');
                     this.editMessageType = 'error';
                 }
             } catch (err) {
-                this.editMessage = '網路錯誤: ' + err.message;
+                this.editMessage = __('網路錯誤: ') + err.message;
                 this.editMessageType = 'error';
             }
         }

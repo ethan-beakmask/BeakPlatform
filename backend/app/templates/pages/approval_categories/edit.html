@@ -95,7 +95,7 @@
 <hr style="margin-top: 40px;">
 <h3 class="text-danger">{{ _('危險區域') }}</h3>
 <form method="POST" action="{{ url_for('approval_categories.delete_category', secure_code=category.secure_code) }}"
-      onsubmit="return confirm('{{ _('確定要刪除類別「%(name)s」嗎？此操作無法復原。', name=category.name) }}');">
+      onsubmit="return confirm(__('確定要刪除類別「{name}」嗎？此操作無法復原。', {name: {{ category.name|tojson|forceescape }} }));">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">
         {{ _('刪除此類別') }}

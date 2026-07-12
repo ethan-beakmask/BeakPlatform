@@ -41,7 +41,7 @@
             <td>
                 <input type="text" id="code" name="code" size="20" x-ref="codeField"
                        x-model="codeval"
-                       :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}"
+                       :placeholder="_ci_generatedCode || __('留空自動產生')"
                        @input.debounce.500ms="ciValidateCode(codeval)">
                 <br><small>{{ _('選填，留空自動產生。如 ACME、DEMO_CORP') }}</small>
                 {% include "partials/_code_input.html" %}
@@ -88,7 +88,7 @@
                            x-model="password" @input="validatePassword()"
                            size="20" minlength="12" required>
                     <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
-                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                     <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
                 </div>
                 <small x-text="passwordRequirements"></small>

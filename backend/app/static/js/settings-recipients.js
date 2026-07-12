@@ -171,7 +171,7 @@ function recipientGroupManager() {
                     this.showModal = true;
                 }
             } catch (error) {
-                alert('載入群組失敗：' + error.message);
+                alert(__('載入群組失敗：') + error.message);
             }
         },
 
@@ -210,10 +210,10 @@ function recipientGroupManager() {
                     this.closeModal();
                     await this.loadGroups();
                 } else {
-                    alert(result.message || '操作失敗');
+                    alert(result.message || __('操作失敗'));
                 }
             } catch (error) {
-                alert('操作失敗：' + error.message);
+                alert(__('操作失敗：') + error.message);
             }
         },
 
@@ -255,10 +255,10 @@ function recipientGroupManager() {
                     this.groupToDelete = null;
                     await this.loadGroups();
                 } else {
-                    alert(result.message || '刪除失敗');
+                    alert(result.message || __('刪除失敗'));
                 }
             } catch (error) {
-                alert('刪除失敗：' + error.message);
+                alert(__('刪除失敗：') + error.message);
             }
         }
     };

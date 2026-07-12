@@ -85,7 +85,7 @@
 
     {# 載入失敗 #}
     <template x-if="error">
-        <div class="cgdb-empty" x-text="'載入失敗: ' + error"></div>
+        <div class="cgdb-empty" x-text="__('載入失敗: {message}', {message: error})"></div>
     </template>
 
     {# 空狀態 #}
@@ -126,7 +126,7 @@
 
                     {# 成員數量 #}
                     <template x-if="db.has_record">
-                        <span x-text="db.member_count + ' 家企業'"></span>
+                        <span x-text="__('{count} 家企業', {count: db.member_count})"></span>
                     </template>
 
                     {# 容量 #}
@@ -255,7 +255,7 @@
                                                 <td style="white-space:nowrap" x-text="log.created_at ? BkTime.format(log.created_at, 'short') : '-'"></td>
                                                 <td>
                                                     <span :class="log.action === 'JOIN' ? 'cgdb-log-join' : 'cgdb-log-leave'"
-                                                          x-text="log.action === 'JOIN' ? '加入' : '退出'"></span>
+                                                          x-text="log.action === 'JOIN' ? __('加入') : __('退出')"></span>
                                                 </td>
                                                 <td x-text="log.org_name"></td>
                                                 <td x-text="log.operator_email"></td>

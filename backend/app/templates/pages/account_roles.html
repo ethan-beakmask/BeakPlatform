@@ -196,7 +196,7 @@ function accountRoles() {
         },
 
         async revokeRole(userSc, roleSc, userName, roleName) {
-            if (!confirm('確定移除 ' + userName + ' 的「' + roleName + '」角色？')) return;
+            if (!confirm(__('確定移除 {userName} 的「{roleName}」角色？', {userName: userName, roleName: roleName}))) return;
             try {
                 const res = await fetch('{{ app_prefix }}/admin/account-roles/api/revoke', {
                     method: 'POST',
@@ -210,7 +210,7 @@ function accountRoles() {
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert(data.error || '操作失敗');
+                    alert(data.error || __('操作失敗'));
                 }
             } catch (e) {
                 alert(e.message);

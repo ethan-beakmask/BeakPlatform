@@ -86,7 +86,7 @@
                            required minlength="8" class="form-control">
                     <button type="button" class="btn-toggle"
                             @click="showPassword = !showPassword"
-                            x-text="showPassword ? '隱藏' : '顯示'"></button>
+                            x-text="showPassword ? __('隱藏') : __('顯示')"></button>
                     <button type="button" class="btn-generate" @click="generatePassword()">
                         {{ _('建議密碼') }}
                     </button>

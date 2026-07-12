@@ -102,11 +102,11 @@ function codeInputMixin(entityType) {
                     this._ci_codeError = '';
                 } else {
                     this._ci_codeValid = false;
-                    this._ci_codeError = data.error || '驗證失敗';
+                    this._ci_codeError = data.error || __('驗證失敗');
                 }
             } catch (e) {
                 console.error('Code validate error:', e);
-                this._ci_codeError = '驗證失敗';
+                this._ci_codeError = __('驗證失敗');
             } finally {
                 this._ci_loading = false;
             }

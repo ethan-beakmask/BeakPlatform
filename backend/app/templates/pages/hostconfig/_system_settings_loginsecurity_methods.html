@@ -1,6 +1,6 @@
         // ==================== 登入安全欄位 ====================
         loginSecFieldLabel(f) {
-            const map = { sv_1: '驗證碼 1', sv_2: '驗證碼 2', sv_3: '驗證碼 3' };
+            const map = { sv_1: __('驗證碼 1'), sv_2: __('驗證碼 2'), sv_3: __('驗證碼 3') };
             return map[f] || f;
         },
 
@@ -26,7 +26,7 @@
                 }
                 this.loginSecurity.loaded = true;
             } catch (e) {
-                this.message.loginSecurity = '載入登入安全設定失敗: ' + e.message;
+                this.message.loginSecurity = __('載入登入安全設定失敗: {message}', {message: e.message});
                 this.message.loginSecurityError = true;
             }
         },
@@ -38,7 +38,7 @@
             const cfg = this.loginSecurity[context];
             const fields = new Set([cfg.password_field, cfg.mine_field, cfg.rescue_field]);
             if (fields.size < 3) {
-                this.message.loginSecurity = '密碼、地雷、救助欄位不能重複指派';
+                this.message.loginSecurity = __('密碼、地雷、救助欄位不能重複指派');
                 this.message.loginSecurityError = true;
                 return;
             }
@@ -58,11 +58,11 @@
                     this.message.loginSecurityError = false;
                     setTimeout(() => { this.message.loginSecurity = ''; }, 2000);
                 } else {
-                    this.message.loginSecurity = data.error || '儲存失敗';
+                    this.message.loginSecurity = data.error || __('儲存失敗');
                     this.message.loginSecurityError = true;
                 }
             } catch (e) {
-                this.message.loginSecurity = '儲存失敗: ' + e.message;
+                this.message.loginSecurity = __('儲存失敗: {message}', {message: e.message});
                 this.message.loginSecurityError = true;
             }
         },

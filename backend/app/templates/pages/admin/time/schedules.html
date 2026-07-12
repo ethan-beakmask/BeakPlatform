@@ -110,7 +110,7 @@
         <div class="modal-overlay">
             <div class="modal-content modal-xl">
                 <div class="modal-header">
-                    <h3 x-text="editingSchedule ? '編輯班表' : '新增班表'"></h3>
+                    <h3 x-text="editingSchedule ? __('編輯班表') : __('新增班表')"></h3>
                     <button class="close-btn" @click="closeModal()">×</button>
                 </div>
                 <div class="modal-body">
@@ -142,7 +142,7 @@
                             <template x-for="day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
                                 <div class="day-config">
                                     <span class="day-label" :class="{ weekend: day === 'sat' || day === 'sun' }"
-                                          x-text="'週' + dayNames[day]"></span>
+                                          x-text="__('週{day}', {day: dayNames[day]})"></span>
                                     <select class="is-workday" x-model="dayConfig[day].isWorkday"
                                             @change="onWorkdayChange(day)">
                                         <option value="true">{{ _('上班') }}</option>
@@ -209,7 +209,7 @@
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
                     <button class="btn btn-primary" @click="saveSchedule()" :disabled="saving">
-                        <span x-text="saving ? '儲存中...' : '儲存'"></span>
+                        <span x-text="saving ? __('儲存中...') : __('儲存')"></span>
                     </button>
                 </div>
             </div>

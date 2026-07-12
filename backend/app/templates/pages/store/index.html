@@ -37,7 +37,7 @@
                 </div>
                 <div class="store-card-body">
                     <h3 class="store-card-title" x-text="item.name"></h3>
-                    <p class="store-card-desc" x-text="item.description || '（無說明）'"></p>
+                    <p class="store-card-desc" x-text="item.description || __('（無說明）')"></p>
                     <div class="store-card-category" x-show="item.category">
                         <span x-text="item.category"></span>
                     </div>
@@ -52,7 +52,7 @@
                     <template x-if="item.installed && item.upgradable">
                         <div class="store-installed-info">
                             <span class="store-upgrade-badge">{{ _('可升級') }}</span>
-                            <small x-text="'目前 v' + item.installed_version"></small>
+                            <small x-text="__('目前 v{version}', {version: item.installed_version})"></small>
                         </div>
                     </template>
                     <template x-if="!item.installed">

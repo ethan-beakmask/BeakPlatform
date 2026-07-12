@@ -231,7 +231,7 @@
 
 <script>
 window.__DEPT_CONFIG = {
-    orgName: {{ (organization.name if organization else '企業') | tojson }},
+    orgName: {% if organization %}{{ organization.name|tojson }}{% else %}__('企業'){% endif %},
     conglomerateName: {{ (conglomerate.name if conglomerate else '') | tojson }},
     orgSettings: {{ (org_settings | tojson) if org_settings is defined else '{}' }},
     domainName: {{ (organization.domain_name if organization else '') | tojson }}
@@ -264,7 +264,7 @@ window.__DEPT_CONFIG = {
 
     <!-- 中間：詳情 -->
     <div class="dept-detail-panel">
-        <div class="panel-header-bar" x-text="isCreatingEmployee ? '新增企業成員' : (isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情'))"></div>
+        <div class="panel-header-bar" x-text="isCreatingEmployee ? __('新增企業成員') : (isCreating ? __('新增部門') : (selectedDept ? selectedDept.name : __('部門詳情')))"></div>
         <div class="panel-body">
             <template x-if="!selectedDept && !isCreating && !isCreatingEmployee">
                 <div class="empty-message">{{ _('請從左側選擇部門') }}</div>
@@ -282,7 +282,7 @@ window.__DEPT_CONFIG = {
                     <!-- 上半：編輯部門 + 跨部門人員 並排 -->
                     <div class="detail-top-row">
                         <div class="edit-section">
-                            <div class="section-title" x-text="isCreating ? '新增部門' : '編輯部門'"></div>
+                            <div class="section-title" x-text="isCreating ? __('新增部門') : __('編輯部門')"></div>
                             <form @submit.prevent="isCreating ? createDepartment() : updateDepartment()">
                                 <div class="form-row">
                                     <label>{{ _('部門名稱') }} *</label>
@@ -294,7 +294,7 @@ window.__DEPT_CONFIG = {
                                     <label>{{ _('部門代碼') }}</label>
                                     <input type="text" x-model="formData.code" :disabled="!isCreating"
                                            maxlength="50" pattern="[A-Za-z0-9_\-]+"
-                                           :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}"
+                                           :placeholder="_ci_generatedCode || __('留空自動產生')"
                                            @input.debounce.500ms="ciValidateCode(formData.code)">
                                     <div class="field-hint">{{ _('選填，留空自動產生') }}</div>
                                     {% include "partials/_code_input.html" %}
@@ -309,7 +309,7 @@ window.__DEPT_CONFIG = {
                                     </select>
                                 </div>
                                 <div class="btn-group">
-                                    <button type="submit" class="btn btn-primary" x-text="isCreating ? '建立' : '儲存'"></button>
+                                    <button type="submit" class="btn btn-primary" x-text="isCreating ? __('建立') : __('儲存')"></button>
                                     <button type="button" class="btn btn-secondary" @click="cancelEdit()">{{ _('取消') }}</button>
                                     <button type="button" class="btn btn-danger" x-show="!isCreating && selectedDept" @click="deleteDepartment()">{{ _('刪除') }}</button>
                                 </div>
@@ -349,7 +349,7 @@ window.__DEPT_CONFIG = {
                     <div x-show="selectedDept">
                         <div class="staff-section-header">
                             <span>{{ _('部門成員') }}</span>
-                            <span style="font-weight:normal;color:#888;font-size:11px;" x-text="'共 '+totalCount+' 人'"></span>
+                            <span style="font-weight:normal;color:#888;font-size:11px;" x-text="__('共 {count} 人', {count: totalCount})"></span>
                         </div>
                         <div class="staff-layout-new">
                             <!-- 左: 主管(含代理人一) + 副主管(含代理人二) -->
@@ -369,7 +369,7 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="!leadership.manager">
-                                        <div class="staff-empty" x-text="isCtrlCrossMode ? '[跨] 跨部門主管' : '拖入設為主管'"></div>
+                                        <div class="staff-empty" x-text="isCtrlCrossMode ? __('[跨] 跨部門主管') : __('拖入設為主管')"></div>
                                     </template>
                                     <!-- 代理人(一) -->
                                     <div class="proxy-section leadership-cell"
@@ -405,7 +405,7 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="!leadership.deputy">
-                                        <div class="staff-empty" x-text="isCtrlCrossMode ? '[跨] 跨部門副主管' : '拖入設為副主管'"></div>
+                                        <div class="staff-empty" x-text="isCtrlCrossMode ? __('[跨] 跨部門副主管') : __('拖入設為副主管')"></div>
                                     </template>
                                     <!-- 代理人(二) -->
                                     <div class="proxy-section leadership-cell"
@@ -448,7 +448,7 @@ window.__DEPT_CONFIG = {
                                         </div>
                                     </template>
                                     <template x-if="regularMembers.length===0">
-                                        <div class="staff-empty" x-text="isCtrlCrossMode ? '[跨] 跨部門成員' : '從右側拖入企業成員'"></div>
+                                        <div class="staff-empty" x-text="isCtrlCrossMode ? __('[跨] 跨部門成員') : __('從右側拖入企業成員')"></div>
                                     </template>
                                 </div>
                             </div>

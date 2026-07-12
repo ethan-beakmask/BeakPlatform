@@ -154,10 +154,10 @@ function toggleDetail(id) {
     const btn = row.previousElementSibling.querySelector('.ml-expand-btn');
     if (row.style.display === 'none') {
         row.style.display = '';
-        if (btn) btn.textContent = '收合';
+        if (btn) btn.textContent = __('收合');
     } else {
         row.style.display = 'none';
-        if (btn) btn.textContent = '展開';
+        if (btn) btn.textContent = __('展開');
     }
 }
 </script>

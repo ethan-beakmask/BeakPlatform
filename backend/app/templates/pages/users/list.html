@@ -70,7 +70,7 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 </form>
                 <a href="#" class="text-danger" style="margin-left: 8px;"
-                   onclick="event.preventDefault(); if(confirm('{{ _('確定要刪除用戶「%(name)s」嗎？', name=user.display_name) }}')) document.getElementById('delete-{{ user.secure_code }}').submit();">
+                   onclick="event.preventDefault(); if(confirm(__('確定要刪除用戶「{name}」嗎？', {name: {{ user.display_name|tojson|forceescape }} }))) document.getElementById('delete-{{ user.secure_code }}').submit();">
                     {{ _('刪除') }}
                 </a>
                 <form id="delete-{{ user.secure_code }}" method="POST" action="{{ url_for('users.delete_user', secure_code=user.secure_code) }}" style="display: none;">

@@ -10,10 +10,10 @@ function modulePermissions() {
 
         // 類型標籤
         typeLabels: {
-            'ROLE': '角色',
-            'DEPARTMENT': '部門',
-            'GROUP': '群組',
-            'ACCOUNT': '帳號',
+            'ROLE': __('角色'),
+            'DEPARTMENT': __('部門'),
+            'GROUP': __('群組'),
+            'ACCOUNT': __('帳號'),
         },
 
         // 新增模態框
@@ -96,15 +96,15 @@ function modulePermissions() {
                     this.showAddModal = false;
                     await this.loadACL(this.addModuleCode);
                 } else {
-                    alert(data.error || '新增失敗');
+                    alert(data.error || __('新增失敗'));
                 }
             } catch (e) {
-                alert('新增失敗: ' + e.message);
+                alert(__('新增失敗: ') + e.message);
             }
         },
 
         async removeACL(secureCode) {
-            if (!confirm('確定要移除此使用權指派？')) return;
+            if (!confirm(__('確定要移除此使用權指派？'))) return;
 
             try {
                 const res = await fetch(window.__BP + '/api/module-access/' + secureCode, {
@@ -114,10 +114,10 @@ function modulePermissions() {
                 if (data.success) {
                     await this.loadACL(this.expandedModule);
                 } else {
-                    alert(data.error || '移除失敗');
+                    alert(data.error || __('移除失敗'));
                 }
             } catch (e) {
-                alert('移除失敗: ' + e.message);
+                alert(__('移除失敗: ') + e.message);
             }
         },
     };

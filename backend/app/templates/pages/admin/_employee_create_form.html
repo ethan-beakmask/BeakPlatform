@@ -62,7 +62,7 @@
                         <input x-show="uc_showPassword" type="text" x-model="uc_password"
                                @input="uc_validatePassword()" :placeholder="uc_suggestedPassword" style="flex:1;">
                         <button type="button" @click="uc_showPassword = !uc_showPassword"
-                                class="btn btn-sm btn-secondary" x-text="uc_showPassword ? '隱藏' : '顯示'"></button>
+                                class="btn btn-sm btn-secondary" x-text="uc_showPassword ? __('隱藏') : __('顯示')"></button>
                         <button type="button" @click="uc_useSuggestedPassword()"
                                 class="btn btn-sm" style="background: #10b981; color: white;">{{ _('使用建議密碼') }}</button>
                     </div>
@@ -148,7 +148,7 @@
 
         <div class="btn-group" style="margin-top: 10px;">
             <button type="submit" class="btn btn-primary" :disabled="uc_submitting"
-                    x-text="uc_submitting ? '建立中...' : '建立企業成員'"></button>
+                    x-text="uc_submitting ? __('建立中...') : __('建立企業成員')"></button>
             <button type="button" class="btn btn-secondary" @click="cancelCreateEmployee()">{{ _('取消') }}</button>
         </div>
     </form>

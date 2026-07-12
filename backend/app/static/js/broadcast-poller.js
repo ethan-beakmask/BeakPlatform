@@ -182,20 +182,20 @@
         var ackSection = '';
         if (requireAck) {
             ackSection = '<div class="bk-alert-scroll-hint" id="bk-scroll-hint-' + item.secure_code + '">' +
-                '(請捲至底部閱讀完整訊息)' +
+                __('(請捲至底部閱讀完整訊息)') +
                 '</div>' +
                 '<div class="bk-alert-ack-row">' +
                 '<input type="checkbox" id="bk-ack-cb-' + item.secure_code + '" disabled>' +
                 '<label for="bk-ack-cb-' + item.secure_code + '" class="bk-disabled" id="bk-ack-label-' + item.secure_code + '">' +
-                '我已閱讀並知悉以上訊息' +
+                __('我已閱讀並知悉以上訊息') +
                 '</label>' +
                 '</div>' +
                 '<button class="bk-alert-confirm-btn" disabled id="bk-ack-btn-' + item.secure_code + '">' +
-                '已知道' +
+                __('已知道') +
                 '</button>';
         } else {
             ackSection = '<button class="bk-alert-confirm-btn" id="bk-ack-btn-' + item.secure_code + '">' +
-                '關閉' +
+                __('關閉') +
                 '</button>';
         }
 

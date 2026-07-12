@@ -163,11 +163,11 @@ function approvalCategoriesManager() {
                 if (data.success) {
                     location.reload();
                 } else {
-                    this.createErrors = data.errors || ['建立失敗'];
+                    this.createErrors = data.errors || [__('建立失敗')];
                     this.createSubmitting = false;
                 }
             } catch (e) {
-                this.createErrors = ['網路錯誤: ' + e.message];
+                this.createErrors = [__('網路錯誤: ') + e.message];
                 this.createSubmitting = false;
             }
         },
@@ -206,11 +206,11 @@ function approvalCategoriesManager() {
                 if (data.success) {
                     location.reload();
                 } else {
-                    this.editErrors = data.errors || ['更新失敗'];
+                    this.editErrors = data.errors || [__('更新失敗')];
                     this.editSubmitting = false;
                 }
             } catch (e) {
-                this.editErrors = ['網路錯誤: ' + e.message];
+                this.editErrors = [__('網路錯誤: ') + e.message];
                 this.editSubmitting = false;
             }
         },
@@ -237,11 +237,11 @@ function approvalCategoriesManager() {
                 if (data.success) {
                     location.reload();
                 } else {
-                    this.editErrors = data.errors || ['刪除失敗'];
+                    this.editErrors = data.errors || [__('刪除失敗')];
                     this.deleteConfirm = false;
                 }
             } catch (e) {
-                this.editErrors = ['網路錯誤: ' + e.message];
+                this.editErrors = [__('網路錯誤: ') + e.message];
                 this.deleteConfirm = false;
             }
         },

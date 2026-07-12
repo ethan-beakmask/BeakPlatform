@@ -16,13 +16,7 @@
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     {% set _locale = current_locale|default('zh-TW') %}
     {% if _locale != 'zh-TW' %}
-    <script>
-    BkI18n.init('{{ _locale }}');
-    fetch('{{ url_for('static', filename='i18n/' + _locale + '.json') }}')
-        .then(function(r) { return r.ok ? r.json() : {}; })
-        .then(function(dict) { BkI18n.loadModule(dict); })
-        .catch(function() {});
-    </script>
+    <script src="{{ url_for('main.i18n_dict_js', locale=_locale) }}"></script>
     {% endif %}
     <!-- 通用表格排序元件（須在 Alpine.js 之前載入，確保函式已定義） -->
     <script src="{{ url_for('static', filename='js/sortable-table.js') }}"></script>
