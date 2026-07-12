@@ -470,6 +470,33 @@ function pageManager() {
 
 ---
 
+## 多語系規範 (I18N-01)
+
+**平台支援 zh-TW（原文即 key）+ en，其他語系由社群擴展。所有新 user-facing 字串必須包翻譯函式：**
+
+| 語境 | 寫法 | 帶變數 |
+|------|------|--------|
+| Python (flash/jsonify error/abort) | `from flask_babel import gettext as _` + `_('中文')` | `_('共 %(n)s 筆', n=x)` |
+| Jinja2 模板 | `{{ _('中文') }}` | `{{ _('共 %(n)s 筆', n=x) }}` |
+| JS（靜態檔、模板 script、Alpine 表達式） | `__('中文')`（i18n.js 全域） | `__('共 {n} 筆', {n: x})` |
+
+**地雷與禁忌**：
+- msgid 含字面 `%` 必須寫 `%%`（flask_babel 一律做 % 插值，裸 % 直接 500）
+- **禁止**包裹：logger/console 訊息、寫入 DB 的資料值、email 主旨內文、參與 `==`/`===` 比較的字串（後端包了 `_()` 後，前端比對同字串即失效——改回穩定布林/代碼欄位）
+- pybabel update 產生的 fuzzy 配對幾乎全是錯的，必須逐條重翻並清除 fuzzy flag
+
+**翻譯流程**（新增字串後）：
+```bash
+cd /opt/BeakPlatform-dev/backend
+../venv/bin/pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+../venv/bin/pybabel update -i translations/messages.pot -d translations -l en
+# 補翻 translations/en/LC_MESSAGES/messages.po 後
+../venv/bin/pybabel compile -d translations   # 改完重啟服務生效
+```
+- JS 字典：`backend/app/static/i18n/en.json`（zh 原文 → en），由 `/i18n/<locale>.js` 路由阻塞式載入
+- 選單標題屬 DB 資料（menu_items.title_i18n JSONB），不走 gettext
+- 詳細計畫與進度：`docs/I18N_PLAN.md`
+
 ## 時區處理規範 (TZ-01)
 
 ### 儲存層

@@ -10,7 +10,7 @@ function odDashboard() {
 
         async load() {
             const r = await OD.fetchJSON(`${API}/dashboard/stats`);
-            if (!r.ok) { alert('載入失敗: ' + r.status); return; }
+            if (!r.ok) { alert(__('載入失敗: {status}', { status: r.status })); return; }
             this.stats = r.body.stats || {};
             this.recent_events = r.body.recent_events || [];
             this.recent_pending = r.body.recent_pending || [];

@@ -16,23 +16,27 @@ function odDecisions() {
                 if (v !== '' && v !== null && v !== undefined) params.set(k, v);
             }
             const r = await OD.fetchJSON(`${API}/decisions?${params}`);
-            if (!r.ok) { alert('載入失敗: ' + r.status); this.loading = false; return; }
+            if (!r.ok) { alert(__('載入失敗: {status}', { status: r.status })); this.loading = false; return; }
             this.decisions = r.body.decisions || [];
             this.loading = false;
         },
 
         async revoke(d) {
-            const reason = prompt(`撤銷 ${d.action} ${d.target_type}/${d.target_value}?\n填入撤銷理由(會產生 unblock 決策):`);
+            const reason = prompt(__('撤銷 {action} {targetType}/{targetValue}?\n填入撤銷理由(會產生 unblock 決策):', {
+                action: d.action,
+                targetType: d.target_type,
+                targetValue: d.target_value,
+            }));
             if (reason === null) return;
             const r = await OD.fetchJSON(`${API}/decisions/${d.secure_code}/revoke`, {
                 method: 'POST',
-                body: JSON.stringify({ reason: reason || '人工手動撤銷' }),
+                body: JSON.stringify({ reason: reason || __('人工手動撤銷') }),
             });
             if (!r.ok) {
-                alert('撤銷失敗: ' + (r.body?.message || r.body?.error || r.status));
+                alert(__('撤銷失敗: {message}', { message: r.body?.message || r.body?.error || r.status }));
                 return;
             }
-            alert(`已產生 unblock 決策: ${r.body.unblock_secure_code}`);
+            alert(__('已產生 unblock 決策: {code}', { code: r.body.unblock_secure_code }));
             this.load();
         },
     };

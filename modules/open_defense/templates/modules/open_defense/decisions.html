@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}決策列表 - OpenDefense{% endblock %}
+{% block title %}{{ _('決策列表 - OpenDefense') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
@@ -10,17 +10,17 @@
 
     <div class="od-header">
         <div>
-            <h1>防禦決策</h1>
-            <p>所有經本平台簽發的決策。pending = 等執行端拉取;applied = 已落地;expired/revoked = 已結束。</p>
+            <h1>{{ _('防禦決策') }}</h1>
+            <p>{{ _('所有經本平台簽發的決策。pending = 等執行端拉取;applied = 已落地;expired/revoked = 已結束。') }}</p>
         </div>
-        <button class="btn btn-secondary" @click="load()">重新整理</button>
+        <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
     </div>
 
     <div class="od-section">
         <div class="od-filters">
-            <label>狀態</label>
+            <label>{{ _('狀態') }}</label>
             <select x-model="filters.status" @change="load()">
-                <option value="">全部</option>
+                <option value="">{{ _('全部') }}</option>
                 <option value="pending">pending</option>
                 <option value="picked_up">picked_up</option>
                 <option value="applied">applied</option>
@@ -29,37 +29,37 @@
                 <option value="expired">expired</option>
                 <option value="revoked">revoked</option>
             </select>
-            <label>動作</label>
+            <label>{{ _('動作') }}</label>
             <select x-model="filters.action" @change="load()">
-                <option value="">全部</option>
+                <option value="">{{ _('全部') }}</option>
                 <option value="block">block</option>
                 <option value="unblock">unblock</option>
                 <option value="allow">allow</option>
                 <option value="escalate">escalate</option>
                 <option value="observe">observe</option>
             </select>
-            <label>目標包含</label>
-            <input type="text" x-model="filters.target" @keyup.enter="load()" placeholder="如 203.0">
-            <label>筆數</label>
+            <label>{{ _('目標包含') }}</label>
+            <input type="text" x-model="filters.target" @keyup.enter="load()" placeholder="{{ _('如 203.0') }}">
+            <label>{{ _('筆數') }}</label>
             <select x-model="filters.limit" @change="load()">
                 <option>50</option><option>100</option><option>200</option><option>500</option>
             </select>
-            <span style="margin-left:auto;font-size:12px;color:#666;" x-text="`共 ${decisions.length} 筆`"></span>
+            <span style="margin-left:auto;font-size:12px;color:#666;" x-text="__('共 {count} 筆', {count: decisions.length})"></span>
         </div>
-        <div x-show="loading" class="od-empty">載入中...</div>
-        <div x-show="!loading && decisions.length===0" class="od-empty">無資料</div>
+        <div x-show="loading" class="od-empty">{{ _('載入中...') }}</div>
+        <div x-show="!loading && decisions.length===0" class="od-empty">{{ _('無資料') }}</div>
         <table x-show="!loading && decisions.length>0" class="od-table">
             <thead>
                 <tr>
-                    <th>建立時間</th>
-                    <th>動作</th>
-                    <th>目標</th>
+                    <th>{{ _('建立時間') }}</th>
+                    <th>{{ _('動作') }}</th>
+                    <th>{{ _('目標') }}</th>
                     <th>EP</th>
-                    <th>嚴重度</th>
+                    <th>{{ _('嚴重度') }}</th>
                     <th>TTL</th>
-                    <th>狀態</th>
-                    <th>執行方</th>
-                    <th>來源</th>
+                    <th>{{ _('狀態') }}</th>
+                    <th>{{ _('執行方') }}</th>
+                    <th>{{ _('來源') }}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -80,7 +80,7 @@
                         <td x-text="d.severity || '-'"></td>
                         <td>
                             <span x-show="d.ttl_seconds" x-text="d.ttl_seconds + 's'"></span>
-                            <span x-show="!d.ttl_seconds" style="color:#999;">永久</span>
+                            <span x-show="!d.ttl_seconds" style="color:#999;">{{ _('永久') }}</span>
                         </td>
                         <td>
                             <span class="od-badge"
@@ -97,7 +97,7 @@
                         <td class="od-actions">
                             <button x-show="d.status==='applied' && d.action!=='unblock'"
                                     class="btn btn-sm btn-secondary"
-                                    @click="revoke(d)">撤銷</button>
+                                    @click="revoke(d)">{{ _('撤銷') }}</button>
                         </td>
                     </tr>
                 </template>

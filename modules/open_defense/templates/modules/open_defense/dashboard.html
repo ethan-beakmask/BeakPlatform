@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}OpenDefense 儀表板{% endblock %}
+{% block title %}{{ _('OpenDefense 儀表板') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/open_defense/css/od-common.css">
@@ -10,57 +10,57 @@
 
     <div class="od-header">
         <div>
-            <h1>OpenDefense 儀表板</h1>
-            <p>對外整合的安全堆疊狀態 / 決策流轉 / 金鑰管理總覽。</p>
+            <h1>{{ _('OpenDefense 儀表板') }}</h1>
+            <p>{{ _('對外整合的安全堆疊狀態 / 決策流轉 / 金鑰管理總覽。') }}</p>
         </div>
-        <button class="btn btn-secondary" @click="load()">重新整理</button>
+        <button class="btn btn-secondary" @click="load()">{{ _('重新整理') }}</button>
     </div>
 
     <div class="od-stats">
         <div class="od-stat-card">
             <div class="od-stat-value warn" x-text="stats.decisions_pending ?? '-'"></div>
-            <div class="od-stat-label">待執行(pending)</div>
+            <div class="od-stat-label">{{ _('待執行(pending)') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.decisions_picked_up ?? '-'"></div>
-            <div class="od-stat-label">處理中(picked_up)</div>
+            <div class="od-stat-label">{{ _('處理中(picked_up)') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value ok" x-text="stats.decisions_applied ?? '-'"></div>
-            <div class="od-stat-label">已落地(applied)</div>
+            <div class="od-stat-label">{{ _('已落地(applied)') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value danger" x-text="stats.decisions_failed ?? '-'"></div>
-            <div class="od-stat-label">失敗(failed)</div>
+            <div class="od-stat-label">{{ _('失敗(failed)') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.decisions_expired ?? '-'"></div>
-            <div class="od-stat-label">過期(expired)</div>
+            <div class="od-stat-label">{{ _('過期(expired)') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.today_intake ?? '-'"></div>
-            <div class="od-stat-label">今日收到事件</div>
+            <div class="od-stat-label">{{ _('今日收到事件') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.today_decisions ?? '-'"></div>
-            <div class="od-stat-label">今日簽發決策</div>
+            <div class="od-stat-label">{{ _('今日簽發決策') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.intake_keys_active ?? '-'"></div>
-            <div class="od-stat-label">啟用金鑰</div>
+            <div class="od-stat-label">{{ _('啟用金鑰') }}</div>
         </div>
         <div class="od-stat-card">
             <div class="od-stat-value" x-text="stats.service_accounts_active ?? '-'"></div>
-            <div class="od-stat-label">啟用執行端帳號</div>
+            <div class="od-stat-label">{{ _('啟用執行端帳號') }}</div>
         </div>
     </div>
 
     <div class="od-modal-grid" style="margin-bottom:16px;">
         <div class="od-section">
-            <div class="od-section-header"><h2>最近事件</h2></div>
-            <div x-show="!recent_events.length" class="od-empty">尚無事件</div>
+            <div class="od-section-header"><h2>{{ _('最近事件') }}</h2></div>
+            <div x-show="!recent_events.length" class="od-empty">{{ _('尚無事件') }}</div>
             <table x-show="recent_events.length" class="od-table">
-                <thead><tr><th>時間</th><th>來源</th><th>類型</th><th>來源 IP</th><th>國家</th><th>嚴重度</th></tr></thead>
+                <thead><tr><th>{{ _('時間') }}</th><th>{{ _('來源') }}</th><th>{{ _('類型') }}</th><th>{{ _('來源 IP') }}</th><th>{{ _('國家') }}</th><th>{{ _('嚴重度') }}</th></tr></thead>
                 <tbody>
                     <template x-for="e in recent_events" :key="e.secure_code">
                         <tr>
@@ -77,10 +77,10 @@
         </div>
 
         <div class="od-section">
-            <div class="od-section-header"><h2>待執行決策</h2></div>
-            <div x-show="!recent_pending.length" class="od-empty">無待執行決策</div>
+            <div class="od-section-header"><h2>{{ _('待執行決策') }}</h2></div>
+            <div x-show="!recent_pending.length" class="od-empty">{{ _('無待執行決策') }}</div>
             <table x-show="recent_pending.length" class="od-table">
-                <thead><tr><th>時間</th><th>動作</th><th>目標</th><th>EP</th></tr></thead>
+                <thead><tr><th>{{ _('時間') }}</th><th>{{ _('動作') }}</th><th>{{ _('目標') }}</th><th>EP</th></tr></thead>
                 <tbody>
                     <template x-for="d in recent_pending" :key="d.secure_code">
                         <tr>

@@ -18,7 +18,7 @@ function odServiceAccounts() {
         async load() {
             this.loading = true;
             const r = await OD.fetchJSON(`${API}/service-accounts`);
-            if (!r.ok) { alert('載入失敗: ' + r.status); this.loading = false; return; }
+            if (!r.ok) { alert(__('載入失敗: {status}', { status: r.status })); this.loading = false; return; }
             this.accounts = r.body.accounts || [];
             this.loading = false;
         },
@@ -38,7 +38,7 @@ function odServiceAccounts() {
             else this.newSA.eps.push(ep);
         },
         async submit() {
-            if (!this.newSA.name.trim()) { alert('名稱必填'); return; }
+            if (!this.newSA.name.trim()) { alert(__('名稱必填')); return; }
             const r = await OD.fetchJSON(`${API}/service-accounts`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -48,7 +48,7 @@ function odServiceAccounts() {
                 }),
             });
             if (!r.ok) {
-                alert('建立失敗: ' + (r.body?.message || r.body?.error || r.status));
+                alert(__('建立失敗: {message}', { message: r.body?.message || r.body?.error || r.status }));
                 return;
             }
             this.newSecret = r.body.sa_secret_b64;
@@ -56,17 +56,17 @@ function odServiceAccounts() {
         },
 
         async unlock(a) {
-            if (!confirm(`解鎖帳號「${a.name}」?(會清除失敗計數)`)) return;
+            if (!confirm(__('解鎖帳號「{name}」?(會清除失敗計數)', { name: a.name }))) return;
             const r = await OD.fetchJSON(`${API}/service-accounts/${a.secure_code}/unlock`,
                                          { method: 'POST' });
-            if (!r.ok) { alert('解鎖失敗: ' + r.status); return; }
+            if (!r.ok) { alert(__('解鎖失敗: {status}', { status: r.status })); return; }
             this.load();
         },
         async revoke(a) {
-            if (!confirm(`撤銷帳號「${a.name}」?\n撤銷後所有 JWT 立即失效。`)) return;
+            if (!confirm(__('撤銷帳號「{name}」?\n撤銷後所有 JWT 立即失效。', { name: a.name }))) return;
             const r = await OD.fetchJSON(`${API}/service-accounts/${a.secure_code}`,
                                          { method: 'DELETE' });
-            if (!r.ok) { alert('撤銷失敗: ' + r.status); return; }
+            if (!r.ok) { alert(__('撤銷失敗: {status}', { status: r.status })); return; }
             this.load();
         },
     };

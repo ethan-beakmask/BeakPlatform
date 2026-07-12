@@ -12,7 +12,7 @@ function odIntakeKeys() {
         async load() {
             this.loading = true;
             const r = await OD.fetchJSON(`${API}/intake-keys`);
-            if (!r.ok) { alert('載入失敗: ' + r.status); this.loading = false; return; }
+            if (!r.ok) { alert(__('載入失敗: {status}', { status: r.status })); this.loading = false; return; }
             this.keys = r.body.keys || [];
             this.loading = false;
         },
