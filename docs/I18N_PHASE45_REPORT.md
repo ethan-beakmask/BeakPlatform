@@ -13,10 +13,10 @@
 | 模組 | Python 中文 literal | HTML 中文行 | JS 中文行 | 本輪狀態 |
 |---|---:|---:|---:|---|
 | open_defense | 152 | 89 | 17 | 完成 |
-| vuln_lifecycle | 68 | 120 | 23 | 已盤點，未包裹 |
-| spec_formulate | 349 | 166 | 88 | 已盤點，未包裹 |
-| nocode_builder | 554 | 486 | 462 | 已盤點，未包裹 |
-| form_workflow | 1667 | 1289 | 2228 | 已盤點，未包裹 |
+| vuln_lifecycle | 68 | 120 | 23 | 完成 (2d9b8534) |
+| spec_formulate | 349 | 166 | 88 | 完成 (915e0973) |
+| nocode_builder | 554 | 486 | 462 | 完成 (cf0e7da6) |
+| form_workflow | 1667 | 1289 | 2228 | 完成 (bcd10510) |
 
 機制確認:
 
@@ -64,3 +64,11 @@
   - `/beakplatform/open-defense/decisions`: 200
   - `/beakplatform/open-defense/intake-keys`: 200
   - `/beakplatform/open-defense/service-accounts`: 200
+
+## 分批完成記錄 (2026-07-12)
+
+四模組已於同日分批完成，一批一 commit。各批跳過案例與驗證細節見 commit message 與 /opt/tmp/ 下 codex 報告（nb_i18n_codex_report.md、fw_i18n_codex_a_report.md、fw_i18n_codex_b_report.md、fw_i18n_js_skips.tsv）。
+
+新增技術債：
+- 公開 Portal（nocode_builder 的 portal_login / portal_register / portal_public 與 portal_auth_service）未包裹——外部訪客語系機制未定義，需另案設計。
+- studio.html / workflow_designer.html / form_designer.html 為獨立模板，已各自補 i18n.js 載入區塊；日後新增獨立模板需記得比照。
