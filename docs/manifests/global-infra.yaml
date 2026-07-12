@@ -5,9 +5,8 @@ description: 全域基礎設施 -- base 模板、全域載入的 JS/CSS、共用
 
 files:
   base_templates:
-    - backend/app/templates/base.html               # 主框架
-    - backend/app/templates/partials/_navbar.html    # 導航列
-    - backend/app/templates/partials/_menubar.html   # 選單列
+    - backend/app/templates/layouts/base.html        # 主框架（含 navbar + 雙列 menubar，nav_menu 由 context processor 注入）
+    - backend/app/templates/components/menu.html     # Alpine 動態選單元件（navbar/sidebar 兩種 layout）
     - backend/app/templates/partials/_code_input.html # code 建議元件
   global_js:
     - backend/app/static/js/timezone.js              # BkTime 時區處理

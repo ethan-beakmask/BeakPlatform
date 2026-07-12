@@ -607,8 +607,10 @@ new Date(record.created_at).toLocaleString('zh-TW')
 cd /opt/BeakPlatform-dev
 source venv/bin/activate
 set -a && source .env && set +a
-cd backend && flask run --host=0.0.0.0 --port=7000
+cd backend && flask run --host=127.0.0.1 --port=7000
 ```
+- 開發服務以**非 debug 模式**跑，Python/模板變更**不會自動重載，必須重啟**（找進程：`ss -tlnp | grep :7000`）
+- 對外經 nginx `192.168.0.16:7000/beakplatform` 反代，flask 只綁 127.0.0.1
 
 ### 檔案輸出
 - **輸出目錄**: `/mnt/smb`（SMB 共享）
