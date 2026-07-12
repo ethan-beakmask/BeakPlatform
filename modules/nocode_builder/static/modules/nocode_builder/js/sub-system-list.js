@@ -40,7 +40,7 @@ function subSystemListManager() {
 
         async doCreate() {
             if (!this.createForm.name.trim()) {
-                this.showToast('名稱不可為空', 'error');
+                this.showToast(__('名稱不可為空'), 'error');
                 return;
             }
             try {
@@ -53,13 +53,13 @@ function subSystemListManager() {
                 if (data.success) {
                     this.showCreateModal = false;
                     this.createForm = { name: '', description: '' };
-                    this.showToast('子系統已建立', 'success');
+                    this.showToast(__('子系統已建立'), 'success');
                     await this.loadList();
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -77,13 +77,13 @@ function subSystemListManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showDeleteModal = false;
-                    this.showToast('子系統已刪除', 'success');
+                    this.showToast(__('子系統已刪除'), 'success');
                     await this.loadList();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗', 'error');
+                this.showToast(__('刪除失敗'), 'error');
             }
         },
 

@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}子系統設定{% endblock %}
+{% block title %}{{ _('子系統設定') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
@@ -142,50 +142,50 @@ window.__SSC_CONFIG = {
     <!-- Header -->
     <div class="dc-header">
         <div>
-            <h1>子系統設定: <span x-text="form.name || '載入中...'"></span></h1>
+            <h1>{{ _('子系統設定') }}: <span x-text="form.name || __('載入中...')"></span></h1>
         </div>
         <div class="dc-toolbar">
-            <a href="{{ app_prefix }}/nocode-builder/sub-systems" class="dc-btn">返回列表</a>
-            <button class="dc-btn primary" @click="save()">儲存基本資訊</button>
+            <a href="{{ app_prefix }}/nocode-builder/sub-systems" class="dc-btn">{{ _('返回列表') }}</a>
+            <button class="dc-btn primary" @click="save()">{{ _('儲存基本資訊') }}</button>
         </div>
     </div>
 
-    <div class="dc-card" x-show="loading" style="padding: 40px; text-align: center; color: #999;">載入中...</div>
+    <div class="dc-card" x-show="loading" style="padding: 40px; text-align: center; color: #999;">{{ _('載入中...') }}</div>
 
     <template x-if="!loading">
         <div>
             <!-- 基本資訊 -->
             <div class="ssc-section">
-                <div class="ssc-section-title">基本資訊</div>
+                <div class="ssc-section-title">{{ _('基本資訊') }}</div>
                 <div class="ssc-section-body">
                     <div class="ssc-info-grid">
                         <div>
                             <div class="ssc-field">
-                                <label>名稱 *</label>
+                                <label>{{ _('名稱') }} *</label>
                                 <input type="text" x-model="form.name">
                             </div>
                             <div class="ssc-field">
-                                <label>說明</label>
+                                <label>{{ _('說明') }}</label>
                                 <textarea x-model="form.description" rows="2"></textarea>
                             </div>
                             <div class="ssc-field">
-                                <label>圖示</label>
+                                <label>{{ _('圖示') }}</label>
                                 <input type="text" x-model="form.icon" style="width: 160px;">
                             </div>
                         </div>
                         <div>
                             <div class="ssc-field">
-                                <label>架構師</label>
+                                <label>{{ _('架構師') }}</label>
                                 <div class="ssc-readonly">
                                     <template x-if="developerNames.length > 0">
                                         <span x-text="developerNames.join(', ')"></span>
                                     </template>
                                     <template x-if="developerNames.length === 0">
-                                        <span style="color: #999;">-- 未指定 --</span>
+                                        <span style="color: #999;">{{ _('-- 未指定 --') }}</span>
                                     </template>
                                 </div>
                                 <div style="font-size: 11px; color: #999; margin-top: 4px;">
-                                    透過 SubSystemProvision 流程指定
+                                    {{ _('透過 SubSystemProvision 流程指定') }}
                                 </div>
                             </div>
                         </div>
@@ -196,13 +196,13 @@ window.__SSC_CONFIG = {
             <!-- 權限政策組 -->
             <div class="ssc-section">
                 <div class="ssc-section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>權限政策組</span>
-                    <button class="dc-btn sm primary" @click="quickAddPolicy()">+ 新增政策組</button>
+                    <span>{{ _('權限政策組') }}</span>
+                    <button class="dc-btn sm primary" @click="quickAddPolicy()">+ {{ _('新增政策組') }}</button>
                 </div>
                 <div class="ssc-section-body" style="padding: 0;">
                     <div x-show="policyGroups.length === 0" class="pp-empty">
-                        尚未建立任何權限政策組。<br>
-                        <span style="font-size: 12px;">點擊「+ 新增政策組」一鍵建立，可立即新增規則。</span>
+                        {{ _('尚未建立任何權限政策組。') }}<br>
+                        <span style="font-size: 12px;">{{ _('點擊「+ 新增政策組」一鍵建立，可立即新增規則。') }}</span>
                     </div>
 
                     <div x-show="policyGroups.length > 0" style="padding: 12px;">
@@ -212,10 +212,10 @@ window.__SSC_CONFIG = {
                                     <span class="pp-item-name" x-text="pg.name"></span>
                                     <span class="pp-item-summary" x-text="ruleSummary(pg)"></span>
                                     <span class="pp-item-usage"
-                                          x-text="pg.usage_count + ' 個網頁使用'"></span>
+                                          x-text="__('{n} 個網頁使用', {n: pg.usage_count})"></span>
                                     <div class="pp-item-actions" @click.stop>
-                                        <button class="dc-btn sm" @click="openEditPolicy(pg)">重新命名</button>
-                                        <button class="dc-btn sm danger" @click="deletePolicy(pg)">刪除</button>
+                                        <button class="dc-btn sm" @click="openEditPolicy(pg)">{{ _('重新命名') }}</button>
+                                        <button class="dc-btn sm danger" @click="deletePolicy(pg)">{{ _('刪除') }}</button>
                                     </div>
                                 </div>
 
@@ -224,7 +224,7 @@ window.__SSC_CONFIG = {
                                     <!-- 已設定的規則列表 -->
                                     <div x-show="getPolicyRules(pg.secure_code).length === 0"
                                          style="padding: 8px 0; font-size: 12px; color: #999;">
-                                        尚無規則 (此政策組無效果，套用時將禁止所有人)
+                                        {{ _('尚無規則 (此政策組無效果，套用時將禁止所有人)') }}
                                     </div>
                                     <template x-for="rule in getPolicyRules(pg.secure_code)" :key="rule.secure_code">
                                         <div class="pp-rule-row">
@@ -233,9 +233,9 @@ window.__SSC_CONFIG = {
                                                   x-text="getPermTypeLabel(rule.grant_type)"></span>
                                             <span class="pp-rule-name" x-text="rule.grant_target_name || rule.grant_target"></span>
                                             <span class="pp-rule-note"
-                                                  x-show="rule.grant_type === 'department' && rule.include_children">(含子部門)</span>
+                                                  x-show="rule.grant_type === 'department' && rule.include_children">{{ _('(含子部門)') }}</span>
                                             <span class="pp-rule-note"
-                                                  x-show="rule.grant_type === 'group' && rule.include_children">(含下層群組)</span>
+                                                  x-show="rule.grant_type === 'group' && rule.include_children">{{ _('(含下層群組)') }}</span>
                                             <button class="dc-btn sm danger"
                                                     @click="deleteRule(pg.secure_code, rule.secure_code)"
                                                     style="padding: 2px 6px;">&times;</button>
@@ -244,34 +244,34 @@ window.__SSC_CONFIG = {
 
                                     <!-- 新增規則 -->
                                     <div class="pp-add-rule">
-                                        <div class="pp-add-rule-title">+ 新增規則</div>
+                                        <div class="pp-add-rule-title">+ {{ _('新增規則') }}</div>
                                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                             <div>
-                                                <label style="font-size: 11px; display: block; margin-bottom: 2px;">類型</label>
+                                                <label style="font-size: 11px; display: block; margin-bottom: 2px;">{{ _('類型') }}</label>
                                                 <select x-model="newRule.grant_type"
                                                         @change="onRuleTypeChange()"
                                                         style="width: 90px; padding: 4px 6px; font-size: 12px;">
-                                                    <option value="department">部門</option>
-                                                    <option value="group">社群</option>
-                                                    <option value="user">個人</option>
+                                                    <option value="department">{{ _('部門') }}</option>
+                                                    <option value="group">{{ _('社群') }}</option>
+                                                    <option value="user">{{ _('個人') }}</option>
                                                 </select>
                                             </div>
                                             <div x-show="newRule.grant_type === 'department' || newRule.grant_type === 'group'"
                                                  style="margin-top: 14px;">
                                                 <label style="font-size: 11px; white-space: nowrap;">
                                                     <input type="checkbox" x-model="newRule.include_children">
-                                                    <span x-text="newRule.grant_type === 'department' ? '含子部門' : '含下層群組'"></span>
+                                                    <span x-text="newRule.grant_type === 'department' ? __('含子部門') : __('含下層群組')"></span>
                                                 </label>
                                             </div>
                                             <button class="dc-btn sm primary"
                                                     @click="addRule(pg.secure_code)"
                                                     :disabled="!newRule.grant_target"
-                                                    style="white-space: nowrap; margin-top: 14px;">新增</button>
+                                                    style="white-space: nowrap; margin-top: 14px;">{{ _('新增') }}</button>
                                         </div>
 
                                         <!-- 樹狀選擇器 (部門/社群) -->
                                         <div x-show="newRule.grant_type === 'department' || newRule.grant_type === 'group'">
-                                            <div x-show="ruleTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">載入中...</div>
+                                            <div x-show="ruleTreeLoading" style="text-align: center; padding: 10px; color: #999; font-size: 11px;">{{ _('載入中...') }}</div>
                                             <div class="dc-perm-tree-box" x-show="!ruleTreeLoading" style="margin-top: 6px;">
                                                 <div :id="'pp-rule-tree-' + pg.secure_code"></div>
                                             </div>
@@ -282,7 +282,7 @@ window.__SSC_CONFIG = {
                                             <select x-model="newRule.grant_target"
                                                     @change="newRule._selectedName = $event.target.selectedOptions[0]?.text || ''"
                                                     style="width: 100%; padding: 4px 6px; font-size: 12px;">
-                                                <option value="">-- 請選擇 --</option>
+                                                <option value="">{{ _('-- 請選擇 --') }}</option>
                                                 <template x-for="opt in ruleTargetOptions" :key="opt.value">
                                                     <option :value="opt.value" x-text="opt.label"></option>
                                                 </template>
@@ -290,7 +290,7 @@ window.__SSC_CONFIG = {
                                         </div>
 
                                         <div x-show="newRule.grant_target" style="font-size: 11px; color: #0066cc; margin-top: 4px;">
-                                            已選擇: <strong x-text="newRule._selectedName || newRule.grant_target_name || ''"></strong>
+                                            {{ _('已選擇') }}: <strong x-text="newRule._selectedName || newRule.grant_target_name || ''"></strong>
                                         </div>
                                     </div>
                                 </div>
@@ -302,29 +302,29 @@ window.__SSC_CONFIG = {
 
             <!-- 使用說明 -->
             <div class="ssc-section">
-                <div class="ssc-section-title">使用說明</div>
+                <div class="ssc-section-title">{{ _('使用說明') }}</div>
                 <div class="ssc-section-body" style="font-size: 13px; color: #666;">
-                    <p style="margin: 0 0 8px 0; font-weight: 500;">權限政策組的用途:</p>
-                    <p style="margin: 0 0 4px 0;">在此建立可複用的准入規則包，每組包含多條部門/社群/個人規則。</p>
-                    <p style="margin: 0 0 4px 0;">建立後到設計器 (Studio) 的網頁屬性中，選擇要套用的政策組。</p>
+                    <p style="margin: 0 0 8px 0; font-weight: 500;">{{ _('權限政策組的用途:') }}</p>
+                    <p style="margin: 0 0 4px 0;">{{ _('在此建立可複用的准入規則包，每組包含多條部門/社群/個人規則。') }}</p>
+                    <p style="margin: 0 0 4px 0;">{{ _('建立後到設計器 (Studio) 的網頁屬性中，選擇要套用的政策組。') }}</p>
                     <hr style="margin: 12px 0; border: none; border-top: 1px solid #eee;">
-                    <p style="margin: 0 0 4px 0; font-weight: 500;">網頁的三種權限模式:</p>
+                    <p style="margin: 0 0 4px 0; font-weight: 500;">{{ _('網頁的三種權限模式:') }}</p>
                     <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
                         <tr>
-                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #0066cc; white-space: nowrap;">A. 權限政策組</td>
-                            <td>選擇已建立的政策組，直接套用其規則</td>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #0066cc; white-space: nowrap;">{{ _('A. 權限政策組') }}</td>
+                            <td>{{ _('選擇已建立的政策組，直接套用其規則') }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #16a34a; white-space: nowrap;">B. 向上繼承</td>
-                            <td>沿用父節點的權限（新增網頁的預設值）</td>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #16a34a; white-space: nowrap;">{{ _('B. 向上繼承') }}</td>
+                            <td>{{ _('沿用父節點的權限（新增網頁的預設值）') }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #9333ea; white-space: nowrap;">C. 自訂權限</td>
-                            <td>在網頁屬性中逐一設定部門/社群/個人規則</td>
+                            <td style="padding: 4px 8px 4px 0; font-weight: 500; color: #9333ea; white-space: nowrap;">{{ _('C. 自訂權限') }}</td>
+                            <td>{{ _('在網頁屬性中逐一設定部門/社群/個人規則') }}</td>
                         </tr>
                     </table>
                     <p style="margin: 8px 0 0 0; font-size: 12px; color: #999;">
-                        未設定權限的網頁預設為禁止狀態（僅設計者預覽可見）。管理層自動擁有所有存取權。
+                        {{ _('未設定權限的網頁預設為禁止狀態（僅設計者預覽可見）。管理層自動擁有所有存取權。') }}
                     </p>
                 </div>
             </div>
@@ -335,24 +335,24 @@ window.__SSC_CONFIG = {
     <div x-show="showPolicyModal" x-cloak class="dc-modal">
         <div class="dc-modal-content" style="width: 450px;">
             <div class="dc-modal-header">
-                <h3>重新命名政策組</h3>
+                <h3>{{ _('重新命名政策組') }}</h3>
                 <button class="dc-close-btn" @click="showPolicyModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
                 <div class="ssc-field">
-                    <label>名稱 *</label>
+                    <label>{{ _('名稱') }} *</label>
                     <input type="text" x-model="policyForm.name"
                            style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
                 </div>
                 <div class="ssc-field">
-                    <label>說明</label>
+                    <label>{{ _('說明') }}</label>
                     <textarea x-model="policyForm.description" rows="2"
                               style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;"></textarea>
                 </div>
             </div>
             <div class="dc-modal-footer">
-                <button class="dc-btn" @click="showPolicyModal = false">取消</button>
-                <button class="dc-btn primary" @click="savePolicy()">更新</button>
+                <button class="dc-btn" @click="showPolicyModal = false">{{ _('取消') }}</button>
+                <button class="dc-btn primary" @click="savePolicy()">{{ _('更新') }}</button>
             </div>
         </div>
     </div>

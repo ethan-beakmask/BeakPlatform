@@ -20,6 +20,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from flask_babel import gettext as _
 from sqlalchemy import text
 
 from app import db
@@ -118,10 +119,10 @@ class DataBridgeService:
             {success: bool, message: str, records_affected: int}
         """
         if not self._validate_params(source_table, target_table, field_mapping):
-            return {'success': False, 'error': '參數驗證失敗: 表名或欄位名不合法'}
+            return {'success': False, 'error': _('參數驗證失敗: 表名或欄位名不合法')}
 
         if not record_key:
-            return {'success': False, 'error': 'record_key 不可為空'}
+            return {'success': False, 'error': _('record_key 不可為空')}
 
         try:
             # Step 1: 從 PG 讀取來源記錄
@@ -129,7 +130,7 @@ class DataBridgeService:
                 org_secure_code, source_table, record_key, list(field_mapping.keys())
             )
             if not pg_rows:
-                return {'success': False, 'error': '來源記錄不存在'}
+                return {'success': False, 'error': _('來源記錄不存在')}
 
             # Step 2: 轉換欄位並寫入 SQLite
             affected = 0
@@ -159,7 +160,7 @@ class DataBridgeService:
 
             return {
                 'success': True,
-                'message': f'已發布 {affected} 筆記錄',
+                'message': _('已發布 %(affected)s 筆記錄', affected=affected),
                 'records_affected': affected,
             }
 
@@ -208,13 +209,13 @@ class DataBridgeService:
             其餘參數同 publish
         """
         if not self._validate_params(source_table, target_table, field_mapping):
-            return {'success': False, 'error': '參數驗證失敗: 表名或欄位名不合法'}
+            return {'success': False, 'error': _('參數驗證失敗: 表名或欄位名不合法')}
 
         if not record_key:
-            return {'success': False, 'error': 'record_key 不可為空'}
+            return {'success': False, 'error': _('record_key 不可為空')}
 
         if not _validate_ident(key_field):
-            return {'success': False, 'error': f'key_field 不合法: {key_field}'}
+            return {'success': False, 'error': _('key_field 不合法: %(key_field)s', key_field=key_field)}
 
         try:
             # Step 1: 從 PG 讀取
@@ -222,7 +223,7 @@ class DataBridgeService:
                 org_secure_code, source_table, record_key, list(field_mapping.keys())
             )
             if not pg_rows:
-                return {'success': False, 'error': '來源記錄不存在'}
+                return {'success': False, 'error': _('來源記錄不存在')}
 
             # Step 2: UPSERT 到 SQLite
             affected = 0
@@ -268,7 +269,7 @@ class DataBridgeService:
 
             return {
                 'success': True,
-                'message': f'已更新 {affected} 筆記錄',
+                'message': _('已更新 %(affected)s 筆記錄', affected=affected),
                 'records_affected': affected,
             }
 
@@ -328,15 +329,16 @@ class DataBridgeService:
         if context not in ALLOWED_COLLECT_CONTEXTS:
             return {
                 'success': False,
-                'error': f'不允許的回收情境: {context}。'
-                         f'允許的情境: {", ".join(sorted(ALLOWED_COLLECT_CONTEXTS))}',
+                'error': _('不允許的回收情境: %(context)s。允許的情境: %(allowed)s',
+                           context=context,
+                           allowed=', '.join(sorted(ALLOWED_COLLECT_CONTEXTS))),
             }
 
         if not self._validate_params(source_table, target_table, field_mapping):
-            return {'success': False, 'error': '參數驗證失敗: 表名或欄位名不合法'}
+            return {'success': False, 'error': _('參數驗證失敗: 表名或欄位名不合法')}
 
         if key_field and not _validate_ident(key_field):
-            return {'success': False, 'error': f'key_field 不合法: {key_field}'}
+            return {'success': False, 'error': _('key_field 不合法: %(key_field)s', key_field=key_field)}
 
         try:
             # Step 1: 從 SQLite 讀取
@@ -347,7 +349,7 @@ class DataBridgeService:
             if not sqlite_rows:
                 return {
                     'success': True,
-                    'message': '無符合條件的記錄',
+                    'message': _('無符合條件的記錄'),
                     'records_affected': 0,
                 }
 
@@ -375,7 +377,7 @@ class DataBridgeService:
 
             return {
                 'success': True,
-                'message': f'已回收 {affected} 筆記錄',
+                'message': _('已回收 %(affected)s 筆記錄', affected=affected),
                 'records_affected': affected,
             }
 
@@ -424,10 +426,10 @@ class DataBridgeService:
         """
         missing = _REQUIRED_RULE_FIELDS - set(rule.keys())
         if missing:
-            return {'success': False, 'error': f'規則缺少必要欄位: {missing}'}
+            return {'success': False, 'error': _('規則缺少必要欄位: %(missing)s', missing=', '.join(sorted(missing)))}
 
         if not rule.get('is_active', True):
-            return {'success': False, 'error': '規則已停用'}
+            return {'success': False, 'error': _('規則已停用')}
 
         rule_id = rule.get('rule_id')
         source_db = rule['source_db']
@@ -441,7 +443,7 @@ class DataBridgeService:
         if source_db in ('org', 'conglomerate') and target_db == 'portal_data':
             # PG -> SQLite
             if not record_key:
-                return {'success': False, 'error': 'PG->SQLite 方向需要 record_key'}
+                return {'success': False, 'error': _('PG->SQLite 方向需要 record_key')}
 
             # 先嘗試 update (upsert)，key_field 存在即用 update 語意
             return self.update(
@@ -459,7 +461,7 @@ class DataBridgeService:
         elif source_db == 'portal_data' and target_db in ('org', 'conglomerate'):
             # SQLite -> PG (受限)
             if not collect_context:
-                return {'success': False, 'error': 'SQLite->PG 方向需要 collect_context'}
+                return {'success': False, 'error': _('SQLite->PG 方向需要 collect_context')}
 
             return self.collect(
                 sub_system_sc=sub_system_sc,
@@ -477,7 +479,8 @@ class DataBridgeService:
         else:
             return {
                 'success': False,
-                'error': f'不支援的橋接方向: {source_db} -> {target_db}',
+                'error': _('不支援的橋接方向: %(source_db)s -> %(target_db)s',
+                           source_db=source_db, target_db=target_db),
             }
 
     # =====================================================================
@@ -495,34 +498,34 @@ class DataBridgeService:
 
         missing = _REQUIRED_RULE_FIELDS - set(rule.keys())
         if missing:
-            errors.append(f'缺少必要欄位: {", ".join(sorted(missing))}')
+            errors.append(_('缺少必要欄位: %(fields)s', fields=', '.join(sorted(missing))))
 
         for key in ('source_table', 'target_table'):
             val = rule.get(key, '')
             if val and not _validate_ident(val):
-                errors.append(f'{key} 不合法: {val}')
+                errors.append(_('%(key)s 不合法: %(val)s', key=key, val=val))
 
         mapping = rule.get('field_mapping', {})
         if not isinstance(mapping, dict) or not mapping:
-            errors.append('field_mapping 必須是非空的 dict')
+            errors.append(_('field_mapping 必須是非空的 dict'))
         else:
             for src, tgt in mapping.items():
                 if not _validate_ident(src):
-                    errors.append(f'field_mapping key 不合法: {src}')
+                    errors.append(_('field_mapping key 不合法: %(src)s', src=src))
                 if not _validate_ident(tgt):
-                    errors.append(f'field_mapping value 不合法: {tgt}')
+                    errors.append(_('field_mapping value 不合法: %(tgt)s', tgt=tgt))
 
         trigger = rule.get('trigger_type', '')
         if trigger not in ('manual', 'on_approve', 'scheduled'):
-            errors.append(f'trigger_type 不合法: {trigger}')
+            errors.append(_('trigger_type 不合法: %(trigger)s', trigger=trigger))
 
         source_db = rule.get('source_db', '')
         target_db = rule.get('target_db', '')
         valid_dbs = {'org', 'conglomerate', 'portal_data'}
         if source_db not in valid_dbs:
-            errors.append(f'source_db 不合法: {source_db}')
+            errors.append(_('source_db 不合法: %(source_db)s', source_db=source_db))
         if target_db not in valid_dbs:
-            errors.append(f'target_db 不合法: {target_db}')
+            errors.append(_('target_db 不合法: %(target_db)s', target_db=target_db))
 
         return {'valid': len(errors) == 0, 'errors': errors}
 

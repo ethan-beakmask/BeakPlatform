@@ -42,7 +42,7 @@ function myProjectsManager() {
 
         async doCreate() {
             if (!this.createForm.name.trim()) {
-                this.showToast('名稱為必填', 'error');
+                this.showToast(__('名稱為必填'), 'error');
                 return;
             }
             try {
@@ -54,20 +54,20 @@ function myProjectsManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showCreateModal = false;
-                    this.showToast('開發案已建立', 'success');
+                    this.showToast(__('開發案已建立'), 'success');
                     await this.loadList();
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async togglePublish(item) {
             const action = item.status === 'draft' ? 'publish' : 'unpublish';
-            const label = action === 'publish' ? '上線' : '下線';
-            if (!confirm('確定要' + label + '「' + item.name + '」嗎?')) return;
+            const label = action === 'publish' ? __('上線') : __('下線');
+            if (!confirm(__('確定要{action}「{name}」嗎?', {action: label, name: item.name}))) return;
 
             try {
                 const res = await fetch(window.__BP + '/api/nocode-builder/projects/' + item.secure_code + '/' + action, {
@@ -75,13 +75,13 @@ function myProjectsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('已' + label, 'success');
+                    this.showToast(__('已{action}', {action: label}), 'success');
                     await this.loadList();
                 } else {
-                    this.showToast(data.error || label + '失敗', 'error');
+                    this.showToast(data.error || __('{action}失敗', {action: label}), 'error');
                 }
             } catch (e) {
-                this.showToast(label + '失敗', 'error');
+                this.showToast(__('{action}失敗', {action: label}), 'error');
             }
         },
 
@@ -99,18 +99,18 @@ function myProjectsManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showDeleteModal = false;
-                    this.showToast('已刪除', 'success');
+                    this.showToast(__('已刪除'), 'success');
                     await this.loadList();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗', 'error');
+                this.showToast(__('刪除失敗'), 'error');
             }
         },
 
         statusLabel(status) {
-            return status === 'published' ? '上線中' : '開發中';
+            return status === 'published' ? __('上線中') : __('開發中');
         },
 
         statusClass(status) {
@@ -118,7 +118,7 @@ function myProjectsManager() {
         },
 
         layoutLabel(mode) {
-            return mode === 'free' ? 'GridStack 自由' : 'Grid 宮格';
+            return mode === 'free' ? __('GridStack 自由') : __('Grid 宮格');
         },
 
         showToast(message, type) {

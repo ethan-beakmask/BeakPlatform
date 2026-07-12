@@ -24,11 +24,11 @@ function siteMapPortal() {
         _wbTree: null,
 
         _roleLabels: {
-            'MANAGER': '團長',
-            'DEPUTY': '副團長',
-            'PROXY1': '代理人(一)',
-            'PROXY2': '代理人(二)',
-            'MEMBER': '團員',
+            'MANAGER': __('團長'),
+            'DEPUTY': __('副團長'),
+            'PROXY1': __('代理人(一)'),
+            'PROXY2': __('代理人(二)'),
+            'MEMBER': __('團員'),
         },
 
         get roleLabel() {
@@ -41,7 +41,7 @@ function siteMapPortal() {
             this.subSystemName = config.subSystemName || '';
 
             if (!this.subSystemSc) {
-                this.error = '未指定子系統';
+                this.error = __('未指定子系統');
                 this.loading = false;
                 return;
             }
@@ -50,7 +50,7 @@ function siteMapPortal() {
                 var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/user-tree');
                 var data = await res.json();
                 if (!data.success) {
-                    this.error = data.error || '載入失敗';
+                    this.error = data.error || __('載入失敗');
                     this.loading = false;
                     return;
                 }
@@ -59,7 +59,7 @@ function siteMapPortal() {
                 this.isAdmin = data.data.is_admin || false;
                 this.tree = data.data.tree || [];
             } catch (e) {
-                this.error = '載入失敗: ' + e.message;
+                this.error = __('載入失敗: {msg}', {msg: e.message});
             }
 
             this.loading = false;
@@ -149,7 +149,7 @@ function siteMapPortal() {
 
             var pageSc = nodeData.page_layout_secure_code;
             if (!pageSc) {
-                this.pageError = '此節點未連結頁面';
+                this.pageError = __('此節點未連結頁面');
                 this.pageLoading = false;
                 return;
             }
@@ -170,12 +170,12 @@ function siteMapPortal() {
                 var layoutData = results[1];
 
                 if (!ctxData.success) {
-                    this.pageError = ctxData.error || '取得權限失敗';
+                    this.pageError = ctxData.error || __('取得權限失敗');
                     this.pageLoading = false;
                     return;
                 }
                 if (!layoutData.success) {
-                    this.pageError = layoutData.error || '載入頁面失敗';
+                    this.pageError = layoutData.error || __('載入頁面失敗');
                     this.pageLoading = false;
                     return;
                 }
@@ -197,7 +197,7 @@ function siteMapPortal() {
                 // 套用頁面樣式（必須在渲染之後，確保 .portal-grid 已建立）
                 this._applyPageStyle(layoutData.data.style_config || {});
             } catch (e) {
-                this.pageError = '載入頁面失敗: ' + e.message;
+                this.pageError = __('載入頁面失敗: {msg}', {msg: e.message});
             } finally {
                 this.pageLoading = false;
             }
@@ -293,7 +293,7 @@ function siteMapPortal() {
                     }
                 } else {
                     if (content) {
-                        content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
+                        content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">' + __('未設定資料來源') + '</div></div>';
                     }
                 }
             }
@@ -371,7 +371,7 @@ function siteMapPortal() {
             }
 
             if (zones.length === 0) {
-                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;">此頁面尚未配置佈局</div>';
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;">' + __('此頁面尚未配置佈局') + '</div>';
             }
         },
 

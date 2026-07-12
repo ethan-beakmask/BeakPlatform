@@ -10,6 +10,7 @@ Data CRUD Module - SubSystem Service
 import logging
 from typing import Dict, List, Optional, Any
 
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app.models.user_unit_membership import UserUnitMembership, MembershipRole
@@ -124,7 +125,7 @@ class SubSystemService:
                     secure_code=ssp.page_layout_secure_code,
                     is_deleted=False,
                 ).first()
-                page_name = layout.name if layout else '未命名頁面'
+                page_name = layout.name if layout else _('未命名頁面')
 
             result.append({
                 'secure_code': ssp.secure_code,

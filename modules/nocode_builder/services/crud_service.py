@@ -8,6 +8,7 @@ import logging
 from datetime import date
 from typing import Any, Dict, List, Optional
 
+from flask_babel import gettext as _
 from psycopg2 import sql as psql
 
 from .schema_service import _SYSTEM_COLUMNS, is_approval_table, _PII_DB_TYPE
@@ -445,7 +446,7 @@ class CrudService:
         missing = _check_required_columns(conn, table_name, insert_data)
         if missing:
             names = ', '.join(sorted(missing))
-            return {'success': False, 'error': f'必填欄位缺少值且無法自動填入: {names}'}
+            return {'success': False, 'error': _('必填欄位缺少值且無法自動填入: %(names)s', names=names)}
 
         cols = list(insert_data.keys())
         col_idents = psql.SQL(', ').join(_ident(c) for c in cols)
@@ -513,7 +514,7 @@ class CrudService:
                     if is_conglomerate:
                         return {
                             'success': False,
-                            'error': '找不到資料，或該筆資料屬於其他企業無法修改',
+                            'error': _('找不到資料，或該筆資料屬於其他企業無法修改'),
                         }
                     return {'success': False, 'error': 'Row not found'}
             conn.commit()
@@ -554,7 +555,7 @@ class CrudService:
                     if is_conglomerate:
                         return {
                             'success': False,
-                            'error': '找不到資料，或該筆資料屬於其他企業無法刪除',
+                            'error': _('找不到資料，或該筆資料屬於其他企業無法刪除'),
                         }
                     return {'success': False, 'error': 'Row not found'}
             conn.commit()

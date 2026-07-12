@@ -9,6 +9,7 @@ import logging
 from datetime import date
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
@@ -63,7 +64,7 @@ def create_site_map_node(ss_sc):
     data = request.get_json() or {}
     name = data.get('name', '').strip()
     if not name:
-        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+        return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
 
     node_type = data.get('node_type', 'page')
 
@@ -82,7 +83,7 @@ def create_site_map_node(ss_sc):
         return jsonify({
             'success': True,
             'data': node.to_dict(),
-            'message': '網頁已建立'
+            'message': _('網頁已建立')
         })
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -117,7 +118,7 @@ def update_site_map_node(ss_sc, node_sc):
             update_fields[field] = data[field]
 
     if 'name' in update_fields and not update_fields['name'].strip():
-        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+        return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
 
     try:
         SiteMapService.update_node(node, **update_fields)
@@ -125,7 +126,7 @@ def update_site_map_node(ss_sc, node_sc):
         return jsonify({
             'success': True,
             'data': node.to_dict(),
-            'message': '節點已更新'
+            'message': _('節點已更新')
         })
     except Exception as e:
         db.session.rollback()
@@ -151,7 +152,7 @@ def delete_site_map_node(ss_sc, node_sc):
             return jsonify({'success': False, 'error': 'Node not found'}), 404
         return jsonify({
             'success': True,
-            'message': f'已刪除 {count} 個節點'
+            'message': _('已刪除 %(count)s 個節點', count=count)
         })
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -182,7 +183,7 @@ def reorder_site_map_nodes(ss_sc):
         db.session.commit()
         return jsonify({
             'success': True,
-            'message': f'已更新 {count} 個節點'
+            'message': _('已更新 %(count)s 個節點', count=count)
         })
     except Exception as e:
         db.session.rollback()
@@ -211,7 +212,7 @@ def _check_developer(ss_sc):
         return None, (jsonify({'success': False, 'error': 'Sub system not found'}), 404)
 
     if not ProjectService.is_developer(current_user, ss):
-        return None, (jsonify({'success': False, 'error': '您不是此子系統的開發者'}), 403)
+        return None, (jsonify({'success': False, 'error': _('您不是此子系統的開發者')}), 403)
 
     return ss, None
 
@@ -269,7 +270,7 @@ def add_site_map_node_permission(ss_sc, node_sc):
 
     if grant_type and grant_target:
         if grant_type not in ('department', 'group', 'user'):
-            return jsonify({'success': False, 'error': 'grant_type 必須為 department / group / user'}), 400
+            return jsonify({'success': False, 'error': _('grant_type 必須為 department / group / user')}), 400
 
         grant_target_name = data.get('grant_target_name', '').strip()
         include_children = bool(data.get('include_children', False)) if grant_type in ('department', 'group') else False
@@ -285,11 +286,11 @@ def add_site_map_node_permission(ss_sc, node_sc):
             )
             db.session.commit()
             if not perm:
-                return jsonify({'success': False, 'error': '此規則已存在'}), 400
+                return jsonify({'success': False, 'error': _('此規則已存在')}), 400
             return jsonify({
                 'success': True,
                 'data': perm.to_dict(),
-                'message': '准入規則已新增'
+                'message': _('准入規則已新增')
             })
         except ValueError as e:
             return jsonify({'success': False, 'error': str(e)}), 400
@@ -303,17 +304,17 @@ def add_site_map_node_permission(ss_sc, node_sc):
     target_sc = data.get('target_secure_code', '').strip()
 
     if not target_type or not target_sc:
-        return jsonify({'success': False, 'error': 'grant_type+grant_target 或 target_type+target_secure_code 為必填'}), 400
+        return jsonify({'success': False, 'error': _('grant_type+grant_target 或 target_type+target_secure_code 為必填')}), 400
 
     try:
         perm = SiteMapService.add_permission(node_sc, ss.org_secure_code, target_type, target_sc)
         db.session.commit()
         if not perm:
-            return jsonify({'success': False, 'error': '此權限已存在'}), 400
+            return jsonify({'success': False, 'error': _('此權限已存在')}), 400
         return jsonify({
             'success': True,
             'data': perm.to_dict(),
-            'message': '權限已新增'
+            'message': _('權限已新增')
         })
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
@@ -339,7 +340,7 @@ def remove_site_map_permission(ss_sc, perm_sc):
         return jsonify({'success': False, 'error': 'Permission not found'}), 404
 
     db.session.commit()
-    return jsonify({'success': True, 'message': '權限已刪除'})
+    return jsonify({'success': True, 'message': _('權限已刪除')})
 
 
 @api_bp.route('/sub-systems/<ss_sc>/site-map/targets')
@@ -446,7 +447,7 @@ def get_site_map_node_context(ss_sc, node_sc):
         redirect_to = node.redirect_to or '/dashboard'
         return jsonify({
             'success': False,
-            'error': '您沒有存取此頁面的權限',
+            'error': _('您沒有存取此頁面的權限'),
             'redirect_to': redirect_to,
         }), 403
 
@@ -510,7 +511,7 @@ def create_permission_policy(ss_sc):
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
     if not name:
-        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+        return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
 
     try:
         group = PermissionPolicyService.create_group(
@@ -519,7 +520,7 @@ def create_permission_policy(ss_sc):
             description=data.get('description', ''),
         )
         db.session.commit()
-        return jsonify({'success': True, 'data': group.to_dict(), 'message': '政策組已建立'})
+        return jsonify({'success': True, 'data': group.to_dict(), 'message': _('政策組已建立')})
     except Exception as e:
         db.session.rollback()
         logger.exception('[PermPolicy] create error')
@@ -543,12 +544,12 @@ def update_permission_policy(ss_sc, pp_sc):
 
     data = request.get_json() or {}
     if 'name' in data and not (data['name'] or '').strip():
-        return jsonify({'success': False, 'error': '名稱不可為空'}), 400
+        return jsonify({'success': False, 'error': _('名稱不可為空')}), 400
 
     try:
         PermissionPolicyService.update_group(group, **data)
         db.session.commit()
-        return jsonify({'success': True, 'data': group.to_dict(), 'message': '政策組已更新'})
+        return jsonify({'success': True, 'data': group.to_dict(), 'message': _('政策組已更新')})
     except Exception as e:
         db.session.rollback()
         logger.exception('[PermPolicy] update error')
@@ -575,7 +576,7 @@ def delete_permission_policy(ss_sc, pp_sc):
         db.session.commit()
         return jsonify({
             'success': True,
-            'message': f'政策組已刪除，{result["affected_nodes"]} 個節點權限已重設'
+            'message': _('政策組已刪除，%(n)s 個節點權限已重設', n=result['affected_nodes'])
         })
     except Exception as e:
         db.session.rollback()
@@ -623,7 +624,7 @@ def add_policy_rule(ss_sc, pp_sc):
     grant_target = data.get('grant_target', '')
 
     if not grant_type or not grant_target:
-        return jsonify({'success': False, 'error': '缺少必要欄位'}), 400
+        return jsonify({'success': False, 'error': _('缺少必要欄位')}), 400
 
     try:
         rule = PermissionPolicyService.add_rule(
@@ -634,7 +635,7 @@ def add_policy_rule(ss_sc, pp_sc):
             include_children=data.get('include_children', False),
         )
         db.session.commit()
-        return jsonify({'success': True, 'data': rule.to_dict(), 'message': '規則已新增'})
+        return jsonify({'success': True, 'data': rule.to_dict(), 'message': _('規則已新增')})
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
@@ -659,7 +660,7 @@ def delete_policy_rule(ss_sc, rule_sc):
         if not ok:
             return jsonify({'success': False, 'error': 'Rule not found'}), 404
         db.session.commit()
-        return jsonify({'success': True, 'message': '規則已刪除'})
+        return jsonify({'success': True, 'message': _('規則已刪除')})
     except Exception as e:
         db.session.rollback()
         logger.exception('[PermPolicy] delete_rule error')
@@ -693,7 +694,7 @@ def apply_permission_down(ss_sc, node_sc):
         return jsonify({
             'success': True,
             'data': {'affected': affected},
-            'message': f'已套用到 {affected} 個子節點'
+            'message': _('已套用到 %(affected)s 個子節點', affected=affected)
         })
     except Exception as e:
         db.session.rollback()

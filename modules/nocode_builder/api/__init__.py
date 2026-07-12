@@ -10,6 +10,7 @@ import re
 import logging
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
@@ -721,7 +722,7 @@ def _check_formgrid_lock(request_obj):
                 if row and row[0]:
                     return jsonify({
                         'success': False,
-                        'error': '此 Master 記錄已鎖定，無法修改關聯資料'
+                        'error': _('此 Master 記錄已鎖定，無法修改關聯資料')
                     }), 403
     except Exception as e:
         logger.warning('FORMGRID lock check failed: %s', e)
@@ -1078,7 +1079,7 @@ def publish_page(secure_code):
         return jsonify({
             'success': True,
             'data': page.to_dict(),
-            'message': '頁面已發布'
+            'message': _('頁面已發布')
         })
     except Exception as e:
         db.session.rollback()
@@ -1108,7 +1109,7 @@ def unpublish_page(secure_code):
         return jsonify({
             'success': True,
             'data': page.to_dict(),
-            'message': '頁面已取消發布'
+            'message': _('頁面已取消發布')
         })
     except Exception as e:
         db.session.rollback()
@@ -1200,7 +1201,7 @@ def _check_sub_system_crud(req, action):
 
         role_type = SubSystemService.get_user_role_type(current_user, ss)
         if role_type is None:
-            return jsonify({'success': False, 'error': '非子系統成員'}), 403
+            return jsonify({'success': False, 'error': _('非子系統成員')}), 403
 
         ssp = DcSubSystemPage.query.filter_by(
             secure_code=ssp_sc,
@@ -1215,7 +1216,7 @@ def _check_sub_system_crud(req, action):
         if not crud.get(action, False):
             return jsonify({
                 'success': False,
-                'error': f'您的角色 ({role_type}) 不允許此操作'
+                'error': _('您的角色 (%(role_type)s) 不允許此操作', role_type=role_type)
             }), 403
 
         return None  # 通過
@@ -1246,7 +1247,7 @@ def _check_site_map_crud(sub_sc, node_sc, action):
 
         role_type = SubSystemService.get_user_role_type(current_user, ss)
         if role_type is None:
-            return jsonify({'success': False, 'error': '非子系統成員'}), 403
+            return jsonify({'success': False, 'error': _('非子系統成員')}), 403
 
         node = SiteMapService.get_node(node_sc, ss.org_secure_code)
         if not node:
@@ -1263,7 +1264,7 @@ def _check_site_map_crud(sub_sc, node_sc, action):
                 if not widget_crud.get(action, False):
                     return jsonify({
                         'success': False,
-                        'error': f'您的角色 ({role_type}) 不允許此操作'
+                        'error': _('您的角色 (%(role_type)s) 不允許此操作', role_type=role_type)
                     }), 403
                 return None  # 通過
 
@@ -1274,7 +1275,7 @@ def _check_site_map_crud(sub_sc, node_sc, action):
         if not crud.get(action, False):
             return jsonify({
                 'success': False,
-                'error': f'您的角色 ({role_type}) 不允許此操作'
+                'error': _('您的角色 (%(role_type)s) 不允許此操作', role_type=role_type)
             }), 403
 
         return None  # 通過
@@ -1358,7 +1359,7 @@ def update_subsystem_style(ss_sc):
         style = data.get('style_config', {})
         ResourceGateway.update(ss, check_permission=False, style_config=style)
         ResourceGateway.commit()
-        return jsonify({'success': True, 'data': ss.style_config or {}, 'message': '子系統預設樣式已更新'})
+        return jsonify({'success': True, 'data': ss.style_config or {}, 'message': _('子系統預設樣式已更新')})
     except Exception as e:
         db.session.rollback()
         logger.exception('[Style] update_subsystem_style error')
@@ -1400,7 +1401,7 @@ def apply_style_to_all_pages(ss_sc):
         ResourceGateway.commit()
         return jsonify({
             'success': True,
-            'message': f'已套用到 {count} 個頁面',
+            'message': _('已套用到 %(count)s 個頁面', count=count),
             'count': count
         })
     except Exception as e:
@@ -1485,7 +1486,7 @@ def upload_background():
         return jsonify({
             'success': True,
             'data': bg.to_dict(),
-            'message': '底圖上傳成功'
+            'message': _('底圖上傳成功')
         })
     except Exception as e:
         db.session.rollback()
@@ -1517,7 +1518,7 @@ def delete_background(secure_code):
 
         ResourceGateway.delete(bg, check_permission=False, soft=True)
         ResourceGateway.commit()
-        return jsonify({'success': True, 'message': '底圖已刪除'})
+        return jsonify({'success': True, 'message': _('底圖已刪除')})
     except Exception as e:
         db.session.rollback()
         logger.exception('[Background] delete error')

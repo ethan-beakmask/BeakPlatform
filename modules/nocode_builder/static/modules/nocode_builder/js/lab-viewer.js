@@ -16,7 +16,7 @@ function labViewer() {
         async init() {
             const config = window.__PAGE_CONFIG || {};
             if (!config.secureCode) {
-                this.error = '未指定頁面';
+                this.error = __('未指定頁面');
                 return;
             }
 
@@ -30,7 +30,7 @@ function labViewer() {
                 const res = await fetch(window.__BP + '/api/nocode-builder/pages/' + config.secureCode);
                 const data = await res.json();
                 if (!data.success) {
-                    this.error = '載入失敗: ' + (data.error || '');
+                    this.error = __('載入失敗: {msg}', {msg: data.error || ''});
                     return;
                 }
 
@@ -45,7 +45,7 @@ function labViewer() {
                 this._initGrid();
                 this._renderLayout(items);
             } catch (e) {
-                this.error = '載入失敗: ' + e.message;
+                this.error = __('載入失敗: {msg}', {msg: e.message});
             }
         },
 
@@ -109,7 +109,7 @@ function labViewer() {
                 } else {
                     const content = gsItem.querySelector('.grid-stack-item-content');
                     if (content) {
-                        content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">未設定資料來源</div></div>';
+                        content.innerHTML = '<div class="dlw-root"><div class="dlw-empty">' + __('未設定資料來源') + '</div></div>';
                     }
                 }
             }

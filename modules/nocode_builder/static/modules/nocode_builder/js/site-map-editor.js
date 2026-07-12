@@ -231,7 +231,7 @@ function siteMapEditor(subSystemSc) {
                 if (container) container.innerHTML = '';
                 try {
                     var treeRoots = [];
-                    var orgName = '企業';
+                    var orgName = __('企業');
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
                             var res = await fetch(window.__BP + '/api/units/departments?tree=true');
@@ -393,19 +393,19 @@ function siteMapEditor(subSystemSc) {
                     this.newNodePerm._selectedName = '';
                     var treeBox = document.querySelector('.dc-perm-tree-box');
                     if (treeBox) treeBox.querySelectorAll('.dc-perm-tree-row.selected').forEach(function(el) { el.classList.remove('selected'); });
-                    this.showToast('准入規則已新增');
+                    this.showToast(__('准入規則已新增'));
                 } else {
-                    this.showToast(data.error || data.message || '新增失敗', 'error');
+                    this.showToast(data.error || data.message || __('新增失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
+                this.showToast(__('新增失敗: {msg}', {msg: e.message}), 'error');
             } finally {
                 this.permSaving = false;
             }
         },
 
         async deleteNodePermRule(permSc) {
-            if (!confirm('確定要刪除此准入規則?')) return;
+            if (!confirm(__('確定要刪除此准入規則?'))) return;
             try {
                 var res = await fetch(
                     window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/permissions/' + permSc,
@@ -414,19 +414,19 @@ function siteMapEditor(subSystemSc) {
                 var data = await res.json();
                 if (data.success) {
                     await this.loadNodePermissions(this.selectedNode.secure_code);
-                    this.showToast('准入規則已刪除');
+                    this.showToast(__('准入規則已刪除'));
                 } else {
-                    this.showToast(data.message || '刪除失敗', 'error');
+                    this.showToast(data.message || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         getPermTypeLabel(type) {
-            if (type === 'department') return '部門';
-            if (type === 'group') return '社群';
-            if (type === 'user') return '個人';
+            if (type === 'department') return __('部門');
+            if (type === 'group') return __('社群');
+            if (type === 'user') return __('個人');
             return type;
         },
 
@@ -449,7 +449,7 @@ function siteMapEditor(subSystemSc) {
 
         async doAddNode() {
             if (!this.addForm.name.trim()) {
-                this.showToast('名稱不可為空', 'error');
+                this.showToast(__('名稱不可為空'), 'error');
                 return;
             }
             try {
@@ -468,20 +468,20 @@ function siteMapEditor(subSystemSc) {
                 var data = await res.json();
                 if (data.success) {
                     this.showAddModal = false;
-                    this.showToast('網頁已建立', 'success');
+                    this.showToast(__('網頁已建立'), 'success');
                     await this.loadTree();
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async saveNode() {
             if (!this.selectedNode) return;
             if (!this.nodeForm.name.trim()) {
-                this.showToast('名稱不可為空', 'error');
+                this.showToast(__('名稱不可為空'), 'error');
                 return;
             }
             try {
@@ -509,13 +509,13 @@ function siteMapEditor(subSystemSc) {
                 );
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast('網頁已更新', 'success');
+                    this.showToast(__('網頁已更新'), 'success');
                     await this.loadTree();
                 } else {
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('更新失敗: ' + e.message, 'error');
+                this.showToast(__('更新失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -532,7 +532,7 @@ function siteMapEditor(subSystemSc) {
 
         async applyDown() {
             if (!this.selectedNode) return;
-            if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
+            if (!confirm(__('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)'))) return;
             try {
                 var res = await fetch(
                     window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code + '/apply-down',
@@ -544,13 +544,13 @@ function siteMapEditor(subSystemSc) {
                 );
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已套用', 'success');
+                    this.showToast(data.message || __('已套用'), 'success');
                     await this.loadTree();
                 } else {
-                    this.showToast(data.error || '套用失敗', 'error');
+                    this.showToast(data.error || __('套用失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('套用失敗: ' + e.message, 'error');
+                this.showToast(__('套用失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -563,7 +563,7 @@ function siteMapEditor(subSystemSc) {
 
         async deleteNode() {
             if (!this.selectedNode) return;
-            if (!confirm('確定要刪除此網頁（含所有子網頁）?')) return;
+            if (!confirm(__('確定要刪除此網頁（含所有子網頁）?'))) return;
             try {
                 var res = await fetch(
                     window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map/nodes/' + this.selectedNode.secure_code,
@@ -571,14 +571,14 @@ function siteMapEditor(subSystemSc) {
                 );
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '網頁已刪除', 'success');
+                    this.showToast(data.message || __('網頁已刪除'), 'success');
                     this.selectedNode = null;
                     await this.loadTree();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -604,7 +604,7 @@ function siteMapEditor(subSystemSc) {
                 });
                 var data = await res.json();
                 if (!data.success) {
-                    this.showToast(data.error || '排序失敗', 'error');
+                    this.showToast(data.error || __('排序失敗'), 'error');
                 }
             } catch (e) {
                 console.error('reorder:', e);

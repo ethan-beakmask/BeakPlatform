@@ -12,15 +12,15 @@
 
 var SM_ROLES = ['GUEST', 'MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2', 'MEMBER'];
 var SM_ROLE_LABELS = {
-    GUEST: '訪客 (任何人)',
-    MANAGER: '管理者',
-    DEPUTY: '副管理者',
-    PROXY1: '代理人 1',
-    PROXY2: '代理人 2',
-    MEMBER: '成員',
+    GUEST: __('訪客 (任何人)'),
+    MANAGER: __('管理者'),
+    DEPUTY: __('副管理者'),
+    PROXY1: __('代理人 1'),
+    PROXY2: __('代理人 2'),
+    MEMBER: __('成員'),
 };
 var SM_ROLE_HINTS = {
-    GUEST: '含非成員',
+    GUEST: __('含非成員'),
     MANAGER: '',
     DEPUTY: '',
     PROXY1: '',
@@ -42,9 +42,9 @@ function studioManager() {
 
         // Component library (易擴充，新增元件只需加入此陣列)
         componentTypes: [
-            { type: 'DATALIST', label: '資料清單', icon: 'fa-table', desc: '展示與操作資料表' },
-            { type: 'SITEMENU', label: '選單', icon: 'fa-bars', desc: 'Site Map 導航選單' },
-            { type: 'FORMGRID', label: '主細元件', icon: 'fa-th-list', desc: '主表+明細表二表三態' },
+            { type: 'DATALIST', label: __('資料清單'), icon: 'fa-table', desc: __('展示與操作資料表') },
+            { type: 'SITEMENU', label: __('選單'), icon: 'fa-bars', desc: __('Site Map 導航選單') },
+            { type: 'FORMGRID', label: __('主細元件'), icon: 'fa-th-list', desc: __('主表+明細表二表三態') },
         ],
 
         // Site Map
@@ -340,14 +340,14 @@ function studioManager() {
                         this.availableViews.push(data.data);
                     }
                     if (data.created) {
-                        this.showToast('已自動建立視圖配置', 'success');
+                        this.showToast(__('已自動建立視圖配置'), 'success');
                     }
                 } else {
-                    this.showToast(data.error || '無法取得視圖', 'error');
+                    this.showToast(data.error || __('無法取得視圖'), 'error');
                 }
             } catch (e) {
                 console.error('Resolve view failed:', e);
-                this.showToast('視圖解析失敗', 'error');
+                this.showToast(__('視圖解析失敗'), 'error');
             } finally {
                 this.resolvingView = false;
             }
@@ -369,7 +369,7 @@ function studioManager() {
             }
 
             if (hasContent) {
-                if (!confirm('切換模式將清空目前的佈局，確定嗎?')) return;
+                if (!confirm(__('切換模式將清空目前的佈局，確定嗎?'))) return;
             }
 
             this.editMode = mode;
@@ -477,7 +477,7 @@ function studioManager() {
          */
         _accessBadgeText: function (roles, permCount) {
             if (typeof permCount === 'number' && permCount > 0) {
-                return '[' + permCount + '規則]';
+                return __('[{n}規則]', {n: permCount});
             }
             // 無 grant permission → 開放給社群成員
             return '';
@@ -1049,7 +1049,7 @@ function studioManager() {
             if (removedCount > 0) {
                 this.settingContextOutputs = validOutputs;
                 this.settingContextInputs = validInputs;
-                this.showToast('已移除 ' + removedCount + ' 筆未填完的 Context 設定', 'success');
+                this.showToast(__('已移除 {n} 筆未填完的 Context 設定', {n: removedCount}), 'success');
             }
 
             var widgetConfig = {
@@ -1109,7 +1109,7 @@ function studioManager() {
                 this.dirty = true;
             }
 
-            this.showToast('已套用', 'success');
+            this.showToast(__('已套用'), 'success');
         },
 
         _applySiteMenuSettings: function () {
@@ -1159,7 +1159,7 @@ function studioManager() {
                 this.dirty = true;
             }
 
-            this.showToast('已套用', 'success');
+            this.showToast(__('已套用'), 'success');
         },
 
         // ===== FORMGRID Settings Apply =====
@@ -1199,7 +1199,7 @@ function studioManager() {
                 this.dirty = true;
             }
 
-            this.showToast('已套用', 'success');
+            this.showToast(__('已套用'), 'success');
         },
 
         // FORMGRID: 資料來源變更
@@ -1510,7 +1510,7 @@ function studioManager() {
                     }
                 }
             });
-            return summary.length > 0 ? summary.join(', ') : '(無)';
+            return summary.length > 0 ? summary.join(', ') : __('(無)');
         },
 
         /**
@@ -1553,7 +1553,7 @@ function studioManager() {
 
         async doAddNode() {
             var name = this.addNodeForm.name.trim();
-            if (!name) { this.showToast('名稱為必填', 'error'); return; }
+            if (!name) { this.showToast(__('名稱為必填'), 'error'); return; }
 
             try {
                 var body = {
@@ -1598,7 +1598,7 @@ function studioManager() {
                 if (pageData.success) {
                     body.page_layout_secure_code = pageData.data.secure_code;
                 } else {
-                    this.showToast(pageData.error || '建立頁面佈局失敗', 'error');
+                    this.showToast(pageData.error || __('建立頁面佈局失敗'), 'error');
                     return;
                 }
 
@@ -1609,15 +1609,15 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.showAddNodeModal = false;
-                    this.showToast(tpl ? '網頁已從模板建立' : '網頁已建立', 'success');
+                    this.showToast(tpl ? __('網頁已從模板建立') : __('網頁已建立'), 'success');
                     await this._loadTree();
                     await this._loadPages();
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -1625,10 +1625,10 @@ function studioManager() {
             if (!this.selectedNode) return;
             // 根頁面不可刪除
             if (!this.selectedNode.parent_secure_code) {
-                this.showToast('根頁面 (welcome) 不可刪除', 'error');
+                this.showToast(__('根頁面 (welcome) 不可刪除'), 'error');
                 return;
             }
-            if (!confirm('確定要刪除網頁「' + this.selectedNode.name + '」嗎?')) return;
+            if (!confirm(__('確定要刪除網頁「{name}」嗎?', {name: this.selectedNode.name}))) return;
 
             try {
                 var res = await fetch(
@@ -1641,14 +1641,14 @@ function studioManager() {
                     this.selectedNode = null;
                     this.currentPageSc = null;
                     this._clearCanvas();
-                    this.showToast('網頁已刪除', 'success');
+                    this.showToast(__('網頁已刪除'), 'success');
                     await this._loadTree();
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗', 'error');
+                this.showToast(__('刪除失敗'), 'error');
             }
         },
 
@@ -1702,7 +1702,7 @@ function studioManager() {
 
         async savePage() {
             if (!this.currentPageSc) {
-                this.showToast('無頁面可儲存 (請先選擇 page 節點)', 'error');
+                this.showToast(__('無頁面可儲存 (請先選擇 page 節點)'), 'error');
                 return;
             }
 
@@ -1725,12 +1725,12 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.dirty = false;
-                    this.showToast('已儲存', 'success');
+                    this.showToast(__('已儲存'), 'success');
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗', 'error');
+                this.showToast(__('儲存失敗'), 'error');
             }
         },
 
@@ -1750,9 +1750,9 @@ function studioManager() {
         async togglePublish() {
             if (!this.subSystem) return;
             var action = this.subSystem.status === 'draft' ? 'publish' : 'unpublish';
-            var label = action === 'publish' ? '上線' : '下線';
+            var label = action === 'publish' ? __('上線') : __('下線');
 
-            if (!confirm('確定要' + label + '「' + this.subSystem.name + '」嗎?')) return;
+            if (!confirm(__('確定要{action}「{name}」嗎?', {action: label, name: this.subSystem.name}))) return;
 
             try {
                 var res = await fetch(window.__BP + '/api/nocode-builder/projects/' + this.subSystemSc + '/' + action, {
@@ -1761,12 +1761,12 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.subSystem.status = data.data.status;
-                    this.showToast('已' + label, 'success');
+                    this.showToast(__('已{action}', {action: label}), 'success');
                 } else {
-                    this.showToast(data.error || label + '失敗', 'error');
+                    this.showToast(data.error || __('{action}失敗', {action: label}), 'error');
                 }
             } catch (e) {
-                this.showToast(label + '失敗', 'error');
+                this.showToast(__('{action}失敗', {action: label}), 'error');
             }
         },
 
@@ -1824,18 +1824,18 @@ function studioManager() {
                         treeNode.permission_mode = this._currentPermMode;
                         treeNode.permission_policy_secure_code = this._currentPolicySc;
                     }
-                    this.showToast('權限模式已儲存', 'success');
+                    this.showToast(__('權限模式已儲存'), 'success');
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async applyPermDown() {
             if (!this.selectedNode) return;
-            if (!confirm('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)')) return;
+            if (!confirm(__('將此網頁的權限設定套用到所有子網頁?\n(已設定自訂權限的子網頁不受影響)'))) return;
             try {
                 // 先儲存當前節點的權限模式，確保 DB 是最新的
                 await this.savePermMode();
@@ -1851,14 +1851,14 @@ function studioManager() {
                 );
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已套用', 'success');
+                    this.showToast(data.message || __('已套用'), 'success');
                     await this._loadTree();
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || '套用失敗', 'error');
+                    this.showToast(data.error || __('套用失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('套用失敗: ' + e.message, 'error');
+                this.showToast(__('套用失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -1903,7 +1903,7 @@ function studioManager() {
                 if (container) container.innerHTML = '';
                 try {
                     var treeRoots = [];
-                    var orgName = '企業';
+                    var orgName = __('企業');
                     if (grantType === 'department') {
                         if (!this._permCache.departments) {
                             var res = await fetch(window.__BP + '/api/units/departments?tree=true');
@@ -2068,22 +2068,22 @@ function studioManager() {
                         var box = treeBox.closest('.dc-perm-tree-box');
                         if (box) box.querySelectorAll('.dc-perm-tree-row.selected').forEach(function(el) { el.classList.remove('selected'); });
                     }
-                    this.showToast('准入規則已新增', 'success');
+                    this.showToast(__('准入規則已新增'), 'success');
                     // 重新載入樹更新 badge
                     await this._loadTree();
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || data.message || '新增失敗', 'error');
+                    this.showToast(data.error || data.message || __('新增失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
+                this.showToast(__('新增失敗: {msg}', {msg: e.message}), 'error');
             } finally {
                 this.permSaving = false;
             }
         },
 
         async deleteNodePermRule(permSc) {
-            if (!confirm('確定要刪除此准入規則?')) return;
+            if (!confirm(__('確定要刪除此准入規則?'))) return;
             try {
                 var res = await fetch(
                     window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/site-map/permissions/' + permSc,
@@ -2092,22 +2092,22 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     await this._loadNodePermissions(this.selectedNode.secure_code);
-                    this.showToast('准入規則已刪除', 'success');
+                    this.showToast(__('准入規則已刪除'), 'success');
                     // 重新載入樹更新 badge
                     await this._loadTree();
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.message || '刪除失敗', 'error');
+                    this.showToast(data.message || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         getPermTypeLabel(type) {
-            if (type === 'department') return '部門';
-            if (type === 'group') return '社群';
-            if (type === 'user') return '個人';
+            if (type === 'department') return __('部門');
+            if (type === 'group') return __('社群');
+            if (type === 'user') return __('個人');
             return type;
         },
 
@@ -2257,18 +2257,18 @@ function studioManager() {
         },
 
         async deleteBgFromGallery(sc) {
-            if (!confirm('確定刪除此底圖?')) return;
+            if (!confirm(__('確定刪除此底圖?'))) return;
             try {
                 var res = await fetch(window.__BP + '/api/nocode-builder/backgrounds/' + sc, { method: 'DELETE' });
                 var data = await res.json();
                 if (data.success) {
                     this.bgGallery = this.bgGallery.filter(function (b) { return b.secure_code !== sc; });
-                    this.showToast('底圖已刪除', 'success');
+                    this.showToast(__('底圖已刪除'), 'success');
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗', 'error');
+                this.showToast(__('刪除失敗'), 'error');
             }
         },
 
@@ -2303,14 +2303,14 @@ function studioManager() {
                     // 自動套用到目前頁面
                     this.styleConfig.bgImage.url = bg.url;
                     this.dirty = true;
-                    this.showToast('底圖上傳成功', 'success');
+                    this.showToast(__('底圖上傳成功'), 'success');
                     return bg;
                 } else {
-                    this.showToast(data.error || '上傳失敗', 'error');
+                    this.showToast(data.error || __('上傳失敗'), 'error');
                     return null;
                 }
             } catch (e) {
-                this.showToast('上傳失敗', 'error');
+                this.showToast(__('上傳失敗'), 'error');
                 return null;
             }
         },
@@ -2325,7 +2325,7 @@ function studioManager() {
 
         async setAsSubSystemDefault() {
             var style = this._buildStyleConfigForSave();
-            if (!confirm('將目前頁面樣式設為子系統預設?')) return;
+            if (!confirm(__('將目前頁面樣式設為子系統預設?'))) return;
             try {
                 var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style', {
                     method: 'PUT',
@@ -2335,18 +2335,18 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this._subSystemStyleConfig = style;
-                    this.showToast('已設為子系統預設', 'success');
+                    this.showToast(__('已設為子系統預設'), 'success');
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 
         async applyStyleToAllPages() {
             var style = this._buildStyleConfigForSave();
-            if (!confirm('將目前頁面樣式覆蓋到此子系統的所有頁面? 此操作不可復原。')) return;
+            if (!confirm(__('將目前頁面樣式覆蓋到此子系統的所有頁面? 此操作不可復原。'))) return;
             try {
                 var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + this.subSystemSc + '/style/apply-all', {
                     method: 'POST',
@@ -2355,12 +2355,12 @@ function studioManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已套用', 'success');
+                    this.showToast(data.message || __('已套用'), 'success');
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 
@@ -2370,7 +2370,7 @@ function studioManager() {
 
         openSaveTemplate: function () {
             if (!this.currentPageSc) {
-                this.showToast('請先選擇一個頁面', 'error');
+                this.showToast(__('請先選擇一個頁面'), 'error');
                 return;
             }
             this.saveTemplateForm = { name: '', description: '', category: '常用' };
@@ -2379,7 +2379,7 @@ function studioManager() {
 
         async doSaveTemplate() {
             var name = this.saveTemplateForm.name.trim();
-            if (!name) { this.showToast('模板名稱為必填', 'error'); return; }
+            if (!name) { this.showToast(__('模板名稱為必填'), 'error'); return; }
 
             this.savingTemplate = true;
             try {
@@ -2407,12 +2407,12 @@ function studioManager() {
                 var data = await res.json();
                 if (data.success) {
                     this.showSaveTemplateModal = false;
-                    this.showToast('模板已儲存', 'success');
+                    this.showToast(__('模板已儲存'), 'success');
                 } else {
-                    this.showToast(data.error || '儲存模板失敗', 'error');
+                    this.showToast(data.error || __('儲存模板失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存模板失敗: ' + e.message, 'error');
+                this.showToast(__('儲存模板失敗: {msg}', {msg: e.message}), 'error');
             } finally {
                 this.savingTemplate = false;
             }
@@ -2434,18 +2434,18 @@ function studioManager() {
         },
 
         async deleteTemplate(sc) {
-            if (!confirm('確定要刪除此模板?')) return;
+            if (!confirm(__('確定要刪除此模板?'))) return;
             try {
                 var res = await fetch(window.__BP + '/api/nocode-builder/templates/' + sc, { method: 'DELETE' });
                 var data = await res.json();
                 if (data.success) {
                     this.templateList = this.templateList.filter(function (t) { return t.secure_code !== sc; });
-                    this.showToast('模板已刪除', 'success');
+                    this.showToast(__('模板已刪除'), 'success');
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗', 'error');
+                this.showToast(__('刪除失敗'), 'error');
             }
         },
 
@@ -2511,7 +2511,7 @@ function studioManager() {
             } else {
                 // 空白頁面
                 rects = '<text x="' + (W / 2) + '" y="' + (H / 2 + 4) + '" text-anchor="middle" ' +
-                        'font-size="12" fill="#bbb" font-family="sans-serif">空白</text>';
+                        'font-size="12" fill="#bbb" font-family="sans-serif">' + __('空白') + '</text>';
             }
 
             return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '">' +
@@ -2611,10 +2611,10 @@ function studioManager() {
                     if (treeNode) treeNode.icon = iconClass || '';
                     this._initSiteMapTree();
                 } else {
-                    this.showToast(data.error || '圖示儲存失敗', 'error');
+                    this.showToast(data.error || __('圖示儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('圖示儲存失敗: ' + e.message, 'error');
+                this.showToast(__('圖示儲存失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -2672,12 +2672,12 @@ function studioManager() {
                     }
                     await this._loadTree();
                     this._initSiteMapTree();
-                    this.showToast('圖示已更新', 'success');
+                    this.showToast(__('圖示已更新'), 'success');
                 } else {
-                    this.showToast(data.error || '圖示儲存失敗', 'error');
+                    this.showToast(data.error || __('圖示儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('圖示儲存失敗: ' + e.message, 'error');
+                this.showToast(__('圖示儲存失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 

@@ -13,11 +13,11 @@ function subSystemPortal() {
         pages: [],
 
         _roleLabels: {
-            'MANAGER': '團長',
-            'DEPUTY': '副團長',
-            'PROXY1': '代理人(一)',
-            'PROXY2': '代理人(二)',
-            'MEMBER': '團員',
+            'MANAGER': __('團長'),
+            'DEPUTY': __('副團長'),
+            'PROXY1': __('代理人(一)'),
+            'PROXY2': __('代理人(二)'),
+            'MEMBER': __('團員'),
         },
 
         get roleLabel() {
@@ -29,7 +29,7 @@ function subSystemPortal() {
             this.subSystemName = config.subSystemName || '';
 
             if (!config.subSystemSc) {
-                this.error = '未指定子系統';
+                this.error = __('未指定子系統');
                 this.loading = false;
                 return;
             }
@@ -38,7 +38,7 @@ function subSystemPortal() {
                 const res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + config.subSystemSc + '/portal');
                 const data = await res.json();
                 if (!data.success) {
-                    this.error = data.error || '載入失敗';
+                    this.error = data.error || __('載入失敗');
                     this.loading = false;
                     return;
                 }
@@ -48,7 +48,7 @@ function subSystemPortal() {
                 this.isAdmin = data.data.is_admin || false;
                 this.pages = data.data.pages || [];
             } catch (e) {
-                this.error = '載入失敗: ' + e.message;
+                this.error = __('載入失敗: {msg}', {msg: e.message});
             } finally {
                 this.loading = false;
             }

@@ -120,7 +120,7 @@ window.__PORTAL_CONFIG = {
 
 <div x-data="siteMapPortal()" x-cloak>
     <!-- Loading -->
-    <div class="sp2-loading" x-show="loading">載入中...</div>
+    <div class="sp2-loading" x-show="loading">{{ _('載入中...') }}</div>
     <!-- Error -->
     <div class="sp2-error" x-show="error" x-text="error"></div>
 
@@ -129,7 +129,7 @@ window.__PORTAL_CONFIG = {
         <!-- Sidebar -->
         <div class="sp2-sidebar">
             <div class="sp2-sidebar-header">
-                <h2 x-text="subSystemName || '子系統'"></h2>
+                <h2 x-text="subSystemName || __('子系統')"></h2>
                 <div class="sp2-sidebar-meta">
                     <span class="role-badge" :class="isAdmin ? 'admin' : ''"
                           x-text="roleLabel"></span>
@@ -150,10 +150,10 @@ window.__PORTAL_CONFIG = {
             </div>
             <div class="sp2-content">
                 <div class="sp2-empty" x-show="!currentNode && !pageLoading">
-                    從左側選單選擇頁面
+                    {{ _('從左側選單選擇頁面') }}
                 </div>
                 <div class="sp2-loading" x-show="pageLoading" style="padding: 40px;">
-                    載入頁面中...
+                    {{ _('載入頁面中...') }}
                 </div>
                 <div x-show="pageError" style="padding: 20px; color: #dc2626;" x-text="pageError"></div>
                 <div class="grid-stack" x-show="currentNode && !pageLoading && !pageError"></div>

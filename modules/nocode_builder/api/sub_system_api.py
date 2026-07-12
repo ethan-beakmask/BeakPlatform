@@ -5,6 +5,7 @@ Data CRUD Module - SubSystem API
 import logging
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
@@ -115,7 +116,7 @@ def create_sub_system():
     return jsonify({
         'success': True,
         'data': result['data'],
-        'message': '子系統已建立'
+        'message': _('子系統已建立')
     })
 
 
@@ -180,7 +181,7 @@ def update_sub_system(secure_code):
     return jsonify({
         'success': True,
         'data': ss.to_dict(),
-        'message': '子系統已更新'
+        'message': _('子系統已更新')
     })
 
 
@@ -195,7 +196,7 @@ def delete_sub_system(secure_code):
     if not result.get('success'):
         return jsonify({'success': False, 'error': result.get('error', 'Delete failed')}), 404
 
-    return jsonify({'success': True, 'message': '子系統已刪除'})
+    return jsonify({'success': True, 'message': _('子系統已刪除')})
 
 
 # =============================================================================
@@ -230,7 +231,7 @@ def list_sub_system_pages(secure_code):
             secure_code=ssp.page_layout_secure_code,
             is_deleted=False,
         ).first()
-        d['page_name'] = layout.name if layout else '(已刪除)'
+        d['page_name'] = layout.name if layout else _('(已刪除)')
         result.append(d)
 
     return jsonify({'success': True, 'data': result})
@@ -264,7 +265,7 @@ def add_sub_system_page(secure_code):
         is_deleted=False,
     ).first()
     if existing:
-        return jsonify({'success': False, 'error': '此頁面已加入子系統'}), 400
+        return jsonify({'success': False, 'error': _('此頁面已加入子系統')}), 400
 
     ssp = ResourceGateway.create(
         DcSubSystemPage,
@@ -283,7 +284,7 @@ def add_sub_system_page(secure_code):
     return jsonify({
         'success': True,
         'data': ssp.to_dict(),
-        'message': '頁面已加入子系統'
+        'message': _('頁面已加入子系統')
     })
 
 
@@ -315,7 +316,7 @@ def update_sub_system_page(ss_sc, page_sc):
     return jsonify({
         'success': True,
         'data': ssp.to_dict(),
-        'message': '頁面設定已更新'
+        'message': _('頁面設定已更新')
     })
 
 
@@ -337,7 +338,7 @@ def remove_sub_system_page(ss_sc, page_sc):
     ResourceGateway.delete(ssp, check_permission=False, soft=True)
     ResourceGateway.commit()
 
-    return jsonify({'success': True, 'message': '頁面已移除'})
+    return jsonify({'success': True, 'message': _('頁面已移除')})
 
 
 # =============================================================================
@@ -361,7 +362,7 @@ def sub_system_portal(secure_code):
 
     role_type = SubSystemService.get_user_role_type(current_user, ss)
     if role_type is None:
-        return jsonify({'success': False, 'error': '您不是此子系統的成員'}), 403
+        return jsonify({'success': False, 'error': _('您不是此子系統的成員')}), 403
 
     pages = SubSystemService.get_visible_pages(current_user, ss)
 
@@ -397,7 +398,7 @@ def get_page_permission_context(ss_sc, ssp_sc):
 
     role_type = SubSystemService.get_user_role_type(current_user, ss)
     if role_type is None:
-        return jsonify({'success': False, 'error': '您不是此子系統的成員'}), 403
+        return jsonify({'success': False, 'error': _('您不是此子系統的成員')}), 403
 
     ssp = ResourceGateway.get(
         DcSubSystemPage, ssp_sc,
@@ -465,7 +466,7 @@ def list_data_sources(secure_code):
     ).first()
     sources.append({
         'key': 'org',
-        'label': '企業資料庫',
+        'label': _('企業資料庫'),
         'db_name': org_db.db_name if org_db else None,
         'available': bool(org_db),
     })
@@ -474,7 +475,7 @@ def list_data_sources(secure_code):
     cg_info = check_cg_available(org_sc)
     sources.append({
         'key': 'conglomerate',
-        'label': '集團共享資料庫' + (
+        'label': _('集團共享資料庫') + (
             f' ({cg_info["conglomerate_name"]})' if cg_info.get('conglomerate_name') else ''
         ),
         'db_name': cg_info.get('db_name'),
@@ -486,13 +487,13 @@ def list_data_sources(secure_code):
     has_sqlite = mgr.has_sqlite(ss.secure_code)
     sources.append({
         'key': 'portal',
-        'label': 'Portal 帳號資料庫',
+        'label': _('Portal 帳號資料庫'),
         'db_name': 'portal.db' if has_sqlite else None,
         'available': has_sqlite,
     })
     sources.append({
         'key': 'portal_data',
-        'label': 'Portal 公開資料庫',
+        'label': _('Portal 公開資料庫'),
         'db_name': 'portal_data.db' if has_sqlite else None,
         'available': has_sqlite,
     })
@@ -680,7 +681,7 @@ def _get_group_name(group_unit_sc):
         secure_code=group_unit_sc,
         is_deleted=False,
     ).first()
-    return unit.name if unit else '(未知社群)'
+    return unit.name if unit else _('(未知社群)')
 
 
 def _get_page_count(sub_system_sc, org_sc):

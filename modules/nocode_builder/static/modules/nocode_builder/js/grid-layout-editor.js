@@ -88,27 +88,27 @@ class GridLayoutEditor {
         this._toolbar.className = 'gle-toolbar';
         this._toolbar.innerHTML = `
             <div class="gle-tb-group">
-                <label>列:</label>
+                <label>${__('列:')}</label>
                 <input type="number" class="gle-input-rows" value="4" min="1" max="30">
-                <label>欄:</label>
+                <label>${__('欄:')}</label>
                 <input type="number" class="gle-input-cols" value="4" min="1" max="30">
-                <button class="gle-tb-btn primary" data-action="create">建立</button>
+                <button class="gle-tb-btn primary" data-action="create">${__('建立')}</button>
             </div>
             <div class="gle-tb-sep"></div>
             <div class="gle-tb-group">
-                <button class="gle-tb-btn" data-action="merge" disabled>合併 <span class="gle-shortcut">M</span></button>
+                <button class="gle-tb-btn" data-action="merge" disabled>${__('合併')} <span class="gle-shortcut">M</span></button>
             </div>
             <div class="gle-tb-sep"></div>
             <div class="gle-tb-group">
-                <label>拆分:</label>
-                <button class="gle-tb-btn" data-action="split-h" disabled>左右</button>
-                <button class="gle-tb-btn" data-action="split-v" disabled>上下</button>
-                <button class="gle-tb-btn" data-action="split-2x2" disabled>田字</button>
-                <button class="gle-tb-btn" data-action="split-custom" disabled>自訂</button>
+                <label>${__('拆分:')}</label>
+                <button class="gle-tb-btn" data-action="split-h" disabled>${__('左右')}</button>
+                <button class="gle-tb-btn" data-action="split-v" disabled>${__('上下')}</button>
+                <button class="gle-tb-btn" data-action="split-2x2" disabled>${__('田字')}</button>
+                <button class="gle-tb-btn" data-action="split-custom" disabled>${__('自訂')}</button>
             </div>
             <div class="gle-tb-sep"></div>
             <div class="gle-tb-group">
-                <button class="gle-tb-btn" data-action="undo" disabled>復原 <span class="gle-shortcut">Ctrl+Z</span></button>
+                <button class="gle-tb-btn" data-action="undo" disabled>${__('復原')} <span class="gle-shortcut">Ctrl+Z</span></button>
             </div>
         `;
         this.container.appendChild(this._toolbar);
@@ -140,12 +140,12 @@ class GridLayoutEditor {
         this._modalOverlay.className = 'gle-modal-overlay';
         this._modalOverlay.innerHTML = `
             <div class="gle-modal">
-                <h3>自訂拆分</h3>
-                <div class="gle-modal-row"><label>列數:</label><input type="number" class="gle-split-r" value="2" min="1" max="20"></div>
-                <div class="gle-modal-row"><label>欄數:</label><input type="number" class="gle-split-c" value="2" min="1" max="20"></div>
+                <h3>${__('自訂拆分')}</h3>
+                <div class="gle-modal-row"><label>${__('列數:')}</label><input type="number" class="gle-split-r" value="2" min="1" max="20"></div>
+                <div class="gle-modal-row"><label>${__('欄數:')}</label><input type="number" class="gle-split-c" value="2" min="1" max="20"></div>
                 <div class="gle-modal-actions">
-                    <button class="gle-tb-btn" data-modal="cancel">取消</button>
-                    <button class="gle-tb-btn primary" data-modal="confirm">拆分</button>
+                    <button class="gle-tb-btn" data-modal="cancel">${__('取消')}</button>
+                    <button class="gle-tb-btn primary" data-modal="confirm">${__('拆分')}</button>
                 </div>
             </div>
         `;
@@ -645,7 +645,7 @@ class GridLayoutEditor {
                     wp.appendChild(typeLabel);
                     const detail = document.createElement('div');
                     detail.className = 'gle-wp-detail';
-                    detail.textContent = widget.type === 'SITEMENU' ? 'SITEMENU' : '(未設定資料來源)';
+                    detail.textContent = widget.type === 'SITEMENU' ? 'SITEMENU' : __('(未設定資料來源)');
                     detail.style.color = '#f59e0b';
                     wp.appendChild(detail);
                     wContainer.appendChild(wp);
@@ -770,7 +770,7 @@ class GridLayoutEditor {
         const isMerged = (b.r2 - b.r1 > 0) || (b.c2 - b.c1 > 0);
 
         if (widget) {
-            this._addCtxItem(menu, '移除元件', () => {
+            this._addCtxItem(menu, __('移除元件'), () => {
                 delete this.widgetMap[wKey];
                 this.render();
                 this._fireChanged();
@@ -779,7 +779,7 @@ class GridLayoutEditor {
         }
 
         if (isMerged) {
-            this._addCtxItem(menu, '取消合併', () => {
+            this._addCtxItem(menu, __('取消合併'), () => {
                 this._saveState();
                 delete this.widgetMap[wKey];
                 // Split back: assign new IDs to each cell
@@ -838,16 +838,16 @@ class GridLayoutEditor {
         const cols = this.matrix[0] ? this.matrix[0].length : 0;
         const regions = this._getRegions();
         const sb = this._statusBar;
-        sb.querySelector('.gle-st-grid').textContent = `矩陣: ${rows} x ${cols}`;
-        sb.querySelector('.gle-st-cells').textContent = `區塊: ${regions.length}`;
+        sb.querySelector('.gle-st-grid').textContent = __('矩陣: {rows} x {cols}', {rows: rows, cols: cols});
+        sb.querySelector('.gle-st-cells').textContent = __('區塊: {n}', {n: regions.length});
         if (this.selected.size === 0) {
-            sb.querySelector('.gle-st-sel').textContent = '未選取';
+            sb.querySelector('.gle-st-sel').textContent = __('未選取');
         } else if (this.selected.size === 1) {
             const b = this._getBounds([...this.selected][0]);
             const rs = b.r2 - b.r1 + 1, cs = b.c2 - b.c1 + 1;
-            sb.querySelector('.gle-st-sel').textContent = `已選取 1 區塊 (${rs}x${cs})`;
+            sb.querySelector('.gle-st-sel').textContent = __('已選取 1 區塊 ({rs}x{cs})', {rs: rs, cs: cs});
         } else {
-            sb.querySelector('.gle-st-sel').textContent = `已選取 ${this.selected.size} 區塊`;
+            sb.querySelector('.gle-st-sel').textContent = __('已選取 {n} 區塊', {n: this.selected.size});
         }
     }
 

@@ -8,6 +8,7 @@ import logging
 import uuid
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf, db
@@ -30,7 +31,7 @@ def _get_sub_system(secure_code: str):
         check_permission=False,
     )
     if not ss or ss.is_deleted:
-        return None, (jsonify({'success': False, 'error': '子系統不存在'}), 404)
+        return None, (jsonify({'success': False, 'error': _('子系統不存在')}), 404)
     return ss, None
 
 
@@ -44,7 +45,7 @@ def _get_sub_system(secure_code: str):
 def bridge_publish(secure_code):
     """PG -> SQLite INSERT (發布公開資料)"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -59,7 +60,7 @@ def bridge_publish(secure_code):
     if not all([source_table, target_table, record_key, field_mapping]):
         return jsonify({
             'success': False,
-            'error': '缺少必要參數: source_table, target_table, record_key, field_mapping',
+            'error': _('缺少必要參數: source_table, target_table, record_key, field_mapping'),
         }), 400
 
     from ..services.data_bridge_service import DataBridgeService
@@ -85,7 +86,7 @@ def bridge_publish(secure_code):
 def bridge_update(secure_code):
     """PG -> SQLite UPSERT (更新已發布的公開資料)"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -101,7 +102,7 @@ def bridge_update(secure_code):
     if not all([source_table, target_table, record_key, field_mapping]):
         return jsonify({
             'success': False,
-            'error': '缺少必要參數: source_table, target_table, record_key, field_mapping',
+            'error': _('缺少必要參數: source_table, target_table, record_key, field_mapping'),
         }), 400
 
     from ..services.data_bridge_service import DataBridgeService
@@ -128,7 +129,7 @@ def bridge_update(secure_code):
 def bridge_collect(secure_code):
     """SQLite -> PG (受限回收，需指定 context)"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -145,7 +146,7 @@ def bridge_collect(secure_code):
     if not all([source_table, target_table, field_mapping, context]):
         return jsonify({
             'success': False,
-            'error': '缺少必要參數: source_table, target_table, field_mapping, context',
+            'error': _('缺少必要參數: source_table, target_table, field_mapping, context'),
         }), 400
 
     from ..services.data_bridge_service import DataBridgeService
@@ -173,7 +174,7 @@ def bridge_collect(secure_code):
 def bridge_execute_rule(secure_code):
     """依規則 ID 執行橋接操作"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -186,7 +187,7 @@ def bridge_execute_rule(secure_code):
     collect_filter = data.get('collect_filter')
 
     if not rule_id:
-        return jsonify({'success': False, 'error': '缺少 rule_id'}), 400
+        return jsonify({'success': False, 'error': _('缺少 rule_id')}), 400
 
     # 從子系統的 bridge_rules 找出對應規則
     rules = ss.bridge_rules or []
@@ -197,7 +198,7 @@ def bridge_execute_rule(secure_code):
             break
 
     if not rule:
-        return jsonify({'success': False, 'error': f'找不到規則: {rule_id}'}), 404
+        return jsonify({'success': False, 'error': _('找不到規則: %(rule_id)s', rule_id=rule_id)}), 404
 
     from ..services.data_bridge_service import DataBridgeService
     bridge = DataBridgeService()
@@ -222,11 +223,11 @@ def bridge_execute_rule(secure_code):
 def bridge_validate_rule(secure_code):
     """驗證橋接規則結構"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     data = request.get_json() or {}
     if not data:
-        return jsonify({'success': False, 'error': '缺少規則內容'}), 400
+        return jsonify({'success': False, 'error': _('缺少規則內容')}), 400
 
     from ..services.data_bridge_service import DataBridgeService
     result = DataBridgeService.validate_rule(data)
@@ -238,7 +239,7 @@ def bridge_validate_rule(secure_code):
 def bridge_logs(secure_code):
     """查詢子系統的橋接操作日誌"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -287,7 +288,7 @@ def bridge_logs(secure_code):
 def list_bridge_rules(secure_code):
     """列出子系統的橋接規則"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -303,7 +304,7 @@ def list_bridge_rules(secure_code):
 def create_bridge_rule(secure_code):
     """新增橋接規則"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -317,7 +318,7 @@ def create_bridge_rule(secure_code):
     if not validation['valid']:
         return jsonify({
             'success': False,
-            'error': '規則驗證失敗',
+            'error': _('規則驗證失敗'),
             'details': validation['errors'],
         }), 400
 
@@ -331,7 +332,7 @@ def create_bridge_rule(secure_code):
         if r.get('rule_id') == data['rule_id']:
             return jsonify({
                 'success': False,
-                'error': f'rule_id 已存在: {data["rule_id"]}',
+                'error': _('rule_id 已存在: %(rule_id)s', rule_id=data['rule_id']),
             }), 400
 
     # 設定預設值
@@ -345,7 +346,7 @@ def create_bridge_rule(secure_code):
     return jsonify({
         'success': True,
         'data': data,
-        'message': '規則已建立',
+        'message': _('規則已建立'),
     })
 
 
@@ -355,7 +356,7 @@ def create_bridge_rule(secure_code):
 def update_bridge_rule(secure_code, rule_id):
     """更新橋接規則"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -372,7 +373,7 @@ def update_bridge_rule(secure_code, rule_id):
             break
 
     if target_idx is None:
-        return jsonify({'success': False, 'error': f'找不到規則: {rule_id}'}), 404
+        return jsonify({'success': False, 'error': _('找不到規則: %(rule_id)s', rule_id=rule_id)}), 404
 
     # 合併更新（保留 rule_id 不可變）
     updated_rule = {**rules[target_idx], **data}
@@ -383,7 +384,7 @@ def update_bridge_rule(secure_code, rule_id):
     if not validation['valid']:
         return jsonify({
             'success': False,
-            'error': '規則驗證失敗',
+            'error': _('規則驗證失敗'),
             'details': validation['errors'],
         }), 400
 
@@ -394,7 +395,7 @@ def update_bridge_rule(secure_code, rule_id):
     return jsonify({
         'success': True,
         'data': updated_rule,
-        'message': '規則已更新',
+        'message': _('規則已更新'),
     })
 
 
@@ -404,7 +405,7 @@ def update_bridge_rule(secure_code, rule_id):
 def delete_bridge_rule(secure_code, rule_id):
     """刪除橋接規則"""
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     ss, err = _get_sub_system(secure_code)
     if err:
@@ -414,12 +415,12 @@ def delete_bridge_rule(secure_code, rule_id):
     new_rules = [r for r in rules if r.get('rule_id') != rule_id]
 
     if len(new_rules) == len(rules):
-        return jsonify({'success': False, 'error': f'找不到規則: {rule_id}'}), 404
+        return jsonify({'success': False, 'error': _('找不到規則: %(rule_id)s', rule_id=rule_id)}), 404
 
     ss.bridge_rules = new_rules
     db.session.commit()
 
     return jsonify({
         'success': True,
-        'message': '規則已刪除',
+        'message': _('規則已刪除'),
     })

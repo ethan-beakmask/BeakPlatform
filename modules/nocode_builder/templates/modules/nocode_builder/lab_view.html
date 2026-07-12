@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}{{ page_name or '頁面預覽' }} - 資料表工具{% endblock %}
+{% block title %}{{ page_name or _('頁面預覽') }} - {{ _('資料表工具') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/gridstack/gridstack.min.css">
@@ -54,20 +54,20 @@ window.__PAGE_CONFIG = {
 
 <div x-data="labViewer()" x-cloak>
     <div class="viewer-topbar">
-        <span class="viewer-topbar-title" x-text="pageName || '頁面預覽'"></span>
+        <span class="viewer-topbar-title" x-text="pageName || __('頁面預覽')"></span>
         <div style="display: flex; gap: 8px; align-items: center;">
             <template x-if="subCtx && subCtx.role_type">
                 <span style="font-size: 12px; padding: 2px 8px; border: 1px solid #ddd; background: #f5f5f5;"
-                      x-text="subCtx.is_admin ? '管理' : '成員'"></span>
+                      x-text="subCtx.is_admin ? __('管理') : __('成員')"></span>
             </template>
             <template x-if="subCtx && subCtx.sub_sc">
-                <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + subCtx.sub_sc + '/portal'" class="dc-btn">返回子系統</a>
+                <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + subCtx.sub_sc + '/portal'" class="dc-btn">{{ _('返回子系統') }}</a>
             </template>
             <template x-if="!subCtx || !subCtx.sub_sc">
-                <a href="{{ app_prefix }}/nocode-builder/lab/{{ secure_code }}" class="dc-btn">編輯此頁</a>
+                <a href="{{ app_prefix }}/nocode-builder/lab/{{ secure_code }}" class="dc-btn">{{ _('編輯此頁') }}</a>
             </template>
             <template x-if="!subCtx || !subCtx.sub_sc">
-                <a href="{{ app_prefix }}/nocode-builder/" class="dc-btn">返回</a>
+                <a href="{{ app_prefix }}/nocode-builder/" class="dc-btn">{{ _('返回') }}</a>
             </template>
         </div>
     </div>

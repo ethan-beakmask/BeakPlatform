@@ -107,7 +107,7 @@ function lookupManager() {
 
         async saveCategory() {
             if (!this.catForm.name.trim()) {
-                this.showToast('請填寫名稱', 'error');
+                this.showToast(__('請填寫名稱'), 'error');
                 return;
             }
             // 代碼留空時採用建議值
@@ -115,7 +115,7 @@ function lookupManager() {
                 this.catForm.code = this._ci_generatedCode;
             }
             if (!this.catForm.code.trim()) {
-                this.showToast('請填寫代碼', 'error');
+                this.showToast(__('請填寫代碼'), 'error');
                 return;
             }
             this.catSaving = true;
@@ -141,7 +141,7 @@ function lookupManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已儲存', 'success');
+                    this.showToast(data.message || __('已儲存'), 'success');
                     this.showCatModal = false;
                     await this.loadCategories();
                     if (data.data) {
@@ -149,10 +149,10 @@ function lookupManager() {
                         this.selectedCat = this.categories.find(function(c) { return c.secure_code === sc; }) || null;
                     }
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: {msg}', {msg: e.message}), 'error');
             }
             this.catSaving = false;
         },
@@ -160,8 +160,8 @@ function lookupManager() {
         async toggleCategoryActive() {
             if (!this.selectedCat || this.selectedCat.is_system) return;
             var newActive = !this.selectedCat.is_active;
-            var msg = newActive ? '確定要啟用類別「' + this.selectedCat.name + '」？'
-                                : '確定要停用類別「' + this.selectedCat.name + '」？';
+            var msg = newActive ? __('確定要啟用類別「{name}」？', {name: this.selectedCat.name})
+                                : __('確定要停用類別「{name}」？', {name: this.selectedCat.name});
             if (!confirm(msg)) return;
             try {
                 var res = await fetch(window.__BP + '/api/lookup/categories/' + this.selectedCat.secure_code, {
@@ -171,45 +171,45 @@ function lookupManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(newActive ? '已啟用' : '已停用', 'success');
+                    this.showToast(newActive ? __('已啟用') : __('已停用'), 'success');
                     var sc = this.selectedCat.secure_code;
                     await this.loadCategories();
                     this.selectedCat = this.categories.find(function(c) { return c.secure_code === sc; }) || null;
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗: ' + e.message, 'error');
+                this.showToast(__('操作失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async deleteCategory() {
             if (!this.selectedCat) return;
             if (this.selectedCat.is_system) {
-                this.showToast('系統級類別不可刪除', 'error');
+                this.showToast(__('系統級類別不可刪除'), 'error');
                 return;
             }
             if (this.selectedCat.is_active !== false) {
-                this.showToast('請先停用類別後再刪除', 'error');
+                this.showToast(__('請先停用類別後再刪除'), 'error');
                 return;
             }
-            if (!confirm('確定要刪除類別「' + this.selectedCat.name + '」及其所有選項？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。')) return;
+            if (!confirm(__('確定要刪除類別「{name}」及其所有選項？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。', {name: this.selectedCat.name}))) return;
             try {
                 var res = await fetch(window.__BP + '/api/lookup/categories/' + this.selectedCat.secure_code, {
                     method: 'DELETE',
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast('已刪除', 'success');
+                    this.showToast(__('已刪除'), 'success');
                     this.selectedCat = null;
                     this.items = [];
                     this._destroyGrid();
                     await this.loadCategories();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -325,7 +325,7 @@ function lookupManager() {
                 var columns = [
                     {
                         id: 'code',
-                        label: '代碼',
+                        label: __('代碼'),
                         width: '130px',
                         sortable: false,
                         renderer: function(value, node) {
@@ -335,7 +335,7 @@ function lookupManager() {
                     },
                     {
                         id: 'values',
-                        label: '值',
+                        label: __('值'),
                         width: '280px',
                         sortable: false,
                         renderer: function(value, node) {
@@ -345,20 +345,20 @@ function lookupManager() {
                     },
                     {
                         id: 'status',
-                        label: '狀態',
+                        label: __('狀態'),
                         width: '60px',
                         sortable: false,
                         renderer: function(value, node) {
                             var d = node.data || {};
                             if (d.is_active) {
-                                return '<span style="color:#276749;">啟用</span>';
+                                return '<span style="color:#276749;">' + __('啟用') + '</span>';
                             }
-                            return '<span style="color:#c53030;">停用</span>';
+                            return '<span style="color:#c53030;">' + __('停用') + '</span>';
                         }
                     },
                     {
                         id: 'actions',
-                        label: '操作',
+                        label: __('操作'),
                         width: '220px',
                         sortable: false,
                         renderer: function(value, node) {
@@ -366,12 +366,12 @@ function lookupManager() {
                             var sc = self._esc(d.secure_code || '');
                             var html = '';
                             if (isHier) {
-                                html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="add-child" data-code="' + self._esc(d.code || '') + '">+子</button> ';
+                                html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="add-child" data-code="' + self._esc(d.code || '') + '">' + __('+子') + '</button> ';
                             }
-                            html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="edit" data-sc="' + sc + '">編輯</button> ';
-                            html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="toggle" data-sc="' + sc + '">' + (d.is_active ? '停用' : '啟用') + '</button> ';
+                            html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="edit" data-sc="' + sc + '">' + __('編輯') + '</button> ';
+                            html += '<button class="btn btn-secondary btn-sm lk-act-btn" data-action="toggle" data-sc="' + sc + '">' + (d.is_active ? __('停用') : __('啟用')) + '</button> ';
                             if (!d.is_active) {
-                                html += '<button class="btn btn-danger btn-sm lk-act-btn" data-action="delete" data-sc="' + sc + '">刪除</button>';
+                                html += '<button class="btn btn-danger btn-sm lk-act-btn" data-action="delete" data-sc="' + sc + '">' + __('刪除') + '</button>';
                             }
                             return html;
                         }
@@ -478,10 +478,10 @@ function lookupManager() {
                 );
                 var data = await res.json();
                 if (!data.success) {
-                    this.showToast(data.error || '排序儲存失敗', 'error');
+                    this.showToast(data.error || __('排序儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('排序儲存失敗: ' + e.message, 'error');
+                this.showToast(__('排序儲存失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -496,13 +496,13 @@ function lookupManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(item.is_active ? '已停用' : '已啟用', 'success');
+                    this.showToast(item.is_active ? __('已停用') : __('已啟用'), 'success');
                     await this.loadItems();
                 } else {
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('更新失敗: ' + e.message, 'error');
+                this.showToast(__('更新失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -510,23 +510,23 @@ function lookupManager() {
             var item = this.items.find(function(i) { return i.secure_code === secureCode; });
             if (!item) return;
             if (item.is_active) {
-                this.showToast('請先停用選項後再刪除', 'error');
+                this.showToast(__('請先停用選項後再刪除'), 'error');
                 return;
             }
-            if (!confirm('確定要刪除選項「' + item.label + '」？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。')) return;
+            if (!confirm(__('確定要刪除選項「{name}」？\n\n刪除之後，與此代碼對應的項目可能無法顯示甚至因無正確對應而發生錯誤。', {name: item.label}))) return;
             try {
                 var res = await fetch(window.__BP + '/api/lookup/items/' + secureCode, {
                     method: 'DELETE',
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast('已刪除', 'success');
+                    this.showToast(__('已刪除'), 'success');
                     await this.loadItems();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -596,20 +596,20 @@ function lookupManager() {
                             this.itemForm.jsonPairs = _jsonToPairs(parsed);
                             this.itemForm.jsonMode = 'simple';
                         } else {
-                            this.showToast('JSON 含巢狀結構，無法轉為簡易模式', 'error');
+                            this.showToast(__('JSON 含巢狀結構，無法轉為簡易模式'), 'error');
                         }
                     } else {
-                        this.showToast('JSON 非物件格式，無法轉為簡易模式', 'error');
+                        this.showToast(__('JSON 非物件格式，無法轉為簡易模式'), 'error');
                     }
                 } catch (e) {
-                    this.showToast('JSON 格式錯誤，無法切換', 'error');
+                    this.showToast(__('JSON 格式錯誤，無法切換'), 'error');
                 }
             }
         },
 
         async saveItem() {
             if (!this.itemForm.label.trim()) {
-                this.showToast('請填寫顯示文字', 'error');
+                this.showToast(__('請填寫顯示文字'), 'error');
                 return;
             }
             // 代碼留空時採用建議值
@@ -617,7 +617,7 @@ function lookupManager() {
                 this.itemForm.code = this._ci_generatedCode;
             }
             if (!this.itemForm.code.trim()) {
-                this.showToast('請填寫代碼', 'error');
+                this.showToast(__('請填寫代碼'), 'error');
                 return;
             }
 
@@ -630,7 +630,7 @@ function lookupManager() {
                     try {
                         parsedValue = JSON.parse(this.itemForm.valueJson);
                     } catch (e) {
-                        this.showToast('JSON 附加資料格式錯誤', 'error');
+                        this.showToast(__('JSON 附加資料格式錯誤'), 'error');
                         return;
                     }
                 }
@@ -667,14 +667,14 @@ function lookupManager() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已儲存', 'success');
+                    this.showToast(data.message || __('已儲存'), 'success');
                     this.showItemModal = false;
                     await this.loadItems();
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: {msg}', {msg: e.message}), 'error');
             }
             this.itemSaving = false;
         },

@@ -5,6 +5,7 @@ Data CRUD Module - Project API
 import logging
 
 from flask import jsonify, request
+from flask_babel import gettext as _
 from flask_login import current_user
 
 from app import csrf
@@ -52,7 +53,7 @@ def update_project(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     data = request.get_json() or {}
     result = ProjectService.update_project(secure_code, data)
@@ -70,7 +71,7 @@ def delete_project(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     result = ProjectService.delete_project(secure_code)
 
@@ -91,7 +92,7 @@ def publish_project(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     result = ProjectService.publish(secure_code)
 
@@ -108,7 +109,7 @@ def unpublish_project(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     result = ProjectService.unpublish(secure_code)
 
@@ -128,7 +129,7 @@ def list_developers(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     result = ProjectService.get_developers(secure_code)
 
@@ -145,7 +146,7 @@ def add_developer(secure_code):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     data = request.get_json() or {}
     user_sc = data.get('user_secure_code', '').strip()
@@ -167,7 +168,7 @@ def remove_developer(secure_code, user_sc):
     from ..services.project_service import ProjectService
 
     if not _check_developer_access(secure_code):
-        return jsonify({'success': False, 'error': '無權限'}), 403
+        return jsonify({'success': False, 'error': _('無權限')}), 403
 
     result = ProjectService.remove_developer(secure_code, user_sc)
 

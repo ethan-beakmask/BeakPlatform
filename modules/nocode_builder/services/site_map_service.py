@@ -17,6 +17,8 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Set, Tuple
 
+from flask_babel import gettext as _
+
 from app import db
 from ..models.site_map_node import DcSiteMapNode
 from ..models.site_map_permission import DcSiteMapPermission
@@ -281,7 +283,7 @@ class SiteMapService:
         page 類型若未指定 page_layout_sc，自動建立空白 DcPageLayout。
         """
         if node_type != 'page':
-            raise ValueError(f'Invalid node_type: {node_type}，僅支援 page')
+            raise ValueError(_('Invalid node_type: %(node_type)s，僅支援 page', node_type=node_type))
 
         # 限制只能有一個根頁面，且名稱必須為 welcome
         if not parent_sc:
@@ -293,12 +295,11 @@ class SiteMapService:
             ).first()
             if existing_root:
                 raise ValueError(
-                    'Site Map 只能有一個根頁面 (welcome)，'
-                    '請將新網頁建立在根頁面下'
+                    _('Site Map 只能有一個根頁面 (welcome)，請將新網頁建立在根頁面下')
                 )
             if name.lower() != 'welcome':
                 raise ValueError(
-                    '根頁面名稱必須為 welcome'
+                    _('根頁面名稱必須為 welcome')
                 )
 
         # page 類型自動建立空白佈局
@@ -363,7 +364,7 @@ class SiteMapService:
             DcSiteMapNode.is_deleted == False,
         ).first()
         if root_check:
-            raise ValueError('根頁面 (welcome) 不可刪除')
+            raise ValueError(_('根頁面 (welcome) 不可刪除'))
 
         now = datetime.utcnow()
         count = 0

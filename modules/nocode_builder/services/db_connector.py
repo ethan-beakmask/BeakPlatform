@@ -11,6 +11,7 @@ Data CRUD Module - DB Connector
 import logging
 from contextlib import contextmanager
 
+from flask_babel import gettext as _
 from flask_login import current_user
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ def _get_org_data_conn(org_sc):
     except RuntimeError as e:
         if '找不到企業' in str(e):
             raise OrgDatabaseNotFound(
-                f'企業 {org_sc} 尚未建立專屬資料庫，請聯繫系統管理員'
+                _('企業 %(org_sc)s 尚未建立專屬資料庫，請聯繫系統管理員', org_sc=org_sc)
             )
         raise
 
@@ -117,12 +118,12 @@ def _get_cg_data_conn(org_sc):
         org = None
 
     if not org:
-        raise CgDatabaseNotFound(f'找不到企業 {org_sc}')
+        raise CgDatabaseNotFound(_('找不到企業 %(org_sc)s', org_sc=org_sc))
 
     cg_sc = getattr(org, 'conglomerate_secure_code', None)
     if not cg_sc:
         raise CgDatabaseNotFound(
-            f'企業 {org_sc} 不屬於任何集團，無法存取集團共享資料庫'
+            _('企業 %(org_sc)s 不屬於任何集團，無法存取集團共享資料庫', org_sc=org_sc)
         )
 
     try:
@@ -132,7 +133,7 @@ def _get_cg_data_conn(org_sc):
     except RuntimeError as e:
         if '找不到集團' in str(e):
             raise CgDatabaseNotFound(
-                f'集團 {cg_sc} 尚未建立共享資料庫，請聯繫系統管理員'
+                _('集團 %(cg_sc)s 尚未建立共享資料庫，請聯繫系統管理員', cg_sc=cg_sc)
             )
         raise
 
@@ -156,10 +157,10 @@ def _get_org_db_display_name(org_sc):
             is_deleted=False,
         ).first()
         if org_db:
-            return f'{org_db.db_name} (企業資料庫)'
-        return '(尚未建立企業資料庫)'
+            return _('%(db_name)s (企業資料庫)', db_name=org_db.db_name)
+        return _('(尚未建立企業資料庫)')
     except Exception:
-        return '(無法取得資料庫資訊)'
+        return _('(無法取得資料庫資訊)')
 
 
 def _get_cg_db_display_name(org_sc):
@@ -171,7 +172,7 @@ def _get_cg_db_display_name(org_sc):
             is_deleted=False,
         ).first()
         if not org or not org.conglomerate_secure_code:
-            return '(不屬於任何集團)'
+            return _('(不屬於任何集團)')
 
         from modules.form_workflow.models.conglomerate_database import (
             FwConglomerateDatabase,
@@ -182,10 +183,10 @@ def _get_cg_db_display_name(org_sc):
             is_deleted=False,
         ).first()
         if cg_db:
-            return f'{cg_db.db_name} (集團共享資料庫)'
-        return '(集團尚未建立共享資料庫)'
+            return _('%(db_name)s (集團共享資料庫)', db_name=cg_db.db_name)
+        return _('(集團尚未建立共享資料庫)')
     except Exception:
-        return '(無法取得集團資料庫資訊)'
+        return _('(無法取得集團資料庫資訊)')
 
 
 def check_cg_available(org_secure_code=None):

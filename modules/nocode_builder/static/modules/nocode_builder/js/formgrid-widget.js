@@ -104,7 +104,7 @@ class FormGridWidget {
         }));
 
         if (!this.config.masterViewCode) {
-            this._renderEmpty('未設定 Master 資料來源');
+            this._renderEmpty(__('未設定 Master 資料來源'));
             return;
         }
 
@@ -217,10 +217,10 @@ class FormGridWidget {
             if (data.success) {
                 this.masterViewConfig = data.data;
             } else {
-                this._renderEmpty('Master 載入失敗: ' + (data.error || ''));
+                this._renderEmpty(__('Master 載入失敗: {msg}', {msg: data.error || ''}));
             }
         } catch (e) {
-            this._renderEmpty('Master 載入失敗: ' + e.message);
+            this._renderEmpty(__('Master 載入失敗: {msg}', {msg: e.message}));
         }
     }
 
@@ -466,7 +466,7 @@ class FormGridWidget {
             const addBtn = document.createElement('button');
             addBtn.className = 'fgw-btn sm primary';
             addBtn.textContent = '+';
-            addBtn.title = '新增 Master';
+            addBtn.title = __('新增 Master');
             addBtn.addEventListener('click', () => this._openMasterModal('create'));
             this._els.mlHeader.appendChild(addBtn);
         }
@@ -481,7 +481,7 @@ class FormGridWidget {
         this.container.appendChild(header);
         const el = document.createElement('div');
         el.className = 'fgw-empty';
-        el.textContent = msg || '未設定資料來源';
+        el.textContent = msg || __('未設定資料來源');
         this.container.appendChild(el);
     }
 
@@ -493,7 +493,7 @@ class FormGridWidget {
         body.innerHTML = '';
 
         if (this.masterRows.length === 0) {
-            body.innerHTML = '<div class="fgw-ml-empty">尚無資料</div>';
+            body.innerHTML = '<div class="fgw-ml-empty">' + __('尚無資料') + '</div>';
             return;
         }
 
@@ -516,7 +516,7 @@ class FormGridWidget {
             if (row.is_locked) {
                 const lockSpan = document.createElement('span');
                 lockSpan.className = 'fgw-ml-lock';
-                lockSpan.textContent = '[鎖定]';
+                lockSpan.textContent = __('[鎖定]');
                 keySpan.appendChild(lockSpan);
             }
             item.appendChild(keySpan);
@@ -549,7 +549,7 @@ class FormGridWidget {
         area.innerHTML = '';
 
         if (!this.selectedMasterData) {
-            area.innerHTML = '<div class="fgw-md-placeholder">請從左側選擇一筆 Master 資料</div>';
+            area.innerHTML = '<div class="fgw-md-placeholder">' + __('請從左側選擇一筆 Master 資料') + '</div>';
             return;
         }
 
@@ -561,12 +561,12 @@ class FormGridWidget {
         if (this.isLocked) {
             const badge = document.createElement('span');
             badge.className = 'fgw-locked-badge';
-            badge.textContent = '已鎖定';
+            badge.textContent = __('已鎖定');
             toolbar.appendChild(badge);
         } else {
             const badge = document.createElement('span');
             badge.className = 'fgw-unlocked-badge';
-            badge.textContent = '未鎖定';
+            badge.textContent = __('未鎖定');
             toolbar.appendChild(badge);
         }
 
@@ -574,7 +574,7 @@ class FormGridWidget {
         if (this.mode === 'view' && !this.isLocked && this.config.allowEdit) {
             const editBtn = document.createElement('button');
             editBtn.className = 'fgw-btn sm primary';
-            editBtn.textContent = '編輯';
+            editBtn.textContent = __('編輯');
             editBtn.addEventListener('click', () => {
                 this.mode = 'edit';
                 this._renderMasterDetail();
@@ -585,13 +585,13 @@ class FormGridWidget {
         if (this.mode === 'edit') {
             const saveBtn = document.createElement('button');
             saveBtn.className = 'fgw-btn sm primary';
-            saveBtn.textContent = '儲存';
+            saveBtn.textContent = __('儲存');
             saveBtn.addEventListener('click', () => this._saveMasterEdit(saveBtn));
             toolbar.appendChild(saveBtn);
 
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'fgw-btn sm';
-            cancelBtn.textContent = '取消';
+            cancelBtn.textContent = __('取消');
             cancelBtn.addEventListener('click', () => {
                 this.mode = 'view';
                 this._selectMaster(this.selectedMasterRowId);
@@ -603,7 +603,7 @@ class FormGridWidget {
         if (this.config.allowEdit && this.mode === 'view') {
             const lockBtn = document.createElement('button');
             lockBtn.className = 'fgw-btn sm ' + (this.isLocked ? 'warn' : '');
-            lockBtn.textContent = this.isLocked ? '解鎖' : '鎖定';
+            lockBtn.textContent = this.isLocked ? __('解鎖') : __('鎖定');
             lockBtn.addEventListener('click', () => this._toggleLock());
             toolbar.appendChild(lockBtn);
         }
@@ -612,7 +612,7 @@ class FormGridWidget {
         if (this.mode === 'view' && !this.isLocked && this.config.allowDelete) {
             const delBtn = document.createElement('button');
             delBtn.className = 'fgw-btn sm danger';
-            delBtn.textContent = '刪除';
+            delBtn.textContent = __('刪除');
             delBtn.addEventListener('click', () => this._deleteMaster());
             toolbar.appendChild(delBtn);
         }
@@ -676,7 +676,7 @@ class FormGridWidget {
 
         if (!this.selectedMasterData || !this.detailViewConfig) {
             body.innerHTML = '<div class="fgw-dt-empty">' +
-                (this.selectedMasterData ? '未設定 Detail 資料來源' : '請先選擇 Master') + '</div>';
+                (this.selectedMasterData ? __('未設定 Detail 資料來源') : __('請先選擇 Master')) + '</div>';
             this._els.dtPager.style.display = 'none';
 
             // 清除 detail toolbar
@@ -690,7 +690,7 @@ class FormGridWidget {
             if (this.config.allowCreate && !this.isLocked) {
                 const addBtn = document.createElement('button');
                 addBtn.className = 'fgw-btn sm primary';
-                addBtn.textContent = '+新增';
+                addBtn.textContent = __('+新增');
                 addBtn.addEventListener('click', () => this._openDetailModal('create'));
                 this._els.dtToolbar.appendChild(addBtn);
             }
@@ -709,7 +709,7 @@ class FormGridWidget {
         const hasActions = canEdit || canDelete;
 
         if (this.detailRows.length === 0) {
-            body.innerHTML = '<div class="fgw-dt-empty">尚無明細資料</div>';
+            body.innerHTML = '<div class="fgw-dt-empty">' + __('尚無明細資料') + '</div>';
             if (this._els.dtPager) this._els.dtPager.style.display = 'none';
             return;
         }
@@ -728,7 +728,7 @@ class FormGridWidget {
                 + (col.label || col.column)
                 + '<span class="fgw-sort-arrow">' + arrow + '</span></th>';
         }
-        if (hasActions) headHtml += '<th class="fgw-dt-actions-th">操作</th>';
+        if (hasActions) headHtml += '<th class="fgw-dt-actions-th">' + __('操作') + '</th>';
         headHtml += '</tr>';
         thead.innerHTML = headHtml;
         table.appendChild(thead);
@@ -764,7 +764,7 @@ class FormGridWidget {
                 if (canEdit) {
                     const btn = document.createElement('button');
                     btn.className = 'fgw-btn sm';
-                    btn.textContent = '編輯';
+                    btn.textContent = __('編輯');
                     const _rid = row._row_id;
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -775,7 +775,7 @@ class FormGridWidget {
                 if (canDelete) {
                     const btn = document.createElement('button');
                     btn.className = 'fgw-btn sm danger';
-                    btn.textContent = '刪除';
+                    btn.textContent = __('刪除');
                     const _rid = row._row_id;
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -806,11 +806,10 @@ class FormGridWidget {
         }
         pager.style.display = 'flex';
         pager.innerHTML =
-            '<span>共 ' + this.detailPagination.total + ' 筆，第 '
-            + this.detailPagination.page + '/' + this.detailPagination.pages + ' 頁</span>'
+            '<span>' + __('共 {total} 筆，第 {page}/{pages} 頁', {total: this.detailPagination.total, page: this.detailPagination.page, pages: this.detailPagination.pages}) + '</span>'
             + '<div class="fgw-dt-page-btns">'
-            + '<button class="fgw-btn sm fgw-prev" ' + (this.detailPagination.page <= 1 ? 'disabled' : '') + '>上一頁</button>'
-            + '<button class="fgw-btn sm fgw-next" ' + (this.detailPagination.page >= this.detailPagination.pages ? 'disabled' : '') + '>下一頁</button>'
+            + '<button class="fgw-btn sm fgw-prev" ' + (this.detailPagination.page <= 1 ? 'disabled' : '') + '>' + __('上一頁') + '</button>'
+            + '<button class="fgw-btn sm fgw-next" ' + (this.detailPagination.page >= this.detailPagination.pages ? 'disabled' : '') + '>' + __('下一頁') + '</button>'
             + '</div>';
         pager.querySelector('.fgw-prev')?.addEventListener('click', () => {
             if (this.detailPagination.page > 1) this._loadDetailRows(this.detailPagination.page - 1);
@@ -875,7 +874,7 @@ class FormGridWidget {
             select.name = colName;
             const emptyOpt = document.createElement('option');
             emptyOpt.value = '';
-            emptyOpt.textContent = '-- 請選擇 --';
+            emptyOpt.textContent = __('-- 請選擇 --');
             select.appendChild(emptyOpt);
             const map = lookupMaps[colName];
             for (const [code, lbl] of Object.entries(map)) {
@@ -954,7 +953,7 @@ class FormGridWidget {
                 const raw = el.value.trim();
                 if (raw) {
                     try { data[colName] = JSON.parse(raw); }
-                    catch (e) { alert('JSON 格式錯誤: ' + col.label); return null; }
+                    catch (e) { alert(__('JSON 格式錯誤: {label}', {label: col.label})); return null; }
                 } else {
                     data[colName] = null;
                 }
@@ -962,7 +961,7 @@ class FormGridWidget {
                 const raw = el.value.trim();
                 if (raw !== '') {
                     data[colName] = Number(raw);
-                    if (isNaN(data[colName])) { alert('數值格式錯誤: ' + col.label); return null; }
+                    if (isNaN(data[colName])) { alert(__('數值格式錯誤: {label}', {label: col.label})); return null; }
                 } else {
                     data[colName] = null;
                 }
@@ -985,7 +984,7 @@ class FormGridWidget {
         if (data === null) return; // 驗證失敗
 
         saveBtn.disabled = true;
-        saveBtn.textContent = '儲存中...';
+        saveBtn.textContent = __('儲存中...');
 
         try {
             const headers = Object.assign(
@@ -1003,22 +1002,24 @@ class FormGridWidget {
                 await this._loadMasterList();
                 await this._selectMaster(this.selectedMasterRowId);
             } else {
-                alert('儲存失敗: ' + (result.error || ''));
+                alert(__('儲存失敗: {msg}', {msg: result.error || ''}));
                 saveBtn.disabled = false;
-                saveBtn.textContent = '儲存';
+                saveBtn.textContent = __('儲存');
             }
         } catch (e) {
-            alert('儲存失敗: ' + e.message);
+            alert(__('儲存失敗: {msg}', {msg: e.message}));
             saveBtn.disabled = false;
-            saveBtn.textContent = '儲存';
+            saveBtn.textContent = __('儲存');
         }
     }
 
     async _toggleLock() {
         if (!this.selectedMasterRowId) return;
         const newLocked = !this.isLocked;
-        const action = newLocked ? '鎖定' : '解鎖';
-        if (!confirm('確定要' + action + '此筆資料嗎？' + (newLocked ? '鎖定後將無法修改。' : ''))) return;
+        const confirmMsg = newLocked
+            ? __('確定要鎖定此筆資料嗎？鎖定後將無法修改。')
+            : __('確定要解鎖此筆資料嗎？');
+        if (!confirm(confirmMsg)) return;
 
         try {
             const headers = Object.assign(
@@ -1035,15 +1036,19 @@ class FormGridWidget {
                 await this._loadMasterList();
                 await this._selectMaster(this.selectedMasterRowId);
             } else {
-                alert(action + '失敗: ' + (result.error || ''));
+                alert(newLocked
+                    ? __('鎖定失敗: {msg}', {msg: result.error || ''})
+                    : __('解鎖失敗: {msg}', {msg: result.error || ''}));
             }
         } catch (e) {
-            alert(action + '失敗: ' + e.message);
+            alert(newLocked
+                ? __('鎖定失敗: {msg}', {msg: e.message})
+                : __('解鎖失敗: {msg}', {msg: e.message}));
         }
     }
 
     async _deleteMaster() {
-        if (!confirm('確定要刪除此筆 Master 資料嗎？所有關聯的 Detail 資料也將被刪除。')) return;
+        if (!confirm(__('確定要刪除此筆 Master 資料嗎？所有關聯的 Detail 資料也將被刪除。'))) return;
 
         try {
             const res = await fetch(
@@ -1060,10 +1065,10 @@ class FormGridWidget {
                 this._emitMasterSelect(null);
                 await this._loadMasterList();
             } else {
-                alert('刪除失敗: ' + (result.error || ''));
+                alert(__('刪除失敗: {msg}', {msg: result.error || ''}));
             }
         } catch (e) {
-            alert('刪除失敗: ' + e.message);
+            alert(__('刪除失敗: {msg}', {msg: e.message}));
         }
     }
 
@@ -1072,7 +1077,7 @@ class FormGridWidget {
     async _openMasterModal(mode) {
         if (this._modalOverlay) return;
 
-        const title = '新增 Master - ' + (this.config.title || '');
+        const title = __('新增 Master - {title}', {title: this.config.title || ''});
         const formCols = this._getMasterFormColumns().filter(c => c.column !== 'is_locked');
 
         // 若有 numbering 規則，先取得建議值
@@ -1120,7 +1125,7 @@ class FormGridWidget {
             if (col.column === pkeyCol && suggestedPkey) {
                 const hint = document.createElement('div');
                 hint.className = 'fgw-form-hint';
-                hint.textContent = '建議編號 (可手動修改)';
+                hint.textContent = __('建議編號 (可手動修改)');
                 valueWrap.appendChild(hint);
             }
 
@@ -1145,7 +1150,7 @@ class FormGridWidget {
             }
 
             saveBtn.disabled = true;
-            saveBtn.textContent = '儲存中...';
+            saveBtn.textContent = __('儲存中...');
 
             try {
                 const headers = Object.assign(
@@ -1161,14 +1166,14 @@ class FormGridWidget {
                     this._closeModal();
                     await this._loadMasterList();
                 } else {
-                    alert('新增失敗: ' + (result.error || ''));
+                    alert(__('新增失敗: {msg}', {msg: result.error || ''}));
                     saveBtn.disabled = false;
-                    saveBtn.textContent = '儲存';
+                    saveBtn.textContent = __('儲存');
                 }
             } catch (e) {
-                alert('新增失敗: ' + e.message);
+                alert(__('新增失敗: {msg}', {msg: e.message}));
                 saveBtn.disabled = false;
-                saveBtn.textContent = '儲存';
+                saveBtn.textContent = __('儲存');
             }
         });
     }
@@ -1179,7 +1184,7 @@ class FormGridWidget {
         if (this._modalOverlay) return;
 
         const isEdit = mode === 'edit';
-        const title = (isEdit ? '編輯' : '新增') + ' Detail';
+        const title = isEdit ? __('編輯 Detail') : __('新增 Detail');
         const formCols = this._getDetailFormColumns();
 
         const { overlay, body, saveBtn } = this._createModal(title);
@@ -1193,7 +1198,7 @@ class FormGridWidget {
                 const data = await res.json();
                 if (data.success) rowData = data.data || {};
             } catch (e) {
-                body.innerHTML = '<div class="fgw-form-error">載入資料失敗</div>';
+                body.innerHTML = '<div class="fgw-form-error">' + __('載入資料失敗') + '</div>';
                 return;
             }
         }
@@ -1235,7 +1240,7 @@ class FormGridWidget {
                 valueWrap.appendChild(input);
                 const hint = document.createElement('div');
                 hint.className = 'fgw-form-hint';
-                hint.textContent = '自動填入 (Master PKey)';
+                hint.textContent = __('自動填入 (Master PKey)');
                 valueWrap.appendChild(hint);
             } else {
                 this._renderFieldInput(valueWrap, col, value, this._detailLookupMaps);
@@ -1256,7 +1261,7 @@ class FormGridWidget {
             }
 
             saveBtn.disabled = true;
-            saveBtn.textContent = '儲存中...';
+            saveBtn.textContent = __('儲存中...');
 
             try {
                 let url, method;
@@ -1283,20 +1288,20 @@ class FormGridWidget {
                     this._closeModal();
                     await this._loadDetailRows(isEdit ? this.detailPagination.page : 1);
                 } else {
-                    alert('儲存失敗: ' + (result.error || ''));
+                    alert(__('儲存失敗: {msg}', {msg: result.error || ''}));
                     saveBtn.disabled = false;
-                    saveBtn.textContent = '儲存';
+                    saveBtn.textContent = __('儲存');
                 }
             } catch (e) {
-                alert('儲存失敗: ' + e.message);
+                alert(__('儲存失敗: {msg}', {msg: e.message}));
                 saveBtn.disabled = false;
-                saveBtn.textContent = '儲存';
+                saveBtn.textContent = __('儲存');
             }
         });
     }
 
     async _deleteDetail(rowId) {
-        if (!confirm('確定要刪除此筆 Detail 資料嗎？')) return;
+        if (!confirm(__('確定要刪除此筆 Detail 資料嗎？'))) return;
 
         try {
             const headers = Object.assign({}, this._buildContextHeaders());
@@ -1311,10 +1316,10 @@ class FormGridWidget {
             if (result.success) {
                 await this._loadDetailRows();
             } else {
-                alert('刪除失敗: ' + (result.error || ''));
+                alert(__('刪除失敗: {msg}', {msg: result.error || ''}));
             }
         } catch (e) {
-            alert('刪除失敗: ' + e.message);
+            alert(__('刪除失敗: {msg}', {msg: e.message}));
         }
     }
 
@@ -1348,11 +1353,11 @@ class FormGridWidget {
         footer.className = 'fgw-modal-footer';
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'fgw-btn';
-        cancelBtn.textContent = '取消';
+        cancelBtn.textContent = __('取消');
         cancelBtn.addEventListener('click', () => this._closeModal());
         const saveBtn = document.createElement('button');
         saveBtn.className = 'fgw-btn primary';
-        saveBtn.textContent = '儲存';
+        saveBtn.textContent = __('儲存');
         saveBtn.disabled = true;
         footer.appendChild(cancelBtn);
         footer.appendChild(saveBtn);

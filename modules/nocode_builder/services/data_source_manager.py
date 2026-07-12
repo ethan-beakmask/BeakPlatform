@@ -23,6 +23,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
+from flask_babel import gettext as _
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -102,8 +103,8 @@ class DataSourceManager:
             db_path = _get_db_path(sub_system_sc, source_type)
             if not db_path.exists():
                 raise FileNotFoundError(
-                    f'SQLite 檔案不存在: {db_path} '
-                    f'(子系統 {sub_system_sc} 可能尚未初始化)'
+                    _('SQLite 檔案不存在: %(path)s (子系統 %(sc)s 可能尚未初始化)',
+                      path=db_path, sc=sub_system_sc)
                 )
 
             engine = create_engine(

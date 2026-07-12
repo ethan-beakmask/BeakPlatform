@@ -10,6 +10,7 @@ Data CRUD Module - SubSystem Provision Service
 import logging
 from typing import Dict, Any
 
+from flask_babel import gettext as _
 from sqlalchemy import func
 
 from app import db
@@ -71,7 +72,7 @@ class SubSystemProvisionService:
         """
         try:
             if not name:
-                return {'success': False, 'error': '子系統名稱為空'}
+                return {'success': False, 'error': _('子系統名稱為空')}
 
             with TenantContext(org_sc):
                 # 驗證開發者帳號（有指定時才驗證）
@@ -82,7 +83,7 @@ class SubSystemProvisionService:
                         is_active=True,
                     ).first()
                     if not developer:
-                        return {'success': False, 'error': '開發者帳號不存在或已停用'}
+                        return {'success': False, 'error': _('開發者帳號不存在或已停用')}
 
                 # 產生 code
                 ss_code = cls._generate_code(org_sc, name)
@@ -214,7 +215,7 @@ class SubSystemProvisionService:
             with TenantContext(org_sc):
                 ss = cls._find_by_code(org_sc, sub_system_code)
                 if not ss:
-                    return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
+                    return {'success': False, 'error': _('子系統 %(code)s 不存在', code=sub_system_code)}
 
                 ss.is_active = False
                 ss.status = 'draft'
@@ -252,7 +253,7 @@ class SubSystemProvisionService:
             with TenantContext(org_sc):
                 ss = cls._find_by_code(org_sc, sub_system_code)
                 if not ss:
-                    return {'success': False, 'error': f'子系統 {sub_system_code} 不存在'}
+                    return {'success': False, 'error': _('子系統 %(code)s 不存在', code=sub_system_code)}
 
                 # 停用選單
                 cls._set_menu_active(ss.menu_item_secure_code, org_sc, False)

@@ -123,7 +123,7 @@ class SiteMenuWidget {
     // =================================================================
 
     _renderSkeleton() {
-        this.container.innerHTML = '<div class="smw-root"><div class="smw-loading">載入中...</div></div>';
+        this.container.innerHTML = '<div class="smw-root"><div class="smw-loading">' + __('載入中...') + '</div></div>';
     }
 
     _renderMenu() {
@@ -153,7 +153,7 @@ class SiteMenuWidget {
         if (this.config.showWelcome) {
             var welcomeNode = {
                 secure_code: '_welcome',
-                name: '\u9996\u9801',       // 首頁
+                name: __('首頁'),       //首頁
                 icon: 'fas fa-home',
                 children: [],
                 _isWelcome: true
@@ -168,7 +168,7 @@ class SiteMenuWidget {
             } else {
                 var empty = document.createElement('div');
                 empty.className = 'smw-empty';
-                empty.innerHTML = '<i class="bi bi-menu-button-wide smw-empty-icon"></i><span>無可用選單項目</span>';
+                empty.innerHTML = '<i class="bi bi-menu-button-wide smw-empty-icon"></i><span>' + __('無可用選單項目') + '</span>';
                 root.appendChild(empty);
             }
             this.container.innerHTML = '';
@@ -212,17 +212,17 @@ class SiteMenuWidget {
 
         // Mock 也支援 welcome
         if (this.config.showWelcome) {
-            mockNodes.push({ secure_code: '_mw', name: '\u9996\u9801', icon: 'fas fa-home', children: [], _isWelcome: true });
+            mockNodes.push({ secure_code: '_mw', name: __('首頁'), icon: 'fas fa-home', children: [], _isWelcome: true });
         }
 
         mockNodes.push(
-            { secure_code: '_m2', name: '\u529f\u80fd', subtitle: '\u7ba1\u7406\u4e2d\u5fc3', icon: 'fas fa-th-large', children: [
-                { secure_code: '_m2a', name: '\u9805\u76ee A', icon: 'fas fa-file-alt', children: [] },
-                { secure_code: '_m2b', name: '\u9805\u76ee B', icon: 'fas fa-chart-line', children: [] },
-                { secure_code: '_m2c', name: '\u9805\u76ee C', icon: 'fas fa-database', children: [] },
+            { secure_code: '_m2', name: __('功能'), subtitle: __('管理中心'), icon: 'fas fa-th-large', children: [
+                { secure_code: '_m2a', name: __('項目 A'), icon: 'fas fa-file-alt', children: [] },
+                { secure_code: '_m2b', name: __('項目 B'), icon: 'fas fa-chart-line', children: [] },
+                { secure_code: '_m2c', name: __('項目 C'), icon: 'fas fa-database', children: [] },
             ]},
-            { secure_code: '_m3', name: '\u5831\u8868', subtitle: '\u6578\u64da\u5206\u6790', icon: 'fas fa-chart-bar', children: [] },
-            { secure_code: '_m4', name: '\u8a2d\u5b9a', subtitle: '\u7cfb\u7d71\u7ba1\u7406', icon: 'fas fa-cog', children: [] }
+            { secure_code: '_m3', name: __('報表'), subtitle: __('數據分析'), icon: 'fas fa-chart-bar', children: [] },
+            { secure_code: '_m4', name: __('設定'), subtitle: __('系統管理'), icon: 'fas fa-cog', children: [] }
         );
 
         // Mock compact 偵測

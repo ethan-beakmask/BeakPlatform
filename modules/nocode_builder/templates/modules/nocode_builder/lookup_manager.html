@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}選項-清單-資料樹{% endblock %}
+{% block title %}{{ _('選項-清單-資料樹') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/vendor/beak-trellis/beak-trellis.css">
@@ -201,31 +201,31 @@
 {% block content %}
 <div class="lk-page" x-data="lookupManager()" x-cloak>
 
-    <h1>選項-清單-資料樹</h1>
-    <p class="lk-desc">管理 Lookup Table 類別與選項，供下拉選單、表單欄位使用</p>
-    <p class="lk-desc" style="margin-top: -10px; color: #856404;">雖然選項容許填入多種資料形態，建議還是同一樹系都用相同的資料型別，以避免前端取得空值</p>
+    <h1>{{ _('選項-清單-資料樹') }}</h1>
+    <p class="lk-desc">{{ _('管理 Lookup Table 類別與選項，供下拉選單、表單欄位使用') }}</p>
+    <p class="lk-desc" style="margin-top: -10px; color: #856404;">{{ _('雖然選項容許填入多種資料形態，建議還是同一樹系都用相同的資料型別，以避免前端取得空值') }}</p>
 
     <div class="lk-layout">
 
         <!-- 左側：類別列表 -->
         <div class="lk-sidebar">
             <div class="lk-sidebar-header">
-                <span>類別</span>
-                <button type="button" class="btn btn-primary btn-sm" @click="openCategoryModal()">+ 新增</button>
+                <span>{{ _('類別') }}</span>
+                <button type="button" class="btn btn-primary btn-sm" @click="openCategoryModal()">+ {{ _('新增') }}</button>
             </div>
             <!-- 類別操作區（選中時顯示） -->
             <div class="lk-sidebar-actions" x-show="selectedCat">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openCategoryModal(selectedCat)" :disabled="selectedCat && selectedCat.is_system">編輯</button>
+                <button type="button" class="btn btn-secondary btn-sm" @click="openCategoryModal(selectedCat)" :disabled="selectedCat && selectedCat.is_system">{{ _('編輯') }}</button>
                 <button type="button" class="btn btn-secondary btn-sm" @click="toggleCategoryActive()" :disabled="selectedCat && selectedCat.is_system"
-                        x-text="selectedCat && selectedCat.is_active === false ? '啟用' : '停用'"></button>
+                        x-text="selectedCat && selectedCat.is_active === false ? __('啟用') : __('停用')"></button>
                 <button type="button" class="btn btn-danger btn-sm" @click="deleteCategory()"
-                        :disabled="!selectedCat || selectedCat.is_system || selectedCat.is_active !== false">刪除</button>
+                        :disabled="!selectedCat || selectedCat.is_system || selectedCat.is_active !== false">{{ _('刪除') }}</button>
             </div>
             <div class="lk-search">
-                <input type="text" x-model="catFilter" placeholder="搜尋類別...">
+                <input type="text" x-model="catFilter" placeholder="{{ _('搜尋類別...') }}">
             </div>
             <div class="lk-cat-list">
-                <div x-show="loading" class="lk-loading">載入中...</div>
+                <div x-show="loading" class="lk-loading">{{ _('載入中...') }}</div>
                 <template x-for="cat in filteredCategories" :key="cat.secure_code">
                     <div class="lk-cat-item"
                          :class="{
@@ -237,14 +237,14 @@
                             <span x-text="cat.name"></span>
                             <span class="lk-cat-badges">
                                 <span x-show="cat.is_system" class="lk-badge-sys">SYS</span>
-                                <span x-show="cat.is_hierarchical" class="lk-badge-hier">階層</span>
+                                <span x-show="cat.is_hierarchical" class="lk-badge-hier">{{ _('階層') }}</span>
                             </span>
                         </div>
                         <div class="lk-cat-code" x-text="cat.code"></div>
                     </div>
                 </template>
                 <div x-show="!loading && filteredCategories.length === 0" class="lk-cat-empty">
-                    無符合的類別
+                    {{ _('無符合的類別') }}
                 </div>
             </div>
         </div>
@@ -252,7 +252,7 @@
         <!-- 右側：選項 TreeGrid -->
         <div class="lk-detail">
             <template x-if="!selectedCat">
-                <div class="lk-placeholder">請從左側選擇一個類別</div>
+                <div class="lk-placeholder">{{ _('請從左側選擇一個類別') }}</div>
             </template>
             <template x-if="selectedCat">
                 <div style="display: flex; flex-direction: column; height: 100%;">
@@ -260,17 +260,17 @@
                         <div class="lk-cat-info">
                             <strong x-text="selectedCat.name"></strong>
                             <code x-text="selectedCat.code"></code>
-                            <span x-show="selectedCat.is_active === false" style="color: var(--color-danger); font-size: 0.8em; margin-left: 6px;">(已停用)</span>
+                            <span x-show="selectedCat.is_active === false" style="color: var(--color-danger); font-size: 0.8em; margin-left: 6px;">{{ _('(已停用)') }}</span>
                         </div>
                         <div>
-                            <button type="button" class="btn btn-primary btn-sm" @click="openItemModal()" :disabled="selectedCat.is_active === false">+ 新增選項</button>
+                            <button type="button" class="btn btn-primary btn-sm" @click="openItemModal()" :disabled="selectedCat.is_active === false">+ {{ _('新增選項') }}</button>
                         </div>
                     </div>
                     <div x-show="selectedCat.description" class="lk-detail-desc" x-text="selectedCat.description"></div>
                     <div class="lk-detail-body">
-                        <div x-show="itemsLoading" class="lk-loading">載入選項中...</div>
+                        <div x-show="itemsLoading" class="lk-loading">{{ _('載入選項中...') }}</div>
                         <div x-show="!itemsLoading && items.length === 0" class="lk-empty-items">
-                            此類別尚無選項，點擊 [+ 新增選項] 開始建立
+                            {{ _('此類別尚無選項，點擊 [+ 新增選項] 開始建立') }}
                         </div>
                         <div id="bt-lookup-tree" x-show="!itemsLoading && items.length > 0"
                              style="height: 100%; overflow: hidden;"></div>
@@ -285,24 +285,24 @@
         <div class="modal-overlay">
             <div class="modal-content modal-sm">
                 <div class="modal-header">
-                    <h3 x-text="catForm.secure_code ? '編輯類別' : '新增類別'"></h3>
+                    <h3 x-text="catForm.secure_code ? __('編輯類別') : __('新增類別')"></h3>
                     <button type="button" class="modal-close" @click="showCatModal = false">&times;</button>
                 </div>
                 <div class="modal-body">
                     <table class="form-table">
                         <tr>
-                            <th>名稱 *</th>
+                            <th>{{ _('名稱') }} *</th>
                             <td>
                                 <input type="text" class="form-control" x-model="catForm.name"
-                                       placeholder="例: 優先程度"
+                                       placeholder="{{ _('例: 優先程度') }}"
                                        @input="if(!catForm.secure_code) ciGenerateCodeDebounced(catForm.name)">
                             </td>
                         </tr>
                         <tr>
-                            <th>代碼 *</th>
+                            <th>{{ _('代碼') }} *</th>
                             <td>
                                 <input type="text" class="form-control" x-model="catForm.code"
-                                       :placeholder="_ci_generatedCode || '例: PRIORITY'"
+                                       :placeholder="_ci_generatedCode || __('例: PRIORITY')"
                                        :disabled="!!catForm.secure_code"
                                        style="font-family: monospace;"
                                        @input="if(!catForm.secure_code) ciValidateCode(catForm.code)">
@@ -310,20 +310,20 @@
                             </td>
                         </tr>
                         <tr>
-                            <th>說明</th>
-                            <td><textarea class="form-control" rows="2" x-model="catForm.description" placeholder="類別用途說明"></textarea></td>
+                            <th>{{ _('說明') }}</th>
+                            <td><textarea class="form-control" rows="2" x-model="catForm.description" placeholder="{{ _('類別用途說明') }}"></textarea></td>
                         </tr>
                         <tr>
-                            <th>階層</th>
-                            <td><label><input type="checkbox" x-model="catForm.is_hierarchical"> 支援階層結構（樹狀下拉）</label></td>
+                            <th>{{ _('階層') }}</th>
+                            <td><label><input type="checkbox" x-model="catForm.is_hierarchical"> {{ _('支援階層結構（樹狀下拉）') }}</label></td>
                         </tr>
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="showCatModal = false">取消</button>
+                    <button type="button" class="btn btn-secondary" @click="showCatModal = false">{{ _('取消') }}</button>
                     <button type="button" class="btn btn-primary" @click="saveCategory()" :disabled="catSaving">
-                        <span x-show="!catSaving">確認</span>
-                        <span x-show="catSaving">處理中...</span>
+                        <span x-show="!catSaving">{{ _('確認') }}</span>
+                        <span x-show="catSaving">{{ _('處理中...') }}</span>
                     </button>
                 </div>
             </div>
@@ -335,24 +335,24 @@
         <div class="modal-overlay">
             <div class="modal-content" style="width: 620px; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
-                    <h3 x-text="itemForm.secure_code ? '編輯選項' : '新增選項'"></h3>
+                    <h3 x-text="itemForm.secure_code ? __('編輯選項') : __('新增選項')"></h3>
                     <button type="button" class="modal-close" @click="showItemModal = false">&times;</button>
                 </div>
                 <div class="modal-body" style="overflow-y: auto; flex: 1;">
                     <table class="form-table">
                         <tr>
-                            <th>顯示文字 *</th>
+                            <th>{{ _('顯示文字') }} *</th>
                             <td>
                                 <input type="text" class="form-control" x-model="itemForm.label"
-                                       placeholder="例: 高"
+                                       placeholder="{{ _('例: 高') }}"
                                        @input="if(!itemForm.secure_code) ciGenerateCodeDebounced(itemForm.label)">
                             </td>
                         </tr>
                         <tr>
-                            <th>代碼 *</th>
+                            <th>{{ _('代碼') }} *</th>
                             <td>
                                 <input type="text" class="form-control" x-model="itemForm.code"
-                                       :placeholder="_ci_generatedCode || '例: HIGH'"
+                                       :placeholder="_ci_generatedCode || __('例: HIGH')"
                                        :disabled="!!itemForm.secure_code"
                                        style="font-family: monospace;"
                                        @input="if(!itemForm.secure_code) ciValidateCode(itemForm.code)">
@@ -360,10 +360,10 @@
                             </td>
                         </tr>
                         <tr x-show="selectedCat && selectedCat.is_hierarchical">
-                            <th>父項</th>
+                            <th>{{ _('父項') }}</th>
                             <td>
                                 <select class="form-control" x-model="itemForm.parent_code">
-                                    <option value="">-- 無 (頂層) --</option>
+                                    <option value="">{{ _('-- 無 (頂層) --') }}</option>
                                     <template x-for="pi in items.filter(i => !itemForm.secure_code || i.secure_code !== itemForm.secure_code)" :key="pi.secure_code">
                                         <option :value="pi.code" x-text="pi.code + ' - ' + pi.label"></option>
                                     </template>
@@ -371,37 +371,37 @@
                             </td>
                         </tr>
                         <tr>
-                            <th>排序</th>
+                            <th>{{ _('排序') }}</th>
                             <td><input type="number" class="form-control" x-model.number="itemForm.sort_order" min="0"></td>
                         </tr>
                     </table>
 
                     <!-- 多型別值欄位 -->
                     <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
-                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">值欄位</legend>
+                        <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">{{ _('值欄位') }}</legend>
                         <table class="form-table" style="margin: 0;">
                             <tr>
-                                <th style="width: 80px;">字串</th>
-                                <td><input type="text" class="form-control" x-model="itemForm.value_str" maxlength="500" placeholder="文字值 (最長 500 字元)"></td>
+                                <th style="width: 80px;">{{ _('字串') }}</th>
+                                <td><input type="text" class="form-control" x-model="itemForm.value_str" maxlength="500" placeholder="{{ _('文字值 (最長 500 字元)') }}"></td>
                             </tr>
                             <tr>
-                                <th>整數</th>
-                                <td><input type="number" class="form-control" x-model="itemForm.value_int" step="1" placeholder="整數值"></td>
+                                <th>{{ _('整數') }}</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_int" step="1" placeholder="{{ _('整數值') }}"></td>
                             </tr>
                             <tr>
-                                <th>小數</th>
-                                <td><input type="number" class="form-control" x-model="itemForm.value_decimal" step="0.01" placeholder="小數值 (2 位)"></td>
+                                <th>{{ _('小數') }}</th>
+                                <td><input type="number" class="form-control" x-model="itemForm.value_decimal" step="0.01" placeholder="{{ _('小數值 (2 位)') }}"></td>
                             </tr>
                             <tr>
-                                <th>日期</th>
+                                <th>{{ _('日期') }}</th>
                                 <td><input type="date" class="form-control" x-model="itemForm.value_date"></td>
                             </tr>
                             <tr>
-                                <th>時間</th>
+                                <th>{{ _('時間') }}</th>
                                 <td><input type="time" class="form-control" x-model="itemForm.value_time"></td>
                             </tr>
                             <tr>
-                                <th>日期時間</th>
+                                <th>{{ _('日期時間') }}</th>
                                 <td><input type="datetime-local" class="form-control" x-model="itemForm.value_datetime"></td>
                             </tr>
                         </table>
@@ -410,12 +410,12 @@
                     <!-- JSON 附加資料 -->
                     <fieldset style="border: 1px solid var(--color-border); padding: 10px 12px; margin: 12px 0 0 0;">
                         <legend style="font-size: 0.85em; font-weight: 600; padding: 0 6px; color: var(--color-text-muted);">
-                            JSON 附加資料
+                            {{ _('JSON 附加資料') }}
                             <span style="float: right; font-weight: normal;">
                                 <button type="button" class="btn btn-secondary" style="padding: 0 6px; font-size: 0.75em; line-height: 18px;"
                                         @click="toggleJsonMode()">
-                                    <span x-show="itemForm.jsonMode === 'simple'">原始模式</span>
-                                    <span x-show="itemForm.jsonMode === 'raw'">簡易模式</span>
+                                    <span x-show="itemForm.jsonMode === 'simple'">{{ _('原始模式') }}</span>
+                                    <span x-show="itemForm.jsonMode === 'raw'">{{ _('簡易模式') }}</span>
                                 </button>
                             </span>
                         </legend>
@@ -427,7 +427,7 @@
                                     <tr style="background: var(--color-bg-header);">
                                         <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 30%;">Key</th>
                                         <th style="padding: 3px 6px; text-align: left; border: 1px solid var(--color-border); width: 40%;">Value</th>
-                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 20%;">型別</th>
+                                        <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 20%;">{{ _('型別') }}</th>
                                         <th style="padding: 3px 6px; text-align: center; border: 1px solid var(--color-border); width: 10%;"></th>
                                     </tr>
                                 </thead>
@@ -453,10 +453,10 @@
                                             <td style="padding: 2px; border: 1px solid var(--color-border);">
                                                 <select class="form-control" x-model="pair.type"
                                                         style="font-size: 0.8em; padding: 1px 2px;">
-                                                    <option value="auto">自動</option>
-                                                    <option value="string">字串</option>
-                                                    <option value="number">數字</option>
-                                                    <option value="boolean">布林</option>
+                                                    <option value="auto">{{ _('自動') }}</option>
+                                                    <option value="string">{{ _('字串') }}</option>
+                                                    <option value="number">{{ _('數字') }}</option>
+                                                    <option value="boolean">{{ _('布林') }}</option>
                                                 </select>
                                             </td>
                                             <td style="padding: 2px; border: 1px solid var(--color-border); text-align: center;">
@@ -468,7 +468,7 @@
                                 </tbody>
                             </table>
                             <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 4px; font-size: 0.8em;"
-                                    @click="itemForm.jsonPairs.push({key:'', value:'', type:'auto'})">+ 新增</button>
+                                    @click="itemForm.jsonPairs.push({key:'', value:'', type:'auto'})">+ {{ _('新增') }}</button>
                         </div>
 
                         <!-- 原始模式: textarea -->
@@ -481,16 +481,16 @@
 
                     <table class="form-table" style="margin-top: 12px;">
                         <tr>
-                            <th style="width: 80px;">狀態</th>
-                            <td><label><input type="checkbox" x-model="itemForm.is_active"> 啟用</label></td>
+                            <th style="width: 80px;">{{ _('狀態') }}</th>
+                            <td><label><input type="checkbox" x-model="itemForm.is_active"> {{ _('啟用') }}</label></td>
                         </tr>
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="showItemModal = false">取消</button>
+                    <button type="button" class="btn btn-secondary" @click="showItemModal = false">{{ _('取消') }}</button>
                     <button type="button" class="btn btn-primary" @click="saveItem()" :disabled="itemSaving">
-                        <span x-show="!itemSaving">確認</span>
-                        <span x-show="itemSaving">處理中...</span>
+                        <span x-show="!itemSaving">{{ _('確認') }}</span>
+                        <span x-show="itemSaving">{{ _('處理中...') }}</span>
                     </button>
                 </div>
             </div>

@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any
 
+from flask_babel import gettext as _
 from flask_login import current_user
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -77,7 +78,7 @@ class ProjectService:
 
         name = data.get('name', '').strip()
         if not name:
-            return {'success': False, 'error': '名稱為必填'}
+            return {'success': False, 'error': _('名稱為必填')}
 
         layout_mode = data.get('layout_mode', 'grid')
         if layout_mode not in ('grid', 'free'):
@@ -112,7 +113,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         update_fields = {}
         for field in ('name', 'description', 'icon'):
@@ -120,7 +121,7 @@ class ProjectService:
                 update_fields[field] = data[field]
 
         if 'name' in update_fields and not update_fields['name'].strip():
-            return {'success': False, 'error': '名稱不可為空'}
+            return {'success': False, 'error': _('名稱不可為空')}
 
         ResourceGateway.update(ss, check_permission=False, **update_fields)
 
@@ -153,7 +154,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         org = get_current_org()
         org_sc = org.secure_code if org else ss.org_secure_code
@@ -200,7 +201,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         ResourceGateway.update(ss, check_permission=False, status='published')
 
@@ -231,7 +232,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         ResourceGateway.update(ss, check_permission=False, status='draft')
 
@@ -262,7 +263,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         developer_scs = ss.developers or []
         developers = []
@@ -294,7 +295,7 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         user = User.query.filter_by(
             secure_code=user_sc,
@@ -302,11 +303,11 @@ class ProjectService:
             is_active=True,
         ).first()
         if not user:
-            return {'success': False, 'error': '用戶不存在'}
+            return {'success': False, 'error': _('用戶不存在')}
 
         developers = copy.deepcopy(ss.developers or [])
         if user_sc in developers:
-            return {'success': False, 'error': '該用戶已是開發者'}
+            return {'success': False, 'error': _('該用戶已是開發者')}
 
         developers.append(user_sc)
         ss.developers = developers
@@ -339,14 +340,14 @@ class ProjectService:
             check_permission=False,
         )
         if not ss or ss.is_deleted:
-            return {'success': False, 'error': '開發案不存在'}
+            return {'success': False, 'error': _('開發案不存在')}
 
         developers = copy.deepcopy(ss.developers or [])
         if user_sc not in developers:
-            return {'success': False, 'error': '該用戶不是開發者'}
+            return {'success': False, 'error': _('該用戶不是開發者')}
 
         if len(developers) <= 1:
-            return {'success': False, 'error': '至少需要保留一位開發者'}
+            return {'success': False, 'error': _('至少需要保留一位開發者')}
 
         developers.remove(user_sc)
         ss.developers = developers

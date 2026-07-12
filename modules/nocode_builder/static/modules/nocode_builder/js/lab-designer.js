@@ -210,7 +210,7 @@ function labDesigner() {
 
         addContextOutput() {
             if (!this.newOutputKey.trim() || !this.newOutputCol.trim()) {
-                alert('請填寫 Context Key 和欄位');
+                alert(__('請填寫 Context Key 和欄位'));
                 return;
             }
             this.settingContextOutputs.push({
@@ -228,7 +228,7 @@ function labDesigner() {
 
         addContextInput() {
             if (!this.newInputKey.trim() || !this.newInputCol.trim()) {
-                alert('請填寫 Context Key 和篩選欄位');
+                alert(__('請填寫 Context Key 和篩選欄位'));
                 return;
             }
             this.settingContextInputs.push({
@@ -307,18 +307,18 @@ function labDesigner() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('已儲存');
+                    alert(__('已儲存'));
                 } else {
-                    alert('儲存失敗: ' + (data.error || ''));
+                    alert(__('儲存失敗: {msg}', {msg: data.error || ''}));
                 }
             } catch (e) {
-                alert('儲存失敗: ' + e.message);
+                alert(__('儲存失敗: {msg}', {msg: e.message}));
             }
         },
 
         async saveAsPage() {
             if (!this.saveAsName.trim()) {
-                alert('請輸入頁面名稱');
+                alert(__('請輸入頁面名稱'));
                 return;
             }
             const layout = this._buildLayoutJson();
@@ -339,12 +339,12 @@ function labDesigner() {
                     this.showSaveAsModal = false;
                     // 更新 URL
                     history.replaceState(null, '', window.__BP + '/nocode-builder/lab/' + this.pageSecureCode);
-                    alert('已儲存');
+                    alert(__('已儲存'));
                 } else {
-                    alert('儲存失敗: ' + (data.error || ''));
+                    alert(__('儲存失敗: {msg}', {msg: data.error || ''}));
                 }
             } catch (e) {
-                alert('儲存失敗: ' + e.message);
+                alert(__('儲存失敗: {msg}', {msg: e.message}));
             }
         },
 
@@ -372,7 +372,7 @@ function labDesigner() {
                 const res = await fetch(window.__BP + '/api/nocode-builder/pages/' + secureCode);
                 const data = await res.json();
                 if (!data.success) {
-                    alert('載入失敗: ' + (data.error || ''));
+                    alert(__('載入失敗: {msg}', {msg: data.error || ''}));
                     return;
                 }
                 this.pageSecureCode = data.data.secure_code;
@@ -387,7 +387,7 @@ function labDesigner() {
                 this._clearAll();
                 this._loadLayoutWidgets(layout.widgets || []);
             } catch (e) {
-                alert('載入失敗: ' + e.message);
+                alert(__('載入失敗: {msg}', {msg: e.message}));
             }
         },
 
@@ -462,7 +462,7 @@ function labDesigner() {
         // 預覽
         previewLayout() {
             if (!this.pageSecureCode) {
-                alert('請先儲存頁面');
+                alert(__('請先儲存頁面'));
                 return;
             }
             window.open(window.__BP + '/nocode-builder/pages/' + this.pageSecureCode, '_blank');
@@ -471,7 +471,7 @@ function labDesigner() {
         // 發布
         async publishPage() {
             if (!this.pageSecureCode) {
-                alert('請先儲存頁面');
+                alert(__('請先儲存頁面'));
                 return;
             }
             try {
@@ -481,19 +481,19 @@ function labDesigner() {
                 const data = await res.json();
                 if (data.success) {
                     this.pageStatus = 'published';
-                    alert('頁面已發布\n上線版 URL: /p/' + this.pageSecureCode);
+                    alert(__('頁面已發布\n上線版 URL: {url}', {url: `/p/${this.pageSecureCode}`}));
                 } else {
-                    alert('發布失敗: ' + (data.error || ''));
+                    alert(__('發布失敗: {msg}', {msg: data.error || ''}));
                 }
             } catch (e) {
-                alert('發布失敗: ' + e.message);
+                alert(__('發布失敗: {msg}', {msg: e.message}));
             }
         },
 
         // 取消發布
         async unpublishPage() {
             if (!this.pageSecureCode) return;
-            if (!confirm('確定要取消發布？取消後 /p/ 連結將無法存取。')) return;
+            if (!confirm(__('確定要取消發布？取消後 /p/ 連結將無法存取。'))) return;
             try {
                 const res = await fetch(window.__BP + '/api/nocode-builder/pages/' + this.pageSecureCode + '/unpublish', {
                     method: 'PATCH',
@@ -501,12 +501,12 @@ function labDesigner() {
                 const data = await res.json();
                 if (data.success) {
                     this.pageStatus = 'draft';
-                    alert('已取消發布');
+                    alert(__('已取消發布'));
                 } else {
-                    alert('取消發布失敗: ' + (data.error || ''));
+                    alert(__('取消發布失敗: {msg}', {msg: data.error || ''}));
                 }
             } catch (e) {
-                alert('取消發布失敗: ' + e.message);
+                alert(__('取消發布失敗: {msg}', {msg: e.message}));
             }
         },
 

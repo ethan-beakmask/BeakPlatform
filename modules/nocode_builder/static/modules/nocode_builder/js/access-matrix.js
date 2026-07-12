@@ -8,12 +8,12 @@
 function accessMatrixManager(subSystemSc) {
     var ROLES = ['GUEST', 'MANAGER', 'DEPUTY', 'PROXY1', 'PROXY2', 'MEMBER'];
     var ROLE_LABELS = {
-        'GUEST': 'GUEST (任何人)',
-        'MANAGER': 'MANAGER (團長)',
-        'DEPUTY': 'DEPUTY (副團長)',
-        'PROXY1': 'PROXY1 (代理一)',
-        'PROXY2': 'PROXY2 (代理二)',
-        'MEMBER': 'MEMBER (團員)',
+        'GUEST': __('GUEST (任何人)'),
+        'MANAGER': __('MANAGER (團長)'),
+        'DEPUTY': __('DEPUTY (副團長)'),
+        'PROXY1': __('PROXY1 (代理一)'),
+        'PROXY2': __('PROXY2 (代理二)'),
+        'MEMBER': __('MEMBER (團員)'),
     };
 
     return {
@@ -34,13 +34,13 @@ function accessMatrixManager(subSystemSc) {
                 var res = await fetch(window.__BP + '/api/nocode-builder/sub-systems/' + subSystemSc + '/site-map');
                 var json = await res.json();
                 if (!json.success) {
-                    this.showToast(json.error || '載入失敗', 'error');
+                    this.showToast(json.error || __('載入失敗'), 'error');
                     this.loading = false;
                     return;
                 }
                 this._buildMatrix(json.data || []);
             } catch (e) {
-                this.showToast('載入失敗: ' + e.message, 'error');
+                this.showToast(__('載入失敗: {msg}', {msg: e.message}), 'error');
             }
             this.loading = false;
         },
@@ -78,13 +78,13 @@ function accessMatrixManager(subSystemSc) {
             var data = toTrellisData(tree);
             if (data.length === 0) {
                 var el = document.getElementById('access-matrix');
-                if (el) el.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">尚無網站地圖節點</div>';
+                if (el) el.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">' + __('尚無網站地圖節點') + '</div>';
                 return;
             }
 
             // 建立 BeakTrellis columns
             var columns = [
-                { id: '_tree', label: '頁面', width: '260px' },
+                { id: '_tree', label: __('頁面'), width: '260px' },
             ];
 
             ROLES.forEach(function(role) {
@@ -210,9 +210,9 @@ function accessMatrixManager(subSystemSc) {
             }
 
             if (failed > 0) {
-                this.showToast(failed + ' 筆更新失敗', 'error');
+                this.showToast(__('{n} 筆更新失敗', {n: failed}), 'error');
             } else {
-                this.showToast('已儲存 ' + updates.length + ' 筆准入設定', 'success');
+                this.showToast(__('已儲存 {n} 筆准入設定', {n: updates.length}), 'success');
                 // 更新 original 記錄
                 Object.keys(this._nodeMap).forEach(function(sc) {
                     self._nodeMap[sc].original = self._nodeMap[sc].access_roles.slice();

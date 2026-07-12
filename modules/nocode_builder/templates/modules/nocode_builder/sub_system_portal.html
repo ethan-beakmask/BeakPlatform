@@ -77,19 +77,19 @@ window.__PORTAL_CONFIG = {
 
 <div class="portal-container" x-data="subSystemPortal()" x-cloak>
     <div class="portal-header">
-        <h1 x-text="subSystemName || '子系統'"></h1>
+        <h1 x-text="subSystemName || __('子系統')"></h1>
         <div class="portal-header-meta">
-            <span>角色: <span class="role-badge" :class="isAdmin ? 'admin' : ''"
+            <span>{{ _('角色:') }} <span class="role-badge" :class="isAdmin ? 'admin' : ''"
                           x-text="roleLabel"></span></span>
-            <span x-text="pages.length + ' 個頁面'"></span>
+            <span x-text="__('{n} 個頁面', {n: pages.length})"></span>
         </div>
     </div>
 
-    <div class="portal-loading" x-show="loading">載入中...</div>
+    <div class="portal-loading" x-show="loading">{{ _('載入中...') }}</div>
     <div class="portal-error" x-show="error" x-text="error"></div>
 
     <div class="portal-empty" x-show="!loading && !error && pages.length === 0">
-        目前沒有可用的頁面
+        {{ _('目前沒有可用的頁面') }}
     </div>
 
     <div class="portal-cards" x-show="!loading && !error && pages.length > 0">

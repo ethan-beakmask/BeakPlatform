@@ -51,7 +51,7 @@ function subSystemConfigManager() {
         async init() {
             const config = window.__SSC_CONFIG || {};
             this.secureCode = config.secureCode || '';
-            this.orgName = config.orgName || '企業';
+            this.orgName = config.orgName || __('企業');
 
             await Promise.all([
                 this.loadSubSystem(),
@@ -82,7 +82,7 @@ function subSystemConfigManager() {
 
         async save() {
             if (!this.form.name.trim()) {
-                this.showToast('名稱不可為空', 'error');
+                this.showToast(__('名稱不可為空'), 'error');
                 return;
             }
             try {
@@ -93,12 +93,12 @@ function subSystemConfigManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('已儲存', 'success');
+                    this.showToast(__('已儲存'), 'success');
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -143,12 +143,12 @@ function subSystemConfigManager() {
                         this.resetNewRule();
                         this.$nextTick(() => this._loadPermTargets(this.newRule.grant_type));
                     }
-                    this.showToast('政策組已建立，可直接新增規則', 'success');
+                    this.showToast(__('政策組已建立，可直接新增規則'), 'success');
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -160,7 +160,7 @@ function subSystemConfigManager() {
 
         async savePolicy() {
             if (!this.policyForm.name.trim()) {
-                this.showToast('政策組名稱不可為空', 'error');
+                this.showToast(__('政策組名稱不可為空'), 'error');
                 return;
             }
             try {
@@ -174,20 +174,20 @@ function subSystemConfigManager() {
                 const data = await res.json();
                 if (data.success) {
                     this.showPolicyModal = false;
-                    this.showToast('政策組已更新', 'success');
+                    this.showToast(__('政策組已更新'), 'success');
                     await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('更新失敗: ' + e.message, 'error');
+                this.showToast(__('更新失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async deletePolicy(pg) {
             const msg = pg.usage_count > 0
-                ? '此政策組有 ' + pg.usage_count + ' 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?'
-                : '確定刪除此政策組?';
+                ? __('此政策組有 {n} 個網頁正在使用，刪除後這些網頁將變為禁止狀態。確定刪除?', {n: pg.usage_count})
+                : __('確定刪除此政策組?');
             if (!confirm(msg)) return;
 
             try {
@@ -198,16 +198,16 @@ function subSystemConfigManager() {
                 );
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '已刪除', 'success');
+                    this.showToast(data.message || __('已刪除'), 'success');
                     if (this.showRulePanel === pg.secure_code) {
                         this.showRulePanel = null;
                     }
                     await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -407,7 +407,7 @@ function subSystemConfigManager() {
 
         async addRule(pgSc) {
             if (!this.newRule.grant_target) {
-                this.showToast('請選擇目標', 'error');
+                this.showToast(__('請選擇目標'), 'error');
                 return;
             }
 
@@ -435,7 +435,7 @@ function subSystemConfigManager() {
                 );
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('規則已新增', 'success');
+                    this.showToast(__('規則已新增'), 'success');
                     // 清除選取狀態，保持樹不動
                     this.newRule.grant_target = '';
                     this.newRule._selectedName = '';
@@ -450,15 +450,15 @@ function subSystemConfigManager() {
                     }
                     await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '新增失敗', 'error');
+                    this.showToast(data.error || __('新增失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
+                this.showToast(__('新增失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
         async deleteRule(pgSc, ruleSc) {
-            if (!confirm('確定刪除此規則?')) return;
+            if (!confirm(__('確定刪除此規則?'))) return;
             try {
                 const res = await fetch(
                     window.__BP + '/api/nocode-builder/sub-systems/' + this.secureCode
@@ -467,13 +467,13 @@ function subSystemConfigManager() {
                 );
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('規則已刪除', 'success');
+                    this.showToast(__('規則已刪除'), 'success');
                     await this.loadPolicies();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: {msg}', {msg: e.message}), 'error');
             }
         },
 
@@ -482,7 +482,7 @@ function subSystemConfigManager() {
         // =================================================================
 
         getPermTypeLabel(type) {
-            return { department: '部門', group: '社群', user: '個人' }[type] || type;
+            return { department: __('部門'), group: __('社群'), user: __('個人') }[type] || type;
         },
 
         getPermTypeCss(type) {
@@ -491,12 +491,12 @@ function subSystemConfigManager() {
 
         ruleSummary(pg) {
             const rules = pg.rules || [];
-            if (!rules.length) return '(無規則)';
+            if (!rules.length) return __('(無規則)');
             const items = rules.slice(0, 3).map(r => {
                 const label = this.getPermTypeLabel(r.grant_type);
                 return label + ':' + (r.grant_target_name || r.grant_target);
             });
-            if (rules.length > 3) items.push('...(共' + rules.length + '條)');
+            if (rules.length > 3) items.push(__('...(共{n}條)', {n: rules.length}));
             return items.join(', ');
         },
 

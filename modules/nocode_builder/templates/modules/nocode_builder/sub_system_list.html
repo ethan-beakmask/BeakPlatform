@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}子系統管理 - 資料表工具{% endblock %}
+{% block title %}{{ _('子系統管理') }} - {{ _('資料表工具') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/nocode_builder/css/nocode-builder.css">
@@ -12,26 +12,26 @@
     <!-- Header -->
     <div class="dc-header">
         <div>
-            <h1>子系統管理</h1>
-            <p>管理子系統的社群綁定、頁面分配和角色權限</p>
+            <h1>{{ _('子系統管理') }}</h1>
+            <p>{{ _('管理子系統的社群綁定、頁面分配和角色權限') }}</p>
         </div>
         <div class="dc-toolbar">
-            <button class="dc-btn" @click="loadList()">重新載入</button>
+            <button class="dc-btn" @click="loadList()">{{ _('重新載入') }}</button>
             <template x-if="meta.can_manage">
-                <button class="dc-btn primary" @click="showCreateModal = true">+ 新增子系統</button>
+                <button class="dc-btn primary" @click="showCreateModal = true">+ {{ _('新增子系統') }}</button>
             </template>
         </div>
     </div>
 
     <!-- Loading -->
     <div class="dc-card" x-show="loading">
-        <div class="dc-loading" style="padding: 40px; text-align: center; color: #999;">載入中...</div>
+        <div class="dc-loading" style="padding: 40px; text-align: center; color: #999;">{{ _('載入中...') }}</div>
     </div>
 
     <!-- Empty -->
     <div class="dc-card" x-show="!loading && items.length === 0">
         <div style="text-align: center; padding: 60px; color: #999;">
-            <p>尚未建立任何子系統</p>
+            <p>{{ _('尚未建立任何子系統') }}</p>
         </div>
     </div>
 
@@ -41,17 +41,17 @@
             <thead>
                 <tr>
                     <template x-if="meta.is_system_admin">
-                        <th style="width: 140px;">企業名稱</th>
+                        <th style="width: 140px;">{{ _('企業名稱') }}</th>
                     </template>
-                    <th style="width: 200px;">子系統名稱</th>
-                    <th style="width: 160px;">申請單號</th>
-                    <th style="width: 140px;">開發者</th>
-                    <th style="width: 140px;">綁定社群</th>
-                    <th>說明</th>
-                    <th style="width: 70px;">頁面數</th>
-                    <th style="width: 60px;">狀態</th>
-                    <th style="width: 140px;">更新時間</th>
-                    <th style="width: 240px;">操作</th>
+                    <th style="width: 200px;">{{ _('子系統名稱') }}</th>
+                    <th style="width: 160px;">{{ _('申請單號') }}</th>
+                    <th style="width: 140px;">{{ _('開發者') }}</th>
+                    <th style="width: 140px;">{{ _('綁定社群') }}</th>
+                    <th>{{ _('說明') }}</th>
+                    <th style="width: 70px;">{{ _('頁面數') }}</th>
+                    <th style="width: 60px;">{{ _('狀態') }}</th>
+                    <th style="width: 140px;">{{ _('更新時間') }}</th>
+                    <th style="width: 240px;">{{ _('操作') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -71,18 +71,18 @@
                         <td x-text="item.page_count || 0"></td>
                         <td>
                             <span class="dc-badge" :class="item.is_active ? 'active' : 'inactive'"
-                                  x-text="item.is_active ? '啟用' : '停用'"></span>
+                                  x-text="item.is_active ? __('啟用') : __('停用')"></span>
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(item.updated_at)"></td>
                         <td class="actions">
                             <a :href="'{{ app_prefix }}/nocode-builder/studio/' + item.secure_code"
-                               class="dc-btn sm">設計器</a>
+                               class="dc-btn sm">{{ _('設計器') }}</a>
                             <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/portal'"
-                               class="dc-btn sm" target="_blank">預覽</a>
+                               class="dc-btn sm" target="_blank">{{ _('預覽') }}</a>
                             <a :href="'{{ app_prefix }}/nocode-builder/sub-systems/' + item.secure_code + '/config'"
-                               class="dc-btn sm">設定</a>
+                               class="dc-btn sm">{{ _('設定') }}</a>
                             <template x-if="meta.can_manage">
-                                <button class="dc-btn sm danger" @click="confirmDelete(item)">刪除</button>
+                                <button class="dc-btn sm danger" @click="confirmDelete(item)">{{ _('刪除') }}</button>
                             </template>
                         </td>
                     </tr>
@@ -95,22 +95,22 @@
     <div x-show="showCreateModal" x-cloak class="dc-modal">
         <div class="dc-modal-content" style="width: 500px;">
             <div class="dc-modal-header">
-                <h3>新增子系統</h3>
+                <h3>{{ _('新增子系統') }}</h3>
                 <button class="dc-close-btn" @click="showCreateModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
                 <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">名稱 *</label>
+                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">{{ _('名稱') }} *</label>
                     <input type="text" x-model="createForm.name" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;">
                 </div>
                 <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">說明</label>
+                    <label style="display: block; margin-bottom: 4px; font-weight: 500;">{{ _('說明') }}</label>
                     <textarea x-model="createForm.description" rows="2" style="width: 100%; padding: 6px 8px; border: 1px solid #ddd;"></textarea>
                 </div>
             </div>
             <div class="dc-modal-footer">
-                <button class="dc-btn" @click="showCreateModal = false">取消</button>
-                <button class="dc-btn primary" @click="doCreate()">建立</button>
+                <button class="dc-btn" @click="showCreateModal = false">{{ _('取消') }}</button>
+                <button class="dc-btn primary" @click="doCreate()">{{ _('建立') }}</button>
             </div>
         </div>
     </div>
@@ -119,15 +119,15 @@
     <div x-show="showDeleteModal" x-cloak class="dc-modal">
         <div class="dc-modal-content" style="width: 400px;">
             <div class="dc-modal-header">
-                <h3>確認刪除</h3>
+                <h3>{{ _('確認刪除') }}</h3>
                 <button class="dc-close-btn" @click="showDeleteModal = false">&times;</button>
             </div>
             <div class="dc-modal-body">
-                <p>確定要刪除子系統「<strong x-text="deletingItem?.name"></strong>」嗎?</p>
+                <p>{{ _('確定要刪除子系統「') }}<strong x-text="deletingItem?.name"></strong>{{ _('」嗎?') }}</p>
             </div>
             <div class="dc-modal-footer">
-                <button class="dc-btn" @click="showDeleteModal = false">取消</button>
-                <button class="dc-btn danger" @click="doDelete()" style="background: #dc2626; color: white;">確認刪除</button>
+                <button class="dc-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="dc-btn danger" @click="doDelete()" style="background: #dc2626; color: white;">{{ _('確認刪除') }}</button>
             </div>
         </div>
     </div>
