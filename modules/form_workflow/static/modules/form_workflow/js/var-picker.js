@@ -11,34 +11,34 @@
     // ── 固定清單 ──
 
     var FI_ITEMS = [
-        { key: 'applicant',       label: '申請人' },
-        { key: 'applicant_dept',  label: '申請人部門' },
-        { key: 'applicant_email', label: '申請人信箱' },
-        { key: 'serial',         label: '流水號' },
-        { key: 'name',           label: '表單名稱' },
-        { key: 'subject',        label: '表單主旨' },
-        { key: 'code',           label: '表單代碼' },
-        { key: 'status',         label: '表單狀態' }
+        { key: 'applicant',       label: __('申請人') },
+        { key: 'applicant_dept',  label: __('申請人部門') },
+        { key: 'applicant_email', label: __('申請人信箱') },
+        { key: 'serial',         label: __('流水號') },
+        { key: 'name',           label: __('表單名稱') },
+        { key: 'subject',        label: __('表單主旨') },
+        { key: 'code',           label: __('表單代碼') },
+        { key: 'status',         label: __('表單狀態') }
     ];
 
     var WI_ITEMS = [
-        { key: 'code',      label: '流程代碼' },
-        { key: 'exec_code', label: '流程執行代碼' },
-        { key: 'name',      label: '流程名稱' },
-        { key: 'status',    label: '流程狀態' },
-        { key: 'depth',     label: '流程深度' }
+        { key: 'code',      label: __('流程代碼') },
+        { key: 'exec_code', label: __('流程執行代碼') },
+        { key: 'name',      label: __('流程名稱') },
+        { key: 'status',    label: __('流程狀態') },
+        { key: 'depth',     label: __('流程深度') }
     ];
 
     var N_ITEMS = [
-        { key: 'name', label: '節點名稱' },
-        { key: 'id',   label: '節點 ID' },
-        { key: 'type', label: '節點類型' }
+        { key: 'name', label: __('節點名稱') },
+        { key: 'id',   label: __('節點 ID') },
+        { key: 'type', label: __('節點類型') }
     ];
 
     var T_ITEMS = [
-        { key: 'now',  label: '當前時間' },
-        { key: 'date', label: '當前日期' },
-        { key: 'time', label: '當前時刻' }
+        { key: 'now',  label: __('當前時間') },
+        { key: 'date', label: __('當前日期') },
+        { key: 'time', label: __('當前時刻') }
     ];
 
     // ── collectVars ──
@@ -60,7 +60,7 @@
 
         if (formItems.length > 0 || fiItems.length > 0) {
             groups.push({
-                title: '表單類',
+                title: __('表單類'),
                 items: formItems.map(function(it) {
                     return { prefix: 'f', key: it.key, label: it.label };
                 }).concat(fiItems.map(function(it) {
@@ -118,7 +118,7 @@
                 return { prefix: 'v', key: it.key, label: it.label };
             });
             groups.push({
-                title: '流程類',
+                title: __('流程類'),
                 items: vMapped.concat(flowItems)
             });
         }
@@ -194,7 +194,7 @@
             if (!hasAny) {
                 var empty = document.createElement('div');
                 empty.style.cssText = 'padding:16px;text-align:center;color:#999;font-size:11px;';
-                empty.textContent = '無匹配變數';
+                empty.textContent = __('無匹配變數');
                 list.appendChild(empty);
             }
         }

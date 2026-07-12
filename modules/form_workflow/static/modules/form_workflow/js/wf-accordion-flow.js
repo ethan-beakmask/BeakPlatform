@@ -225,7 +225,7 @@
                             <option value="default" ${fallback.action === 'default' ? 'selected' : ''}>走第一條出線</option>
                         </select>
                         <input type="text" id="branchFallbackMessage" placeholder="Log 訊息"
-                               value="${fallback.log_message || '無匹配規則'}"
+                               value="${fallback.log_message || __('無匹配規則')}"
                                style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; ${fallback.action === 'route' ? 'display:none;' : ''}">
                         <select id="branchFallbackTarget" style="padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; grid-column: span 2; ${fallback.action !== 'route' ? 'display:none;' : ''}">
                             <option value="">選擇目標出線...</option>
@@ -444,18 +444,18 @@
 
             const delaySecondsInput = document.getElementById('delaySeconds');
             if (!delaySecondsInput) {
-                updateStatus('找不到延遲秒數輸入框', 'warning');
+                updateStatus(__('找不到延遲秒數輸入框'), 'warning');
                 return;
             }
 
             const delaySeconds = parseInt(delaySecondsInput.value, 10);
             if (isNaN(delaySeconds) || delaySeconds < 0) {
-                updateStatus('延遲秒數必須是非負整數', 'warning');
+                updateStatus(__('延遲秒數必須是非負整數'), 'warning');
                 return;
             }
 
             if (delaySeconds > 86400) {
-                updateStatus('延遲秒數不能超過 86400（24小時）', 'warning');
+                updateStatus(__('延遲秒數不能超過 86400（24小時）'), 'warning');
                 return;
             }
 

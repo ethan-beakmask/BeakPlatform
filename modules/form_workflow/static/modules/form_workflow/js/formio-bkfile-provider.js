@@ -63,10 +63,10 @@
                             try {
                                 result = JSON.parse(xhr.responseText);
                             } catch (e) {
-                                return reject(new Error('回應格式錯誤'));
+                                return reject(new Error(__('回應格式錯誤')));
                             }
                             if (!result.success) {
-                                return reject(new Error(result.message || '上傳失敗'));
+                                return reject(new Error(result.message || __('上傳失敗')));
                             }
                             // FormIO 存入 submission.data 的檔案物件
                             resolve({
@@ -88,11 +88,11 @@
                     };
 
                     xhr.onerror = function () {
-                        reject(new Error('網路錯誤，無法上傳'));
+                        reject(new Error(__('網路錯誤，無法上傳')));
                     };
 
                     xhr.onabort = function () {
-                        reject(new Error('上傳已取消'));
+                        reject(new Error(__('上傳已取消')));
                     };
 
                     xhr.send(fd);
@@ -104,7 +104,7 @@
              */
             downloadFile(file) {
                 if (!file || !file.url) {
-                    return Promise.reject(new Error('無效的檔案參考'));
+                    return Promise.reject(new Error(__('無效的檔案參考')));
                 }
 
                 // file.url 是 secure_code
@@ -114,7 +114,7 @@
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (!data.success) {
-                        throw new Error(data.message || '無法取得下載連結');
+                        throw new Error(data.message || __('無法取得下載連結'));
                     }
                     // 開啟下載（一次性 token URL）
                     window.open(data.url, '_blank');

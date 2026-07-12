@@ -32,7 +32,7 @@
                 // 建構選項
                 let options = '<option value="">請選擇設定組...</option>';
                 data.data.configs.forEach(config => {
-                    const isSystemLabel = config.is_system ? ' (系統)' : '';
+                    const isSystemLabel = config.is_system ? __(' (系統)') : '';
                     const selected = selectedConfigId && config.id == selectedConfigId ? 'selected' : '';
                     // 從 channels 物件取得頻道名稱陣列（與系統級一致）
                     const channelNames = Object.keys(config.channels || {});
@@ -116,15 +116,15 @@
 
             // 驗證必填項
             if (!configId) {
-                updateStatus('請選擇 Bot 設定組', 'warning');
+                updateStatus(__('請選擇 Bot 設定組'), 'warning');
                 return;
             }
             if (!channelName) {
-                updateStatus('請選擇頻道', 'warning');
+                updateStatus(__('請選擇頻道'), 'warning');
                 return;
             }
             if (!message || !message.trim()) {
-                updateStatus('請輸入訊息內容', 'warning');
+                updateStatus(__('請輸入訊息內容'), 'warning');
                 return;
             }
 
@@ -245,15 +245,15 @@
 
             // 驗證必填項
             if (!configId) {
-                updateStatus('請選擇系統級 Bot 設定組', 'warning');
+                updateStatus(__('請選擇系統級 Bot 設定組'), 'warning');
                 return;
             }
             if (!channelName) {
-                updateStatus('請選擇頻道', 'warning');
+                updateStatus(__('請選擇頻道'), 'warning');
                 return;
             }
             if (!message || !message.trim()) {
-                updateStatus('請輸入訊息內容', 'warning');
+                updateStatus(__('請輸入訊息內容'), 'warning');
                 return;
             }
 

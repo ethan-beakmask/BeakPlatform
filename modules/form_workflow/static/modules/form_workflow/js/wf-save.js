@@ -291,7 +291,7 @@
         // 儲存流程
         async function saveWorkflow() {
             if (isReadOnly) {
-                updateStatus('唯讀模式，無法儲存', 'warning');
+                updateStatus(__('唯讀模式，無法儲存'), 'warning');
                 return;
             }
             // 儲存前自動套用當前面板的設定
@@ -304,7 +304,7 @@
 
             if (!currentWorkflowId) {
                 console.error('❌ currentWorkflowId 未設置！');
-                updateStatus('請先選擇或建立一個流程', 'warning');
+                updateStatus(__('請先選擇或建立一個流程'), 'warning');
                 return;
             }
 
@@ -489,7 +489,7 @@
                 console.log('📦 後端回應資料:', data);
 
                 if (data) {
-                    updateStatus('✅ 流程已儲存');
+                    updateStatus(__('✅ 流程已儲存'));
                     console.log('✅ 儲存成功');
 
                     // 更新版本號顯示（含 revision）
@@ -517,13 +517,13 @@
                         generateAndSaveThumbnail();
                     }, 100);
                 } else {
-                    updateStatus('儲存失敗', 'warning');
+                    updateStatus(__('儲存失敗'), 'warning');
                     console.log('❌ 儲存失敗：後端返回空資料');
                 }
             } catch (error) {
                 console.error('❌ 儲存流程失敗:', error);
                 console.error('錯誤堆疊:', error.stack);
-                updateStatus('儲存失敗：' + error.message, 'warning');
+                updateStatus(__('儲存失敗：') + error.message, 'warning');
             }
         }
 

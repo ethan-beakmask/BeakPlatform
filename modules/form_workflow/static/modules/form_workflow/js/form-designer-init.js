@@ -101,7 +101,7 @@ function buildBuilderGroups() {
 
     const groups = {
         basic: {
-            title: '基本元件',
+            title: __('基本元件'),
             weight: 0,
             default: true,
             components: {
@@ -118,7 +118,7 @@ function buildBuilderGroups() {
             }
         },
         advanced: {
-            title: '進階元件',
+            title: __('進階元件'),
             weight: 10,
             components: {
                 file: _themed('file', { ..._bi('file'), schema: { ..._bi('file').schema, storage: 'bkfile' } }),
@@ -134,7 +134,7 @@ function buildBuilderGroups() {
             }
         },
         layout: {
-            title: '版面配置',
+            title: __('版面配置'),
             weight: 20,
             components: {
                 htmlelement: true,
@@ -152,7 +152,7 @@ function buildBuilderGroups() {
     // 自行開發元件：僅企業管理員以上可見
     if (_isOrgAdminOrAbove) {
         groups.custom = {
-            title: '平台元件',
+            title: __('平台元件'),
             weight: 5,
             components: {
                 formTitle: true,
@@ -195,7 +195,7 @@ async function loadFormData() {
                         if (btn) {
                             btn.disabled = true;
                             btn.classList.add('disabled');
-                            btn.title = '您沒有編輯權限';
+                            btn.title = __('您沒有編輯權限');
                         }
                     });
 
@@ -307,7 +307,7 @@ async function loadFormData() {
         document.getElementById('form-category').value = urlCategory;
         document.getElementById('form-description').value = urlDescription;
         setFormTheme(DEFAULT_THEME_FOR_NEW_FORM);
-        const titleText = formName || '請設定表單名稱';
+        const titleText = formName || __('請設定表單名稱');
         return { components: [
             { type: 'formTitle', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: titleText, key: 'formTitle', input: false, tableView: false }
         ] };
@@ -317,7 +317,7 @@ async function loadFormData() {
         document.getElementById('form-name').value = '新表單';
         setFormTheme(DEFAULT_THEME_FOR_NEW_FORM);
         return { components: [
-            { type: 'formTitle', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: '請設定表單名稱', key: 'formTitle', input: false, tableView: false }
+            { type: 'formTitle', tag: 'h3', attrs: [{ attr: 'style', value: 'text-align:center; margin:0 0 0.5rem 0;' }], content: __('請設定表單名稱'), key: 'formTitle', input: false, tableView: false }
         ] };
     }
 }
@@ -524,7 +524,7 @@ schemaModalApply.addEventListener('click', async () => {
 
         // 驗證基本結構
         if (!newSchema.components && !Array.isArray(newSchema)) {
-            throw new Error('Schema 必須包含 components 欄位');
+            throw new Error(__('Schema 必須包含 components 欄位'));
         }
 
         // 套用到 Form Builder
@@ -536,7 +536,7 @@ schemaModalApply.addEventListener('click', async () => {
         console.log('Schema 已即時套用');
     } catch (error) {
         console.error('Schema 解析錯誤:', error);
-        schemaError.textContent = 'JSON 格式錯誤: ' + error.message;
+        schemaError.textContent = __('JSON 格式錯誤: ') + error.message;
         schemaError.style.display = 'block';
     }
 });

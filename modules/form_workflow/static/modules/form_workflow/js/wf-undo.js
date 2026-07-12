@@ -17,7 +17,7 @@
 
         function undo() {
             if (undoStack.length === 0) {
-                updateStatus('沒有可復原的操作', 'warning');
+                updateStatus(__('沒有可復原的操作'), 'warning');
                 return;
             }
             const state = JSON.parse(undoStack.pop());

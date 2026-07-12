@@ -56,7 +56,7 @@
                             if (btn) {
                                 btn.disabled = true;
                                 btn.classList.add('disabled');
-                                btn.title = '您沒有編輯權限';
+                                btn.title = __('您沒有編輯權限');
                                 btn.style.opacity = '0.5';
                                 btn.style.cursor = 'not-allowed';
                             }
@@ -136,7 +136,7 @@
                         if (btn) {
                             btn.disabled = true;
                             btn.classList.add('disabled');
-                            btn.title = '通用子流程唯讀，請從流程管理頁面開啟編輯';
+                            btn.title = __('通用子流程唯讀，請從流程管理頁面開啟編輯');
                             btn.style.opacity = '0.5';
                             btn.style.cursor = 'not-allowed';
                         }
@@ -182,7 +182,7 @@
             } catch (error) {
                 console.error('❌ 載入流程失敗:', error);
                 updateStatus(`載入流程失敗：${error.message}\n\n請查看控制台了解詳細錯誤訊息`, 'warning');
-                updateStatus('載入流程失敗');
+                updateStatus(__('載入流程失敗'));
                 lockInterface();
             }
         }
@@ -393,7 +393,7 @@
                         id: node.id,
                         type: node.type,
                         label: node.label,
-                        parent: node.parent || '(無)'
+                        parent: node.parent || __('(無)')
                     });
 
                     // 取得圖示 URL（支援本地 SVG 路徑和 Font Awesome class）

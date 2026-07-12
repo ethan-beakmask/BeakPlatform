@@ -20,7 +20,7 @@ function workflowTreePage() {
                 var res = await fetch(window.__BP + '/api/form-workflow/workflows/flow-trees/' + this.secureCode);
                 var data = await res.json();
                 if (!data.success) {
-                    this.error = data.error || '載入失敗';
+                    this.error = data.error || __('載入失敗');
                     return;
                 }
                 var tree = data.data.tree;

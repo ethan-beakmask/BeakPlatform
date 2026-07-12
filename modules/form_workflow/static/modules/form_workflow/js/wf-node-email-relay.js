@@ -29,7 +29,7 @@
                 // 建構選項
                 let options = '';
                 data.data.groups.forEach(group => {
-                    const isSystem = group.scope === 'system' ? ' (系統)' : '';
+                    const isSystem = group.scope === 'system' ? __(' (系統)') : '';
                     const selected = selectedIds && selectedIds.includes(group.id) ? 'selected' : '';
                     options += `<option value="${group.id}" ${selected}>${group.name}${isSystem} (${group.recipient_count}人)</option>`;
                 });
@@ -72,11 +72,11 @@
 
             // 驗證必填項
             if (!subject || !subject.trim()) {
-                updateStatus('請輸入郵件主旨', 'warning');
+                updateStatus(__('請輸入郵件主旨'), 'warning');
                 return;
             }
             if (!body || !body.trim()) {
-                updateStatus('請輸入郵件內容', 'warning');
+                updateStatus(__('請輸入郵件內容'), 'warning');
                 return;
             }
 
@@ -90,13 +90,13 @@
                     recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => opt.value);
                 }
                 if (recipientGroups.length === 0) {
-                    updateStatus('請選擇至少一個收件人群組', 'warning');
+                    updateStatus(__('請選擇至少一個收件人群組'), 'warning');
                     return;
                 }
             } else if (recipientType === 'manual') {
                 recipientManual = document.getElementById('emailRelayRecipientManual')?.value || '';
                 if (!recipientManual.trim()) {
-                    updateStatus('請輸入收件者 Email', 'warning');
+                    updateStatus(__('請輸入收件者 Email'), 'warning');
                     return;
                 }
             }

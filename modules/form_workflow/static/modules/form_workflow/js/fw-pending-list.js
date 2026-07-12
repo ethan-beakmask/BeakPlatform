@@ -72,7 +72,7 @@ function pendingListManager() {
         async submitApproval() {
             if (this.submitting) return;
             if (this.availablePaths.length > 0 && !this.selectedPath) {
-                alert('請選擇路徑');
+                alert(__('請選擇路徑'));
                 return;
             }
 
@@ -89,14 +89,14 @@ function pendingListManager() {
                 var data = await res.json();
 
                 if (data.success) {
-                    alert('簽核完成');
+                    alert(__('簽核完成'));
                     this.closeApproveModal();
                     this.loadTasks();
                 } else {
-                    alert('簽核失敗: ' + (data.error || data.message));
+                    alert(__('簽核失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('簽核失敗: ' + e.message);
+                alert(__('簽核失敗: ') + e.message);
             } finally {
                 this.submitting = false;
             }

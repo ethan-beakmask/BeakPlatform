@@ -11,6 +11,7 @@ from app.platform.data import get_current_org
 from app import csrf
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 
 _PHRASE_CATEGORY_CODE = 'APPROVAL_PHRASES'
@@ -89,12 +90,12 @@ def create_canned_message():
     data = request.get_json() or {}
     text = (data.get('text') or '').strip()
     if not text:
-        return jsonify({'success': False, 'error': '片語內容不可為空'}), 400
+        return jsonify({'success': False, 'error': _('片語內容不可為空')}), 400
     if len(text) > 200:
-        return jsonify({'success': False, 'error': '片語內容不可超過 200 字'}), 400
+        return jsonify({'success': False, 'error': _('片語內容不可超過 200 字')}), 400
 
     if not _ensure_phrase_category(org.secure_code):
-        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
+        return jsonify({'success': False, 'error': _('企業尚未建立專屬資料庫')}), 400
 
     # 取得目前最大 sort_order
     existing = LookupOrgService.get_items_by_user(
@@ -126,25 +127,25 @@ def update_canned_message(secure_code):
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     if not _has_org_db(org.secure_code):
-        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
+        return jsonify({'success': False, 'error': _('企業尚未建立專屬資料庫')}), 400
 
     # 驗證此片語屬於當前用戶
     item = LookupOrgService.get_item_by_secure_code(org.secure_code, secure_code)
     if not item or item.get('user_secure_code') != current_user.secure_code:
-        return jsonify({'success': False, 'error': '找不到此片語'}), 404
+        return jsonify({'success': False, 'error': _('找不到此片語')}), 404
 
     data = request.get_json() or {}
     text = (data.get('text') or '').strip()
     if not text:
-        return jsonify({'success': False, 'error': '片語內容不可為空'}), 400
+        return jsonify({'success': False, 'error': _('片語內容不可為空')}), 400
     if len(text) > 200:
-        return jsonify({'success': False, 'error': '片語內容不可超過 200 字'}), 400
+        return jsonify({'success': False, 'error': _('片語內容不可超過 200 字')}), 400
 
     updated = LookupOrgService.update_item(
         org.secure_code, secure_code, label=text
     )
     if not updated:
-        return jsonify({'success': False, 'error': '更新失敗'}), 500
+        return jsonify({'success': False, 'error': _('更新失敗')}), 500
 
     return jsonify({'success': True, 'data': _phrase_to_dict(updated)})
 
@@ -161,15 +162,15 @@ def delete_canned_message(secure_code):
         return jsonify({'success': False, 'error': 'Organization not found'}), 400
 
     if not _has_org_db(org.secure_code):
-        return jsonify({'success': False, 'error': '企業尚未建立專屬資料庫'}), 400
+        return jsonify({'success': False, 'error': _('企業尚未建立專屬資料庫')}), 400
 
     # 驗證此片語屬於當前用戶
     item = LookupOrgService.get_item_by_secure_code(org.secure_code, secure_code)
     if not item or item.get('user_secure_code') != current_user.secure_code:
-        return jsonify({'success': False, 'error': '找不到此片語'}), 404
+        return jsonify({'success': False, 'error': _('找不到此片語')}), 404
 
     ok = LookupOrgService.delete_item(org.secure_code, secure_code)
     if not ok:
-        return jsonify({'success': False, 'error': '刪除失敗'}), 500
+        return jsonify({'success': False, 'error': _('刪除失敗')}), 500
 
-    return jsonify({'success': True, 'message': '已刪除'})
+    return jsonify({'success': True, 'message': _('已刪除')})

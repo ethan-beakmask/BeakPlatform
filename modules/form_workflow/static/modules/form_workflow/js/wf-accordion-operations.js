@@ -222,11 +222,11 @@
             const inputVarCount = (currentConfig.input_variables || []).length;
 
             const typeLabels = {
-                'INITIATOR': '發起人',
-                'USER': '指定用戶',
-                'ROLE': '指定角色',
-                'DEPARTMENT': '指定部門',
-                'DYNAMIC': '動態'
+                'INITIATOR': __('發起人'),
+                'USER': __('指定用戶'),
+                'ROLE': __('指定角色'),
+                'DEPARTMENT': __('指定部門'),
+                'DYNAMIC': __('動態')
             };
 
             // 簽核者摘要

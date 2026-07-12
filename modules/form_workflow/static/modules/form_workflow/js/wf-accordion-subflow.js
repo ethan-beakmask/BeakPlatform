@@ -127,7 +127,7 @@
                 const parentId = currentWorkflowId;
                 if (!parentId) {
                     console.error('無法取得當前工作流程 ID');
-                    updateStatus('無法載入子流程清單：找不到父流程 ID', 'warning');
+                    updateStatus(__('無法載入子流程清單：找不到父流程 ID'), 'warning');
                     return;
                 }
 
@@ -219,7 +219,7 @@
 
             } catch (error) {
                 console.error('載入子流程清單失敗:', error);
-                updateStatus('無法載入子流程清單：' + error.message, 'warning');
+                updateStatus(__('無法載入子流程清單：') + error.message, 'warning');
             }
         }
 
@@ -287,24 +287,24 @@
                     updateStatus(`已刪除子流程「${name}」`, 'success');
                     await loadAvailableSubflows(nodeId);
                 } else {
-                    updateStatus('刪除失敗：' + (result.error || '未知錯誤'), 'warning');
+                    updateStatus(__('刪除失敗：') + (result.error || '未知錯誤'), 'warning');
                 }
             } catch (error) {
                 console.error('刪除子流程失敗:', error);
-                updateStatus('刪除子流程失敗：' + error.message, 'warning');
+                updateStatus(__('刪除子流程失敗：') + error.message, 'warning');
             }
         }
 
         // 建立新子流程
         async function createNewSubflow(nodeId) {
-            const subflowName = prompt('請輸入子流程名稱：');
+            const subflowName = prompt(__('請輸入子流程名稱：'));
             if (!subflowName || !subflowName.trim()) {
                 return;
             }
 
             const parentId = currentWorkflowId;
             if (!parentId) {
-                updateStatus('無法建立子流程：找不到父流程 ID', 'warning');
+                updateStatus(__('無法建立子流程：找不到父流程 ID'), 'warning');
                 return;
             }
 
@@ -337,11 +337,11 @@
                     await loadAvailableSubflows(nodeId);
                     selectSubflow(nodeId, result.data.code, result.data.name, true);
                 } else {
-                    updateStatus('建立子流程失敗：' + (result.message || '未知錯誤'), 'warning');
+                    updateStatus(__('建立子流程失敗：') + (result.message || '未知錯誤'), 'warning');
                 }
             } catch (error) {
                 console.error('建立子流程失敗:', error);
-                updateStatus('無法建立子流程：' + error.message, 'warning');
+                updateStatus(__('無法建立子流程：') + error.message, 'warning');
             }
         }
 
@@ -410,10 +410,10 @@
 
         // 添加輸入參數映射
         function addInputMapping(nodeId) {
-            const parentVar = prompt('請輸入父流程變數名稱：');
+            const parentVar = prompt(__('請輸入父流程變數名稱：'));
             if (!parentVar || !parentVar.trim()) return;
 
-            const childVar = prompt('請輸入子流程變數名稱：');
+            const childVar = prompt(__('請輸入子流程變數名稱：'));
             if (!childVar || !childVar.trim()) return;
 
             const node = cy.getElementById(nodeId);
@@ -434,10 +434,10 @@
 
         // 添加輸出參數映射
         function addOutputMapping(nodeId) {
-            const childVar = prompt('請輸入子流程變數名稱：');
+            const childVar = prompt(__('請輸入子流程變數名稱：'));
             if (!childVar || !childVar.trim()) return;
 
-            const parentVar = prompt('請輸入父流程變數名稱：');
+            const parentVar = prompt(__('請輸入父流程變數名稱：'));
             if (!parentVar || !parentVar.trim()) return;
 
             const node = cy.getElementById(nodeId);
@@ -503,13 +503,13 @@
             // 從下拉選單取得選擇的子流程
             const selectElement = document.getElementById('childFlowSelect');
             if (!selectElement) {
-                updateStatus('找不到子流程選單', 'warning');
+                updateStatus(__('找不到子流程選單'), 'warning');
                 return;
             }
 
             const childFlowId = selectElement.value?.trim();
             if (!childFlowId) {
-                updateStatus('請選擇子流程', 'warning');
+                updateStatus(__('請選擇子流程'), 'warning');
                 return;
             }
 

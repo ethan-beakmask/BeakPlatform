@@ -59,12 +59,12 @@ function instanceListManager() {
 
         getStatusText(status) {
             var map = {
-                'DRAFT': '草稿',
-                'PENDING': '待處理',
-                'RUNNING': '處理中',
-                'COMPLETED': '已完成',
-                'REJECTED': '已駁回',
-                'CANCELLED': '已取消'
+                'DRAFT': __('草稿'),
+                'PENDING': __('待處理'),
+                'RUNNING': __('處理中'),
+                'COMPLETED': __('已完成'),
+                'REJECTED': __('已駁回'),
+                'CANCELLED': __('已取消')
             };
             return map[status] || status || '-';
         },

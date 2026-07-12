@@ -66,7 +66,7 @@
                 }, baseSpeed / animationSpeed);
                 animationIntervals.push(interval);
             });
-            updateStatus('流動動畫已啟動');
+            updateStatus(__('流動動畫已啟動'));
         }
 
         // 啟動脈衝效果
@@ -87,7 +87,7 @@
                 }, baseSpeed / animationSpeed);
                 animationIntervals.push(interval);
             });
-            updateStatus('脈衝效果已啟動');
+            updateStatus(__('脈衝效果已啟動'));
         }
 
         // 停止所有動畫
@@ -101,7 +101,7 @@
                 edge.style('line-dash-offset', 0);
                 edge.style('width', 1); // 重置為預設寬度
             });
-            updateStatus('所有動畫已停止');
+            updateStatus(__('所有動畫已停止'));
         }
 
         // 改變畫布顏色
@@ -110,7 +110,7 @@
             cyContainer.style.backgroundColor = color;
             document.getElementById('canvas-color-picker').value = color;
             document.getElementById('canvas-color-display').textContent = color;
-            updateStatus('畫布顏色已變更: ' + color);
+            updateStatus(__('畫布顏色已變更: ') + color);
         }
 
         // 從調色盤改變畫布顏色
@@ -122,7 +122,7 @@
         // 置中顯示所有節點
         function fitToView() {
             cy.fit(cy.nodes(':visible'), 50); // 50px padding
-            updateStatus('已置中所有節點');
+            updateStatus(__('已置中所有節點'));
             updateZoomDisplay();
             drawGridBackground(); // 重新繪製網格
         }
@@ -243,12 +243,12 @@
 
             // 檢查檔案大小（限制5MB）
             if (file.size > 5 * 1024 * 1024) {
-                updateStatus('檔案太大！請選擇小於 5MB 的圖片', 'warning');
+                updateStatus(__('檔案太大！請選擇小於 5MB 的圖片'), 'warning');
                 return;
             }
 
             // 詢問底圖名稱（可選）
-            const description = prompt('請輸入底圖名稱（可留空使用檔案名稱）:', '');
+            const description = prompt(__('請輸入底圖名稱（可留空使用檔案名稱）:'), '');
 
             // 如果用戶按下取消，則中止上傳
             if (description === null) {
@@ -272,14 +272,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    updateStatus('底圖上傳成功');
+                    updateStatus(__('底圖上傳成功'));
                     await loadBackgrounds(); // 重新載入列表
                 } else {
-                    updateStatus('上傳失敗: ' + data.message, 'warning');
+                    updateStatus(__('上傳失敗: ') + data.message, 'warning');
                 }
             } catch (error) {
                 console.error('上傳錯誤:', error);
-                updateStatus('上傳失敗', 'warning');
+                updateStatus(__('上傳失敗'), 'warning');
             } finally {
                 document.getElementById('upload-progress').style.display = 'none';
                 fileInput.value = ''; // 清空檔案選擇
@@ -293,12 +293,12 @@
 
             // 更新顯示
             const bg = availableBackgrounds.find(b => b.id === bgId);
-            const displayName = bg ? (bg.description || bg.filename) : '(無)';
+            const displayName = bg ? (bg.description || bg.filename) : __('(無)');
             document.getElementById('current-background-name').value = displayName;
 
             renderBackgroundList();
             applyBackgroundImage();
-            updateStatus('已選擇底圖: ' + displayName);
+            updateStatus(__('已選擇底圖: ') + displayName);
         }
 
         // 清除底圖選擇
@@ -308,13 +308,13 @@
             document.getElementById('current-background-name').value = '(無)';
             renderBackgroundList();
             applyBackgroundImage();
-            updateStatus('已清除底圖');
+            updateStatus(__('已清除底圖'));
         }
 
         // 儲存底圖描述
         async function saveBackgroundDescription() {
             if (!currentBackgroundId) {
-                updateStatus('請先選擇底圖', 'warning');
+                updateStatus(__('請先選擇底圖'), 'warning');
                 return;
             }
 
@@ -322,7 +322,7 @@
             const newDescription = nameInput.value.trim();
 
             if (!newDescription) {
-                updateStatus('名稱不能為空', 'warning');
+                updateStatus(__('名稱不能為空'), 'warning');
                 return;
             }
 
@@ -340,7 +340,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    updateStatus('名稱已更新');
+                    updateStatus(__('名稱已更新'));
 
                     // 更新 availableBackgrounds 陣列中的描述
                     const bgIndex = availableBackgrounds.findIndex(bg => bg.id === currentBackgroundId);
@@ -351,18 +351,18 @@
                     // 重新渲染縮圖牆
                     renderBackgroundList();
                 } else {
-                    updateStatus('更新失敗: ' + data.message, 'warning');
+                    updateStatus(__('更新失敗: ') + data.message, 'warning');
                 }
             } catch (error) {
                 console.error('更新錯誤:', error);
-                updateStatus('更新失敗', 'warning');
+                updateStatus(__('更新失敗'), 'warning');
             }
         }
 
         // 刪除當前底圖
         async function deleteCurrentBackground() {
             if (!currentBackgroundId) {
-                updateStatus('請先選擇要刪除的底圖', 'warning');
+                updateStatus(__('請先選擇要刪除的底圖'), 'warning');
                 return;
             }
 
@@ -374,7 +374,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    updateStatus('底圖已刪除');
+                    updateStatus(__('底圖已刪除'));
 
                     // 切換成無底圖
                     clearBackground();
@@ -382,11 +382,11 @@
                     // 重新載入底圖列表
                     await loadBackgrounds();
                 } else {
-                    updateStatus('刪除失敗: ' + data.message, 'warning');
+                    updateStatus(__('刪除失敗: ') + data.message, 'warning');
                 }
             } catch (error) {
                 console.error('刪除錯誤:', error);
-                updateStatus('刪除失敗', 'warning');
+                updateStatus(__('刪除失敗'), 'warning');
             }
         }
 
@@ -420,7 +420,7 @@
                 bgLayer.appendChild(img);
                 cyContainer.insertBefore(bgLayer, cyContainer.firstChild);
 
-                updateStatus('底圖已套用（置中顯示）');
+                updateStatus(__('底圖已套用（置中顯示）'));
             }
         }
 
@@ -441,7 +441,7 @@
                 }
             });
 
-            updateStatus(`節點邊框: ${globalNodeBorder ? '顯示' : '隱藏'}`);
+            updateStatus(`節點邊框: ${globalNodeBorder ? __('顯示') : __('隱藏')}`);
         }
 
         // ==================== 網格嚴格定位系統 ====================

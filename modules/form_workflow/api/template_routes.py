@@ -14,6 +14,7 @@ from app.platform.auth import current_user, require_permission
 from app.platform.data import get_current_org
 
 from . import api_bp
+from flask_babel import gettext as _
 
 
 @api_bp.route('/templates')
@@ -154,7 +155,7 @@ def create_template():
     return jsonify({
         'success': True,
         'data': template.to_dict(include_schema=True),
-        'message': '表單模板已建立'
+        'message': _('表單模板已建立')
     })
 
 
@@ -203,7 +204,7 @@ def update_template(secure_code):
     return jsonify({
         'success': True,
         'data': template.to_dict(include_schema=True),
-        'message': '表單模板已更新'
+        'message': _('表單模板已更新')
     })
 
 
@@ -231,10 +232,10 @@ def batch_delete_templates():
             secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
         ).first()
         if not tpl:
-            results.append({'secure_code': sc, 'success': False, 'message': '找不到表單'})
+            results.append({'secure_code': sc, 'success': False, 'message': _('找不到表單')})
             continue
         tpl.is_deleted = True
-        results.append({'secure_code': sc, 'success': True, 'message': '已刪除'})
+        results.append({'secure_code': sc, 'success': True, 'message': _('已刪除')})
         succeeded += 1
 
     db.session.commit()
@@ -312,7 +313,7 @@ def batch_import_templates():
     # 防呆：檢查 export_type
     export_type = data.get('export_type', '')
     if export_type and export_type != 'forms':
-        return jsonify({'success': False, 'error': f'檔案類型不符：期望 forms，實際為 {export_type}'}), 400
+        return jsonify({'success': False, 'error': _('檔案類型不符：期望 forms，實際為 %(export_type)s', export_type=export_type)}), 400
 
     items = data.get('items', [])
     if not items:
@@ -415,7 +416,7 @@ def batch_save_new_version_templates():
             secure_code=sc, org_secure_code=org.secure_code, is_deleted=False
         ).first()
         if not tpl:
-            results.append({'secure_code': sc, 'success': False, 'message': '找不到表單'})
+            results.append({'secure_code': sc, 'success': False, 'message': _('找不到表單')})
             continue
         current_version = tpl.version or 'AA'
         if len(current_version) >= 2:
@@ -440,7 +441,7 @@ def batch_save_new_version_templates():
             owner_secure_code=current_user.secure_code,
         )
         db.session.add(new_tpl)
-        results.append({'secure_code': sc, 'success': True, 'message': f'已另存為版本 {new_version}', 'new_secure_code': new_tpl.secure_code})
+        results.append({'secure_code': sc, 'success': True, 'message': _('已另存為版本 %(version)s', version=new_version), 'new_secure_code': new_tpl.secure_code})
         succeeded += 1
 
     db.session.commit()
@@ -508,5 +509,5 @@ def delete_template(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '表單模板已刪除'
+        'message': _('表單模板已刪除')
     })

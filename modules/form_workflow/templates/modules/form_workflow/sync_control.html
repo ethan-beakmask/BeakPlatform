@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}同步中控台 - BeakPlatform{% endblock %}
+{% block title %}{{ _('同步中控台 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/sync-control.css">
@@ -12,22 +12,22 @@
     <!-- 頁首 -->
     <div class="sc-header">
         <div>
-            <h1>同步中控台</h1>
+            <h1>{{ _('同步中控台') }}</h1>
             <div class="sc-meta">
                 <span x-show="status && status.formio && status.formio.exists"
                       x-text="status.formio.form_name"></span>
-                <span x-show="!status || !status.formio || !status.formio.exists" style="color: #9ca3af;">載入中...</span>
+                <span x-show="!status || !status.formio || !status.formio.exists" style="color: #9ca3af;">{{ _('載入中...') }}</span>
             </div>
         </div>
         <div class="sc-toolbar">
-            <button class="sc-btn" @click="loadStatus()" :disabled="loading">重新載入</button>
-            <button class="sc-btn" @click="goSpecEditor()">開啟規格編輯器</button>
-            <button class="sc-btn" @click="window.open('{{ app_prefix }}/forms/data-specs', '_self')">返回規格列表</button>
+            <button class="sc-btn" @click="loadStatus()" :disabled="loading">{{ _('重新載入') }}</button>
+            <button class="sc-btn" @click="goSpecEditor()">{{ _('開啟規格編輯器') }}</button>
+            <button class="sc-btn" @click="window.open('{{ app_prefix }}/forms/data-specs', '_self')">{{ _('返回規格列表') }}</button>
         </div>
     </div>
 
     <!-- 載入中 -->
-    <div x-show="loading" class="sc-loading">載入中...</div>
+    <div x-show="loading" class="sc-loading">{{ _('載入中...') }}</div>
 
     <!-- 主內容 -->
     <div x-show="!loading && status">
@@ -37,20 +37,20 @@
             <!-- Spec -->
             <div class="sc-aspect-card" :class="!status.spec.exists ? 'unavailable' : ''">
                 <div class="sc-aspect-title">
-                    Spec (欄位規格)
+                    {{ _('Spec (欄位規格)') }}
                     <span class="sc-status-dot" :class="status.spec.exists ? 'active' : 'inactive'"></span>
                 </div>
                 <div class="sc-aspect-info">
                     <template x-if="status.spec.exists">
                         <div>
-                            <div>版本: <strong>v<span x-text="status.spec.version"></span></strong></div>
-                            <div>欄位數: <strong x-text="status.spec.field_count"></strong></div>
-                            <div>修改者: <span x-text="status.spec.last_modified_by_name || '-'"></span></div>
-                            <div>更新: <span x-text="formatDate(status.spec.last_modified_at)"></span></div>
+                            <div>{{ _('版本:') }} <strong>v<span x-text="status.spec.version"></span></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.spec.field_count"></strong></div>
+                            <div>{{ _('修改者:') }} <span x-text="status.spec.last_modified_by_name || '-'"></span></div>
+                            <div>{{ _('更新:') }} <span x-text="formatDate(status.spec.last_modified_at)"></span></div>
                         </div>
                     </template>
                     <template x-if="!status.spec.exists">
-                        <div style="color: #9ca3af;">尚未建立</div>
+                        <div style="color: #9ca3af;">{{ _('尚未建立') }}</div>
                     </template>
                 </div>
             </div>
@@ -64,13 +64,13 @@
                 <div class="sc-aspect-info">
                     <template x-if="status.formio.exists">
                         <div>
-                            <div>表單: <strong x-text="status.formio.form_name"></strong></div>
-                            <div>欄位數: <strong x-text="status.formio.field_count"></strong></div>
-                            <div>更新: <span x-text="formatDate(status.formio.updated_at)"></span></div>
+                            <div>{{ _('表單:') }} <strong x-text="status.formio.form_name"></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.formio.field_count"></strong></div>
+                            <div>{{ _('更新:') }} <span x-text="formatDate(status.formio.updated_at)"></span></div>
                         </div>
                     </template>
                     <template x-if="!status.formio.exists">
-                        <div style="color: #9ca3af;">找不到表單模板</div>
+                        <div style="color: #9ca3af;">{{ _('找不到表單模板') }}</div>
                     </template>
                 </div>
             </div>
@@ -84,14 +84,14 @@
                 <div class="sc-aspect-info">
                     <template x-if="status.sql.exists">
                         <div>
-                            <div>表名: <strong class="sc-mono" x-text="status.sql.table_name"></strong></div>
-                            <div>欄位數: <strong x-text="status.sql.column_count"></strong></div>
-                            <div>資料筆數: <strong x-text="status.sql.row_count"></strong></div>
-                            <div>同步: <span x-text="formatDate(status.sql.last_synced_at)"></span></div>
+                            <div>{{ _('表名:') }} <strong class="sc-mono" x-text="status.sql.table_name"></strong></div>
+                            <div>{{ _('欄位數:') }} <strong x-text="status.sql.column_count"></strong></div>
+                            <div>{{ _('資料筆數:') }} <strong x-text="status.sql.row_count"></strong></div>
+                            <div>{{ _('同步:') }} <span x-text="formatDate(status.sql.last_synced_at)"></span></div>
                         </div>
                     </template>
                     <template x-if="!status.sql.exists">
-                        <div style="color: #9ca3af;">尚未建立 SQL Registry</div>
+                        <div style="color: #9ca3af;">{{ _('尚未建立 SQL Registry') }}</div>
                     </template>
                 </div>
             </div>
@@ -172,7 +172,7 @@
                 </div>
                 <div class="sc-also-spec">
                     <input type="checkbox" x-model="alsoUpdateSpec" id="also-spec">
-                    <label for="also-spec">同時更新 Spec（新增一版）</label>
+                    <label for="also-spec">{{ _('同時更新 Spec（新增一版）') }}</label>
                 </div>
             </div>
 
@@ -183,7 +183,7 @@
             <template x-if="driftData && driftData.spec_vs_formio && driftData.spec_vs_formio.length > 0">
                 <div class="sc-drift-section">
                     <div class="sc-drift-title">
-                        Spec vs FormIO 偏移 (<span x-text="driftData.spec_vs_formio.length"></span>)
+                        {{ _('Spec vs FormIO 偏移 (') }}<span x-text="driftData.spec_vs_formio.length"></span>)
                     </div>
                     <template x-for="d in driftData.spec_vs_formio" :key="d.field_key + d.issue">
                         <div class="sc-drift-item" :class="d.severity">
@@ -197,7 +197,7 @@
             <template x-if="driftData && driftData.spec_vs_sql && driftData.spec_vs_sql.length > 0">
                 <div class="sc-drift-section">
                     <div class="sc-drift-title">
-                        Spec vs SQL 偏移 (<span x-text="driftData.spec_vs_sql.length"></span>)
+                        {{ _('Spec vs SQL 偏移 (') }}<span x-text="driftData.spec_vs_sql.length"></span>)
                     </div>
                     <template x-for="d in driftData.spec_vs_sql" :key="d.field_key + d.issue">
                         <div class="sc-drift-item" :class="d.severity">
@@ -211,7 +211,7 @@
             <template x-if="driftData && (!driftData.spec_vs_formio || driftData.spec_vs_formio.length === 0) && (!driftData.spec_vs_sql || driftData.spec_vs_sql.length === 0)">
                 <div class="sc-drift-section">
                     <div style="text-align: center; color: #059669; font-size: 13px; padding: 8px;">
-                        三向比對一致，無偏移
+                        {{ _('三向比對一致，無偏移') }}
                     </div>
                 </div>
             </template>
@@ -231,7 +231,7 @@
 
                 <template x-if="confirmNeedTableName">
                     <div style="margin-top: 12px;">
-                        <p class="sc-warning-text">高風險操作：請輸入表名確認</p>
+                        <p class="sc-warning-text">{{ _('高風險操作：請輸入表名確認') }}</p>
                         <input type="text" class="sc-confirm-input"
                                x-model="confirmTableInput"
                                :placeholder="'輸入 ' + (status && status.sql ? status.sql.table_name : '') + ' 確認'">
@@ -239,10 +239,10 @@
                 </template>
             </div>
             <div class="sc-modal-footer">
-                <button class="sc-btn" @click="showConfirmModal = false">取消</button>
+                <button class="sc-btn" @click="showConfirmModal = false">{{ _('取消') }}</button>
                 <button class="sc-btn primary" @click="executeConfirmed()"
                         :disabled="confirmNeedTableName && confirmTableInput !== (status && status.sql ? status.sql.table_name : '')">
-                    確認執行
+                    {{ _('確認執行') }}
                 </button>
             </div>
         </div>

@@ -156,11 +156,11 @@ function fcBatchApproval() {
                 if (data.success) {
                     this.batchApprovalInfo = data.data;
                 } else {
-                    this.showToast(data.error || '載入簽核資訊失敗', 'error');
+                    this.showToast(data.error || __('載入簽核資訊失敗'), 'error');
                     this.showBatchApprovalModal = false;
                 }
             } catch (e) {
-                this.showToast('載入簽核資訊失敗', 'error');
+                this.showToast(__('載入簽核資訊失敗'), 'error');
                 this.showBatchApprovalModal = false;
             } finally {
                 this.loadingBatchInfo = false;
@@ -193,12 +193,12 @@ function fcBatchApproval() {
 
             if (useCustom) {
                 if (this.batchApprovalOptionValue === null) {
-                    this.showToast('請選擇一個決策選項', 'warning');
+                    this.showToast(__('請選擇一個決策選項'), 'warning');
                     return;
                 }
             } else {
                 if (this.batchApprovalEdges.length === 0) {
-                    this.showToast('請選擇後續動作', 'warning');
+                    this.showToast(__('請選擇後續動作'), 'warning');
                     return;
                 }
             }
@@ -246,10 +246,10 @@ function fcBatchApproval() {
                     this.loadPendingApprovals();
                     this.loadTracking();
                 } else {
-                    this.showToast(data.error || '批次簽核失敗', 'error');
+                    this.showToast(data.error || __('批次簽核失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('批次簽核失敗: ' + e.message, 'error');
+                this.showToast(__('批次簽核失敗: ') + e.message, 'error');
             } finally {
                 this.submittingBatchApproval = false;
             }

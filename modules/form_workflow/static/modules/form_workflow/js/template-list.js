@@ -196,10 +196,10 @@ function templateListManager() {
                         this.loadTemplates();
                     }
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.saving = false;
             }
@@ -245,10 +245,10 @@ function templateListManager() {
                     this.deletingTemplate = null;
                     this.loadTemplates();
                 } else {
-                    alert('刪除失敗: ' + (data.error || data.message));
+                    alert(__('刪除失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('刪除失敗: ' + e.message);
+                alert(__('刪除失敗: ') + e.message);
             }
         },
 
@@ -311,10 +311,10 @@ function templateListManager() {
                     this.selectedItems = [];
                     this.loadTemplates();
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }
@@ -330,7 +330,7 @@ function templateListManager() {
                 const json = JSON.parse(text);
                 const items = json.items;
                 if (!Array.isArray(items) || items.length === 0) {
-                    alert('JSON 格式不正確或無匯入項目');
+                    alert(__('JSON 格式不正確或無匯入項目'));
                     return;
                 }
                 if (!confirm(`即將匯入 ${items.length} 個表單模板，code 重複者將跳過。確定？`)) return;
@@ -345,10 +345,10 @@ function templateListManager() {
                     alert(`匯入完成：建立 ${data.summary.created}，跳過 ${data.summary.skipped}`);
                     this.loadTemplates();
                 } else {
-                    alert('匯入失敗: ' + (data.error || data.message));
+                    alert(__('匯入失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('匯入失敗: ' + e.message);
+                alert(__('匯入失敗: ') + e.message);
             }
         },
 
@@ -380,10 +380,10 @@ function templateListManager() {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 } else {
-                    alert('匯出失敗: ' + (data.error || data.message));
+                    alert(__('匯出失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('匯出失敗: ' + e.message);
+                alert(__('匯出失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }
@@ -405,10 +405,10 @@ function templateListManager() {
                     this.selectedItems = [];
                     this.loadTemplates();
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }

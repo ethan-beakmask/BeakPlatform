@@ -66,29 +66,29 @@
 
             // 節點類型顯示名稱（對應 DB workflow_node_definitions）
             const typeNames = {
-                'Start': '開始節點',
-                'End': '結束節點',
-                'Switch': '條件分支',
-                'Subflow': '子流程',
-                'Converge': '匯聚節點',
-                'Delay': '暫停',
-                'OpSet': '設定變數',
-                'OpFieldRead': '讀取欄位',
-                'OpFieldWrite': '寫入欄位',
-                'FormAdapter': '簽核',
-                'EmailAdapter': '郵件通知',
-                'SqlExecutor': 'SQL 執行器',
-                'Abandon': '放棄流程',
-                'Telegram': 'Telegram 通知',
-                'SysTelegram': '系統 Telegram',
-                'EmailRelay': '系統郵件',
-                'NavbarBroadcast': '跑馬燈廣播',
-                'AlertBroadcast': '緊急廣播',
-                'Branch': '條件路由',
-                'ParallelFork': '並行分支',
-                'ParallelJoin': '並行匯合',
-                'SubSystemProvision': '子系統配置',
-                'ApiKeyAction': 'API Key 處置'
+                'Start': __('開始節點'),
+                'End': __('結束節點'),
+                'Switch': __('條件分支'),
+                'Subflow': __('子流程'),
+                'Converge': __('匯聚節點'),
+                'Delay': __('暫停'),
+                'OpSet': __('設定變數'),
+                'OpFieldRead': __('讀取欄位'),
+                'OpFieldWrite': __('寫入欄位'),
+                'FormAdapter': __('簽核'),
+                'EmailAdapter': __('郵件通知'),
+                'SqlExecutor': __('SQL 執行器'),
+                'Abandon': __('放棄流程'),
+                'Telegram': __('Telegram 通知'),
+                'SysTelegram': __('系統 Telegram'),
+                'EmailRelay': __('系統郵件'),
+                'NavbarBroadcast': __('跑馬燈廣播'),
+                'AlertBroadcast': __('緊急廣播'),
+                'Branch': __('條件路由'),
+                'ParallelFork': __('並行分支'),
+                'ParallelJoin': __('並行匯合'),
+                'SubSystemProvision': __('子系統配置'),
+                'ApiKeyAction': __('API Key 處置')
             };
 
             const description = node.data('description') || '';
@@ -209,7 +209,7 @@
         function applyNodeBasicInfo(nodeId, silent = false) {
             const node = cy.getElementById(nodeId);
             if (!node) {
-                updateStatus('找不到節點', 'warning');
+                updateStatus(__('找不到節點'), 'warning');
                 return null;
             }
 

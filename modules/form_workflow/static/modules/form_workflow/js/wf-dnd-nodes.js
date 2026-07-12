@@ -30,13 +30,13 @@
                     // 測試節點使用特定的測試文字
                     let title = this.querySelector('.node-title').textContent;
                     if (nodeType === 'test_node_inside' || nodeType === 'test_node_outside') {
-                        title = '測試圖形文字大小12345678';
+                        title = __('測試圖形文字大小12345678');
                     } else if (nodeType === 'test_node_3colors') {
-                        title = '三色圖案測試';
+                        title = __('三色圖案測試');
                     } else if (nodeType === 'test_node_image') {
-                        title = '網路圖片測試';
+                        title = __('網路圖片測試');
                     } else if (nodeType === 'test_node_circle') {
-                        title = '圓形遮罩測試';
+                        title = __('圓形遮罩測試');
                     }
 
                     e.dataTransfer.setData('nodeLabel', title);
@@ -210,7 +210,7 @@
         function createEdge(sourceNode, targetNode) {
             // 驗證 1：防止自連接
             if (sourceNode.id() === targetNode.id()) {
-                updateStatus('❌ 不能連接節點到自己', 'error');
+                updateStatus(__('❌ 不能連接節點到自己'), 'error');
                 return false;
             }
 
@@ -220,7 +220,7 @@
 
             // 檢查是否為異類連接
             if (sourceIsCompound !== targetIsCompound) {
-                updateStatus('❌ 不能在節點與群組之間建立連線', 'error');
+                updateStatus(__('❌ 不能在節點與群組之間建立連線'), 'error');
                 return false;
             }
 

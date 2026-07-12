@@ -4,25 +4,25 @@
  */
 
 const FORMIO_TYPES = [
-    { value: 'textfield', label: '文字', pgDefault: 'VARCHAR(500)' },
-    { value: 'textarea', label: '多行文字', pgDefault: 'TEXT' },
-    { value: 'number', label: '數字', pgDefault: 'NUMERIC' },
-    { value: 'checkbox', label: '核取方塊', pgDefault: 'BOOLEAN' },
-    { value: 'day', label: '日期', pgDefault: 'DATE' },
-    { value: 'datetime', label: '日期時間', pgDefault: 'TIMESTAMP' },
-    { value: 'email', label: '電子郵件', pgDefault: 'VARCHAR(200)' },
-    { value: 'phoneNumber', label: '電話', pgDefault: 'VARCHAR(50)' },
-    { value: 'select', label: '下拉選單', pgDefault: 'VARCHAR(500)' },
-    { value: 'radio', label: '單選按鈕', pgDefault: 'VARCHAR(200)' },
-    { value: 'selectboxes', label: '複選框', pgDefault: 'JSONB' },
-    { value: 'file', label: '檔案', pgDefault: 'JSONB' },
-    { value: 'signature', label: '簽名', pgDefault: 'TEXT' },
-    { value: 'hidden', label: '隱藏', pgDefault: 'TEXT' },
-    { value: 'currency', label: '貨幣', pgDefault: 'NUMERIC(15,2)' },
+    { value: 'textfield', label: __('文字'), pgDefault: 'VARCHAR(500)' },
+    { value: 'textarea', label: __('多行文字'), pgDefault: 'TEXT' },
+    { value: 'number', label: __('數字'), pgDefault: 'NUMERIC' },
+    { value: 'checkbox', label: __('核取方塊'), pgDefault: 'BOOLEAN' },
+    { value: 'day', label: __('日期'), pgDefault: 'DATE' },
+    { value: 'datetime', label: __('日期時間'), pgDefault: 'TIMESTAMP' },
+    { value: 'email', label: __('電子郵件'), pgDefault: 'VARCHAR(200)' },
+    { value: 'phoneNumber', label: __('電話'), pgDefault: 'VARCHAR(50)' },
+    { value: 'select', label: __('下拉選單'), pgDefault: 'VARCHAR(500)' },
+    { value: 'radio', label: __('單選按鈕'), pgDefault: 'VARCHAR(200)' },
+    { value: 'selectboxes', label: __('複選框'), pgDefault: 'JSONB' },
+    { value: 'file', label: __('檔案'), pgDefault: 'JSONB' },
+    { value: 'signature', label: __('簽名'), pgDefault: 'TEXT' },
+    { value: 'hidden', label: __('隱藏'), pgDefault: 'TEXT' },
+    { value: 'currency', label: __('貨幣'), pgDefault: 'NUMERIC(15,2)' },
     { value: 'url', label: 'URL', pgDefault: 'VARCHAR(1000)' },
-    { value: 'tags', label: '標籤', pgDefault: 'JSONB' },
-    { value: 'datagrid', label: '資料表格', pgDefault: 'JSONB' },
-    { value: 'editgrid', label: '編輯表格', pgDefault: 'JSONB' },
+    { value: 'tags', label: __('標籤'), pgDefault: 'JSONB' },
+    { value: 'datagrid', label: __('資料表格'), pgDefault: 'JSONB' },
+    { value: 'editgrid', label: __('編輯表格'), pgDefault: 'JSONB' },
 ];
 
 function getPgDefault(formioType) {
@@ -187,7 +187,7 @@ function fieldSpecEditor() {
                     this.specVersion = data.data.version;
                     this.specStatus = data.data.status;
                     this.specName = data.data.name || '';
-                    this.formTemplateName = data.data.name || '(獨立規格)';
+                    this.formTemplateName = data.data.name || __('(獨立規格)');
                     if (data.data.form_template_secure_code) {
                         this.formTemplateSc = data.data.form_template_secure_code;
                     }
@@ -306,9 +306,9 @@ function fieldSpecEditor() {
                         // 更新 URL 不重載頁面
                         history.replaceState(null, '', window.__BP + '/forms/data-specs/' + this.specSc + '/edit');
                     }
-                    _toast('success', data.message || '已儲存');
+                    _toast('success', data.message || __('已儲存'));
                 } else {
-                    _toast('error', data.error || '儲存失敗');
+                    _toast('error', data.error || __('儲存失敗'));
                 }
             } catch (e) {
                 _toast('error', '儲存失敗: ' + e.message);
@@ -317,7 +317,7 @@ function fieldSpecEditor() {
         },
 
         async syncFromFormio() {
-            if (!confirm('從 FormIO schema 同步會覆蓋目前的規格，確認?')) return;
+            if (!confirm(__('從 FormIO schema 同步會覆蓋目前的規格，確認?'))) return;
             this.saving = true;
             try {
                 var res = await fetch(window.__BP + '/api/form-workflow/specs/' + this.formTemplateSc + '/sync-from-formio', {
@@ -329,9 +329,9 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.fields = _normalizeFields(data.data.fields || [], this.fields);
                     this.specVersion = data.data.version;
-                    _toast('success', data.message || '已同步');
+                    _toast('success', data.message || __('已同步'));
                 } else {
-                    _toast('error', data.error || '同步失敗');
+                    _toast('error', data.error || __('同步失敗'));
                 }
             } catch (e) {
                 _toast('error', '同步失敗: ' + e.message);
@@ -354,10 +354,10 @@ function fieldSpecEditor() {
                         this.previewSchema = data.data.schema;
                         this.showPreview = true;
                     } else {
-                        _toast('success', data.message || '已套用');
+                        _toast('success', data.message || __('已套用'));
                     }
                 } else {
-                    _toast('error', data.error || '操作失敗');
+                    _toast('error', data.error || __('操作失敗'));
                 }
             } catch (e) {
                 _toast('error', '操作失敗: ' + e.message);
@@ -378,7 +378,7 @@ function fieldSpecEditor() {
                     this.previewSchema = data.data.schema;
                     this.showPreview = true;
                 } else {
-                    _toast('error', data.error || '預覽失敗');
+                    _toast('error', data.error || __('預覽失敗'));
                 }
             } catch (e) {
                 _toast('error', '預覽失敗: ' + e.message);
@@ -395,7 +395,7 @@ function fieldSpecEditor() {
                     this.compareResult = data.data;
                     this.showCompare = true;
                 } else {
-                    _toast('error', data.error || '比對失敗');
+                    _toast('error', data.error || __('比對失敗'));
                 }
             } catch (e) {
                 _toast('error', '比對失敗: ' + e.message);
@@ -433,7 +433,7 @@ function fieldSpecEditor() {
         },
 
         async restoreAsNewVersion(h) {
-            if (!confirm('確定要以 v' + h.version + ' 的欄位建立新版本？')) return;
+            if (!confirm(__('確定要以 v') + h.version + ' 的欄位建立新版本？')) return;
             this.historyRestoring = true;
             try {
                 var fields = h.fields_snapshot || [];
@@ -452,7 +452,7 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    _toast('success', data.message || '已從 v' + h.version + ' 建立新版');
+                    _toast('success', data.message || __('已從 v') + h.version + ' 建立新版');
                     this.historyPreview = null;
                     this.showHistory = false;
                     // 重新載入
@@ -460,7 +460,7 @@ function fieldSpecEditor() {
                     this.specVersion = data.data.version;
                     this.dirty = false;
                 } else {
-                    _toast('error', data.error || '取回失敗');
+                    _toast('error', data.error || __('取回失敗'));
                 }
             } catch (e) {
                 _toast('error', '取回失敗: ' + e.message);
@@ -473,7 +473,7 @@ function fieldSpecEditor() {
                 _toast('error', '獨立規格無綁定表單，無法套用');
                 return;
             }
-            if (!confirm('確定要將 v' + h.version + ' 的欄位套用到表單設計？\n（發行機制確保既有 SQL 表不受影響）')) return;
+            if (!confirm(__('確定要將 v') + h.version + ' 的欄位套用到表單設計？\n（發行機制確保既有 SQL 表不受影響）')) return;
             this.historyRestoring = true;
             try {
                 // 先取回為新版
@@ -487,7 +487,7 @@ function fieldSpecEditor() {
                 });
                 var saveData = await saveRes.json();
                 if (!saveData.success) {
-                    _toast('error', saveData.error || '儲存新版失敗');
+                    _toast('error', saveData.error || __('儲存新版失敗'));
                     this.historyRestoring = false;
                     return;
                 }
@@ -507,7 +507,7 @@ function fieldSpecEditor() {
                     this.specVersion = saveData.data.version;
                     this.dirty = false;
                 } else {
-                    _toast('error', applyData.error || '套用到表單失敗');
+                    _toast('error', applyData.error || __('套用到表單失敗'));
                 }
             } catch (e) {
                 _toast('error', '操作失敗: ' + e.message);
@@ -543,11 +543,11 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    _toast('success', data.message || '已關聯');
+                    _toast('success', data.message || __('已關聯'));
                     this.formTemplateSc = this.linkTemplateSc;
                     this.showLinkModal = false;
                 } else {
-                    _toast('error', data.error || '關聯失敗');
+                    _toast('error', data.error || __('關聯失敗'));
                 }
             } catch (e) {
                 _toast('error', '關聯失敗: ' + e.message);
@@ -589,13 +589,13 @@ function fieldSpecEditor() {
                 });
                 var data = await res.json();
                 if (data.success) {
-                    _toast('success', data.message || '已建立表單');
+                    _toast('success', data.message || __('已建立表單'));
                     this.showCreateFormModal = false;
                     if (data.data && data.data.form_template) {
                         this.formTemplateSc = data.data.form_template.secure_code;
                     }
                 } else {
-                    _toast('error', data.error || '建立失敗');
+                    _toast('error', data.error || __('建立失敗'));
                 }
             } catch (e) {
                 _toast('error', '建立失敗: ' + e.message);
@@ -616,7 +616,7 @@ function fieldSpecEditor() {
                 if (data.success) {
                     this.sqlTables = data.data || [];
                 } else {
-                    _toast('error', data.error || '載入失敗');
+                    _toast('error', data.error || __('載入失敗'));
                 }
             } catch (e) {
                 _toast('error', '載入失敗: ' + e.message);
@@ -638,9 +638,9 @@ function fieldSpecEditor() {
                 if (data.success && data.data && data.data.fields) {
                     this.fields = _normalizeFields(data.data.fields, this.fields);
                     this.showSqlTableModal = false;
-                    _toast('success', data.message || '欄位已匯入');
+                    _toast('success', data.message || __('欄位已匯入'));
                 } else {
-                    _toast('error', data.error || '匯入失敗');
+                    _toast('error', data.error || __('匯入失敗'));
                 }
             } catch (e) {
                 _toast('error', '匯入失敗: ' + e.message);
@@ -667,7 +667,7 @@ function fieldSpecEditor() {
                     this.sqlApplyPreview = data.data;
                     this.showSqlApplyModal = true;
                 } else {
-                    _toast('error', data.error || '預覽失敗');
+                    _toast('error', data.error || __('預覽失敗'));
                 }
             } catch (e) {
                 _toast('error', '預覽失敗: ' + e.message);
@@ -696,7 +696,7 @@ function fieldSpecEditor() {
                         _toast('info', '表結構無需變更');
                     }
                 } else {
-                    _toast('error', data.error || '執行失敗');
+                    _toast('error', data.error || __('執行失敗'));
                 }
             } catch (e) {
                 _toast('error', '執行失敗: ' + e.message);

@@ -14,19 +14,19 @@ function fcColumnConfig() {
 
         // --- Properties ---
         _columnDefs: {
-            serial_number:  { label: '單號',       defaultWidth: 140 },
-            form_name:      { label: '表單名稱',    defaultWidth: 120 },
-            subject:        { label: '主旨',        defaultWidth: null, flex: true, noHide: true },
-            applicant:      { label: '發起人',      defaultWidth: 100 },
-            category:       { label: '表單類別',    defaultWidth: 80 },
-            current_node:   { label: '目前關卡',    defaultWidth: 140 },
-            wait_time:      { label: '等待時間',    defaultWidth: 150 },
-            submit_time:    { label: '送單時間',    defaultWidth: 130 },
-            signed_elapsed: { label: '簽核後歷時',  defaultWidth: 130 },
-            end_time:       { label: '結束時間',    defaultWidth: 130 },
-            status:         { label: '狀態',        defaultWidth: 70 },
-            duration:       { label: '流程耗時',    defaultWidth: 100 },
-            actions:        { label: '操作',        defaultWidth: 110, noHide: true },
+            serial_number:  { label: __('單號'),       defaultWidth: 140 },
+            form_name:      { label: __('表單名稱'),    defaultWidth: 120 },
+            subject:        { label: __('主旨'),        defaultWidth: null, flex: true, noHide: true },
+            applicant:      { label: __('發起人'),      defaultWidth: 100 },
+            category:       { label: __('表單類別'),    defaultWidth: 80 },
+            current_node:   { label: __('目前關卡'),    defaultWidth: 140 },
+            wait_time:      { label: __('等待時間'),    defaultWidth: 150 },
+            submit_time:    { label: __('送單時間'),    defaultWidth: 130 },
+            signed_elapsed: { label: __('簽核後歷時'),  defaultWidth: 130 },
+            end_time:       { label: __('結束時間'),    defaultWidth: 130 },
+            status:         { label: __('狀態'),        defaultWidth: 70 },
+            duration:       { label: __('流程耗時'),    defaultWidth: 100 },
+            actions:        { label: __('操作'),        defaultWidth: 110, noHide: true },
         },
 
         // --- Methods ---
@@ -150,14 +150,14 @@ function fcColumnConfig() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('欄位設定已儲存');
+                    this.showToast(__('欄位設定已儲存'));
                     // 重新載入當前用戶的設定
                     await this.loadColumnConfig();
                 } else {
-                    this.showToast(data.error || '儲存失敗', 'error');
+                    this.showToast(data.error || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗', 'error');
+                this.showToast(__('儲存失敗'), 'error');
             } finally {
                 this.savingColumnConfig = false;
             }

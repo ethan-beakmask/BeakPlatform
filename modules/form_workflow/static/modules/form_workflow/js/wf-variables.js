@@ -11,7 +11,7 @@
          */
         async function loadMappedForms(versionType = 'design') {
             if (!currentWorkflowId) {
-                updateStatus('⚠ 請先載入流程');
+                updateStatus(__('⚠ 請先載入流程'));
                 return;
             }
 
@@ -49,7 +49,7 @@
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.message || '載入失敗');
+                    throw new Error(result.message || __('載入失敗'));
                 }
 
                 currentMappedForms = result.data.forms || [];
@@ -234,7 +234,7 @@
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.message || '分析失敗');
+                    throw new Error(result.message || __('分析失敗'));
                 }
 
                 currentFormFields = result.data.fields || [];
@@ -285,30 +285,30 @@
 
             // Form.io 類型中文對照
             const typeLabels = {
-                'textfield': '文字欄位',
-                'textarea': '多行文字',
-                'number': '數字',
-                'password': '密碼',
-                'email': '電子郵件',
-                'phoneNumber': '電話號碼',
-                'url': '網址',
-                'currency': '貨幣',
-                'checkbox': '核取方塊',
-                'selectboxes': '多選方塊',
-                'select': '下拉選單',
-                'radio': '單選按鈕',
-                'datetime': '日期時間',
-                'day': '日期(日)',
-                'time': '時間',
-                'date': '日期',
-                'hidden': '隱藏欄位',
-                'signature': '簽名',
-                'file': '檔案上傳',
-                'tags': '標籤',
-                'address': '地址',
-                'datagrid': '資料表格',
-                'editgrid': '編輯表格',
-                'survey': '問卷'
+                'textfield': __('文字欄位'),
+                'textarea': __('多行文字'),
+                'number': __('數字'),
+                'password': __('密碼'),
+                'email': __('電子郵件'),
+                'phoneNumber': __('電話號碼'),
+                'url': __('網址'),
+                'currency': __('貨幣'),
+                'checkbox': __('核取方塊'),
+                'selectboxes': __('多選方塊'),
+                'select': __('下拉選單'),
+                'radio': __('單選按鈕'),
+                'datetime': __('日期時間'),
+                'day': __('日期(日)'),
+                'time': __('時間'),
+                'date': __('日期'),
+                'hidden': __('隱藏欄位'),
+                'signature': __('簽名'),
+                'file': __('檔案上傳'),
+                'tags': __('標籤'),
+                'address': __('地址'),
+                'datagrid': __('資料表格'),
+                'editgrid': __('編輯表格'),
+                'survey': __('問卷')
             };
 
             // 資料類型標籤顏色
@@ -460,7 +460,7 @@
                     document.body.removeChild(textarea);
                     updateStatus(`✅ 已複製: ${text}`);
                 } catch (e) {
-                    updateStatus('❌ 複製失敗');
+                    updateStatus(__('❌ 複製失敗'));
                 }
             }
         }
@@ -496,7 +496,7 @@
                 }
             } catch (err) {
                 console.error('複製失敗:', err);
-                updateStatus('❌ 複製失敗');
+                updateStatus(__('❌ 複製失敗'));
             }
 
             document.body.removeChild(textarea);
@@ -510,7 +510,7 @@
             const checkedRows = document.querySelectorAll('#form-fields-tbody .field-row input.field-read-checkbox:checked');
 
             if (checkedRows.length === 0) {
-                updateStatus('⚠ 請先勾選要複製的欄位');
+                updateStatus(__('⚠ 請先勾選要複製的欄位'));
                 return;
             }
 
@@ -524,7 +524,7 @@
             });
 
             if (displayVars.length === 0) {
-                updateStatus('⚠ 沒有可複製的變數');
+                updateStatus(__('⚠ 沒有可複製的變數'));
                 return;
             }
 
@@ -547,7 +547,7 @@
                 }
             } catch (err) {
                 console.error('複製失敗:', err);
-                updateStatus('❌ 複製失敗');
+                updateStatus(__('❌ 複製失敗'));
             }
 
             document.body.removeChild(textarea);
@@ -561,7 +561,7 @@
             const checkedRows = document.querySelectorAll('#form-fields-tbody .field-row input.field-read-checkbox:checked');
 
             if (checkedRows.length === 0) {
-                updateStatus('⚠ 請先勾選要複製的欄位');
+                updateStatus(__('⚠ 請先勾選要複製的欄位'));
                 return;
             }
 
@@ -575,7 +575,7 @@
             });
 
             if (internalVars.length === 0) {
-                updateStatus('⚠ 沒有可複製的變數');
+                updateStatus(__('⚠ 沒有可複製的變數'));
                 return;
             }
 
@@ -598,7 +598,7 @@
                 }
             } catch (err) {
                 console.error('複製失敗:', err);
-                updateStatus('❌ 複製失敗');
+                updateStatus(__('❌ 複製失敗'));
             }
 
             document.body.removeChild(textarea);
@@ -609,14 +609,14 @@
          */
         function copyFieldsTable() {
             if (currentFormFields.length === 0) {
-                updateStatus('⚠ 沒有欄位可複製');
+                updateStatus(__('⚠ 沒有欄位可複製'));
                 return;
             }
 
             // 建立 TSV 格式 (Tab-Separated Values)
             let tsv = '欄位代碼\t顯示名稱\t類型\t資料型別\t必填\t路徑\n';
             for (const field of currentFormFields) {
-                tsv += `${field.key}\t${field.label}\t${field.type}\t${field.data_type}\t${field.required ? '是' : '否'}\t${field.path}\n`;
+                tsv += `${field.key}\t${field.label}\t${field.type}\t${field.data_type}\t${field.required ? __('是') : __('否')}\t${field.path}\n`;
             }
 
             copyToClipboard(tsv);
@@ -713,10 +713,10 @@
 
         // OpSet 運算元中文對照
         const _opSetLabels = {
-            'set': '設定', 'add': '加法', 'subtract': '減法',
-            'multiply': '乘法', 'divide': '除法', 'concat': '字串連接',
-            'convert': '型別轉換', 'increment': '遞增', 'decrement': '遞減',
-            'expr': '表達式'
+            'set': __('設定'), 'add': __('加法'), 'subtract': __('減法'),
+            'multiply': __('乘法'), 'divide': __('除法'), 'concat': __('字串連接'),
+            'convert': __('型別轉換'), 'increment': __('遞增'), 'decrement': __('遞減'),
+            'expr': __('表達式')
         };
 
         /**
@@ -803,7 +803,7 @@
                         if (config.output_variable) {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: 'v.' + config.output_variable, detail: '決策輸出變數'
+                                varName: 'v.' + config.output_variable, detail: __('決策輸出變數')
                             });
                         }
                         // input_variables → READ
@@ -812,7 +812,7 @@
                             if (!iv.var_name) return;
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type,
-                                varName: 'v.' + iv.var_name, detail: '輸入變數控制'
+                                varName: 'v.' + iv.var_name, detail: __('輸入變數控制')
                             });
                         });
                         break;
@@ -821,7 +821,7 @@
                         if (config.result_var) {
                             allVars.push({
                                 category: 'SET', nodeId, displayName, type,
-                                varName: 'v.' + config.result_var, detail: 'SQL 查詢結果'
+                                varName: 'v.' + config.result_var, detail: __('SQL 查詢結果')
                             });
                         }
                         break;
@@ -842,7 +842,7 @@
                                 if (formPrefixes.some(p => varName.startsWith(p))) return;
                                 // 無前綴裸名加 v. 前綴顯示
                                 const displayVar = varName.startsWith('v.') ? varName : 'v.' + varName;
-                                const condDesc = `${rule.name || '規則' + (ri+1)}: ${cond.operator || '=='} ${cond.value || ''}`;
+                                const condDesc = `${rule.name || __('規則') + (ri+1)}: ${cond.operator || '=='} ${cond.value || ''}`;
                                 allVars.push({
                                     category: 'READ', nodeId, displayName, type,
                                     varName: displayVar, detail: condDesc
@@ -877,7 +877,7 @@
                         refs.forEach(v => {
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type: 'Telegram',
-                                varName: v, detail: '訊息引用'
+                                varName: v, detail: __('訊息引用')
                             });
                         });
                         break;
@@ -889,7 +889,7 @@
                         refs2.forEach(v => {
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type: 'EmailAdapter',
-                                varName: v, detail: '郵件引用'
+                                varName: v, detail: __('郵件引用')
                             });
                         });
                         break;
@@ -899,7 +899,7 @@
                         refs3.forEach(v => {
                             allVars.push({
                                 category: 'READ', nodeId, displayName, type,
-                                varName: v, detail: '欄位寫入引用'
+                                varName: v, detail: __('欄位寫入引用')
                             });
                         });
                         break;
@@ -912,8 +912,8 @@
                 : allVars.filter(v => v.category === filter.toUpperCase());
 
             if (filtered.length === 0) {
-                const emptyMsg = filter === 'all' ? '流程中沒有偵測到變數'
-                    : filter === 'set' ? '沒有設定(SET)類型的變數' : '沒有讀取(READ)類型的變數';
+                const emptyMsg = filter === 'all' ? __('流程中沒有偵測到變數')
+                    : filter === 'set' ? __('沒有設定(SET)類型的變數') : __('沒有讀取(READ)類型的變數');
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #999;"><i class="fas fa-info-circle"></i> ${emptyMsg}</td></tr>`;
                 if (countEl) countEl.textContent = `（${allVars.length} 個變數中 0 個符合）`;
                 return;
@@ -1006,7 +1006,7 @@
             const checkboxes = document.querySelectorAll('.opset-var-checkbox:checked');
 
             if (checkboxes.length === 0) {
-                updateStatus('⚠ 請先勾選要複製的變數');
+                updateStatus(__('⚠ 請先勾選要複製的變數'));
                 return;
             }
 
@@ -1031,14 +1031,14 @@
          */
         function copyVarsTable() {
             if (!window.cy) {
-                updateStatus('⚠ 流程圖尚未載入');
+                updateStatus(__('⚠ 流程圖尚未載入'));
                 return;
             }
 
             // 用當前篩選重新收集
             const rows = document.querySelectorAll('#opset-vars-tbody tr');
             if (!rows.length || (rows.length === 1 && rows[0].querySelector('td[colspan]'))) {
-                updateStatus('⚠ 沒有變數可複製');
+                updateStatus(__('⚠ 沒有變數可複製'));
                 return;
             }
 
@@ -1055,7 +1055,7 @@
             });
 
             copyToClipboard(tsv);
-            updateStatus('✅ 已複製變數表格到剪貼簿');
+            updateStatus(__('✅ 已複製變數表格到剪貼簿'));
         }
         window.copyVarsTable = copyVarsTable;
         window.copyOpsetVarsTable = copyVarsTable;
@@ -1068,7 +1068,7 @@
 
             const node = cy.getElementById(nodeId);
             if (node.length === 0) {
-                updateStatus('⚠ 找不到節點: ' + nodeId);
+                updateStatus(__('⚠ 找不到節點: ') + nodeId);
                 return;
             }
 
@@ -1204,7 +1204,7 @@
          */
         async function saveFieldReadConfig() {
             if (!selectedFormId || !cy) {
-                updateStatus('⚠ 請先選擇表單');
+                updateStatus(__('⚠ 請先選擇表單'));
                 return;
             }
 
@@ -1214,7 +1214,7 @@
             // 取得目前選中的表單資訊
             const currentForm = currentMappedForms.find(f => f.form_id === selectedFormId);
             if (!currentForm) {
-                updateStatus('❌ 找不到表單資訊');
+                updateStatus(__('❌ 找不到表單資訊'));
                 return;
             }
 
@@ -1247,7 +1247,7 @@
                 updateStatus(`✅ 已儲存「${currentForm.form_name}」的欄位取值設定 (${selectedKeys.length} 個欄位)`);
             } catch (error) {
                 console.error('儲存失敗:', error);
-                updateStatus('❌ 儲存失敗: ' + error.message);
+                updateStatus(__('❌ 儲存失敗: ') + error.message);
                 fieldReadConfigDirty = true;
                 updateFieldConfigStatus();
             }
@@ -1411,7 +1411,7 @@
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.message || '載入失敗');
+                    throw new Error(result.message || __('載入失敗'));
                 }
 
                 const fields = result.data.fields || [];
@@ -1581,7 +1581,7 @@
          */
         async function applyVarConfigRead() {
             if (!varConfigReadFormId || !varConfigReadFormCode) {
-                updateStatus('⚠ 請先選擇表單');
+                updateStatus(__('⚠ 請先選擇表單'));
                 return;
             }
 
@@ -1589,14 +1589,14 @@
             const selectedKeys = Array.from(checkboxes).map(cb => cb.dataset.key);
 
             if (selectedKeys.length === 0) {
-                updateStatus('⚠ 請至少選擇一個欄位');
+                updateStatus(__('⚠ 請至少選擇一個欄位'));
                 return;
             }
 
             // 取得表單資訊
             const form = currentMappedForms.find(f => f.form_id === varConfigReadFormId);
             if (!form) {
-                updateStatus('❌ 找不到表單資訊');
+                updateStatus(__('❌ 找不到表單資訊'));
                 return;
             }
 
@@ -1625,7 +1625,7 @@
                 }
             } catch (error) {
                 console.error('儲存失敗:', error);
-                updateStatus('❌ 儲存失敗: ' + error.message);
+                updateStatus(__('❌ 儲存失敗: ') + error.message);
             }
         }
 
@@ -1634,7 +1634,7 @@
          */
         function copyVarConfigWriteSyntax() {
             if (!varConfigWriteFormCode) {
-                updateStatus('⚠ 請先選擇表單');
+                updateStatus(__('⚠ 請先選擇表單'));
                 return;
             }
 
@@ -1646,7 +1646,7 @@
             }));
 
             if (selectedFields.length === 0) {
-                updateStatus('⚠ 請至少選擇一個欄位');
+                updateStatus(__('⚠ 請至少選擇一個欄位'));
                 return;
             }
 
@@ -1702,11 +1702,11 @@
                 if (successful) {
                     updateStatus(`✅ 已複製 ${count} 個變數語法到剪貼簿`);
                 } else {
-                    updateStatus('❌ 複製失敗');
+                    updateStatus(__('❌ 複製失敗'));
                 }
             } catch (err) {
                 console.error('複製失敗:', err);
-                updateStatus('❌ 複製失敗: ' + err.message);
+                updateStatus(__('❌ 複製失敗: ') + err.message);
             }
 
             document.body.removeChild(textarea);
@@ -1756,7 +1756,7 @@
                 const response = await fetch(url);
                 const result = await response.json();
 
-                if (!result.success) throw new Error(result.message || '載入失敗');
+                if (!result.success) throw new Error(result.message || __('載入失敗'));
 
                 fieldPermFormFields = result.data.fields || [];
                 renderFieldPermissionsTable(node, form.form_name);

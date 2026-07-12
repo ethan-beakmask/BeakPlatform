@@ -14,6 +14,7 @@ from app import db, csrf
 
 from .form_center import form_center_bp
 from .fc_utils import _apply_field_permissions_to_schema
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -146,14 +147,14 @@ def get_pending_task(secure_code):
     ).first()
 
     if not task:
-        return jsonify({'success': False, 'error': '找不到指定的任務'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的任務')}), 404
 
     # 檢查當前用戶是否為指定簽核人
     task_result_data = (task.result or {}).get('data', {})
     assignee_type = task_result_data.get('assignee_type')
     assignees = task_result_data.get('assignees', [])
     if assignee_type and current_user.secure_code not in assignees:
-        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+        return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     # 取得表單資訊（使用 secure_code）
     form_instance = FwFormInstance.query.filter_by(
@@ -263,14 +264,14 @@ def lock_task(secure_code):
         ).with_for_update().first()
 
         if not task:
-            return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
+            return jsonify({'success': False, 'error': _('找不到任務或已處理')}), 404
 
         # 檢查當前用戶是否為指定簽核人
         task_result_data = (task.result or {}).get('data', {})
         assignee_type = task_result_data.get('assignee_type')
         assignees = task_result_data.get('assignees', [])
         if assignee_type and current_user.secure_code not in assignees:
-            return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+            return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
         # 檢查是否已被鎖定
         if task.is_locked:
@@ -280,7 +281,7 @@ def lock_task(secure_code):
                 db.session.commit()
                 return jsonify({
                     'success': True,
-                    'message': '鎖定已刷新',
+                    'message': _('鎖定已刷新'),
                     'remaining_seconds': task.lock_remaining_seconds
                 })
             else:
@@ -289,7 +290,7 @@ def lock_task(secure_code):
                 locker_display = locker.employee_id or locker.display_name or locker.username if locker else '未知'
                 return jsonify({
                     'success': False,
-                    'error': f'此表單由 {locker_display} 簽核中',
+                    'error': _('此表單由 %(locker)s 簽核中', locker=locker_display),
                     'locked_by_display': locker_display,
                     'code': 'LOCKED'
                 }), 409
@@ -300,14 +301,14 @@ def lock_task(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '已取得簽核鎖定',
+            'message': _('已取得簽核鎖定'),
             'remaining_seconds': task.lock_remaining_seconds
         })
 
     except Exception as e:
         db.session.rollback()
         logger.error(f'取得簽核鎖定失敗: {e}')
-        return jsonify({'success': False, 'error': f'取得鎖定失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('取得鎖定失敗: %(error)s', error=str(e))}), 500
 
 
 @form_center_bp.route('/pending-tasks/<secure_code>/lock', methods=['DELETE'])
@@ -331,14 +332,14 @@ def unlock_task(secure_code):
         ).with_for_update().first()
 
         if not task:
-            return jsonify({'success': False, 'error': '找不到任務'}), 404
+            return jsonify({'success': False, 'error': _('找不到任務')}), 404
 
         # 只有鎖定者可以釋放
         if task.locked_by == current_user.secure_code:
             task.release_lock()
             db.session.commit()
 
-        return jsonify({'success': True, 'message': '鎖定已釋放'})
+        return jsonify({'success': True, 'message': _('鎖定已釋放')})
 
     except Exception as e:
         db.session.rollback()
@@ -366,27 +367,27 @@ def approve_task(secure_code):
         ).with_for_update().first()
 
         if not task:
-            return jsonify({'success': False, 'error': '找不到任務或已處理'}), 404
+            return jsonify({'success': False, 'error': _('找不到任務或已處理')}), 404
 
         # 檢查當前用戶是否為指定簽核人
         task_result_data = (task.result or {}).get('data', {})
         assignee_type = task_result_data.get('assignee_type')
         assignees = task_result_data.get('assignees', [])
         if assignee_type and current_user.secure_code not in assignees:
-            return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+            return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
         # 驗證鎖定持有者：必須是當前用戶且未逾時
         if task.is_locked and task.locked_by != current_user.secure_code:
             return jsonify({
                 'success': False,
-                'error': '此表單正由他人簽核中',
+                'error': _('此表單正由他人簽核中'),
                 'code': 'LOCKED'
             }), 409
 
         if task.locked_by == current_user.secure_code and not task.is_locked:
             return jsonify({
                 'success': False,
-                'error': '簽核逾時，鎖定已失效，請重新開啟',
+                'error': _('簽核逾時，鎖定已失效，請重新開啟'),
                 'code': 'LOCK_EXPIRED'
             }), 409
 
@@ -400,7 +401,7 @@ def approve_task(secure_code):
         if existing_approval:
             return jsonify({
                 'success': False,
-                'error': '您已簽核過此節點，無法重複簽核',
+                'error': _('您已簽核過此節點，無法重複簽核'),
                 'code': 'DUPLICATE'
             }), 409
 
@@ -419,7 +420,7 @@ def approve_task(secure_code):
         # 驗證簽核意見最少字數
         min_comment_length = task_result_data.get('min_comment_length', 0)
         if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
-            return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
+            return jsonify({'success': False, 'error': _('簽核意見至少需要 %(count)s 字', count=min_comment_length)}), 400
 
         # 處理表單欄位修改
         from ..models import FwFormInstance, FwFormFieldChange
@@ -452,7 +453,7 @@ def approve_task(secure_code):
                     if perm != 'editable':
                         return jsonify({
                             'success': False,
-                            'error': f'欄位 {field_key} 不允許修改'
+                            'error': _('欄位 %(field_key)s 不允許修改', field_key=field_key)
                         }), 403
 
                     field_change = FwFormFieldChange(
@@ -568,9 +569,9 @@ def approve_task(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '簽核完成' if decision == 'approved' else '已退回'
+            'message': _('簽核完成') if decision == 'approved' else _('已退回')
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'簽核失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('簽核失敗: %(error)s', error=str(e))}), 500

@@ -69,7 +69,7 @@
 
                         <!-- 預覽 -->
                         <div id="nbPreview" style="margin-bottom: 8px; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; overflow: hidden; white-space: nowrap; background: ${bgColor}; color: ${textColor};">
-                            ${message || '預覽：跑馬燈訊息將顯示在此'}
+                            ${message || __('預覽：跑馬燈訊息將顯示在此')}
                         </div>
                     </div>
 

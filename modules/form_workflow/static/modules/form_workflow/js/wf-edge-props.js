@@ -21,7 +21,7 @@
                 const sourceLabel = edge.source().data('label') || edge.source().id();
                 const targetLabel = edge.target().data('label') || edge.target().id();
                 // 正交折線加上標記
-                const suffix = edge.data('orthogonalEnabled') ? ' [正交]' : '';
+                const suffix = edge.data('orthogonalEnabled') ? __(' [正交]') : '';
                 option.textContent = `${sourceLabel} → ${targetLabel}${suffix}`;
                 selector.appendChild(option);
             });
@@ -177,9 +177,9 @@
 
             const curveStyle = document.getElementById('curve-style').value;
             const styleNames = {
-                'straight': '直線',
-                'bezier': '曲線',
-                'taxi': '直角折線'
+                'straight': __('直線'),
+                'bezier': __('曲線'),
+                'taxi': __('直角折線')
             };
 
             // 特殊處理：yellow-control 創建黃點控制點
@@ -311,7 +311,7 @@
                 }
             });
 
-            updateStatus('貝茲曲線參數已更新');
+            updateStatus(__('貝茲曲線參數已更新'));
         }
 
         // 更新計程車曲線控制
@@ -329,7 +329,7 @@
                 'taxi-turn-min-distance': 10
             });
 
-            updateStatus('計程車曲線參數已更新');
+            updateStatus(__('計程車曲線參數已更新'));
         }
 
         // 更新線條樣式
@@ -382,7 +382,7 @@
                 }
             });
 
-            updateStatus('線條樣式已更新');
+            updateStatus(__('線條樣式已更新'));
         }
 
         // 更新箭頭樣式
@@ -422,7 +422,7 @@
                 }
             }
 
-            updateStatus('箭頭樣式已更新');
+            updateStatus(__('箭頭樣式已更新'));
         }
 
         // 更新邊的標籤
@@ -494,7 +494,7 @@
                 }
             }
 
-            updateStatus('邊標籤已更新');
+            updateStatus(__('邊標籤已更新'));
         }
 
         // 更新邊的條件表達式
@@ -504,7 +504,7 @@
             const condition = document.getElementById('edge-condition').value;
             currentSelectedEdge.data('condition', condition);
 
-            updateStatus('條件表達式已更新');
+            updateStatus(__('條件表達式已更新'));
         }
 
         // 更新邊是否為預設路徑
@@ -524,7 +524,7 @@
                 });
             }
 
-            updateStatus(isDefault ? '已設為預設路徑' : '已取消預設路徑');
+            updateStatus(isDefault ? __('已設為預設路徑') : __('已取消預設路徑'));
         }
 
         // 測試條件表達式
@@ -532,7 +532,7 @@
             const condition = document.getElementById('edge-condition').value;
 
             if (!condition || condition.trim() === '') {
-                updateStatus('請先輸入條件表達式', 'warning');
+                updateStatus(__('請先輸入條件表達式'), 'warning');
                 return;
             }
 
@@ -587,7 +587,7 @@
         // 套用預設樣式
         function applyPreset(presetName) {
             if (!currentSelectedEdge) {
-                updateStatus('請先選擇一條線段', 'warning');
+                updateStatus(__('請先選擇一條線段'), 'warning');
                 return;
             }
 
@@ -634,7 +634,7 @@
             if (preset) {
                 // 分段折線需要提示使用者
                 if (presetName === 'polyline') {
-                    updateStatus('分段折線需要使用 Shift + 點擊線段 來添加中繼點', 'warning');
+                    updateStatus(__('分段折線需要使用 Shift + 點擊線段 來添加中繼點'), 'warning');
                 }
 
                 currentSelectedEdge.style(preset);
@@ -654,7 +654,7 @@
         // 刪除當前選中的線段
         function deleteSelectedEdge() {
             if (!currentSelectedEdge) {
-                updateStatus('請先選擇一條線段', 'warning');
+                updateStatus(__('請先選擇一條線段'), 'warning');
                 return;
             }
 
@@ -679,7 +679,7 @@
             currentSelectedEdge = null;
             document.getElementById('edge-selector').value = '';
             document.getElementById('edge-info').classList.remove('show');
-            document.getElementById('edge-info').textContent = '請先選擇一條線段以調整其屬性';
+            document.getElementById('edge-info').textContent = __('請先選擇一條線段以調整其屬性');
 
             // 更新線段選擇器
             updateEdgeSelector();

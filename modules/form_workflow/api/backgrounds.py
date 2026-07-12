@@ -12,6 +12,7 @@ from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app.services import file_service
 from app import db, csrf
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ def upload_background():
         return jsonify({'success': False, 'message': 'Organization not found'}), 400
 
     if 'file' not in request.files:
-        return jsonify({'success': False, 'message': '未提供檔案'}), 400
+        return jsonify({'success': False, 'message': _('未提供檔案')}), 400
 
     file = request.files['file']
 
@@ -99,7 +100,7 @@ def upload_background():
 
         return jsonify({
             'success': True,
-            'message': '底圖上傳成功',
+            'message': _('底圖上傳成功'),
             'data': background.to_dict()
         }), 201
 
@@ -108,7 +109,7 @@ def upload_background():
     except Exception as e:
         db.session.rollback()
         logger.exception("底圖上傳失敗")
-        return jsonify({'success': False, 'message': f'上傳失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('上傳失敗: %(error)s', error=str(e))}), 500
 
 
 @backgrounds_bp.route('/<secure_code>', methods=['PUT'])
@@ -129,7 +130,7 @@ def update_background(secure_code):
     ).first()
 
     if not background:
-        return jsonify({'success': False, 'message': '底圖不存在'}), 404
+        return jsonify({'success': False, 'message': _('底圖不存在')}), 404
 
     try:
         data = request.get_json() or {}
@@ -140,13 +141,13 @@ def update_background(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '底圖描述已更新',
+            'message': _('底圖描述已更新'),
             'data': background.to_dict()
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'更新失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('更新失敗: %(error)s', error=str(e))}), 500
 
 
 @backgrounds_bp.route('/<secure_code>', methods=['DELETE'])
@@ -167,7 +168,7 @@ def delete_background(secure_code):
     ).first()
 
     if not background:
-        return jsonify({'success': False, 'message': '底圖不存在'}), 404
+        return jsonify({'success': False, 'message': _('底圖不存在')}), 404
 
     try:
         # 透過 FileService 刪除實體檔案
@@ -183,9 +184,9 @@ def delete_background(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '底圖已刪除'
+            'message': _('底圖已刪除')
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('刪除失敗: %(error)s', error=str(e))}), 500

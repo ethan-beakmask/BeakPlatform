@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表單設計器 - BeakPlatform</title>
+    <title>{{ _('表單設計器 - BeakPlatform') }}</title>
     <script>window.__BP = '{{ app_prefix }}';</script>
+    <script src="{{ app_prefix }}/static/js/i18n.js"></script>
+    {% set _locale = current_locale|default('zh-TW') %}
+    {% if _locale != 'zh-TW' %}
+    <script src="{{ app_prefix }}/i18n/{{ _locale }}.js"></script>
+    {% endif %}
 
     <!-- Bootstrap 5 (本地) -->
     <link href="{{ app_prefix }}/static/vendor/bootstrap.min.css" rel="stylesheet">
@@ -34,7 +39,7 @@
             <span class="navbar-user">{{ current_user.display_name }}{% if current_user.primary_unit %} / {{ current_user.primary_unit.name }}{% endif %}</span>
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin:0; margin-left:16px;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">登出</button>
+                <button type="submit">{{ _('登出') }}</button>
             </form>
         </div>
     </div>
@@ -47,79 +52,79 @@
         <!-- 工具列 -->
         <div class="designer-toolbar">
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                    <input type="text" class="form-control form-control-sm" style="width: 210px;" placeholder="表單檔名" id="form-name">
+                    <input type="text" class="form-control form-control-sm" style="width: 210px;" placeholder="{{ _('表單檔名') }}" id="form-name">
                     <span id="form-version-badge" class="badge bg-secondary" style="display: none;">AA</span>
                     <span id="form-author-info" class="text-muted small" style="display: none; margin-left: 4px;"></span>
                     <select class="form-select form-select-sm" style="width: 170px;" id="form-category">
                     </select>
-                    <input type="text" class="form-control form-control-sm" style="width: 240px;" placeholder="描述（選填）" id="form-description">
+                    <input type="text" class="form-control form-control-sm" style="width: 240px;" placeholder="{{ _('描述（選填）') }}" id="form-description">
                     <button id="btn-save" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-save"></i> 儲存
+                        <i class="fas fa-save"></i> {{ _('儲存') }}
                     </button>
                     <button id="btn-save-close" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-save"></i> 儲存並離開
+                        <i class="fas fa-save"></i> {{ _('儲存並離開') }}
                     </button>
                     <button id="btn-save-new-version" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-code-branch"></i> 另存新版
+                        <i class="fas fa-code-branch"></i> {{ _('另存新版') }}
                     </button>
                     <button id="btn-discard" class="btn btn-sm btn-outline-danger">
-                        <i class="fas fa-times"></i> 放棄
+                        <i class="fas fa-times"></i> {{ _('放棄') }}
                     </button>
                 </div>
 
                 <!-- 第二列：範本、預覽、寬度設定 -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <button id="btn-load-template" class="btn btn-sm btn-outline-success" title="從範本載入表單結構">
-                        <i class="fas fa-file-import"></i> 載入範本
+                    <button id="btn-load-template" class="btn btn-sm btn-outline-success" title="{{ _('從範本載入表單結構') }}">
+                        <i class="fas fa-file-import"></i> {{ _('載入範本') }}
                     </button>
-                    <button id="btn-upload-template" class="btn btn-sm btn-outline-success" title="上傳範本檔案">
-                        <i class="fas fa-upload"></i> 上傳範本
+                    <button id="btn-upload-template" class="btn btn-sm btn-outline-success" title="{{ _('上傳範本檔案') }}">
+                        <i class="fas fa-upload"></i> {{ _('上傳範本') }}
                     </button>
                     <input type="file" id="template-file-input" accept=".json" style="display: none;">
-                    <button id="btn-background" class="btn btn-sm btn-outline-secondary" title="設定表單底圖">
-                        <i class="fas fa-image"></i> 底圖
+                    <button id="btn-background" class="btn btn-sm btn-outline-secondary" title="{{ _('設定表單底圖') }}">
+                        <i class="fas fa-image"></i> {{ _('底圖') }}
                     </button>
                     <button id="btn-preview" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-eye"></i> 表單預覽
+                        <i class="fas fa-eye"></i> {{ _('表單預覽') }}
                     </button>
                     <button id="btn-print-preview" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-print"></i> 列印預覽
+                        <i class="fas fa-print"></i> {{ _('列印預覽') }}
                     </button>
                     <button id="btn-get-schema" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-code"></i> Schema
                     </button>
-                    <button id="btn-field-spec" class="btn btn-sm btn-outline-warning" title="開啟欄位規格編輯器" onclick="openFieldSpecEditor()">
-                        <i class="fas fa-database"></i> 規格
+                    <button id="btn-field-spec" class="btn btn-sm btn-outline-warning" title="{{ _('開啟欄位規格編輯器') }}" onclick="openFieldSpecEditor()">
+                        <i class="fas fa-database"></i> {{ _('規格') }}
                     </button>
                     <span class="border-start ps-2 ms-1"></span>
-                    <label class="form-check form-check-inline mb-0 small" title="啟用後，填表時可上傳附件檔案">
+                    <label class="form-check form-check-inline mb-0 small" title="{{ _('啟用後，填表時可上傳附件檔案') }}">
                         <input class="form-check-input" type="checkbox" id="chk-file-upload" checked>
-                        <span class="form-check-label text-muted">附件上傳</span>
+                        <span class="form-check-label text-muted">{{ _('附件上傳') }}</span>
                     </label>
-                    <label class="form-check form-check-inline mb-0 small" title="啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || 分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名">
+                    <label class="form-check form-check-inline mb-0 small" title="{{ _('啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || 分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名') }}">
                         <input class="form-check-input" type="checkbox" id="chk-placeholder-to-label" checked>
-                        <span class="form-check-label text-muted">提示→標籤</span>
+                        <span class="form-check-label text-muted">{{ _('提示→標籤') }}</span>
                     </label>
                     <span class="border-start ps-2 ms-1"></span>
-                    <span class="small text-muted">風格:</span>
+                    <span class="small text-muted">{{ _('風格:') }}</span>
                     <select id="form-theme" class="form-select form-select-sm" style="width: auto;">
-                        <option value="default">formio預設</option>
+                        <option value="default">{{ _('formio預設') }}</option>
                     </select>
                     <span class="border-start ps-2 ms-1"></span>
-                    <span class="small text-muted">寬度:</span>
+                    <span class="small text-muted">{{ _('寬度:') }}</span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button id="btn-width-narrow" class="btn btn-outline-secondary" title="窄版 900px">
-                            窄
+                        <button id="btn-width-narrow" class="btn btn-outline-secondary" title="{{ _('窄版 900px') }}">
+                            {{ _('窄') }}
                         </button>
-                        <button id="btn-width-wide" class="btn btn-outline-secondary" title="寬版 1200px">
-                            寬
+                        <button id="btn-width-wide" class="btn btn-outline-secondary" title="{{ _('寬版 1200px') }}">
+                            {{ _('寬') }}
                         </button>
-                        <button id="btn-width-full" class="btn btn-outline-secondary active" title="不限制寬度">
-                            不限
+                        <button id="btn-width-full" class="btn btn-outline-secondary active" title="{{ _('不限制寬度') }}">
+                            {{ _('不限') }}
                         </button>
                     </div>
                     <input type="number" class="form-control form-control-sm" style="width: 90px;"
-                           id="form-width-input" placeholder="自訂 px" min="300" step="10">
+                           id="form-width-input" placeholder="{{ _('自訂 px') }}" min="300" step="10">
                     <span class="text-muted small ms-1">300+</span>
                 </div>
             </div>

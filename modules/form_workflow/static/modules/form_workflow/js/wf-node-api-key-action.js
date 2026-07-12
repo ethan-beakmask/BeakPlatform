@@ -98,7 +98,7 @@
                 (data.keys || []).forEach(k => {
                     const opt = document.createElement('option');
                     opt.value = k.key_id;
-                    const statusLabel = k.status === 'active' ? '' : `［${k.status === 'suspended' ? '暫停中' : k.status}］`;
+                    const statusLabel = k.status === 'active' ? '' : `［${k.status === 'suspended' ? __('暫停中') : k.status}］`;
                     opt.textContent = `${k.name} (${k.key_id}) ${statusLabel}`;
                     if (k.key_id === selectedKeyId) opt.selected = true;
                     sel.appendChild(opt);
@@ -121,13 +121,13 @@
             if (keySource === 'static') {
                 keyId = document.getElementById('akaKeyStatic')?.value || '';
                 if (!keyId) {
-                    updateStatus('請選擇處置對象 Key', 'warning');
+                    updateStatus(__('請選擇處置對象 Key'), 'warning');
                     return;
                 }
             } else if (keySource === 'variable') {
                 keyId = document.getElementById('akaKeyExpr')?.value?.trim() || '';
                 if (!keyId) {
-                    updateStatus('請輸入 key_id 運算式', 'warning');
+                    updateStatus(__('請輸入 key_id 運算式'), 'warning');
                     return;
                 }
             }
@@ -140,6 +140,6 @@
                 key_id: keyId,
                 reason: document.getElementById('akaReason')?.value?.trim() || '',
             });
-            updateStatus('API Key 處置設定已套用', 'success');
+            updateStatus(__('API Key 處置設定已套用'), 'success');
         }
         window.applyApiKeyActionConfig = applyApiKeyActionConfig;

@@ -8,7 +8,7 @@
             <div style="display: flex; align-items: center; gap: 16px;">
                 <!-- 標題 -->
                 <div>
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 600;">流程監控</h3>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600;">{{ _('流程監控') }}</h3>
                     <p x-show="monitoringExecution" style="margin: 2px 0 0; font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <span style="font-family: monospace; background: #e5e7eb; padding: 2px 6px; border-radius: 3px;" x-text="monitoringExecution?.execution_code"></span>
                         <span style="color: #d1d5db;">|</span>
@@ -25,19 +25,19 @@
                 <!-- 狀態徽章 -->
                 <div style="display: flex; gap: 8px; font-size: 11px;">
                     <span class="fc-status-badge" style="background: #f9fafb; border: 1px solid #e5e7eb;">
-                        狀態: <strong x-text="monitorStatus.flowStatus || '-'"></strong>
+                        {{ _('狀態:') }} <strong x-text="monitorStatus.flowStatus || '-'"></strong>
                     </span>
                     <span class="fc-status-badge fc-status-badge-running">
-                        執行中: <strong x-text="monitorStatus.activeCount || 0"></strong>
+                        {{ _('執行中:') }} <strong x-text="monitorStatus.activeCount || 0"></strong>
                     </span>
                     <span class="fc-status-badge fc-status-badge-completed">
-                        完成: <strong x-text="monitorStatus.completedCount || 0"></strong>
+                        {{ _('完成:') }} <strong x-text="monitorStatus.completedCount || 0"></strong>
                     </span>
                     <span class="fc-status-badge fc-status-badge-failed">
-                        失敗: <strong x-text="monitorStatus.failedCount || 0"></strong>
+                        {{ _('失敗:') }} <strong x-text="monitorStatus.failedCount || 0"></strong>
                     </span>
                     <span class="fc-status-badge fc-status-badge-waiting">
-                        等待: <strong x-text="monitorStatus.waitingCount || 0"></strong>
+                        {{ _('等待:') }} <strong x-text="monitorStatus.waitingCount || 0"></strong>
                     </span>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                         x-cloak
                         @click="confirmForceEnd()"
                         style="padding: 4px 12px; font-size: 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    強制結束
+                    {{ _('強制結束') }}
                 </button>
                 <button @click="closeMonitorModal()" class="fc-close-btn">&times;</button>
             </div>
@@ -57,28 +57,28 @@
             <button @click="monitorPage = 'overview'"
                     :style="monitorPage === 'overview' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                流程總覽
+                {{ _('流程總覽') }}
             </button>
             <button @click="switchToMonitorFlowChart()"
                     :style="monitorPage === 'flowChart' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                流程總圖
+                {{ _('流程總圖') }}
             </button>
             <button @click="monitorPage = 'detail'"
                     :style="monitorPage === 'detail' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                執行日誌
+                {{ _('執行日誌') }}
                 <span x-show="(monitorData?.logs || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #e5e7eb; border-radius: 10px; font-size: 10px;" x-text="(monitorData?.logs || []).length"></span>
             </button>
             <button @click="switchToFormContent()"
                     :style="monitorPage === 'formContent' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                表單內容
+                {{ _('表單內容') }}
             </button>
             <button @click="switchToApprovalHistory()"
                     :style="monitorPage === 'approvals' ? 'border-bottom: 2px solid #3b82f6; color: #3b82f6;' : 'color: #6b7280;'"
                     style="padding: 8px 16px; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer;">
-                簽核歷史
+                {{ _('簽核歷史') }}
                 <span x-show="(formDetail?.approvals || []).length > 0" style="margin-left: 4px; padding: 2px 6px; background: #fef3c7; color: #92400e; border-radius: 10px; font-size: 10px;" x-text="(formDetail?.approvals || []).length"></span>
             </button>
         </div>
@@ -111,29 +111,29 @@
                 <!-- 標題列 -->
                 <div class="fc-history-header">
                     <div style="font-size: 13px; font-weight: 600;">
-                        執行歷程
+                        {{ _('執行歷程') }}
                         <span style="font-weight: normal; color: #6b7280; margin-left: 4px;">(<span x-text="(monitorStatus.executionHistory || []).length"></span>)</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <!-- 自動刷新開關 -->
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
                             <input type="checkbox" x-model="autoRefresh" @change="toggleAutoRefresh()" style="width: 12px; height: 12px;">
-                            <span :style="autoRefresh ? 'color: #16a34a;' : 'color: #6b7280;'">5秒刷新</span>
+                            <span :style="autoRefresh ? 'color: #16a34a;' : 'color: #6b7280;'">{{ _('5秒刷新') }}</span>
                         </label>
                         <!-- 手動刷新 -->
                         <button @click="refreshMonitor()" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #3b82f6; padding: 2px 6px;">
-                            刷新
+                            {{ _('刷新') }}
                         </button>
                     </div>
                 </div>
 
                 <!-- 表頭 -->
                 <div style="display: flex; padding: 6px 8px; font-size: 10px; color: #6b7280; border-bottom: 1px solid #e5e7eb; gap: 4px; flex-shrink: 0;">
-                    <div style="width: 160px;">流程</div>
-                    <div style="width: 120px;">顯示名稱</div>
-                    <div style="flex: 1;">節點</div>
-                    <div style="width: 80px;">狀態</div>
-                    <div style="width: 80px;">時間</div>
+                    <div style="width: 160px;">{{ _('流程') }}</div>
+                    <div style="width: 120px;">{{ _('顯示名稱') }}</div>
+                    <div style="flex: 1;">{{ _('節點') }}</div>
+                    <div style="width: 80px;">{{ _('狀態') }}</div>
+                    <div style="width: 80px;">{{ _('時間') }}</div>
                 </div>
 
                 <!-- 歷程清單 -->
@@ -156,7 +156,7 @@
                                       }"></span>
                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                                       :style="item.is_subprocess ? 'color: #7c3aed;' : 'color: #3b82f6;'"
-                                      x-text="item.workflow_name || '主流程'"></span>
+                                      x-text="item.workflow_name || __('主流程')"></span>
                             </div>
                             <!-- 顯示名稱 -->
                             <div style="width: 120px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="item.display_name || '-'"></div>
@@ -188,20 +188,20 @@
                 <!-- 標題列 -->
                 <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; flex-shrink: 0;">
                     <div style="font-size: 13px; font-weight: 600;">
-                        執行日誌
+                        {{ _('執行日誌') }}
                         <span style="font-weight: normal; color: #6b7280; margin-left: 4px;">(<span x-text="filteredLogs.length"></span>)</span>
                     </div>
                     <!-- 搜尋框 -->
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="text" x-model="logSearchQuery" placeholder="搜尋日誌..."
+                        <input type="text" x-model="logSearchQuery" placeholder="{{ _('搜尋日誌...') }}"
                                style="width: 150px; padding: 4px 8px; font-size: 11px; border: 1px solid #d1d5db; border-radius: 4px;">
-                        <button x-show="logSearchQuery" @click="logSearchQuery = ''" style="font-size: 11px; color: #6b7280; background: none; border: none; cursor: pointer;">清除</button>
+                        <button x-show="logSearchQuery" @click="logSearchQuery = ''" style="font-size: 11px; color: #6b7280; background: none; border: none; cursor: pointer;">{{ _('清除') }}</button>
                     </div>
                 </div>
                 <!-- 日誌清單 -->
                 <div style="flex: 1; overflow-y: auto;">
                     <div x-show="filteredLogs.length === 0" style="text-align: center; padding: 32px; color: #9ca3af;">
-                        <p x-text="logSearchQuery ? '沒有符合的日誌' : '尚無執行日誌'"></p>
+                        <p x-text="logSearchQuery ? __('沒有符合的日誌') : __('尚無執行日誌')"></p>
                     </div>
                     <template x-for="(log, idx) in filteredLogs" :key="idx">
                         <div style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid;"
@@ -228,13 +228,13 @@
             <!-- 右側：變數變化 -->
             <div style="width: 40%; display: flex; flex-direction: column; background: #f9fafb; border-radius: 8px; padding: 12px; overflow: hidden;">
                 <div style="font-size: 13px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; flex-shrink: 0;">
-                    變數變化
+                    {{ _('變數變化') }}
                     <span style="font-weight: normal; color: #6b7280; margin-left: 4px;">(<span x-text="variableChanges.length"></span>)</span>
                 </div>
                 <!-- 變數變化清單 -->
                 <div style="flex: 1; overflow-y: auto;">
                     <div x-show="variableChanges.length === 0" style="text-align: center; padding: 32px; color: #9ca3af;">
-                        <p>尚無變數變化記錄</p>
+                        <p>{{ _('尚無變數變化記錄') }}</p>
                     </div>
                     <template x-for="(change, idx) in variableChanges" :key="idx">
                         <div style="display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid;"
@@ -256,7 +256,7 @@
                 </div>
                 <!-- 最終變數值 -->
                 <div x-show="Object.keys(monitorData?.variables || {}).length > 0" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
-                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px;">最終變數值</div>
+                    <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px;">{{ _('最終變數值') }}</div>
                     <div style="max-height: 120px; overflow-y: auto;">
                         <template x-for="[key, value] in Object.entries(monitorData?.variables || {})" :key="key">
                             <div style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: white; border-radius: 4px; margin-bottom: 4px; font-size: 11px;">
@@ -272,25 +272,25 @@
 
         <!-- 第三頁：表單內容 -->
         <div x-show="monitorPage === 'formContent'" style="flex: 1; padding: 20px; overflow-y: auto;">
-            <div x-show="loadingFormDetail" class="fc-loading">載入表單內容中...</div>
-            <div x-show="!loadingFormDetail && !formDetail" class="fc-empty">無法載入表單內容</div>
+            <div x-show="loadingFormDetail" class="fc-loading">{{ _('載入表單內容中...') }}</div>
+            <div x-show="!loadingFormDetail && !formDetail" class="fc-empty">{{ _('無法載入表單內容') }}</div>
             <div x-show="!loadingFormDetail && formDetail">
                 <!-- 表單基本資訊 -->
                 <div style="background: #f9fafb; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 24px; font-size: 12px;">
                     <div>
-                        <span style="color: #6b7280;">單號：</span>
+                        <span style="color: #6b7280;">{{ _('單號：') }}</span>
                         <span style="font-family: monospace; font-weight: 500;" x-text="formDetail?.serial_number"></span>
                     </div>
                     <div>
-                        <span style="color: #6b7280;">表單：</span>
+                        <span style="color: #6b7280;">{{ _('表單：') }}</span>
                         <span style="font-weight: 500;" x-text="formDetail?.form_name"></span>
                     </div>
                     <div>
-                        <span style="color: #6b7280;">申請人：</span>
+                        <span style="color: #6b7280;">{{ _('申請人：') }}</span>
                         <span x-text="formDetail?.applicant_name || '-'"></span>
                     </div>
                     <div>
-                        <span style="color: #6b7280;">送出時間：</span>
+                        <span style="color: #6b7280;">{{ _('送出時間：') }}</span>
                         <span x-text="formDetail?.submitted_at ? formatDate(formDetail.submitted_at) : '-'"></span>
                     </div>
                 </div>
@@ -303,27 +303,27 @@
 
         <!-- 第四頁：簽核歷史 -->
         <div x-show="monitorPage === 'approvals'" class="fc-monitor-body" style="padding: 20px;">
-            <div x-show="loadingFormDetail" class="fc-loading">載入簽核歷史中...</div>
+            <div x-show="loadingFormDetail" class="fc-loading">{{ _('載入簽核歷史中...') }}</div>
             <div x-show="!loadingFormDetail && (!formDetail?.approvals || formDetail.approvals.length === 0)" class="fc-empty">
-                此表單尚無簽核記錄
+                {{ _('此表單尚無簽核記錄') }}
             </div>
             <div x-show="!loadingFormDetail && formDetail?.approvals?.length > 0">
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
                     <button @click="approvalSortAsc = !approvalSortAsc"
                             style="padding: 4px 12px; font-size: 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; color: #374151;">
-                        <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? '舊→新' : '新→舊'"></span>
+                        <i class="fas fa-sort"></i> <span x-text="approvalSortAsc ? __('舊→新') : __('新→舊')"></span>
                     </button>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px; max-width: 900px; margin: 0 auto;">
                     <thead>
                         <tr style="background: #f9fafb;">
-                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">簽核者</th>
-                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">動作</th>
-                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">關卡</th>
+                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">{{ _('簽核者') }}</th>
+                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">{{ _('動作') }}</th>
+                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap;">{{ _('關卡') }}</th>
                             <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; white-space: nowrap; cursor: pointer;" @click="approvalSortAsc = !approvalSortAsc">
-                                簽核時間 <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
+                                {{ _('簽核時間') }} <i class="fas" :class="approvalSortAsc ? 'fa-sort-up' : 'fa-sort-down'" style="color: #6b7280;"></i>
                             </th>
-                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">意見</th>
+                            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">{{ _('意見') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -351,11 +351,11 @@
                 <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #ef4444;"></div> End</div>
                 <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
                 <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
-                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
-                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
-                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
-                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
-                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> {{ _('系統node') }}</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> {{ _('子流程') }}</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> {{ _('執行中') }}</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> {{ _('已完成') }}</div>
+                <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> {{ _('失敗') }}</div>
             </div>
         </div>
     </div>

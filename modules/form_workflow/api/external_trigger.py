@@ -13,6 +13,7 @@ scope 解釋(本模組負責):
 import logging
 
 from flask import Blueprint, jsonify, request, g
+from flask_babel import gettext as _
 
 from app import db, limiter
 from app.security.decorators import api_key_hmac_required
@@ -94,7 +95,7 @@ def _resolve_applicant(api_key):
         is_active=True,
     ).first()
     if not user:
-        raise ValueError('API Key 綁定的系統帳號不存在或已停用')
+        raise ValueError(_('API Key 綁定的系統帳號不存在或已停用'))
 
     return {
         'applicant_secure_code': user.secure_code,
@@ -229,7 +230,7 @@ def trigger_form():
     )
     return jsonify({
         'success': True,
-        'message': '表單已送出，流程已啟動',
+        'message': _('表單已送出，流程已啟動'),
         'data': {
             'form_instance_secure_code': form_instance.secure_code,
             'serial_number': form_instance.serial_number,

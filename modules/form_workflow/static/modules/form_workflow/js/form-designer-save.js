@@ -98,7 +98,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
                     })
                 }),
                 new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('請求超時（15秒）')), 15000)
+                    setTimeout(() => reject(new Error(__('請求超時（15秒）'))), 15000)
                 )
             ]);
         } else {
@@ -117,7 +117,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
                     })
                 }),
                 new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('請求超時（15秒）')), 15000)
+                    setTimeout(() => reject(new Error(__('請求超時（15秒）'))), 15000)
                 )
             ]);
         }
@@ -152,7 +152,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
                 sessionStorage.setItem('thumb_pending', currentFormId || result.data.secure_code);
             }
         } else {
-            throw new Error(result.message || '儲存失敗');
+            throw new Error(result.message || __('儲存失敗'));
         }
     } catch (error) {
         console.error('儲存失敗:', error);
@@ -226,7 +226,7 @@ document.getElementById('btn-save-close').addEventListener('click', async () => 
             // 跳轉到表單清單頁面
             window.location.href = window.__BP + '/forms/templates';
         } else {
-            throw new Error(result.message || '儲存失敗');
+            throw new Error(result.message || __('儲存失敗'));
         }
     } catch (error) {
         console.error('儲存失敗:', error);
@@ -313,7 +313,7 @@ document.getElementById('btn-save-new-version').addEventListener('click', async 
             // 不切換到新版本，保持在當前版本繼續編輯
             alert(`已在背景儲存為新版本 (${newVersion})\n\n新版本編號: ${newSecureCode}\n\n您仍在編輯目前版本，可從表單清單開啟新版本。`);
         } else {
-            throw new Error(result.message || '儲存新版本失敗');
+            throw new Error(result.message || __('儲存新版本失敗'));
         }
     } catch (error) {
         console.error('儲存新版本失敗:', error);

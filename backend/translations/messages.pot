@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 21:02+0800\n"
+"POT-Creation-Date: 2026-07-12 21:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,6 +182,8 @@ msgstr ""
 msgid "不支援的操作: %(action)s"
 msgstr ""
 
+#: ../modules/form_workflow/api/fc_admin.py:106
+#: ../modules/form_workflow/api/fc_admin.py:182
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:481
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:931
 #: app/api/_ss_emailrelay.py:419 app/api/_ss_emailrelay.py:439
@@ -505,6 +507,9 @@ msgstr ""
 msgid "至少需要選擇兩家企業"
 msgstr ""
 
+#: ../modules/form_workflow/api/categories.py:233
+#: ../modules/form_workflow/api/fc_fill.py:347
+#: ../modules/form_workflow/api/form_themes.py:161
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:414
 #: ../modules/spec_formulate/services/schema/pg_table_manager.py:836
 #: app/api/conglomerates.py:84 app/api/conglomerates.py:276
@@ -531,12 +536,14 @@ msgstr ""
 msgid "集團至少需要兩家企業"
 msgstr ""
 
-#: app/api/conglomerates.py:214 app/web/approval_categories.py:273
-#: app/web/delegations.py:242 app/web/external_users.py:443
-#: app/web/job_families.py:291 app/web/job_families.py:292
-#: app/web/job_levels.py:272 app/web/job_titles.py:349
-#: app/web/job_titles.py:350 app/web/menu.py:493 app/web/modules.py:180
-#: app/web/organizations.py:320 app/web/positions.py:244
+#: ../modules/form_workflow/api/backgrounds.py:150
+#: ../modules/form_workflow/api/categories.py:309
+#: ../modules/form_workflow/api/form_themes.py:214 app/api/conglomerates.py:214
+#: app/web/approval_categories.py:273 app/web/delegations.py:242
+#: app/web/external_users.py:443 app/web/job_families.py:291
+#: app/web/job_families.py:292 app/web/job_levels.py:272
+#: app/web/job_titles.py:349 app/web/job_titles.py:350 app/web/menu.py:493
+#: app/web/modules.py:180 app/web/organizations.py:320 app/web/positions.py:244
 #: app/web/sys_accounts.py:247 app/web/sys_accounts.py:248 app/web/units.py:195
 #: app/web/users.py:606
 #, python-format
@@ -727,6 +734,7 @@ msgstr ""
 msgid "Logo 上傳成功"
 msgstr ""
 
+#: ../modules/form_workflow/api/backgrounds.py:112
 #: app/api/enterprise_settings.py:360 app/api/files.py:174
 #, python-format
 msgid "上傳失敗: %(error)s"
@@ -741,6 +749,9 @@ msgstr ""
 msgid "Logo 已刪除"
 msgstr ""
 
+#: ../modules/form_workflow/api/backgrounds.py:192
+#: ../modules/form_workflow/api/categories.py:353
+#: ../modules/form_workflow/api/form_themes.py:257
 #: app/api/enterprise_settings.py:381 app/api/files.py:445
 #: app/web/approval_categories.py:332 app/web/delegations.py:294
 #: app/web/external_users.py:658 app/web/job_families.py:375
@@ -762,7 +773,7 @@ msgstr ""
 msgid "違規下載！檔案下載連結只限一次性且限時下載"
 msgstr ""
 
-#: app/api/files.py:130
+#: ../modules/form_workflow/api/backgrounds.py:60 app/api/files.py:130
 msgid "未提供檔案"
 msgstr ""
 
@@ -884,8 +895,8 @@ msgstr ""
 msgid "系統級類別不可修改"
 msgstr ""
 
-#: app/api/lookup.py:201 app/api/lookup.py:381
-#: app/api/organizational_units.py:1606
+#: ../modules/form_workflow/api/fc_phrases.py:148 app/api/lookup.py:201
+#: app/api/lookup.py:381 app/api/organizational_units.py:1606
 msgid "更新失敗"
 msgstr ""
 
@@ -902,7 +913,8 @@ msgstr ""
 msgid "請先停用類別後再刪除"
 msgstr ""
 
-#: app/api/lookup.py:241 app/api/lookup.py:419
+#: ../modules/form_workflow/api/fc_phrases.py:174 app/api/lookup.py:241
+#: app/api/lookup.py:419
 msgid "刪除失敗"
 msgstr ""
 
@@ -967,7 +979,7 @@ msgstr ""
 msgid "缺少 order 陣列"
 msgstr ""
 
-#: app/api/lookup.py:458
+#: ../modules/form_workflow/api/categories.py:399 app/api/lookup.py:458
 msgid "排序已更新"
 msgstr ""
 
@@ -1776,6 +1788,9 @@ msgstr ""
 msgid "已更新"
 msgstr ""
 
+#: ../modules/form_workflow/api/fc_phrases.py:176
+#: ../modules/form_workflow/api/template_routes.py:238
+#: ../modules/form_workflow/api/workflow_routes.py:724
 #: app/api/work_schedules.py:479
 msgid "已刪除"
 msgstr ""
@@ -1861,6 +1876,35 @@ msgstr ""
 msgid "確認密碼一致"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:70
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:13
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:141
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:187
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:159
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:121
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:419
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:155
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:331
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:532
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:562
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:592
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:630
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:663
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:434
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:152
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:173
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:179
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:278
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:108
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:242
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:188
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:237
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:140
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:388
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:423
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:251
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:490
@@ -1959,6 +2003,8 @@ msgstr ""
 msgid "取消"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:42
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:28
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:66
 #: app/templates/auth/change_password.html:86
 #: app/templates/layouts/base.html:52
@@ -2254,6 +2300,7 @@ msgstr ""
 msgid "用戶編號"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:328
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:325
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:254
 #: app/templates/pages/account_roles.html:35
@@ -2286,6 +2333,7 @@ msgstr ""
 msgid "角色指派"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:90
 #: app/templates/pages/account_roles.html:99
 #: app/templates/pages/admin/_settings_smtp_section.html:31
 #: app/templates/pages/admin/_settings_telegram_section.html:130
@@ -2321,6 +2369,18 @@ msgstr ""
 msgid "確認指派"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:163
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:125
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:136
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:91
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:437
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:127
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:182
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:111
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:64
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:191
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:228
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:391
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:326
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:493
 #: app/templates/pages/account_roles.html:139
@@ -2384,6 +2444,8 @@ msgstr ""
 msgid "歡迎，%(name)s"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:20
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:83
 #: app/templates/pages/dashboard.html:43
 msgid "待簽核"
 msgstr ""
@@ -2423,6 +2485,8 @@ msgstr ""
 msgid "主要 Email"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:38
 #: app/templates/pages/admin/settings.html:215
 #: app/templates/pages/organizations/create.html:51
 #: app/templates/pages/organizations/edit.html:59
@@ -2736,6 +2800,48 @@ msgstr ""
 msgid "登入頁面有三個外觀一致的驗證碼欄位，可分別指定為密碼、地雷、救助用途。員工登入與廠商登入各自獨立設定，避免洩漏彼此的策略。"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:135
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:182
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:18
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:15
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:79
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:137
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:184
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:233
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:282
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:26
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:61
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:82
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:32
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:311
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:87
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:476
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:546
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:609
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:100
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:178
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:222
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:291
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:337
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:26
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:348
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:77
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:19
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:30
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:49
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:48
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:70
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:375
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:413
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:82
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:213
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:31
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:228
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:26
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:33
@@ -2927,6 +3033,10 @@ msgstr ""
 msgid "群組名稱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:143
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:19
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:557
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:94
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:313
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:45
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:96
@@ -2971,6 +3081,17 @@ msgstr ""
 msgid "收件人數"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:242
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:292
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:135
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:300
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:347
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:42
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:108
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:208
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:79
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:248
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:484
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:43
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:52
@@ -3035,6 +3156,25 @@ msgstr ""
 msgid "狀態"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:41
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:51
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:226
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:144
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:189
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:303
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:350
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:57
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:44
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:117
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:212
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:92
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:250
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:48
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:54
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:46
@@ -3072,6 +3212,8 @@ msgstr ""
 msgid "人"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:183
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:383
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:485
 #: app/templates/pages/admin/_settings_recipients_section.html:44
 #: app/templates/pages/admin/_settings_smtp_section.html:53
@@ -3174,6 +3316,14 @@ msgstr ""
 msgid "預覽"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:53
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:67
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:65
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:141
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:295
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:218
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:796
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:73
@@ -3200,6 +3350,17 @@ msgstr ""
 msgid "編輯"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:81
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:69
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:73
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:95
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:133
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:253
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:63
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:227
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:222
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:74
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:102
@@ -3298,6 +3459,13 @@ msgstr ""
 msgid "收件人預覽 -"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:18
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:109
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:308
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
 #: app/templates/pages/admin/_settings_recipients_section.html:245
 #: app/templates/pages/job_levels/list.html:67
@@ -3312,6 +3480,19 @@ msgstr ""
 msgid "通知信箱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:91
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:424
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:228
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:292
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:305
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:134
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:261
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:369
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:418
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:210
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:654
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:231
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1121
 #: app/templates/pages/admin/_settings_recipients_section.html:267
@@ -3320,6 +3501,14 @@ msgstr ""
 msgid "關閉"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:156
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:165
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:174
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:219
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:238
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:404
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:424
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:129
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:138
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:122
@@ -3342,6 +3531,10 @@ msgstr ""
 msgid "確定要刪除收件人群組「"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:151
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:169
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:223
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:408
 #: app/templates/pages/admin/_settings_recipients_section.html:277
 #: app/templates/pages/admin/_settings_smtp_section.html:199
 #: app/templates/pages/admin/_settings_telegram_section.html:165
@@ -3375,6 +3568,9 @@ msgstr ""
 msgid "點擊「新增設定」開始建立"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:37
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:74
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:240
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:294
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:91
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:164
@@ -3527,6 +3723,14 @@ msgstr ""
 msgid "例如: 告警通知群組"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:38
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:109
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:39
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:108
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:177
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:242
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:371
 #: app/templates/pages/admin/_settings_telegram_section.html:90
 #: app/templates/pages/admin/groups.html:237
 #: app/templates/pages/admin/groups.html:255
@@ -3717,6 +3921,7 @@ msgstr ""
 msgid "社群分類"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:329
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:326
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:255
 #: app/templates/pages/admin/groups.html:188
@@ -3731,6 +3936,9 @@ msgstr ""
 msgid "成員"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:332
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:343
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:214
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:471
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:342
@@ -3775,6 +3983,7 @@ msgstr ""
 msgid "團長"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:338
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:132
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:146
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:184
@@ -4033,10 +4242,13 @@ msgstr ""
 msgid "授權企業數"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:176
 #: app/templates/pages/admin/module_list.html:99
 msgid "展開"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:57
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:110
 #: app/templates/pages/admin/module_list.html:102
 #: app/templates/pages/job_titles/create.html:68
@@ -5000,6 +5212,11 @@ msgstr ""
 msgid "日期"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:39
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:41
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:326
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:466
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:551
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:323
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:250
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
@@ -5031,6 +5248,8 @@ msgstr ""
 msgid "批次匯入"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:32
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:181
 #: app/templates/pages/admin/time/holidays.html:122
 #: app/templates/pages/admin/time/holidays.html:124
 msgid "匯入"
@@ -5246,6 +5465,8 @@ msgstr ""
 msgid "新增核決權限類別"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:16
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:13
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:42
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:148
 #: app/templates/pages/approval_categories/create.html:7
@@ -5372,6 +5593,10 @@ msgstr ""
 msgid "幣別"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:36
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:113
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:36
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:112
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:374
 #: app/templates/pages/approval_categories/create.html:67
 #: app/templates/pages/approval_categories/edit.html:62
@@ -5458,6 +5683,7 @@ msgstr ""
 msgid "核決上限"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:24
 #: app/templates/pages/approval_categories/limits.html:51
 #: app/templates/pages/job_levels/matrix.html:38
 #: app/templates/pages/job_levels/matrix.html:73
@@ -5491,6 +5717,10 @@ msgstr ""
 msgid "尚無類別資料"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:75
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:154
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:241
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:348
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:302
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:352
 #: app/templates/pages/approval_categories/list.html:93
@@ -5517,6 +5747,8 @@ msgstr ""
 msgid "請從左側選擇類別進行編輯"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:422
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:98
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:65
 #: app/templates/pages/approval_categories/list.html:196
 #: app/templates/pages/menu/list.html:97
@@ -5524,6 +5756,10 @@ msgstr ""
 msgid "儲存中..."
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:151
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:169
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:223
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:408
 #: app/templates/pages/approval_categories/list.html:209
 msgid "確定要刪除「"
 msgstr ""
@@ -5544,6 +5780,7 @@ msgstr ""
 msgid "如: PETTY_CASH"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:595
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:121
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:428
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:555
@@ -5581,6 +5818,7 @@ msgstr ""
 msgid "未就緒"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:30
 #: app/templates/pages/cg_databases/overview.html:121
 msgid "正常"
 msgstr ""
@@ -5649,6 +5887,7 @@ msgstr ""
 msgid "異動歷程"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:136
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:400
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:63
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
@@ -5657,6 +5896,9 @@ msgstr ""
 msgid "時間"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:321
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:49
 #: ../modules/open_defense/templates/modules/open_defense/dashboard.html:83
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:32
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:55
@@ -5921,6 +6163,7 @@ msgstr ""
 msgid "限定特定流程類型"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:49
 #: app/templates/pages/delegations/view.html:90
 msgid "建立者"
 msgstr ""
@@ -5982,6 +6225,7 @@ msgstr ""
 msgid "歸屬群組 *"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:356
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:88
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:160
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:197
@@ -6014,6 +6258,7 @@ msgstr ""
 msgid "（使用規則：%(name)s）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:386
 #: app/templates/pages/external-users/create.html:105
 #: app/templates/pages/external-users/edit.html:54
 #: app/templates/pages/external-users/view.html:81
@@ -6544,6 +6789,7 @@ msgstr ""
 msgid "文字"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:296
 #: app/templates/pages/hostconfig/_system_settings_section_menucolors.html:25
 #: app/templates/pages/menu/list.html:128
 #: app/templates/pages/modules/create.html:51
@@ -7116,6 +7362,7 @@ msgstr ""
 msgid "是 (不可刪除)"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:100
 #: app/templates/pages/job_families/view.html:62
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/job_levels/view.html:48
@@ -7343,6 +7590,9 @@ msgstr ""
 msgid "編輯職等:"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:105
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:150
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:344
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:956
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:80
 #: app/templates/pages/job_levels/list.html:130
@@ -7418,6 +7668,9 @@ msgstr ""
 msgid "%(name)s - 職等詳情"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:105
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:110
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:115
 #: app/templates/pages/job_levels/view.html:32
 #: app/templates/pages/modules/view.html:51
 #: app/templates/pages/positions/list.html:60
@@ -7427,6 +7680,10 @@ msgstr ""
 msgid "是"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:123
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:249
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:53
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:45
 #: app/templates/pages/job_levels/view.html:55
@@ -7766,6 +8023,9 @@ msgstr ""
 msgid "等共"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:82
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:59
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:223
 #: app/templates/pages/menu/edit.html:273
 msgid "項"
 msgstr ""
@@ -7875,6 +8135,7 @@ msgstr ""
 msgid "例：監控管理"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:594
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:120
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:1028
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:113
@@ -8148,6 +8409,9 @@ msgstr ""
 msgid "選擇對象"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:20
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:431
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:166
 #: app/templates/pages/modules/list.html:164
 #: app/templates/partials/_icon_picker.html:7
 msgid "搜尋..."
@@ -8189,6 +8453,7 @@ msgstr ""
 msgid "頁面類型"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:90
 #: app/templates/pages/modules/view.html:71
 #: app/templates/pages/platform_help/org_admin.html:403
 msgid "權限"
@@ -8268,6 +8533,7 @@ msgstr ""
 msgid "密碼輪換"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:210
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:97
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:531
 #: app/templates/pages/org_databases/monitor.html:119
@@ -8291,6 +8557,10 @@ msgstr ""
 msgid "您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:26
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:88
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:224
 #: app/templates/pages/org_databases/monitor.html:207
 #: app/templates/pages/roles/list.html:27
 msgid "反選"
@@ -8332,6 +8602,9 @@ msgstr ""
 msgid "\" -- 停用"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:152
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:420
 #: app/templates/pages/org_databases/monitor.html:360
 msgid "此操作無法復原。"
 msgstr ""
@@ -8633,6 +8906,7 @@ msgstr ""
 msgid "搜尋企業名稱/網域"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:524
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:23
 #: ../modules/open_defense/templates/modules/open_defense/decisions.html:34
 #: ../modules/open_defense/templates/modules/open_defense/service_accounts.html:49
@@ -8671,6 +8945,8 @@ msgstr ""
 msgid "已建立 ("
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:134
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:243
 #: app/templates/pages/organizations/list.html:72
 msgid "未建立"
 msgstr ""
@@ -8756,6 +9032,9 @@ msgstr ""
 msgid "尚未生效"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:321
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:72
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:48
 #: app/templates/pages/organizations/list.html:285
 msgid "檢視"
 msgstr ""
@@ -10504,6 +10783,7 @@ msgstr ""
 msgid "最後使用"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:248
 #: app/templates/pages/security/api_keys.html:61
 msgid "暫停"
 msgstr ""
@@ -10612,6 +10892,9 @@ msgstr ""
 msgid "系統預設:"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:421
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:101
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:38
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lab.html:252
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:52
@@ -10655,6 +10938,11 @@ msgstr ""
 msgid "完整 INFO"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:47
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:88
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:203
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:77
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:243
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:40
 #: app/templates/pages/server_manage/redis_monitor.html:50
 msgid "版本"
@@ -11020,6 +11308,9 @@ msgstr ""
 msgid "點擊選擇部門"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:198
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:89
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:141
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:166
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:212
@@ -11155,6 +11446,8 @@ msgstr ""
 msgid "欄位名稱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:142
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:468
 #: app/templates/pages/users/import.html:94
 msgid "必填"
 msgstr ""
@@ -11225,6 +11518,9 @@ msgstr ""
 msgid "企業管理員請至「企業管理員帳號」管理，外部廠商請至「外部廠商帳號」管理。"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:85
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:312
 #: app/templates/pages/users/list.html:89
 msgid "上一頁"
 msgstr ""
@@ -11234,6 +11530,9 @@ msgstr ""
 msgid "第 %(page)s / %(pages)s 頁 （共 %(total)s 筆）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:313
 #: app/templates/pages/users/list.html:93
 msgid "下一頁"
 msgstr ""
@@ -12098,7 +12397,7 @@ msgstr ""
 msgid "已停用合約 %(number)s"
 msgstr ""
 
-#: app/web/organizations.py:492
+#: ../modules/form_workflow/api/mappings.py:769 app/web/organizations.py:492
 #, python-format
 msgid "停用失敗: %(error)s"
 msgstr ""
@@ -12192,7 +12491,8 @@ msgstr ""
 msgid "Email 格式不正確"
 msgstr ""
 
-#: app/web/sys_accounts.py:111 app/web/sys_accounts.py:206
+#: ../modules/form_workflow/api/form_themes.py:118 app/web/sys_accounts.py:111
+#: app/web/sys_accounts.py:206
 msgid "顯示名稱為必填"
 msgstr ""
 
@@ -13304,6 +13604,15 @@ msgstr ""
 msgid "規格管理"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:19
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:19
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:28
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:20
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:19
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:23
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:31
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:180
 #: ../modules/nocode_builder/templates/modules/nocode_builder/my_projects.html:19
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_list.html:19
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:18
@@ -13330,6 +13639,8 @@ msgstr ""
 msgid "建立第一個規格"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:46
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:34
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:38
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:92
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:145
@@ -13337,6 +13648,9 @@ msgstr ""
 msgid "規格名稱"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:48
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:115
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:224
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:41
 msgid "欄位數"
 msgstr ""
@@ -13355,6 +13669,8 @@ msgstr ""
 msgid "採用建議"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:122
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:113
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:547
 msgid "描述（選填）"
@@ -13402,6 +13718,7 @@ msgstr ""
 msgid "請從上方下拉選單加入規格"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:46
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema.html:198
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:603
 msgid "版本:"
@@ -13466,10 +13783,12 @@ msgstr ""
 msgid "解除"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:77
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:112
 msgid "關聯表單"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:82
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:114
 msgid "建立表單"
 msgstr ""
@@ -13482,11 +13801,13 @@ msgstr ""
 msgid "欄位定義表"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:109
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:157
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:488
 msgid "個欄位"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:200
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:165
 msgid "[+] 新增 10 列空白欄位"
 msgstr ""
@@ -13511,10 +13832,12 @@ msgstr ""
 msgid "版本歷史表"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:309
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:232
 msgid "無歷史記錄"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:288
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:242
 msgid "還原"
 msgstr ""
@@ -13531,14 +13854,17 @@ msgstr ""
 msgid "~ 修改:"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:403
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:298
 msgid "進階設定"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:457
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:311
 msgid "預設值"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:458
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:312
 msgid "(無)"
 msgstr ""
@@ -13571,6 +13897,7 @@ msgstr ""
 msgid "尚未填充"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:533
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:325
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:492
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:365
@@ -13594,6 +13921,7 @@ msgstr ""
 msgid "-- 選擇 --"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:563
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:398
 msgid "確認關聯"
 msgstr ""
@@ -13606,6 +13934,18 @@ msgstr ""
 msgid "建立 FormIO 表單"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:89
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:143
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:190
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:239
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:288
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:111
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:220
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:577
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:53
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:104
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:204
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:126
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:415
 msgid "表單名稱"
 msgstr ""
@@ -13654,6 +13994,7 @@ msgstr ""
 msgid "SPEC 覆蓋資料表"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:667
 #: ../modules/spec_formulate/templates/modules/spec_formulate/spec_schema_editor.html:506
 msgid "執行中..."
 msgstr ""
@@ -13707,10 +14048,12 @@ msgstr ""
 msgid "已套用到 %(count)s 個頁面"
 msgstr ""
 
+#: ../modules/form_workflow/api/backgrounds.py:103
 #: ../modules/nocode_builder/api/__init__.py:1489
 msgid "底圖上傳成功"
 msgstr ""
 
+#: ../modules/form_workflow/api/backgrounds.py:187
 #: ../modules/nocode_builder/api/__init__.py:1521
 msgid "底圖已刪除"
 msgstr ""
@@ -13788,10 +14131,12 @@ msgstr ""
 msgid "您不是此子系統的開發者"
 msgstr ""
 
+#: ../modules/form_workflow/api/mapping_permissions.py:92
 #: ../modules/nocode_builder/api/site_map_api.py:273
 msgid "grant_type 必須為 department / group / user"
 msgstr ""
 
+#: ../modules/form_workflow/api/mapping_permissions.py:106
 #: ../modules/nocode_builder/api/site_map_api.py:289
 msgid "此規則已存在"
 msgstr ""
@@ -14326,6 +14671,11 @@ msgstr ""
 msgid "雖然選項容許填入多種資料形態，建議還是同一樹系都用相同的資料型別，以避免前端取得空值"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:113
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:186
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:230
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:299
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:345
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:213
 msgid "類別"
 msgstr ""
@@ -14375,6 +14725,7 @@ msgstr ""
 msgid "支援階層結構（樹狀下拉）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:494
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:344
 msgid "顯示文字"
 msgstr ""
@@ -14440,6 +14791,7 @@ msgstr ""
 msgid "型別"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:710
 #: ../modules/nocode_builder/templates/modules/nocode_builder/lookup_manager.html:456
 msgid "自動"
 msgstr ""
@@ -14547,6 +14899,7 @@ msgstr ""
 msgid "頁面組態"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:85
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:147
 msgid "底圖"
 msgstr ""
@@ -14555,18 +14908,23 @@ msgstr ""
 msgid "圖庫"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:154
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:160
 msgid "上傳"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:85
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:173
 msgid "透明度"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:197
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:183
 msgid "縮放"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:103
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:193
 msgid "位置"
 msgstr ""
@@ -14664,14 +15022,17 @@ msgstr ""
 msgid "尚無准入規則（所有社群成員皆可進入）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:314
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:311
 msgid "（含子部門）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:315
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:312
 msgid "（含下層群組）"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:330
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:327
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_config.html:256
 msgid "個人"
@@ -14681,10 +15042,13 @@ msgstr ""
 msgid "含下層"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:354
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:354
 msgid "選擇成員"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:364
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:364
 msgid "已選擇:"
 msgstr ""
@@ -14829,6 +15193,7 @@ msgstr ""
 msgid "高亮節點"
 msgstr ""
 
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:143
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:550
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:712
 #: ../modules/nocode_builder/templates/modules/nocode_builder/studio.html:896
@@ -15229,5 +15594,3738 @@ msgstr ""
 
 #: ../modules/nocode_builder/templates/modules/nocode_builder/sub_system_portal_v2.html:156
 msgid "載入頁面中..."
+msgstr ""
+
+#: ../modules/form_workflow/api/backgrounds.py:133
+#: ../modules/form_workflow/api/backgrounds.py:171
+msgid "底圖不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/backgrounds.py:144
+msgid "底圖描述已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:128
+#: ../modules/form_workflow/api/categories.py:257
+#: ../modules/form_workflow/api/categories.py:333
+msgid "分類不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:131
+msgid "無權查看此分類"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:173
+msgid "分類名稱為必填"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:184
+msgid "指定的父分類不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:186
+msgid "不支援三層分類"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:207
+#: ../modules/form_workflow/api/categories.py:282
+#, python-format
+msgid "分類「%(name)s」已存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:227
+msgid "分類建立成功"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:260
+msgid "系統內建分類無法修改"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:263
+msgid "無權修改此分類"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:303
+msgid "分類更新成功"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:336
+msgid "無權刪除此分類"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:348
+msgid "分類已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:381
+msgid "排序清單不可為空"
+msgstr ""
+
+#: ../modules/form_workflow/api/categories.py:404
+#, python-format
+msgid "排序失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/external_trigger.py:98
+msgid "API Key 綁定的系統帳號不存在或已停用"
+msgstr ""
+
+#: ../modules/form_workflow/api/external_trigger.py:233
+#: ../modules/form_workflow/api/fc_fill.py:333
+msgid "表單已送出，流程已啟動"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:46
+#: ../modules/form_workflow/api/fc_fill.py:59
+#: ../modules/form_workflow/api/fc_fill.py:249
+#: ../modules/form_workflow/api/fc_monitor.py:105
+#: ../modules/form_workflow/api/fc_my_forms.py:188
+msgid "找不到指定的表單"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:55
+msgid "找不到關聯的流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:61
+#: ../modules/form_workflow/api/fc_admin.py:131
+msgid "無權限執行此操作"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:65
+#, python-format
+msgid "流程狀態為 %(status)s，無法強制結束"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:100
+msgid "流程已強制結束"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:151
+msgid "沒有可刪除的測試表單"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_admin.py:176
+#, python-format
+msgid "已刪除 %(count)s 筆測試表單"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:48
+msgid "未選取任何待簽核項目"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:51
+msgid "單次批次簽核上限 100 筆"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:68
+#: ../modules/form_workflow/api/fc_pending.py:267
+#: ../modules/form_workflow/api/fc_pending.py:370
+msgid "找不到任務或已處理"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:77
+msgid "非指定簽核人"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:84
+msgid "正由他人簽核中"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:97
+msgid "已簽核過此節點"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:106
+#: ../modules/form_workflow/api/fc_pending.py:423
+#: ../modules/form_workflow/api/instance_routes.py:233
+#, python-format
+msgid "簽核意見至少需要 %(count)s 字"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_batch.py:201
+#, python-format
+msgid "批次簽核完成：成功 %(success_count)s 筆，失敗 %(fail_count)s 筆"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:49
+#: ../modules/form_workflow/api/fc_fill.py:190
+msgid "需要試行設計稿權限"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:93
+msgid "找不到指定的表單或已停用"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:101
+#: ../modules/form_workflow/api/fc_fill.py:260
+msgid "您沒有填寫此表單的權限"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:171
+msgid "請填寫表單主旨"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:177
+msgid "缺少 published_secure_code 或 mapping_secure_code"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:200
+#: ../modules/form_workflow/api/mappings.py:551
+#: ../modules/form_workflow/api/mappings.py:878
+#: ../modules/form_workflow/api/mappings.py:931
+msgid "找不到指定的配對"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:209
+msgid "找不到關聯的表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:218
+msgid "找不到關聯的流程模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:252
+msgid "此表單已停用"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_fill.py:333
+msgid "表單已送出，流程已啟動（測試模式）"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_monitor.py:36
+msgid "找不到指定的流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_monitor.py:171
+#: ../modules/form_workflow/api/fc_monitor.py:338
+#, python-format
+msgid "流程實例 %(instance_id)s 不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:150
+msgid "找不到指定的任務"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:157
+#: ../modules/form_workflow/api/fc_pending.py:274
+#: ../modules/form_workflow/api/fc_pending.py:377
+#: ../modules/form_workflow/api/instance_routes.py:170
+#: ../modules/form_workflow/api/instance_routes.py:224
+msgid "您不是此任務的指定簽核人"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:284
+msgid "鎖定已刷新"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:293
+#, python-format
+msgid "此表單由 %(locker)s 簽核中"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:304
+msgid "已取得簽核鎖定"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:311
+#, python-format
+msgid "取得鎖定失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:335
+msgid "找不到任務"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:342
+msgid "鎖定已釋放"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:383
+msgid "此表單正由他人簽核中"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:390
+msgid "簽核逾時，鎖定已失效，請重新開啟"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:404
+msgid "您已簽核過此節點，無法重複簽核"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:456
+#, python-format
+msgid "欄位 %(field_key)s 不允許修改"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:572
+#: ../modules/form_workflow/api/instance_routes.py:274
+msgid "簽核完成"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:572
+msgid "已退回"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_pending.py:577
+#, python-format
+msgid "簽核失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_phrases.py:93
+#: ../modules/form_workflow/api/fc_phrases.py:140
+msgid "片語內容不可為空"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_phrases.py:95
+#: ../modules/form_workflow/api/fc_phrases.py:142
+msgid "片語內容不可超過 200 字"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_phrases.py:98
+#: ../modules/form_workflow/api/fc_phrases.py:130
+#: ../modules/form_workflow/api/fc_phrases.py:165
+msgid "企業尚未建立專屬資料庫"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_phrases.py:135
+#: ../modules/form_workflow/api/fc_phrases.py:170
+msgid "找不到此片語"
+msgstr ""
+
+#: ../modules/form_workflow/api/fc_utils.py:367
+#, python-format
+msgid "語系 %(locale)s 的欄位設定已儲存"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:82
+#: ../modules/form_workflow/api/form_themes.py:185
+#: ../modules/form_workflow/api/form_themes.py:238
+#: ../modules/form_workflow/api/form_themes.py:337
+msgid "主題不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:85
+msgid "無權查看此主題"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:116
+msgid "主題識別碼為必填"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:123
+msgid "識別碼只允許小寫英文、數字、連字號，且以英文開頭"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:137
+#, python-format
+msgid "主題識別碼「%(name)s」已存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:155
+msgid "主題建立成功"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:188
+#: ../modules/form_workflow/api/form_themes.py:340
+msgid "無權修改此主題"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:208
+msgid "主題更新成功"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:241
+msgid "系統內建主題無法刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:244
+msgid "無權刪除此主題"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:252
+msgid "主題已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:316
+msgid "未上傳檔案"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:320
+msgid "僅接受 .css 檔案"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:324
+msgid "CSS 檔案內容為空"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:347
+msgid "CSS 已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:356
+msgid "新建主題需提供識別碼和顯示名稱"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:360
+msgid "識別碼只允許小寫英文、數字、連字號"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:376
+msgid "主題上傳成功"
+msgstr ""
+
+#: ../modules/form_workflow/api/form_themes.py:382
+#, python-format
+msgid "處理失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:390
+#: ../modules/form_workflow/api/template_routes.py:158
+msgid "表單模板已建立"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:483
+#: ../modules/form_workflow/api/template_routes.py:207
+msgid "表單模板已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:513
+#: ../modules/form_workflow/api/template_routes.py:512
+msgid "表單模板已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:539
+msgid "表單沒有任何欄位，無法發布"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:549
+msgid "表單模板已發布"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:580
+msgid "表單模板已取消發布"
+msgstr ""
+
+#: ../modules/form_workflow/api/forms.py:934
+#: ../modules/form_workflow/api/workflows.py:618
+#, python-format
+msgid "已另存新版本 %(version)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/mapping_permissions.py:41
+#: ../modules/form_workflow/api/mapping_permissions.py:84
+msgid "配對不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/mapping_permissions.py:95
+msgid "grant_target 為必填"
+msgstr ""
+
+#: ../modules/form_workflow/api/mapping_permissions.py:126
+msgid "權限規則已新增"
+msgstr ""
+
+#: ../modules/form_workflow/api/mapping_permissions.py:152
+msgid "規則不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/mapping_permissions.py:159
+msgid "權限規則已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:237
+msgid "必須指定表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:239
+msgid "必須指定工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:249
+msgid "找不到指定的表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:259
+msgid "找不到指定的工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:270
+msgid "此配對已存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:296
+msgid "配對已建立"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:342
+msgid "找不到指定的編號規則"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:350
+msgid "配對已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:376
+msgid "已發行的配對無法刪除，請先取消發行"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:384
+msgid "配對已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:411
+#: ../modules/form_workflow/api/mappings.py:500
+#: ../modules/form_workflow/api/mappings.py:722
+#: ../modules/form_workflow/api/mappings.py:750
+#: ../modules/form_workflow/api/mappings.py:790
+#: ../modules/form_workflow/api/mappings.py:837
+#: ../modules/form_workflow/api/mappings.py:970
+msgid "找不到指定的發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:415
+msgid "缺少 sql_sync_enabled 參數"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:421
+msgid "SQL 同步啟用後無法關閉"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:425
+msgid "已封存的版本無法啟用 SQL 同步"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:474
+msgid "SQL 同步已啟用（已建立同步表）"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:474
+msgid "SQL 同步已啟用"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:565
+msgid "表單模板不存在或已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:568
+msgid "工作流模板不存在或已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:572
+msgid "表單沒有欄位，無法發行"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:576
+msgid "工作流沒有節點，無法發行"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:601
+#, python-format
+msgid "版本未變更，維持現有發行版本 (版本 %(version)s)"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:628
+#, python-format
+msgid "已重新啟用先前的發行版本 (版本 %(version)s)"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:661
+#, python-format
+msgid "發行成功 (版本 %(version)s)"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:666
+#, python-format
+msgid "發行失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:753
+msgid "已封存的版本無法停用"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:756
+msgid "此版本已是停用狀態"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:765
+msgid "已停用此發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:793
+msgid "只有 Suspended 狀態才能重新開放"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:803
+#, python-format
+msgid "已有其他發行版本 (v%(version)s)"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:812
+msgid "已重新開放此發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:816
+#, python-format
+msgid "重新開放失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:840
+msgid "此版本已是封存狀態"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:849
+msgid "已封存此發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:853
+#, python-format
+msgid "封存失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:881
+msgid "此配對已封存"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:897
+#, python-format
+msgid "尚有 %(count)s 個發行版本未封存，請先封存所有版本"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:909
+msgid "配對已封存"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:934
+msgid "此配對未封存"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:944
+msgid "配對已恢復"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:973
+msgid "此版本已被使用過，無法刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:976
+msgid "運作中的版本無法刪除，請先暫停或封存"
+msgstr ""
+
+#: ../modules/form_workflow/api/mappings.py:986
+#, python-format
+msgid "發行版本 v%(version)s 已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/template_routes.py:235
+#: ../modules/form_workflow/api/template_routes.py:419
+msgid "找不到表單"
+msgstr ""
+
+#: ../modules/form_workflow/api/template_routes.py:316
+#, python-format
+msgid "檔案類型不符：期望 forms，實際為 %(export_type)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/template_routes.py:444
+#: ../modules/form_workflow/api/workflow_routes.py:974
+#, python-format
+msgid "已另存為版本 %(version)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:278
+msgid "工作流模板已建立"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:327
+msgid "工作流模板已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:445
+#: ../modules/form_workflow/api/workflow_routes.py:526
+#: ../modules/form_workflow/api/workflow_routes.py:605
+msgid "找不到此工作流"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:721
+#: ../modules/form_workflow/api/workflow_routes.py:948
+msgid "找不到流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:817
+#, python-format
+msgid "檔案類型不符：期望 workflows，實際為 %(export_type)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:1092
+#: ../modules/form_workflow/api/workflows.py:491
+#, python-format
+msgid "無法刪除：尚有 %(count)s 個運行中的流程實例"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflow_routes.py:1117
+msgid "工作流模板已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:246
+msgid "流程模板已建立"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:410
+msgid "流程模板已更新"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:425
+#, python-format
+msgid "流程模板已更新，並自動建立表單「%(name)s」及配對"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:522
+msgid "流程模板已刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:938
+msgid "子流程已建立"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:965
+msgid "找不到子流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:969
+msgid "無法刪除通用子流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1021
+#, python-format
+msgid "此子流程正被「%(name)s」引用，無法刪除"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1051
+#, python-format
+msgid "已刪除 %(count)s 個子流程"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1176
+#, python-format
+msgid "建立變數映射失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1342
+msgid "流程不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1418
+#, python-format
+msgid "取得配對表單失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1478
+msgid "表單不存在"
+msgstr ""
+
+#: ../modules/form_workflow/api/workflows.py:1532
+#, python-format
+msgid "分析表單欄位失敗: %(error)s"
+msgstr ""
+
+#: ../modules/form_workflow/services/form_submit_service.py:216
+msgid "流程中找不到起始節點"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:91
+#, python-format
+msgid "表單實例 %(form_instance_secure_code)s 不存在"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:113
+msgid "找不到對應的工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:116
+msgid "工作流模板不存在"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:121
+msgid "工作流模板缺少 graph 資料"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:173
+msgid "工作流模板缺少 Start 節點"
+msgstr ""
+
+#: ../modules/form_workflow/services/workflow_engine.py:228
+#, python-format
+msgid "工作流模板 %(workflow_template_secure_code)s 不存在"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:12
+msgid "-- 選擇簽核片語 --"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:22
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:33
+msgid "管理簽核片語"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:40
+msgid "已儲存片語 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:43
+msgid "尚無簽核片語"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:68
+msgid "存"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:80
+msgid "新增片語"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_canned_messages_bar.html:82
+msgid "輸入新的簽核片語..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:5
+msgid "表單 Schema（可編輯）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:15
+msgid "套用變更"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:88
+msgid "表單預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:29
+msgid "正常預覽（可捲動）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:32
+msgid "全覽模式（縮放顯示全部）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:33
+msgid "全覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:52
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:91
+msgid "列印預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:55
+msgid "列印"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:70
+msgid "表單底圖設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:77
+msgid "目前底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:79
+msgid "尚未設定底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:83
+msgid "顯示設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:92
+msgid "顯示方式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:94
+msgid "符合 (保持比例)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:95
+msgid "填滿 (裁切)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:96
+msgid "拉伸 (可能變形)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:97
+msgid "原始大小"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:98
+msgid "拼圖 (平鋪)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:99
+msgid "拼圖 (位移交錯)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:105
+msgid "置中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:106
+msgid "靠上"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:107
+msgid "靠下"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:108
+msgid "靠左"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:109
+msgid "靠右"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:113
+msgid "移除底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:351
+msgid "上傳新底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:127
+msgid "支援 PNG, JPG, GIF, WebP 格式，最大 5MB"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:132
+msgid "從圖庫選擇"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:153
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:165
+msgid "確認放棄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:159
+msgid "您有未儲存的變更，確定要放棄嗎？"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:175
+msgid "選擇表單範本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:179
+msgid "選擇一個範本來快速建立表單結構。載入範本會覆蓋目前的表單內容。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_designer_modals.html:189
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:78
+msgid "載入範本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:8
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:60
+msgid "簽核表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:12
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:11
+msgid "主旨："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:22
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:289
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:21
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:38
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:68
+msgid "申請人："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:23
+msgid "關卡："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:29
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:76
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:76
+msgid "表單內容"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:30
+msgid "唯讀"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:31
+msgid "部分欄位可編輯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:45
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:39
+msgid "簽核歷程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:54
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:320
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:48
+msgid "簽核者"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:56
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:322
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:50
+msgid "關卡"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:58
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:324
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:52
+msgid "簽核時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:326
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:54
+msgid "意見"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:83
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:47
+msgid "請選擇決策"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:112
+msgid "已選擇："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:79
+msgid "請選擇後續動作"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:120
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:80
+msgid "（可複選）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:140
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:105
+msgid "簽核意見"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:149
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:110
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:104
+msgid "輸入簽核意見..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:151
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:112
+msgid "最少"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:151
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:112
+msgid "字"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_approval_modal.html:162
+msgid "送出簽核"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:8
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:28
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:90
+msgid "批次簽核"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:21
+msgid "選取項目（"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:21
+msgid "筆）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:88
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:142
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:189
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:238
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:287
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:109
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:183
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:227
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:296
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:342
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:52
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:100
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:130
+msgid "單號"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:28
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:90
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:144
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:191
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:240
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:289
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:111
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:185
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:229
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:298
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:344
+msgid "主旨"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_batch_approval_modal.html:29
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:91
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:193
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:291
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:112
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:231
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:346
+msgid "發起人"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:8
+msgid "&larr; 返回表單中心"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:10
+msgid "欄位顯示設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:12
+msgid "欄位設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:87
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:59
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:223
+msgid "已選"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:25
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:60
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:191
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:283
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:87
+msgid "筆"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:32
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:159
+msgid "追蹤中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:38
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:94
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:273
+msgid "歷史"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:51
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:162
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:276
+msgid "我發起的表單("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:165
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:279
+msgid "我簽過的表單("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:80
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:101
+msgid "目前沒有待簽核的表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:86
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:107
+msgid "全選/取消全選（限同表單同節點同版本）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:92
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:145
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:192
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:241
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:290
+msgid "表單類別"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:93
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:114
+msgid "目前關卡"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:94
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:115
+msgid "等待時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:118
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:170
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:219
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:268
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:319
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:139
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:211
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:257
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:326
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:374
+msgid "閱讀表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:123
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:144
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:49
+msgid "簽核"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:124
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:145
+msgid "簽核中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:138
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:179
+msgid "目前沒有執行中的流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:146
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:194
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:187
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:232
+msgid "待簽關卡"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:147
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:188
+msgid "送單時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:164
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:213
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:262
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:313
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:205
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:251
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:320
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:368
+msgid "除錯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:167
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:216
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:265
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:316
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:65
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:31
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:208
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:254
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:323
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:371
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:457
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:24
+msgid "流程總圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:185
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:223
+msgid "沒有曾簽核過的執行中流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:195
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:233
+msgid "簽核後歷時"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:234
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:292
+msgid "沒有歷史記錄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:243
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:293
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:301
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:348
+msgid "結束時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:244
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:294
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:302
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:349
+msgid "流程耗時"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:283
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:338
+msgid "沒有曾簽核過的已結束流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+msgid "筆，第"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:336
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:309
+msgid "頁"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:339
+msgid "&lt; 上一頁"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:344
+msgid "= listTotalPages\" @click=\"listPage++\">下一頁 &gt;"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:353
+msgid "表單中心 - 欄位顯示設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:359
+msgid "適用語系："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:377
+msgid "使用者登入後依其語系載入對應設定，無精確語系時 fallback 到「通用」，無通用則用程式預設值。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:383
+msgid "欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:384
+msgid "寬度 (px)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:385
+msgid "隱藏"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:394
+msgid "(彈性)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_form_center_list_view.html:411
+msgid "必顯示"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:11
+msgid "流程監控"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:28
+msgid "狀態:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:31
+msgid "執行中:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:34
+msgid "完成:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:37
+msgid "失敗:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:40
+msgid "等待:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:49
+msgid "強制結束"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:60
+msgid "流程總覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:70
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:191
+msgid "執行日誌"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:81
+msgid "簽核歷史"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:114
+msgid "執行歷程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:121
+msgid "5秒刷新"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:125
+msgid "刷新"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:132
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:40
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:115
+msgid "流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:134
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:138
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:548
+msgid "節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:196
+msgid "搜尋日誌..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:231
+msgid "變數變化"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:237
+msgid "尚無變數變化記錄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:259
+msgid "最終變數值"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:275
+msgid "載入表單內容中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:276
+msgid "無法載入表單內容"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:281
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:70
+msgid "單號："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:285
+msgid "表單："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:293
+msgid "送出時間："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:306
+msgid "載入簽核歷史中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:308
+msgid "此表單尚無簽核記錄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:354
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:52
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:479
+msgid "系統node"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:355
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:53
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:480
+msgid "子流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:356
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:54
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:481
+msgid "執行中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:357
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:55
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:482
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:24
+msgid "已完成"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_monitor_modal.html:358
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:56
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:483
+msgid "失敗"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:17
+msgid "載入表單中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:22
+msgid "部門："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/_read_form_modal.html:23
+msgid "狀態："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:3
+msgid "分類管理 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:15
+msgid "分類管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:16
+msgid "管理表單和流程的二層分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:20
+msgid "+ 新增父分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:29
+msgid "尚無分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:30
+msgid "點擊「新增父分類」開始建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:40
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:118
+msgid "顯示範圍"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:61
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:121
+msgid "表單設計"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:124
+msgid "流程設計"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:63
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:127
+msgid "表單中心"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:66
+msgid "+ 子分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:77
+msgid "子分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:78
+msgid "繼承父分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:101
+msgid "父分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:106
+msgid "例：人事表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:110
+msgid "簡述此分類的用途"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/category_list.html:114
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:113
+msgid "數字越小越前面"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:3
+msgid "表單流程 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:14
+msgid "表單流程系統"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:15
+msgid "管理表單模板、工作流程和簽核任務"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:22
+msgid "表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:26
+msgid "工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:30
+msgid "表單實例"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:34
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:22
+msgid "待處理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:40
+msgid "快速操作"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:43
+msgid "建立表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:46
+msgid "建立工作流"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:49
+msgid "查看我的表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:52
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:15
+msgid "待簽核任務"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:60
+msgid "最近表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:63
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:52
+msgid "尚無表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:81
+msgid "最近工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:84
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:216
+msgid "尚無工作流模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:103
+msgid "我的最近表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/dashboard.html:106
+msgid "尚無表單實例"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:3
+msgid "資料表規格 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:15
+msgid "資料表規格管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:18
+msgid "個表單，"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:19
+msgid "個 SQL Registry，"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:20
+msgid "個獨立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:26
+msgid "+ 為表單建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:27
+msgid "+ 新增獨立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:40
+msgid "獨立規格 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:50
+msgid "最後更新"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:67
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:158
+msgid "同步中控"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:83
+msgid "目前沒有任何資料表規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:84
+msgid "可透過「新增獨立規格」建立，或為既有表單建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:90
+msgid "表單綁定規格 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:98
+msgid "反相選取"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:101
+msgid "隱藏選取 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:112
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:221
+msgid "表單代碼"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:113
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:222
+msgid "規格狀態"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:114
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:223
+msgid "規格版本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:116
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:225
+msgid "Registry 數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:157
+msgid "編輯規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:159
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:72
+msgid "比對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:163
+msgid "建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:187
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:279
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:358
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:221
+msgid "欄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:206
+msgid "已隱藏的 Registry ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:212
+msgid "全部還原"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:305
+msgid "新增資料表規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:309
+msgid "選擇尚無規格的表單範本："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:314
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:548
+msgid "所有表單範本都已建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:332
+msgid "前往建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:342
+msgid "三向比對 -"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:352
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:215
+msgid "規格 v"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:353
+msgid ""
+"欄 |\n"
+"                            表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:355
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:218
+msgid "欄 |"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:361
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:224
+msgid "SQL: 未建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:368
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:234
+msgid "規格 vs 表單:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:370
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:379
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:236
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:245
+msgid "一致"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:373
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:382
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:239
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:248
+msgid "有偏移 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:373
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:382
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:239
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:248
+msgid "項)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:377
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:243
+msgid "規格 vs SQL:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:385
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:251
+msgid "SQL 同步表尚未建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:392
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:257
+msgid "規格、表單、SQL 三向完全一致"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:398
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:262
+msgid "規格 vs 表單 偏移細節"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:411
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:274
+msgid "規格 vs SQL 偏移細節"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/data_spec_list.html:427
+msgid ""
+"i.form_template_name === "
+"compareTemplateName)?.form_template_secure_code)\">\n"
+"                        前往編輯器處理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:3
+msgid "欄位規格 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:23
+msgid "欄位規格編輯器"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:27
+msgid "輸入規格名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:29
+msgid "| 新建獨立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:48
+msgid "| 尚未建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:56
+msgid "從現有 FormIO schema 反向建立規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:57
+msgid "從 FormIO 同步"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:61
+msgid "生成 FormIO schema 預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:62
+msgid "FormIO 預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:66
+msgid "將規格套用到表單 schema"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:67
+msgid "套用到表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:71
+msgid "三向比對: Spec vs FormIO vs SQL"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:76
+msgid "關聯到既有表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:81
+msgid "從此規格建立新表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:85
+msgid "從 org DB 既有表匯入欄位定義"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:86
+msgid "從 SQL Table 同步"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:89
+msgid "將 spec 欄位定義建立/更新到 SQL Table"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:90
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:640
+msgid "套用到 SQL Table"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:97
+msgid "儲存規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:113
+msgid ""
+"f.constraints && f.constraints.required).length > 0\">\n"
+"                必填:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:119
+msgid "點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:189
+msgid "詳細"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:212
+msgid "三向比對結果"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:216
+msgid ""
+"欄 |\n"
+"                        表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:226
+msgid "| 偏移:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:291
+msgid "FormIO Schema 預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:304
+msgid "版本歷史"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:335
+msgid "修改"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:351
+msgid ""
+"欄位內容\n"
+"                            ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:352
+msgid "個欄位)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:357
+msgid "取回為新版"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:362
+msgid "取回並套用到表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:365
+msgid "關閉預覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:427
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:431
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:438
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:442
+msgid "(無限制)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:447
+msgid "Pattern (正規表達式)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:453
+msgid "自訂驗證邏輯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:464
+msgid "選項來源"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:468
+msgid "手動定義"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:475
+msgid "選項預覽 (前 10 項)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:477
+msgid "無選項"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:491
+msgid "手動選項"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:495
+msgid "值"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:501
+msgid "+ 新增選項"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:508
+msgid "子欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:526
+msgid "+ 子欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:542
+msgid "關聯到表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:572
+msgid "從規格建立新表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:578
+msgid "請輸入表單名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:581
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:158
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:545
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:352
+msgid "分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:583
+msgid "-- 不指定 --"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:589
+msgid "載入分類中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:605
+msgid "從 SQL Table 同步欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:611
+msgid "企業資料庫中沒有任何表"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:615
+msgid "選擇要匯入欄位定義的表（共"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:615
+msgid "個表）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:631
+msgid "匯入欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:647
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:87
+msgid "表名:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:656
+msgid "DB 中有"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:656
+msgid "個欄位不在 spec 中（不會自動刪除）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/field_spec_editor.html:666
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:245
+msgid "確認執行"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:2
+msgid "流程總圖 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/flow_overview.html:43
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:471
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:67
+msgid "載入流程圖中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:3
+msgid "表單中心 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:33
+msgid "表單分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:51
+msgid "新填表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:110
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:184
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:228
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:297
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:343
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:38
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:113
+msgid "表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:283
+msgid ""
+"0\" class=\"fc-btn fc-btn-sm\"\n"
+"                        style=\"background: #fef2f2; color: #dc2626; "
+"border: 1px solid #fecaca;\"\n"
+"                        @click=\"deleteTestForms()\"\n"
+"                        x-text=\"__('刪除測試表單 (') + testFormCount + ')'\">"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:397
+msgid "測試模式 - 表單尚未正式發行"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:403
+msgid "載入表單結構中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:409
+msgid "表單主旨"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:412
+msgid "請輸入表單主旨（必填）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:423
+msgid "附件"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:429
+msgid "此表單尚無欄位定義"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:430
+msgid "請至表單設計器添加欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_center.html:436
+msgid "送出表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:6
+msgid "表單設計器 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:55
+msgid "表單檔名"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:65
+msgid "儲存並離開"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:62
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:107
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:226
+msgid "另存新版"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:71
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:110
+msgid "放棄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:77
+msgid "從範本載入表單結構"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:80
+msgid "上傳範本檔案"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:81
+msgid "上傳範本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:84
+msgid "設定表單底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:96
+msgid "開啟欄位規格編輯器"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:97
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:106
+msgid "規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:100
+msgid "啟用後，填表時可上傳附件檔案"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:102
+msgid "附件上傳"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:104
+msgid ""
+"啟用後，元件 placeholder 中的非拉丁文字會自動填入 label。&#10;支援 || "
+"分隔：前段→label，後段→placeholder&#10;範例：姓名||請輸入姓名"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:106
+msgid "提示→標籤"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:109
+msgid "風格:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:111
+msgid "formio預設"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:114
+msgid "寬度:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:116
+msgid "窄版 900px"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:117
+msgid "窄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:119
+msgid "寬版 1200px"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:120
+msgid "寬"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:122
+msgid "不限制寬度"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:123
+msgid "不限"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_designer.html:127
+msgid "自訂 px"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:3
+msgid "表單風格管理 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:15
+msgid "表單風格管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:16
+msgid "管理表單的外觀風格主題"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:20
+msgid "+ 新增主題"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:29
+msgid "尚無自訂主題"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:30
+msgid "系統已內建「預設」主題，點擊「新增主題」建立自訂風格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:37
+msgid "識別碼"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:69
+msgid "下載 CSS"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:70
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:138
+msgid "上傳 CSS"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:84
+msgid "「預設」主題為"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:84
+msgid "，不在此管理。自訂主題的 CSS 需以"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:85
+msgid "[data-form-theme=\"識別碼\"]"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:85
+msgid "為 scope 覆寫樣式。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:99
+msgid "識別碼 *"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:99
+msgid "（小寫英文、數字、連字號）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:100
+msgid "例：modern-flat"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:104
+msgid "顯示名稱 *"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:105
+msgid "例：現代扁平"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:109
+msgid "簡述此風格的特點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:117
+msgid "CSS 內容"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:117
+msgid "字元)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:143
+msgid "為「"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:143
+msgid "」上傳 CSS 檔案，將覆蓋現有內容。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:155
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:354
+msgid "上傳中..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/form_theme_list.html:170
+msgid "已套用此主題的表單將回退至預設風格。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:3
+msgid "我的表單 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:15
+msgid "我的表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:16
+msgid "查看您填寫和參與的表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:20
+msgid "全部狀態"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:21
+msgid "草稿"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:23
+msgid "處理中"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:25
+msgid "已駁回"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:26
+msgid "已取消"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:36
+msgid "我提交的"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:39
+msgid "我參與的"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:46
+msgid "尚無表單記錄"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:54
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:115
+msgid "當前節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:56
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:119
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:142
+msgid "提交時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:95
+msgid "表單詳情"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/instance_list.html:128
+msgid "表單資料"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:3
+msgid "表單流程配對 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:15
+msgid "表單流程配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:16
+msgid "設定表單與流程的對應關係"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:21
+msgid "+ 新增配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:30
+msgid "尚無表單流程配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:31
+msgid "點擊「新增配對」將表單與流程關聯起來"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:37
+msgid "發行名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:41
+msgid "表單編號"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:42
+msgid "運作版本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:87
+msgid "新發行"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:94
+msgid "0) ? '需先封存所有發行版本' : (m.total_versions === 0 ? '無發行版本' : '封存此配對')\">封存"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:116
+msgid "封存時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:132
+msgid "恢復"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:145
+msgid "新增配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:151
+msgid "選擇表單 *"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:153
+msgid "-- 請選擇表單 --"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:159
+msgid "沒有可配對的表單，所有表單都已配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:163
+msgid "選擇流程 *"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:165
+msgid "-- 請選擇流程 --"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:171
+msgid "沒有可用的主流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:175
+msgid "配對建立後需「發行」才會讓一般用戶可在表單中心使用。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:181
+msgid "建立配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:193
+msgid "發行版本 -"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:198
+msgid "尚無發行版本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:205
+msgid "表單版本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:206
+msgid "流程名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:207
+msgid "流程版本"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:209
+msgid "SQL 同步"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:211
+msgid "發行時間"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:249
+msgid "開放"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:250
+msgid "封存"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:270
+msgid "確認解除配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:274
+msgid "確定要解除「"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:274
+msgid "」與「"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:274
+msgid "」的配對嗎？"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:275
+msgid "此操作不會刪除表單或流程本身。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:279
+msgid "確認解除"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:288
+msgid "填寫權限設定 -"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:294
+msgid "預設規則（不可修改）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:297
+msgid "流程設計師 (FLOW_DESIGNER) 角色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:298
+msgid "表單設計師 (FORM_DESIGNER) 角色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:303
+msgid "自訂規則"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:306
+msgid "尚無自訂規則，僅預設角色可填寫此表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:316
+msgid "刪除此規則"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:322
+msgid "+ 新增規則"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:335
+msgid "包含所有子部門"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:340
+msgid "包含下層群組"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:378
+msgid "配對規則說明"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:383
+msgid "基本規則"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:385
+msgid "表單同一時間只能與一個流程配對。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:386
+msgid "一個流程可被多個表單配對。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:387
+msgid "同一組配對，限制單一發行版本。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:388
+msgid "同一組配對，發佈新的發行之後，舊版的表單流程若已發動，會從配對庫的舊版設計繼續完成流程，不會與新版發行衝突。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:389
+msgid "基於上一項，如果企業原則需要中斷舊版流程，請由企業級管理員強制中斷（可能需自行通知申請人），並於設計時考慮逾期簽核的時效不宜太久。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:393
+msgid "自動配對規則"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:395
+msgid "用名稱配對，當新建立流程時，如果沒有同名稱的表單，儲存新流程時會建立同名稱的表單且自動配對（因為流程需要表單發動）。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:396
+msgid "再度建立同名稱的流程時（ID不同，這是合規則的），若同名稱的表單已經存在，無論如何不會自動配對（避免自動建立非預期的配對）。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:400
+msgid "人工配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:402
+msgid "在不違反上述規則下可順利配對，並有防呆提示。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:403
+msgid "同一配對未發行時，直接採用設計圖發動，提供設計者可「邊改邊測試」的環境，永遠是最新版本（設計圖只有一個版本），所以修改設計後請遺忘該設計在表單中心的舊記錄，因為舊資料與新設計版本不同（未必會有明顯錯誤）。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:404
+msgid "每一次發行，會從表單與流程的設計圖「複製」到發行庫，確保變更設計後在表單中心查詢舊發行的表單時，能真實呈現當時的表單與流程。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:405
+msgid "基於上一項，當企業一般用戶以發行的版本運作時，設計者依然能邊修改邊測試，或另以新配對發行給指定用戶於真實環境進行封測，等設計完成後用原本的配對或新配對來發行新版本。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:409
+msgid "表單權限"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:411
+msgid "未發行：只管理員可使用。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:412
+msgid "封測：表單權限設定給測試組人員，可用真實環境封閉測試。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/mappings_list.html:413
+msgid "公開：表單權限設定給一般用戶，企業使用環境。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:3
+msgid "待簽核任務 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:28
+msgid "目前沒有待簽核的任務"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:29
+msgid "當有表單需要您簽核時，會顯示在這裡"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:40
+msgid "節點："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:44
+msgid "提交："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:90
+msgid "選擇路徑"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:103
+msgid "簽核意見（選填）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:110
+msgid "確認簽核"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:121
+msgid "任務詳情"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:134
+msgid "申請人"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/pending_list.html:148
+msgid "開始簽核"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:3
+msgid "同步中控台 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:15
+msgid "同步中控台"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:24
+msgid "開啟規格編輯器"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:25
+msgid "返回規格列表"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:40
+msgid "Spec (欄位規格)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:47
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:68
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:88
+msgid "欄位數:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:48
+msgid "修改者:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:49
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:69
+msgid "更新:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:53
+msgid "尚未建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:67
+msgid "表單:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:73
+msgid "找不到表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:89
+msgid "資料筆數:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:90
+msgid "同步:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:94
+msgid "尚未建立 SQL Registry"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:175
+msgid "同時更新 Spec（新增一版）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:186
+msgid "Spec vs FormIO 偏移 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:200
+msgid "Spec vs SQL 偏移 ("
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:214
+msgid "三向比對一致，無偏移"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/sync_control.html:234
+msgid "高風險操作：請輸入表名確認"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:3
+msgid "表單模板 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:15
+msgid "表單模板管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:16
+msgid "管理表單的結構定義"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:23
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:171
+msgid "清單模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:176
+msgid "縮圖模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:34
+msgid "+ 新增表單模板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:53
+msgid "點擊「新增模板」開始建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:61
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:225
+msgid "匯出"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:78
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:247
+msgid "配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:95
+msgid "已配對"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:105
+msgid "結構"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:106
+msgid "欄位規格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:116
+msgid "項，第"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:151
+msgid "例：請假申請表"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:155
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:349
+msgid "留空則自動產生"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:178
+msgid "簡述此表單的用途"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:202
+msgid "表單結構 -"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:225
+msgid "此表單已被以下配對使用："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:228
+msgid "- 流程："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:229
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:415
+msgid "（已發行）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/template_list.html:232
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:418
+msgid "刪除後配對將無法重新發行，但不影響已執行的流程。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:6
+msgid "流程設計器 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:37
+msgid "流程元件"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:38
+msgid "展開/收合所有分類"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:57
+msgid "流程樹系"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:60
+msgid "開啟樹系圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:63
+msgid "重新載入流程樹"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:79
+msgid "鷹眼"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:82
+msgid "自動縮放以顯示所有節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:83
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:210
+msgid "適應"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:104
+msgid "儲存並關閉"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:133
+msgid "編輯描述"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:137
+msgid "輸入流程描述..."
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:141
+msgid "確定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:147
+msgid "Shift 模式：框選節點 / 連續畫線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:159
+msgid "常用控制"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:162
+msgid "控制項"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:165
+msgid "底圖管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:168
+msgid "表單欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:171
+msgid "變數總覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:175
+msgid "展開或收合控制面板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:187
+msgid "系統訊息"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:187
+msgid "⚠ 警告"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:193
+msgid "畫布調整"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:208
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:40
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:24
+msgid "放大"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:209
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:34
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:18
+msgid "縮小"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:210
+msgid "自適應"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:218
+msgid "畫布顏色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:220
+msgid "黑色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:221
+msgid "中灰"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:222
+msgid "白色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:223
+msgid "藍晒圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:229
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:230
+msgid "自訂顏色"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:235
+msgid "網格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:239
+msgid "線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:243
+msgid "點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:250
+msgid "節點邊框"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:253
+msgid "顯示"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:261
+msgid "群組管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:266
+msgid "建立群組"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:269
+msgid "解散群組"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:277
+msgid "選取群組後可在此調整設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:285
+msgid "線段動畫效果"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:290
+msgid "流動動畫"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:297
+msgid "脈衝效果"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:303
+msgid "動畫速度:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:310
+msgid "停止所有動畫"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:319
+msgid "快捷鍵說明"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:321
+msgid "Shift 模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:321
+msgid "（節點操作）："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:323
+msgid "圈選（空白處拖動）：只選節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:324
+msgid "連續點擊節點：連續畫線，放開 Shift 結束"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:326
+msgid "Ctrl 模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:326
+msgid "（線條操作）："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:328
+msgid "圈選（空白處拖動）：只選線條"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:329
+msgid "點擊線段：編輯多點折線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:331
+msgid "Alt 模式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:331
+msgid "（群組操作）："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:333
+msgid "拖拉節點/群組：脫離群組"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:335
+msgid "：刪除選中元素"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:336
+msgid "：取消當前操作"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:360
+msgid "當前底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:363
+msgid "儲存名稱"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:366
+msgid "刪除底圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:391
+msgid "配對表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:396
+msgid "重新載入配對表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:402
+msgid "設計版"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:406
+msgid "發行版"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:419
+msgid "共 0 張表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:427
+msgid "變數清單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:434
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:513
+msgid "複製表格到剪貼簿"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:438
+msgid "複製勾選欄位的內部變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:440
+msgid "內部"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:442
+#, python-brace-format
+msgid "複製勾選欄位的引用語法 ${f.key}"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:455
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:542
+msgid "全選/取消全選"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:457
+msgid "標籤"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:459
+msgid "內部變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:460
+msgid "FieldWrite 使用的內部變數格式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:463
+msgid "引用語法"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:467
+msgid "資料型別"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:469
+msgid "預設值/選項"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:475
+msgid "請先選擇表單"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:485
+msgid "共 0 個欄位"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:501
+msgid "流程變數總覽"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:505
+msgid "重新掃描所有節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:509
+msgid "複製勾選的變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:511
+msgid "複製變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:515
+msgid "複製表格"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:528
+msgid "設定 SET"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:532
+msgid "讀取 READ"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:554
+msgid "變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:564
+msgid "點擊 Reload 掃描流程中所有節點的變數"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:573
+msgid "掃描所有節點的變數。SET = 設定變數值，READ = 讀取/引用變數。使用"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:573
+#, python-brace-format
+msgid "${變數名稱}"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:573
+msgid "引用。"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:585
+msgid "設定面板"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:590
+msgid "請點擊節點查看設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:595
+msgid "線段編輯"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:597
+msgid "新增中繼點數量:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:600
+msgid "新增中繼點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:603
+msgid "現有中繼點:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:605
+msgid "無中繼點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:609
+msgid "清除所有中繼點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:615
+msgid "直角折線座標調整"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:618
+msgid "說明："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:619
+msgid "調整中間段的座標來改變直角折線的形狀"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:624
+msgid "線段類型："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:627
+msgid "目前座標："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:631
+msgid "調整座標值："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:647
+msgid "精確輸入："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:650
+msgid "套用座標"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:660
+msgid "線段屬性控制"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:664
+msgid "選擇線段:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:666
+msgid "-- 點擊線段以選取 --"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:671
+msgid "請先選擇一條線段以調整其屬性"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:676
+msgid "線段樣式:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:678
+msgid "直線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:679
+msgid "曲線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:680
+msgid "分段折線 (使用 Shift+點擊 添加中繼點)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:681
+msgid "正交折線 (拖動線段調整)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:682
+msgid "直角折線(黃點)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:683
+msgid "直角折線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:690
+msgid "控制點距離:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:696
+msgid "控制點權重:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:705
+msgid "直角折線會自動創建兩個藍色菱形控制點，拖動控制點可調整轉角位置（只能垂直移動）"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:708
+msgid "計程車方向:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:711
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:733
+msgid "垂直優先"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:712
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:732
+msgid "水平優先"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:713
+msgid "向下"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:714
+msgid "向上"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:718
+msgid "轉彎半徑:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:727
+msgid "正交折線：點擊線段後拖動，水平線只能上下移動，垂直線只能左右移動"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:729
+msgid "起始方向:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:731
+msgid "自動判斷"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:740
+msgid "線條寬度:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:745
+msgid "線條顏色:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:748
+msgid "線條樣式:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:750
+msgid "實線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:751
+msgid "虛線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:752
+msgid "點線"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:758
+msgid "箭頭樣式:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:760
+msgid "三角形"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:761
+msgid "T型三角"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:762
+msgid "圓形"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:763
+msgid "方形"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:764
+msgid "菱形"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:765
+msgid "V形"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:766
+msgid "無箭頭"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:770
+msgid "箭頭縮放:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:778
+msgid "條件分支設定"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:781
+msgid "用於條件分支節點的出邊，設定條件表達式來決定流程路徑"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:784
+msgid "標籤文字 (Label):"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:785
+msgid "例如: 已核准、年齡 > 18"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:789
+msgid "顯示在第幾段:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:791
+msgid "第1段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:792
+msgid "第2段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:793
+msgid "第3段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:794
+msgid "第4段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:795
+msgid "第5段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:799
+msgid "文字方向:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:801
+msgid "自動旋轉"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:802
+msgid "0° (水平)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:810
+msgid "條件表達式:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:811
+msgid "例如: vars.age > 18"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:814
+msgid "表達式範例:"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:821
+msgid "設為預設路徑 (當所有條件都不符合時使用)"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:825
+msgid "測試表達式"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_designer.html:832
+msgid "刪除線段"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:3
+msgid "工作流模板 - BeakPlatform"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:21
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:296
+msgid "樹系圖"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:27
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:246
+msgid "未用"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:37
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:45
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:21
+msgid "適應畫面"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:50
+msgid ""
+"0\"\n"
+"                    @click=\"deleteAllUnused()\">\n"
+"                全部刪除"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:75
+msgid "其他節點"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:76
+msgid "子流程群組"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:84
+msgid "沒有未使用的專屬子流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:88
+msgid "刪除行為參考"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:93
+msgid "遞迴刪下層"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:99
+msgid "畫布刪 Subflow 節點 → 儲存"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:101
+msgid "只改 graph JSON，子流程模板保留"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:104
+msgid "未用面板「刪除」單個"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:106
+msgid "BFS 遞迴軟刪除 + 所有下層"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:109
+msgid "未用面板「全部刪除」"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:111
+msgid "逐一呼叫上方 API"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:114
+msgid "刪除主流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:116
+msgid "BFS 遞迴軟刪除整棵樹"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:161
+msgid "工作流模板管理"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:162
+msgid "管理流程定義與節點配置"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:183
+msgid "+ 新增工作流"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:192
+msgid "主流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:196
+msgid "通用子流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:217
+msgid "點擊「新增工作流」開始建立"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:244
+msgid "專屬"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:245
+msgid "通用"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:308
+msgid ""
+"項，\n"
+"                第"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:345
+msgid "例：請假審批流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:372
+msgid "簡述此工作流的用途"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:377
+msgid "設為通用子流程"
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:411
+msgid "此流程已被以下配對使用："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_list.html:414
+msgid "- 表單："
+msgstr ""
+
+#: ../modules/form_workflow/templates/modules/form_workflow/workflow_tree.html:3
+msgid "流程樹系圖 - BeakPlatform"
 msgstr ""
 

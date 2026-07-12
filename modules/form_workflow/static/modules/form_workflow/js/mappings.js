@@ -132,14 +132,14 @@ function mappingsManager() {
 
                 if (data.success) {
                     this.closeCreateModal();
-                    this.showToast('配對建立成功');
+                    this.showToast(__('配對建立成功'));
                     await this.loadMappings();
                     await this.loadUnmappedForms();
                 } else {
-                    this.showToast(data.error || '建立失敗', 'error');
+                    this.showToast(data.error || __('建立失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('建立失敗: ' + e.message, 'error');
+                this.showToast(__('建立失敗: ') + e.message, 'error');
             } finally {
                 this.saving = false;
             }
@@ -156,13 +156,13 @@ function mappingsManager() {
                 const data = await res.json();
 
                 if (data.success) {
-                    this.showToast(data.message || '發行成功');
+                    this.showToast(data.message || __('發行成功'));
                     await this.loadMappings();
                 } else {
-                    this.showToast(data.error || '發行失敗', 'error');
+                    this.showToast(data.error || __('發行失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('發行失敗: ' + e.message, 'error');
+                this.showToast(__('發行失敗: ') + e.message, 'error');
             }
         },
 
@@ -195,14 +195,14 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('已暫停');
+                    this.showToast(__('已暫停'));
                     await this.viewPublished(this.viewingMapping);
                     await this.loadMappings();
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 
@@ -213,19 +213,19 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('已重新開放');
+                    this.showToast(__('已重新開放'));
                     await this.viewPublished(this.viewingMapping);
                     await this.loadMappings();
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 
         async archiveVersion(v) {
-            if (!confirm('確定要封存此版本嗎？封存後無法重新開放。')) return;
+            if (!confirm(__('確定要封存此版本嗎？封存後無法重新開放。'))) return;
 
             try {
                 const res = await fetch(`${window.__BP}/api/mappings/published/${v.secure_code}/archive`, {
@@ -233,13 +233,13 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('已封存');
+                    this.showToast(__('已封存'));
                     await this.viewPublished(this.viewingMapping);
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 
@@ -252,14 +252,14 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('配對已封存');
+                    this.showToast(__('配對已封存'));
                     await this.loadMappings();
                     await this.loadArchivedMappings();
                 } else {
-                    this.showToast(data.error || '封存失敗', 'error');
+                    this.showToast(data.error || __('封存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('封存失敗: ' + e.message, 'error');
+                this.showToast(__('封存失敗: ') + e.message, 'error');
             }
         },
 
@@ -270,14 +270,14 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast('配對已恢復');
+                    this.showToast(__('配對已恢復'));
                     await this.loadMappings();
                     await this.loadArchivedMappings();
                 } else {
-                    this.showToast(data.error || '恢復失敗', 'error');
+                    this.showToast(data.error || __('恢復失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('恢復失敗: ' + e.message, 'error');
+                this.showToast(__('恢復失敗: ') + e.message, 'error');
             }
         },
 
@@ -290,14 +290,14 @@ function mappingsManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.showToast(data.message || '版本已刪除');
+                    this.showToast(data.message || __('版本已刪除'));
                     await this.viewPublished(this.viewingMapping);
                     await this.loadMappings();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: ') + e.message, 'error');
             }
         },
 
@@ -322,15 +322,15 @@ function mappingsManager() {
 
                 if (data.success) {
                     this.showDeleteModal = false;
-                    this.showToast('配對已解除');
+                    this.showToast(__('配對已解除'));
                     await this.loadMappings();
                     await this.loadArchivedMappings();
                     await this.loadUnmappedForms();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: ') + e.message, 'error');
             }
         },
 
@@ -340,7 +340,7 @@ function mappingsManager() {
                 v.sql_sync_enabled = true; // revert checkbox
                 return;
             }
-            if (!confirm('啟用 SQL 同步後無法關閉，確定啟用？')) {
+            if (!confirm(__('啟用 SQL 同步後無法關閉，確定啟用？'))) {
                 v.sql_sync_enabled = false; // revert checkbox
                 return;
             }
@@ -353,14 +353,14 @@ function mappingsManager() {
                 const data = await res.json();
                 if (data.success) {
                     v.sql_sync_enabled = true;
-                    this.showToast(data.message || 'SQL 同步已啟用');
+                    this.showToast(data.message || __('SQL 同步已啟用'));
                     this.loadSyncStatus(v);
                 } else {
-                    this.showToast(data.error || '操作失敗', 'error');
+                    this.showToast(data.error || __('操作失敗'), 'error');
                     v.sql_sync_enabled = !enabled; // revert
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
                 v.sql_sync_enabled = !enabled;
             }
         },
@@ -405,13 +405,13 @@ function mappingsManager() {
                 const data = await res.json();
                 if (data.success) {
                     m.numbering_rule_secure_code = ruleSecureCode || null;
-                    this.showToast('編號規則已更新');
+                    this.showToast(__('編號規則已更新'));
                 } else {
-                    this.showToast(data.error || '更新失敗', 'error');
+                    this.showToast(data.error || __('更新失敗'), 'error');
                     await this.loadMappings();
                 }
             } catch (e) {
-                this.showToast('更新失敗: ' + e.message, 'error');
+                this.showToast(__('更新失敗: ') + e.message, 'error');
             }
         },
 
@@ -465,7 +465,7 @@ function mappingsManager() {
         async _loadPermTargets(grantType) {
             this.permTargetOptions = [];
             const container = document.getElementById('perm-tree-container');
-            const orgName = (window.__MAPPING_CONFIG || {}).orgName || '企業';
+            const orgName = (window.__MAPPING_CONFIG || {}).orgName || __('企業');
 
             if (grantType === 'department' || grantType === 'group') {
                 this.permTreeLoading = true;
@@ -635,19 +635,19 @@ function mappingsManager() {
                     // 清除樹狀選中
                     const treeBox = document.querySelector('.fw-perm-tree-box');
                     if (treeBox) treeBox.querySelectorAll('.fw-perm-tree-row.selected').forEach(el => el.classList.remove('selected'));
-                    this.showToast('權限規則已新增');
+                    this.showToast(__('權限規則已新增'));
                 } else {
-                    this.showToast(data.message || '新增失敗', 'error');
+                    this.showToast(data.message || __('新增失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('新增失敗: ' + e.message, 'error');
+                this.showToast(__('新增失敗: ') + e.message, 'error');
             } finally {
                 this.permSaving = false;
             }
         },
 
         async deletePermRule(secureCcode) {
-            if (!confirm('確定要刪除此權限規則？')) return;
+            if (!confirm(__('確定要刪除此權限規則？'))) return;
             try {
                 const res = await fetch(`${window.__BP}/api/mapping-permissions/rule/${secureCcode}`, {
                     method: 'DELETE',
@@ -655,12 +655,12 @@ function mappingsManager() {
                 const data = await res.json();
                 if (data.success) {
                     await this._loadPermRules(this.permMapping.secure_code);
-                    this.showToast('權限規則已刪除');
+                    this.showToast(__('權限規則已刪除'));
                 } else {
-                    this.showToast(data.message || '刪除失敗', 'error');
+                    this.showToast(data.message || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: ') + e.message, 'error');
             }
         },
 

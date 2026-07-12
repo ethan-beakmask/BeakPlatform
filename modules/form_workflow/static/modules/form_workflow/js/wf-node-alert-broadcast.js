@@ -64,11 +64,11 @@
             const message = document.getElementById('abMessage')?.value?.trim();
 
             if (!broadcastCode) {
-                updateStatus('請輸入廣播代碼', 'warning');
+                updateStatus(__('請輸入廣播代碼'), 'warning');
                 return;
             }
             if (!title) {
-                updateStatus('請輸入標題', 'warning');
+                updateStatus(__('請輸入標題'), 'warning');
                 return;
             }
 
@@ -95,6 +95,6 @@
             }
 
             node.data('config', updatedConfig);
-            updateStatus('緊急廣播設定已套用', 'success');
+            updateStatus(__('緊急廣播設定已套用'), 'success');
         }
         window.applyAlertBroadcastConfig = applyAlertBroadcastConfig;

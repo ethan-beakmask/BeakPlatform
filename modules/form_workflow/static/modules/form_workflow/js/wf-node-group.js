@@ -11,7 +11,7 @@
         // 顯示替換節點面板
         async function showReplaceNodePanel() {
             if (!contextMenuTarget) {
-                updateStatus('⚠️ 請先選取要替換的節點', 'warning');
+                updateStatus(__('⚠️ 請先選取要替換的節點'), 'warning');
                 return;
             }
 
@@ -24,7 +24,7 @@
                     const response = await fetch(window.__BP + '/api/workflows/data/node-definitions');
                     const result = await response.json();
                     if (!result.success) {
-                        throw new Error(result.message || '載入節點定義失敗');
+                        throw new Error(result.message || __('載入節點定義失敗'));
                     }
                     replaceNodeDefinitions = result.data;
                 } catch (error) {
@@ -50,14 +50,14 @@
 
             // 分類名稱對應
             const CATEGORY_NAMES = {
-                'basic': '基本節點',
-                'form': '表單處理',
-                'notification': '通知機制',
-                'flow_control': '流程控制',
-                'data': '資料處理',
-                'operation': '運算操作',
-                'integration': '系統整合',
-                'system_admin': '系統專用'
+                'basic': __('基本節點'),
+                'form': __('表單處理'),
+                'notification': __('通知機制'),
+                'flow_control': __('流程控制'),
+                'data': __('資料處理'),
+                'operation': __('運算操作'),
+                'integration': __('系統整合'),
+                'system_admin': __('系統專用')
             };
 
             // 建立模態框
@@ -151,7 +151,7 @@
         // 還原上次替換（從記憶體 buffer 還原）
         function executeRestoreNode() {
             if (!replaceNodeUndoBuffer) {
-                updateStatus('⚠️ 沒有可還原的替換記錄', 'warning');
+                updateStatus(__('⚠️ 沒有可還原的替換記錄'), 'warning');
                 closeReplaceNodeModal();
                 return;
             }
@@ -162,7 +162,7 @@
             // 找到當前佔位的新節點
             const currentNode = cy.getElementById(buf.newNodeId);
             if (!currentNode || currentNode.length === 0) {
-                updateStatus('⚠️ 找不到替換後的節點，可能已被刪除', 'warning');
+                updateStatus(__('⚠️ 找不到替換後的節點，可能已被刪除'), 'warning');
                 replaceNodeUndoBuffer = null;
                 closeReplaceNodeModal();
                 return;
@@ -297,7 +297,7 @@
         // 執行替換節點
         function executeReplaceNode(newType, newLabel, newIcon) {
             if (!replaceNodeTarget) {
-                updateStatus('⚠️ 替換目標遺失', 'warning');
+                updateStatus(__('⚠️ 替換目標遺失'), 'warning');
                 closeReplaceNodeModal();
                 return;
             }
@@ -448,7 +448,7 @@
             });
 
             if (selectedNodes.length === 0) {
-                updateStatus('請先選取至少一個節點（Ctrl+點擊選取多個）', 'warning');
+                updateStatus(__('請先選取至少一個節點（Ctrl+點擊選取多個）'), 'warning');
                 return;
             }
 
@@ -492,17 +492,17 @@
             const groups = selected.filter(n => isGroupNode(n));
 
             if (nodes.length === 0) {
-                updateStatus('請先選取要加入的節點', 'warning');
+                updateStatus(__('請先選取要加入的節點'), 'warning');
                 return;
             }
 
             if (groups.length === 0) {
-                updateStatus('請選取一個群組節點', 'warning');
+                updateStatus(__('請選取一個群組節點'), 'warning');
                 return;
             }
 
             if (groups.length > 1) {
-                updateStatus('只能選取一個群組', 'warning');
+                updateStatus(__('只能選取一個群組'), 'warning');
                 return;
             }
 
@@ -535,7 +535,7 @@
             });
 
             if (selectedNodes.length === 0) {
-                updateStatus('請選取群組內的節點', 'warning');
+                updateStatus(__('請選取群組內的節點'), 'warning');
                 return;
             }
 
@@ -571,7 +571,7 @@
             const selectedGroups = cy.nodes(':selected').filter(node => isGroupNode(node));
 
             if (selectedGroups.length === 0) {
-                updateStatus('請選取要解散的群組節點', 'warning');
+                updateStatus(__('請選取要解散的群組節點'), 'warning');
                 return;
             }
 

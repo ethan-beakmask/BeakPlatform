@@ -128,30 +128,30 @@
                     // 檢查是否有未儲存的變更
                     if (hasUnsavedChanges) {
                         // 有未儲存的變更，顯示警告
-                        const confirmLeave = confirm('您有未儲存的變更，確定要離開嗎？');
+                        const confirmLeave = confirm(__('您有未儲存的變更，確定要離開嗎？'));
                         if (confirmLeave) {
                             // 用戶確認離開
                             console.log('✅ 用戶確認離開');
                             window.location.href = window.__BP + '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消離開');
-                            updateStatus('已取消離開，繼續編輯', 'info');
+                            updateStatus(__('已取消離開，繼續編輯'), 'info');
                         }
                     } else {
                         // 沒有未儲存的變更，詢問是否要離開
-                        const confirmLeave = confirm('確定要返回流程目錄嗎？');
+                        const confirmLeave = confirm(__('確定要返回流程目錄嗎？'));
                         if (confirmLeave) {
                             console.log('✅ 用戶確認返回目錄');
                             window.location.href = window.__BP + '/forms/workflows';
                         } else {
                             console.log('❌ 用戶取消');
-                            updateStatus('已取消返回，繼續編輯', 'info');
+                            updateStatus(__('已取消返回，繼續編輯'), 'info');
                         }
                     }
                 } else {
                     // 後續的後退嘗試，直接阻止並提示
                     if (preventBackCount === 2) {
-                        updateStatus('🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）', 'warning');
+                        updateStatus(__('🛡️ 後退已被阻擋（請使用上方的「放棄」按鈕返回目錄）'), 'warning');
                     }
                 }
             });
@@ -231,7 +231,7 @@
                     console.group('🔍 最後 10 筆滾輪事件分析');
                     last10.forEach((log, i) => {
                         const ratio = Math.abs(log.deltaX) / Math.abs(log.deltaY);
-                        const direction = Math.abs(log.deltaX) > Math.abs(log.deltaY) ? '水平' : '垂直';
+                        const direction = Math.abs(log.deltaX) > Math.abs(log.deltaY) ? __('水平') : __('垂直');
                         console.log(`${i + 1}. ${direction} | deltaX:${log.deltaX.toFixed(2)} deltaY:${log.deltaY.toFixed(2)} | 比例:${ratio.toFixed(2)} | target:${log.target}`);
                     });
                     console.groupEnd();
@@ -277,19 +277,19 @@
                 console.log('📂 開啟現有流程:', workflowId, wasJustCreated ? '(剛建立)' : '');
                 hasEverSaved = !wasJustCreated;  // 剛建立的標記為未儲存
                 await enterDesignMode(workflowId);
-                updateStatus('載入流程中...');
+                updateStatus(__('載入流程中...'));
             } else if (isNewWorkflow) {
                 // 新增流程，直接進入設計模式
                 console.log('✨ 新增流程');
                 hasEverSaved = false;  // 新建流程，標記為從未儲存
                 createNewWorkflowAndEnter(workflowName, workflowCategory, workflowDescription);
-                updateStatus('新增流程中...');
+                updateStatus(__('新增流程中...'));
             } else {
                 // 沒有參數，自動進入新增模式
                 console.log('✨ 無參數，自動建立新流程');
                 hasEverSaved = false;  // 新建流程，標記為從未儲存
                 createNewWorkflowAndEnter('新流程', '', '');
-                updateStatus('新增流程中...');
+                updateStatus(__('新增流程中...'));
             }
 
             // 等待 auth.js 載入後執行權限檢查

@@ -158,10 +158,10 @@ function workflowListManager() {
                         this.loadWorkflows();
                     }
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.saving = false;
             }
@@ -310,7 +310,7 @@ function workflowListManager() {
                 const res = await fetch(`${window.__BP}/api/form-workflow/workflows/${rootCode}/flow-overview`);
                 const result = await res.json();
                 if (!result.success) {
-                    this.overviewView.error = result.error || '載入失敗';
+                    this.overviewView.error = result.error || __('載入失敗');
                     this.overviewView.loading = false;
                     return;
                 }
@@ -489,10 +489,10 @@ function workflowListManager() {
                     this.unusedView.subflows = this.unusedView.subflows.filter(s => s.secure_code !== sf.secure_code);
                     this.loadWorkflows();
                 } else {
-                    alert('刪除失敗: ' + (data.error || data.message));
+                    alert(__('刪除失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('刪除失敗: ' + e.message);
+                alert(__('刪除失敗: ') + e.message);
             }
         },
 
@@ -539,10 +539,10 @@ function workflowListManager() {
                     this.deletingWorkflow = null;
                     this.loadWorkflows();
                 } else {
-                    alert('刪除失敗: ' + (data.error || data.message));
+                    alert(__('刪除失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('刪除失敗: ' + e.message);
+                alert(__('刪除失敗: ') + e.message);
             }
         },
 
@@ -610,10 +610,10 @@ function workflowListManager() {
                     this.selectedItems = [];
                     this.loadWorkflows();
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }
@@ -629,7 +629,7 @@ function workflowListManager() {
                 const json = JSON.parse(text);
                 const items = json.items;
                 if (!Array.isArray(items) || items.length === 0) {
-                    alert('JSON 格式不正確或無匯入項目');
+                    alert(__('JSON 格式不正確或無匯入項目'));
                     return;
                 }
                 if (!confirm(`即將匯入 ${items.length} 個流程模板（含子流程），code 重複者將跳過。確定？`)) return;
@@ -644,10 +644,10 @@ function workflowListManager() {
                     alert(`匯入完成：建立 ${data.summary.created}，跳過 ${data.summary.skipped}`);
                     this.loadWorkflows();
                 } else {
-                    alert('匯入失敗: ' + (data.error || data.message));
+                    alert(__('匯入失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('匯入失敗: ' + e.message);
+                alert(__('匯入失敗: ') + e.message);
             }
         },
 
@@ -679,10 +679,10 @@ function workflowListManager() {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 } else {
-                    alert('匯出失敗: ' + (data.error || data.message));
+                    alert(__('匯出失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('匯出失敗: ' + e.message);
+                alert(__('匯出失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }
@@ -704,10 +704,10 @@ function workflowListManager() {
                     this.selectedItems = [];
                     this.loadWorkflows();
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.batchProcessing = false;
             }

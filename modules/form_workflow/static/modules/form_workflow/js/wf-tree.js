@@ -345,7 +345,7 @@
 
             // 檢查是否有未儲存的變更
             if (typeof hasUnsavedChanges === 'function' && hasUnsavedChanges()) {
-                const confirmed = confirm('目前有未儲存的變更，確定要切換到其他流程嗎？');
+                const confirmed = confirm(__('目前有未儲存的變更，確定要切換到其他流程嗎？'));
                 if (!confirmed) {
                     return;
                 }

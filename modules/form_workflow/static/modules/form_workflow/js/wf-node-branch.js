@@ -292,7 +292,7 @@
             if (!node) return;
 
             const fallbackAction = document.getElementById('branchFallbackAction')?.value || 'log';
-            const fallbackMessage = document.getElementById('branchFallbackMessage')?.value || '無匹配規則';
+            const fallbackMessage = document.getElementById('branchFallbackMessage')?.value || __('無匹配規則');
             const fallbackTarget = document.getElementById('branchFallbackTarget')?.value || '';
 
             // 清理規則資料

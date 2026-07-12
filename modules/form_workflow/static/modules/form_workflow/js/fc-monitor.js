@@ -85,7 +85,7 @@ function fcMonitor() {
                             action: 'set',
                             actionLabel: data.operation || 'set',
                             varName: match[1],
-                            displayValue: match[2] || '(空)'
+                            displayValue: match[2] || __('(空)')
                         });
                     }
                 }
@@ -149,7 +149,7 @@ function fcMonitor() {
                 }
             } catch (error) {
                 console.error('載入流程追蹤錯誤:', error);
-                this.showToast('載入流程圖失敗', 'error');
+                this.showToast(__('載入流程圖失敗'), 'error');
             }
         },
 
@@ -509,11 +509,11 @@ function fcMonitor() {
                     }
                 } else {
                     console.error('載入表單詳情失敗:', result.error);
-                    this.showToast('載入表單詳情失敗', 'error');
+                    this.showToast(__('載入表單詳情失敗'), 'error');
                 }
             } catch (error) {
                 console.error('載入表單詳情錯誤:', error);
-                this.showToast('載入表單詳情錯誤', 'error');
+                this.showToast(__('載入表單詳情錯誤'), 'error');
             } finally {
                 this.loadingFormDetail = false;
             }
@@ -566,7 +566,7 @@ function fcMonitor() {
         },
 
         async confirmForceEnd() {
-            if (!confirm('確定要強制結束此流程？此操作將取消所有執行中的節點並結束流程。')) return;
+            if (!confirm(__('確定要強制結束此流程？此操作將取消所有執行中的節點並結束流程。'))) return;
             await this.executeForceEnd();
         },
 
@@ -583,17 +583,17 @@ function fcMonitor() {
                 });
                 const result = await res.json();
                 if (result.success) {
-                    this.showToast('流程已強制結束', 'success');
+                    this.showToast(__('流程已強制結束'), 'success');
                     await this.refreshMonitor();
                     this.loadTracking();
                     this.loadSigned();
                     this.loadHistory();
                     this.loadSignedHistory();
                 } else {
-                    this.showToast(result.error || '操作失敗', 'error');
+                    this.showToast(result.error || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗', 'error');
+                this.showToast(__('操作失敗'), 'error');
             }
         },
 

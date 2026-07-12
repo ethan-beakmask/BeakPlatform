@@ -287,7 +287,7 @@
             try {
                 const response = await fetch(url);
                 const result = await response.json();
-                if (!result.success) throw new Error(result.message || '載入失敗');
+                if (!result.success) throw new Error(result.message || __('載入失敗'));
 
                 fieldPermFormFields = result.data.fields || [];
                 renderFieldPermissionsInTab(node, form.form_name, content);
@@ -416,8 +416,8 @@
                     // 檢查每個決策選項是否都有連線
                     const unmappedOptions = options.filter(opt => !opt.target_edges || opt.target_edges.length === 0);
                     if (unmappedOptions.length > 0) {
-                        const names = unmappedOptions.map((o, i) => o.label || '(未命名)').join('、');
-                        if (msgEl) { msgEl.textContent = '決策選項 [' + names + '] 尚未連接去向'; msgEl.className = 'fa-modal-message warning'; }
+                        const names = unmappedOptions.map((o, i) => o.label || __('(未命名)')).join('、');
+                        if (msgEl) { msgEl.textContent = __('決策選項 [') + names + '] 尚未連接去向'; msgEl.className = 'fa-modal-message warning'; }
                         const tab1 = document.querySelectorAll('.fa-modal-tab')[1];
                         if (tab1) tab1.click();
                         return;
@@ -433,7 +433,7 @@
                             const tn = cy.getElementById(e.target);
                             return (tn && tn.length) ? (tn.data('label') || e.target) : e.target;
                         }).join('、');
-                        if (msgEl) { msgEl.textContent = '去向 [' + names + '] 沒有任何決策選項連接'; msgEl.className = 'fa-modal-message warning'; }
+                        if (msgEl) { msgEl.textContent = __('去向 [') + names + '] 沒有任何決策選項連接'; msgEl.className = 'fa-modal-message warning'; }
                         const tab1 = document.querySelectorAll('.fa-modal-tab')[1];
                         if (tab1) tab1.click();
                         return;
@@ -496,7 +496,7 @@
 
             const finishModeInput = document.querySelector('input[name="finishMode"]:checked');
             if (!finishModeInput) {
-                updateStatus('請選擇結束模式', 'warning');
+                updateStatus(__('請選擇結束模式'), 'warning');
                 return;
             }
 
@@ -519,9 +519,9 @@
 
             // 根據模式顯示不同訊息
             const modeNames = {
-                'detach': '分離執行模式',
-                'cancel': '取消/終止模式',
-                'strict': '嚴格等待模式'
+                'detach': __('分離執行模式'),
+                'cancel': __('取消/終止模式'),
+                'strict': __('嚴格等待模式')
             };
 
             updateStatus(`✅ 結束模式：${modeNames[finishMode]}，等待 ${waitSeconds} 秒`, 'success');
@@ -579,7 +579,7 @@
 
             const actionEl = document.querySelector('input[name="sspAction"]:checked');
             if (!actionEl) {
-                updateStatus('請選擇動作類型', 'warning');
+                updateStatus(__('請選擇動作類型'), 'warning');
                 return;
             }
             const action = actionEl.value;
@@ -594,20 +594,20 @@
                 updatedConfig.sub_system_developer = devEl ? devEl.value.trim() : '';
                 updatedConfig.sub_system_icon = iconEl ? iconEl.value.trim() : '';
                 if (!updatedConfig.sub_system_name) {
-                    updateStatus('子系統名稱為必填', 'warning');
+                    updateStatus(__('子系統名稱為必填'), 'warning');
                     return;
                 }
             } else {
                 const codeEl = document.getElementById('sspCode');
                 updatedConfig.sub_system_code = codeEl ? codeEl.value.trim() : '';
                 if (!updatedConfig.sub_system_code) {
-                    updateStatus('子系統代碼為必填', 'warning');
+                    updateStatus(__('子系統代碼為必填'), 'warning');
                     return;
                 }
             }
 
             node.data('config', updatedConfig);
-            const labels = { create: '建立', suspend: '停用', delete: '刪除' };
+            const labels = { create: __('建立'), suspend: __('停用'), delete: __('刪除') };
             updateStatus(`子系統配置：${labels[action] || action}`, 'success');
 
             console.log('SubSystemProvision 配置已更新:', {
@@ -620,7 +620,7 @@
         function updateConvergeMode(nodeId, mode) {
             const node = cy.getElementById(nodeId);
             if (!node) {
-                updateStatus('找不到節點', 'warning');
+                updateStatus(__('找不到節點'), 'warning');
                 return;
             }
 
@@ -639,7 +639,7 @@
             // 重新渲染面板以更新選中狀態
             showNodeSettings(node);
 
-            const modeText = mode === 'ANY' ? '任一完成' : '等待全部';
+            const modeText = mode === 'ANY' ? __('任一完成') : __('等待全部');
             updateStatus(`✅ 匯聚模式已設為：${modeText}`);
 
             console.log('匯聚節點配置已更新:', {

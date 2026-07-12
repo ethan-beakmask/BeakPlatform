@@ -21,7 +21,7 @@
             var entry = {
                 id: node.secure_code,
                 parentId: parentId,
-                name: node.name || '未命名',
+                name: node.name || __('未命名'),
                 code: node.code || '',
                 thumbnail: node.thumbnail_2x1 || null,
                 nodeCount: node.node_count || 0,
@@ -127,7 +127,7 @@
             flatData.unshift({
                 id: '__virtual_root__',
                 parentId: null,
-                name: '所有流程樹',
+                name: __('所有流程樹'),
                 code: '',
                 thumbnail: null,
                 nodeCount: 0,

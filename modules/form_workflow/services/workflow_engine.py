@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 from app import db
 from app.platform.auth import current_user
 from app.platform.data import get_current_org
+from flask_babel import gettext as _
 
 from ..models import (
     FwFormTemplate,
@@ -87,7 +88,7 @@ class WorkflowEngine:
         ).first()
 
         if not form_instance:
-            raise ValueError(f'表單實例 {form_instance_secure_code} 不存在')
+            raise ValueError(_('表單實例 %(form_instance_secure_code)s 不存在', form_instance_secure_code=form_instance_secure_code))
 
         # 2. 取得工作流模板
         if workflow_template_secure_code:
@@ -109,15 +110,15 @@ class WorkflowEngine:
                     is_deleted=False
                 ).first()
             else:
-                raise ValueError('找不到對應的工作流模板')
+                raise ValueError(_('找不到對應的工作流模板'))
 
         if not workflow_template:
-            raise ValueError(f'工作流模板不存在')
+            raise ValueError(_('工作流模板不存在'))
 
         # 3. 取得流程定義並保存快照
         graph = workflow_template.graph
         if not graph or 'nodes' not in graph:
-            raise ValueError('工作流模板缺少 graph 資料')
+            raise ValueError(_('工作流模板缺少 graph 資料'))
 
         # 4. 創建工作流實例（保存 graph_snapshot，確保流程執行期間使用發行時的圖）
         timeout_at = None
@@ -169,7 +170,7 @@ class WorkflowEngine:
                 })
 
         if not start_nodes:
-            raise ValueError('工作流模板缺少 Start 節點')
+            raise ValueError(_('工作流模板缺少 Start 節點'))
 
         # 6. 將 START 節點加入執行佇列
         for start_node in start_nodes:
@@ -224,7 +225,7 @@ class WorkflowEngine:
         ).first()
 
         if not workflow_template:
-            raise ValueError(f'工作流模板 {workflow_template_secure_code} 不存在')
+            raise ValueError(_('工作流模板 %(workflow_template_secure_code)s 不存在', workflow_template_secure_code=workflow_template_secure_code))
 
         # 建立流程記錄單作為 FormInstance
         record_instance = FwFormInstance(

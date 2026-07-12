@@ -9,6 +9,7 @@ from app.platform.data import get_current_org
 from app import db
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 
 @form_center_bp.route('/my-forms')
@@ -184,7 +185,7 @@ def get_my_form(secure_code):
     ).first()
 
     if not instance:
-        return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的表單')}), 404
 
     return jsonify({
         'success': True,

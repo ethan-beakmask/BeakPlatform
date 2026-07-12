@@ -51,7 +51,7 @@
                             alreadyLeftGroup = true;
 
                             const isGroup = isGroupNode(node);
-                            const nodeType = isGroup ? '群組' : '節點';
+                            const nodeType = isGroup ? __('群組') : __('節點');
                             updateStatus(`🔓 ${nodeType}正在脫離群組 ${currentParent.data('label')}...`);
                         }
                     }
@@ -74,7 +74,7 @@
                         continuousLineMode = true;
                         continuousLineNodes = [node];
                         node.addClass('continuous-line-highlight');
-                        updateStatus('連續畫線模式：繼續點擊節點以畫線，放開 Shift 結束');
+                        updateStatus(__('連續畫線模式：繼續點擊節點以畫線，放開 Shift 結束'));
                     } else {
                         // 連續畫線中，與上一個節點連線
                         const lastNode = continuousLineNodes[continuousLineNodes.length - 1];
@@ -84,7 +84,7 @@
                             node.addClass('continuous-line-highlight');
                             updateStatus(`已連接 ${continuousLineNodes.length} 個節點`);
                         } else {
-                            updateStatus('不能連接到同一個節點', 'warning');
+                            updateStatus(__('不能連接到同一個節點'), 'warning');
                         }
                     }
                 }
@@ -167,7 +167,7 @@
                     trackingMouseOnEdge = false;
                     // 不恢復 userPanningEnabled，保持 false
                     // 左鍵用於框選，右鍵用於平移（由自訂代碼控制）
-                    updateStatus('就緒');
+                    updateStatus(__('就緒'));
                 }
             });
 
@@ -227,16 +227,16 @@
                 const parentEdgeId = node.data('parentEdge');
 
                 if (node.data('orthogonalControl')) {
-                    updateStatus('拖動正交折線控制點');
+                    updateStatus(__('拖動正交折線控制點'));
                     // 高亮相關線段
                     cy.edges(`[parentEdge="${parentEdgeId}"]`).addClass('highlighted');
                 } else if (node.data('taxiControl')) {
-                    updateStatus('拖動直角折線控制點 - 只能水平移動');
+                    updateStatus(__('拖動直角折線控制點 - 只能水平移動'));
                     // 高亮相關線段
                     cy.edges(`[id="${parentEdgeId}"]`).addClass('highlighted');
                     cy.edges(`[parentEdge="${parentEdgeId}"]`).addClass('highlighted');
                 } else {
-                    updateStatus('拖動中繼點調整線段路徑');
+                    updateStatus(__('拖動中繼點調整線段路徑'));
                 }
             });
 
@@ -247,12 +247,12 @@
 
                 // 根據控制點類型顯示不同訊息
                 if (node.data('orthogonalControl')) {
-                    updateStatus('正交折線已更新');
+                    updateStatus(__('正交折線已更新'));
                 } else if (node.data('taxiControl')) {
                     node.removeData('dragStartY');
-                    updateStatus('直角折線已更新');
+                    updateStatus(__('直角折線已更新'));
                 } else {
-                    updateStatus('中繼點位置已更新');
+                    updateStatus(__('中繼點位置已更新'));
                 }
 
                 // 移除高亮
@@ -330,7 +330,7 @@
                         // 暫時禁用畫布平移
                         cy.userPanningEnabled(false);
 
-                        updateStatus('拖動中間線段 - 可水平/垂直移動調整位置');
+                        updateStatus(__('拖動中間線段 - 可水平/垂直移動調整位置'));
                     }
                 }
             });
@@ -359,7 +359,7 @@
                     // 不恢復 userPanningEnabled，保持 false
                     // 左鍵用於框選，右鍵用於平移（由自訂代碼控制）
                     draggingMiddleSegment = null;
-                    updateStatus('中間線段位置已更新');
+                    updateStatus(__('中間線段位置已更新'));
                 }
             });
 
@@ -399,7 +399,7 @@
                         const validEdges = selected.edges().filter(edge => !edge.data('edgeType') || edge.data('edgeType') !== 'relay');
 
                         if (validNodes.length === 0 && validEdges.length === 0) {
-                            const msg = hasStartNode ? '⚠️ Start 節點不允許複製' : '無可複製的元素（中繼點和中繼線段不可單獨複製）';
+                            const msg = hasStartNode ? __('⚠️ Start 節點不允許複製') : __('無可複製的元素（中繼點和中繼線段不可單獨複製）');
                             updateStatus(msg, 'warning');
                             return;
                         }
@@ -433,7 +433,7 @@
                 // Ctrl+V 貼上（連續按 V 時累計偏移，避免重疊）
                 if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !isInputField) {
                     if (!clipboard || (clipboard.nodes.length === 0 && clipboard.edges.length === 0)) {
-                        updateStatus('剪貼簿為空', 'warning');
+                        updateStatus(__('剪貼簿為空'), 'warning');
                         return;
                     }
 
@@ -660,7 +660,7 @@
                                 const elemId = elem.data('id');
                                 if (elem.isNode() && (elemId === 'node-Start' || elemType === 'Start')) {
                                     blockedCount++;
-                                    updateStatus('⚠️ Start 節點不允許刪除', 'warning');
+                                    updateStatus(__('⚠️ Start 節點不允許刪除'), 'warning');
                                 } else if (elem.isNode() && isGroupNode(elem)) {
                                     // 刪除群組時，先清理所有子節點連接的邊控制點
                                     const children = elem.children();
@@ -669,7 +669,7 @@
                                         const childId = child.data('id');
                                         if (childId === 'node-Start' || childType === 'Start') {
                                             child.move({ parent: null });
-                                            updateStatus('Start 節點已自動移出群組', 'info');
+                                            updateStatus(__('Start 節點已自動移出群組'), 'info');
                                         } else {
                                             cleanupNodeEdgeControlSystems(child);
                                         }
@@ -724,7 +724,7 @@
                         connectingSourceNode.addClass('no-border');
                     }
                     connectingSourceNode = null;
-                    updateStatus('已取消連線');
+                    updateStatus(__('已取消連線'));
                 }
             });
 
@@ -804,7 +804,7 @@
 
                 // Alt + 拖拉脫離群組：顯示完成訊息（已在 drag 事件中脫離）
                 if (altPressed && hasMoved && nodePressedForDrag && nodePressedForDrag.id() === node.id() && alreadyLeftGroup) {
-                    const nodeType = isGroup ? '群組' : '節點';
+                    const nodeType = isGroup ? __('群組') : __('節點');
                     updateStatus(`✅ ${nodeType}已成功脫離群組`);
                     console.log(`✅ Alt+拖拉：${nodeType} ${node.id()} 已脫離群組`);
 
@@ -875,7 +875,7 @@
                             if (currentParent.length > 0) refreshEmptyGroupStyle(currentParent);
                             refreshEmptyGroupStyle(targetGroup);
 
-                            const nodeType = isGroup ? '群組' : '節點';
+                            const nodeType = isGroup ? __('群組') : __('節點');
                             updateStatus(`${nodeType}已自動加入群組 ${targetGroup.data('label')}`);
                             console.log(`✅ ${nodeType} ${node.id()} 加入群組 ${targetGroup.id()}`);
                         }
@@ -890,7 +890,7 @@
                             cy.style().update();
                             refreshEmptyGroupStyle(currentParent);
 
-                            const nodeType = isGroup ? '群組' : '節點';
+                            const nodeType = isGroup ? __('群組') : __('節點');
                             updateStatus(`${nodeType}已移出群組 ${currentParent.data('label')}`);
                             console.log(`✅ ${nodeType} ${node.id()} 移出群組 ${currentParent.id()}`);
                         }

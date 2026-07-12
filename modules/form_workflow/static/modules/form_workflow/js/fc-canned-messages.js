@@ -47,9 +47,9 @@ function fcCannedMessages() {
                     this.cannedMessages.push(data.data);
                     this.cannedNewText = '';
                 } else {
-                    this.showToast(data.error || '新增失敗', 'error');
+                    this.showToast(data.error || __('新增失敗'), 'error');
                 }
-            } catch (e) { this.showToast('新增失敗', 'error'); }
+            } catch (e) { this.showToast(__('新增失敗'), 'error'); }
         },
 
         startEditCanned(msg) {
@@ -78,22 +78,22 @@ function fcCannedMessages() {
                     this.cannedEditId = null;
                     this.cannedEditText = '';
                 } else {
-                    this.showToast(data.error || '修改失敗', 'error');
+                    this.showToast(data.error || __('修改失敗'), 'error');
                 }
-            } catch (e) { this.showToast('修改失敗', 'error'); }
+            } catch (e) { this.showToast(__('修改失敗'), 'error'); }
         },
 
         async deleteCannedMessage(sc) {
-            if (!confirm('確定刪除此簽核片語？')) return;
+            if (!confirm(__('確定刪除此簽核片語？'))) return;
             try {
                 const res = await fetch(`${window.__BP}/api/form-center/canned-messages/${sc}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     this.cannedMessages = this.cannedMessages.filter(m => m.secure_code !== sc);
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
-            } catch (e) { this.showToast('刪除失敗', 'error'); }
+            } catch (e) { this.showToast(__('刪除失敗'), 'error'); }
         },
     };
 }

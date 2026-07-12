@@ -8,6 +8,7 @@ from flask_login import current_user
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
+from flask_babel import gettext as _
 
 mapping_permissions_bp = Blueprint(
     'form_workflow_mapping_permissions',
@@ -37,7 +38,7 @@ def list_permissions(mapping_secure_code):
         is_deleted=False
     ).first()
     if not mapping:
-        return jsonify({'success': False, 'message': '配對不存在'}), 404
+        return jsonify({'success': False, 'message': _('配對不存在')}), 404
 
     permissions = FwMappingPermission.query.filter_by(
         mapping_secure_code=mapping_secure_code,
@@ -80,7 +81,7 @@ def create_permission(mapping_secure_code):
         is_deleted=False
     ).first()
     if not mapping:
-        return jsonify({'success': False, 'message': '配對不存在'}), 404
+        return jsonify({'success': False, 'message': _('配對不存在')}), 404
 
     data = request.get_json() or {}
     grant_type = data.get('grant_type', '')
@@ -88,10 +89,10 @@ def create_permission(mapping_secure_code):
     grant_target_name = data.get('grant_target_name', '')
 
     if grant_type not in ('department', 'group', 'user'):
-        return jsonify({'success': False, 'message': 'grant_type 必須為 department / group / user'}), 400
+        return jsonify({'success': False, 'message': _('grant_type 必須為 department / group / user')}), 400
 
     if not grant_target:
-        return jsonify({'success': False, 'message': 'grant_target 為必填'}), 400
+        return jsonify({'success': False, 'message': _('grant_target 為必填')}), 400
 
     # 檢查重複
     existing = FwMappingPermission.query.filter_by(
@@ -102,7 +103,7 @@ def create_permission(mapping_secure_code):
         is_deleted=False
     ).first()
     if existing:
-        return jsonify({'success': False, 'message': '此規則已存在'}), 400
+        return jsonify({'success': False, 'message': _('此規則已存在')}), 400
 
     include_children = bool(data.get('include_children', False)) if grant_type in ('department', 'group') else False
     user_name = getattr(current_user, 'display_name', '') or getattr(current_user, 'native_name', '') or ''
@@ -122,7 +123,7 @@ def create_permission(mapping_secure_code):
 
     return jsonify({
         'success': True,
-        'message': '權限規則已新增',
+        'message': _('權限規則已新增'),
         'data': perm.to_dict()
     }), 201
 
@@ -148,12 +149,12 @@ def delete_permission(secure_code):
         is_deleted=False
     ).first()
     if not perm:
-        return jsonify({'success': False, 'message': '規則不存在'}), 404
+        return jsonify({'success': False, 'message': _('規則不存在')}), 404
 
     perm.is_deleted = True
     db.session.commit()
 
     return jsonify({
         'success': True,
-        'message': '權限規則已刪除'
+        'message': _('權限規則已刪除')
     })

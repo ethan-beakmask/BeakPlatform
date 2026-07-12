@@ -20,7 +20,7 @@
             // 獲取控制點
             const controls = taxiControlPoints.get(edge.id());
             if (!controls || controls.length === 0) {
-                updateStatus('錯誤：找不到直角折線控制點');
+                updateStatus(__('錯誤：找不到直角折線控制點'));
                 return;
             }
 
@@ -35,7 +35,7 @@
             const target = cy.getElementById(targetId);
 
             if (source.length === 0 || target.length === 0) {
-                updateStatus('錯誤：找不到來源或目標節點');
+                updateStatus(__('錯誤：找不到來源或目標節點'));
                 return;
             }
 
@@ -47,12 +47,12 @@
 
             if (isHorizontal) {
                 // 水平線 - 調整 Y 座標
-                document.getElementById('taxi-segment-type').textContent = '水平線';
+                document.getElementById('taxi-segment-type').textContent = __('水平線');
                 document.getElementById('taxi-current-coord').textContent = `Y = ${pos.y.toFixed(1)}`;
                 document.getElementById('taxi-coord-input').value = Math.round(pos.y);
             } else {
                 // 垂直線 - 調整 X 座標
-                document.getElementById('taxi-segment-type').textContent = '垂直線';
+                document.getElementById('taxi-segment-type').textContent = __('垂直線');
                 document.getElementById('taxi-current-coord').textContent = `X = ${pos.x.toFixed(1)}`;
                 document.getElementById('taxi-coord-input').value = Math.round(pos.x);
             }
@@ -63,13 +63,13 @@
         // 調整直角折線座標（相對調整）
         function adjustTaxiCoord(delta) {
             if (!currentTaxiEdge) {
-                updateStatus('請先選擇一條直角折線', 'warning');
+                updateStatus(__('請先選擇一條直角折線'), 'warning');
                 return;
             }
 
             const controls = taxiControlPoints.get(currentTaxiEdge.id());
             if (!controls || controls.length === 0) {
-                updateStatus('錯誤：找不到控制點', 'warning');
+                updateStatus(__('錯誤：找不到控制點'), 'warning');
                 return;
             }
 
@@ -104,19 +104,19 @@
         // 設置直角折線座標（絕對設置）
         function setTaxiCoord() {
             if (!currentTaxiEdge) {
-                updateStatus('請先選擇一條直角折線', 'warning');
+                updateStatus(__('請先選擇一條直角折線'), 'warning');
                 return;
             }
 
             const newValue = parseFloat(document.getElementById('taxi-coord-input').value);
             if (isNaN(newValue)) {
-                updateStatus('請輸入有效的數字', 'warning');
+                updateStatus(__('請輸入有效的數字'), 'warning');
                 return;
             }
 
             const controls = taxiControlPoints.get(currentTaxiEdge.id());
             if (!controls || controls.length === 0) {
-                updateStatus('錯誤：找不到控制點', 'warning');
+                updateStatus(__('錯誤：找不到控制點'), 'warning');
                 return;
             }
 
@@ -152,7 +152,7 @@
         function closeTaxiCoordPanel() {
             currentTaxiEdge = null;
             document.getElementById('taxi-coord-panel').style.display = 'none';
-            updateStatus('已關閉座標控制面板');
+            updateStatus(__('已關閉座標控制面板'));
         }
 
         // 繪製網格背景
@@ -449,7 +449,7 @@
                 gridStyle = style;
             }
             drawGridBackground();
-            updateStatus(`網格樣式: ${style === 'off' ? '關閉' : style === 'lines' ? '線條' : '點陣'}`);
+            updateStatus(`網格樣式: ${style === 'off' ? __('關閉') : style === 'lines' ? __('線條') : __('點陣')}`);
         }
 
         // 切換網格勾選框
@@ -473,14 +473,14 @@
             if (linesCheckbox.checked) {
                 gridEnabled = true;
                 gridStyle = 'lines';
-                updateStatus('網格樣式: 線條');
+                updateStatus(__('網格樣式: 線條'));
             } else if (dotsCheckbox.checked) {
                 gridEnabled = true;
                 gridStyle = 'dots';
-                updateStatus('網格樣式: 點陣');
+                updateStatus(__('網格樣式: 點陣'));
             } else {
                 gridEnabled = false;
-                updateStatus('網格樣式: 關閉');
+                updateStatus(__('網格樣式: 關閉'));
             }
 
             drawGridBackground();
@@ -642,7 +642,7 @@
                 contextMenuTarget.move({ parent: null });
                 cy.style().update();
                 if (oldParent.length > 0) refreshEmptyGroupStyle(oldParent);
-                updateStatus('節點已移出群組');
+                updateStatus(__('節點已移出群組'));
                 updateMinimap();
             }
             hideContextMenu();
@@ -655,14 +655,14 @@
                 const nodeType = normalizeNodeType(contextMenuTarget.data('type'));
                 const nodeId = contextMenuTarget.data('id');
                 if (nodeId === 'node-Start' || nodeType === 'Start') {
-                    updateStatus('⚠️ Start 節點不允許刪除', 'warning');
+                    updateStatus(__('⚠️ Start 節點不允許刪除'), 'warning');
                     hideContextMenu();
                     return;
                 }
                 // 檢查是否為 Subflow 節點
                 const isSubflow = nodeType === 'Subflow';
                 contextMenuTarget.remove();
-                updateStatus('節點已刪除');
+                updateStatus(__('節點已刪除'));
                 updateMinimap();
                 // 如果刪除了 SUBFLOW 節點，延遲 0.5 秒後重新整理流程樹系
                 if (isSubflow) {
@@ -678,11 +678,11 @@
         function editGroupLabel() {
             if (contextMenuTarget) {
                 const currentLabel = contextMenuTarget.data('label');
-                const newLabel = prompt('輸入群組名稱:', currentLabel);
+                const newLabel = prompt(__('輸入群組名稱:'), currentLabel);
                 if (newLabel !== null && newLabel.trim() !== '') {
                     contextMenuTarget.data('label', newLabel.trim());
                     updateGroupSettingsPanel();
-                    updateStatus('群組名稱已更新');
+                    updateStatus(__('群組名稱已更新'));
                     hasUnsavedChanges = true;
                     updateSaveButtonState();
                 }
@@ -711,7 +711,7 @@
                     });
                 }
 
-                updateStatus(`群組框線已設為: ${style === 'solid' ? '實線' : style === 'dashed' ? '虛線' : '無框線'}`);
+                updateStatus(`群組框線已設為: ${style === 'solid' ? __('實線') : style === 'dashed' ? __('虛線') : __('無框線')}`);
                 updateGroupSettingsPanel();
                 hasUnsavedChanges = true;
                 updateSaveButtonState();
@@ -727,7 +727,7 @@
                     'shape': style === 'round' ? 'roundrectangle' : 'rectangle'
                 });
 
-                updateStatus(`群組形狀已設為: ${style === 'round' ? '圓角' : '直角'}`);
+                updateStatus(`群組形狀已設為: ${style === 'round' ? __('圓角') : __('直角')}`);
                 updateGroupSettingsPanel();
                 hasUnsavedChanges = true;
                 updateSaveButtonState();
@@ -759,7 +759,7 @@
                 }
                 updateGroupSettingsPanel();
                 updateMinimap();
-                updateStatus('群組顏色已重設');
+                updateStatus(__('群組顏色已重設'));
                 hasUnsavedChanges = true;
                 updateSaveButtonState();
             }
@@ -775,7 +775,7 @@
                 });
                 contextMenuTarget.remove();
                 cy.style().update();
-                updateStatus('群組已解散');
+                updateStatus(__('群組已解散'));
                 updateMinimap();
             }
             hideContextMenu();

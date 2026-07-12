@@ -14,6 +14,7 @@ from app.platform.auth import current_user, has_permission, require_permission
 from app.platform.data import get_current_org
 
 from . import api_bp
+from flask_babel import gettext as _
 
 
 # =============================================================================
@@ -166,7 +167,7 @@ def get_pending_task(secure_code):
     assignee_type = task_result_data.get('assignee_type')
     assignees = task_result_data.get('assignees', [])
     if assignee_type and current_user.secure_code not in assignees:
-        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+        return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     # 取得關聯的表單實例
     form_instance = FwFormInstance.query.filter_by(
@@ -220,7 +221,7 @@ def approve_task(secure_code):
     assignee_type = task_result_data.get('assignee_type')
     assignees = task_result_data.get('assignees', [])
     if assignee_type and current_user.secure_code not in assignees:
-        return jsonify({'success': False, 'error': '您不是此任務的指定簽核人'}), 403
+        return jsonify({'success': False, 'error': _('您不是此任務的指定簽核人')}), 403
 
     data = request.get_json() or {}
     selected_path = data.get('selected_path')
@@ -229,7 +230,7 @@ def approve_task(secure_code):
     # 驗證簽核意見最少字數
     min_comment_length = task_result_data.get('min_comment_length', 0)
     if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
-        return jsonify({'success': False, 'error': f'簽核意見至少需要 {min_comment_length} 字'}), 400
+        return jsonify({'success': False, 'error': _('簽核意見至少需要 %(count)s 字', count=min_comment_length)}), 400
 
     # 建立簽核記錄
     approval_record = FwApprovalRecord(
@@ -270,5 +271,5 @@ def approve_task(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '簽核完成'
+        'message': _('簽核完成')
     })

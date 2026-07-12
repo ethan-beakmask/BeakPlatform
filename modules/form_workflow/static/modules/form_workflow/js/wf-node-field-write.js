@@ -107,7 +107,7 @@
             // 檢查是否有配對表單
             if (!currentMappedForms || currentMappedForms.length === 0) {
                 select.innerHTML = '<option value="">需要配對表單</option>';
-                updateStatus('⚠ 請先在表單欄位分頁配對表單');
+                updateStatus(__('⚠ 請先在表單欄位分頁配對表單'));
                 return;
             }
 
@@ -135,7 +135,7 @@
             } catch (error) {
                 console.error('重新載入欄位失敗:', error);
                 select.innerHTML = '<option value="">載入失敗</option>';
-                updateStatus('❌ 載入欄位失敗: ' + error.message);
+                updateStatus(__('❌ 載入欄位失敗: ') + error.message);
             }
         }
         window.reloadFieldWriteTargetFields = reloadFieldWriteTargetFields;
@@ -190,7 +190,7 @@
             const contentTypeRadio = document.querySelector('input[name="fieldWriteContentType"]:checked');
 
             if (!targetFieldInput || !contentInput) {
-                updateStatus('找不到輸入欄位', 'warning');
+                updateStatus(__('找不到輸入欄位'), 'warning');
                 return;
             }
 
@@ -200,7 +200,7 @@
 
             // 驗證必填
             if (!targetField) {
-                updateStatus('請輸入目標欄位 Key', 'warning');
+                updateStatus(__('請輸入目標欄位 Key'), 'warning');
                 targetFieldInput.focus();
                 return;
             }

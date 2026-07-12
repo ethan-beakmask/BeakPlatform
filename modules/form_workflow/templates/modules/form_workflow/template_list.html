@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}表單模板 - BeakPlatform{% endblock %}
+{% block title %}{{ _('表單模板 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/template-list.css">
@@ -12,26 +12,26 @@
     <!-- 頁首 -->
     <div class="fw-header">
         <div>
-            <h1>表單模板管理</h1>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">管理表單的結構定義</p>
+            <h1>{{ _('表單模板管理') }}</h1>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">{{ _('管理表單的結構定義') }}</p>
         </div>
         <div class="fw-toolbar">
             <input type="text" x-model="searchQuery" @input.debounce.300ms="loadTemplates()"
-                   placeholder="搜尋..." style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
+                   placeholder="{{ _('搜尋...') }}" style="padding: 8px 12px; border: 1px solid #ddd; width: 200px;">
             <div class="view-toggle">
                 <button @click="viewMode = 'list'; localStorage.setItem('forms_view_mode', 'list');"
-                        :class="viewMode === 'list' ? 'active' : ''" title="清單模式">
+                        :class="viewMode === 'list' ? 'active' : ''" title="{{ _('清單模式') }}">
                     <i class="ri-list-unordered"></i>
                 </button>
                 <button @click="viewMode = 'grid'; localStorage.setItem('forms_view_mode', 'grid');"
-                        :class="viewMode === 'grid' ? 'active' : ''" title="縮圖模式">
+                        :class="viewMode === 'grid' ? 'active' : ''" title="{{ _('縮圖模式') }}">
                     <i class="ri-layout-grid-fill"></i>
                 </button>
             </div>
-            <button class="fw-btn" @click="loadTemplates()">重新載入</button>
-            <button class="fw-btn" @click="$refs.importFileInput.click()">匯入</button>
+            <button class="fw-btn" @click="loadTemplates()">{{ _('重新載入') }}</button>
+            <button class="fw-btn" @click="$refs.importFileInput.click()">{{ _('匯入') }}</button>
             <input type="file" accept=".json" x-ref="importFileInput" @change="handleImportFile($event)" style="display:none;">
-            <button class="fw-btn primary" @click="openCreateModal()">+ 新增表單模板</button>
+            <button class="fw-btn primary" @click="openCreateModal()">{{ _('+ 新增表單模板') }}</button>
         </div>
     </div>
 
@@ -46,22 +46,22 @@
 
     <!-- 表格 -->
     <div class="fw-card">
-        <div x-show="loading" class="fw-loading">載入中...</div>
+        <div x-show="loading" class="fw-loading">{{ _('載入中...') }}</div>
 
         <div x-show="!loading && filteredTemplates.length === 0" class="fw-empty">
-            <p style="font-size: 16px; margin-bottom: 8px;">尚無表單模板</p>
-            <p>點擊「新增模板」開始建立</p>
+            <p style="font-size: 16px; margin-bottom: 8px;">{{ _('尚無表單模板') }}</p>
+            <p>{{ _('點擊「新增模板」開始建立') }}</p>
         </div>
 
         <!-- 批次工具列 -->
         <div x-show="!loading && selectedItems.length > 0 && viewMode === 'list'"
              style="padding: 8px 12px; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; align-items: center; gap: 12px; font-size: 13px;">
-            <span style="font-weight: 500;">已選 <strong x-text="selectedItems.length"></strong> 項</span>
-            <button class="fw-btn" @click="invertSelection()" style="padding: 4px 10px;">反選</button>
-            <button class="fw-btn" @click="batchExport()" :disabled="batchProcessing" style="padding: 4px 10px;">匯出</button>
-            <button class="fw-btn primary" @click="batchSaveNewVersion()" :disabled="batchProcessing" style="padding: 4px 10px;">另存新版</button>
-            <button class="fw-btn danger" @click="batchDelete()" :disabled="batchProcessing" style="padding: 4px 10px;">刪除</button>
-            <span x-show="batchProcessing" style="color: #666;">處理中...</span>
+            <span style="font-weight: 500;">{{ _('已選') }} <strong x-text="selectedItems.length"></strong> {{ _('項') }}</span>
+            <button class="fw-btn" @click="invertSelection()" style="padding: 4px 10px;">{{ _('反選') }}</button>
+            <button class="fw-btn" @click="batchExport()" :disabled="batchProcessing" style="padding: 4px 10px;">{{ _('匯出') }}</button>
+            <button class="fw-btn primary" @click="batchSaveNewVersion()" :disabled="batchProcessing" style="padding: 4px 10px;">{{ _('另存新版') }}</button>
+            <button class="fw-btn danger" @click="batchDelete()" :disabled="batchProcessing" style="padding: 4px 10px;">{{ _('刪除') }}</button>
+            <span x-show="batchProcessing" style="color: #666;">{{ _('處理中...') }}</span>
         </div>
 
         <!-- 清單模式 -->
@@ -71,14 +71,14 @@
                     <th style="width: 40px; text-align: center;">
                         <input type="checkbox" @change="toggleSelectAll()" :checked="selectedItems.length > 0 && selectedItems.length === filteredTemplates.length">
                     </th>
-                    <th style="width: 200px;">名稱</th>
-                    <th style="width: 120px;">代碼</th>
-                    <th>描述</th>
-                    <th style="width: 60px;">版本</th>
-                    <th style="width: 60px; text-align: center;">配對</th>
-                    <th style="width: 80px;">狀態</th>
-                    <th style="width: 140px;">更新時間</th>
-                    <th style="width: 150px;" class="actions">操作</th>
+                    <th style="width: 200px;">{{ _('名稱') }}</th>
+                    <th style="width: 120px;">{{ _('代碼') }}</th>
+                    <th>{{ _('描述') }}</th>
+                    <th style="width: 60px;">{{ _('版本') }}</th>
+                    <th style="width: 60px; text-align: center;">{{ _('配對') }}</th>
+                    <th style="width: 80px;">{{ _('狀態') }}</th>
+                    <th style="width: 140px;">{{ _('更新時間') }}</th>
+                    <th style="width: 150px;" class="actions">{{ _('操作') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -92,18 +92,18 @@
                         <td style="color: #666;" x-text="truncate(t.description, 50)"></td>
                         <td style="font-family: monospace; color: #999; font-size: 12px;" x-text="(t.version || 'AA') + (t.revision || '')"></td>
                         <td style="text-align: center;">
-                            <span x-show="t.is_mapped" class="fw-badge active">已配對</span>
+                            <span x-show="t.is_mapped" class="fw-badge active">{{ _('已配對') }}</span>
                             <span x-show="!t.is_mapped" style="color: #999; font-size: 12px;">-</span>
                         </td>
                         <td>
                             <span class="fw-badge" :class="t.is_active ? 'active' : 'inactive'"
-                                  x-text="t.is_active ? '啟用' : '停用'"></span>
+                                  x-text="t.is_active ? __('啟用') : __('停用')"></span>
                         </td>
                         <td style="color: #999; font-size: 12px;" x-text="formatDate(t.updated_at)"></td>
                         <td class="actions">
-                            <button class="fw-btn" @click="editTemplate(t)">編輯</button>
-                            <button class="fw-btn" @click="viewSchema(t)">結構</button>
-                            <a class="fw-btn" :href="'{{ app_prefix }}/forms/templates/' + t.secure_code + '/spec'" title="欄位規格">規格</a>
+                            <button class="fw-btn" @click="editTemplate(t)">{{ _('編輯') }}</button>
+                            <button class="fw-btn" @click="viewSchema(t)">{{ _('結構') }}</button>
+                            <a class="fw-btn" :href="'{{ app_prefix }}/forms/templates/' + t.secure_code + '/spec'" title="{{ _('欄位規格') }}">{{ _('規格') }}</a>
                         </td>
                     </tr>
                 </template>
@@ -113,11 +113,11 @@
         <!-- 分頁 -->
         <div x-show="!loading && pagination.pages > 1 && viewMode === 'list'" class="fw-pagination">
             <span style="font-size: 12px; color: #666;">
-                共 <strong x-text="pagination.total"></strong> 項，第 <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> 頁
+                {{ _('共') }} <strong x-text="pagination.total"></strong> {{ _('項，第') }} <strong x-text="pagination.page"></strong>/<strong x-text="pagination.pages"></strong> {{ _('頁') }}
             </span>
             <div style="display: flex; gap: 4px;">
-                <button class="fw-btn" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">上一頁</button>
-                <button class="fw-btn" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">下一頁</button>
+                <button class="fw-btn" @click="goToPage(pagination.page - 1)" :disabled="!pagination.has_prev">{{ _('上一頁') }}</button>
+                <button class="fw-btn" @click="goToPage(pagination.page + 1)" :disabled="!pagination.has_next">{{ _('下一頁') }}</button>
             </div>
         </div>
     </div>
@@ -141,21 +141,21 @@
     <div x-show="showModal" x-cloak class="fw-modal">
         <div class="fw-modal-content">
             <div class="fw-modal-header">
-                <h3 x-text="editingTemplate ? '編輯表單模板' : '新增表單模板'"></h3>
+                <h3 x-text="editingTemplate ? __('編輯表單模板') : __('新增表單模板')"></h3>
                 <button @click="closeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <form @submit.prevent="saveTemplate()">
                 <div class="fw-modal-body">
                     <div class="fw-form-group">
-                        <label>名稱 *</label>
-                        <input type="text" x-model="formData.name" required placeholder="例：請假申請表">
+                        <label>{{ _('名稱 *') }}</label>
+                        <input type="text" x-model="formData.name" required placeholder="{{ _('例：請假申請表') }}">
                     </div>
                     <div class="fw-form-group">
-                        <label>代碼</label>
-                        <input type="text" x-model="formData.code" placeholder="留空則自動產生" style="text-transform: uppercase;">
+                        <label>{{ _('代碼') }}</label>
+                        <input type="text" x-model="formData.code" placeholder="{{ _('留空則自動產生') }}" style="text-transform: uppercase;">
                     </div>
                     <div class="fw-form-group">
-                        <label>分類</label>
+                        <label>{{ _('分類') }}</label>
                         <select x-model="formData.category_secure_code">
                             <template x-for="parent in categories" :key="parent.secure_code">
                                 <template x-if="(parent.children || []).length > 0">
@@ -174,21 +174,21 @@
                         </select>
                     </div>
                     <div class="fw-form-group">
-                        <label>描述</label>
-                        <textarea x-model="formData.description" placeholder="簡述此表單的用途"></textarea>
+                        <label>{{ _('描述') }}</label>
+                        <textarea x-model="formData.description" placeholder="{{ _('簡述此表單的用途') }}"></textarea>
                     </div>
                     <div class="fw-form-group">
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="checkbox" x-model="formData.is_active">
-                            <span>啟用</span>
+                            <span>{{ _('啟用') }}</span>
                         </label>
                     </div>
                 </div>
                 <div class="fw-modal-footer">
-                    <button type="button" class="fw-btn" @click="closeModal()">取消</button>
+                    <button type="button" class="fw-btn" @click="closeModal()">{{ _('取消') }}</button>
                     <button type="submit" class="fw-btn primary" :disabled="saving">
-                        <span x-show="!saving" x-text="editingTemplate ? '儲存變更' : '建立表單模板'"></span>
-                        <span x-show="saving">處理中...</span>
+                        <span x-show="!saving" x-text="editingTemplate ? __('儲存變更') : __('建立表單模板')"></span>
+                        <span x-show="saving">{{ _('處理中...') }}</span>
                     </button>
                 </div>
             </form>
@@ -199,7 +199,7 @@
     <div x-show="showSchemaModal" x-cloak class="fw-modal">
         <div class="fw-modal-content" style="width: 700px;">
             <div class="fw-modal-header">
-                <h3>表單結構 - <span x-text="viewingTemplate?.name"></span></h3>
+                <h3>{{ _('表單結構 -') }} <span x-text="viewingTemplate?.name"></span></h3>
                 <button @click="showSchemaModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fw-modal-body">
@@ -207,7 +207,7 @@
                      x-text="JSON.stringify(viewingTemplate?.schema || {}, null, 2)"></pre>
             </div>
             <div class="fw-modal-footer">
-                <button class="fw-btn" @click="showSchemaModal = false">關閉</button>
+                <button class="fw-btn" @click="showSchemaModal = false">{{ _('關閉') }}</button>
             </div>
         </div>
     </div>
@@ -216,26 +216,26 @@
     <div x-show="showDeleteModal" x-cloak class="fw-modal">
         <div class="fw-modal-content" style="width: 450px;">
             <div class="fw-modal-header">
-                <h3>確認刪除</h3>
+                <h3>{{ _('確認刪除') }}</h3>
                 <button @click="showDeleteModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fw-modal-body">
-                <p>確定要刪除「<strong x-text="deletingTemplate?.name"></strong>」嗎？</p>
+                <p>{{ _('確定要刪除「') }}<strong x-text="deletingTemplate?.name"></strong>{{ _('」嗎？') }}</p>
                 <div x-show="deleteWarnings.length > 0" style="margin: 12px 0; padding: 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px;">
-                    <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 8px;">此表單已被以下配對使用：</p>
+                    <p style="color: #92400e; font-size: 13px; font-weight: 600; margin: 0 0 8px;">{{ _('此表單已被以下配對使用：') }}</p>
                     <template x-for="(w, i) in deleteWarnings" :key="i">
                         <p style="color: #92400e; font-size: 12px; margin: 4px 0; padding-left: 8px;">
-                            - 流程：<span x-text="w.workflow_name"></span>
-                            <span x-show="w.is_published" style="color: #dc2626; font-weight: 500;">（已發行）</span>
+                            {{ _('- 流程：') }}<span x-text="w.workflow_name"></span>
+                            <span x-show="w.is_published" style="color: #dc2626; font-weight: 500;">{{ _('（已發行）') }}</span>
                         </p>
                     </template>
-                    <p style="color: #b45309; font-size: 12px; margin: 8px 0 0;">刪除後配對將無法重新發行，但不影響已執行的流程。</p>
+                    <p style="color: #b45309; font-size: 12px; margin: 8px 0 0;">{{ _('刪除後配對將無法重新發行，但不影響已執行的流程。') }}</p>
                 </div>
-                <p style="color: #dc2626; font-size: 13px;">此操作無法復原。</p>
+                <p style="color: #dc2626; font-size: 13px;">{{ _('此操作無法復原。') }}</p>
             </div>
             <div class="fw-modal-footer">
-                <button class="fw-btn" @click="showDeleteModal = false">取消</button>
-                <button class="fw-btn danger" @click="deleteTemplate()">確認刪除</button>
+                <button class="fw-btn" @click="showDeleteModal = false">{{ _('取消') }}</button>
+                <button class="fw-btn danger" @click="deleteTemplate()">{{ _('確認刪除') }}</button>
             </div>
         </div>
     </div>

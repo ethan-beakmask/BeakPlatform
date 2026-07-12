@@ -12,6 +12,7 @@ from flask_login import current_user
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
+from flask_babel import gettext as _
 
 # 建立 API Blueprint
 mappings_bp = Blueprint(
@@ -233,9 +234,9 @@ def create_mapping():
     workflow_secure_code = data.get('workflow_template_secure_code')
 
     if not form_secure_code:
-        return jsonify({'success': False, 'error': '必須指定表單模板'}), 400
+        return jsonify({'success': False, 'error': _('必須指定表單模板')}), 400
     if not workflow_secure_code:
-        return jsonify({'success': False, 'error': '必須指定工作流模板'}), 400
+        return jsonify({'success': False, 'error': _('必須指定工作流模板')}), 400
 
     # 查詢表單模板
     form_template = FwFormTemplate.query.filter_by(
@@ -245,7 +246,7 @@ def create_mapping():
     ).first()
 
     if not form_template:
-        return jsonify({'success': False, 'error': '找不到指定的表單模板'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的表單模板')}), 404
 
     # 查詢工作流模板
     workflow_template = FwWorkflowTemplate.query.filter_by(
@@ -255,7 +256,7 @@ def create_mapping():
     ).first()
 
     if not workflow_template:
-        return jsonify({'success': False, 'error': '找不到指定的工作流模板'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的工作流模板')}), 404
 
     # 檢查是否已存在相同配對
     existing = FwFormWorkflowMapping.query.filter_by(
@@ -266,7 +267,7 @@ def create_mapping():
     ).first()
 
     if existing:
-        return jsonify({'success': False, 'error': '此配對已存在'}), 400
+        return jsonify({'success': False, 'error': _('此配對已存在')}), 400
 
     # 建立配對
     mapping = FwFormWorkflowMapping(
@@ -292,7 +293,7 @@ def create_mapping():
     return jsonify({
         'success': True,
         'data': mapping.to_dict(),
-        'message': '配對已建立'
+        'message': _('配對已建立')
     })
 
 
@@ -338,7 +339,7 @@ def update_mapping(secure_code):
                 is_deleted=False
             ).first()
             if not rule:
-                return jsonify({'success': False, 'error': '找不到指定的編號規則'}), 404
+                return jsonify({'success': False, 'error': _('找不到指定的編號規則')}), 404
         mapping.numbering_rule_secure_code = rule_sc
     mapping.updated_at = datetime.utcnow()
     db.session.commit()
@@ -346,7 +347,7 @@ def update_mapping(secure_code):
     return jsonify({
         'success': True,
         'data': mapping.to_dict(),
-        'message': '配對已更新'
+        'message': _('配對已更新')
     })
 
 
@@ -372,7 +373,7 @@ def delete_mapping(secure_code):
 
     # 檢查是否已發行
     if mapping.is_published:
-        return jsonify({'success': False, 'error': '已發行的配對無法刪除，請先取消發行'}), 400
+        return jsonify({'success': False, 'error': _('已發行的配對無法刪除，請先取消發行')}), 400
 
     mapping.is_deleted = True
     mapping.updated_at = datetime.utcnow()
@@ -380,7 +381,7 @@ def delete_mapping(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '配對已刪除'
+        'message': _('配對已刪除')
     })
 
 
@@ -407,21 +408,21 @@ def toggle_sql_sync(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     data = request.get_json() or {}
     if 'sql_sync_enabled' not in data:
-        return jsonify({'success': False, 'error': '缺少 sql_sync_enabled 參數'}), 400
+        return jsonify({'success': False, 'error': _('缺少 sql_sync_enabled 參數')}), 400
 
     enabled = bool(data['sql_sync_enabled'])
 
     # 規則：已啟用就不可關閉
     if published.sql_sync_enabled and not enabled:
-        return jsonify({'success': False, 'error': 'SQL 同步啟用後無法關閉'}), 400
+        return jsonify({'success': False, 'error': _('SQL 同步啟用後無法關閉')}), 400
 
     # 規則：已封存的版本不可啟用
     if enabled and published.status == 'Archived':
-        return jsonify({'success': False, 'error': '已封存的版本無法啟用 SQL 同步'}), 400
+        return jsonify({'success': False, 'error': _('已封存的版本無法啟用 SQL 同步')}), 400
 
     published.sql_sync_enabled = True
     published.updated_at = datetime.utcnow()
@@ -470,9 +471,7 @@ def toggle_sql_sync(secure_code):
 
     db.session.commit()
 
-    msg = 'SQL 同步已啟用'
-    if sync_table_created:
-        msg += '（已建立同步表）'
+    msg = _('SQL 同步已啟用（已建立同步表）') if sync_table_created else _('SQL 同步已啟用')
 
     return jsonify({
         'success': True,
@@ -498,7 +497,7 @@ def get_sql_sync_status(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     registry = FwSqlFormRegistry.query.filter_by(
         published_secure_code=secure_code,
@@ -549,7 +548,7 @@ def publish_mapping(secure_code):
     ).first()
 
     if not mapping:
-        return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的配對')}), 404
 
     # 取得表單和流程模板
     form_template = FwFormTemplate.query.filter_by(
@@ -563,18 +562,18 @@ def publish_mapping(secure_code):
     ).first()
 
     if not form_template:
-        return jsonify({'success': False, 'error': '表單模板不存在或已刪除'}), 404
+        return jsonify({'success': False, 'error': _('表單模板不存在或已刪除')}), 404
 
     if not workflow_template:
-        return jsonify({'success': False, 'error': '工作流模板不存在或已刪除'}), 404
+        return jsonify({'success': False, 'error': _('工作流模板不存在或已刪除')}), 404
 
     # 驗證表單
     if not form_template.schema or not form_template.schema.get('components'):
-        return jsonify({'success': False, 'error': '表單沒有欄位，無法發行'}), 400
+        return jsonify({'success': False, 'error': _('表單沒有欄位，無法發行')}), 400
 
     # 驗證流程
     if not workflow_template.graph or not workflow_template.graph.get('nodes'):
-        return jsonify({'success': False, 'error': '工作流沒有節點，無法發行'}), 400
+        return jsonify({'success': False, 'error': _('工作流沒有節點，無法發行')}), 400
 
     try:
         # 檢查現有 Published 版本
@@ -599,7 +598,7 @@ def publish_mapping(secure_code):
                 return jsonify({
                     'success': True,
                     'data': existing_published.to_dict(),
-                    'message': f'版本未變更，維持現有發行版本 (版本 {existing_published.publish_version})'
+                    'message': _('版本未變更，維持現有發行版本 (版本 %(version)s)', version=existing_published.publish_version)
                 })
 
             # 有變更 → 先查找是否有相同版本的 Suspended 記錄可重新啟用
@@ -626,7 +625,7 @@ def publish_mapping(secure_code):
                 return jsonify({
                     'success': True,
                     'data': reusable.to_dict(),
-                    'message': f'已重新啟用先前的發行版本 (版本 {reusable.publish_version})'
+                    'message': _('已重新啟用先前的發行版本 (版本 %(version)s)', version=reusable.publish_version)
                 })
 
             # 沒有可重用的版本 → 停用舊版，建立新版
@@ -659,12 +658,12 @@ def publish_mapping(secure_code):
         return jsonify({
             'success': True,
             'data': published.to_dict(),
-            'message': f'發行成功 (版本 {published.publish_version})'
+            'message': _('發行成功 (版本 %(version)s)', version=published.publish_version)
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'發行失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('發行失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -720,7 +719,7 @@ def get_published(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     include_snapshots = request.args.get('include_snapshots', 'false').lower() == 'true'
 
@@ -748,13 +747,13 @@ def suspend_published(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     if published.status == 'Archived':
-        return jsonify({'success': False, 'error': '已封存的版本無法停用'}), 400
+        return jsonify({'success': False, 'error': _('已封存的版本無法停用')}), 400
 
     if published.status == 'Suspended':
-        return jsonify({'success': False, 'error': '此版本已是停用狀態'}), 400
+        return jsonify({'success': False, 'error': _('此版本已是停用狀態')}), 400
 
     try:
         published.suspend(suspended_by=current_user.secure_code)
@@ -763,11 +762,11 @@ def suspend_published(secure_code):
         return jsonify({
             'success': True,
             'data': published.to_dict(),
-            'message': '已停用此發行版本'
+            'message': _('已停用此發行版本')
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'停用失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('停用失敗: %(error)s', error=str(e))}), 500
 
 
 @mappings_bp.route('/published/<secure_code>/reopen', methods=['POST'])
@@ -788,10 +787,10 @@ def reopen_published(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     if published.status != 'Suspended':
-        return jsonify({'success': False, 'error': '只有 Suspended 狀態才能重新開放'}), 400
+        return jsonify({'success': False, 'error': _('只有 Suspended 狀態才能重新開放')}), 400
 
     # 檢查是否有其他 Published 版本
     existing_published = FwPublishedFormWorkflow.query.filter(
@@ -801,7 +800,7 @@ def reopen_published(secure_code):
     ).first()
 
     if existing_published:
-        return jsonify({'success': False, 'error': f'已有其他發行版本 (v{existing_published.publish_version})'}), 400
+        return jsonify({'success': False, 'error': _('已有其他發行版本 (v%(version)s)', version=existing_published.publish_version)}), 400
 
     try:
         published.reopen()
@@ -810,11 +809,11 @@ def reopen_published(secure_code):
         return jsonify({
             'success': True,
             'data': published.to_dict(),
-            'message': '已重新開放此發行版本'
+            'message': _('已重新開放此發行版本')
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'重新開放失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('重新開放失敗: %(error)s', error=str(e))}), 500
 
 
 @mappings_bp.route('/published/<secure_code>/archive', methods=['POST'])
@@ -835,10 +834,10 @@ def archive_published(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     if published.status == 'Archived':
-        return jsonify({'success': False, 'error': '此版本已是封存狀態'}), 400
+        return jsonify({'success': False, 'error': _('此版本已是封存狀態')}), 400
 
     try:
         published.archive()
@@ -847,11 +846,11 @@ def archive_published(secure_code):
         return jsonify({
             'success': True,
             'data': published.to_dict(),
-            'message': '已封存此發行版本'
+            'message': _('已封存此發行版本')
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'封存失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('封存失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -876,10 +875,10 @@ def archive_mapping(secure_code):
     ).first()
 
     if not mapping:
-        return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的配對')}), 404
 
     if mapping.is_archived:
-        return jsonify({'success': False, 'error': '此配對已封存'}), 400
+        return jsonify({'success': False, 'error': _('此配對已封存')}), 400
 
     # 檢查所有發行版本是否都為 Archived
     versions = FwPublishedFormWorkflow.query.filter_by(
@@ -895,7 +894,7 @@ def archive_mapping(secure_code):
         if non_archived:
             return jsonify({
                 'success': False,
-                'error': f'尚有 {len(non_archived)} 個發行版本未封存，請先封存所有版本'
+                'error': _('尚有 %(count)s 個發行版本未封存，請先封存所有版本', count=len(non_archived))
             }), 400
 
     mapping.is_archived = True
@@ -907,7 +906,7 @@ def archive_mapping(secure_code):
     return jsonify({
         'success': True,
         'data': mapping.to_dict(),
-        'message': '配對已封存'
+        'message': _('配對已封存')
     })
 
 
@@ -929,10 +928,10 @@ def unarchive_mapping(secure_code):
     ).first()
 
     if not mapping:
-        return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的配對')}), 404
 
     if not mapping.is_archived:
-        return jsonify({'success': False, 'error': '此配對未封存'}), 400
+        return jsonify({'success': False, 'error': _('此配對未封存')}), 400
 
     mapping.is_archived = False
     mapping.archived_at = None
@@ -942,7 +941,7 @@ def unarchive_mapping(secure_code):
     return jsonify({
         'success': True,
         'data': mapping.to_dict(),
-        'message': '配對已恢復'
+        'message': _('配對已恢復')
     })
 
 
@@ -968,13 +967,13 @@ def delete_published(secure_code):
     ).first()
 
     if not published:
-        return jsonify({'success': False, 'error': '找不到指定的發行版本'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的發行版本')}), 404
 
     if published.is_used:
-        return jsonify({'success': False, 'error': '此版本已被使用過，無法刪除'}), 400
+        return jsonify({'success': False, 'error': _('此版本已被使用過，無法刪除')}), 400
 
     if published.status == 'Published':
-        return jsonify({'success': False, 'error': '運作中的版本無法刪除，請先暫停或封存'}), 400
+        return jsonify({'success': False, 'error': _('運作中的版本無法刪除，請先暫停或封存')}), 400
 
     # 軟刪除
     published.is_deleted = True
@@ -984,7 +983,7 @@ def delete_published(secure_code):
 
     return jsonify({
         'success': True,
-        'message': f'發行版本 v{published.publish_version} 已刪除'
+        'message': _('發行版本 v%(version)s 已刪除', version=published.publish_version)
     })
 
 

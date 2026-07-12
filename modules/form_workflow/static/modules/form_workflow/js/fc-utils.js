@@ -56,7 +56,7 @@ function fcUtils() {
         },
 
         getActionText(action) {
-            const map = { 'approved': '核准', 'rejected': '退回', 'PENDING': '待簽', 'FORCE_END': '強制結束' };
+            const map = { 'approved': __('核准'), 'rejected': __('退回'), 'PENDING': __('待簽'), 'FORCE_END': __('強制結束') };
             return map[action] || action;
         },
 
@@ -89,9 +89,9 @@ function fcUtils() {
 
         getStatusText(status) {
             const map = {
-                'INITIAL': '草稿', 'PENDING': '待處理', 'RUNNING': '進行中',
-                'COMPLETED': '已完成', 'REJECTED': '已退回', 'ERROR': '錯誤',
-                'TERMINATED': '已終止', 'CANCELLED': '已取消'
+                'INITIAL': __('草稿'), 'PENDING': __('待處理'), 'RUNNING': __('進行中'),
+                'COMPLETED': __('已完成'), 'REJECTED': __('已退回'), 'ERROR': __('錯誤'),
+                'TERMINATED': __('已終止'), 'CANCELLED': __('已取消')
             };
             return map[status] || status;
         },

@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block title %}流程總圖 - BeakPlatform{% endblock %}
+{% block title %}{{ _('流程總圖 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <script>
@@ -28,7 +28,7 @@ window.__INSTANCE_ID = '{{ instance_id }}';
 <div x-data="flowOverview()" x-init="init()">
 
 <div class="fo-toolbar">
-    <h2>流程總圖</h2>
+    <h2>{{ _('流程總圖') }}</h2>
     <span class="sep">|</span>
     <span class="meta" x-text="executionCode || '-'"></span>
     <span class="meta" x-text="workflowName || ''"></span>
@@ -40,7 +40,7 @@ window.__INSTANCE_ID = '{{ instance_id }}';
     <span class="stats" x-text="statsText"></span>
 </div>
 
-<div x-show="loading" class="fo-loading">載入流程圖中...</div>
+<div x-show="loading" class="fo-loading">{{ _('載入流程圖中...') }}</div>
 <div x-show="error" class="fo-loading" style="color: #ef4444;" x-text="error"></div>
 <div id="cy-overview" x-show="!loading && !error"></div>
 
@@ -49,11 +49,11 @@ window.__INSTANCE_ID = '{{ instance_id }}';
     <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #ef4444;"></div> End</div>
     <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
     <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
-    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
-    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
-    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
-    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
-    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> {{ _('系統node') }}</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> {{ _('子流程') }}</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> {{ _('執行中') }}</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> {{ _('已完成') }}</div>
+    <div class="fo-legend-item"><div class="fo-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> {{ _('失敗') }}</div>
 </div>
 
 </div>

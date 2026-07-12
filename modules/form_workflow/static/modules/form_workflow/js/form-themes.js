@@ -46,10 +46,10 @@ function formThemeManager() {
                 if (json.success) {
                     this.themes = json.data;
                 } else {
-                    this.showToast(json.message || '載入失敗', 'error');
+                    this.showToast(json.message || __('載入失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('載入主題失敗: ' + e.message, 'error');
+                this.showToast(__('載入主題失敗: ') + e.message, 'error');
             }
             this.loading = false;
         },
@@ -75,7 +75,7 @@ function formThemeManager() {
                 const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${theme.secure_code}`);
                 const json = await res.json();
                 if (!json.success) {
-                    this.showToast(json.message || '載入失敗', 'error');
+                    this.showToast(json.message || __('載入失敗'), 'error');
                     return;
                 }
                 const full = json.data;
@@ -90,7 +90,7 @@ function formThemeManager() {
                 };
                 this.showModal = true;
             } catch (e) {
-                this.showToast('載入主題詳情失敗: ' + e.message, 'error');
+                this.showToast(__('載入主題詳情失敗: ') + e.message, 'error');
             }
         },
 
@@ -118,10 +118,10 @@ function formThemeManager() {
                     this.closeModal();
                     this.loadThemes();
                 } else {
-                    this.showToast(json.message || '儲存失敗', 'error');
+                    this.showToast(json.message || __('儲存失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('儲存失敗: ' + e.message, 'error');
+                this.showToast(__('儲存失敗: ') + e.message, 'error');
             }
             this.saving = false;
         },
@@ -174,10 +174,10 @@ function formThemeManager() {
                     this.showUploadModal = false;
                     this.loadThemes();
                 } else {
-                    this.showToast(json.message || '上傳失敗', 'error');
+                    this.showToast(json.message || __('上傳失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('上傳失敗: ' + e.message, 'error');
+                this.showToast(__('上傳失敗: ') + e.message, 'error');
             }
             this.uploading = false;
         },
@@ -189,7 +189,7 @@ function formThemeManager() {
                 const res = await fetch(`${window.__BP}/api/form-workflow/form-themes/${theme.secure_code}`);
                 const json = await res.json();
                 if (!json.success || !json.data.css_content) {
-                    this.showToast('無 CSS 內容可下載', 'warning');
+                    this.showToast(__('無 CSS 內容可下載'), 'warning');
                     return;
                 }
 
@@ -203,7 +203,7 @@ function formThemeManager() {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } catch (e) {
-                this.showToast('下載失敗: ' + e.message, 'error');
+                this.showToast(__('下載失敗: ') + e.message, 'error');
             }
         },
 
@@ -222,10 +222,10 @@ function formThemeManager() {
                     this.showToast(json.message, 'success');
                     this.loadThemes();
                 } else {
-                    this.showToast(json.message || '操作失敗', 'error');
+                    this.showToast(json.message || __('操作失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('操作失敗: ' + e.message, 'error');
+                this.showToast(__('操作失敗: ') + e.message, 'error');
             }
         },
 
@@ -250,10 +250,10 @@ function formThemeManager() {
                     this.deletingTheme = null;
                     this.loadThemes();
                 } else {
-                    this.showToast(json.message || '刪除失敗', 'error');
+                    this.showToast(json.message || __('刪除失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('刪除失敗: ' + e.message, 'error');
+                this.showToast(__('刪除失敗: ') + e.message, 'error');
             }
         },
 

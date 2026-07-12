@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}資料表規格 - BeakPlatform{% endblock %}
+{% block title %}{{ _('資料表規格 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/data-spec-list.css">
@@ -12,24 +12,24 @@
     <!-- 頁首 -->
     <div class="ds-header">
         <div>
-            <h1>資料表規格管理</h1>
+            <h1>{{ _('資料表規格管理') }}</h1>
             <div class="ds-meta">
                 <span x-show="!loading">
-                    共 <strong x-text="items.length"></strong> 個表單，
-                    <strong x-text="totalRegistries"></strong> 個 SQL Registry，
-                    <strong x-text="standaloneSpecs.length"></strong> 個獨立規格
+                    {{ _('共') }} <strong x-text="items.length"></strong> {{ _('個表單，') }}
+                    <strong x-text="totalRegistries"></strong> {{ _('個 SQL Registry，') }}
+                    <strong x-text="standaloneSpecs.length"></strong> {{ _('個獨立規格') }}
                 </span>
             </div>
         </div>
         <div class="ds-toolbar">
-            <button class="ds-btn" @click="loadData()" :disabled="loading">重新載入</button>
-            <button class="ds-btn" @click="openNewSpec()">+ 為表單建立規格</button>
-            <button class="ds-btn primary" @click="goNewStandalone()">+ 新增獨立規格</button>
+            <button class="ds-btn" @click="loadData()" :disabled="loading">{{ _('重新載入') }}</button>
+            <button class="ds-btn" @click="openNewSpec()">{{ _('+ 為表單建立規格') }}</button>
+            <button class="ds-btn primary" @click="goNewStandalone()">{{ _('+ 新增獨立規格') }}</button>
         </div>
     </div>
 
     <!-- 載入中 -->
-    <div x-show="loading" class="ds-loading">載入中...</div>
+    <div x-show="loading" class="ds-loading">{{ _('載入中...') }}</div>
 
     <!-- 主內容 -->
     <div x-show="!loading">
@@ -37,36 +37,36 @@
         <!-- ============ 獨立規格區塊 ============ -->
         <div x-show="standaloneSpecs.length > 0" class="ds-section">
             <div class="ds-section-header">
-                <span class="ds-section-title">獨立規格 (<span x-text="standaloneSpecs.length"></span>)</span>
+                <span class="ds-section-title">{{ _('獨立規格 (') }}<span x-text="standaloneSpecs.length"></span>)</span>
             </div>
             <div class="ds-card">
                 <table class="ds-table">
                     <thead>
                         <tr>
-                            <th>規格名稱</th>
-                            <th>版本</th>
-                            <th>欄位數</th>
-                            <th>建立者</th>
-                            <th>最後更新</th>
-                            <th style="width: 180px;" class="ds-actions">操作</th>
+                            <th>{{ _('規格名稱') }}</th>
+                            <th>{{ _('版本') }}</th>
+                            <th>{{ _('欄位數') }}</th>
+                            <th>{{ _('建立者') }}</th>
+                            <th>{{ _('最後更新') }}</th>
+                            <th style="width: 180px;" class="ds-actions">{{ _('操作') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="spec in standaloneSpecs" :key="spec.secure_code">
                             <tr>
                                 <td>
-                                    <span x-text="spec.name || '(未命名)'"></span>
+                                    <span x-text="spec.name || __('(未命名)')"></span>
                                 </td>
                                 <td>v<span x-text="spec.version"></span></td>
                                 <td x-text="(spec.fields || []).length"></td>
                                 <td x-text="spec.created_by_name || '-'" style="font-size: 12px; color: #6b7280;"></td>
                                 <td style="font-size: 12px; color: #6b7280;" x-text="formatDate(spec.updated_at)"></td>
                                 <td class="ds-actions" @click.stop>
-                                    <button class="primary" @click="goEditStandalone(spec.secure_code)">編輯</button>
+                                    <button class="primary" @click="goEditStandalone(spec.secure_code)">{{ _('編輯') }}</button>
                                     <template x-if="spec.form_template_secure_code">
-                                        <button @click="goSyncControl(spec.form_template_secure_code)">同步中控</button>
+                                        <button @click="goSyncControl(spec.form_template_secure_code)">{{ _('同步中控') }}</button>
                                     </template>
-                                    <button class="sm" style="color: #dc2626; border-color: #fca5a5;" @click="deleteStandalone(spec.secure_code)" :disabled="deletingSpec">刪除</button>
+                                    <button class="sm" style="color: #dc2626; border-color: #fca5a5;" @click="deleteStandalone(spec.secure_code)" :disabled="deletingSpec">{{ _('刪除') }}</button>
                                 </td>
                             </tr>
                         </template>
@@ -80,25 +80,25 @@
         <!-- 空狀態 -->
         <div x-show="items.length === 0 && standaloneSpecs.length === 0" class="ds-card">
             <div class="ds-empty">
-                <p style="font-size: 15px; margin-bottom: 8px;">目前沒有任何資料表規格</p>
-                <p>可透過「新增獨立規格」建立，或為既有表單建立規格</p>
+                <p style="font-size: 15px; margin-bottom: 8px;">{{ _('目前沒有任何資料表規格') }}</p>
+                <p>{{ _('可透過「新增獨立規格」建立，或為既有表單建立規格') }}</p>
             </div>
         </div>
 
         <div x-show="items.length > 0" class="ds-section">
             <div class="ds-section-header">
-                <span class="ds-section-title">表單綁定規格 (<span x-text="items.length"></span>)</span>
+                <span class="ds-section-title">{{ _('表單綁定規格 (') }}<span x-text="items.length"></span>)</span>
             </div>
         </div>
 
         <!-- 上方清單工具列 -->
         <div x-show="items.length > 0" class="ds-list-toolbar">
             <button class="ds-btn sm" @click="toggleExpandAll('upper')"
-                    x-text="allExpanded ? '全閉合' : '全展開'"></button>
-            <button class="ds-btn sm" @click="invertSelection()">反相選取</button>
+                    x-text="allExpanded ? __('全閉合') : __('全展開')"></button>
+            <button class="ds-btn sm" @click="invertSelection()">{{ _('反相選取') }}</button>
             <button class="ds-btn sm danger" @click="hideSelected()"
                     :disabled="selectedCount === 0">
-                隱藏選取 (<span x-text="selectedCount"></span>)
+                {{ _('隱藏選取 (') }}<span x-text="selectedCount"></span>)
             </button>
         </div>
 
@@ -108,13 +108,13 @@
                 <thead>
                     <tr>
                         <th style="width: 24px;"></th>
-                        <th>表單名稱</th>
-                        <th>表單代碼</th>
-                        <th>規格狀態</th>
-                        <th>規格版本</th>
-                        <th>欄位數</th>
-                        <th>Registry 數</th>
-                        <th style="width: 160px;" class="ds-actions">操作</th>
+                        <th>{{ _('表單名稱') }}</th>
+                        <th>{{ _('表單代碼') }}</th>
+                        <th>{{ _('規格狀態') }}</th>
+                        <th>{{ _('規格版本') }}</th>
+                        <th>{{ _('欄位數') }}</th>
+                        <th>{{ _('Registry 數') }}</th>
+                        <th style="width: 160px;" class="ds-actions">{{ _('操作') }}</th>
                     </tr>
                 </thead>
                 <template x-for="item in items" :key="item.form_template_secure_code || item.spec_secure_code">
@@ -131,7 +131,7 @@
                                     <span class="ds-badge active" x-text="item.spec_status"></span>
                                 </template>
                                 <template x-if="!item.spec_status">
-                                    <span class="ds-badge none">未建立</span>
+                                    <span class="ds-badge none">{{ _('未建立') }}</span>
                                 </template>
                             </td>
                             <td>
@@ -154,13 +154,13 @@
                             <td class="ds-actions" @click.stop>
                                 <template x-if="item.spec_status">
                                     <span>
-                                        <button class="primary" @click="goToSpecEditor(item.form_template_secure_code)">編輯規格</button>
-                                        <button @click="goSyncControl(item.form_template_secure_code)">同步中控</button>
-                                        <button @click="runCompare(item)" :disabled="comparing">比對</button>
+                                        <button class="primary" @click="goToSpecEditor(item.form_template_secure_code)">{{ _('編輯規格') }}</button>
+                                        <button @click="goSyncControl(item.form_template_secure_code)">{{ _('同步中控') }}</button>
+                                        <button @click="runCompare(item)" :disabled="comparing">{{ _('比對') }}</button>
                                     </span>
                                 </template>
                                 <template x-if="!item.spec_status">
-                                    <button @click="createSpec(item)" :disabled="creating">建立規格</button>
+                                    <button @click="createSpec(item)" :disabled="creating">{{ _('建立規格') }}</button>
                                 </template>
                             </td>
                         </tr>
@@ -184,11 +184,11 @@
                                 <td class="ds-mono" x-text="reg.table_name" style="color: #6b7280;"></td>
                                 <td>
                                     <span x-text="reg.column_count"></span>
-                                    <span style="color: #9ca3af; font-size: 11px;"> 欄</span>
+                                    <span style="color: #9ca3af; font-size: 11px;"> {{ _('欄') }}</span>
                                 </td>
                                 <td>
                                     <span x-text="reg.row_count"></span>
-                                    <span style="color: #9ca3af; font-size: 11px;"> 筆</span>
+                                    <span style="color: #9ca3af; font-size: 11px;"> {{ _('筆') }}</span>
                                 </td>
                                 <td style="font-size: 11px; color: #6b7280;" x-text="formatDate(reg.last_synced_at)"></td>
                                 <td></td>
@@ -203,13 +203,13 @@
         <div x-show="lowerCount > 0" class="ds-hidden-section">
             <div class="ds-hidden-header">
                 <span class="ds-hidden-title">
-                    已隱藏的 Registry (<span x-text="lowerCount"></span>)
+                    {{ _('已隱藏的 Registry (') }}<span x-text="lowerCount"></span>)
                 </span>
                 <div class="ds-toolbar">
                     <button class="ds-btn sm" @click="toggleExpandAll('lower')"
-                            x-text="lowerAllExpanded ? '全閉合' : '全展開'"></button>
+                            x-text="lowerAllExpanded ? __('全閉合') : __('全展開')"></button>
                     <button class="ds-btn sm" @click="unhideAll()"
-                            :disabled="hiddenCount === 0">全部還原</button>
+                            :disabled="hiddenCount === 0">{{ _('全部還原') }}</button>
                 </div>
             </div>
             <div class="ds-card">
@@ -217,13 +217,13 @@
                     <thead>
                         <tr>
                             <th style="width: 24px;"></th>
-                            <th>表單名稱</th>
-                            <th>表單代碼</th>
-                            <th>規格狀態</th>
-                            <th>規格版本</th>
-                            <th>欄位數</th>
-                            <th>Registry 數</th>
-                            <th style="width: 100px;" class="ds-actions">操作</th>
+                            <th>{{ _('表單名稱') }}</th>
+                            <th>{{ _('表單代碼') }}</th>
+                            <th>{{ _('規格狀態') }}</th>
+                            <th>{{ _('規格版本') }}</th>
+                            <th>{{ _('欄位數') }}</th>
+                            <th>{{ _('Registry 數') }}</th>
+                            <th style="width: 100px;" class="ds-actions">{{ _('操作') }}</th>
                         </tr>
                     </thead>
                     <template x-for="item in items" :key="'h_' + (item.form_template_secure_code || item.spec_secure_code)">
@@ -240,7 +240,7 @@
                                         <span class="ds-badge active" x-text="item.spec_status"></span>
                                     </template>
                                     <template x-if="!item.spec_status">
-                                        <span class="ds-badge none">未建立</span>
+                                        <span class="ds-badge none">{{ _('未建立') }}</span>
                                     </template>
                                 </td>
                                 <td>
@@ -276,16 +276,16 @@
                                     <td class="ds-mono" x-text="reg.table_name" style="color: #6b7280;"></td>
                                     <td>
                                         <span x-text="reg.column_count"></span>
-                                        <span style="color: #9ca3af; font-size: 11px;"> 欄</span>
+                                        <span style="color: #9ca3af; font-size: 11px;"> {{ _('欄') }}</span>
                                     </td>
                                     <td>
                                         <span x-text="reg.row_count"></span>
-                                        <span style="color: #9ca3af; font-size: 11px;"> 筆</span>
+                                        <span style="color: #9ca3af; font-size: 11px;"> {{ _('筆') }}</span>
                                     </td>
                                     <td style="font-size: 11px; color: #6b7280;" x-text="formatDate(reg.last_synced_at)"></td>
                                     <td class="ds-actions" @click.stop>
                                         <template x-if="_isManuallyHidden(reg.registry_secure_code)">
-                                            <button class="sm" @click="unhideRegistry(reg.registry_secure_code)">還原</button>
+                                            <button class="sm" @click="unhideRegistry(reg.registry_secure_code)">{{ _('還原') }}</button>
                                         </template>
                                     </td>
                                 </tr>
@@ -302,16 +302,16 @@
     <div x-show="showNewModal" x-cloak class="ds-modal">
         <div class="ds-modal-content">
             <div class="ds-modal-header">
-                <h3>新增資料表規格</h3>
+                <h3>{{ _('新增資料表規格') }}</h3>
                 <button @click="showNewModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="ds-modal-body">
-                <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">選擇尚無規格的表單範本：</p>
+                <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">{{ _('選擇尚無規格的表單範本：') }}</p>
 
-                <div x-show="loadingTemplates" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
+                <div x-show="loadingTemplates" style="text-align: center; padding: 20px; color: #9ca3af;">{{ _('載入中...') }}</div>
 
                 <div x-show="!loadingTemplates && availableTemplates.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
-                    所有表單範本都已建立規格
+                    {{ _('所有表單範本都已建立規格') }}
                 </div>
 
                 <div x-show="!loadingTemplates && availableTemplates.length > 0" class="ds-template-list">
@@ -328,8 +328,8 @@
                 </div>
             </div>
             <div class="ds-modal-footer">
-                <button class="ds-btn" @click="showNewModal = false">取消</button>
-                <button class="ds-btn primary" @click="confirmNewSpec()" :disabled="!selectedTemplateSc">前往建立</button>
+                <button class="ds-btn" @click="showNewModal = false">{{ _('取消') }}</button>
+                <button class="ds-btn primary" @click="confirmNewSpec()" :disabled="!selectedTemplateSc">{{ _('前往建立') }}</button>
             </div>
         </div>
     </div>
@@ -339,7 +339,7 @@
         <div class="ds-modal-content wide">
             <div class="ds-modal-header">
                 <h3>
-                    三向比對 -
+                    {{ _('三向比對 -') }}
                     <span x-text="compareTemplateName"></span>
                 </h3>
                 <button @click="showCompareModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
@@ -349,53 +349,53 @@
                     <div>
                         <!-- 欄位數摘要 -->
                         <div style="margin-bottom: 8px; padding: 8px 12px; background: #f9fafb; border-radius: 3px; font-size: 12px;">
-                            規格 v<strong x-text="compareResult.versions ? compareResult.versions.spec_version : ''"></strong>:
-                            <strong x-text="compareResult.summary.spec_field_count"></strong> 欄 |
-                            表單 <strong x-text="compareResult.versions ? compareResult.versions.form_version : ''"></strong>:
-                            <strong x-text="compareResult.summary.formio_field_count"></strong> 欄 |
+                            {{ _('規格 v') }}<strong x-text="compareResult.versions ? compareResult.versions.spec_version : ''"></strong>:
+                            <strong x-text="compareResult.summary.spec_field_count"></strong> {{ _('欄 |
+                            表單') }} <strong x-text="compareResult.versions ? compareResult.versions.form_version : ''"></strong>:
+                            <strong x-text="compareResult.summary.formio_field_count"></strong> {{ _('欄 |') }}
                             <template x-if="compareResult.summary.has_sql_registry">
                                 <span>SQL <strong x-text="compareResult.versions ? compareResult.versions.sql_table_name : ''"></strong>:
-                                <strong x-text="compareResult.summary.sql_column_count"></strong> 欄</span>
+                                <strong x-text="compareResult.summary.sql_column_count"></strong> {{ _('欄') }}</span>
                             </template>
                             <template x-if="!compareResult.summary.has_sql_registry">
-                                <span>SQL: 未建立</span>
+                                <span>{{ _('SQL: 未建立') }}</span>
                             </template>
                         </div>
 
                         <!-- 各組狀態摘要 -->
                         <div style="margin-bottom: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 3px; font-size: 12px; line-height: 1.8;">
                             <div>
-                                <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs 表單:</span>
+                                <span style="display: inline-block; width: 100px; font-weight: 600;">{{ _('規格 vs 表單:') }}</span>
                                 <template x-if="compareResult.summary.spec_formio_status === 'match'">
-                                    <span style="color: #059669;">一致</span>
+                                    <span style="color: #059669;">{{ _('一致') }}</span>
                                 </template>
                                 <template x-if="compareResult.summary.spec_formio_status === 'mismatch'">
-                                    <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_formio.length"></span> 項)</span>
+                                    <span style="color: #dc2626;">{{ _('有偏移 (') }}<span x-text="compareResult.spec_vs_formio.length"></span> {{ _('項)') }}</span>
                                 </template>
                             </div>
                             <div>
-                                <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs SQL:</span>
+                                <span style="display: inline-block; width: 100px; font-weight: 600;">{{ _('規格 vs SQL:') }}</span>
                                 <template x-if="compareResult.summary.spec_sql_status === 'match'">
-                                    <span style="color: #059669;">一致</span>
+                                    <span style="color: #059669;">{{ _('一致') }}</span>
                                 </template>
                                 <template x-if="compareResult.summary.spec_sql_status === 'mismatch'">
-                                    <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_sql.length"></span> 項)</span>
+                                    <span style="color: #dc2626;">{{ _('有偏移 (') }}<span x-text="compareResult.spec_vs_sql.length"></span> {{ _('項)') }}</span>
                                 </template>
                                 <template x-if="compareResult.summary.spec_sql_status === 'unavailable'">
-                                    <span style="color: #9ca3af;">SQL 同步表尚未建立</span>
+                                    <span style="color: #9ca3af;">{{ _('SQL 同步表尚未建立') }}</span>
                                 </template>
                             </div>
                         </div>
 
                         <!-- 三向完全一致 -->
                         <template x-if="compareResult.summary.overall === 'all_match'">
-                            <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">規格、表單、SQL 三向完全一致</p>
+                            <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">{{ _('規格、表單、SQL 三向完全一致') }}</p>
                         </template>
 
                         <!-- 規格 vs 表單 偏移細節 -->
                         <template x-if="compareResult.spec_vs_formio && compareResult.spec_vs_formio.length > 0">
                             <div style="margin-bottom: 12px;">
-                                <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs 表單 偏移細節</p>
+                                <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">{{ _('規格 vs 表單 偏移細節') }}</p>
                                 <template x-for="d in compareResult.spec_vs_formio" :key="d.field_key + d.issue">
                                     <div class="ds-drift-item" :class="d.severity">
                                         <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -408,7 +408,7 @@
                         <!-- 規格 vs SQL 偏移細節 -->
                         <template x-if="compareResult.spec_vs_sql && compareResult.spec_vs_sql.length > 0">
                             <div>
-                                <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs SQL 偏移細節</p>
+                                <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">{{ _('規格 vs SQL 偏移細節') }}</p>
                                 <template x-for="d in compareResult.spec_vs_sql" :key="d.field_key + d.issue">
                                     <div class="ds-drift-item" :class="d.severity">
                                         <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -421,11 +421,11 @@
                 </template>
             </div>
             <div class="ds-modal-footer">
-                <button class="ds-btn" @click="showCompareModal = false">關閉</button>
+                <button class="ds-btn" @click="showCompareModal = false">{{ _('關閉') }}</button>
                 <template x-if="compareResult && compareResult.summary.total_drifts > 0">
                     <button class="ds-btn primary"
-                            @click="showCompareModal = false; goToSpecEditor(items.find(i => i.form_template_name === compareTemplateName)?.form_template_secure_code)">
-                        前往編輯器處理
+                            @click="showCompareModal = false; goToSpecEditor(items.find(i => {{ _('i.form_template_name === compareTemplateName)?.form_template_secure_code)">
+                        前往編輯器處理') }}
                     </button>
                 </template>
             </div>

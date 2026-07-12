@@ -36,7 +36,7 @@
                 // 建構選項
                 let options = configs.length > 1 ? '<option value="">(使用預設設定)</option>' : '';
                 configs.forEach(cfg => {
-                    const isDefault = cfg.is_default ? ' ⭐預設' : '';
+                    const isDefault = cfg.is_default ? __(' ⭐預設') : '';
                     const provider = cfg.provider_type !== 'generic' ? ` [${cfg.provider_type}]` : '';
                     // 檢查是否被選中：明確選擇 > 自動選擇
                     const isSelected = (selectedId && String(selectedId) === String(cfg.id)) ||
@@ -130,11 +130,11 @@
 
             // 驗證必填項
             if (!subject || !subject.trim()) {
-                updateStatus('請輸入郵件主旨', 'warning');
+                updateStatus(__('請輸入郵件主旨'), 'warning');
                 return;
             }
             if (!body || !body.trim()) {
-                updateStatus('請輸入郵件內容', 'warning');
+                updateStatus(__('請輸入郵件內容'), 'warning');
                 return;
             }
 
@@ -148,13 +148,13 @@
                     recipientGroups = Array.from(groupSelect.selectedOptions).map(opt => opt.value);
                 }
                 if (recipientGroups.length === 0) {
-                    updateStatus('請選擇至少一個收件人群組', 'warning');
+                    updateStatus(__('請選擇至少一個收件人群組'), 'warning');
                     return;
                 }
             } else if (recipientType === 'manual') {
                 recipientManual = document.getElementById('emailAdapterRecipientManual')?.value || '';
                 if (!recipientManual.trim()) {
-                    updateStatus('請輸入收件者 Email', 'warning');
+                    updateStatus(__('請輸入收件者 Email'), 'warning');
                     return;
                 }
             }

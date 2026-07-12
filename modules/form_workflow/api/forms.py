@@ -31,6 +31,7 @@ forms_bp = Blueprint(
 # =============================================================================
 
 import re
+from flask_babel import gettext as _
 
 _CJK_RE = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
 
@@ -386,7 +387,7 @@ def create_template():
         'success': True,
         'data': result,
         'thumbnail_pending': thumbnail_pending,
-        'message': '表單模板已建立'
+        'message': _('表單模板已建立')
     })
 
 
@@ -479,7 +480,7 @@ def update_template(secure_code):
         'success': True,
         'data': template.to_dict(include_schema=True),
         'thumbnail_pending': thumbnail_pending,
-        'message': '表單模板已更新'
+        'message': _('表單模板已更新')
     })
 
 
@@ -509,7 +510,7 @@ def delete_template(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '表單模板已刪除'
+        'message': _('表單模板已刪除')
     })
 
 
@@ -535,7 +536,7 @@ def publish_template(secure_code):
 
     # 檢查是否可以發布
     if not template.schema or not template.schema.get('components'):
-        return jsonify({'success': False, 'error': '表單沒有任何欄位，無法發布'}), 400
+        return jsonify({'success': False, 'error': _('表單沒有任何欄位，無法發布')}), 400
 
     template.is_published = True
     template.publish_at = datetime.utcnow()
@@ -545,7 +546,7 @@ def publish_template(secure_code):
     return jsonify({
         'success': True,
         'data': template.to_dict(include_schema=True),
-        'message': '表單模板已發布'
+        'message': _('表單模板已發布')
     })
 
 
@@ -576,7 +577,7 @@ def unpublish_template(secure_code):
     return jsonify({
         'success': True,
         'data': template.to_dict(include_schema=True),
-        'message': '表單模板已取消發布'
+        'message': _('表單模板已取消發布')
     })
 
 
@@ -930,5 +931,5 @@ def save_new_version(secure_code):
     return jsonify({
         'success': True,
         'data': new_template.to_dict(include_schema=True),
-        'message': f'已另存新版本 {new_version}'
+        'message': _('已另存新版本 %(version)s', version=new_version)
     })

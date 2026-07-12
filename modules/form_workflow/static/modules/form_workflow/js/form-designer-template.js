@@ -157,7 +157,7 @@ const TemplateManager = {
 
         // 檢查是否有未儲存的變更
         if (hasUnsavedChanges) {
-            if (!confirm('載入範本會覆蓋目前的表單內容，確定要繼續嗎？')) {
+            if (!confirm(__('載入範本會覆蓋目前的表單內容，確定要繼續嗎？'))) {
                 return;
             }
         }
@@ -212,7 +212,7 @@ const TemplateManager = {
 
                 this.closeModal();
             } else {
-                throw new Error(result.message || '載入範本失敗');
+                throw new Error(result.message || __('載入範本失敗'));
             }
         } catch (error) {
             console.error('載入範本失敗:', error);

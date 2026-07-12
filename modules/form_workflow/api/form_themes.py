@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request, Response
 from app.security.decorators import module_access_required, public_route
 from app.platform.data import get_current_org
 from app import db, csrf
+from flask_babel import gettext as _
 
 # 建立 API Blueprint
 form_themes_bp = Blueprint(
@@ -78,10 +79,10 @@ def get_theme(secure_code):
     ).first()
 
     if not theme:
-        return jsonify({'success': False, 'message': '主題不存在'}), 404
+        return jsonify({'success': False, 'message': _('主題不存在')}), 404
 
     if theme.org_secure_code and theme.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權查看此主題'}), 403
+        return jsonify({'success': False, 'message': _('無權查看此主題')}), 403
 
     return jsonify({'success': True, 'data': theme.to_dict_with_css()})
 
@@ -112,14 +113,14 @@ def create_theme():
     data = request.get_json() or {}
 
     if not data.get('name'):
-        return jsonify({'success': False, 'message': '主題識別碼為必填'}), 400
+        return jsonify({'success': False, 'message': _('主題識別碼為必填')}), 400
     if not data.get('display_name'):
-        return jsonify({'success': False, 'message': '顯示名稱為必填'}), 400
+        return jsonify({'success': False, 'message': _('顯示名稱為必填')}), 400
 
     # 識別碼只允許英文、數字、連字號
     import re
     if not re.match(r'^[a-z][a-z0-9-]*$', data['name']):
-        return jsonify({'success': False, 'message': '識別碼只允許小寫英文、數字、連字號，且以英文開頭'}), 400
+        return jsonify({'success': False, 'message': _('識別碼只允許小寫英文、數字、連字號，且以英文開頭')}), 400
 
     # 檢查名稱是否重複
     dup = FwFormTheme.query.filter_by(
@@ -133,7 +134,7 @@ def create_theme():
     ).first()
 
     if dup:
-        return jsonify({'success': False, 'message': f'主題識別碼「{data["name"]}」已存在'}), 400
+        return jsonify({'success': False, 'message': _('主題識別碼「%(name)s」已存在', name=data["name"])}), 400
 
     try:
         theme = FwFormTheme(
@@ -151,13 +152,13 @@ def create_theme():
 
         return jsonify({
             'success': True,
-            'message': '主題建立成功',
+            'message': _('主題建立成功'),
             'data': theme.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('建立失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -181,10 +182,10 @@ def update_theme(secure_code):
     ).first()
 
     if not theme:
-        return jsonify({'success': False, 'message': '主題不存在'}), 404
+        return jsonify({'success': False, 'message': _('主題不存在')}), 404
 
     if theme.org_secure_code and theme.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權修改此主題'}), 403
+        return jsonify({'success': False, 'message': _('無權修改此主題')}), 403
 
     data = request.get_json() or {}
 
@@ -204,13 +205,13 @@ def update_theme(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '主題更新成功',
+            'message': _('主題更新成功'),
             'data': theme.to_dict()
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'更新失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('更新失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -234,13 +235,13 @@ def delete_theme(secure_code):
     ).first()
 
     if not theme:
-        return jsonify({'success': False, 'message': '主題不存在'}), 404
+        return jsonify({'success': False, 'message': _('主題不存在')}), 404
 
     if theme.is_system:
-        return jsonify({'success': False, 'message': '系統內建主題無法刪除'}), 403
+        return jsonify({'success': False, 'message': _('系統內建主題無法刪除')}), 403
 
     if theme.org_secure_code and theme.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權刪除此主題'}), 403
+        return jsonify({'success': False, 'message': _('無權刪除此主題')}), 403
 
     try:
         theme.is_deleted = True
@@ -248,12 +249,12 @@ def delete_theme(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '主題已刪除'
+            'message': _('主題已刪除')
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('刪除失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -312,15 +313,15 @@ def upload_theme():
         return jsonify({'success': False, 'message': 'Organization not found'}), 400
 
     if 'file' not in request.files:
-        return jsonify({'success': False, 'message': '未上傳檔案'}), 400
+        return jsonify({'success': False, 'message': _('未上傳檔案')}), 400
 
     file = request.files['file']
     if not file.filename or not file.filename.endswith('.css'):
-        return jsonify({'success': False, 'message': '僅接受 .css 檔案'}), 400
+        return jsonify({'success': False, 'message': _('僅接受 .css 檔案')}), 400
 
     css_content = file.read().decode('utf-8')
     if not css_content.strip():
-        return jsonify({'success': False, 'message': 'CSS 檔案內容為空'}), 400
+        return jsonify({'success': False, 'message': _('CSS 檔案內容為空')}), 400
 
     secure_code = request.form.get('secure_code')
 
@@ -333,17 +334,17 @@ def upload_theme():
             ).first()
 
             if not theme:
-                return jsonify({'success': False, 'message': '主題不存在'}), 404
+                return jsonify({'success': False, 'message': _('主題不存在')}), 404
 
             if theme.org_secure_code and theme.org_secure_code != org.secure_code:
-                return jsonify({'success': False, 'message': '無權修改此主題'}), 403
+                return jsonify({'success': False, 'message': _('無權修改此主題')}), 403
 
             theme.css_content = css_content
             db.session.commit()
 
             return jsonify({
                 'success': True,
-                'message': 'CSS 已更新',
+                'message': _('CSS 已更新'),
                 'data': theme.to_dict()
             })
         else:
@@ -352,11 +353,11 @@ def upload_theme():
             display_name = request.form.get('display_name', '')
 
             if not name or not display_name:
-                return jsonify({'success': False, 'message': '新建主題需提供識別碼和顯示名稱'}), 400
+                return jsonify({'success': False, 'message': _('新建主題需提供識別碼和顯示名稱')}), 400
 
             import re
             if not re.match(r'^[a-z][a-z0-9-]*$', name):
-                return jsonify({'success': False, 'message': '識別碼只允許小寫英文、數字、連字號'}), 400
+                return jsonify({'success': False, 'message': _('識別碼只允許小寫英文、數字、連字號')}), 400
 
             theme = FwFormTheme(
                 org_secure_code=org.secure_code,
@@ -372,10 +373,10 @@ def upload_theme():
 
             return jsonify({
                 'success': True,
-                'message': '主題上傳成功',
+                'message': _('主題上傳成功'),
                 'data': theme.to_dict()
             }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'處理失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('處理失敗: %(error)s', error=str(e))}), 500

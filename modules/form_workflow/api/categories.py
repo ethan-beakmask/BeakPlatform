@@ -8,6 +8,7 @@ from flask_login import current_user
 from app.security.decorators import module_access_required
 from app.platform.data import get_current_org
 from app import db, csrf
+from flask_babel import gettext as _
 
 # 建立 API Blueprint
 categories_bp = Blueprint(
@@ -124,10 +125,10 @@ def get_category(secure_code):
     ).first()
 
     if not category:
-        return jsonify({'success': False, 'message': '分類不存在'}), 404
+        return jsonify({'success': False, 'message': _('分類不存在')}), 404
 
     if category.org_secure_code and category.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權查看此分類'}), 403
+        return jsonify({'success': False, 'message': _('無權查看此分類')}), 403
 
     data = category.to_dict()
 
@@ -169,7 +170,7 @@ def create_category():
     data = request.get_json() or {}
 
     if not data.get('name'):
-        return jsonify({'success': False, 'message': '分類名稱為必填'}), 400
+        return jsonify({'success': False, 'message': _('分類名稱為必填')}), 400
 
     parent_sc = data.get('parent_secure_code')
 
@@ -180,9 +181,9 @@ def create_category():
             is_deleted=False
         ).first()
         if not parent:
-            return jsonify({'success': False, 'message': '指定的父分類不存在'}), 400
+            return jsonify({'success': False, 'message': _('指定的父分類不存在')}), 400
         if parent.is_child:
-            return jsonify({'success': False, 'message': '不支援三層分類'}), 400
+            return jsonify({'success': False, 'message': _('不支援三層分類')}), 400
 
     # 檢查同層名稱是否已存在
     dup_query = FwCategory.query.filter_by(
@@ -203,7 +204,7 @@ def create_category():
     )
 
     if dup_query.first():
-        return jsonify({'success': False, 'message': f'分類「{data["name"]}」已存在'}), 400
+        return jsonify({'success': False, 'message': _('分類「%(name)s」已存在', name=data["name"])}), 400
 
     try:
         category = FwCategory(
@@ -223,13 +224,13 @@ def create_category():
 
         return jsonify({
             'success': True,
-            'message': '分類建立成功',
+            'message': _('分類建立成功'),
             'data': category.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('建立失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -253,13 +254,13 @@ def update_category(secure_code):
     ).first()
 
     if not category:
-        return jsonify({'success': False, 'message': '分類不存在'}), 404
+        return jsonify({'success': False, 'message': _('分類不存在')}), 404
 
     if category.is_system:
-        return jsonify({'success': False, 'message': '系統內建分類無法修改'}), 403
+        return jsonify({'success': False, 'message': _('系統內建分類無法修改')}), 403
 
     if category.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權修改此分類'}), 403
+        return jsonify({'success': False, 'message': _('無權修改此分類')}), 403
 
     data = request.get_json() or {}
 
@@ -278,7 +279,7 @@ def update_category(secure_code):
             )
             existing = dup_query.first()
             if existing and existing.id != category.id:
-                return jsonify({'success': False, 'message': f'分類「{data["name"]}」已存在'}), 400
+                return jsonify({'success': False, 'message': _('分類「%(name)s」已存在', name=data["name"])}), 400
             category.name = data['name']
 
         if 'description' in data:
@@ -299,13 +300,13 @@ def update_category(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '分類更新成功',
+            'message': _('分類更新成功'),
             'data': category.to_dict()
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'更新失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('更新失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -329,10 +330,10 @@ def delete_category(secure_code):
     ).first()
 
     if not category:
-        return jsonify({'success': False, 'message': '分類不存在'}), 404
+        return jsonify({'success': False, 'message': _('分類不存在')}), 404
 
     if category.org_secure_code != org.secure_code:
-        return jsonify({'success': False, 'message': '無權刪除此分類'}), 403
+        return jsonify({'success': False, 'message': _('無權刪除此分類')}), 403
 
     can_delete, message = category.can_delete(org.secure_code)
     if not can_delete:
@@ -344,12 +345,12 @@ def delete_category(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '分類已刪除'
+            'message': _('分類已刪除')
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'刪除失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('刪除失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -377,7 +378,7 @@ def reorder_categories():
     order = data.get('order', [])
 
     if not order:
-        return jsonify({'success': False, 'message': '排序清單不可為空'}), 400
+        return jsonify({'success': False, 'message': _('排序清單不可為空')}), 400
 
     try:
         for index, sc in enumerate(order):
@@ -395,9 +396,9 @@ def reorder_categories():
 
         return jsonify({
             'success': True,
-            'message': '排序已更新'
+            'message': _('排序已更新')
         })
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'排序失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('排序失敗: %(error)s', error=str(e))}), 500

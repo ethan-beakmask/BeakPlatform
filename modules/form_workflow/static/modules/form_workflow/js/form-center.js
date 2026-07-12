@@ -81,7 +81,7 @@ function formCenterManager() {
             const parent = this.parentCategories.find(c => c.secure_code === this.selectedParent);
             if (!parent) return [];
             const children = [...(parent.children || [])];
-            children.push({ secure_code: '__child_uncategorized__', name: '其他' });
+            children.push({ secure_code: '__child_uncategorized__', name: __('其他') });
             return children;
         },
 

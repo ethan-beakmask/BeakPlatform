@@ -13,6 +13,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ def force_end_workflow(secure_code):
     ).first()
 
     if not form_instance:
-        return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的表單')}), 404
 
     # 查詢流程實例
     workflow_instance = FwWorkflowInstance.query.filter_by(
@@ -51,17 +52,17 @@ def force_end_workflow(secure_code):
     ).first()
 
     if not workflow_instance:
-        return jsonify({'success': False, 'error': '找不到關聯的流程'}), 404
+        return jsonify({'success': False, 'error': _('找不到關聯的流程')}), 404
 
     # 權限檢查：發起人 or 管理員
     is_applicant = form_instance.applicant_secure_code == current_user.secure_code
     is_admin = getattr(current_user, 'is_org_admin', False)
     if not is_applicant and not is_admin:
-        return jsonify({'success': False, 'error': '無權限執行此操作'}), 403
+        return jsonify({'success': False, 'error': _('無權限執行此操作')}), 403
 
     # 狀態檢查
     if workflow_instance.status != 'RUNNING':
-        return jsonify({'success': False, 'error': f'流程狀態為 {workflow_instance.status}，無法強制結束'}), 400
+        return jsonify({'success': False, 'error': _('流程狀態為 %(status)s，無法強制結束', status=workflow_instance.status)}), 400
 
     try:
         # 取消所有未完成節點
@@ -96,13 +97,13 @@ def force_end_workflow(secure_code):
 
         return jsonify({
             'success': True,
-            'message': '流程已強制結束'
+            'message': _('流程已強制結束')
         })
 
     except Exception as e:
         db.session.rollback()
         logger.error(f'強制結束流程失敗: {e}')
-        return jsonify({'success': False, 'error': f'操作失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('操作失敗: %(error)s', error=str(e))}), 500
 
 
 @form_center_bp.route('/my-test-forms', methods=['DELETE'])
@@ -127,7 +128,7 @@ def delete_my_test_forms():
         getattr(current_user, 'is_org_admin', False)
     )
     if not is_admin:
-        return jsonify({'success': False, 'error': '無權限執行此操作'}), 403
+        return jsonify({'success': False, 'error': _('無權限執行此操作')}), 403
 
     # FwWorkflowInstance 終態：COMPLETED/ERROR/CANCELLED/REJECTED
     # 用 JOIN 確保流程已結束
@@ -147,7 +148,7 @@ def delete_my_test_forms():
     ).all()
 
     if not test_instances:
-        return jsonify({'success': True, 'deleted_count': 0, 'message': '沒有可刪除的測試表單'})
+        return jsonify({'success': True, 'deleted_count': 0, 'message': _('沒有可刪除的測試表單')})
 
     try:
         deleted_count = 0
@@ -172,10 +173,10 @@ def delete_my_test_forms():
         return jsonify({
             'success': True,
             'deleted_count': deleted_count,
-            'message': f'已刪除 {deleted_count} 筆測試表單'
+            'message': _('已刪除 %(count)s 筆測試表單', count=deleted_count)
         })
 
     except Exception as e:
         db.session.rollback()
         logger.error(f'批量刪除測試表單失敗: {e}')
-        return jsonify({'success': False, 'error': f'操作失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('操作失敗: %(error)s', error=str(e))}), 500

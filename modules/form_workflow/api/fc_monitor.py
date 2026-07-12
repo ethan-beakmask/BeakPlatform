@@ -11,6 +11,7 @@ from app.platform.data import get_current_org
 from app import db
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def get_workflow_progress(secure_code):
     ).first()
 
     if not workflow:
-        return jsonify({'success': False, 'error': '找不到指定的流程'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的流程')}), 404
 
     # 取得所有節點執行記錄（使用 secure_code）
     queue_items = FwNodeExecutionQueue.query.filter_by(
@@ -101,7 +102,7 @@ def get_form_detail(secure_code):
     ).first()
 
     if not form_instance:
-        return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+        return jsonify({'success': False, 'error': _('找不到指定的表單')}), 404
 
     # 取得簽核歷史
     approvals = []
@@ -167,7 +168,7 @@ def get_execution_path(instance_id):
     ).first()
 
     if not instance:
-        return jsonify({'success': False, 'error': f'流程實例 {instance_id} 不存在'}), 404
+        return jsonify({'success': False, 'error': _('流程實例 %(instance_id)s 不存在', instance_id=instance_id)}), 404
 
     # 查詢此流程實例的所有節點執行記錄
     nodes = FwNodeExecutionQueue.query.filter_by(
@@ -334,7 +335,7 @@ def get_execution_logs(instance_id):
     ).first()
 
     if not instance:
-        return jsonify({'success': False, 'error': f'流程實例 {instance_id} 不存在'}), 404
+        return jsonify({'success': False, 'error': _('流程實例 %(instance_id)s 不存在', instance_id=instance_id)}), 404
 
     # 取得查詢參數
     level_filter = request.args.get('level')

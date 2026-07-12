@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}表單中心 - BeakPlatform{% endblock %}
+{% block title %}{{ _('表單中心 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <!-- Window Bridge: Jinja2 → JS -->
@@ -30,7 +30,7 @@ window.__USER_SC = '{{ user_secure_code }}';
     <!-- 左側邊欄：表單分類導航 -->
     <div class="fc-sidebar" x-show="viewMode === 'dashboard'">
         <div class="fc-sidebar-box">
-            <div style="padding: 8px 12px; font-weight: 400; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">表單分類</div>
+            <div style="padding: 8px 12px; font-weight: 400; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6;">{{ _('表單分類') }}</div>
             <template x-for="cat in parentCategories" :key="cat.secure_code">
                 <div class="fc-category-item" :class="{ active: selectedParent === cat.secure_code }"
                      @click="selectParent(cat.secure_code)" style="cursor: pointer;">
@@ -48,7 +48,7 @@ window.__USER_SC = '{{ user_secure_code }}';
         <div class="fc-section">
             <div class="fc-section-header">
                 <div class="fc-section-title">
-                    <span>新填表單</span>
+                    <span>{{ _('新填表單') }}</span>
                     <div class="fc-tabs" style="margin-left: 12px;" x-show="selectedParent && currentChildren.length > 0">
                         <template x-for="child in currentChildren" :key="child.secure_code">
                             <div class="fc-tab" :class="{ active: selectedChild === child.secure_code }" @click="selectedChild = child.secure_code">
@@ -59,9 +59,9 @@ window.__USER_SC = '{{ user_secure_code }}';
                 </div>
             </div>
             <div class="fc-section-body">
-                <div x-show="loadingForms" class="fc-loading">載入中...</div>
+                <div x-show="loadingForms" class="fc-loading">{{ _('載入中...') }}</div>
                 <div x-show="!loadingForms && filteredForms.length === 0" class="fc-empty">
-                    <span x-text="availableForms.length === 0 ? '目前沒有可填寫的表單' : '此分類目前沒有表單'"></span>
+                    <span x-text="availableForms.length === 0 ? __('目前沒有可填寫的表單') : __('此分類目前沒有表單')"></span>
                 </div>
                 <div x-show="!loadingForms && filteredForms.length > 0" class="fc-form-grid">
                     <template x-for="form in filteredForms" :key="form.secure_code + '_' + form._source">
@@ -80,14 +80,14 @@ window.__USER_SC = '{{ user_secure_code }}';
         <div class="fc-section">
             <div class="fc-section-header">
                 <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('pending')">待簽核</span>
+                    <span class="fc-section-link" @click="switchToList('pending')">{{ _('待簽核') }}</span>
                     <span x-show="pendingApprovals.length > 0" class="fc-badge fc-badge-pending" x-text="pendingApprovals.length"></span>
                     <!-- 批次工具列 -->
                     <div x-show="batchSelectedCount > 0" style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #eef2ff; border-radius: 4px; font-size: 12px; margin-left: 100px;">
-                        <span>已選 <strong x-text="batchSelectedCount"></strong> 筆</span>
-                        <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">反選</button>
-                        <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">清除</button>
-                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">批次簽核</button>
+                        <span>{{ _('已選') }} <strong x-text="batchSelectedCount"></strong> {{ _('筆') }}</span>
+                        <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchInvertSelection()">{{ _('反選') }}</button>
+                        <button class="fc-btn fc-btn-sm" style="background: #e5e7eb; color: #374151; padding: 2px 6px; font-size: 11px;" @click="batchClearSelection()">{{ _('清除') }}</button>
+                        <button class="fc-btn fc-btn-warning fc-btn-sm" style="padding: 2px 8px; font-size: 11px;" @click="openBatchApprovalModal()">{{ _('批次簽核') }}</button>
                     </div>
                 </div>
                 <div x-show="pendingTotalPages > 1" class="fc-pagination">
@@ -97,23 +97,23 @@ window.__USER_SC = '{{ user_secure_code }}';
                 </div>
             </div>
             <div style="padding: 0;">
-                <div x-show="loadingPending" class="fc-loading">載入中...</div>
-                <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">目前沒有待簽核的表單</div>
+                <div x-show="loadingPending" class="fc-loading">{{ _('載入中...') }}</div>
+                <div x-show="!loadingPending && pendingApprovals.length === 0" class="fc-empty">{{ _('目前沒有待簽核的表單') }}</div>
                 <table x-show="!loadingPending && pendingApprovals.length > 0" class="fc-table fc-table-pending">
                     <thead>
                         <tr>
                             <th style="width: 36px; text-align: center; overflow: visible; text-overflow: clip;">
                                 <input type="checkbox" @change="batchSelectAll()" :checked="batchAllChecked"
-                                       title="全選/取消全選（限同表單同節點同版本）">
+                                       title="{{ _('全選/取消全選（限同表單同節點同版本）') }}">
                             </th>
-                            <th class="fc-sortable" style="width: 140px;" @click="toggleSort('pending', 'serial_number')">單號<span x-text="sortIcon('pending', 'serial_number')"></span></th>
-                            <th style="width: 150px;">表單</th>
-                            <th>主旨</th>
-                            <th style="width: 150px;">發起人</th>
-                            <th style="width: 80px;">類別</th>
-                            <th style="width: 150px;">目前關卡</th>
-                            <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">等待時間<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
-                            <th style="width: 100px;">操作</th>
+                            <th class="fc-sortable" style="width: 140px;" @click="toggleSort('pending', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('pending', 'serial_number')"></span></th>
+                            <th style="width: 150px;">{{ _('表單') }}</th>
+                            <th>{{ _('主旨') }}</th>
+                            <th style="width: 150px;">{{ _('發起人') }}</th>
+                            <th style="width: 80px;">{{ _('類別') }}</th>
+                            <th style="width: 150px;">{{ _('目前關卡') }}</th>
+                            <th class="fc-sortable" style="width: 150px;" @click="toggleSort('pending', 'scheduled_at')">{{ _('等待時間') }}<span x-text="sortIcon('pending', 'scheduled_at')"></span></th>
+                            <th style="width: 100px;">{{ _('操作') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,20 +129,20 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <span x-show="item.is_test" class="fc-badge fc-badge-test" style="margin-right: 4px;">TEST</span>
                                     <span style="color: #3b82f6; font-family: monospace;" x-text="getShortSerial(item.serial_number)"></span>
                                 </td>
-                                <td style="font-weight: 500;" x-text="item.form_name || '未命名表單'"></td>
+                                <td style="font-weight: 500;" x-text="item.form_name || __('未命名表單')"></td>
                                 <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                 <td x-text="item.applicant_name || '-'"></td>
                                 <td style="color: #6b7280;" x-text="item.category || '-'"></td>
                                 <td><span class="fc-badge fc-badge-pending" x-text="item.node_name || '-'"></span></td>
                                 <td style="color: #92400e;" x-text="formatWaitTime(item.scheduled_at)"></td>
                                 <td style="display: flex; gap: 4px; align-items: center;">
-                                    <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="閱讀表單">
+                                    <button class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" @click="openPendingReadForm(item)" title="{{ _('閱讀表單') }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                     </button>
                                     <button class="fc-btn fc-btn-warning fc-btn-sm" style="white-space: nowrap;" @click="openApprovalModal(item)"
                                             :disabled="item.is_locked && !item.locked_by_self">
-                                        <span x-show="!(item.is_locked && !item.locked_by_self)">簽核</span>
-                                        <span x-show="item.is_locked && !item.locked_by_self" style="font-size: 11px;">簽核中</span>
+                                        <span x-show="!(item.is_locked && !item.locked_by_self)">{{ _('簽核') }}</span>
+                                        <span x-show="item.is_locked && !item.locked_by_self" style="font-size: 11px;">{{ _('簽核中') }}</span>
                                     </button>
                                 </td>
                             </tr>
@@ -156,13 +156,13 @@ window.__USER_SC = '{{ user_secure_code }}';
         <div class="fc-section">
             <div class="fc-section-header">
                 <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('tracking')">追蹤中</span>
+                    <span class="fc-section-link" @click="switchToList('tracking')">{{ _('追蹤中') }}</span>
                     <div class="fc-tabs" style="margin-left: 12px;">
                         <div class="fc-tab" :class="{ active: trackingTab === 'mine' }" @click="trackingTab = 'mine'; trackingPage = 1">
-                            我發起的表單(<span x-text="trackingList.length"></span>)
+                            {{ _('我發起的表單(') }}<span x-text="trackingList.length"></span>)
                         </div>
                         <div class="fc-tab" :class="{ active: trackingTab === 'signed' }" @click="trackingTab = 'signed'; signedPage = 1">
-                            我簽過的表單(<span x-text="signedList.length"></span>)
+                            {{ _('我簽過的表單(') }}<span x-text="signedList.length"></span>)
                         </div>
                     </div>
                 </div>
@@ -175,18 +175,18 @@ window.__USER_SC = '{{ user_secure_code }}';
             <div style="padding: 0;">
                 <!-- 我的表單 -->
                 <div x-show="trackingTab === 'mine'">
-                    <div x-show="loadingTracking" class="fc-loading">載入中...</div>
-                    <div x-show="!loadingTracking && trackingList.length === 0" class="fc-empty">目前沒有執行中的流程</div>
+                    <div x-show="loadingTracking" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingTracking && trackingList.length === 0" class="fc-empty">{{ _('目前沒有執行中的流程') }}</div>
                     <table x-show="!loadingTracking && trackingList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('tracking', 'serial_number')">單號<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
-                                <th style="width: 150px;">表單</th>
-                                <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 150px;">待簽關卡</th>
-                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('tracking', 'submitted_at')">送單時間<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
-                                <th style="width: 120px;">操作</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('tracking', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('tracking', 'serial_number')"></span></th>
+                                <th style="width: 150px;">{{ _('表單') }}</th>
+                                <th>{{ _('主旨') }}</th>
+                                <th style="width: 80px;">{{ _('類別') }}</th>
+                                <th style="width: 150px;">{{ _('待簽關卡') }}</th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('tracking', 'submitted_at')">{{ _('送單時間') }}<span x-text="sortIcon('tracking', 'submitted_at')"></span></th>
+                                <th style="width: 120px;">{{ _('操作') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -199,16 +199,16 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <td style="font-weight: 500;" x-text="item.form_name"></td>
                                     <td style="color: #374151;" x-text="shortSubject(item.form_subject)" :title="item.form_subject || ''"></td>
                                     <td style="color: #6b7280;" x-text="item.category || '-'"></td>
-                                    <td style="color: #0d9488;" x-text="item.current_approver || '尚未到簽核關卡'"></td>
+                                    <td style="color: #0d9488;" x-text="item.current_approver || __('尚未到簽核關卡')"></td>
                                     <td style="color: #6b7280;" x-text="formatDate(item.submitted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
-                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
@@ -219,19 +219,19 @@ window.__USER_SC = '{{ user_secure_code }}';
                 </div>
                 <!-- 簽核表單 -->
                 <div x-show="trackingTab === 'signed'">
-                    <div x-show="loadingSigned" class="fc-loading">載入中...</div>
-                    <div x-show="!loadingSigned && signedList.length === 0" class="fc-empty">沒有曾簽核過的執行中流程</div>
+                    <div x-show="loadingSigned" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingSigned && signedList.length === 0" class="fc-empty">{{ _('沒有曾簽核過的執行中流程') }}</div>
                     <table x-show="!loadingSigned && signedList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('trackingSigned', 'serial_number')">單號<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
-                                <th style="width: 150px;">表單</th>
-                                <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 80px;">發起人</th>
-                                <th style="width: 120px;">待簽關卡</th>
-                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'submitted_at')">簽核後歷時<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
-                                <th style="width: 120px;">操作</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('trackingSigned', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('trackingSigned', 'serial_number')"></span></th>
+                                <th style="width: 150px;">{{ _('表單') }}</th>
+                                <th>{{ _('主旨') }}</th>
+                                <th style="width: 80px;">{{ _('類別') }}</th>
+                                <th style="width: 80px;">{{ _('發起人') }}</th>
+                                <th style="width: 120px;">{{ _('待簽關卡') }}</th>
+                                <th class="fc-sortable" style="width: 120px;" @click="toggleSort('trackingSigned', 'submitted_at')">{{ _('簽核後歷時') }}<span x-text="sortIcon('trackingSigned', 'submitted_at')"></span></th>
+                                <th style="width: 120px;">{{ _('操作') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -248,13 +248,13 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <td style="color: #0d9488;" x-text="item.current_approver || '-'"></td>
                                     <td style="color: #6b7280;" x-text="formatWaitTime(item.my_acted_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
-                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
@@ -270,37 +270,37 @@ window.__USER_SC = '{{ user_secure_code }}';
         <div class="fc-section">
             <div class="fc-section-header">
                 <div class="fc-section-title">
-                    <span class="fc-section-link" @click="switchToList('history')">歷史</span>
+                    <span class="fc-section-link" @click="switchToList('history')">{{ _('歷史') }}</span>
                     <div class="fc-tabs" style="margin-left: 12px;">
                         <div class="fc-tab" :class="{ active: historyTab === 'mine' }" @click="historyTab = 'mine'; historyPage = 1">
-                            我發起的表單(<span x-text="historyList.length"></span>)
+                            {{ _('我發起的表單(') }}<span x-text="historyList.length"></span>)
                         </div>
                         <div class="fc-tab" :class="{ active: historyTab === 'signed' }" @click="historyTab = 'signed'; signedHistoryPage = 1">
-                            我簽過的表單(<span x-text="signedHistoryList.length"></span>)
+                            {{ _('我簽過的表單(') }}<span x-text="signedHistoryList.length"></span>)
                         </div>
                     </div>
                 </div>
-                <button x-show="isAdmin && testFormCount > 0" class="fc-btn fc-btn-sm"
+                <button x-show="isAdmin && testFormCount > {{ _('0" class="fc-btn fc-btn-sm"
                         style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;"
                         @click="deleteTestForms()"
-                        x-text="'刪除測試表單 (' + testFormCount + ')'"></button>
+                        x-text="__(\'刪除測試表單 (\') + testFormCount + \')\'">') }}</button>
             </div>
             <div style="padding: 0;">
                 <!-- 我的歷史 -->
                 <div x-show="historyTab === 'mine'">
-                    <div x-show="loadingHistory" class="fc-loading">載入中...</div>
-                    <div x-show="!loadingHistory && historyList.length === 0" class="fc-empty">沒有歷史記錄</div>
+                    <div x-show="loadingHistory" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingHistory && historyList.length === 0" class="fc-empty">{{ _('沒有歷史記錄') }}</div>
                     <table x-show="!loadingHistory && historyList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'serial_number')">單號<span x-text="sortIcon('history', 'serial_number')"></span></th>
-                                <th style="width: 150px;">表單</th>
-                                <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 80px;">狀態</th>
-                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('history', 'workflow_completed_at')">結束時間<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
-                                <th style="width: 100px;">流程耗時</th>
-                                <th style="width: 120px;">操作</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('history', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('history', 'serial_number')"></span></th>
+                                <th style="width: 150px;">{{ _('表單') }}</th>
+                                <th>{{ _('主旨') }}</th>
+                                <th style="width: 80px;">{{ _('類別') }}</th>
+                                <th style="width: 80px;">{{ _('狀態') }}</th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('history', 'workflow_completed_at')">{{ _('結束時間') }}<span x-text="sortIcon('history', 'workflow_completed_at')"></span></th>
+                                <th style="width: 100px;">{{ _('流程耗時') }}</th>
+                                <th style="width: 120px;">{{ _('操作') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -317,13 +317,13 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
-                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
@@ -334,20 +334,20 @@ window.__USER_SC = '{{ user_secure_code }}';
                 </div>
                 <!-- 簽核歷史 -->
                 <div x-show="historyTab === 'signed'">
-                    <div x-show="loadingSignedHistory" class="fc-loading">載入中...</div>
-                    <div x-show="!loadingSignedHistory && signedHistoryList.length === 0" class="fc-empty">沒有曾簽核過的已結束流程</div>
+                    <div x-show="loadingSignedHistory" class="fc-loading">{{ _('載入中...') }}</div>
+                    <div x-show="!loadingSignedHistory && signedHistoryList.length === 0" class="fc-empty">{{ _('沒有曾簽核過的已結束流程') }}</div>
                     <table x-show="!loadingSignedHistory && signedHistoryList.length > 0" class="fc-table">
                         <thead>
                             <tr>
-                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'serial_number')">單號<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
-                                <th style="width: 150px;">表單</th>
-                                <th>主旨</th>
-                                <th style="width: 80px;">類別</th>
-                                <th style="width: 80px;">發起人</th>
-                                <th style="width: 60px;">狀態</th>
-                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('historySigned', 'workflow_completed_at')">結束時間<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
-                                <th style="width: 100px;">流程耗時</th>
-                                <th style="width: 120px;">操作</th>
+                                <th class="fc-sortable" style="width: 140px;" @click="toggleSort('historySigned', 'serial_number')">{{ _('單號') }}<span x-text="sortIcon('historySigned', 'serial_number')"></span></th>
+                                <th style="width: 150px;">{{ _('表單') }}</th>
+                                <th>{{ _('主旨') }}</th>
+                                <th style="width: 80px;">{{ _('類別') }}</th>
+                                <th style="width: 80px;">{{ _('發起人') }}</th>
+                                <th style="width: 60px;">{{ _('狀態') }}</th>
+                                <th class="fc-sortable" style="width: 150px;" @click="toggleSort('historySigned', 'workflow_completed_at')">{{ _('結束時間') }}<span x-text="sortIcon('historySigned', 'workflow_completed_at')"></span></th>
+                                <th style="width: 100px;">{{ _('流程耗時') }}</th>
+                                <th style="width: 120px;">{{ _('操作') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -365,13 +365,13 @@ window.__USER_SC = '{{ user_secure_code }}';
                                     <td style="color: #6b7280;" x-text="formatDate(item.workflow_completed_at)"></td>
                                     <td style="color: #6b7280;" x-text="formatDuration(item.workflow_started_at, item.workflow_completed_at)"></td>
                                     <td style="display: flex; gap: 4px;">
-                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="除錯">
+                                        <button x-show="canViewExecution && !isExternalUser" @click="viewExecutionDetail(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('除錯') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         </button>
-                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="流程總圖">
+                                        <button x-show="!isExternalUser" @click="openFlowOverview(item)" class="fc-btn fc-btn-sm" style="background: #eff6ff; color: #3b82f6;" title="{{ _('流程總圖') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
                                         </button>
-                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="閱讀表單">
+                                        <button @click="openReadForm(item)" class="fc-btn fc-btn-sm" style="background: #f3f4f6; color: #6b7280;" title="{{ _('閱讀表單') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                                         </button>
                                     </td>
@@ -392,24 +392,24 @@ window.__USER_SC = '{{ user_secure_code }}';
         <div class="fc-modal-content" :style="'width: ' + ((selectedForm?.builder_config?.formWidth > 0) ? Math.max(selectedForm.builder_config.formWidth + 120, 700) + 'px' : '85vw') + '; max-height: 100vh;'">
             <div class="fc-modal-header">
                 <div>
-                    <h3 x-text="'填寫表單 - ' + (selectedForm?.name || '')"></h3>
+                    <h3 x-text="__('填寫表單 - ') + (selectedForm?.name || '')"></h3>
                     <p x-show="selectedForm?._status === 'test'" style="margin: 4px 0 0; font-size: 12px; color: #c2410c;">
-                        測試模式 - 表單尚未正式發行
+                        {{ _('測試模式 - 表單尚未正式發行') }}
                     </p>
                 </div>
                 <button class="fc-close-btn" @click="closeFillModal()">&times;</button>
             </div>
             <div class="fc-modal-body fc-form-canvas">
-                <div x-show="loadingFormSchema" class="fc-loading">載入表單結構中...</div>
+                <div x-show="loadingFormSchema" class="fc-loading">{{ _('載入表單結構中...') }}</div>
                 <div x-show="!loadingFormSchema && formSchema">
                     <div id="form-fill-container">
                         <!-- 平台層：表單主旨（必填），在 form.io 渲染區內部，自動跟隨表單寬度 -->
                         <div id="form-subject-wrapper" style="margin-bottom: 16px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
                             <label for="form-subject-input" style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">
-                                表單主旨 <span style="color: #dc2626;">*</span>
+                                {{ _('表單主旨') }} <span style="color: #dc2626;">*</span>
                             </label>
                             <input id="form-subject-input" type="text" x-model="formSubject" maxlength="500"
-                                   placeholder="請輸入表單主旨（必填）"
+                                   placeholder="{{ _('請輸入表單主旨（必填）') }}"
                                    class="fc-subject-input"
                                    :class="subjectError ? 'fc-subject-error' : ''">
                             <p x-show="subjectError" x-cloak style="margin: 4px 0 0; font-size: 12px; color: #dc2626;" x-text="subjectError"></p>
@@ -420,21 +420,21 @@ window.__USER_SC = '{{ user_secure_code }}';
                     <!-- 附件區塊（builder_config.fileUploadEnabled 預設啟用） -->
                     <div x-show="!loadingFormSchema && formSchema && selectedForm?.builder_config?.fileUploadEnabled !== false" style="margin-top: 16px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
                         <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">
-                            <i class="fas fa-paperclip" style="margin-right: 4px;"></i> 附件
+                            <i class="fas fa-paperclip" style="margin-right: 4px;"></i> {{ _('附件') }}
                         </div>
                         <div id="fill-form-attachments"></div>
                     </div>
                 </div>
                 <div x-show="!loadingFormSchema && !formSchema" class="fc-empty">
-                    <p>此表單尚無欄位定義</p>
-                    <p style="font-size: 12px;">請至表單設計器添加欄位</p>
+                    <p>{{ _('此表單尚無欄位定義') }}</p>
+                    <p style="font-size: 12px;">{{ _('請至表單設計器添加欄位') }}</p>
                 </div>
             </div>
             <div class="fc-modal-footer">
-                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeFillModal()">取消</button>
+                <button class="fc-btn" style="background: #f3f4f6; color: #374151;" @click="closeFillModal()">{{ _('取消') }}</button>
                 <button class="fc-btn fc-btn-primary" @click="submitForm()" :disabled="submitting">
-                    <span x-show="!submitting">送出表單</span>
-                    <span x-show="submitting">處理中...</span>
+                    <span x-show="!submitting">{{ _('送出表單') }}</span>
+                    <span x-show="submitting">{{ _('處理中...') }}</span>
                 </button>
             </div>
         </div>
@@ -454,7 +454,7 @@ window.__USER_SC = '{{ user_secure_code }}';
             <!-- 標題列 -->
             <div class="fc-flowchart-modal-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <h3 style="margin: 0; font-size: 15px; font-weight: 600;">流程總圖</h3>
+                    <h3 style="margin: 0; font-size: 15px; font-weight: 600;">{{ _('流程總圖') }}</h3>
                     <span x-show="flowOverviewInfo.executionCode" style="font-size: 12px; font-family: monospace; background: #e5e7eb; padding: 2px 6px; border-radius: 3px; color: #374151;" x-text="flowOverviewInfo.executionCode"></span>
                     <span x-show="flowOverviewInfo.workflowName" style="font-size: 12px; color: #6b7280;" x-text="flowOverviewInfo.workflowName"></span>
                     <span x-show="flowOverviewInfo.flowStatus" style="font-size: 11px; padding: 2px 8px; border-radius: 3px;"
@@ -468,7 +468,7 @@ window.__USER_SC = '{{ user_secure_code }}';
             </div>
             <!-- 流程圖區域 -->
             <div style="flex: 1; position: relative; overflow: hidden;">
-                <div x-show="flowOverviewLoading" class="fc-loading" style="padding: 60px;">載入流程圖中...</div>
+                <div x-show="flowOverviewLoading" class="fc-loading" style="padding: 60px;">{{ _('載入流程圖中...') }}</div>
                 <div x-show="flowOverviewError" class="fc-loading" style="padding: 60px; color: #ef4444;" x-text="flowOverviewError"></div>
                 <div id="cy-flow-overview" x-show="!flowOverviewLoading && !flowOverviewError" style="width: 100%; height: 100%;"></div>
                 <div x-show="!flowOverviewLoading && !flowOverviewError" class="fc-flowchart-legend">
@@ -476,11 +476,11 @@ window.__USER_SC = '{{ user_secure_code }}';
                     <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #ef4444;"></div> End</div>
                     <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #3b82f6;"></div> FormAdapter</div>
                     <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #f59e0b;"></div> EmailAdapter</div>
-                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> 系統node</div>
-                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> 子流程</div>
-                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> 執行中</div>
-                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> 已完成</div>
-                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> 失敗</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #d1d5db; border-style: dashed;"></div> {{ _('系統node') }}</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: rgba(59,130,246,0.1); border: 1px dashed #3b82f6;"></div> {{ _('子流程') }}</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #FFC107; border: 2px solid #FF9800;"></div> {{ _('執行中') }}</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #4CAF50; border: 2px solid #388E3C;"></div> {{ _('已完成') }}</div>
+                    <div class="fc-flowchart-legend-item"><div class="fc-flowchart-legend-dot" style="background: #F44336; border: 2px solid #D32F2F;"></div> {{ _('失敗') }}</div>
                 </div>
             </div>
         </div>

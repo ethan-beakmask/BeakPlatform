@@ -149,7 +149,7 @@ const BackgroundManager = {
                 await this.loadGallery();
                 this.updatePreviewPanel();
             } else {
-                Toast.error(result.message || '上傳失敗');
+                Toast.error(result.message || __('上傳失敗'));
             }
         } catch (error) {
             console.error('上傳失敗:', error);

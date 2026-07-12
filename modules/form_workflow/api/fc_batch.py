@@ -13,6 +13,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +45,10 @@ def batch_approve_tasks():
     comment = data.get('comment', '')
 
     if not queue_secure_codes or not isinstance(queue_secure_codes, list):
-        return jsonify({'success': False, 'error': '未選取任何待簽核項目'}), 400
+        return jsonify({'success': False, 'error': _('未選取任何待簽核項目')}), 400
 
     if len(queue_secure_codes) > 100:
-        return jsonify({'success': False, 'error': '單次批次簽核上限 100 筆'}), 400
+        return jsonify({'success': False, 'error': _('單次批次簽核上限 100 筆')}), 400
 
     user_code = current_user.secure_code
     results = []        # 每筆處理結果
@@ -64,7 +65,7 @@ def batch_approve_tasks():
             ).with_for_update().first()
 
             if not task:
-                results.append({'queue_secure_code': qsc, 'success': False, 'error': '找不到任務或已處理'})
+                results.append({'queue_secure_code': qsc, 'success': False, 'error': _('找不到任務或已處理')})
                 fail_count += 1
                 continue
 
@@ -73,14 +74,14 @@ def batch_approve_tasks():
             assignee_type = task_result_data.get('assignee_type')
             assignees = task_result_data.get('assignees', [])
             if assignee_type and user_code not in assignees:
-                results.append({'queue_secure_code': qsc, 'success': False, 'error': '非指定簽核人'})
+                results.append({'queue_secure_code': qsc, 'success': False, 'error': _('非指定簽核人')})
                 fail_count += 1
                 db.session.rollback()
                 continue
 
             # 檢查是否被他人鎖定
             if task.is_locked and task.locked_by != user_code:
-                results.append({'queue_secure_code': qsc, 'success': False, 'error': '正由他人簽核中'})
+                results.append({'queue_secure_code': qsc, 'success': False, 'error': _('正由他人簽核中')})
                 fail_count += 1
                 db.session.rollback()
                 continue
@@ -93,7 +94,7 @@ def batch_approve_tasks():
             ).filter(FwApprovalRecord.action.in_(['approved', 'rejected'])).first()
 
             if existing:
-                results.append({'queue_secure_code': qsc, 'success': False, 'error': '已簽核過此節點'})
+                results.append({'queue_secure_code': qsc, 'success': False, 'error': _('已簽核過此節點')})
                 fail_count += 1
                 db.session.rollback()
                 continue
@@ -102,7 +103,7 @@ def batch_approve_tasks():
             min_comment_length = task_result_data.get('min_comment_length', 0)
             if min_comment_length > 0 and len(comment.strip()) < min_comment_length:
                 results.append({'queue_secure_code': qsc, 'success': False,
-                                'error': f'簽核意見至少需要 {min_comment_length} 字'})
+                                'error': _('簽核意見至少需要 %(count)s 字', count=min_comment_length)})
                 fail_count += 1
                 db.session.rollback()
                 continue
@@ -197,7 +198,7 @@ def batch_approve_tasks():
 
     return jsonify({
         'success': True,
-        'message': f'批次簽核完成：成功 {success_count} 筆，失敗 {fail_count} 筆',
+        'message': _('批次簽核完成：成功 %(success_count)s 筆，失敗 %(fail_count)s 筆', success_count=success_count, fail_count=fail_count),
         'success_count': success_count,
         'fail_count': fail_count,
         'results': results

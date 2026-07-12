@@ -70,7 +70,7 @@ function fcFlowOverview() {
                 const offsetY = sfNode.position.y - cy + 180 + depth * 40;
 
                 const groupId = `group_${sfNode.id}`;
-                groups.push({ id: groupId, label: childTab.name || '子流程', parent: parentGroupId || null, level: Math.min(depth, _FC_GROUP_COLORS.length - 1) });
+                groups.push({ id: groupId, label: childTab.name || __('子流程'), parent: parentGroupId || null, level: Math.min(depth, _FC_GROUP_COLORS.length - 1) });
 
                 const subPrefix = `sf${depth}_${sfNode.id}_`;
                 const subResult = this._fcFlattenGraph(subGraph, codeToTab, depth + 1, subPrefix, groupId);
@@ -241,7 +241,7 @@ function fcFlowOverview() {
                 const result = await res.json();
 
                 if (!result.success) {
-                    this.flowOverviewError = result.error || '載入失敗';
+                    this.flowOverviewError = result.error || __('載入失敗');
                     this.flowOverviewLoading = false;
                     return;
                 }

@@ -11,6 +11,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def get_form_for_filling(secure_code):
             has_permission('form_workflow.design.tryout')
         )
         if not can_tryout:
-            return jsonify({'success': False, 'error': '需要試行設計稿權限'}), 403
+            return jsonify({'success': False, 'error': _('需要試行設計稿權限')}), 403
 
         # 測試模式：從設計稿取得表單定義
         form_template = FwFormTemplate.query.filter_by(
@@ -55,7 +56,7 @@ def get_form_for_filling(secure_code):
         ).first()
 
         if not form_template:
-            return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+            return jsonify({'success': False, 'error': _('找不到指定的表單')}), 404
 
         # 取得配對資訊
         mapping = FwFormWorkflowMapping.query.filter_by(
@@ -89,7 +90,7 @@ def get_form_for_filling(secure_code):
         ).first()
 
         if not published:
-            return jsonify({'success': False, 'error': '找不到指定的表單或已停用'}), 404
+            return jsonify({'success': False, 'error': _('找不到指定的表單或已停用')}), 404
 
         # 驗證填寫權限（與列表/送單同一套 FwMappingPermission 判斷），防 schema 洩漏
         from ..services.fill_permission_service import user_can_fill_mapping
@@ -97,7 +98,7 @@ def get_form_for_filling(secure_code):
             current_user, org.secure_code,
             published.source_mapping_secure_code,
         ):
-            return jsonify({'success': False, 'error': '您沒有填寫此表單的權限'}), 403
+            return jsonify({'success': False, 'error': _('您沒有填寫此表單的權限')}), 403
 
         form_snapshot = published.form_snapshot or {}
 
@@ -167,13 +168,13 @@ def submit_form():
     subject = (data.get('subject') or '').strip()
 
     if not subject:
-        return jsonify({'success': False, 'error': '請填寫表單主旨'}), 400
+        return jsonify({'success': False, 'error': _('請填寫表單主旨')}), 400
 
     # 判斷模式
     is_test_mode = bool(mapping_secure_code) and not published_secure_code
 
     if not published_secure_code and not mapping_secure_code:
-        return jsonify({'success': False, 'error': '缺少 published_secure_code 或 mapping_secure_code'}), 400
+        return jsonify({'success': False, 'error': _('缺少 published_secure_code 或 mapping_secure_code')}), 400
 
     try:
         if is_test_mode:
@@ -186,7 +187,7 @@ def submit_form():
                 has_permission('form_workflow.design.tryout')
             )
             if not can_tryout:
-                return jsonify({'success': False, 'error': '需要試行設計稿權限'}), 403
+                return jsonify({'success': False, 'error': _('需要試行設計稿權限')}), 403
 
             # 查找配對
             mapping = FwFormWorkflowMapping.query.filter_by(
@@ -196,7 +197,7 @@ def submit_form():
             ).first()
 
             if not mapping:
-                return jsonify({'success': False, 'error': '找不到指定的配對'}), 404
+                return jsonify({'success': False, 'error': _('找不到指定的配對')}), 404
 
             # 取得表單設計稿
             form_template = FwFormTemplate.query.filter_by(
@@ -205,7 +206,7 @@ def submit_form():
             ).first()
 
             if not form_template:
-                return jsonify({'success': False, 'error': '找不到關聯的表單模板'}), 404
+                return jsonify({'success': False, 'error': _('找不到關聯的表單模板')}), 404
 
             # 取得流程設計稿
             workflow_template = FwWorkflowTemplate.query.filter_by(
@@ -214,7 +215,7 @@ def submit_form():
             ).first()
 
             if not workflow_template:
-                return jsonify({'success': False, 'error': '找不到關聯的流程模板'}), 404
+                return jsonify({'success': False, 'error': _('找不到關聯的流程模板')}), 404
 
             # 使用設計稿資料
             form_name = form_template.name
@@ -245,10 +246,10 @@ def submit_form():
             ).first()
 
             if not published:
-                return jsonify({'success': False, 'error': '找不到指定的表單'}), 404
+                return jsonify({'success': False, 'error': _('找不到指定的表單')}), 404
 
             if published.status != 'Published':
-                return jsonify({'success': False, 'error': '此表單已停用'}), 400
+                return jsonify({'success': False, 'error': _('此表單已停用')}), 400
 
             # A-1：驗證填寫權限（與表單中心列表同一套 FwMappingPermission 判斷）
             from ..services.fill_permission_service import user_can_fill_mapping
@@ -256,7 +257,7 @@ def submit_form():
                 current_user, org.secure_code,
                 published.source_mapping_secure_code,
             ):
-                return jsonify({'success': False, 'error': '您沒有填寫此表單的權限'}), 403
+                return jsonify({'success': False, 'error': _('您沒有填寫此表單的權限')}), 403
 
             # 標記為已使用
             published.mark_as_used()
@@ -329,7 +330,7 @@ def submit_form():
 
         return jsonify({
             'success': True,
-            'message': '表單已送出，流程已啟動' + ('（測試模式）' if is_test_mode else ''),
+            'message': _('表單已送出，流程已啟動（測試模式）') if is_test_mode else _('表單已送出，流程已啟動'),
             'data': {
                 'form_instance_secure_code': form_instance.secure_code,
                 'serial_number': form_instance.serial_number,
@@ -343,4 +344,4 @@ def submit_form():
         db.session.rollback()
         import traceback
         traceback.print_exc()
-        return jsonify({'success': False, 'error': f'建立失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': _('建立失敗: %(error)s', error=str(e))}), 500

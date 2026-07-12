@@ -360,8 +360,8 @@
             // 驗證
             if (assigneeType !== 'INITIATOR' && !assigneeValue.trim()) {
                 const msg = document.getElementById('faModalMessage');
-                if (msg) { msg.textContent = '請選擇或填寫簽核者'; msg.className = 'fa-modal-message warning'; }
-                else { updateStatus('請選擇或填寫簽核者', 'warning'); }
+                if (msg) { msg.textContent = __('請選擇或填寫簽核者'); msg.className = 'fa-modal-message warning'; }
+                else { updateStatus(__('請選擇或填寫簽核者'), 'warning'); }
                 return;
             }
 
@@ -397,11 +397,11 @@
             node.data('config', updatedConfig);
 
             const typeLabels = {
-                'INITIATOR': '發起人',
-                'USER': '指定用戶',
-                'ROLE': '指定角色',
-                'DEPARTMENT': '指定部門',
-                'DYNAMIC': '動態'
+                'INITIATOR': __('發起人'),
+                'USER': __('指定用戶'),
+                'ROLE': __('指定角色'),
+                'DEPARTMENT': __('指定部門'),
+                'DYNAMIC': __('動態')
             };
 
             const modeInfo = assigneeList.length > 1 ? `(${assigneeList.length}人，任一人簽)` : '';

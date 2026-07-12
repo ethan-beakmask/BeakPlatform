@@ -94,11 +94,11 @@
         html += '<label style="font-size: 11px; color: #666; display: block; margin-bottom: 2px;">按鈕風格</label>';
         html += '<select id="dc-style" style="width: 100%; padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">';
         var styles = [
-            { v: 'primary', l: '主要 (藍)' },
-            { v: 'success', l: '成功 (綠)' },
-            { v: 'warning', l: '警告 (黃)' },
-            { v: 'danger', l: '危險 (紅)' },
-            { v: 'default', l: '預設 (灰)' }
+            { v: 'primary', l: __('主要 (藍)') },
+            { v: 'success', l: __('成功 (綠)') },
+            { v: 'warning', l: __('警告 (黃)') },
+            { v: 'danger', l: __('危險 (紅)') },
+            { v: 'default', l: __('預設 (灰)') }
         ];
         styles.forEach(function (s) {
             html += '<option value="' + s.v + '">' + s.l + '</option>';
@@ -157,7 +157,7 @@
 
         var titleEl = document.getElementById('dcTitle');
         if (titleEl) {
-            titleEl.textContent = '#' + (index + 1) + ' ' + (opt.label || '(未命名)');
+            titleEl.textContent = '#' + (index + 1) + ' ' + (opt.label || __('(未命名)'));
             titleEl.style.color = color;
         }
 
@@ -214,7 +214,7 @@
         if (fieldsPanel) fieldsPanel.style.borderColor = color;
         var titleEl = document.getElementById('dcTitle');
         if (titleEl) {
-            titleEl.textContent = '#' + (_editingOptionIndex + 1) + ' ' + (opt.label || '(未命名)');
+            titleEl.textContent = '#' + (_editingOptionIndex + 1) + ' ' + (opt.label || __('(未命名)'));
             titleEl.style.color = color;
         }
     }

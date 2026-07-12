@@ -12,6 +12,7 @@ from app.platform.data import get_current_org
 from app import db, csrf
 
 from .form_center import form_center_bp
+from flask_babel import gettext as _
 
 
 # =============================================================================
@@ -363,6 +364,6 @@ def save_column_config():
 
     return jsonify({
         'success': True,
-        'message': f'語系 {locale} 的欄位設定已儲存',
+        'message': _('語系 %(locale)s 的欄位設定已儲存', locale=locale),
         'data': config_row.to_dict()
     })

@@ -59,15 +59,15 @@
 
 // 分類名稱對應
 var CATEGORY_NAMES = {
-    'basic': '基本節點',
-    'form': '表單處理',
-    'notification': '通知機制',
-    'flow_control': '流程控制',
-    'data': '資料處理',
-    'operation': '運算操作',
-    'integration': '系統整合',
-    'security': '安全管控',
-    'system_admin': '系統專用'
+    'basic': __('基本節點'),
+    'form': __('表單處理'),
+    'notification': __('通知機制'),
+    'flow_control': __('流程控制'),
+    'data': __('資料處理'),
+    'operation': __('運算操作'),
+    'integration': __('系統整合'),
+    'security': __('安全管控'),
+    'system_admin': __('系統專用')
 };
 
 // 分類圖示對應
@@ -89,7 +89,7 @@ async function loadNodeDefinitions() {
         var result = await response.json();
 
         if (!result.success) {
-            throw new Error(result.message || '載入節點定義失敗');
+            throw new Error(result.message || __('載入節點定義失敗'));
         }
 
         var container = document.getElementById('node-categories-container');

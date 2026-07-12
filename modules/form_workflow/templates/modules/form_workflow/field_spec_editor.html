@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}欄位規格 - BeakPlatform{% endblock %}
+{% block title %}{{ _('欄位規格 - BeakPlatform') }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/modules/form_workflow/css/field-spec-editor.css">
@@ -20,18 +20,18 @@ window.__SPEC_CONFIG = {
     <!-- 頁首 -->
     <div class="fs-header">
         <div>
-            <h1>欄位規格編輯器</h1>
+            <h1>{{ _('欄位規格編輯器') }}</h1>
             <div class="fs-meta">
                 <template x-if="isStandalone && !specSc">
                     <span>
-                        <input type="text" x-model="specName" placeholder="輸入規格名稱"
+                        <input type="text" x-model="specName" placeholder="{{ _('輸入規格名稱') }}"
                                style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
-                        <span> | 新建獨立規格</span>
+                        <span> {{ _('| 新建獨立規格') }}</span>
                     </span>
                 </template>
                 <template x-if="isStandalone && specSc">
                     <span>
-                        <input type="text" x-model="specName" placeholder="規格名稱"
+                        <input type="text" x-model="specName" placeholder="{{ _('規格名稱') }}"
                                style="border: 1px solid #d1d5db; padding: 2px 8px; font-size: 13px; border-radius: 3px; width: 200px;">
                         <template x-if="specVersion">
                             <span> | v<span x-text="specVersion"></span></span>
@@ -45,7 +45,7 @@ window.__SPEC_CONFIG = {
                             <span> | v<span x-text="specVersion"></span></span>
                         </template>
                         <template x-if="!specVersion && !loading">
-                            <span> | 尚未建立規格</span>
+                            <span> {{ _('| 尚未建立規格') }}</span>
                         </template>
                     </span>
                 </template>
@@ -53,70 +53,70 @@ window.__SPEC_CONFIG = {
         </div>
         <div class="fs-toolbar">
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="從現有 FormIO schema 反向建立規格">
-                    從 FormIO 同步
+                <button class="fs-btn" @click="syncFromFormio()" :disabled="saving" title="{{ _('從現有 FormIO schema 反向建立規格') }}">
+                    {{ _('從 FormIO 同步') }}
                 </button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="生成 FormIO schema 預覽">
-                    FormIO 預覽
+                <button class="fs-btn" @click="generatePreview()" :disabled="!specVersion || previewing" title="{{ _('生成 FormIO schema 預覽') }}">
+                    {{ _('FormIO 預覽') }}
                 </button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="將規格套用到表單 schema">
-                    套用到表單
+                <button class="fs-btn warning" @click="applyToForm('replace')" :disabled="!specVersion || saving" title="{{ _('將規格套用到表單 schema') }}">
+                    {{ _('套用到表單') }}
                 </button>
             </template>
             <template x-if="!isStandalone">
-                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="三向比對: Spec vs FormIO vs SQL">
-                    比對
+                <button class="fs-btn" @click="runCompare()" :disabled="!specVersion || comparing" title="{{ _('三向比對: Spec vs FormIO vs SQL') }}">
+                    {{ _('比對') }}
                 </button>
             </template>
             <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openLinkForm()" title="關聯到既有表單">
-                    關聯表單
+                <button class="fs-btn" @click="openLinkForm()" title="{{ _('關聯到既有表單') }}">
+                    {{ _('關聯表單') }}
                 </button>
             </template>
             <template x-if="isStandalone && specSc">
-                <button class="fs-btn" @click="openCreateFormModal()" title="從此規格建立新表單">
-                    建立表單
+                <button class="fs-btn" @click="openCreateFormModal()" title="{{ _('從此規格建立新表單') }}">
+                    {{ _('建立表單') }}
                 </button>
             </template>
-            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading" title="從 org DB 既有表匯入欄位定義">
-                <span x-show="!sqlLoading">從 SQL Table 同步</span>
-                <span x-show="sqlLoading">載入中...</span>
+            <button class="fs-btn" @click="openSyncFromSqlModal()" :disabled="sqlLoading" title="{{ _('從 org DB 既有表匯入欄位定義') }}">
+                <span x-show="!sqlLoading">{{ _('從 SQL Table 同步') }}</span>
+                <span x-show="sqlLoading">{{ _('載入中...') }}</span>
             </button>
-            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading" title="將 spec 欄位定義建立/更新到 SQL Table">
-                <span x-show="!sqlLoading">套用到 SQL Table</span>
-                <span x-show="sqlLoading">處理中...</span>
+            <button class="fs-btn warning" @click="applyToSqlTable()" :disabled="!specVersion || sqlLoading" title="{{ _('將 spec 欄位定義建立/更新到 SQL Table') }}">
+                <span x-show="!sqlLoading">{{ _('套用到 SQL Table') }}</span>
+                <span x-show="sqlLoading">{{ _('處理中...') }}</span>
             </button>
             <button class="fs-btn" @click="loadHistory()" :disabled="!specVersion || historyLoading">
-                歷史
+                {{ _('歷史') }}
             </button>
             <button class="fs-btn success" @click="saveSpec()" :disabled="saving">
-                <span x-show="!saving">儲存規格</span>
-                <span x-show="saving">儲存中...</span>
+                <span x-show="!saving">{{ _('儲存規格') }}</span>
+                <span x-show="saving">{{ _('儲存中...') }}</span>
             </button>
         </div>
     </div>
 
     <!-- 載入中 -->
-    <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">載入中...</div>
+    <div x-show="loading" style="padding: 40px; text-align: center; color: #9ca3af;">{{ _('載入中...') }}</div>
 
     <!-- 欄位 Grid -->
     <div x-show="!loading" class="fs-card">
         <div x-show="fields.length > 0" class="fs-summary">
-            <span>共 <strong x-text="fields.length"></strong> 個欄位</span>
+            <span>{{ _('共') }} <strong x-text="fields.length"></strong> {{ _('個欄位') }}</span>
             <span x-show="fields.filter(f => f.is_pii).length > 0">
                 PII: <strong x-text="fields.filter(f => f.is_pii).length"></strong>
             </span>
-            <span x-show="fields.filter(f => f.constraints && f.constraints.required).length > 0">
-                必填: <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
+            <span x-show="fields.filter(f => {{ _('f.constraints && f.constraints.required).length > 0">
+                必填:') }} <strong x-text="fields.filter(f => f.constraints && f.constraints.required).length"></strong>
             </span>
         </div>
 
         <div x-show="fields.length === 0" class="fs-empty-hint">
-            點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入
+            {{ _('點擊下方 [+] 按鈕新增空白欄位列，或使用「從 FormIO 同步」自動匯入') }}
         </div>
 
         <table class="fs-grid-table">
@@ -139,9 +139,9 @@ window.__SPEC_CONFIG = {
                     <th>Type</th>
                     <th>PG Type</th>
                     <th>PII</th>
-                    <th>必填</th>
-                    <th>說明</th>
-                    <th class="col-actions">操作</th>
+                    <th>{{ _('必填') }}</th>
+                    <th>{{ _('說明') }}</th>
+                    <th class="col-actions">{{ _('操作') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -186,7 +186,7 @@ window.__SPEC_CONFIG = {
                             <input type="text" x-model="f.description" placeholder="-">
                         </td>
                         <td class="col-actions">
-                            <button @click="openDetail(idx)">詳細</button>
+                            <button @click="openDetail(idx)">{{ _('詳細') }}</button>
                             <button class="danger" @click="removeField(idx)">X</button>
                         </td>
                     </tr>
@@ -197,7 +197,7 @@ window.__SPEC_CONFIG = {
                     <td colspan="9" style="padding: 6px 8px; border: none;">
                         <button class="fs-btn" @click="addEmptyRows(10)"
                                 style="font-size: 12px; padding: 3px 12px;">
-                            [+] 新增 10 列空白欄位
+                            {{ _('[+] 新增 10 列空白欄位') }}
                         </button>
                     </td>
                 </tr>
@@ -209,57 +209,57 @@ window.__SPEC_CONFIG = {
     <template x-if="showCompare && compareResult">
         <div class="fs-compare-panel">
             <div class="fs-compare-header">
-                <span>三向比對結果</span>
+                <span>{{ _('三向比對結果') }}</span>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span style="font-size: 12px; color: #6b7280;">
-                        規格 v<strong x-text="compareResult.versions ? compareResult.versions.spec_version : ''"></strong>:
-                        <strong x-text="compareResult.summary.spec_field_count"></strong> 欄 |
-                        表單 <strong x-text="compareResult.versions ? compareResult.versions.form_version : ''"></strong>:
-                        <strong x-text="compareResult.summary.formio_field_count"></strong> 欄 |
+                        {{ _('規格 v') }}<strong x-text="compareResult.versions ? compareResult.versions.spec_version : ''"></strong>:
+                        <strong x-text="compareResult.summary.spec_field_count"></strong> {{ _('欄 |
+                        表單') }} <strong x-text="compareResult.versions ? compareResult.versions.form_version : ''"></strong>:
+                        <strong x-text="compareResult.summary.formio_field_count"></strong> {{ _('欄 |') }}
                         <template x-if="compareResult.summary.has_sql_registry">
                             <span>SQL <strong x-text="compareResult.versions ? compareResult.versions.sql_table_name : ''"></strong>:
-                            <strong x-text="compareResult.summary.sql_column_count"></strong> 欄</span>
+                            <strong x-text="compareResult.summary.sql_column_count"></strong> {{ _('欄') }}</span>
                         </template>
                         <template x-if="!compareResult.summary.has_sql_registry">
-                            <span>SQL: 未建立</span>
+                            <span>{{ _('SQL: 未建立') }}</span>
                         </template>
-                        | 偏移: <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
+                        {{ _('| 偏移:') }} <strong x-text="compareResult.summary.total_drifts" :style="compareResult.summary.total_drifts > 0 ? 'color:#dc2626' : 'color:#059669'"></strong>
                     </span>
-                    <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showCompare = false">關閉</button>
+                    <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showCompare = false">{{ _('關閉') }}</button>
                 </div>
             </div>
             <div class="fs-compare-body">
                 <div style="margin-bottom: 12px; padding: 8px 12px; background: #f9fafb; border-radius: 3px; font-size: 12px; line-height: 1.8;">
                     <div>
-                        <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs 表單:</span>
+                        <span style="display: inline-block; width: 100px; font-weight: 600;">{{ _('規格 vs 表單:') }}</span>
                         <template x-if="compareResult.summary.spec_formio_status === 'match'">
-                            <span style="color: #059669;">一致</span>
+                            <span style="color: #059669;">{{ _('一致') }}</span>
                         </template>
                         <template x-if="compareResult.summary.spec_formio_status === 'mismatch'">
-                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_formio.length"></span> 項)</span>
+                            <span style="color: #dc2626;">{{ _('有偏移 (') }}<span x-text="compareResult.spec_vs_formio.length"></span> {{ _('項)') }}</span>
                         </template>
                     </div>
                     <div>
-                        <span style="display: inline-block; width: 100px; font-weight: 600;">規格 vs SQL:</span>
+                        <span style="display: inline-block; width: 100px; font-weight: 600;">{{ _('規格 vs SQL:') }}</span>
                         <template x-if="compareResult.summary.spec_sql_status === 'match'">
-                            <span style="color: #059669;">一致</span>
+                            <span style="color: #059669;">{{ _('一致') }}</span>
                         </template>
                         <template x-if="compareResult.summary.spec_sql_status === 'mismatch'">
-                            <span style="color: #dc2626;">有偏移 (<span x-text="compareResult.spec_vs_sql.length"></span> 項)</span>
+                            <span style="color: #dc2626;">{{ _('有偏移 (') }}<span x-text="compareResult.spec_vs_sql.length"></span> {{ _('項)') }}</span>
                         </template>
                         <template x-if="compareResult.summary.spec_sql_status === 'unavailable'">
-                            <span style="color: #9ca3af;">SQL 同步表尚未建立</span>
+                            <span style="color: #9ca3af;">{{ _('SQL 同步表尚未建立') }}</span>
                         </template>
                     </div>
                 </div>
 
                 <template x-if="compareResult.summary.overall === 'all_match'">
-                    <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">規格、表單、SQL 三向完全一致</p>
+                    <p style="color: #059669; font-size: 13px; text-align: center; padding: 12px;">{{ _('規格、表單、SQL 三向完全一致') }}</p>
                 </template>
 
                 <template x-if="compareResult.spec_vs_formio.length > 0">
                     <div style="margin-bottom: 12px;">
-                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs 表單 偏移細節</p>
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">{{ _('規格 vs 表單 偏移細節') }}</p>
                         <template x-for="d in compareResult.spec_vs_formio" :key="d.field_key + d.issue">
                             <div class="fs-drift-item" :class="d.severity">
                                 <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -271,7 +271,7 @@ window.__SPEC_CONFIG = {
 
                 <template x-if="compareResult.spec_vs_sql.length > 0">
                     <div>
-                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">規格 vs SQL 偏移細節</p>
+                        <p style="font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 6px;">{{ _('規格 vs SQL 偏移細節') }}</p>
                         <template x-for="d in compareResult.spec_vs_sql" :key="d.field_key + d.issue">
                             <div class="fs-drift-item" :class="d.severity">
                                 <span><strong x-text="d.field_key"></strong>: <span x-text="d.detail"></span></span>
@@ -288,8 +288,8 @@ window.__SPEC_CONFIG = {
     <template x-if="showPreview && previewSchema">
         <div class="fs-preview-panel">
             <div class="fs-preview-header">
-                <span>FormIO Schema 預覽</span>
-                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showPreview = false">關閉</button>
+                <span>{{ _('FormIO Schema 預覽') }}</span>
+                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showPreview = false">{{ _('關閉') }}</button>
             </div>
             <div class="fs-preview-body">
                 <pre x-text="JSON.stringify(previewSchema, null, 2)"></pre>
@@ -301,12 +301,12 @@ window.__SPEC_CONFIG = {
     <template x-if="showHistory">
         <div class="fs-compare-panel">
             <div class="fs-compare-header">
-                <span>版本歷史</span>
-                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false; historyPreview = null">關閉</button>
+                <span>{{ _('版本歷史') }}</span>
+                <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="showHistory = false; historyPreview = null">{{ _('關閉') }}</button>
             </div>
             <div class="fs-history-list">
                 <template x-if="histories.length === 0">
-                    <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">無歷史記錄</p>
+                    <p style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px;">{{ _('無歷史記錄') }}</p>
                 </template>
                 <template x-for="h in histories" :key="h.secure_code">
                     <div class="fs-history-item" :class="historyPreview && historyPreview.secure_code === h.secure_code ? 'active' : ''">
@@ -318,24 +318,24 @@ window.__SPEC_CONFIG = {
                             <div style="display: flex; gap: 4px;">
                                 <button class="fs-btn" style="padding: 2px 8px; font-size: 11px;"
                                         @click="previewHistoryVersion(h)"
-                                        :disabled="historyPreview && historyPreview.secure_code === h.secure_code">檢視</button>
+                                        :disabled="historyPreview && historyPreview.secure_code === h.secure_code">{{ _('檢視') }}</button>
                             </div>
                         </div>
                         <div class="fs-history-meta">
-                            <span x-text="h.changed_by_name || '系統'"></span> |
+                            <span x-text="h.changed_by_name || __('系統')"></span> |
                             <span x-text="formatDate(h.created_at)"></span> |
-                            <span x-text="(h.fields_snapshot || []).length + ' 個欄位'"></span>
+                            <span x-text="(h.fields_snapshot || []).length + __(' 個欄位')"></span>
                         </div>
                         <template x-if="h.change_diff">
                             <div class="fs-history-diff">
                                 <span class="added" x-show="h.change_diff.added && h.change_diff.added.length">
-                                    +<span x-text="h.change_diff.added.length"></span> 新增
+                                    +<span x-text="h.change_diff.added.length"></span> {{ _('新增') }}
                                 </span>
                                 <span class="modified" x-show="h.change_diff.modified && h.change_diff.modified.length">
-                                    ~<span x-text="h.change_diff.modified.length"></span> 修改
+                                    ~<span x-text="h.change_diff.modified.length"></span> {{ _('修改') }}
                                 </span>
                                 <span class="removed" x-show="h.change_diff.removed && h.change_diff.removed.length">
-                                    -<span x-text="h.change_diff.removed.length"></span> 移除
+                                    -<span x-text="h.change_diff.removed.length"></span> {{ _('移除') }}
                                 </span>
                             </div>
                         </template>
@@ -348,21 +348,21 @@ window.__SPEC_CONFIG = {
                 <div style="border-top: 1px solid #e5e7eb; padding: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="font-size: 13px; font-weight: 600;">
-                            v<span x-text="historyPreview.version"></span> 欄位內容
-                            (<span x-text="(historyPreview.fields_snapshot || []).length"></span> 個欄位)
+                            v<span x-text="historyPreview.version"></span> {{ _('欄位內容
+                            (') }}<span x-text="(historyPreview.fields_snapshot || []).length"></span> {{ _('個欄位)') }}
                         </span>
                         <div style="display: flex; gap: 6px;">
                             <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #3b82f6; color: #fff; border-color: #3b82f6;"
                                     @click="restoreAsNewVersion(historyPreview)" :disabled="historyRestoring">
-                                取回為新版
+                                {{ _('取回為新版') }}
                             </button>
                             <template x-if="!isStandalone">
                                 <button class="fs-btn" style="padding: 3px 10px; font-size: 12px; background: #f59e0b; color: #fff; border-color: #f59e0b;"
                                         @click="applyHistoryToForm(historyPreview)" :disabled="historyRestoring">
-                                    取回並套用到表單
+                                    {{ _('取回並套用到表單') }}
                                 </button>
                             </template>
-                            <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="closeHistoryPreview()">關閉預覽</button>
+                            <button class="fs-btn" style="padding: 3px 10px; font-size: 12px;" @click="closeHistoryPreview()">{{ _('關閉預覽') }}</button>
                         </div>
                     </div>
                     <div style="max-height: 260px; overflow-y: auto;">
@@ -400,7 +400,7 @@ window.__SPEC_CONFIG = {
     <div x-show="showDetailModal" x-cloak class="fs-modal">
         <div class="fs-modal-content">
             <div class="fs-modal-header">
-                <h3>進階設定</h3>
+                <h3>{{ _('進階設定') }}</h3>
                 <button @click="closeDetail()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
@@ -424,57 +424,57 @@ window.__SPEC_CONFIG = {
                 <div class="fs-form-row">
                     <div class="fs-form-group">
                         <label>MaxLength</label>
-                        <input type="number" x-model.number="detailForm.constraints.maxLength" placeholder="(無限制)">
+                        <input type="number" x-model.number="detailForm.constraints.maxLength" placeholder="{{ _('(無限制)') }}">
                     </div>
                     <div class="fs-form-group">
                         <label>MinLength</label>
-                        <input type="number" x-model.number="detailForm.constraints.minLength" placeholder="(無限制)">
+                        <input type="number" x-model.number="detailForm.constraints.minLength" placeholder="{{ _('(無限制)') }}">
                     </div>
                 </div>
 
                 <div class="fs-form-row">
                     <div class="fs-form-group">
                         <label>Min</label>
-                        <input type="number" x-model.number="detailForm.constraints.min" placeholder="(無限制)">
+                        <input type="number" x-model.number="detailForm.constraints.min" placeholder="{{ _('(無限制)') }}">
                     </div>
                     <div class="fs-form-group">
                         <label>Max</label>
-                        <input type="number" x-model.number="detailForm.constraints.max" placeholder="(無限制)">
+                        <input type="number" x-model.number="detailForm.constraints.max" placeholder="{{ _('(無限制)') }}">
                     </div>
                 </div>
 
                 <div class="fs-form-group">
-                    <label>Pattern (正規表達式)</label>
+                    <label>{{ _('Pattern (正規表達式)') }}</label>
                     <input type="text" x-model="detailForm.constraints.pattern" placeholder="^[A-Z0-9]+$">
                 </div>
 
                 <div class="fs-form-group">
                     <label>Custom Validation</label>
-                    <textarea x-model="detailForm.constraints.customValidation" placeholder="自訂驗證邏輯"></textarea>
+                    <textarea x-model="detailForm.constraints.customValidation" placeholder="{{ _('自訂驗證邏輯') }}"></textarea>
                 </div>
 
                 <div class="fs-form-group">
-                    <label>預設值</label>
-                    <input type="text" x-model="detailForm.default_value" placeholder="(無)">
+                    <label>{{ _('預設值') }}</label>
+                    <input type="text" x-model="detailForm.default_value" placeholder="{{ _('(無)') }}">
                 </div>
 
                 <!-- Lookup Source (select/radio/selectboxes) -->
                 <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type)">
                     <div class="fs-form-group">
-                        <label>選項來源</label>
+                        <label>{{ _('選項來源') }}</label>
                         <select x-model="detailForm.lookup_category_code"
                                 @change="loadLookupPreview(detailForm.lookup_category_code)"
                                 style="margin-bottom: 6px;">
-                            <option value="">手動定義</option>
+                            <option value="">{{ _('手動定義') }}</option>
                             <template x-for="lk in lookupCategories" :key="lk.code">
                                 <option :value="lk.code" x-text="lk.name + ' (' + lk.code + ')'"></option>
                             </template>
                         </select>
                         <!-- Lookup 預覽 -->
                         <div x-show="detailForm.lookup_category_code" style="margin-bottom: 8px; padding: 6px 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 3px; font-size: 12px;">
-                            <div style="font-weight: 500; margin-bottom: 4px; color: #374151;">選項預覽 (前 10 項)</div>
-                            <div x-show="lookupPreviewLoading" style="color: #9ca3af;">載入中...</div>
-                            <div x-show="!lookupPreviewLoading && lookupPreviewItems.length === 0" style="color: #9ca3af;">無選項</div>
+                            <div style="font-weight: 500; margin-bottom: 4px; color: #374151;">{{ _('選項預覽 (前 10 項)') }}</div>
+                            <div x-show="lookupPreviewLoading" style="color: #9ca3af;">{{ _('載入中...') }}</div>
+                            <div x-show="!lookupPreviewLoading && lookupPreviewItems.length === 0" style="color: #9ca3af;">{{ _('無選項') }}</div>
                             <template x-for="pi in lookupPreviewItems" :key="pi.code">
                                 <div style="padding: 2px 0; display: flex; gap: 8px;">
                                     <span style="font-family: monospace; color: #6b7280; min-width: 80px;" x-text="pi.code"></span>
@@ -488,24 +488,24 @@ window.__SPEC_CONFIG = {
                 <!-- Options (select/radio/selectboxes) - 僅手動定義時顯示 -->
                 <template x-if="['select', 'radio', 'selectboxes'].includes(detailForm.formio_type) && !detailForm.lookup_category_code">
                     <div class="fs-form-group">
-                        <label>手動選項</label>
+                        <label>{{ _('手動選項') }}</label>
                         <template x-for="(opt, oi) in detailOptionRows" :key="oi">
                             <div style="display: flex; gap: 6px; margin-bottom: 4px;">
-                                <input type="text" x-model="opt.label" placeholder="顯示文字" style="flex: 1;">
-                                <input type="text" x-model="opt.value" placeholder="值" style="flex: 1;">
+                                <input type="text" x-model="opt.label" placeholder="{{ _('顯示文字') }}" style="flex: 1;">
+                                <input type="text" x-model="opt.value" placeholder="{{ _('值') }}" style="flex: 1;">
                                 <button type="button" @click="removeDetailOption(oi)"
                                         style="padding: 4px 8px; border: 1px solid #fca5a5; background: #fff; color: #dc2626; cursor: pointer; font-size: 12px; border-radius: 2px;">X</button>
                             </div>
                         </template>
                         <button type="button" @click="addDetailOption()"
-                                style="padding: 4px 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; border-radius: 2px;">+ 新增選項</button>
+                                style="padding: 4px 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; border-radius: 2px;">{{ _('+ 新增選項') }}</button>
                     </div>
                 </template>
 
                 <!-- Grid Children (datagrid/editgrid) -->
                 <template x-if="['datagrid', 'editgrid'].includes(detailForm.formio_type)">
                     <div class="fs-form-group">
-                        <label>子欄位</label>
+                        <label>{{ _('子欄位') }}</label>
                         <div class="fs-grid-children">
                             <template x-for="(child, ci) in detailGridChildRows" :key="ci">
                                 <div style="display: flex; gap: 6px; margin-bottom: 4px; align-items: center;">
@@ -523,14 +523,14 @@ window.__SPEC_CONFIG = {
                                 </div>
                             </template>
                             <button type="button" @click="addDetailGridChild()"
-                                    style="padding: 3px 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 11px; border-radius: 2px;">+ 子欄位</button>
+                                    style="padding: 3px 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 11px; border-radius: 2px;">{{ _('+ 子欄位') }}</button>
                         </div>
                     </div>
                 </template>
             </div>
             <div class="fs-modal-footer">
-                <button type="button" class="fs-btn" @click="closeDetail()">取消</button>
-                <button type="button" class="fs-btn primary" @click="saveDetail()">確認</button>
+                <button type="button" class="fs-btn" @click="closeDetail()">{{ _('取消') }}</button>
+                <button type="button" class="fs-btn primary" @click="saveDetail()">{{ _('確認') }}</button>
             </div>
         </div>
     </div>
@@ -539,13 +539,13 @@ window.__SPEC_CONFIG = {
     <div x-show="showLinkModal" x-cloak class="fs-modal">
         <div class="fs-modal-content">
             <div class="fs-modal-header">
-                <h3>關聯到表單</h3>
+                <h3>{{ _('關聯到表單') }}</h3>
                 <button @click="showLinkModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
-                <div x-show="linkLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
+                <div x-show="linkLoading" style="text-align: center; padding: 20px; color: #9ca3af;">{{ _('載入中...') }}</div>
                 <div x-show="!linkLoading && linkTemplates.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
-                    所有表單範本都已建立規格
+                    {{ _('所有表單範本都已建立規格') }}
                 </div>
                 <div x-show="!linkLoading && linkTemplates.length > 0" style="max-height: 360px; overflow-y: auto;">
                     <template x-for="tpl in linkTemplates" :key="tpl.secure_code">
@@ -559,8 +559,8 @@ window.__SPEC_CONFIG = {
                 </div>
             </div>
             <div class="fs-modal-footer">
-                <button class="fs-btn" @click="showLinkModal = false">取消</button>
-                <button class="fs-btn primary" @click="confirmLinkForm()" :disabled="!linkTemplateSc">確認關聯</button>
+                <button class="fs-btn" @click="showLinkModal = false">{{ _('取消') }}</button>
+                <button class="fs-btn primary" @click="confirmLinkForm()" :disabled="!linkTemplateSc">{{ _('確認關聯') }}</button>
             </div>
         </div>
     </div>
@@ -569,30 +569,30 @@ window.__SPEC_CONFIG = {
     <div x-show="showCreateFormModal" x-cloak class="fs-modal">
         <div class="fs-modal-content" style="width: 480px;">
             <div class="fs-modal-header">
-                <h3>從規格建立新表單</h3>
+                <h3>{{ _('從規格建立新表單') }}</h3>
                 <button @click="showCreateFormModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
                 <div class="fs-form-group">
-                    <label>表單名稱</label>
-                    <input type="text" x-model="createFormName" placeholder="請輸入表單名稱">
+                    <label>{{ _('表單名稱') }}</label>
+                    <input type="text" x-model="createFormName" placeholder="{{ _('請輸入表單名稱') }}">
                 </div>
                 <div class="fs-form-group" x-show="!createFormLoading && createFormCategories.length > 0">
-                    <label>分類</label>
+                    <label>{{ _('分類') }}</label>
                     <select x-model="createFormCategorySc">
-                        <option value="">-- 不指定 --</option>
+                        <option value="">{{ _('-- 不指定 --') }}</option>
                         <template x-for="cat in createFormCategories" :key="cat.secure_code">
                             <option :value="cat.secure_code" x-text="cat.name"></option>
                         </template>
                     </select>
                 </div>
-                <div x-show="createFormLoading" style="text-align: center; padding: 12px; color: #9ca3af; font-size: 12px;">載入分類中...</div>
+                <div x-show="createFormLoading" style="text-align: center; padding: 12px; color: #9ca3af; font-size: 12px;">{{ _('載入分類中...') }}</div>
             </div>
             <div class="fs-modal-footer">
-                <button class="fs-btn" @click="showCreateFormModal = false">取消</button>
+                <button class="fs-btn" @click="showCreateFormModal = false">{{ _('取消') }}</button>
                 <button class="fs-btn primary" @click="confirmCreateForm()" :disabled="saving || !createFormName.trim()">
-                    <span x-show="!saving">建立</span>
-                    <span x-show="saving">建立中...</span>
+                    <span x-show="!saving">{{ _('建立') }}</span>
+                    <span x-show="saving">{{ _('建立中...') }}</span>
                 </button>
             </div>
         </div>
@@ -602,17 +602,17 @@ window.__SPEC_CONFIG = {
     <div x-show="showSqlTableModal" x-cloak class="fs-modal">
         <div class="fs-modal-content" style="width: 560px;">
             <div class="fs-modal-header">
-                <h3>從 SQL Table 同步欄位</h3>
+                <h3>{{ _('從 SQL Table 同步欄位') }}</h3>
                 <button @click="showSqlTableModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
-                <div x-show="sqlLoading" style="text-align: center; padding: 20px; color: #9ca3af;">載入中...</div>
+                <div x-show="sqlLoading" style="text-align: center; padding: 20px; color: #9ca3af;">{{ _('載入中...') }}</div>
                 <div x-show="!sqlLoading && sqlTables.length === 0" style="text-align: center; padding: 20px; color: #9ca3af;">
-                    企業資料庫中沒有任何表
+                    {{ _('企業資料庫中沒有任何表') }}
                 </div>
                 <div x-show="!sqlLoading && sqlTables.length > 0">
                     <div style="margin-bottom: 8px; font-size: 12px; color: #6b7280;">
-                        選擇要匯入欄位定義的表（共 <span x-text="sqlTables.length"></span> 個表）
+                        {{ _('選擇要匯入欄位定義的表（共') }} <span x-text="sqlTables.length"></span> {{ _('個表）') }}
                     </div>
                     <div style="max-height: 360px; overflow-y: auto;">
                         <template x-for="tbl in sqlTables" :key="tbl.table_name">
@@ -627,8 +627,8 @@ window.__SPEC_CONFIG = {
                 </div>
             </div>
             <div class="fs-modal-footer">
-                <button class="fs-btn" @click="showSqlTableModal = false">取消</button>
-                <button class="fs-btn primary" @click="confirmSyncFromSql()" :disabled="!selectedSqlTable || sqlLoading">匯入欄位</button>
+                <button class="fs-btn" @click="showSqlTableModal = false">{{ _('取消') }}</button>
+                <button class="fs-btn primary" @click="confirmSyncFromSql()" :disabled="!selectedSqlTable || sqlLoading">{{ _('匯入欄位') }}</button>
             </div>
         </div>
     </div>
@@ -637,14 +637,14 @@ window.__SPEC_CONFIG = {
     <div x-show="showSqlApplyModal" x-cloak class="fs-modal">
         <div class="fs-modal-content" style="width: 640px;">
             <div class="fs-modal-header">
-                <h3>套用到 SQL Table</h3>
+                <h3>{{ _('套用到 SQL Table') }}</h3>
                 <button @click="showSqlApplyModal = false" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             <div class="fs-modal-body">
                 <template x-if="sqlApplyPreview">
                     <div>
                         <div style="margin-bottom: 12px;">
-                            <span style="font-size: 12px; color: #6b7280;">表名: </span>
+                            <span style="font-size: 12px; color: #6b7280;">{{ _('表名:') }} </span>
                             <span style="font-family: monospace; font-weight: 600;" x-text="sqlApplyPreview.table_name"></span>
                             <span style="margin-left: 12px; padding: 2px 8px; border-radius: 3px; font-size: 11px;"
                                   :style="sqlApplyPreview.action === 'create' ? 'background:#d1fae5;color:#065f46;' : sqlApplyPreview.action === 'alter' ? 'background:#fef3c7;color:#92400e;' : 'background:#e5e7eb;color:#374151;'"
@@ -653,18 +653,18 @@ window.__SPEC_CONFIG = {
                         <div style="background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; line-height: 1.6; max-height: 320px; overflow-y: auto; white-space: pre-wrap;" x-text="sqlApplyPreview.ddl"></div>
                         <template x-if="sqlApplyPreview.plan && sqlApplyPreview.plan.drop_candidates && sqlApplyPreview.plan.drop_candidates.length > 0">
                             <div style="margin-top: 8px; padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 3px; font-size: 12px; color: #991b1b;">
-                                DB 中有 <strong x-text="sqlApplyPreview.plan.drop_candidates.length"></strong> 個欄位不在 spec 中（不會自動刪除）
+                                {{ _('DB 中有') }} <strong x-text="sqlApplyPreview.plan.drop_candidates.length"></strong> {{ _('個欄位不在 spec 中（不會自動刪除）') }}
                             </div>
                         </template>
                     </div>
                 </template>
             </div>
             <div class="fs-modal-footer">
-                <button class="fs-btn" @click="showSqlApplyModal = false">取消</button>
+                <button class="fs-btn" @click="showSqlApplyModal = false">{{ _('取消') }}</button>
                 <template x-if="sqlApplyPreview && sqlApplyPreview.action !== 'no_change'">
                     <button class="fs-btn warning" @click="confirmApplyToSql()" :disabled="sqlLoading">
-                        <span x-show="!sqlLoading">確認執行</span>
-                        <span x-show="sqlLoading">執行中...</span>
+                        <span x-show="!sqlLoading">{{ _('確認執行') }}</span>
+                        <span x-show="sqlLoading">{{ _('執行中...') }}</span>
                     </button>
                 </template>
             </div>

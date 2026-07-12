@@ -216,14 +216,14 @@ function dataSpecManager() {
                         this._saveHidden();
                     }
                 } else {
-                    _dsToast('error', regData.error || '載入失敗');
+                    _dsToast('error', regData.error || __('載入失敗'));
                 }
 
                 if (saData.success) {
                     this.standaloneSpecs = saData.data || [];
                 }
             } catch (e) {
-                _dsToast('error', '載入失敗: ' + e.message);
+                _dsToast('error', __('載入失敗: ') + e.message);
             }
             this.loading = false;
         },
@@ -243,10 +243,10 @@ function dataSpecManager() {
                 if (data.success) {
                     this.availableTemplates = data.data || [];
                 } else {
-                    _dsToast('error', data.error || '載入範本失敗');
+                    _dsToast('error', data.error || __('載入範本失敗'));
                 }
             } catch (e) {
-                _dsToast('error', '載入範本失敗: ' + e.message);
+                _dsToast('error', __('載入範本失敗: ') + e.message);
             }
             this.loadingTemplates = false;
         },
@@ -257,7 +257,7 @@ function dataSpecManager() {
 
         confirmNewSpec() {
             if (!this.selectedTemplateSc) {
-                _dsToast('error', '請選擇表單範本');
+                _dsToast('error', __('請選擇表單範本'));
                 return;
             }
             this.showNewModal = false;
@@ -284,13 +284,13 @@ function dataSpecManager() {
                 );
                 const data = await res.json();
                 if (data.success) {
-                    _dsToast('success', data.message || '規格已建立');
+                    _dsToast('success', data.message || __('規格已建立'));
                     await this.loadData();
                 } else {
-                    _dsToast('error', data.error || '建立失敗');
+                    _dsToast('error', data.error || __('建立失敗'));
                 }
             } catch (e) {
-                _dsToast('error', '建立失敗: ' + e.message);
+                _dsToast('error', __('建立失敗: ') + e.message);
             }
             this.creating = false;
         },
@@ -308,10 +308,10 @@ function dataSpecManager() {
                     this.compareResult = data.data;
                     this.showCompareModal = true;
                 } else {
-                    _dsToast('error', data.error || '比對失敗');
+                    _dsToast('error', data.error || __('比對失敗'));
                 }
             } catch (e) {
-                _dsToast('error', '比對失敗: ' + e.message);
+                _dsToast('error', __('比對失敗: ') + e.message);
             }
             this.comparing = false;
         },
@@ -330,7 +330,7 @@ function dataSpecManager() {
         },
 
         async deleteStandalone(specSc) {
-            if (!confirm('確定要刪除此獨立規格？此操作無法復原。')) return;
+            if (!confirm(__('確定要刪除此獨立規格？此操作無法復原。'))) return;
             this.deletingSpec = true;
             try {
                 const res = await fetch(window.__BP + '/api/form-workflow/specs/standalone/' + specSc, {
@@ -339,13 +339,13 @@ function dataSpecManager() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    _dsToast('success', '已刪除');
+                    _dsToast('success', __('已刪除'));
                     await this.loadData();
                 } else {
-                    _dsToast('error', data.error || '刪除失敗');
+                    _dsToast('error', data.error || __('刪除失敗'));
                 }
             } catch (e) {
-                _dsToast('error', '刪除失敗: ' + e.message);
+                _dsToast('error', __('刪除失敗: ') + e.message);
             }
             this.deletingSpec = false;
         },
@@ -367,9 +367,9 @@ function dataSpecManager() {
         getStatusLabel(status) {
             if (!status) return '-';
             const map = {
-                'Published': '已發行',
-                'Suspended': '已停用',
-                'Archived': '已封存',
+                'Published': __('已發行'),
+                'Suspended': __('已停用'),
+                'Archived': __('已封存'),
             };
             return map[status] || status;
         },

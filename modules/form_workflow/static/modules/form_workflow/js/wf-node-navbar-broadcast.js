@@ -20,7 +20,7 @@
             const broadcastCode = document.getElementById('nbBroadcastCode')?.value?.trim();
 
             if (!broadcastCode) {
-                updateStatus('請輸入廣播代碼', 'warning');
+                updateStatus(__('請輸入廣播代碼'), 'warning');
                 return;
             }
 
@@ -30,7 +30,7 @@
             if (mode === 'start') {
                 const message = document.getElementById('nbMessage')?.value?.trim();
                 if (!message) {
-                    updateStatus('請輸入訊息內容', 'warning');
+                    updateStatus(__('請輸入訊息內容'), 'warning');
                     return;
                 }
                 updatedConfig.message = message;
@@ -41,7 +41,7 @@
             }
 
             node.data('config', updatedConfig);
-            updateStatus('跑馬燈廣播設定已套用', 'success');
+            updateStatus(__('跑馬燈廣播設定已套用'), 'success');
         }
         window.applyNavbarBroadcastConfig = applyNavbarBroadcastConfig;
 
@@ -50,7 +50,7 @@
             if (['nbMessage', 'nbTextColor', 'nbBgColor'].includes(e.target?.id)) {
                 const preview = document.getElementById('nbPreview');
                 if (!preview) return;
-                const msg = document.getElementById('nbMessage')?.value || '預覽：跑馬燈訊息';
+                const msg = document.getElementById('nbMessage')?.value || __('預覽：跑馬燈訊息');
                 const tc = document.getElementById('nbTextColor')?.value || '#000000';
                 const bg = document.getElementById('nbBgColor')?.value || '#FDE047';
                 preview.textContent = msg;

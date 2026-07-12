@@ -55,7 +55,7 @@ function fcApproval() {
                 const lockData = await lockRes.json();
 
                 if (!lockData.success) {
-                    this.showToast(lockData.error || '無法取得簽核鎖定', 'error');
+                    this.showToast(lockData.error || __('無法取得簽核鎖定'), 'error');
                     this.loadingApproval = false;
                     return;
                 }
@@ -84,12 +84,12 @@ function fcApproval() {
                     await this.$nextTick();
                     this.renderApprovalForm();
                 } else {
-                    this.showToast(data.error || '載入失敗', 'error');
+                    this.showToast(data.error || __('載入失敗'), 'error');
                     this.closeApprovalModal();
                 }
             } catch (e) {
                 console.error('載入簽核詳情失敗:', e);
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
                 this.closeApprovalModal();
             } finally {
                 this.loadingApproval = false;
@@ -103,7 +103,7 @@ function fcApproval() {
                 this.approvalLockRemaining--;
                 if (this.approvalLockRemaining <= 0) {
                     this._clearApprovalCountdown();
-                    this.showToast('簽核逾時，表單已自動關閉', 'warning');
+                    this.showToast(__('簽核逾時，表單已自動關閉'), 'warning');
                     this.closeApprovalModal();
                     this.loadPendingApprovals();
                 }
@@ -258,12 +258,12 @@ function fcApproval() {
             // 驗證選擇
             if (useCustom) {
                 if (this.selectedOptionValue === null) {
-                    this.showToast('請選擇一個決策選項', 'warning');
+                    this.showToast(__('請選擇一個決策選項'), 'warning');
                     return;
                 }
             } else {
                 if (this.selectedEdges.length === 0) {
-                    this.showToast('請選擇後續動作', 'warning');
+                    this.showToast(__('請選擇後續動作'), 'warning');
                     return;
                 }
             }
@@ -321,7 +321,7 @@ function fcApproval() {
                         }
                     }
 
-                    this.showToast('簽核完成');
+                    this.showToast(__('簽核完成'));
                     // 不走 closeApprovalModal（避免重複 DELETE lock），直接清理 UI
                     if (this._beforeUnloadHandler) {
                         window.removeEventListener('beforeunload', this._beforeUnloadHandler);
@@ -350,23 +350,23 @@ function fcApproval() {
                     // 處理特定錯誤碼
                     if (data.code === 'LOCK_EXPIRED') {
                         this._clearApprovalCountdown();
-                        this.showToast('簽核逾時，請重新開啟', 'error');
+                        this.showToast(__('簽核逾時，請重新開啟'), 'error');
                         this.closeApprovalModal();
                         this.loadPendingApprovals();
                     } else if (data.code === 'LOCKED') {
-                        this.showToast(data.error || '此表單正由他人簽核中', 'error');
+                        this.showToast(data.error || __('此表單正由他人簽核中'), 'error');
                         this.closeApprovalModal();
                         this.loadPendingApprovals();
                     } else if (data.code === 'DUPLICATE') {
-                        this.showToast('您已簽核過此節點', 'error');
+                        this.showToast(__('您已簽核過此節點'), 'error');
                         this.closeApprovalModal();
                         this.loadPendingApprovals();
                     } else {
-                        this.showToast(data.error || '簽核失敗', 'error');
+                        this.showToast(data.error || __('簽核失敗'), 'error');
                     }
                 }
             } catch (e) {
-                this.showToast('簽核失敗: ' + e.message, 'error');
+                this.showToast(__('簽核失敗: ') + e.message, 'error');
             } finally {
                 this.submittingApproval = false;
             }

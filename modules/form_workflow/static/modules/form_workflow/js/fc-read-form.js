@@ -44,12 +44,12 @@ function fcReadForm() {
                     await this.$nextTick();
                     this.renderReadForm();
                 } else {
-                    this.showToast(result.error || '載入失敗', 'error');
+                    this.showToast(result.error || __('載入失敗'), 'error');
                     this.closeReadForm();
                 }
             } catch (e) {
                 console.error('載入閱讀表單失敗:', e);
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
                 this.closeReadForm();
             } finally {
                 this.loadingReadForm = false;
@@ -71,12 +71,12 @@ function fcReadForm() {
                     await this.$nextTick();
                     this.renderReadForm();
                 } else {
-                    this.showToast(result.error || '載入失敗', 'error');
+                    this.showToast(result.error || __('載入失敗'), 'error');
                     this.closeReadForm();
                 }
             } catch (e) {
                 console.error('載入閱讀表單失敗:', e);
-                this.showToast('載入失敗', 'error');
+                this.showToast(__('載入失敗'), 'error');
                 this.closeReadForm();
             } finally {
                 this.loadingReadForm = false;
@@ -148,11 +148,11 @@ function fcReadForm() {
                     this.loadHistory();
                     this.loadSignedHistory();
                 } else {
-                    this.showToast(data.error || '刪除失敗', 'error');
+                    this.showToast(data.error || __('刪除失敗'), 'error');
                 }
             } catch (e) {
                 console.error('刪除測試表單失敗:', e);
-                this.showToast('刪除失敗，請稍後再試', 'error');
+                this.showToast(__('刪除失敗，請稍後再試'), 'error');
             }
         },
     };

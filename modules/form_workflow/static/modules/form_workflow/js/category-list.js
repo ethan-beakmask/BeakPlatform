@@ -24,9 +24,9 @@ function categoryManager() {
 
         get modalTitle() {
             if (this.editingCategory) {
-                return this.editingCategory.parent_secure_code ? '編輯子分類' : '編輯父分類';
+                return this.editingCategory.parent_secure_code ? __('編輯子分類') : __('編輯父分類');
             }
-            return this.formData.parent_secure_code ? '新增子分類' : '新增父分類';
+            return this.formData.parent_secure_code ? __('新增子分類') : __('新增父分類');
         },
 
         async init() {
@@ -118,10 +118,10 @@ function categoryManager() {
                     this.closeModal();
                     this.loadCategories();
                 } else {
-                    alert('操作失敗: ' + (data.error || data.message));
+                    alert(__('操作失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('操作失敗: ' + e.message);
+                alert(__('操作失敗: ') + e.message);
             } finally {
                 this.saving = false;
             }
@@ -147,10 +147,10 @@ function categoryManager() {
                     this.deletingCategory = null;
                     this.loadCategories();
                 } else {
-                    alert('刪除失敗: ' + (data.error || data.message));
+                    alert(__('刪除失敗: ') + (data.error || data.message));
                 }
             } catch (e) {
-                alert('刪除失敗: ' + e.message);
+                alert(__('刪除失敗: ') + e.message);
             }
         }
     };

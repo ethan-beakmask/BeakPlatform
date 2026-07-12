@@ -16,6 +16,7 @@ from app.platform.auth import (
 )
 from app.platform.data import get_current_org
 from app import db, csrf
+from flask_babel import gettext as _
 
 # 建立 API Blueprint - 使用與 A6 相同的路徑
 workflows_bp = Blueprint(
@@ -242,7 +243,7 @@ def create_template():
         'success': True,
         'secure_code': template.secure_code,
         **template.to_dict(include_graph=True),
-        'message': '流程模板已建立'
+        'message': _('流程模板已建立')
     })
 
 
@@ -406,7 +407,7 @@ def update_template(secure_code):
     response_data = {
         'success': True,
         **template.to_dict(include_graph=True),
-        'message': '流程模板已更新'
+        'message': _('流程模板已更新')
     }
 
     # 如果有自動建立表單和配對，加入額外資訊
@@ -421,7 +422,7 @@ def update_template(secure_code):
                 'secure_code': auto_created_mapping.secure_code
             } if auto_created_mapping else None
         }
-        response_data['message'] = f'流程模板已更新，並自動建立表單「{auto_created_form.name}」及配對'
+        response_data['message'] = _('流程模板已更新，並自動建立表單「%(name)s」及配對', name=auto_created_form.name)
 
     return jsonify(response_data)
 
@@ -487,7 +488,7 @@ def delete_template(secure_code):
     if running_count > 0:
         return jsonify({
             'success': False,
-            'error': f'無法刪除：尚有 {running_count} 個運行中的流程實例'
+            'error': _('無法刪除：尚有 %(count)s 個運行中的流程實例', count=running_count)
         }), 409
 
     now = datetime.utcnow()
@@ -518,7 +519,7 @@ def delete_template(secure_code):
 
     return jsonify({
         'success': True,
-        'message': '流程模板已刪除',
+        'message': _('流程模板已刪除'),
         'details': {
             'deleted_workflows': deleted_names,
             'deleted_mappings': mapping_count
@@ -614,7 +615,7 @@ def save_new_version(secure_code):
     return jsonify({
         'success': True,
         'data': new_template.to_dict(include_graph=True),
-        'message': f'已另存新版本 {new_version}'
+        'message': _('已另存新版本 %(version)s', version=new_version)
     })
 
 
@@ -934,7 +935,7 @@ def create_subflow():
             'name': subflow.name,
             'description': subflow.description,
         },
-        'message': '子流程已建立'
+        'message': _('子流程已建立')
     })
 
 
@@ -961,11 +962,11 @@ def delete_subflow(secure_code):
     ).first()
 
     if not subflow:
-        return jsonify({'success': False, 'error': '找不到子流程'}), 404
+        return jsonify({'success': False, 'error': _('找不到子流程')}), 404
 
     # 只能刪專屬子流程
     if not subflow.parent_workflow_secure_code:
-        return jsonify({'success': False, 'error': '無法刪除通用子流程'}), 403
+        return jsonify({'success': False, 'error': _('無法刪除通用子流程')}), 403
 
     # 追溯到根主流程，收集整個家族
     root_code = subflow.parent_workflow_secure_code
@@ -1017,7 +1018,7 @@ def delete_subflow(secure_code):
             if config.get('childFlowId') == subflow.code:
                 return jsonify({
                     'success': False,
-                    'error': f'此子流程正被「{wf.name}」引用，無法刪除'
+                    'error': _('此子流程正被「%(name)s」引用，無法刪除', name=wf.name)
                 }), 409
 
     # 遞迴收集要刪除的子流程（此子流程 + 其下層專屬子流程）
@@ -1047,7 +1048,7 @@ def delete_subflow(secure_code):
 
     return jsonify({
         'success': True,
-        'message': f'已刪除 {len(to_delete)} 個子流程',
+        'message': _('已刪除 %(count)s 個子流程', count=len(to_delete)),
         'deleted': deleted_names
     })
 
@@ -1172,7 +1173,7 @@ def variable_mapping():
         import traceback
         print(f"❌ VARIABLE_MAPPING ERROR: {str(e)}")
         print(f"📋 Traceback:\n{traceback.format_exc()}")
-        return jsonify({'success': False, 'message': f'建立變數映射失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('建立變數映射失敗: %(error)s', error=str(e))}), 500
 
 
 # =============================================================================
@@ -1338,7 +1339,7 @@ def get_workflow_mapped_forms(template_id):
         ).first()
 
         if not workflow:
-            return jsonify({'success': False, 'message': '流程不存在'}), 404
+            return jsonify({'success': False, 'message': _('流程不存在')}), 404
 
         forms = []
 
@@ -1414,7 +1415,7 @@ def get_workflow_mapped_forms(template_id):
         import traceback
         print(f"❌ GET_WORKFLOW_MAPPED_FORMS ERROR: {str(e)}")
         print(f"📋 Traceback:\n{traceback.format_exc()}")
-        return jsonify({'success': False, 'message': f'取得配對表單失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('取得配對表單失敗: %(error)s', error=str(e))}), 500
 
 
 @workflows_bp.route('/data/forms/<form_id>/fields', methods=['GET'])
@@ -1474,7 +1475,7 @@ def get_form_fields(form_id):
         ).first()
 
         if not form:
-            return jsonify({'success': False, 'message': '表單不存在'}), 404
+            return jsonify({'success': False, 'message': _('表單不存在')}), 404
 
         # 取得 schema
         schema = None
@@ -1528,7 +1529,7 @@ def get_form_fields(form_id):
         import traceback
         print(f"❌ GET_FORM_FIELDS ERROR: {str(e)}")
         print(f"📋 Traceback:\n{traceback.format_exc()}")
-        return jsonify({'success': False, 'message': f'分析表單欄位失敗: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': _('分析表單欄位失敗: %(error)s', error=str(e))}), 500
 
 
 def _extract_form_fields(components, path_prefix='data', nested_level=0):

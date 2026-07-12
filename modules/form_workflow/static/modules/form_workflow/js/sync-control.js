@@ -41,7 +41,7 @@ function syncControl() {
                 if (statusData.success) {
                     this.status = statusData.data;
                 } else {
-                    _scToast('error', statusData.error || '載入失敗');
+                    _scToast('error', statusData.error || __('載入失敗'));
                     this.loading = false;
                     return;
                 }
@@ -61,9 +61,9 @@ function syncControl() {
         // --- 比對狀態 ---
         getComparisonLabel(comp) {
             if (!comp) return '-';
-            if (comp.status === 'match') return '一致';
-            if (comp.status === 'mismatch') return '偏移 (' + comp.drift_count + ')';
-            return '不可用';
+            if (comp.status === 'match') return __('一致');
+            if (comp.status === 'mismatch') return __('偏移 (') + comp.drift_count + ')';
+            return __('不可用');
         },
 
         getSyncBtnClass(compKey, available) {
@@ -166,11 +166,11 @@ function syncControl() {
 
                 const data = await res.json();
                 if (data.success) {
-                    _scToast('success', data.message || '同步完成');
+                    _scToast('success', data.message || __('同步完成'));
                     // 重新載入狀態
                     await this.loadStatus();
                 } else {
-                    _scToast('error', data.error || '同步失敗');
+                    _scToast('error', data.error || __('同步失敗'));
                 }
             } catch (e) {
                 _scToast('error', '同步失敗: ' + e.message);

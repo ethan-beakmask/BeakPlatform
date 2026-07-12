@@ -25,11 +25,11 @@
                 timeoutMinutes = parseInt(minutesInput?.value, 10);
 
                 if (isNaN(timeoutMinutes) || timeoutMinutes < 1) {
-                    updateStatus('逾時時間必須至少 1 分鐘', 'warning');
+                    updateStatus(__('逾時時間必須至少 1 分鐘'), 'warning');
                     return;
                 }
                 if (timeoutMinutes > 14400) {
-                    updateStatus('逾時時間不能超過 14400 分鐘（10 天）', 'warning');
+                    updateStatus(__('逾時時間不能超過 14400 分鐘（10 天）'), 'warning');
                     return;
                 }
 
@@ -37,7 +37,7 @@
                 timeoutEdgeId = edgeSelect?.value || '';
 
                 if (!timeoutEdgeId) {
-                    updateStatus('啟用逾時時必須指定逾時去向', 'warning');
+                    updateStatus(__('啟用逾時時必須指定逾時去向'), 'warning');
                     return;
                 }
             }
@@ -55,7 +55,7 @@
             if (enableTimeout) {
                 updateStatus(`並行匯合設定已套用：逾時 ${timeoutMinutes} 分鐘`, 'success');
             } else {
-                updateStatus('並行匯合設定已套用：無逾時限制', 'success');
+                updateStatus(__('並行匯合設定已套用：無逾時限制'), 'success');
             }
 
             console.log('ParallelJoin 節點配置已更新:', {

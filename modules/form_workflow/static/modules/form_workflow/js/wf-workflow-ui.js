@@ -42,7 +42,7 @@
                     icon.classList.add('open');
                 }
             });
-            updateStatus('已打開所有節點分類');
+            updateStatus(__('已打開所有節點分類'));
         }
 
         // 全部關閉分類
@@ -57,7 +57,7 @@
                     icon.classList.remove('open');
                 }
             });
-            updateStatus('已關閉所有節點分類');
+            updateStatus(__('已關閉所有節點分類'));
         }
 
         // 切換全部分類（展開/收合）
@@ -150,7 +150,7 @@
 
             // 顯示流程資訊
             document.getElementById('workflow-info').style.display = 'flex';
-            document.getElementById('current-workflow-name').value = workflowName || '未命名流程';
+            document.getElementById('current-workflow-name').value = workflowName || __('未命名流程');
             document.getElementById('current-workflow-version').textContent = workflowVersion ? `版本 ${workflowVersion}` : 'v1.0';
             const categorySelect = document.getElementById('current-workflow-category');
             if (categorySelect) {
@@ -172,8 +172,8 @@
             const newCategorySc = categoryInput ? categoryInput.value : '';
 
             if (!newName) {
-                updateStatus('流程名稱不能為空', 'warning');
-                nameInput.value = currentWorkflow?.name || '未命名流程';
+                updateStatus(__('流程名稱不能為空'), 'warning');
+                nameInput.value = currentWorkflow?.name || __('未命名流程');
                 return;
             }
 
@@ -209,8 +209,8 @@
                 console.log('✅ 流程資訊已更新:', { name: newName, description: newDescription, category_secure_code: newCategorySc });
             } catch (error) {
                 console.error('❌ 更新流程資訊失敗:', error);
-                updateStatus('更新流程資訊失敗', 'warning');
-                nameInput.value = currentWorkflow?.name || '未命名流程';
+                updateStatus(__('更新流程資訊失敗'), 'warning');
+                nameInput.value = currentWorkflow?.name || __('未命名流程');
                 document.getElementById('current-workflow-description').value = (currentWorkflow?.description || '').split('\n')[0];
                 if (categoryInput) categoryInput.value = currentWorkflow?.category_secure_code || '';
             }
@@ -245,10 +245,10 @@
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 currentWorkflow.description = fullText;
-                updateStatus('✅ 已更新描述', 'info');
+                updateStatus(__('✅ 已更新描述'), 'info');
             } catch (error) {
                 console.error('❌ 更新描述失敗:', error);
-                updateStatus('更新描述失敗', 'warning');
+                updateStatus(__('更新描述失敗'), 'warning');
                 document.getElementById('current-workflow-description').value = (currentWorkflow?.description || '').split('\n')[0];
             }
         }
@@ -305,12 +305,12 @@
 
             const formsCountEl = document.getElementById('mapped-forms-count');
             if (formsCountEl) {
-                formsCountEl.textContent = '共 0 張表單';
+                formsCountEl.textContent = __('共 0 張表單');
             }
 
             const fieldsCountEl = document.getElementById('form-fields-count');
             if (fieldsCountEl) {
-                fieldsCountEl.textContent = '共 0 個欄位';
+                fieldsCountEl.textContent = __('共 0 個欄位');
             }
 
             // 重置版本切換按鈕

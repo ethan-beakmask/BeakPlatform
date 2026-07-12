@@ -35,17 +35,17 @@
         // 新增中繼點
         function addRelayPoints() {
             if (!selectedEdge || selectedEdge.data('parentEdge')) {
-                updateStatus('請先選擇一條主要線段（Shift+點擊線段）', 'warning');
+                updateStatus(__('請先選擇一條主要線段（Shift+點擊線段）'), 'warning');
                 return;
             }
 
             // 禁止在正交折線和黃點折線上新增中繼點
             if (selectedEdge.data('orthogonalEnabled')) {
-                updateStatus('正交折線不支援新增中繼點，請先切換為其他樣式', 'warning');
+                updateStatus(__('正交折線不支援新增中繼點，請先切換為其他樣式'), 'warning');
                 return;
             }
             if (yellowControlPoints.has(selectedEdge.id())) {
-                updateStatus('黃點折線不支援新增中繼點，請先切換為其他樣式', 'warning');
+                updateStatus(__('黃點折線不支援新增中繼點，請先切換為其他樣式'), 'warning');
                 return;
             }
 
@@ -55,7 +55,7 @@
             const target = cy.getElementById(selectedEdge.data('originalTarget') || selectedEdge.data('target'));
 
             if (source.length === 0 || target.length === 0) {
-                updateStatus('ERROR: 找不到來源或目標節點');
+                updateStatus(__('ERROR: 找不到來源或目標節點'));
                 return;
             }
 
@@ -269,5 +269,5 @@
             selectedEdge.style('display', 'element');
 
             updateRelayPointsList();
-            updateStatus('已清除所有中繼點');
+            updateStatus(__('已清除所有中繼點'));
         }

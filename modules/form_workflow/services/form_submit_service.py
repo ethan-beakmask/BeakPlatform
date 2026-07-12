@@ -16,6 +16,7 @@ from sqlalchemy import text
 from app import db
 from app.models import UserNumberingRule
 from app.services.numbering_service import NumberingService
+from flask_babel import gettext as _
 
 
 class SubmitError(Exception):
@@ -212,7 +213,7 @@ def create_instance_and_start(
 
     if not start_node:
         db.session.rollback()
-        raise SubmitError('流程中找不到起始節點')
+        raise SubmitError(_('流程中找不到起始節點'))
 
     queue_item = FwNodeExecutionQueue(
         secure_code=secrets.token_urlsafe(16),

@@ -354,7 +354,7 @@
             // 重新創建正交折線以應用新方向
             if (currentSelectedEdge.data('orthogonalEnabled')) {
                 createOrthogonalControlPoints(currentSelectedEdge);
-                updateStatus('✓ 正交折線方向已更新');
+                updateStatus(__('✓ 正交折線方向已更新'));
             }
         }
 
@@ -572,9 +572,9 @@
                 };
 
                 if (isHorizontal) {
-                    updateStatus('🔄 拖動水平線段（只能上下移動）');
+                    updateStatus(__('🔄 拖動水平線段（只能上下移動）'));
                 } else {
-                    updateStatus('🔄 拖動垂直線段（只能左右移動）');
+                    updateStatus(__('🔄 拖動垂直線段（只能左右移動）'));
                 }
 
                 evt.preventDefault();
@@ -640,7 +640,7 @@
             // 監聽畫布的 mouseup
             cy.on('mouseup', function(evt) {
                 if (orthogonalSegmentDrag) {
-                    updateStatus('✓ 線段位置已更新');
+                    updateStatus(__('✓ 線段位置已更新'));
                     orthogonalSegmentDrag = null;
                 }
             });

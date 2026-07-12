@@ -10,7 +10,7 @@
             if (e.key === 'Shift' && !shiftPressed) {
                 shiftPressed = true;
                 document.getElementById('mode-indicator').classList.add('active');
-                updateStatus('Shift 模式：圈選節點 / 連續畫線');
+                updateStatus(__('Shift 模式：圈選節點 / 連續畫線'));
 
                 // Shift 模式：禁止線條被選中
                 if (cy) {
@@ -19,7 +19,7 @@
             }
             if (e.key === 'Control' && !ctrlPressed) {
                 ctrlPressed = true;
-                updateStatus('Ctrl 模式：圈選線條 / 編輯折線');
+                updateStatus(__('Ctrl 模式：圈選線條 / 編輯折線'));
 
                 // Ctrl 模式：禁止節點被選中
                 if (cy) {
@@ -28,7 +28,7 @@
             }
             if (e.key === 'Alt' && !altPressed) {
                 altPressed = true;
-                updateStatus('Alt 模式：框選所有元素 / 拖動脫離群組');
+                updateStatus(__('Alt 模式：框選所有元素 / 拖動脫離群組'));
 
                 // Alt 模式：允許節點和線段都可被選中，並禁用平移以啟用框選
                 if (cy) {
@@ -57,9 +57,9 @@
                     continuousLineNodes = [];
                     // 清除所有節點的高亮
                     cy.nodes().removeClass('continuous-line-highlight');
-                    updateStatus('連續畫線模式已結束');
+                    updateStatus(__('連續畫線模式已結束'));
                 } else {
-                    updateStatus('Shift 模式已關閉');
+                    updateStatus(__('Shift 模式已關閉'));
                 }
             }
             if (e.key === 'Control') {
@@ -70,7 +70,7 @@
                     cy.nodes().selectify();
                 }
 
-                updateStatus('Ctrl 模式已關閉');
+                updateStatus(__('Ctrl 模式已關閉'));
             }
             if (e.key === 'Alt') {
                 altPressed = false;
@@ -99,7 +99,7 @@
                     }
                 }
 
-                updateStatus('Alt 模式已關閉');
+                updateStatus(__('Alt 模式已關閉'));
             }
         });
 

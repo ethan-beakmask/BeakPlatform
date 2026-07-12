@@ -159,14 +159,14 @@ function fcFormFill() {
                             this.showToast(result.errors.join('\n'), 'error');
                         }
                     }
-                    this.showToast(data.message || '表單已送出');
+                    this.showToast(data.message || __('表單已送出'));
                     this.closeFillModal();
                     this.loadTracking();
                 } else {
-                    this.showToast(data.error || '送出失敗', 'error');
+                    this.showToast(data.error || __('送出失敗'), 'error');
                 }
             } catch (e) {
-                this.showToast('送出失敗: ' + e.message, 'error');
+                this.showToast(__('送出失敗: ') + e.message, 'error');
             } finally {
                 this.submitting = false;
             }

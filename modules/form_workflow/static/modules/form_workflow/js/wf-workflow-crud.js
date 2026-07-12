@@ -11,7 +11,7 @@
 
             // 先儲存
             if (!currentWorkflowId) {
-                updateStatus('請先選擇或建立一個流程', 'warning');
+                updateStatus(__('請先選擇或建立一個流程'), 'warning');
                 return;
             }
 
@@ -48,7 +48,7 @@
             console.log('💾 儲存新版本', targetNode ? '(已指定目標節點)' : '');
 
             if (!currentWorkflowId) {
-                updateStatus('請先選擇或建立一個流程', 'warning');
+                updateStatus(__('請先選擇或建立一個流程'), 'warning');
                 return;
             }
 
@@ -63,7 +63,7 @@
                     }
                 }
 
-                updateStatus('正在儲存新版本...', 'info');
+                updateStatus(__('正在儲存新版本...'), 'info');
 
                 const requestBody = {
                     name: document.getElementById('current-workflow-name')?.value,
@@ -158,7 +158,7 @@
             // 取消按鈕
             cancelBtn.addEventListener('click', () => {
                 modal.remove();
-                updateStatus('已取��另存新版', 'info');
+                updateStatus(__('已取��另存新版'), 'info');
             });
 
             // 確定按鈕
@@ -223,7 +223,7 @@
             if (!saveBtn) return;
             if (hasUnsavedChanges) {
                 saveBtn.style.outline = '2px solid #f59e0b';
-                saveBtn.title = '有未儲存的變更';
+                saveBtn.title = __('有未儲存的變更');
             } else {
                 saveBtn.style.outline = '';
                 saveBtn.title = '';
@@ -248,7 +248,7 @@
 
             if (hasChanges) {
                 // 有變更，需要確認
-                if (!confirm('您有未儲存的變更，確定要放棄並離開嗎？')) {
+                if (!confirm(__('您有未儲存的變更，確定要放棄並離開嗎？'))) {
                     console.log('  用戶取消放棄操作');
                     return;
                 }
@@ -336,7 +336,7 @@
                             card.className = 'workflow-selection-card';
 
                             // 格式化日期
-                            const createdDate = w.created_at ? BkTime.format(w.created_at, 'date') : '未知';
+                            const createdDate = w.created_at ? BkTime.format(w.created_at, 'date') : __('未知');
 
                             // 計算節點數量
                             const nodeCount = w.cytoscape_config?.nodes?.length || 0;
@@ -424,19 +424,19 @@
                     }
 
                     await loadWorkflowList();
-                    updateStatus('流程已刪除');
+                    updateStatus(__('流程已刪除'));
                 } else {
-                    updateStatus('刪除流程失敗', 'warning');
+                    updateStatus(__('刪除流程失敗'), 'warning');
                 }
             } catch (error) {
                 console.error('刪除流程失敗:', error);
-                updateStatus('刪除流程失敗', 'warning');
+                updateStatus(__('刪除流程失敗'), 'warning');
             }
         }
 
         // 建立新流程
         async function createNewWorkflow() {
-            const name = prompt('請輸入流程名稱：', '新流程');
+            const name = prompt(__('請輸入流程名稱：'), '新流程');
             if (!name) return;
 
             try {
@@ -475,7 +475,7 @@
             } catch (error) {
                 console.error('❌ 建立流程失敗:', error);
                 console.error('錯誤堆疊:', error.stack);
-                updateStatus('建立流程失敗：' + error.message, 'warning');
+                updateStatus(__('建立流程失敗：') + error.message, 'warning');
             }
         }
 
@@ -501,7 +501,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        name: name || '新流程',
+                        name: name || __('新流程'),
                         category_secure_code: categorySc || '',
                         description: description || ''
                     })
@@ -544,7 +544,7 @@
             } catch (error) {
                 console.error('❌ 建立流程失敗:', error);
                 console.error('錯誤堆疊:', error.stack);
-                updateStatus('建立流程失敗：' + error.message, 'warning');
+                updateStatus(__('建立流程失敗：') + error.message, 'warning');
                 // 失敗時重定向回列表頁
                 window.location.href = window.__BP + '/forms/workflows';
             } finally {
