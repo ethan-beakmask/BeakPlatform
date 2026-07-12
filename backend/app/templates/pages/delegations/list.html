@@ -1,29 +1,29 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}代理授權管理 - BeakMask{% endblock %}
+{% block title %}{{ _('代理授權管理') }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>代理授權管理</h1>
+<h1>{{ _('代理授權管理') }}</h1>
 
 <p>
-    <a href="{{ url_for('delegations.create_delegation') }}">[新增代理授權]</a>
+    <a href="{{ url_for('delegations.create_delegation') }}">{{ _('[新增代理授權]') }}</a>
 </p>
 
 <p class="text-muted" style="font-size: 0.9em;">
-    代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住
+    {{ _('代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住') }}
 </p>
 
-<p>共 {{ delegations|length }} 筆代理授權</p>
+<p>{{ _('共 %(count)s 筆代理授權', count=delegations|length) }}</p>
 
 <table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th data-sort="text">授權人</th>
-            <th data-sort="text">被授權人</th>
-            <th data-sort="text">代理類型</th>
-            <th data-sort="text">狀態</th>
-            <th data-sort="date">生效期間</th>
-            <th>操作</th>
+            <th data-sort="text">{{ _('授權人') }}</th>
+            <th data-sort="text">{{ _('被授權人') }}</th>
+            <th data-sort="text">{{ _('代理類型') }}</th>
+            <th data-sort="text">{{ _('狀態') }}</th>
+            <th data-sort="date">{{ _('生效期間') }}</th>
+            <th>{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -44,23 +44,23 @@
                 {% endif %}
             </td>
             <td>
-                {% if d.delegation_type == 'FULL' %}全權代理
+                {% if d.delegation_type == 'FULL' %}{{ _('全權代理') }}
                 {% elif d.delegation_type == 'APPROVAL' %}
-                    限額代理
+                    {{ _('限額代理') }}
                     {% if d.approval_limit %}({{ '{:,.0f}'.format(d.approval_limit) }}){% endif %}
-                {% elif d.delegation_type == 'SPECIFIC' %}特定代理
+                {% elif d.delegation_type == 'SPECIFIC' %}{{ _('特定代理') }}
                 {% else %}{{ d.delegation_type }}
                 {% endif %}
             </td>
             <td>
                 {% if d.status == 'ACTIVE' %}
-                <span class="text-success">生效中</span>
+                <span class="text-success">{{ _('生效中') }}</span>
                 {% elif d.status == 'PENDING' %}
-                <span class="text-warning">待生效</span>
+                <span class="text-warning">{{ _('待生效') }}</span>
                 {% elif d.status == 'EXPIRED' %}
-                <span class="text-muted">已過期</span>
+                <span class="text-muted">{{ _('已過期') }}</span>
                 {% elif d.status == 'REVOKED' %}
-                <span class="text-danger">已撤銷</span>
+                <span class="text-danger">{{ _('已撤銷') }}</span>
                 {% else %}{{ d.status }}
                 {% endif %}
             </td>
@@ -70,15 +70,15 @@
                 {{ d.effective_until.strftime('%Y-%m-%d') if d.effective_until else '?' }}
             </td>
             <td>
-                <a href="{{ url_for('delegations.view_delegation', secure_code=d.secure_code) }}">[查看]</a>
+                <a href="{{ url_for('delegations.view_delegation', secure_code=d.secure_code) }}">{{ _('[查看]') }}</a>
                 {% if d.status != 'REVOKED' and d.status != 'EXPIRED' %}
-                <a href="{{ url_for('delegations.edit_delegation', secure_code=d.secure_code) }}">[編輯]</a>
+                <a href="{{ url_for('delegations.edit_delegation', secure_code=d.secure_code) }}">{{ _('[編輯]') }}</a>
                 {% endif %}
             </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="6" class="text-muted" style="text-align: center;">尚無代理授權</td>
+            <td colspan="6" class="text-muted" style="text-align: center;">{{ _('尚無代理授權') }}</td>
         </tr>
         {% endfor %}
     </tbody>

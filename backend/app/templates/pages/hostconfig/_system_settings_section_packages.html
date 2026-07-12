@@ -1,7 +1,7 @@
 <!-- ==================== 套件版本 ==================== -->
 <div id="section-packages" class="settings-section" :class="{ active: activeSection === 'packages' }">
-    <h2>套件版本</h2>
-    <p>系統服務、Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。</p>
+    <h2>{{ _('套件版本') }}</h2>
+    <p>{{ _('系統服務、Python 後端套件與前端 vendor 套件的版本比對（僅供檢視）。') }}</p>
 
     <div x-show="message.packages" x-cloak
          :class="'message ' + (message.packagesError ? 'message-error' : 'message-success')"
@@ -14,8 +14,8 @@
             <div style="font-size: 13px; color: #666;">
                 <template x-if="packages.cachedAt">
                     <span>
-                        查詢時間: <span x-text="packages.cachedAt.replace('T', ' ').substring(0, 19)"></span>
-                        <span x-show="packages.cached" style="color: #f59e0b;">（快取）</span>
+                        {{ _('查詢時間:') }} <span x-text="packages.cachedAt.replace('T', ' ').substring(0, 19)"></span>
+                        <span x-show="packages.cached" style="color: #f59e0b;">{{ _('（快取）') }}</span>
                         <span style="color: #888;" x-text="'（耗時 ' + packages.durationMs + 'ms）'"></span>
                     </span>
                 </template>
@@ -23,8 +23,8 @@
             <button class="btn btn-primary"
                     @click="loadPackageVersions(true)"
                     :disabled="loading.packages">
-                <span x-show="loading.packages">查詢中...</span>
-                <span x-show="!loading.packages">重新查詢</span>
+                <span x-show="loading.packages">{{ _('查詢中...') }}</span>
+                <span x-show="!loading.packages">{{ _('重新查詢') }}</span>
             </button>
         </div>
     </div>
@@ -43,22 +43,22 @@
     <!-- 載入中 -->
     <template x-if="loading.packages && packages.python.length === 0">
         <div class="settings-card">
-            <div class="loading">正在查詢套件版本，可能需要數秒...</div>
+            <div class="loading">{{ _('正在查詢套件版本，可能需要數秒...') }}</div>
         </div>
     </template>
 
     <!-- 系統服務表格 -->
     <template x-if="packages.services.length > 0">
         <div class="settings-card">
-            <h4>系統服務 (<span x-text="packages.services.length"></span>)</h4>
+            <h4>{{ _('系統服務') }} (<span x-text="packages.services.length"></span>)</h4>
             <div style="overflow-x: auto;">
                 <table class="config-table">
                     <thead>
                         <tr>
-                            <th>服務名稱</th>
-                            <th>安裝版本</th>
-                            <th>最新版本</th>
-                            <th>狀態</th>
+                            <th>{{ _('服務名稱') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('狀態') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,16 +82,16 @@
     <!-- 前端套件表格 -->
     <template x-if="packages.frontend.length > 0">
         <div class="settings-card">
-            <h4>前端 Vendor 套件 (<span x-text="packages.frontend.length"></span>)</h4>
+            <h4>{{ _('前端 Vendor 套件') }} (<span x-text="packages.frontend.length"></span>)</h4>
             <div style="overflow-x: auto;">
                 <table class="config-table">
                     <thead>
                         <tr>
-                            <th>套件名稱</th>
-                            <th>安裝版本</th>
-                            <th>最新版本</th>
-                            <th>來源檔案</th>
-                            <th>狀態</th>
+                            <th>{{ _('套件名稱') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('來源檔案') }}</th>
+                            <th>{{ _('狀態') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,16 +116,16 @@
     <!-- Python 套件表格 -->
     <template x-if="packages.python.length > 0">
         <div class="settings-card">
-            <h4>Python 套件 (<span x-text="packages.python.length"></span>)</h4>
+            <h4>{{ _('Python 套件') }} (<span x-text="packages.python.length"></span>)</h4>
             <div style="overflow-x: auto;">
                 <table class="config-table">
                     <thead>
                         <tr>
-                            <th>套件名稱</th>
-                            <th>需求版本</th>
-                            <th>安裝版本</th>
-                            <th>最新版本</th>
-                            <th>狀態</th>
+                            <th>{{ _('套件名稱') }}</th>
+                            <th>{{ _('需求版本') }}</th>
+                            <th>{{ _('安裝版本') }}</th>
+                            <th>{{ _('最新版本') }}</th>
+                            <th>{{ _('狀態') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,12 +149,12 @@
 
     <!-- 說明 -->
     <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
-        <h4 style="color: #0369a1;">說明</h4>
+        <h4 style="color: #0369a1;">{{ _('說明') }}</h4>
         <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #0369a1;">
-            <li>系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得</li>
-            <li>查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新</li>
-            <li>封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作</li>
-            <li>此頁面僅供版本檢視，不提供線上升級功能</li>
+            <li>{{ _('系統服務版本從 GitHub 取得，Python 套件從 PyPI 取得，前端套件從 npm Registry 取得') }}</li>
+            <li>{{ _('查詢結果快取 30 分鐘，點擊「重新查詢」可強制刷新') }}</li>
+            <li>{{ _('封閉網路環境下線上版本會顯示「無法檢查」，不影響系統運作') }}</li>
+            <li>{{ _('此頁面僅供版本檢視，不提供線上升級功能') }}</li>
         </ul>
     </div>
 </div>

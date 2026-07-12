@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}新增職等 - BeakMask{% endblock %}
+{% block title %}{{ _('新增職等') }} - BeakMask{% endblock %}
 
 {% block head %}
 <script src="{{ url_for('static', filename='js/code-input.js') }}"></script>
@@ -8,11 +8,11 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('job_levels.list_job_levels') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+    <a href="{{ url_for('job_levels.list_job_levels') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">新增職等</h1>
+    <h1 class="page-title">{{ _('新增職等') }}</h1>
 </div>
 
 <form method="POST" style="max-width: 600px;"
@@ -21,93 +21,93 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="width: 150px;">職等名稱 *</th>
+            <th style="width: 150px;">{{ _('職等名稱') }} *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
-                       placeholder="如 職員級" style="width: 100%;"
+                       placeholder="{{ _('如 職員級') }}" style="width: 100%;"
                        value="{{ request.form.get('name', '') }}"
                        @input.debounce.500ms="ciGenerateCode($event.target.value)">
             </td>
         </tr>
         <tr>
-            <th>職等代碼</th>
+            <th>{{ _('職等代碼') }}</th>
             <td>
                 <input type="text" name="code" maxlength="20" x-ref="codeField"
-                       :placeholder="_ci_generatedCode || '留空自動產生'" style="width: 100%;"
+                       :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}" style="width: 100%;"
                        x-model="codeval"
                        @input.debounce.500ms="ciValidateCode(codeval)">
-                <div class="text-muted" style="font-size: 0.8em;">選填，留空自動產生。建議格式：L + 序號，如 L100, L150</div>
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('選填，留空自動產生。建議格式：L + 序號，如 L100, L150') }}</div>
                 {% include "partials/_code_input.html" %}
             </td>
         </tr>
         <tr>
-            <th>英文名稱</th>
+            <th>{{ _('英文名稱') }}</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
-                       placeholder="如 Staff Level" style="width: 100%;"
+                       placeholder="{{ _('如 Staff Level') }}" style="width: 100%;"
                        value="{{ request.form.get('name_en', '') }}">
             </td>
         </tr>
         <tr>
-            <th>職等序號 *</th>
+            <th>{{ _('職等序號') }} *</th>
             <td>
                 <input type="number" name="level_order" required min="0" max="9999"
-                       placeholder="如 150" style="width: 100%;"
+                       placeholder="{{ _('如 150') }}" style="width: 100%;"
                        value="{{ request.form.get('level_order', '') }}">
                 <div class="text-muted" style="font-size: 0.8em;">
-                    數字越大職等越高。使用等距跳號：0, 100, 200... 900
+                    {{ _('數字越大職等越高。使用等距跳號：0, 100, 200... 900') }}
                 </div>
             </td>
         </tr>
         <tr>
-            <th>管理職等</th>
+            <th>{{ _('管理職等') }}</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_manager_level" value="true"
                            {% if request.form.get('is_manager_level') == 'true' %}checked{% endif %}>
-                    是管理職等 (帶人主管)
+                    {{ _('是管理職等 (帶人主管)') }}
                 </label>
             </td>
         </tr>
         <tr>
-            <th>管理幅度</th>
+            <th>{{ _('管理幅度') }}</th>
             <td>
                 <input type="text" name="management_scope" maxlength="100"
-                       placeholder="如 單一部門、全公司" style="width: 100%;"
+                       placeholder="{{ _('如 單一部門、全公司') }}" style="width: 100%;"
                        value="{{ request.form.get('management_scope', '') }}">
             </td>
         </tr>
         <tr>
-            <th style="vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">{{ _('描述') }}</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;"
-                          placeholder="職等的詳細說明">{{ request.form.get('description', '') }}</textarea>
+                          placeholder="{{ _('職等的詳細說明') }}">{{ request.form.get('description', '') }}</textarea>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit" class="btn btn-primary">建立職等</button>
-                <a href="{{ url_for('job_levels.list_job_levels') }}" class="btn btn-cancel" style="margin-left: 20px;">取消</a>
+                <button type="submit" class="btn btn-primary">{{ _('建立職等') }}</button>
+                <a href="{{ url_for('job_levels.list_job_levels') }}" class="btn btn-cancel" style="margin-left: 20px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
 </form>
 
-<div class="section-title" style="margin-top:32px;">職等序號參考</div>
+<div class="section-title" style="margin-top:32px;">{{ _('職等序號參考') }}</div>
 <table class="data-table bordered" style="font-size: 0.9em;">
     <tr>
-        <th>代碼</th><th>序號</th><th>名稱</th>
+        <th>{{ _('代碼') }}</th><th>{{ _('序號') }}</th><th>{{ _('名稱') }}</th>
     </tr>
-    <tr><td>L900</td><td>900</td><td>總經理級</td></tr>
-    <tr><td>L800</td><td>800</td><td>副總經理級</td></tr>
-    <tr><td>L700</td><td>700</td><td>處長級</td></tr>
-    <tr><td>L600</td><td>600</td><td>副處長級</td></tr>
-    <tr><td>L500</td><td>500</td><td>經理級</td></tr>
-    <tr><td>L400</td><td>400</td><td>副理級</td></tr>
-    <tr><td>L300</td><td>300</td><td>主任級</td></tr>
-    <tr><td>L200</td><td>200</td><td>高級職員級</td></tr>
-    <tr><td>L100</td><td>100</td><td>職員級</td></tr>
-    <tr><td>L000</td><td>0</td><td>外部廠商</td></tr>
+    <tr><td>L900</td><td>900</td><td>{{ _('總經理級') }}</td></tr>
+    <tr><td>L800</td><td>800</td><td>{{ _('副總經理級') }}</td></tr>
+    <tr><td>L700</td><td>700</td><td>{{ _('處長級') }}</td></tr>
+    <tr><td>L600</td><td>600</td><td>{{ _('副處長級') }}</td></tr>
+    <tr><td>L500</td><td>500</td><td>{{ _('經理級') }}</td></tr>
+    <tr><td>L400</td><td>400</td><td>{{ _('副理級') }}</td></tr>
+    <tr><td>L300</td><td>300</td><td>{{ _('主任級') }}</td></tr>
+    <tr><td>L200</td><td>200</td><td>{{ _('高級職員級') }}</td></tr>
+    <tr><td>L100</td><td>100</td><td>{{ _('職員級') }}</td></tr>
+    <tr><td>L000</td><td>0</td><td>{{ _('外部廠商') }}</td></tr>
 </table>
 
 {% endblock %}

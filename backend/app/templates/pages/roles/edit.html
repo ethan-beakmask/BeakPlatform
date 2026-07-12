@@ -1,23 +1,23 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ role.name }} - 角色管理 - BeakMask{% endblock %}
+{% block title %}{{ role.name }} - {{ _('角色管理') }} - BeakMask{% endblock %}
 
 {% block content %}
 <div x-data="roleEditForm()">
     <div style="margin-bottom:12px;">
-        <a href="{{ url_for('roles.list_roles') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+        <a href="{{ url_for('roles.list_roles') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
     </div>
 
     <div class="page-header" style="margin-top:30px;">
         <h1 class="page-title">
             {{ role.name }}
             {% if role.is_system_role %}
-            <span class="badge badge-info" style="margin-left: 8px;">系統角色</span>
+            <span class="badge badge-info" style="margin-left: 8px;">{{ _('系統角色') }}</span>
             {% endif %}
         </h1>
         {% if not role.is_system_role %}
         <button type="button" @click="confirmDelete()" class="btn btn-danger">
-            刪除角色
+            {{ _('刪除角色') }}
         </button>
         {% endif %}
     </div>
@@ -27,66 +27,66 @@
         <table class="info-table">
             <!-- 角色代碼（唯讀） -->
             <tr>
-                <th>角色代碼</th>
+                <th>{{ _('角色代碼') }}</th>
                 <td>
                     <code style="font-size: 1.1em; background: #f3f4f6; padding: 4px 8px; border-radius: 4px;">{{ role.code }}</code>
-                    <div class="hint">代碼建立後無法修改</div>
+                    <div class="hint">{{ _('代碼建立後無法修改') }}</div>
                 </td>
             </tr>
 
             <!-- 角色名稱 -->
             <tr>
-                <th>角色名稱 *</th>
+                <th>{{ _('角色名稱') }} *</th>
                 <td>
                     {% if is_editable %}
                     <input type="text" x-model="formData.name" required maxlength="100" class="form-control">
                     {% else %}
                     <span>{{ role.name }}</span>
-                    <div class="hint">系統角色無法修改名稱</div>
+                    <div class="hint">{{ _('系統角色無法修改名稱') }}</div>
                     {% endif %}
                 </td>
             </tr>
 
             <!-- 角色類型（唯讀） -->
             <tr>
-                <th>類型</th>
-                <td>{% if role.role_type == 'POSITION' %}職位 (部門專用){% else %}角色 (通用){% endif %}</td>
+                <th>{{ _('類型') }}</th>
+                <td>{% if role.role_type == 'POSITION' %}{{ _('職位 (部門專用)') }}{% else %}{{ _('角色 (通用)') }}{% endif %}</td>
             </tr>
 
             <!-- 適用範圍（唯讀） -->
             <tr>
-                <th>適用範圍</th>
+                <th>{{ _('適用範圍') }}</th>
                 <td>
-                    {% if role.scope_type == 'GLOBAL' %}全企業
-                    {% elif role.scope_type == 'DEPARTMENT' %}部門
-                    {% elif role.scope_type == 'GROUP' %}社群
-                    {% elif role.scope_type == 'EXTERNAL' %}外部人員
+                    {% if role.scope_type == 'GLOBAL' %}{{ _('全企業') }}
+                    {% elif role.scope_type == 'DEPARTMENT' %}{{ _('部門') }}
+                    {% elif role.scope_type == 'GROUP' %}{{ _('社群') }}
+                    {% elif role.scope_type == 'EXTERNAL' %}{{ _('外部人員') }}
                     {% else %}{{ role.scope_type }}{% endif %}
                 </td>
             </tr>
 
             <!-- 管理職 -->
             <tr>
-                <th>管理職</th>
+                <th>{{ _('管理職') }}</th>
                 <td>
                     {% if is_editable %}
                     <label style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" x-model="formData.is_manager">
-                        <span>是管理職（具有管理權限）</span>
+                        <span>{{ _('是管理職（具有管理權限）') }}</span>
                     </label>
                     {% else %}
-                    <span>{{ '是' if role.is_manager else '否' }}</span>
+                    <span>{{ _('是') if role.is_manager else _('否') }}</span>
                     {% endif %}
                 </td>
             </tr>
 
             <!-- 描述 -->
             <tr>
-                <th>描述</th>
+                <th>{{ _('描述') }}</th>
                 <td>
                     {% if is_editable %}
                     <textarea x-model="formData.description" rows="3" class="form-control"
-                              placeholder="角色職責說明..."></textarea>
+                              placeholder="{{ _('角色職責說明...') }}"></textarea>
                     {% else %}
                     <span>{{ role.description or '-' }}</span>
                     {% endif %}
@@ -95,7 +95,7 @@
 
             <!-- 排序順序 -->
             <tr>
-                <th>排序順序</th>
+                <th>{{ _('排序順序') }}</th>
                 <td>
                     {% if is_editable %}
                     <input type="number" x-model.number="formData.sort_order" min="0" class="form-control" style="width: 100px;">
@@ -107,11 +107,11 @@
 
             <!-- 建立/更新時間 -->
             <tr>
-                <th>建立時間</th>
+                <th>{{ _('建立時間') }}</th>
                 <td class="text-muted">{{ role.created_at.strftime('%Y-%m-%d %H:%M') if role.created_at else '-' }}</td>
             </tr>
             <tr>
-                <th>更新時間</th>
+                <th>{{ _('更新時間') }}</th>
                 <td class="text-muted">{{ role.updated_at.strftime('%Y-%m-%d %H:%M') if role.updated_at else '-' }}</td>
             </tr>
         </table>
@@ -120,8 +120,8 @@
         <div style="margin-top: 20px; text-align: center;">
             <button type="submit" :disabled="isSubmitting" class="btn btn-primary"
                     :style="isSubmitting ? 'opacity: 0.6; cursor: not-allowed;' : ''">
-                <span x-show="!isSubmitting">儲存變更</span>
-                <span x-show="isSubmitting">儲存中...</span>
+                <span x-show="!isSubmitting">{{ _('儲存變更') }}</span>
+                <span x-show="isSubmitting">{{ _('儲存中...') }}</span>
             </button>
         </div>
         {% endif %}
@@ -132,23 +132,23 @@
         <span x-text="successMsg"></span>
     </div>
     <div x-show="errorMsg" x-cloak class="alert alert-error mt-16">
-        <strong>錯誤：</strong> <span x-text="errorMsg"></span>
+        <strong>{{ _('錯誤：') }}</strong> <span x-text="errorMsg"></span>
     </div>
 
     <!-- 使用此角色的用戶清單 -->
     <div style="margin-top: 32px;">
         <h2 style="font-size: 16px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">
-            使用此角色的用戶
-            <span class="text-muted" style="font-weight: normal;">({{ assigned_users|length }} 人)</span>
+            {{ _('使用此角色的用戶') }}
+            <span class="text-muted" style="font-weight: normal;">({{ _('%(count)s 人', count=assigned_users|length) }})</span>
         </h2>
 
         {% if assigned_users %}
         <table class="data-table bordered" style="max-width: 600px;">
             <thead>
                 <tr>
-                    <th>姓名</th>
+                    <th>{{ _('姓名') }}</th>
                     <th>Email</th>
-                    <th>操作</th>
+                    <th>{{ _('操作') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -157,40 +157,39 @@
                     <td>{{ user.display_name or user.username }}</td>
                     <td>{{ user.email }}</td>
                     <td class="text-center">
-                        <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">[查看]</a>
+                        <a href="{{ url_for('users.edit_user', secure_code=user.secure_code) }}">[{{ _('查看') }}]</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p class="text-muted">目前沒有用戶使用此角色</p>
+        <p class="text-muted">{{ _('目前沒有用戶使用此角色') }}</p>
         {% endif %}
     </div>
 
     <!-- 刪除確認對話框 -->
     <div x-show="showDeleteModal" x-cloak class="modal-overlay">
         <div class="modal-content modal-sm">
-            <h3 style="margin: 0 0 16px 0; font-size: 18px;">確認刪除</h3>
+            <h3 style="margin: 0 0 16px 0; font-size: 18px;">{{ _('確認刪除') }}</h3>
 
             <template x-if="assignedCount > 0">
                 <div class="alert alert-warning">
-                    <strong>警告：</strong>此角色目前有 <span x-text="assignedCount"></span> 位用戶使用中。
-                    刪除後這些用戶將失去此角色的權限。
+                    <strong>{{ _('警告：') }}</strong>{{ _('此角色目前有') }} <span x-text="assignedCount"></span> {{ _('位用戶使用中。刪除後這些用戶將失去此角色的權限。') }}
                 </div>
             </template>
 
-            <p>確定要刪除角色「<strong>{{ role.name }}</strong>」嗎？</p>
+            <p>{{ _('確定要刪除角色「%(name)s」嗎？', name=role.name) }}</p>
 
             <div class="modal-buttons" style="margin-top: 20px;">
                 <button type="button" @click="showDeleteModal = false" class="btn btn-cancel">
-                    取消
+                    {{ _('取消') }}
                 </button>
                 <button type="button" @click="doDelete()"
                         :disabled="isDeleting" class="btn btn-danger"
                         :style="isDeleting ? 'opacity: 0.6;' : ''">
-                    <span x-show="!isDeleting">確認刪除</span>
-                    <span x-show="isDeleting">刪除中...</span>
+                    <span x-show="!isDeleting">{{ _('確認刪除') }}</span>
+                    <span x-show="isDeleting">{{ _('刪除中...') }}</span>
                 </button>
             </div>
         </div>

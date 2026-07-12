@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}系統設定 - BeakMask{% endblock %}
+{% block title %}{{ _('系統設定') }} - BeakMask{% endblock %}
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,41 +11,41 @@
 <div class="settings-layout" x-data="{ activeSection: 'basic' }">
     <!-- 左側選單 -->
     <div class="settings-sidebar">
-        <h3>設定分類</h3>
+        <h3>{{ _('設定分類') }}</h3>
         <div class="settings-menu-item" :class="{ active: activeSection === 'basic' }"
              @click="activeSection = 'basic'">
             <span class="settings-menu-icon">[B]</span>
-            <span>企業資訊</span>
+            <span>{{ _('企業資訊') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'login-branding' }"
              @click="activeSection = 'login-branding'">
             <span class="settings-menu-icon">[L]</span>
-            <span>登入頁面顯示</span>
+            <span>{{ _('登入頁面顯示') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'general' }"
              @click="activeSection = 'general'">
             <span class="settings-menu-icon">[G]</span>
-            <span>一般設定</span>
+            <span>{{ _('一般設定') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'password-policy' }"
              @click="activeSection = 'password-policy'">
             <span class="settings-menu-icon">[P]</span>
-            <span>密碼政策</span>
+            <span>{{ _('密碼政策') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'login-security' }"
              @click="activeSection = 'login-security'">
             <span class="settings-menu-icon">[F]</span>
-            <span>登入安全欄位</span>
+            <span>{{ _('登入安全欄位') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
              @click="activeSection = 'recipients'">
             <span class="settings-menu-icon">[R]</span>
-            <span>收件人群組</span>
+            <span>{{ _('收件人群組') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'smtp' }"
              @click="activeSection = 'smtp'">
             <span class="settings-menu-icon">[S]</span>
-            <span>SMTP 郵件</span>
+            <span>{{ _('SMTP 郵件') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
              @click="activeSection = 'telegram'">
@@ -58,37 +58,37 @@
     <div class="settings-content">
         <!-- 企業資訊 -->
         <section id="basic" class="settings-section" x-show="activeSection === 'basic'" x-data="logoSettings()" x-init="init()">
-            <h2>企業資訊</h2>
+            <h2>{{ _('企業資訊') }}</h2>
             <table border="1" cellpadding="10" cellspacing="0">
                 <tr>
-                    <th style="text-align: left; width: 150px;">企業名稱</th>
+                    <th style="text-align: left; width: 150px;">{{ _('企業名稱') }}</th>
                     <td>{{ current_user.organization.name if current_user.organization else '-' }}</td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">網域</th>
+                    <th style="text-align: left;">{{ _('網域') }}</th>
                     <td>{{ current_user.organization.domain_name if current_user.organization else '-' }}</td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">帳號上限</th>
-                    <td>&infin; -- 開源的沒打算商業化，大家盡量用吧^_^</td>
+                    <th style="text-align: left;">{{ _('帳號上限') }}</th>
+                    <td>{{ _('&infin; -- 開源的沒打算商業化，大家盡量用吧^_^') }}</td>
                 </tr>
                 <tr>
-                    <th style="text-align: left; vertical-align: top;">企業 Logo</th>
+                    <th style="text-align: left; vertical-align: top;">{{ _('企業 Logo') }}</th>
                     <td>
                         <!-- 預覽區 -->
                         <div style="margin-bottom: 12px;">
                             <template x-if="logoUrl">
                                 <div style="display: flex; align-items: center; gap: 16px;">
-                                    <img :src="logoUrl" alt="企業 Logo"
+                                    <img :src="logoUrl" alt="{{ _('企業 Logo') }}"
                                          style="max-width: 200px; max-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #fff;">
                                     <button type="button" @click="deleteLogo()"
                                             style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                        刪除
+                                        {{ _('刪除') }}
                                     </button>
                                 </div>
                             </template>
                             <template x-if="!logoUrl">
-                                <span style="color: #999;">尚未上傳 Logo</span>
+                                <span style="color: #999;">{{ _('尚未上傳 Logo') }}</span>
                             </template>
                         </div>
                         <!-- 上傳區 -->
@@ -100,7 +100,7 @@
                                     style="padding: 8px 16px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer;">
                                 <span x-text="uploading ? '上傳中...' : (logoUrl ? '更換 Logo' : '上傳 Logo')"></span>
                             </button>
-                            <span style="color: #666; font-size: 12px;">支援 PNG, JPG, GIF, SVG, WebP（最大 2MB）</span>
+                            <span style="color: #666; font-size: 12px;">{{ _('支援 PNG, JPG, GIF, SVG, WebP（最大 2MB）') }}</span>
                         </div>
                         <!-- 訊息 -->
                         <p x-show="message" x-text="message"
@@ -108,25 +108,25 @@
                                    (messageType === 'success' ? 'background: #e8f5e9; color: #2e7d32;' : 'background: #fef2f2; color: #dc2626;')"
                            x-transition></p>
                         <div style="margin-top: 8px; color: #666; font-size: 12px;">
-                            Logo 會顯示在企業專屬登入頁面
+                            {{ _('Logo 會顯示在企業專屬登入頁面') }}
                         </div>
                     </td>
                 </tr>
             </table>
             <p style="margin-top: 10px; color: #666;">
-                <small>如需修改其他企業資訊，請聯繫系統管理員。</small>
+                <small>{{ _('如需修改其他企業資訊，請聯繫系統管理員。') }}</small>
             </p>
         </section>
 
         <!-- 登入頁面品牌設定 -->
         <section id="login-branding" class="settings-section" x-show="activeSection === 'login-branding'" x-data="loginBrandingSettings()" x-init="init()">
-            <h2>登入頁面顯示</h2>
+            <h2>{{ _('登入頁面顯示') }}</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
-                隱藏可避免透過登入頁辨識企業身份
+                {{ _('隱藏可避免透過登入頁辨識企業身份') }}
             </p>
             <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
                 <tr>
-                    <th style="text-align: left; width: 200px; vertical-align: top;">企業成員登入頁面</th>
+                    <th style="text-align: left; width: 200px; vertical-align: top;">{{ _('企業成員登入頁面') }}</th>
                     <td>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -134,20 +134,20 @@
                                        x-model="settings.login_employee_show_logo"
                                        @change="saveSetting('login_employee_show_logo', settings.login_employee_show_logo)"
                                        style="width: 18px; height: 18px;">
-                                <span>顯示企業 Logo</span>
+                                <span>{{ _('顯示企業 Logo') }}</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox"
                                        x-model="settings.login_employee_show_name"
                                        @change="saveSetting('login_employee_show_name', settings.login_employee_show_name)"
                                        style="width: 18px; height: 18px;">
-                                <span>顯示企業名稱</span>
+                                <span>{{ _('顯示企業名稱') }}</span>
                             </label>
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <th style="text-align: left; vertical-align: top;">外部廠商登入頁面</th>
+                    <th style="text-align: left; vertical-align: top;">{{ _('外部廠商登入頁面') }}</th>
                     <td>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -155,14 +155,14 @@
                                        x-model="settings.login_external_show_logo"
                                        @change="saveSetting('login_external_show_logo', settings.login_external_show_logo)"
                                        style="width: 18px; height: 18px;">
-                                <span>顯示企業 Logo</span>
+                                <span>{{ _('顯示企業 Logo') }}</span>
                             </label>
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox"
                                        x-model="settings.login_external_show_name"
                                        @change="saveSetting('login_external_show_name', settings.login_external_show_name)"
                                        style="width: 18px; height: 18px;">
-                                <span>顯示企業名稱</span>
+                                <span>{{ _('顯示企業名稱') }}</span>
                             </label>
                         </div>
                     </td>
@@ -176,29 +176,29 @@
 
         <!-- 一般設定 -->
         <section id="general" class="settings-section" x-show="activeSection === 'general'" x-data="generalSettings()" x-init="init()">
-            <h2>一般設定</h2>
+            <h2>{{ _('一般設定') }}</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
-                控制企業的一般行為設定
+                {{ _('控制企業的一般行為設定') }}
             </p>
 
             <table border="1" cellpadding="10" cellspacing="0" style="width: 100%;">
                 <tr>
-                    <th style="text-align: left; width: 200px;">允許用戶修改個人資料</th>
+                    <th style="text-align: left; width: 200px;">{{ _('允許用戶修改個人資料') }}</th>
                     <td>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox"
                                    x-model="settings.allow_user_self_edit"
                                    @change="saveSettings()"
                                    style="width: 18px; height: 18px;">
-                            <span>允許一般用戶在「個人設定」中編輯自己的資料</span>
+                            <span>{{ _('允許一般用戶在「個人設定」中編輯自己的資料') }}</span>
                         </label>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                            關閉後，用戶只能檢視自己的資料但無法修改（密碼變更除外）
+                            {{ _('關閉後，用戶只能檢視自己的資料但無法修改（密碼變更除外）') }}
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">企業常用語系</th>
+                    <th style="text-align: left;">{{ _('企業常用語系') }}</th>
                     <td>
                         <select x-model="settings.locale" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
@@ -207,43 +207,43 @@
                             {% endfor %}
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                            影響選單標題等介面元素的顯示語言（需重新整理頁面生效）
+                            {{ _('影響選單標題等介面元素的顯示語言（需重新整理頁面生效）') }}
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">顯示名稱</th>
+                    <th style="text-align: left;">{{ _('顯示名稱') }}</th>
                     <td>
                         <select x-model="settings.display_name_field" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
-                            <option value="native_name">本國姓名</option>
-                            <option value="english_name">英文姓名</option>
-                            <option value="nickname">暱稱</option>
-                            <option value="username">帳號</option>
-                            <option value="employee_id">用戶編號</option>
+                            <option value="native_name">{{ _('本國姓名') }}</option>
+                            <option value="english_name">{{ _('英文姓名') }}</option>
+                            <option value="nickname">{{ _('暱稱') }}</option>
+                            <option value="username">{{ _('帳號') }}</option>
+                            <option value="employee_id">{{ _('用戶編號') }}</option>
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                            決定系統中用戶名稱的顯示方式
+                            {{ _('決定系統中用戶名稱的顯示方式') }}
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">帳號姓名連接符號</th>
+                    <th style="text-align: left;">{{ _('帳號姓名連接符號') }}</th>
                     <td>
                         <select x-model="settings.name_connector" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
-                            <option value=".">. (點) -- first.last</option>
-                            <option value="_">_ (底線) -- first_last</option>
-                            <option value="-">- (連字號) -- first-last</option>
-                            <option value="">(無符號) -- firstlast</option>
+                            <option value=".">{{ _('. (點) -- first.last') }}</option>
+                            <option value="_">{{ _('_ (底線) -- first_last') }}</option>
+                            <option value="-">{{ _('- (連字號) -- first-last') }}</option>
+                            <option value="">{{ _('(無符號) -- firstlast') }}</option>
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                            建立帳號時，姓名之間使用的連接符號（帳號統一小寫）
+                            {{ _('建立帳號時，姓名之間使用的連接符號（帳號統一小寫）') }}
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <th style="text-align: left;">企業主要時區</th>
+                    <th style="text-align: left;">{{ _('企業主要時區') }}</th>
                     <td>
                         <select x-model="settings.timezone" @change="saveSettings()"
                                 style="padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; min-width: 280px;">
@@ -256,7 +256,7 @@
                             {% endfor %}
                         </select>
                         <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                            IANA 時區，影響系統時間顯示（管理員設定一次即可）
+                            {{ _('IANA 時區，影響系統時間顯示（管理員設定一次即可）') }}
                         </div>
                     </td>
                 </tr>
@@ -269,9 +269,9 @@
 
         <!-- 密碼政策 -->
         <section id="password-policy" class="settings-section" x-show="activeSection === 'password-policy'" x-data="passwordPolicySettings()" x-init="init()">
-            <h2>密碼政策</h2>
+            <h2>{{ _('密碼政策') }}</h2>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
-                設定密碼複雜度要求、歷史限制和登入失敗鎖定
+                {{ _('設定密碼複雜度要求、歷史限制和登入失敗鎖定') }}
             </p>
 
             <!-- 啟用開關 -->
@@ -281,18 +281,17 @@
                            x-model="policy.enabled"
                            @change="savePolicy()"
                            style="width: 18px; height: 18px;">
-                    <span style="font-weight: 500;">啟用密碼政策</span>
-                    <span style="color: #666; font-size: 13px;">（啟用後，所有密碼欄位將檢查複雜度要求）</span>
+                    <span style="font-weight: 500;">{{ _('啟用密碼政策') }}</span>
+                    <span style="color: #666; font-size: 13px;">{{ _('（啟用後，所有密碼欄位將檢查複雜度要求）') }}</span>
                 </label>
             </div>
 
             <!-- SMTP 未設定警告 -->
             <div x-show="!hasSmtp && policy.enabled"
                  style="padding: 12px 16px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;">
-                <strong style="color: #92400e;">注意</strong>
+                <strong style="color: #92400e;">{{ _('注意') }}</strong>
                 <span style="color: #78350f;">
-                    尚未設定 SMTP，忘記密碼功能無法使用。
-                    請切換到「SMTP 郵件」分頁進行設定。
+                    {{ _('尚未設定 SMTP，忘記密碼功能無法使用。請切換到「SMTP 郵件」分頁進行設定。') }}
                 </span>
             </div>
 
@@ -302,36 +301,36 @@
                     <tbody>
                         <!-- 密碼長度 -->
                         <tr>
-                            <th style="text-align: left;">最小長度</th>
+                            <th style="text-align: left;">{{ _('最小長度') }}</th>
                             <td>
                                 <input type="number" x-model.number="policy.min_length"
                                        @change="savePolicy()"
                                        min="8" max="32"
                                        style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <span style="margin-left: 8px; color: #666;">個字元（建議 12 以上）</span>
+                                <span style="margin-left: 8px; color: #666;">{{ _('個字元（建議 12 以上）') }}</span>
                             </td>
                         </tr>
 
                         <!-- 複雜度要求 -->
                         <tr>
-                            <th style="text-align: left; vertical-align: top;">複雜度要求</th>
+                            <th style="text-align: left; vertical-align: top;">{{ _('複雜度要求') }}</th>
                             <td>
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" x-model="policy.require_uppercase" @change="savePolicy()">
-                                        <span>包含大寫字母 (A-Z)</span>
+                                        <span>{{ _('包含大寫字母 (A-Z)') }}</span>
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" x-model="policy.require_lowercase" @change="savePolicy()">
-                                        <span>包含小寫字母 (a-z)</span>
+                                        <span>{{ _('包含小寫字母 (a-z)') }}</span>
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" x-model="policy.require_digit" @change="savePolicy()">
-                                        <span>包含數字 (0-9)</span>
+                                        <span>{{ _('包含數字 (0-9)') }}</span>
                                     </label>
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" x-model="policy.require_special" @change="savePolicy()">
-                                        <span>包含特殊符號 (!@#$%^&* 等)</span>
+                                        <span>{{ _('包含特殊符號 (!@#$%^&* 等)') }}</span>
                                     </label>
                                 </div>
                             </td>
@@ -339,42 +338,42 @@
 
                         <!-- 密碼歷史 -->
                         <tr>
-                            <th style="text-align: left;">密碼歷史限制</th>
+                            <th style="text-align: left;">{{ _('密碼歷史限制') }}</th>
                             <td>
                                 <input type="number" x-model.number="policy.history_count"
                                        @change="savePolicy()"
                                        min="0" max="24"
                                        style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <span style="margin-left: 8px; color: #666;">次內不可重複使用（0 = 不限制）</span>
+                                <span style="margin-left: 8px; color: #666;">{{ _('次內不可重複使用（0 = 不限制）') }}</span>
                             </td>
                         </tr>
 
                         <!-- 登入失敗鎖定 -->
                         <tr>
-                            <th style="text-align: left;">登入失敗鎖定</th>
+                            <th style="text-align: left;">{{ _('登入失敗鎖定') }}</th>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                    <span>連續失敗</span>
+                                    <span>{{ _('連續失敗') }}</span>
                                     <input type="number" x-model.number="policy.max_failed_attempts"
                                            @change="savePolicy()"
                                            min="3" max="10"
                                            style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <span>次後鎖定帳號</span>
+                                    <span>{{ _('次後鎖定帳號') }}</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span>基礎鎖定時間</span>
+                                    <span>{{ _('基礎鎖定時間') }}</span>
                                     <input type="number" x-model.number="policy.lockout_duration_minutes"
                                            @change="savePolicy()"
                                            min="1" max="60"
                                            style="width: 60px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                    <span>分鐘，每次鎖定時間 x</span>
+                                    <span>{{ _('分鐘，每次鎖定時間 x') }}</span>
                                     <input type="number" x-model.number="policy.lockout_multiplier"
                                            @change="savePolicy()"
                                            min="1" max="3"
                                            style="width: 50px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                                 <div style="margin-top: 6px; color: #666; font-size: 12px;">
-                                    例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）
+                                    {{ _('例：基礎 15 分鐘 x 2，第一次鎖 15 分鐘，第二次 30 分鐘，第三次 60 分鐘...（最多 24 小時）') }}
                                 </div>
                             </td>
                         </tr>

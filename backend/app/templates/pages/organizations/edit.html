@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯企業 - {{ organization.name }} - BeakMask{% endblock %}
+{% block title %}{{ _('編輯企業') }} - {{ organization.name }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/css/organizations.css">
@@ -11,9 +11,9 @@
 
 <!-- 頁面標題列 -->
 <div class="page-header">
-    <h1 class="page-title">編輯企業 - {{ organization.name }}</h1>
+    <h1 class="page-title">{{ _('編輯企業') }} - {{ organization.name }}</h1>
     <div class="page-actions">
-        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">返回企業管理</a>
+        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">{{ _('返回企業管理') }}</a>
     </div>
 </div>
 
@@ -34,73 +34,73 @@
     <!-- 基本資訊 -->
     <div class="detail-card">
         <div class="detail-card-header">
-            <h3>基本資訊</h3>
+            <h3>{{ _('基本資訊') }}</h3>
         </div>
         <div class="detail-card-body">
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">企業代碼</label>
+                    <label class="form-label">{{ _('企業代碼') }}</label>
                     <input type="text" class="form-control" value="{{ organization.code }}" disabled>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">網域名稱</label>
+                    <label class="form-label">{{ _('網域名稱') }}</label>
                     <input type="text" class="form-control" value="{{ organization.domain_name }}" disabled>
-                    <div class="form-hint">企業代碼與網域名稱建立後不可變更</div>
+                    <div class="form-hint">{{ _('企業代碼與網域名稱建立後不可變更') }}</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="name">企業名稱 <span class="required">*</span></label>
+                    <label class="form-label" for="name">{{ _('企業名稱') }} <span class="required">*</span></label>
                     <input type="text" id="name" name="name" class="form-control"
                            value="{{ organization.name }}" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="display_name">顯示名稱</label>
+                    <label class="form-label" for="display_name">{{ _('顯示名稱') }}</label>
                     <input type="text" id="display_name" name="display_name" class="form-control"
                            value="{{ organization.display_name or '' }}">
-                    <div class="form-hint">多語言顯示用，不填則使用企業名稱</div>
+                    <div class="form-hint">{{ _('多語言顯示用，不填則使用企業名稱') }}</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="customer_type">客戶類型</label>
+                    <label class="form-label" for="customer_type">{{ _('客戶類型') }}</label>
                     <select id="customer_type" name="customer_type" class="form-control">
-                        <option value="TRIAL" {% if organization.customer_type == 'TRIAL' %}selected{% endif %}>試用</option>
-                        <option value="FORMAL" {% if organization.customer_type == 'FORMAL' %}selected{% endif %}>正式客戶</option>
-                        <option value="BLACKLIST" {% if organization.customer_type == 'BLACKLIST' %}selected{% endif %}>黑名單</option>
+                        <option value="TRIAL" {% if organization.customer_type == 'TRIAL' %}selected{% endif %}>{{ _('試用') }}</option>
+                        <option value="FORMAL" {% if organization.customer_type == 'FORMAL' %}selected{% endif %}>{{ _('正式客戶') }}</option>
+                        <option value="BLACKLIST" {% if organization.customer_type == 'BLACKLIST' %}selected{% endif %}>{{ _('黑名單') }}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="user_limit">帳號上限</label>
+                    <label class="form-label" for="user_limit">{{ _('帳號上限') }}</label>
                     <input type="text" id="user_limit" name="user_limit" class="form-control"
                            value="&infin;" readonly>
-                    <div class="form-hint">目前已使用 {{ active_user_count }} 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^</div>
+                    <div class="form-hint">{{ _('目前已使用 %(count)s 個帳號 -- 開源的沒打算商業化，大家盡量用吧^_^', count=active_user_count) }}</div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="is_active">狀態</label>
+                    <label class="form-label" for="is_active">{{ _('狀態') }}</label>
                     <select id="is_active" name="is_active" class="form-control" x-model="isActive">
-                        <option value="true">啟用</option>
-                        <option value="false">停用</option>
+                        <option value="true">{{ _('啟用') }}</option>
+                        <option value="false">{{ _('停用') }}</option>
                     </select>
                     {% if active_contracts %}
-                    <div class="form-hint text-warning">此企業有 {{ active_contracts|length }} 份未到期合約</div>
+                    <div class="form-hint text-warning">{{ _('此企業有 %(count)s 份未到期合約', count=active_contracts|length) }}</div>
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label class="form-label">所屬集團</label>
+                    <label class="form-label">{{ _('所屬集團') }}</label>
                     <input type="text" class="form-control"
-                           value="{% if organization.conglomerate %}{{ organization.conglomerate.name }}{% else %}無{% endif %}" disabled>
-                    <div class="form-hint">集團設定請至企業管理列表頁操作</div>
+                           value="{% if organization.conglomerate %}{{ organization.conglomerate.name }}{% else %}{{ _('無') }}{% endif %}" disabled>
+                    <div class="form-hint">{{ _('集團設定請至企業管理列表頁操作') }}</div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="description">描述</label>
+                <label class="form-label" for="description">{{ _('描述') }}</label>
                 <textarea id="description" name="description" class="form-control" rows="3">{{ organization.description or '' }}</textarea>
             </div>
         </div>
@@ -109,24 +109,24 @@
     <!-- 聯絡資訊 -->
     <div class="detail-card">
         <div class="detail-card-header">
-            <h3>聯絡資訊</h3>
+            <h3>{{ _('聯絡資訊') }}</h3>
         </div>
         <div class="detail-card-body">
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="contact_person">聯絡人</label>
+                    <label class="form-label" for="contact_person">{{ _('聯絡人') }}</label>
                     <input type="text" id="contact_person" name="contact_person" class="form-control"
                            value="{{ organization.contact_person or '' }}">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="contact_email">聯絡信箱</label>
+                    <label class="form-label" for="contact_email">{{ _('聯絡信箱') }}</label>
                     <input type="email" id="contact_email" name="contact_email" class="form-control"
                            value="{{ organization.contact_email or '' }}">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="contact_phone">聯絡電話</label>
+                    <label class="form-label" for="contact_phone">{{ _('聯絡電話') }}</label>
                     <input type="text" id="contact_phone" name="contact_phone" class="form-control"
                            value="{{ organization.contact_phone or '' }}">
                 </div>
@@ -135,7 +135,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label" for="address">地址</label>
+                <label class="form-label" for="address">{{ _('地址') }}</label>
                 <textarea id="address" name="address" class="form-control" rows="2">{{ organization.address or '' }}</textarea>
             </div>
         </div>
@@ -143,8 +143,8 @@
 
     <!-- 儲存按鈕 -->
     <div style="display: flex; gap: 8px; margin-bottom: 24px;">
-        <button type="submit" class="btn btn-primary">儲存變更</button>
-        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">取消</a>
+        <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+        <a href="{{ url_for('organizations.list_orgs', org=organization.secure_code) }}" class="btn btn-secondary">{{ _('取消') }}</a>
     </div>
 </form>
 
@@ -152,17 +152,17 @@
 {% if not organization.is_system_org %}
 <div class="detail-card" style="border-color: var(--color-danger);">
     <div class="detail-card-header" style="background: var(--color-danger-light);">
-        <h3 style="color: var(--color-danger);">危險操作</h3>
+        <h3 style="color: var(--color-danger);">{{ _('危險操作') }}</h3>
     </div>
     <div class="detail-card-body">
         <p style="margin: 0 0 12px 0; font-size: var(--font-size-sm); color: var(--color-text-secondary);">
-            刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。
+            {{ _('刪除此企業將無法復原，所有相關資料（帳號、合約、設定）都會被標記為刪除。') }}
         </p>
         <form method="POST"
               action="{{ url_for('organizations.delete_org', secure_code=organization.secure_code) }}"
-              onsubmit="return confirm('確定要刪除企業「{{ organization.name }}」嗎？此操作無法復原。');">
+              onsubmit="return confirm('{{ _('確定要刪除企業「%(name)s」嗎？此操作無法復原。', name=organization.name) }}');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger">刪除企業</button>
+            <button type="submit" class="btn btn-danger">{{ _('刪除企業') }}</button>
         </form>
     </div>
 </div>

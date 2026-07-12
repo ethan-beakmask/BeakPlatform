@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}速率限制 - BeakPlatform{% endblock %}
+{% block title %}{{ _('速率限制') }} - BeakPlatform{% endblock %}
 
 {% block head %}
 <style>
@@ -51,9 +51,9 @@
 
 {% block content %}
 <div class="rl-container" x-data="orgRateLimits()" x-init="load()">
-    <h2>速率限制設定</h2>
+    <h2>{{ _('速率限制設定') }}</h2>
     <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
-        設定本企業認證頁面的 POST 嘗試頻率上限。未設定時使用系統預設值。
+        {{ _('設定本企業認證頁面的 POST 嘗試頻率上限。未設定時使用系統預設值。') }}
     </p>
 
     <div x-show="msg" class="rl-msg" :class="msgErr ? 'rl-msg-err' : 'rl-msg-ok'"
@@ -68,45 +68,45 @@
                         <input type="text" class="rl-input" x-model="cat.value"
                                :placeholder="cat.system_default">
                         <template x-if="cat.source === 'org'">
-                            <span class="rl-source rl-source-org">(企業自訂)</span>
+                            <span class="rl-source rl-source-org">{{ _('(企業自訂)') }}</span>
                         </template>
                         <template x-if="cat.source === 'system'">
-                            <span class="rl-source rl-source-system">(系統預設)</span>
+                            <span class="rl-source rl-source-system">{{ _('(系統預設)') }}</span>
                         </template>
                         <button style="font-size: 12px; padding: 3px 8px; border: 1px solid #d1d5db;
                                        border-radius: 3px; background: #f9fafb; cursor: pointer;"
                                 @click="cat.value = ''"
                                 x-show="cat.source === 'org'"
-                                title="清除企業設定，回歸系統預設">恢復預設</button>
+                                title="{{ _('清除企業設定，回歸系統預設') }}">{{ _('恢復預設') }}</button>
                     </div>
                     <div class="rl-system-default">
-                        系統預設: <span x-text="cat.system_default"></span>
+                        {{ _('系統預設:') }} <span x-text="cat.system_default"></span>
                     </div>
                 </div>
             </template>
 
             <div class="rl-actions">
-                <button class="btn btn-primary" @click="save()">儲存</button>
+                <button class="btn btn-primary" @click="save()">{{ _('儲存') }}</button>
             </div>
         </div>
     </template>
 
     <template x-if="categories.length === 0 && !loading">
-        <p style="color: #6b7280;">載入中...</p>
+        <p style="color: #6b7280;">{{ _('載入中...') }}</p>
     </template>
 
     <div class="rl-info">
-        <h4>格式說明</h4>
+        <h4>{{ _('格式說明') }}</h4>
         <table>
-            <thead><tr><th>格式</th><th>說明</th></tr></thead>
+            <thead><tr><th>{{ _('格式') }}</th><th>{{ _('說明') }}</th></tr></thead>
             <tbody>
-                <tr><td><code>20 per 10 minutes</code></td><td>每 10 分鐘最多 20 次</td></tr>
-                <tr><td><code>5 per minute</code></td><td>每分鐘最多 5 次</td></tr>
-                <tr><td><code>3 per hour</code></td><td>每小時最多 3 次</td></tr>
+                <tr><td><code>20 per 10 minutes</code></td><td>{{ _('每 10 分鐘最多 20 次') }}</td></tr>
+                <tr><td><code>5 per minute</code></td><td>{{ _('每分鐘最多 5 次') }}</td></tr>
+                <tr><td><code>3 per hour</code></td><td>{{ _('每小時最多 3 次') }}</td></tr>
             </tbody>
         </table>
         <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">
-            限制以「帳號 + 來源 IP」計算，同企業不同帳號互不影響。清空欄位並儲存即可恢復系統預設。
+            {{ _('限制以「帳號 + 來源 IP」計算，同企業不同帳號互不影響。清空欄位並儲存即可恢復系統預設。') }}
         </p>
     </div>
 </div>

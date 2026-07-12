@@ -1,7 +1,7 @@
 <!-- ==================== 選單配色 ==================== -->
 <div id="section-menucolors" class="settings-section" :class="{ active: activeSection === 'menucolors' }">
-    <h2>選單配色</h2>
-    <p>調整主選單列與選單管理頁面的權限著色。儲存後重新整理頁面生效。</p>
+    <h2>{{ _('選單配色') }}</h2>
+    <p>{{ _('調整主選單列與選單管理頁面的權限著色。儲存後重新整理頁面生效。') }}</p>
 
     <div x-show="message.menuColors" x-cloak
          :class="'message ' + (message.menuColorsError ? 'message-error' : 'message-success')"
@@ -11,55 +11,55 @@
     <!-- 選單列底色 -->
     <!-- 選單配色矩陣 -->
     <div class="settings-card">
-        <h4>選單配色</h4>
+        <h4>{{ _('選單配色') }}</h4>
         <table class="data-table bordered" style="width:auto">
             <thead>
                 <tr>
-                    <th>類型</th>
-                    <th>底色</th>
-                    <th>文字</th>
+                    <th>{{ _('類型') }}</th>
+                    <th>{{ _('底色') }}</th>
+                    <th>{{ _('文字') }}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>系統管理員</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-sys-bg']"> <code x-text="menuColors.colors['menu-sys-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-sys-text']"> <code x-text="menuColors.colors['menu-sys-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-text')" title="重置">R</button></td>
+                    <td>{{ _('系統管理員') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-sys-bg']"> <code x-text="menuColors.colors['menu-sys-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-sys-text']"> <code x-text="menuColors.colors['menu-sys-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-sys-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>企業管理員</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-org-bg']"> <code x-text="menuColors.colors['menu-org-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-org-text']"> <code x-text="menuColors.colors['menu-org-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-text')" title="重置">R</button></td>
+                    <td>{{ _('企業管理員') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-org-bg']"> <code x-text="menuColors.colors['menu-org-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-org-text']"> <code x-text="menuColors.colors['menu-org-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-org-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>外部廠商</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-ext-bg']"> <code x-text="menuColors.colors['menu-ext-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-ext-text']"> <code x-text="menuColors.colors['menu-ext-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-text')" title="重置">R</button></td>
+                    <td>{{ _('外部廠商') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-ext-bg']"> <code x-text="menuColors.colors['menu-ext-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-ext-text']"> <code x-text="menuColors.colors['menu-ext-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-ext-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>跨階層基本選單(企業成員)</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-common-bg']"> <code x-text="menuColors.colors['menu-common-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-common-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-common-text']"> <code x-text="menuColors.colors['menu-common-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-common-text')" title="重置">R</button></td>
+                    <td>{{ _('跨階層基本選單(企業成員)') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-common-bg']"> <code x-text="menuColors.colors['menu-common-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-common-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-common-text']"> <code x-text="menuColors.colors['menu-common-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-common-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>跨級標記</td>
+                    <td>{{ _('跨級標記') }}</td>
                     <td style="color:#999">-</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-cross-text']"> <code x-text="menuColors.colors['menu-cross-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-cross-text')" title="重置">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-cross-text']"> <code x-text="menuColors.colors['menu-cross-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-cross-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>模組</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-module-bg']"> <code x-text="menuColors.colors['menu-module-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-module-text']"> <code x-text="menuColors.colors['menu-module-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-text')" title="重置">R</button></td>
+                    <td>{{ _('模組') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-module-bg']"> <code x-text="menuColors.colors['menu-module-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-module-text']"> <code x-text="menuColors.colors['menu-module-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-module-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
                 <tr>
-                    <td>選單列背景</td>
-                    <td><input type="color" x-model="menuColors.colors['menubar-bg']"> <code x-text="menuColors.colors['menubar-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menubar-bg')" title="重置">R</button></td>
+                    <td>{{ _('選單列背景') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menubar-bg']"> <code x-text="menuColors.colors['menubar-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menubar-bg')" title="{{ _('重置') }}">R</button></td>
                     <td style="color:#999">-</td>
                 </tr>
                 <tr>
-                    <td>表頭列</td>
-                    <td><input type="color" x-model="menuColors.colors['menu-header-bg']"> <code x-text="menuColors.colors['menu-header-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-bg')" title="重置">R</button></td>
-                    <td><input type="color" x-model="menuColors.colors['menu-header-text']"> <code x-text="menuColors.colors['menu-header-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-text')" title="重置">R</button></td>
+                    <td>{{ _('表頭列') }}</td>
+                    <td><input type="color" x-model="menuColors.colors['menu-header-bg']"> <code x-text="menuColors.colors['menu-header-bg']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-bg')" title="{{ _('重置') }}">R</button></td>
+                    <td><input type="color" x-model="menuColors.colors['menu-header-text']"> <code x-text="menuColors.colors['menu-header-text']"></code> <button class="btn btn-secondary btn-xs" @click="resetSingleColor('menu-header-text')" title="{{ _('重置') }}">R</button></td>
                 </tr>
             </tbody>
         </table>
@@ -67,8 +67,8 @@
 
     <!-- 操作按鈕 -->
     <div class="btn-group" style="margin-top: 16px;">
-        <button class="btn btn-primary" @click="previewMenuColors()">即時預覽</button>
-        <button class="btn btn-success" @click="saveMenuColors()">儲存配色</button>
-        <button class="btn btn-danger" @click="resetMenuColors()">重置為預設</button>
+        <button class="btn btn-primary" @click="previewMenuColors()">{{ _('即時預覽') }}</button>
+        <button class="btn btn-success" @click="saveMenuColors()">{{ _('儲存配色') }}</button>
+        <button class="btn btn-danger" @click="resetMenuColors()">{{ _('重置為預設') }}</button>
     </div>
 </div>

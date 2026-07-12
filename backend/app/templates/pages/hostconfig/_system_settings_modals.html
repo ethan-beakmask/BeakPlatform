@@ -8,19 +8,19 @@
 
             <form @submit.prevent="saveSmtpConfig()">
                 <div class="form-group">
-                    <label>設定名稱 *</label>
-                    <input type="text" x-model="smtp.form.name" required placeholder="例如: Gmail 主要">
+                    <label>{{ _('設定名稱') }} *</label>
+                    <input type="text" x-model="smtp.form.name" required placeholder="{{ _('例如: Gmail 主要') }}">
                 </div>
 
                 <div class="form-group">
-                    <label>描述</label>
-                    <textarea x-model="smtp.form.description" rows="2" placeholder="選填"></textarea>
+                    <label>{{ _('描述') }}</label>
+                    <textarea x-model="smtp.form.description" rows="2" placeholder="{{ _('選填') }}"></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>提供者</label>
+                    <label>{{ _('提供者') }}</label>
                     <select x-model="smtp.form.provider_type" @change="applySmtpPreset()">
-                        <option value="generic">一般 SMTP</option>
+                        <option value="generic">{{ _('一般 SMTP') }}</option>
                         <option value="gmail">Gmail</option>
                         <option value="outlook">Outlook / Office 365</option>
                     </select>
@@ -28,11 +28,11 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>SMTP 伺服器 *</label>
+                        <label>{{ _('SMTP 伺服器') }} *</label>
                         <input type="text" x-model="smtp.form.smtp_host" required placeholder="smtp.gmail.com">
                     </div>
                     <div class="form-group" style="max-width: 120px;">
-                        <label>連接埠 *</label>
+                        <label>{{ _('連接埠') }} *</label>
                         <input type="number" x-model.number="smtp.form.smtp_port" required placeholder="587">
                     </div>
                 </div>
@@ -41,62 +41,62 @@
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" x-model="smtp.form.use_tls">
-                            使用 STARTTLS
+                            {{ _('使用 STARTTLS') }}
                         </label>
                     </div>
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" x-model="smtp.form.use_ssl">
-                            使用 SSL
+                            {{ _('使用 SSL') }}
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>帳號 *</label>
+                    <label>{{ _('帳號') }} *</label>
                     <input type="text" x-model="smtp.form.username" required placeholder="your.email@gmail.com">
                 </div>
 
                 <div class="form-group">
                     <label x-text="smtp.editing ? '密碼（留空保持不變）' : '密碼 *'"></label>
-                    <input type="password" x-model="smtp.form.password" :required="!smtp.editing" placeholder="應用程式密碼">
+                    <input type="password" x-model="smtp.form.password" :required="!smtp.editing" placeholder="{{ _('應用程式密碼') }}">
                     <div class="form-hint" x-show="smtp.form.provider_type === 'gmail'">
-                        Gmail 請使用「應用程式密碼」，格式如 xxxx xxxx xxxx xxxx
+                        {{ _('Gmail 請使用「應用程式密碼」，格式如 xxxx xxxx xxxx xxxx') }}
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>寄件人 Email *</label>
+                        <label>{{ _('寄件人 Email') }} *</label>
                         <input type="email" x-model="smtp.form.from_email" required placeholder="noreply@example.com">
                     </div>
                     <div class="form-group">
-                        <label>寄件人名稱</label>
+                        <label>{{ _('寄件人名稱') }}</label>
                         <input type="text" x-model="smtp.form.from_name" placeholder="BeakMask System">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="max-width: 120px;">
-                        <label>優先順序</label>
+                        <label>{{ _('優先順序') }}</label>
                         <input type="number" x-model.number="smtp.form.priority" placeholder="100">
                     </div>
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" x-model="smtp.form.is_default">
-                            設為預設
+                            {{ _('設為預設') }}
                         </label>
                     </div>
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" x-model="smtp.form.is_active">
-                            啟用
+                            {{ _('啟用') }}
                         </label>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="smtp.showModal = false">取消</button>
+                    <button type="button" class="btn btn-secondary" @click="smtp.showModal = false">{{ _('取消') }}</button>
                     <button type="submit" class="btn btn-primary" x-text="smtp.editing ? '儲存' : '新增'"></button>
                 </div>
             </form>
@@ -113,40 +113,40 @@
 
             <form @submit.prevent="saveTelegramConfig()">
                 <div class="form-group">
-                    <label>設定名稱 *</label>
-                    <input type="text" x-model="telegram.form.name" required placeholder="例如: 主要通知 Bot">
+                    <label>{{ _('設定名稱') }} *</label>
+                    <input type="text" x-model="telegram.form.name" required placeholder="{{ _('例如: 主要通知 Bot') }}">
                 </div>
 
                 <div class="form-group">
-                    <label>描述</label>
-                    <textarea x-model="telegram.form.description" rows="2" placeholder="選填"></textarea>
+                    <label>{{ _('描述') }}</label>
+                    <textarea x-model="telegram.form.description" rows="2" placeholder="{{ _('選填') }}"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Bot Token *</label>
                     <input type="text" x-model="telegram.form.bot_token" required
                            placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
-                    <div class="form-hint">從 @BotFather 取得的 Token</div>
+                    <div class="form-hint">{{ _('從 @BotFather 取得的 Token') }}</div>
                 </div>
 
                 <div class="form-group">
-                    <label>頻道設定</label>
+                    <label>{{ _('頻道設定') }}</label>
                     <div class="channel-list">
                         <template x-for="(channel, index) in telegram.form.channelList" :key="index">
                             <div class="channel-item">
-                                <input type="text" x-model="channel.name" placeholder="頻道名稱">
+                                <input type="text" x-model="channel.name" placeholder="{{ _('頻道名稱') }}">
                                 <input type="text" x-model="channel.chat_id" placeholder="Chat ID">
                                 <button type="button" class="btn btn-danger" @click="removeChannel(index)">X</button>
                             </div>
                         </template>
-                        <button type="button" class="btn btn-secondary" @click="addChannel()">+ 新增頻道</button>
+                        <button type="button" class="btn btn-secondary" @click="addChannel()">+ {{ _('新增頻道') }}</button>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>預設頻道</label>
+                    <label>{{ _('預設頻道') }}</label>
                     <select x-model="telegram.form.default_channel">
-                        <option value="">-- 選擇預設頻道 --</option>
+                        <option value="">-- {{ _('選擇預設頻道') }} --</option>
                         <template x-for="(channel, index) in telegram.form.channelList" :key="index">
                             <option :value="channel.name" x-text="channel.name" x-show="channel.name"></option>
                         </template>
@@ -156,12 +156,12 @@
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" x-model="telegram.form.is_active">
-                        啟用
+                        {{ _('啟用') }}
                     </label>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="telegram.showModal = false">取消</button>
+                    <button type="button" class="btn btn-secondary" @click="telegram.showModal = false">{{ _('取消') }}</button>
                     <button type="submit" class="btn btn-primary" x-text="telegram.editing ? '儲存' : '新增'"></button>
                 </div>
             </form>
@@ -178,37 +178,37 @@
 
             <form @submit.prevent="saveRecipientGroup()">
                 <div class="form-group">
-                    <label>群組名稱 *</label>
-                    <input type="text" x-model="recipients.form.name" required placeholder="例如: 系統管理員">
+                    <label>{{ _('群組名稱') }} *</label>
+                    <input type="text" x-model="recipients.form.name" required placeholder="{{ _('例如: 系統管理員') }}">
                 </div>
 
                 <div class="form-group">
-                    <label>描述</label>
-                    <textarea x-model="recipients.form.description" rows="2" placeholder="選填"></textarea>
+                    <label>{{ _('描述') }}</label>
+                    <textarea x-model="recipients.form.description" rows="2" placeholder="{{ _('選填') }}"></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="max-width: 120px;">
-                        <label>優先順序</label>
+                        <label>{{ _('優先順序') }}</label>
                         <input type="number" x-model.number="recipients.form.priority" placeholder="100">
                     </div>
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" x-model="recipients.form.is_active">
-                            啟用
+                            {{ _('啟用') }}
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>收件人 Email（每行一個）</label>
+                    <label>{{ _('收件人 Email（每行一個）') }}</label>
                     <textarea x-model="recipients.form.emailList" rows="5"
                               placeholder="admin@example.com&#10;user@example.com"></textarea>
-                    <div class="form-hint">系統級群組以 Email 清單形式管理收件人</div>
+                    <div class="form-hint">{{ _('系統級群組以 Email 清單形式管理收件人') }}</div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="recipients.showModal = false">取消</button>
+                    <button type="button" class="btn btn-secondary" @click="recipients.showModal = false">{{ _('取消') }}</button>
                     <button type="submit" class="btn btn-primary" x-text="recipients.editing ? '儲存' : '新增'"></button>
                 </div>
             </form>

@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}伺服器設定 - BeakMask{% endblock %}
+{% block title %}{{ _('伺服器設定') }} - BeakMask{% endblock %}
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,7 +11,7 @@
 <div class="settings-layout" x-data="serverSettings()" x-init="init()">
     <!-- 左側選單 -->
     <div class="settings-sidebar">
-        <h3>設定分類</h3>
+        <h3>{{ _('設定分類') }}</h3>
         <div class="settings-menu-item" :class="{ active: activeSection === 'emailrelay' }"
              @click="activeSection = 'emailrelay'">
             <span class="settings-menu-icon">[M]</span>
@@ -20,7 +20,7 @@
         <div class="settings-menu-item" :class="{ active: activeSection === 'smtp' }"
              @click="activeSection = 'smtp'; loadSmtpConfigs()">
             <span class="settings-menu-icon">[S]</span>
-            <span>SMTP 郵件</span>
+            <span>{{ _('SMTP 郵件') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'telegram' }"
              @click="activeSection = 'telegram'; loadTelegramConfigs()">
@@ -30,37 +30,37 @@
         <div class="settings-menu-item" :class="{ active: activeSection === 'recipients' }"
              @click="activeSection = 'recipients'; loadRecipientGroups()">
             <span class="settings-menu-icon">[R]</span>
-            <span>收件人群組</span>
+            <span>{{ _('收件人群組') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'menucolors' }"
              @click="activeSection = 'menucolors'; loadMenuColors()">
             <span class="settings-menu-icon">[C]</span>
-            <span>選單配色</span>
+            <span>{{ _('選單配色') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'audit' }"
              @click="activeSection = 'audit'; loadAuditSettings()">
             <span class="settings-menu-icon">[A]</span>
-            <span>稽核設定</span>
+            <span>{{ _('稽核設定') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'ratelimit' }"
              @click="activeSection = 'ratelimit'; loadRateLimitSettings()">
             <span class="settings-menu-icon">[L]</span>
-            <span>速率限制</span>
+            <span>{{ _('速率限制') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'loginsecurity' }"
              @click="activeSection = 'loginsecurity'; loadLoginSecuritySettings()">
             <span class="settings-menu-icon">[K]</span>
-            <span>登入安全欄位</span>
+            <span>{{ _('登入安全欄位') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'filestorage' }"
              @click="activeSection = 'filestorage'; loadFileStorageSettings()">
             <span class="settings-menu-icon">[F]</span>
-            <span>檔案儲存</span>
+            <span>{{ _('檔案儲存') }}</span>
         </div>
         <div class="settings-menu-item" :class="{ active: activeSection === 'packages' }"
              @click="activeSection = 'packages'; loadPackageVersions()">
             <span class="settings-menu-icon">[V]</span>
-            <span>套件版本</span>
+            <span>{{ _('套件版本') }}</span>
         </div>
     </div>
 

@@ -1,7 +1,7 @@
 <!-- ==================== 檔案儲存 ==================== -->
 <div id="section-filestorage" class="settings-section" :class="{ active: activeSection === 'filestorage' }">
-    <h2>檔案儲存</h2>
-    <p>加密檔案的儲存路徑與目錄管理設定。</p>
+    <h2>{{ _('檔案儲存') }}</h2>
+    <p>{{ _('加密檔案的儲存路徑與目錄管理設定。') }}</p>
 
     <div x-show="message.fileStorage" x-cloak
          :class="'message ' + (message.fileStorageError ? 'message-error' : 'message-success')"
@@ -10,89 +10,89 @@
 
     <!-- 儲存路徑（唯讀） -->
     <div class="settings-card">
-        <h4>加密檔案儲存路徑</h4>
+        <h4>{{ _('加密檔案儲存路徑') }}</h4>
         <div class="form-group">
-            <label>目前路徑</label>
+            <label>{{ _('目前路徑') }}</label>
             <input type="text" :value="fileStorage.encryptedStorageDir" readonly
                    style="background: #f5f5f5; color: #666; cursor: not-allowed; width: 100%; max-width: 800px;">
             <div class="form-hint">
-                此路徑由環境變數 ENCRYPTED_STORAGE_DIR 控制。
-                如需修改，請調整 .env 檔案後重啟 Flask 服務。
+                {{ _('此路徑由環境變數 ENCRYPTED_STORAGE_DIR 控制。') }}
+                {{ _('如需修改，請調整 .env 檔案後重啟 Flask 服務。') }}
             </div>
         </div>
     </div>
 
     <!-- 目錄檔案上限 -->
     <div class="settings-card">
-        <h4>目錄檔案數上限</h4>
+        <h4>{{ _('目錄檔案數上限') }}</h4>
         <form @submit.prevent="saveFileStorageSettings()">
             <div class="form-group">
-                <label>單一目錄最大檔案數</label>
+                <label>{{ _('單一目錄最大檔案數') }}</label>
                 <input type="number" x-model.number="fileStorage.dirFileLimit"
                        min="1000" max="1000000" style="width: 180px;">
                 <div class="form-hint">
-                    加密檔案按月份自動建立子目錄（如 202609/）。
-                    當單月目錄檔案數達到此上限，系統自動建立接續目錄（如 202609_2/）。
-                    有效範圍: 1,000 ~ 1,000,000，預設 100,000。
+                    {{ _('加密檔案按月份自動建立子目錄（如 202609/）。') }}
+                    {{ _('當單月目錄檔案數達到此上限，系統自動建立接續目錄（如 202609_2/）。') }}
+                    {{ _('有效範圍: 1,000 ~ 1,000,000，預設 100,000。') }}
                 </div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">儲存設定</button>
+                <button type="submit" class="btn btn-primary">{{ _('儲存設定') }}</button>
             </div>
         </form>
     </div>
 
     <div class="settings-card" style="background: #f0f9ff; border-color: #bae6fd;">
-        <h4 style="color: #0369a1;">目錄結構說明</h4>
-        <pre style="margin: 0; font-size: 13px; color: #0369a1; background: transparent; border: none; padding: 0;">{儲存路徑}/
-  {企業SC}/
-    202604/          -- 每月自動建立
+        <h4 style="color: #0369a1;">{{ _('目錄結構說明') }}</h4>
+        <pre style="margin: 0; font-size: 13px; color: #0369a1; background: transparent; border: none; padding: 0;">{{ _('{儲存路徑}/') }}
+  {{ _('{企業SC}/') }}
+    202604/          -- {{ _('每月自動建立') }}
     202605/
-    202605_2/        -- 超過上限時自動遞增
+    202605_2/        -- {{ _('超過上限時自動遞增') }}
     202606/</pre>
     </div>
 
     <div class="settings-card" style="background: #fffbeb; border-color: #fde68a;">
-        <h4 style="color: #92400e;">檔案系統建議值</h4>
+        <h4 style="color: #92400e;">{{ _('檔案系統建議值') }}</h4>
         <table class="config-table" style="font-size: 13px;">
             <thead>
                 <tr>
-                    <th>檔案系統</th>
-                    <th>常見平台</th>
-                    <th>建議上限</th>
-                    <th>說明</th>
+                    <th>{{ _('檔案系統') }}</th>
+                    <th>{{ _('常見平台') }}</th>
+                    <th>{{ _('建議上限') }}</th>
+                    <th>{{ _('說明') }}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td><strong>ext4</strong></td>
-                    <td>Linux (預設)</td>
+                    <td>{{ _('Linux (預設)') }}</td>
                     <td>100,000</td>
-                    <td>超過 10 萬檔案後目錄操作性能明顯下降，dir_index 效率降低</td>
+                    <td>{{ _('超過 10 萬檔案後目錄操作性能明顯下降，dir_index 效率降低') }}</td>
                 </tr>
                 <tr>
                     <td><strong>XFS</strong></td>
-                    <td>Linux (RHEL/CentOS 預設)</td>
+                    <td>{{ _('Linux (RHEL/CentOS 預設)') }}</td>
                     <td>500,000</td>
-                    <td>B+ tree 目錄結構，大量檔案下性能優於 ext4</td>
+                    <td>{{ _('B+ tree 目錄結構，大量檔案下性能優於 ext4') }}</td>
                 </tr>
                 <tr>
                     <td><strong>Btrfs</strong></td>
                     <td>Linux</td>
                     <td>200,000</td>
-                    <td>B-tree 結構，適合中等規模，超過 20 萬後建議分目錄</td>
+                    <td>{{ _('B-tree 結構，適合中等規模，超過 20 萬後建議分目錄') }}</td>
                 </tr>
                 <tr>
                     <td><strong>NTFS</strong></td>
                     <td>Windows</td>
                     <td>100,000</td>
-                    <td>超過 10 萬後檔案總管與 dir 指令回應遲緩</td>
+                    <td>{{ _('超過 10 萬後檔案總管與 dir 指令回應遲緩') }}</td>
                 </tr>
                 <tr>
                     <td><strong>ReFS</strong></td>
                     <td>Windows Server</td>
                     <td>500,000</td>
-                    <td>B+ tree 目錄，大規模儲存場景優於 NTFS</td>
+                    <td>{{ _('B+ tree 目錄，大規模儲存場景優於 NTFS') }}</td>
                 </tr>
             </tbody>
         </table>

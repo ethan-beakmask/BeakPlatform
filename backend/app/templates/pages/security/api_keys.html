@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}API Key 管理 - BeakPlatform{% endblock %}
+{% block title %}{{ _('API Key 管理') }} - BeakPlatform{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/css/api-keys.css">
@@ -10,12 +10,12 @@
 <div class="ak-container" x-data="apiKeysManager()" x-init="init()">
     <div class="ak-toolbar">
         <div>
-            <h2 style="margin:0;">API Key 管理</h2>
+            <h2 style="margin:0;">{{ _('API Key 管理') }}</h2>
             <p class="ak-sub" style="margin:4px 0 0 0;">
-                外部系統以 HMAC 簽章發動表單流程的專屬金鑰。每個外部系統/裝置一把 Key，來源清楚可稽核。
+                {{ _('外部系統以 HMAC 簽章發動表單流程的專屬金鑰。每個外部系統/裝置一把 Key，來源清楚可稽核。') }}
             </p>
         </div>
-        <button class="btn btn-primary" @click="openCreate()">建立 API Key</button>
+        <button class="btn btn-primary" @click="openCreate()">{{ _('建立 API Key') }}</button>
     </div>
 
     <div x-show="msg" class="ak-msg" :class="msgErr ? 'ak-msg-err' : 'ak-msg-ok'"
@@ -25,13 +25,13 @@
         <thead>
             <tr>
                 <th>Key ID</th>
-                <th>名稱 / 使用者</th>
-                <th>授權範圍</th>
-                <th>IP 鎖定</th>
-                <th>期限</th>
-                <th>最後使用</th>
-                <th>狀態</th>
-                <th>操作</th>
+                <th>{{ _('名稱 / 使用者') }}</th>
+                <th>{{ _('授權範圍') }}</th>
+                <th>{{ _('IP 鎖定') }}</th>
+                <th>{{ _('期限') }}</th>
+                <th>{{ _('最後使用') }}</th>
+                <th>{{ _('狀態') }}</th>
+                <th>{{ _('操作') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -56,20 +56,20 @@
                              x-text="key.suspended_reason"></div>
                     </td>
                     <td class="ak-actions">
-                        <button class="ak-btn-sm" @click="openEdit(key)">編輯</button>
+                        <button class="ak-btn-sm" @click="openEdit(key)">{{ _('編輯') }}</button>
                         <template x-if="key.status === 'active'">
-                            <button class="ak-btn-sm" @click="openSuspend(key)">暫停</button>
+                            <button class="ak-btn-sm" @click="openSuspend(key)">{{ _('暫停') }}</button>
                         </template>
                         <template x-if="key.status === 'suspended'">
-                            <button class="ak-btn-sm" @click="resume(key)">復原</button>
+                            <button class="ak-btn-sm" @click="resume(key)">{{ _('復原') }}</button>
                         </template>
-                        <button class="ak-btn-sm ak-btn-danger" @click="revoke(key)">撤銷</button>
+                        <button class="ak-btn-sm ak-btn-danger" @click="revoke(key)">{{ _('撤銷') }}</button>
                     </td>
                 </tr>
             </template>
             <template x-if="!loading && keys.length === 0">
                 <tr><td colspan="8" style="text-align:center; color:#6b7280;">
-                    尚未建立任何 API Key
+                    {{ _('尚未建立任何 API Key') }}
                 </td></tr>
             </template>
         </tbody>

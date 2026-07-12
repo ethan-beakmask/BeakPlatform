@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}共用月曆 - {{ schedule.name }} - BeakMask{% endblock %}
+{% block title %}{{ _('共用月曆 - %(name)s', name=schedule.name) }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/holidays.css') }}">
@@ -9,12 +9,12 @@
 {% block content %}
 <div x-data="holidaysApp()">
     <p>
-        <a href="{{ url_for('work_schedules.list_schedules') }}">&lt; 返回班表列表</a>
+        <a href="{{ url_for('work_schedules.list_schedules') }}">{{ _('&lt; 返回班表列表') }}</a>
     </p>
 
     <div class="page-header">
         <div>
-            <h1>共用月曆</h1>
+            <h1>{{ _('共用月曆') }}</h1>
             <p style="color: #666; margin: 5px 0 0;">{{ schedule.name }}</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
@@ -23,7 +23,7 @@
                 <span x-text="year"></span>
                 <button @click="changeYear(1)">&gt;</button>
             </div>
-            <button class="btn btn-primary" @click="openAddModal()">+ 新增假日</button>
+            <button class="btn btn-primary" @click="openAddModal()">{{ _('+ 新增假日') }}</button>
         </div>
     </div>
 
@@ -36,19 +36,19 @@
     <div class="legend">
         <div class="legend-item">
             <div class="legend-box holiday"></div>
-            <span>假日</span>
+            <span>{{ _('假日') }}</span>
         </div>
         <div class="legend-item">
             <div class="legend-box" style="background: #fef3c7; border: 1px solid #fcd34d;"></div>
-            <span>補假</span>
+            <span>{{ _('補假') }}</span>
         </div>
         <div class="legend-item">
             <div class="legend-box workday"></div>
-            <span>補班</span>
+            <span>{{ _('補班') }}</span>
         </div>
         <div class="legend-item">
-            <div class="legend-box weekend">六</div>
-            <span>週末（依班表設定）</span>
+            <div class="legend-box weekend">{{ _('六') }}</div>
+            <span>{{ _('週末（依班表設定）') }}</span>
         </div>
     </div>
 
@@ -58,13 +58,13 @@
             <div class="month-card">
                 <div class="month-header" x-text="monthNames[month - 1]"></div>
                 <div class="month-grid">
-                    <div class="weekday-header">日</div>
-                    <div class="weekday-header">一</div>
-                    <div class="weekday-header">二</div>
-                    <div class="weekday-header">三</div>
-                    <div class="weekday-header">四</div>
-                    <div class="weekday-header">五</div>
-                    <div class="weekday-header">六</div>
+                    <div class="weekday-header">{{ _('日') }}</div>
+                    <div class="weekday-header">{{ _('一') }}</div>
+                    <div class="weekday-header">{{ _('二') }}</div>
+                    <div class="weekday-header">{{ _('三') }}</div>
+                    <div class="weekday-header">{{ _('四') }}</div>
+                    <div class="weekday-header">{{ _('五') }}</div>
+                    <div class="weekday-header">{{ _('六') }}</div>
                     <template x-for="cell in getMonthCells(month)" :key="cell.key">
                         <div class="day-cell"
                              :class="getDayClass(cell)"
@@ -79,16 +79,16 @@
 
     <!-- Holidays List -->
     <div class="holidays-list">
-        <h3>假日/補班列表</h3>
+        <h3>{{ _('假日/補班列表') }}</h3>
         <template x-if="holidays.length > 0">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>日期</th>
-                        <th>類型</th>
-                        <th>說明</th>
-                        <th>工作時段</th>
-                        <th>操作</th>
+                        <th>{{ _('日期') }}</th>
+                        <th>{{ _('類型') }}</th>
+                        <th>{{ _('說明') }}</th>
+                        <th>{{ _('工作時段') }}</th>
+                        <th>{{ _('操作') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,8 +102,8 @@
                             <td x-text="h.description || '-'"></td>
                             <td x-text="h.work_periods ? h.work_periods.join(', ') : '-'"></td>
                             <td class="actions">
-                                <button @click="editHoliday(h)">編輯</button>
-                                <button class="danger" @click="deleteHoliday(h)">刪除</button>
+                                <button @click="editHoliday(h)">{{ _('編輯') }}</button>
+                                <button class="danger" @click="deleteHoliday(h)">{{ _('刪除') }}</button>
                             </td>
                         </tr>
                     </template>
@@ -111,17 +111,17 @@
             </table>
         </template>
         <template x-if="holidays.length === 0">
-            <p style="color: #666;">本年度尚未設定任何假日/補班</p>
+            <p style="color: #666;">{{ _('本年度尚未設定任何假日/補班') }}</p>
         </template>
     </div>
 
     <!-- Import Section -->
     <div class="import-section">
-        <h4>批次匯入</h4>
+        <h4>{{ _('批次匯入') }}</h4>
         <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-            匯入 <span x-text="year"></span> 年台灣國定假日
+            {{ _('匯入') }} <span x-text="year"></span> {{ _('年台灣國定假日') }}
         </p>
-        <button class="btn btn-secondary" @click="importTWHolidays()">匯入 <span x-text="year"></span> 年台灣假日</button>
+        <button class="btn btn-secondary" @click="importTWHolidays()">{{ _('匯入') }} <span x-text="year"></span> {{ _('年台灣假日') }}</button>
     </div>
 
     <!-- Add/Edit Modal -->
@@ -134,52 +134,52 @@
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>開始日期 *</label>
+                        <label>{{ _('開始日期 *') }}</label>
                         <input type="date" x-model="form.holiday_date" :disabled="editingHoliday">
                     </div>
                     <template x-if="!editingHoliday">
                         <div class="form-group">
-                            <label>結束日期</label>
+                            <label>{{ _('結束日期') }}</label>
                             <input type="date" x-model="form.end_date" :min="form.holiday_date">
-                            <div class="form-hint">留空表示僅設定單日</div>
+                            <div class="form-hint">{{ _('留空表示僅設定單日') }}</div>
                         </div>
                     </template>
                     <template x-if="!editingHoliday">
                         <div class="form-group" style="margin: 16px 0; padding: 12px; background: #fef2f2; border-radius: 4px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
                                 <input type="checkbox" x-model="form.cancelMode" style="width: auto;">
-                                <span style="color: #dc2626;">取消設定（回復班表預設值）</span>
+                                <span style="color: #dc2626;">{{ _('取消設定（回復班表預設值）') }}</span>
                             </label>
-                            <div class="form-hint" style="margin-left: 24px;">勾選後將刪除範圍內的假日/補班設定</div>
+                            <div class="form-hint" style="margin-left: 24px;">{{ _('勾選後將刪除範圍內的假日/補班設定') }}</div>
                         </div>
                     </template>
                     <template x-if="!form.cancelMode">
                         <div>
                             <div class="form-group">
-                                <label>類型 *</label>
+                                <label>{{ _('類型 *') }}</label>
                                 <select x-model="form.holiday_type">
-                                    <option value="HOLIDAY">假日（休假）</option>
-                                    <option value="COMP_OFF">補假（休假）</option>
-                                    <option value="WORKDAY">補班（上班）</option>
+                                    <option value="HOLIDAY">{{ _('假日（休假）') }}</option>
+                                    <option value="COMP_OFF">{{ _('補假（休假）') }}</option>
+                                    <option value="WORKDAY">{{ _('補班（上班）') }}</option>
                                 </select>
                             </div>
                             <template x-if="form.holiday_type === 'WORKDAY'">
                                 <div class="form-group">
-                                    <label>工作時段 *</label>
+                                    <label>{{ _('工作時段 *') }}</label>
                                     <input type="text" x-model="form.work_periods_str"
                                            placeholder="09:00-12:00,13:00-17:00">
-                                    <div class="form-hint">多時段用逗號分隔</div>
+                                    <div class="form-hint">{{ _('多時段用逗號分隔') }}</div>
                                 </div>
                             </template>
                             <div class="form-group">
-                                <label>說明</label>
-                                <input type="text" x-model="form.description" placeholder="例：中秋節">
+                                <label>{{ _('說明') }}</label>
+                                <input type="text" x-model="form.description" placeholder="{{ _('例：中秋節') }}">
                             </div>
                         </div>
                     </template>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" @click="closeModal()">取消</button>
+                    <button class="btn btn-secondary" @click="closeModal()">{{ _('取消') }}</button>
                     <button class="btn btn-primary"
                             :style="form.cancelMode ? 'background: #dc2626' : ''"
                             @click="saveHoliday()"

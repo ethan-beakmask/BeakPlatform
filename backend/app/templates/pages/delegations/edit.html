@@ -1,42 +1,42 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯代理授權 - BeakMask{% endblock %}
+{% block title %}{{ _('編輯代理授權') }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>編輯代理授權</h1>
+<h1>{{ _('編輯代理授權') }}</h1>
 
 <p>
-    <a href="{{ url_for('delegations.list_delegations') }}">[返回列表]</a>
-    <a href="{{ url_for('delegations.view_delegation', secure_code=delegation.secure_code) }}">[查看詳情]</a>
+    <a href="{{ url_for('delegations.list_delegations') }}">{{ _('[返回列表]') }}</a>
+    <a href="{{ url_for('delegations.view_delegation', secure_code=delegation.secure_code) }}">{{ _('[查看詳情]') }}</a>
 </p>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">授權人</th>
+            <th style="text-align: left; width: 150px;">{{ _('授權人') }}</th>
             <td>
                 {% if delegation.delegator %}
                 <strong>{{ delegation.delegator.display_name }}</strong>
                 {% else %}
                 <span class="text-muted">-</span>
                 {% endif %}
-                <span class="text-muted">(不可修改)</span>
+                <span class="text-muted">{{ _('(不可修改)') }}</span>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">被授權人</th>
+            <th style="text-align: left;">{{ _('被授權人') }}</th>
             <td>
                 {% if delegation.delegate %}
                 <strong>{{ delegation.delegate.display_name }}</strong>
                 {% else %}
                 <span class="text-muted">-</span>
                 {% endif %}
-                <span class="text-muted">(不可修改)</span>
+                <span class="text-muted">{{ _('(不可修改)') }}</span>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">代理類型 *</th>
+            <th style="text-align: left;">{{ _('代理類型 *') }}</th>
             <td>
                 <select name="delegation_type" required style="width: 100%;" onchange="toggleApprovalLimit(this)">
                     {% for type_val, type_name in delegation_types %}
@@ -49,72 +49,72 @@
             </td>
         </tr>
         <tr id="approval_limit_row" style="{% if delegation.delegation_type != 'APPROVAL' %}display: none;{% endif %}">
-            <th style="text-align: left;">簽核金額上限</th>
+            <th style="text-align: left;">{{ _('簽核金額上限') }}</th>
             <td>
                 <input type="number" name="approval_limit" min="0" step="1000" style="width: 100%;"
                        value="{{ delegation.approval_limit or '' }}">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">生效開始 *</th>
+            <th style="text-align: left;">{{ _('生效開始 *') }}</th>
             <td>
                 <input type="date" name="effective_from" required style="width: 100%;"
                        value="{{ delegation.effective_from.strftime('%Y-%m-%d') if delegation.effective_from else '' }}">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">生效結束 *</th>
+            <th style="text-align: left;">{{ _('生效結束 *') }}</th>
             <td>
                 <input type="date" name="effective_until" required style="width: 100%;"
                        value="{{ delegation.effective_until.strftime('%Y-%m-%d') if delegation.effective_until else '' }}">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">授權原因</th>
+            <th style="text-align: left; vertical-align: top;">{{ _('授權原因') }}</th>
             <td>
                 <textarea name="reason" rows="3" style="width: 100%;">{{ delegation.reason or '' }}</textarea>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">目前狀態</th>
+            <th style="text-align: left;">{{ _('目前狀態') }}</th>
             <td>
                 {% if delegation.status == 'ACTIVE' %}
-                <span class="text-success">生效中</span>
+                <span class="text-success">{{ _('生效中') }}</span>
                 {% elif delegation.status == 'PENDING' %}
-                <span class="text-warning">待生效</span>
+                <span class="text-warning">{{ _('待生效') }}</span>
                 {% elif delegation.status == 'EXPIRED' %}
-                <span class="text-muted">已過期</span>
+                <span class="text-muted">{{ _('已過期') }}</span>
                 {% elif delegation.status == 'REVOKED' %}
-                <span class="text-danger">已撤銷</span>
+                <span class="text-danger">{{ _('已撤銷') }}</span>
                 {% endif %}
-                <span class="text-muted" style="font-size: 0.9em;">(依日期自動判定)</span>
+                <span class="text-muted" style="font-size: 0.9em;">{{ _('(依日期自動判定)') }}</span>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit" class="btn btn-primary">儲存變更</button>
+                <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
                 <a href="{{ url_for('delegations.view_delegation', secure_code=delegation.secure_code) }}"
-                   style="margin-left: 20px;">取消</a>
+                   style="margin-left: 20px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
 </form>
 
 <hr style="margin-top: 40px;">
-<h3 class="text-danger">危險區域</h3>
+<h3 class="text-danger">{{ _('危險區域') }}</h3>
 <div style="display: flex; gap: 20px;">
     <form method="POST" action="{{ url_for('delegations.revoke_delegation', secure_code=delegation.secure_code) }}"
           onsubmit="return confirm('確定要撤銷此代理授權嗎？');">
         <input type="hidden" name="revoke_reason" value="由管理員手動撤銷">
         <button type="submit" class="btn btn-warning">
-            撤銷授權
+            {{ _('撤銷授權') }}
         </button>
     </form>
     <form method="POST" action="{{ url_for('delegations.delete_delegation', secure_code=delegation.secure_code) }}"
           onsubmit="return confirm('確定要刪除此代理授權紀錄嗎？');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-danger">
-            刪除紀錄
+            {{ _('刪除紀錄') }}
         </button>
     </form>
 </div>

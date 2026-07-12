@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯系統管理員 {{ account.username }} - BeakMask{% endblock %}
+{% block title %}{{ _('編輯系統管理員 %(username)s', username=account.username) }} - BeakMask{% endblock %}
 
 {% block head %}
 <script src="{{ app_prefix }}/static/js/password-form.js"></script>
@@ -8,11 +8,11 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+    <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">編輯系統管理員</h1>
+    <h1 class="page-title">{{ _('編輯系統管理員') }}</h1>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -29,39 +29,39 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <td>帳號</td>
-            <td><code>{{ account.username }}@{{ SYSTEM_ORG_CODE }}</code> (不可變更)</td>
+            <td>{{ _('帳號') }}</td>
+            <td><code>{{ account.username }}@{{ SYSTEM_ORG_CODE }}</code> ({{ _('不可變更') }})</td>
         </tr>
         <tr>
             <td>Email</td>
-            <td>{{ account.email }} (不可變更)</td>
+            <td>{{ account.email }} ({{ _('不可變更') }})</td>
         </tr>
         <tr>
-            <td><label for="display_name">顯示名稱 *</label></td>
+            <td><label for="display_name">{{ _('顯示名稱') }} *</label></td>
             <td>
                 <input type="text" id="display_name" name="display_name" size="40" required
                        value="{{ account.display_name }}">
             </td>
         </tr>
         <tr>
-            <td><label for="is_active">狀態</label></td>
+            <td><label for="is_active">{{ _('狀態') }}</label></td>
             <td>
                 {% if is_self %}
-                    <span class="text-success">啟用</span> (不能停用自己)
+                    <span class="text-success">{{ _('啟用') }}</span> ({{ _('不能停用自己') }})
                     <input type="hidden" name="is_active" value="1">
                 {% else %}
                     <select id="is_active" name="is_active">
-                        <option value="1" {% if account.is_active %}selected{% endif %}>啟用</option>
-                        <option value="0" {% if not account.is_active %}selected{% endif %}>停用</option>
+                        <option value="1" {% if account.is_active %}selected{% endif %}>{{ _('啟用') }}</option>
+                        <option value="0" {% if not account.is_active %}selected{% endif %}>{{ _('停用') }}</option>
                     </select>
                 {% endif %}
             </td>
         </tr>
         <tr>
-            <td colspan="2"><hr><strong>變更密碼</strong>（留空表示不變更）</td>
+            <td colspan="2"><hr><strong>{{ _('變更密碼') }}</strong>{{ _('（留空表示不變更）') }}</td>
         </tr>
         <tr>
-            <td style="vertical-align: top;"><label for="new_password">新密碼</label></td>
+            <td style="vertical-align: top;"><label for="new_password">{{ _('新密碼') }}</label></td>
             <td>
                 <div class="password-field">
                     <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
@@ -69,7 +69,7 @@
                            minlength="8">
                     <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
                             x-text="showPassword ? '隱藏' : '顯示'"></button>
-                    <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
+                    <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
                 </div>
                 <small x-text="passwordRequirements"></small>
                 <div class="password-errors" x-show="password && passwordErrors.length > 0">
@@ -78,25 +78,25 @@
                     </template>
                 </div>
                 <div class="password-ok" x-show="password && passwordErrors.length === 0 && passwordChecked">
-                    密碼符合要求
+                    {{ _('密碼符合要求') }}
                 </div>
             </td>
         </tr>
         <tr>
-            <td><label for="confirm_password">確認新密碼</label></td>
+            <td><label for="confirm_password">{{ _('確認新密碼') }}</label></td>
             <td>
                 <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
                        x-model="confirmPassword" minlength="8">
                 <div x-show="confirmPassword && password !== confirmPassword" style="color: #dc2626; font-size: 12px; margin-top: 4px;">
-                    密碼不一致
+                    {{ _('密碼不一致') }}
                 </div>
             </td>
         </tr>
         <tr>
             <td colspan="2">
                 <br>
-                <button type="submit" class="btn btn-primary">儲存變更</button>
-                <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-cancel" style="margin-left: 10px;">取消</a>
+                <button type="submit" class="btn btn-primary">{{ _('儲存變更') }}</button>
+                <a href="{{ url_for('sys_accounts.list_accounts') }}" class="btn btn-cancel" style="margin-left: 10px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
@@ -104,27 +104,27 @@
 
 
 {% if not is_self %}
-<div class="section-title" style="margin-top:32px;">刪除帳號</div>
-<p>刪除此系統管理員帳號將無法復原，請謹慎操作。</p>
+<div class="section-title" style="margin-top:32px;">{{ _('刪除帳號') }}</div>
+<p>{{ _('刪除此系統管理員帳號將無法復原，請謹慎操作。') }}</p>
 <form method="POST" action="{{ url_for('sys_accounts.delete_account', secure_code=account.secure_code) }}"
-      onsubmit="return confirm('確定要刪除此系統管理員嗎？');">
+      onsubmit="return confirm('{{ _('確定要刪除此系統管理員嗎？') }}');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-danger">刪除帳號</button>
+    <button type="submit" class="btn btn-danger">{{ _('刪除帳號') }}</button>
 </form>
 {% endif %}
 
-<div class="section-title" style="margin-top:32px;">帳號資訊</div>
+<div class="section-title" style="margin-top:32px;">{{ _('帳號資訊') }}</div>
 <table class="info-table text-muted">
     <tr>
-        <td>建立時間</td>
+        <td>{{ _('建立時間') }}</td>
         <td>{{ account.created_at|tz_format('%Y-%m-%d %H:%M') if account.created_at else '-' }}</td>
     </tr>
     <tr>
-        <td>最後登入</td>
+        <td>{{ _('最後登入') }}</td>
         <td>{{ account.last_login_at|tz_format('%Y-%m-%d %H:%M') if account.last_login_at else '-' }}</td>
     </tr>
     <tr>
-        <td>密碼變更時間</td>
+        <td>{{ _('密碼變更時間') }}</td>
         <td>{{ account.password_changed_at|tz_format('%Y-%m-%d %H:%M') if account.password_changed_at else '-' }}</td>
     </tr>
 </table>

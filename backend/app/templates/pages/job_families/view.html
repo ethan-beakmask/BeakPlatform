@@ -1,70 +1,70 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ job_family.name }} - 職系詳情 - BeakMask{% endblock %}
+{% block title %}{{ job_family.name }} - {{ _('職系詳情') }} - BeakMask{% endblock %}
 
 {% block content %}
 <h1>{{ job_family.name }}</h1>
 
 <p>
-    <a href="{{ url_for('job_families.list_job_families') }}">[返回列表]</a>
-    <a href="{{ url_for('job_families.edit_job_family', secure_code=job_family.secure_code) }}">[編輯]</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('返回列表') }}]</a>
+    <a href="{{ url_for('job_families.edit_job_family', secure_code=job_family.secure_code) }}">[{{ _('編輯') }}]</a>
 </p>
 
 <table class="info-table">
     <tr>
-        <th style="width: 150px;">職系代碼</th>
+        <th style="width: 150px;">{{ _('職系代碼') }}</th>
         <td><code>{{ job_family.code }}</code></td>
     </tr>
     <tr>
-        <th>職系名稱</th>
+        <th>{{ _('職系名稱') }}</th>
         <td>{{ job_family.name }}</td>
     </tr>
     <tr>
-        <th>英文名稱</th>
+        <th>{{ _('英文名稱') }}</th>
         <td>{{ job_family.name_en or '-' }}</td>
     </tr>
     <tr>
-        <th>職系類型</th>
+        <th>{{ _('職系類型') }}</th>
         <td>
             {% if job_family.family_type == 'MANAGER' %}
-            <strong style="color: #0066cc;">管理職</strong> (People Manager)
+            <strong style="color: #0066cc;">{{ _('管理職') }}</strong> (People Manager)
             {% else %}
-            <strong style="color: #009933;">專業職</strong> (Individual Contributor)
+            <strong style="color: #009933;">{{ _('專業職') }}</strong> (Individual Contributor)
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>上層職系</th>
+        <th>{{ _('上層職系') }}</th>
         <td>
             {% if job_family.parent %}
             <a href="{{ url_for('job_families.view_job_family', secure_code=job_family.parent.secure_code) }}">
                 {{ job_family.parent.name }}
             </a>
             {% else %}
-            - (根職系)
+            - ({{ _('根職系') }})
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>描述</th>
+        <th>{{ _('描述') }}</th>
         <td>{{ job_family.description or '-' }}</td>
     </tr>
     <tr>
-        <th>排序順序</th>
+        <th>{{ _('排序順序') }}</th>
         <td>{{ job_family.sort_order }}</td>
     </tr>
     <tr>
-        <th>狀態</th>
-        <td>{% if job_family.is_active %}啟用{% else %}停用{% endif %}</td>
+        <th>{{ _('狀態') }}</th>
+        <td>{% if job_family.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>系統預設</th>
-        <td>{% if job_family.is_system_default %}是 (不可刪除){% else %}否{% endif %}</td>
+        <th>{{ _('系統預設') }}</th>
+        <td>{% if job_family.is_system_default %}{{ _('是 (不可刪除)') }}{% else %}{{ _('否') }}{% endif %}</td>
     </tr>
 </table>
 
 {% if job_family.children %}
-<h3 style="margin-top: 30px;">子職系</h3>
+<h3 style="margin-top: 30px;">{{ _('子職系') }}</h3>
 <ul>
     {% for child in job_family.children %}
     {% if not child.is_deleted %}
@@ -79,7 +79,7 @@
 {% endif %}
 
 {% if job_family.job_titles %}
-<h3 style="margin-top: 30px;">使用此職系的職稱</h3>
+<h3 style="margin-top: 30px;">{{ _('使用此職系的職稱') }}</h3>
 <ul>
     {% for title in job_family.job_titles %}
     {% if not title.is_deleted %}

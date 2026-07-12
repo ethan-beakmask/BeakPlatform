@@ -1,20 +1,20 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}職級職稱矩陣 - BeakMask{% endblock %}
+{% block title %}{{ _('職級職稱矩陣') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/css/job-matrix.css">
 {% endblock %}
 
 {% block content %}
-<h1>職級職稱矩陣</h1>
+<h1>{{ _('職級職稱矩陣') }}</h1>
 
 <div class="nav-links">
-    <strong>[職級職稱矩陣]</strong>
-    <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
-    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
-    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
-    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+    <strong>{{ _('[職級職稱矩陣]') }}</strong>
+    <a href="{{ url_for('job_levels.list_job_levels') }}">{{ _('[職等管理]') }}</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">{{ _('[職系管理]') }}</a>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">{{ _('[職稱管理]') }}</a>
+    <a href="{{ url_for('approval_categories.list_categories') }}">{{ _('[核決權限類別]') }}</a>
 </div>
 
 {% if levels and families %}
@@ -22,7 +22,7 @@
     <table class="matrix-table">
         <thead>
             <tr>
-                <th class="level-header">職等</th>
+                <th class="level-header">{{ _('職等') }}</th>
                 {% for family in families %}
                 <th class="family-header">{{ family.name }}</th>
                 {% endfor %}
@@ -35,7 +35,7 @@
                     <span class="level-code">{{ level.code }}</span>
                     <span class="level-name">{{ level.name }}</span>
                     {% if level.is_manager_level %}
-                    <span class="level-manager yes">管理</span>
+                    <span class="level-manager yes">{{ _('管理') }}</span>
                     {% endif %}
                 </td>
                 {% for family in families %}
@@ -51,7 +51,7 @@
                               data-secure-code="{{ title.secure_code }}"
                               data-name="{{ title.name }}"
                               data-is-supervisor="{{ 'true' if title.is_supervisor else 'false' }}"
-                              title="{{ title.name_en or '' }}{% if title.is_supervisor %} (管理職){% endif %} - 拖拉可移動">
+                              title="{{ title.name_en or '' }}{% if title.is_supervisor %} {{ _('(管理職)') }}{% endif %} {{ _('- 拖拉可移動') }}">
                             {{ title.name }}
                         </span>
                         {% endfor %}
@@ -67,16 +67,16 @@
 </div>
 
 <div class="legend">
-    <strong>圖例：</strong>
-    <span class="legend-item"><span class="title-item" style="cursor: default;">一般職稱</span></span>
-    <span class="legend-item"><span class="title-item supervisor" style="cursor: default;">管理職</span></span>
-    <span class="legend-item" style="margin-left: 20px;"><span class="level-manager yes">管理</span> 管理職等</span>
+    <strong>{{ _('圖例：') }}</strong>
+    <span class="legend-item"><span class="title-item" style="cursor: default;">{{ _('一般職稱') }}</span></span>
+    <span class="legend-item"><span class="title-item supervisor" style="cursor: default;">{{ _('管理職') }}</span></span>
+    <span class="legend-item" style="margin-left: 20px;"><span class="level-manager yes">{{ _('管理') }}</span> {{ _('管理職等') }}</span>
 </div>
 
 <p style="color: #6b7280; font-size: 0.9em; margin-top: 16px;">
-    共 {{ levels|length }} 個職等 × {{ families|length }} 個職系
+    {{ _('共 %(levels)s 個職等 × %(families)s 個職系', levels=levels|length, families=families|length) }}
     <br>
-    <span style="color: #9ca3af;">提示：拖拉職稱可以移動到不同的職等或職系</span>
+    <span style="color: #9ca3af;">{{ _('提示：拖拉職稱可以移動到不同的職等或職系') }}</span>
 </p>
 
 <script>
@@ -88,10 +88,10 @@ window.__MATRIX_CONFIG = {
 
 {% else %}
 <p style="color: #6b7280;">
-    尚無資料。請先建立
-    <a href="{{ url_for('job_levels.create_job_level') }}">職等</a>、
-    <a href="{{ url_for('job_families.create_job_family') }}">職系</a> 和
-    <a href="{{ url_for('job_titles.create_job_title') }}">職稱</a>。
+    {{ _('尚無資料。請先建立') }}
+    <a href="{{ url_for('job_levels.create_job_level') }}">{{ _('職等') }}</a>、
+    <a href="{{ url_for('job_families.create_job_family') }}">{{ _('職系') }}</a> {{ _('和') }}
+    <a href="{{ url_for('job_titles.create_job_title') }}">{{ _('職稱') }}</a>。
 </p>
 {% endif %}
 

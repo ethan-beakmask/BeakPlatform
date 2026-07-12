@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}匯入用戶 - BeakMask{% endblock %}
+{% block title %}{{ _('匯入用戶') }} - BeakMask{% endblock %}
 
 {% block head %}
 <style>
@@ -66,11 +66,11 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">&lt; 返回用戶列表</a>
+    <a href="{{ url_for('users.list_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回用戶列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">匯入用戶</h1>
+    <h1 class="page-title">{{ _('匯入用戶') }}</h1>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -85,85 +85,85 @@
 
 <div class="import-form">
     <div class="field-info">
-        <h3>CSV 欄位說明</h3>
+        <h3>{{ _('CSV 欄位說明') }}</h3>
         <table>
             <thead>
                 <tr>
-                    <th>欄位名稱</th>
-                    <th>說明</th>
-                    <th>必填</th>
+                    <th>{{ _('欄位名稱') }}</th>
+                    <th>{{ _('說明') }}</th>
+                    <th>{{ _('必填') }}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>username</td>
-                    <td>帳號 (不含 @domain)</td>
+                    <td>{{ _('帳號 (不含 @domain)') }}</td>
                     <td class="required-mark">*</td>
                 </tr>
                 <tr>
                     <td>password</td>
-                    <td>密碼 (至少 8 字元)</td>
+                    <td>{{ _('密碼 (至少 8 字元)') }}</td>
                     <td class="required-mark">*</td>
                 </tr>
                 <tr>
                     <td>display_name</td>
-                    <td>顯示姓名</td>
+                    <td>{{ _('顯示姓名') }}</td>
                     <td class="required-mark">*</td>
                 </tr>
                 <tr>
                     <td>role</td>
-                    <td>角色: user / org_admin</td>
+                    <td>{{ _('角色: user / org_admin') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>employee_id</td>
-                    <td>用戶編號 (組織內唯一)</td>
+                    <td>{{ _('用戶編號 (組織內唯一)') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>department_code</td>
-                    <td>部門代碼</td>
+                    <td>{{ _('部門代碼') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>english_name</td>
-                    <td>英文姓名</td>
+                    <td>{{ _('英文姓名') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>native_name</td>
-                    <td>本國姓名</td>
+                    <td>{{ _('本國姓名') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>nickname</td>
-                    <td>暱稱</td>
+                    <td>{{ _('暱稱') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>backup_email_1</td>
-                    <td>備用 Email 1</td>
+                    <td>{{ _('備用 Email 1') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>backup_email_2</td>
-                    <td>備用 Email 2</td>
+                    <td>{{ _('備用 Email 2') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>mobile_phone_1</td>
-                    <td>手機號碼 1</td>
+                    <td>{{ _('手機號碼 1') }}</td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>mobile_phone_2</td>
-                    <td>手機號碼 2</td>
+                    <td>{{ _('手機號碼 2') }}</td>
                     <td></td>
                 </tr>
             </tbody>
         </table>
         <p class="text-muted" style="margin-top: 10px; font-size: 12px;">
-            <a href="{{ url_for('users.download_csv_template') }}">[下載 CSV 範本]</a>
+            <a href="{{ url_for('users.download_csv_template') }}">{{ _('[下載 CSV 範本]') }}</a>
         </p>
     </div>
 
@@ -171,16 +171,16 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div class="upload-area">
-            <p>選擇 CSV 檔案上傳</p>
+            <p>{{ _('選擇 CSV 檔案上傳') }}</p>
             <input type="file" name="csv_file" accept=".csv" required>
             <p class="text-muted" style="font-size: 12px;">
-                支援 UTF-8 編碼的 CSV 檔案
+                {{ _('支援 UTF-8 編碼的 CSV 檔案') }}
             </p>
         </div>
 
         <div class="btn-row">
-            <button type="submit" class="btn btn-primary">開始匯入</button>
-            <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">取消</a>
+            <button type="submit" class="btn btn-primary">{{ _('開始匯入') }}</button>
+            <a href="{{ url_for('users.list_users') }}" class="btn btn-cancel">{{ _('取消') }}</a>
         </div>
     </form>
 </div>

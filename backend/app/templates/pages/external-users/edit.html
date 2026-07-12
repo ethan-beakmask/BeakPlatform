@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯 {{ user.display_name }} - 外部廠商 - BeakMask{% endblock %}
+{% block title %}{{ _('編輯 %(name)s - 外部廠商', name=user.display_name) }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/css/external-user-edit.css">
@@ -8,11 +8,11 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">&lt; 返回外部廠商列表</a>
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回外部廠商列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">編輯外部廠商：{{ user.display_name }}</h1>
+    <h1 class="page-title">{{ _('編輯外部廠商：%(display_name)s', display_name=user.display_name) }}</h1>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -26,20 +26,20 @@
 {% endwith %}
 
 <!-- 基本資訊（唯讀） -->
-<div class="section-title">基本資訊</div>
+<div class="section-title">{{ _('基本資訊') }}</div>
 <table class="info-table">
     <tr>
-        <th>姓名</th>
+        <th>{{ _('姓名') }}</th>
         <td>{{ user.display_name }}</td>
     </tr>
     <tr>
-        <th>編號</th>
+        <th>{{ _('編號') }}</th>
         <td><code>{{ user.employee_id or '-' }}</code></td>
     </tr>
 </table>
 
 <!-- 可編輯欄位 -->
-<div class="section-title">帳號資訊</div>
+<div class="section-title">{{ _('帳號資訊') }}</div>
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
@@ -51,33 +51,33 @@
             </td>
         </tr>
         <tr>
-            <th style="vertical-align: top;">備註</th>
+            <th style="vertical-align: top;">{{ _('備註') }}</th>
             <td>
                 <textarea name="notes" rows="3" style="width: 100%; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;"
-                          maxlength="1000" placeholder="選填">{{ user.notes or '' }}</textarea>
+                          maxlength="1000" placeholder="{{ _('選填') }}">{{ user.notes or '' }}</textarea>
             </td>
         </tr>
         <tr>
             <th></th>
             <td style="padding-top: 15px;">
                 <button type="submit" class="btn btn-primary">
-                    儲存變更
+                    {{ _('儲存變更') }}
                 </button>
                 <a href="{{ url_for('external_users.list_external_users') }}"
-                   class="btn btn-cancel" style="margin-left: 15px;">取消</a>
+                   class="btn btn-cancel" style="margin-left: 15px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
 </form>
 
 <!-- 密碼變更 -->
-<div class="section-title optional">變更密碼</div>
+<div class="section-title optional">{{ _('變更密碼') }}</div>
 <form method="POST" action="{{ url_for('external_users.change_password', secure_code=user.secure_code) }}"
       style="max-width: 600px;" x-data="passwordForm()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="vertical-align: top;">新密碼</th>
+            <th style="vertical-align: top;">{{ _('新密碼') }}</th>
             <td>
                 <div style="display: flex; gap: 8px; align-items: start;">
                     <div style="flex: 1;">
@@ -90,7 +90,7 @@
                             x-text="showPassword ? '隱藏' : '顯示'"></button>
                     <button type="button" @click="generatePassword()"
                             style="padding: 6px 10px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        建議密碼
+                        {{ _('建議密碼') }}
                     </button>
                 </div>
                 <div class="help-text" x-text="passwordRequirements"></div>
@@ -103,7 +103,7 @@
                 <!-- 驗證通過 -->
                 <div x-show="password && passwordErrors.length === 0 && passwordChecked"
                      style="margin-top: 6px; color: #16a34a; font-size: 12px;">
-                    ✓ 密碼符合要求
+                    {{ _('✓ 密碼符合要求') }}
                 </div>
             </td>
         </tr>
@@ -112,10 +112,10 @@
             <td>
                 <button type="submit" :disabled="!password || passwordErrors.length > 0"
                         style="padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer;"
-                        :style="(!password || passwordErrors.length > 0) && 'opacity: 0.5; cursor: not-allowed'">
-                    變更密碼
+                        :style="(!password || passwordErrors.length > 0) && \'opacity: 0.5; cursor: not-allowed\'">
+                    {{ _('變更密碼') }}
                 </button>
-                <span style="color: #9ca3af; font-size: 0.85em; margin-left: 15px;">留空則不變更</span>
+                <span style="color: #9ca3af; font-size: 0.85em; margin-left: 15px;">{{ _('留空則不變更') }}</span>
             </td>
         </tr>
     </table>
@@ -124,16 +124,16 @@
 <script src="{{ app_prefix }}/static/js/password-form.js"></script>
 
 <!-- 群組管理 -->
-<div class="section-title optional">歸屬群組</div>
+<div class="section-title optional">{{ _('歸屬群組') }}</div>
 
 {% if current_groups %}
 <table class="group-table">
     <thead>
         <tr>
-            <th style="width: 200px;">群組名稱</th>
-            <th style="width: 100px;">角色</th>
-            <th style="width: 120px;">加入日期</th>
-            <th style="width: 80px;">操作</th>
+            <th style="width: 200px;">{{ _('群組名稱') }}</th>
+            <th style="width: 100px;">{{ _('角色') }}</th>
+            <th style="width: 120px;">{{ _('加入日期') }}</th>
+            <th style="width: 80px;">{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -157,10 +157,10 @@
                       onsubmit="return confirm('確定要從「{{ group.unit.name }}」移除嗎？')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="membership_code" value="{{ group.membership_code }}">
-                    <button type="submit" class="btn-remove">移除</button>
+                    <button type="submit" class="btn-remove">{{ _('移除') }}</button>
                 </form>
                 {% else %}
-                <span style="color: #9ca3af; font-size: 0.85em;">不可移除</span>
+                <span style="color: #9ca3af; font-size: 0.85em;">{{ _('不可移除') }}</span>
                 {% endif %}
             </td>
         </tr>
@@ -168,7 +168,7 @@
     </tbody>
 </table>
 {% else %}
-<p class="text-danger">此外部廠商未加入任何群組！請立即加入群組。</p>
+<p class="text-danger">{{ _('此外部廠商未加入任何群組！請立即加入群組。') }}</p>
 {% endif %}
 
 <!-- 加入新群組 -->
@@ -176,21 +176,21 @@
 {% if available_groups %}
 <form method="POST" action="{{ url_for('external_users.add_to_group', secure_code=user.secure_code) }}" class="add-group-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>加入群組：</label>
+    <label>{{ _('加入群組：') }}</label>
     <select name="group_code" required>
-        <option value="">-- 選擇群組 --</option>
+        <option value="">{{ _('-- 選擇群組 --') }}</option>
         {% for group in available_groups %}
         <option value="{{ group.code }}">{{ group.name }}</option>
         {% endfor %}
     </select>
-    <button type="submit" class="btn btn-primary">加入</button>
+    <button type="submit" class="btn btn-primary">{{ _('加入') }}</button>
 </form>
 {% else %}
-<p style="color: #9ca3af; font-size: 0.9em; margin-top: 10px;">已加入所有可用群組</p>
+<p style="color: #9ca3af; font-size: 0.9em; margin-top: 10px;">{{ _('已加入所有可用群組') }}</p>
 {% endif %}
 
 <div style="margin-top: 20px; padding: 12px; background: #f0f9ff; border-radius: 4px; border: 1px solid #bae6fd; max-width: 600px;">
-    <strong style="color: #0369a1;">提示：</strong>
-    <span style="color: #0c4a6e;">外部廠商必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。</span>
+    <strong style="color: #0369a1;">{{ _('提示：') }}</strong>
+    <span style="color: #0c4a6e;">{{ _('外部廠商必須至少屬於一個群組。如需變更角色，請至「社群設定」頁面操作。') }}</span>
 </div>
 {% endblock %}

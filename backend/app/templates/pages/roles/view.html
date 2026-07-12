@@ -1,10 +1,10 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ role.name }} - 角色詳情 - BeakMask{% endblock %}
+{% block title %}{{ role.name }} - {{ _('角色詳情') }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('roles.list_roles') }}" class="btn btn-secondary btn-sm">&lt; 返回角色列表</a>
+    <a href="{{ url_for('roles.list_roles') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回角色列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
@@ -12,55 +12,55 @@
 </div>
 
 {% if not role.is_system_role %}
-<p><a href="{{ url_for('roles.edit_role', secure_code=role.secure_code) }}">[編輯]</a></p>
+<p><a href="{{ url_for('roles.edit_role', secure_code=role.secure_code) }}">[{{ _('編輯') }}]</a></p>
 {% endif %}
 
 <table class="data-table bordered">
     <tr>
-        <th>角色代碼</th>
+        <th>{{ _('角色代碼') }}</th>
         <td><code>{{ role.code }}</code></td>
     </tr>
     <tr>
-        <th>角色名稱</th>
+        <th>{{ _('角色名稱') }}</th>
         <td>{{ role.name }}</td>
     </tr>
     <tr>
-        <th>角色類型</th>
-        <td>{% if role.role_type == 'POSITION' %}職位{% else %}角色{% endif %}</td>
+        <th>{{ _('角色類型') }}</th>
+        <td>{% if role.role_type == 'POSITION' %}{{ _('職位') }}{% else %}{{ _('角色') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>適用範圍</th>
+        <th>{{ _('適用範圍') }}</th>
         <td>
-            {% if role.scope_type == 'GLOBAL' %}全企業
-            {% elif role.scope_type == 'DEPARTMENT' %}部門
-            {% elif role.scope_type == 'GROUP' %}社群
-            {% elif role.scope_type == 'EXTERNAL' %}外部人員
+            {% if role.scope_type == 'GLOBAL' %}{{ _('全企業') }}
+            {% elif role.scope_type == 'DEPARTMENT' %}{{ _('部門') }}
+            {% elif role.scope_type == 'GROUP' %}{{ _('社群') }}
+            {% elif role.scope_type == 'EXTERNAL' %}{{ _('外部人員') }}
             {% else %}{{ role.scope_type }}{% endif %}
         </td>
     </tr>
     <tr>
-        <th>是否為管理者</th>
-        <td>{{ '是' if role.is_manager else '否' }}</td>
+        <th>{{ _('是否為管理者') }}</th>
+        <td>{{ _('是') if role.is_manager else _('否') }}</td>
     </tr>
     <tr>
-        <th>系統預設角色</th>
-        <td>{{ '是' if role.is_system_role else '否' }}</td>
+        <th>{{ _('系統預設角色') }}</th>
+        <td>{{ _('是') if role.is_system_role else _('否') }}</td>
     </tr>
     <tr>
-        <th>描述</th>
+        <th>{{ _('描述') }}</th>
         <td>{{ role.description or '-' }}</td>
     </tr>
     <tr>
-        <th>建立時間</th>
+        <th>{{ _('建立時間') }}</th>
         <td>{{ role.created_at|tz_format('%Y-%m-%d %H:%M') if role.created_at else '-' }}</td>
     </tr>
     <tr>
-        <th>更新時間</th>
+        <th>{{ _('更新時間') }}</th>
         <td>{{ role.updated_at|tz_format('%Y-%m-%d %H:%M') if role.updated_at else '-' }}</td>
     </tr>
 </table>
 
 {% if role.is_system_role %}
-<p><strong>注意：</strong>此為系統預設角色，無法編輯或刪除。</p>
+<p><strong>{{ _('注意：') }}</strong>{{ _('此為系統預設角色，無法編輯或刪除。') }}</p>
 {% endif %}
 {% endblock %}

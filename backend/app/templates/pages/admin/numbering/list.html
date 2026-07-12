@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}用戶編號規則 - BeakMask{% endblock %}
+{% block title %}{{ _('用戶編號規則') }} - BeakMask{% endblock %}
 
 {% block head %}
 <style>
@@ -92,12 +92,12 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">&lt; 返回系統設定</a>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回系統設定') }}</a>
 </div>
 
 <div class="rules-header" style="margin-top:30px;">
-    <h1>用戶編號規則</h1>
-    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">+ 新增規則</a>
+    <h1>{{ _('用戶編號規則') }}</h1>
+    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">+ {{ _('新增規則') }}</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -114,12 +114,12 @@
 <table class="rules-table">
     <thead>
         <tr>
-            <th>規則名稱</th>
-            <th>使用範圍</th>
-            <th>描述</th>
-            <th>狀態</th>
-            <th>編號預覽</th>
-            <th>操作</th>
+            <th>{{ _('規則名稱') }}</th>
+            <th>{{ _('使用範圍') }}</th>
+            <th>{{ _('描述') }}</th>
+            <th>{{ _('狀態') }}</th>
+            <th>{{ _('編號預覽') }}</th>
+            <th>{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -128,41 +128,41 @@
             <td>
                 {{ rule.name }}
                 {% if rule.default_for == 'EMPLOYEE' %}
-                <span class="badge badge-default">企業成員預設</span>
+                <span class="badge badge-default">{{ _('企業成員預設') }}</span>
                 {% elif rule.default_for == 'EXTERNAL' %}
-                <span class="badge" style="background: #f97316; color: white;">外部預設</span>
+                <span class="badge" style="background: #f97316; color: white;">{{ _('外部預設') }}</span>
                 {% elif rule.default_for == 'FORM' %}
-                <span class="badge" style="background: #8b5cf6; color: white;">表單預設</span>
+                <span class="badge" style="background: #8b5cf6; color: white;">{{ _('表單預設') }}</span>
                 {% endif %}
             </td>
             <td>
                 {% if rule.usage_scope == 'INTERNAL_ONLY' %}
-                <span class="badge" style="background: #0ea5e9; color: white;">內部專用</span>
+                <span class="badge" style="background: #0ea5e9; color: white;">{{ _('內部專用') }}</span>
                 {% elif rule.usage_scope == 'EXTERNAL_ONLY' %}
-                <span class="badge" style="background: #f97316; color: white;">外部專用</span>
+                <span class="badge" style="background: #f97316; color: white;">{{ _('外部專用') }}</span>
                 {% elif rule.usage_scope == 'INTERNAL_UNIVERSAL' %}
-                <span class="badge" style="background: #8b5cf6; color: white;">內外都通用</span>
+                <span class="badge" style="background: #8b5cf6; color: white;">{{ _('內外都通用') }}</span>
                 {% else %}
-                <span class="badge" style="background: #9ca3af; color: white;">未設定</span>
+                <span class="badge" style="background: #9ca3af; color: white;">{{ _('未設定') }}</span>
                 {% endif %}
             </td>
             <td>{{ rule.description or '-' }}</td>
             <td>
                 {% if rule.is_active %}
-                <span class="badge badge-active">啟用</span>
+                <span class="badge badge-active">{{ _('啟用') }}</span>
                 {% else %}
-                <span class="badge badge-inactive">停用</span>
+                <span class="badge badge-inactive">{{ _('停用') }}</span>
                 {% endif %}
             </td>
             <td><span class="preview-code">{{ rule.preview }}</span></td>
             <td class="actions">
-                <a href="{{ url_for('numbering.edit_rule', secure_code=rule.secure_code) }}">編輯</a>
+                <a href="{{ url_for('numbering.edit_rule', secure_code=rule.secure_code) }}">{{ _('編輯') }}</a>
                 {% if not rule.default_for %}
                 <form method="POST" action="{{ url_for('numbering.delete_rule', secure_code=rule.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('確定要刪除規則「{{ rule.name }}」嗎？')">
+                      onsubmit="return confirm('{{ _('確定要刪除規則「%(name)s」嗎？', name=rule.name) }}')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="danger">刪除</button>
+                    <button type="submit" class="danger">{{ _('刪除') }}</button>
                 </form>
                 {% endif %}
             </td>
@@ -172,20 +172,20 @@
 </table>
 {% else %}
 <div class="empty-state">
-    <p>尚未建立任何編號規則</p>
-    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">建立第一個規則</a>
+    <p>{{ _('尚未建立任何編號規則') }}</p>
+    <a href="{{ url_for('numbering.create_rule') }}" class="btn btn-primary">{{ _('建立第一個規則') }}</a>
 </div>
 {% endif %}
 
 <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-    <h3 style="margin-top: 0;">說明</h3>
+    <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
     <ul style="margin: 0; padding-left: 20px; color: #666;">
-        <li>每個企業可設定多組編號規則</li>
-        <li>「企業成員預設」規則會在新增企業成員帳號時自動使用</li>
-        <li>「外部預設」規則會在新增外部廠商時自動使用</li>
-        <li>「表單預設」規則會在表單送出時自動產生單號</li>
-        <li>編號元素可包含：前綴文字、序號、年碼、月碼、後綴文字</li>
-        <li>序號滿時會自動進位（前綴循環）</li>
+        <li>{{ _('每個企業可設定多組編號規則') }}</li>
+        <li>{{ _('「企業成員預設」規則會在新增企業成員帳號時自動使用') }}</li>
+        <li>{{ _('「外部預設」規則會在新增外部廠商時自動使用') }}</li>
+        <li>{{ _('「表單預設」規則會在表單送出時自動產生單號') }}</li>
+        <li>{{ _('編號元素可包含：前綴文字、序號、年碼、月碼、後綴文字') }}</li>
+        <li>{{ _('序號滿時會自動進位（前綴循環）') }}</li>
     </ul>
 </div>
 {% endblock %}

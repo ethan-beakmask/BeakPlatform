@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}系統管理員帳號 - BeakMask{% endblock %}
+{% block title %}{{ _('系統管理員帳號') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/master-detail.css') }}">
@@ -25,9 +25,9 @@ window.__SYS_ACCOUNTS_CONFIG = {
 <div x-data="sysAccountsManager()" x-init="init()">
 
 <div class="page-header">
-    <h1 class="page-title" style="margin-bottom: 4px;">系統管理員帳號</h1>
+    <h1 class="page-title" style="margin-bottom: 4px;">{{ _('系統管理員帳號') }}</h1>
 </div>
-<p style="color: #777; margin-top: 0; font-size: 13px;">管理 {{ SYSTEM_ORG_CODE }} 的系統管理員帳號</p>
+<p style="color: #777; margin-top: 0; font-size: 13px;">{{ _('管理 %(org_code)s 的系統管理員帳號', org_code=SYSTEM_ORG_CODE) }}</p>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -42,19 +42,19 @@ window.__SYS_ACCOUNTS_CONFIG = {
 <div class="master-detail">
     <!-- 左面板: 列表 -->
     <div class="master-panel">
-        <button type="button" class="btn btn-primary" style="margin-bottom: 12px;" @click="openCreateModal()">+ 新增系統管理員</button>
+        <button type="button" class="btn btn-primary" style="margin-bottom: 12px;" @click="openCreateModal()">+ {{ _('新增系統管理員') }}</button>
 
         <template x-if="accounts.length === 0">
-            <p style="color: #888;">尚無系統管理員帳號。</p>
+            <p style="color: #888;">{{ _('尚無系統管理員帳號。') }}</p>
         </template>
 
         <template x-if="accounts.length > 0">
             <table class="master-table">
                 <thead>
                     <tr>
-                        <th>帳號</th>
-                        <th>顯示名稱</th>
-                        <th>狀態</th>
+                        <th>{{ _('帳號') }}</th>
+                        <th>{{ _('顯示名稱') }}</th>
+                        <th>{{ _('狀態') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,7 +79,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
     <div class="detail-panel">
         <!-- 未選取 -->
         <template x-if="!selected">
-            <div class="detail-placeholder">請從左側選擇帳號進行編輯</div>
+            <div class="detail-placeholder">{{ _('請從左側選擇帳號進行編輯') }}</div>
         </template>
 
         <!-- 已選取 -->
@@ -97,8 +97,8 @@ window.__SYS_ACCOUNTS_CONFIG = {
 
                     <!-- 帳號 (唯讀) -->
                     <div class="field-row">
-                        <label>帳號</label>
-                        <span class="field-value"><code x-text="selected.username + '@' + window.__SYSTEM_ORG_CODE"></code> (不可變更)</span>
+                        <label>{{ _('帳號') }}</label>
+                        <span class="field-value"><code x-text="selected.username + '@' + window.__SYSTEM_ORG_CODE"></code> ({{ _('不可變更') }})</span>
                     </div>
 
                     <!-- Email (唯讀) -->
@@ -109,20 +109,20 @@ window.__SYS_ACCOUNTS_CONFIG = {
 
                     <!-- 顯示名稱 -->
                     <div class="field-row">
-                        <label for="edit_display_name">顯示名稱 *</label>
+                        <label for="edit_display_name">{{ _('顯示名稱') }} *</label>
                         <input type="text" id="edit_display_name" x-model="editForm.display_name">
                     </div>
 
                     <!-- 狀態 -->
                     <div class="field-row">
-                        <label for="edit_is_active">狀態</label>
+                        <label for="edit_is_active">{{ _('狀態') }}</label>
                         <template x-if="selected.is_self">
-                            <span class="field-value status-active">啟用 (不能停用自己)</span>
+                            <span class="field-value status-active">{{ _('啟用') }} ({{ _('不能停用自己') }})</span>
                         </template>
                         <template x-if="!selected.is_self">
                             <select id="edit_is_active" x-model="editForm.is_active">
-                                <option :value="true">啟用</option>
-                                <option :value="false">停用</option>
+                                <option :value="true">{{ _('啟用') }}</option>
+                                <option :value="false">{{ _('停用') }}</option>
                             </select>
                         </template>
                     </div>
@@ -130,19 +130,19 @@ window.__SYS_ACCOUNTS_CONFIG = {
 
                 <!-- 密碼變更 -->
                 <div class="password-section">
-                    <h4>變更密碼 (留空表示不變更)</h4>
+                    <h4>{{ _('變更密碼') }} ({{ _('留空表示不變更') }})</h4>
 
                     <div class="field-row">
-                        <label>新密碼</label>
+                        <label>{{ _('新密碼') }}</label>
                         <div class="password-inline">
                             <input :type="showEditPassword ? 'text' : 'password'"
                                    x-model="editForm.new_password"
                                    @input="_validatePasswordInput(editForm.new_password)"
-                                   placeholder="留空不變更">
+                                   placeholder="{{ _('留空不變更') }}">
                             <button type="button" class="btn btn-sm btn-secondary"
                                     @click="showEditPassword = !showEditPassword"
                                     x-text="showEditPassword ? '隱藏' : '顯示'"></button>
-                            <button type="button" class="btn btn-sm btn-secondary" @click="generateEditPassword()">建議密碼</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @click="generateEditPassword()">{{ _('建議密碼') }}</button>
                         </div>
                         <div class="pw-requirements" x-show="passwordRequirements" x-text="passwordRequirements" style="margin-left: 100px;"></div>
                         <div class="pw-errors" x-show="editForm.new_password && passwordErrors.length > 0" style="margin-left: 100px;">
@@ -151,20 +151,20 @@ window.__SYS_ACCOUNTS_CONFIG = {
                             </template>
                         </div>
                         <div class="pw-ok" x-show="editForm.new_password && passwordErrors.length === 0 && passwordChecked" style="margin-left: 100px;">
-                            密碼符合要求
+                            {{ _('密碼符合要求') }}
                         </div>
                     </div>
 
                     <div class="field-row">
-                        <label>確認密碼</label>
+                        <label>{{ _('確認密碼') }}</label>
                         <input :type="showEditPassword ? 'text' : 'password'"
                                x-model="editForm.confirm_password"
-                               placeholder="再次輸入新密碼"
+                               placeholder="{{ _('再次輸入新密碼') }}"
                                style="width: 260px;">
                         <div class="pw-mismatch"
                              x-show="editForm.confirm_password && editForm.new_password !== editForm.confirm_password"
                              style="margin-left: 100px;">
-                            密碼不一致
+                            {{ _('密碼不一致') }}
                         </div>
                     </div>
                 </div>
@@ -179,18 +179,18 @@ window.__SYS_ACCOUNTS_CONFIG = {
 
                 <!-- 帳號資訊 -->
                 <div class="edit-section" style="margin-top: 20px;">
-                    <h3>帳號資訊</h3>
+                    <h3>{{ _('帳號資訊') }}</h3>
                     <table class="account-info-table">
                         <tr>
-                            <td>建立時間</td>
+                            <td>{{ _('建立時間') }}</td>
                             <td x-text="selected.created_at || '-'"></td>
                         </tr>
                         <tr>
-                            <td>最後登入</td>
+                            <td>{{ _('最後登入') }}</td>
                             <td x-text="selected.last_login_at || '-'"></td>
                         </tr>
                         <tr>
-                            <td>密碼變更</td>
+                            <td>{{ _('密碼變更') }}</td>
                             <td x-text="selected.password_changed_at || '-'"></td>
                         </tr>
                     </table>
@@ -199,11 +199,11 @@ window.__SYS_ACCOUNTS_CONFIG = {
                 <!-- 刪除區段 -->
                 <template x-if="!selected.is_self">
                     <div class="delete-section">
-                        <h4>刪除帳號</h4>
-                        <p>刪除此系統管理員帳號將無法復原，請謹慎操作。</p>
+                        <h4>{{ _('刪除帳號') }}</h4>
+                        <p>{{ _('刪除此系統管理員帳號將無法復原，請謹慎操作。') }}</p>
                         <button type="button" class="btn btn-danger btn-sm"
                                 @click="submitDelete()"
-                                :disabled="submitting">刪除帳號</button>
+                                :disabled="submitting">{{ _('刪除帳號') }}</button>
                     </div>
                 </template>
             </div>
@@ -216,7 +216,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
     <div class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>新增系統管理員</h3>
+                <h3>{{ _('新增系統管理員') }}</h3>
                 <button type="button" class="modal-close" @click="closeCreateModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -228,26 +228,26 @@ window.__SYS_ACCOUNTS_CONFIG = {
                 </div>
 
                 <div class="field-row">
-                    <label for="create_username">帳號 *</label>
+                    <label for="create_username">{{ _('帳號') }} *</label>
                     <input type="text" id="create_username" x-model="createForm.username"
-                           placeholder="英數字和底線">
-                    <small>登入時為: username@{{ SYSTEM_ORG_CODE }}</small>
+                           placeholder="{{ _('英數字和底線') }}">
+                    <small>{{ _('登入時為: username@%(org_code)s', org_code=SYSTEM_ORG_CODE) }}</small>
                 </div>
 
                 <div class="field-row">
                     <label for="create_email">Email *</label>
                     <input type="email" id="create_email" x-model="createForm.email"
                            placeholder="admin@example.com">
-                    <small>可使用任何 Email (含 Gmail 等公共信箱)</small>
+                    <small>{{ _('可使用任何 Email (含 Gmail 等公共信箱)') }}</small>
                 </div>
 
                 <div class="field-row">
-                    <label for="create_display_name">顯示名稱 *</label>
+                    <label for="create_display_name">{{ _('顯示名稱') }} *</label>
                     <input type="text" id="create_display_name" x-model="createForm.display_name">
                 </div>
 
                 <div class="field-row">
-                    <label>密碼 *</label>
+                    <label>{{ _('密碼') }} *</label>
                     <div class="password-inline">
                         <input :type="showCreatePassword ? 'text' : 'password'"
                                x-model="createForm.password"
@@ -255,7 +255,7 @@ window.__SYS_ACCOUNTS_CONFIG = {
                         <button type="button" class="btn btn-sm btn-secondary"
                                 @click="showCreatePassword = !showCreatePassword"
                                 x-text="showCreatePassword ? '隱藏' : '顯示'"></button>
-                        <button type="button" class="btn btn-sm btn-secondary" @click="generateCreatePassword()">建議密碼</button>
+                        <button type="button" class="btn btn-sm btn-secondary" @click="generateCreatePassword()">{{ _('建議密碼') }}</button>
                     </div>
                     <div class="pw-requirements" x-show="passwordRequirements" x-text="passwordRequirements" style="margin-left: 100px;"></div>
                     <div class="pw-errors" x-show="createForm.password && passwordErrors.length > 0" style="margin-left: 100px;">
@@ -264,23 +264,23 @@ window.__SYS_ACCOUNTS_CONFIG = {
                         </template>
                     </div>
                     <div class="pw-ok" x-show="createForm.password && passwordErrors.length === 0 && passwordChecked" style="margin-left: 100px;">
-                        密碼符合要求
+                        {{ _('密碼符合要求') }}
                     </div>
                 </div>
 
                 <div class="field-row">
-                    <label>確認密碼 *</label>
+                    <label>{{ _('確認密碼') }} *</label>
                     <input :type="showCreatePassword ? 'text' : 'password'"
                            x-model="createForm.confirm_password">
                     <div class="pw-mismatch"
                          x-show="createForm.confirm_password && createForm.password !== createForm.confirm_password"
                          style="margin-left: 100px;">
-                        密碼不一致
+                        {{ _('密碼不一致') }}
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">取消</button>
+                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">{{ _('取消') }}</button>
                 <button type="button" class="btn btn-primary"
                         @click="submitCreate()"
                         :disabled="submitting"

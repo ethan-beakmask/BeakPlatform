@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}企業管理員帳號 - BeakMask{% endblock %}
+{% block title %}{{ _('企業管理員帳號') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/org-admin-rescue.css') }}">
@@ -8,12 +8,12 @@
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">&lt; 返回系統設定</a>
+    <a href="{{ url_for('admin.settings') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回系統設定') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">企業管理員帳號</h1>
-    <a href="{{ url_for('org_admins.create_admin') }}" class="btn btn-primary">+ 新增管理員</a>
+    <h1 class="page-title">{{ _('企業管理員帳號') }}</h1>
+    <a href="{{ url_for('org_admins.create_admin') }}" class="btn btn-primary">+ {{ _('新增管理員') }}</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -27,8 +27,8 @@
 {% endwith %}
 
 <div class="alert alert-info">
-    <strong>目前啟用的管理員：{{ active_count }} 人</strong>
-    <span class="text-muted" style="margin-left: 10px;">（必須至少保留一個啟用的管理員）</span>
+    <strong>{{ _('目前啟用的管理員：%(count)s 人', count=active_count) }}</strong>
+    <span class="text-muted" style="margin-left: 10px;">{{ _('（必須至少保留一個啟用的管理員）') }}</span>
 </div>
 
 {% if admins %}
@@ -36,12 +36,12 @@
 <table class="data-table bordered" x-data="sortableTable()">
     <thead>
         <tr>
-            <th data-sort="text">帳號</th>
-            <th data-sort="text">姓名</th>
-            <th data-sort="text">綁定企業成員</th>
-            <th data-sort="text" class="text-center">狀態</th>
-            <th data-sort="date">建立時間</th>
-            <th class="text-center">操作</th>
+            <th data-sort="text">{{ _('帳號') }}</th>
+            <th data-sort="text">{{ _('姓名') }}</th>
+            <th data-sort="text">{{ _('綁定企業成員') }}</th>
+            <th data-sort="text" class="text-center">{{ _('狀態') }}</th>
+            <th data-sort="date">{{ _('建立時間') }}</th>
+            <th class="text-center">{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -50,7 +50,7 @@
             <td>
                 <code>{{ admin.username }}</code>
                 {% if admin.is_original_admin %}
-                <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
+                <span class="text-muted" style="font-size: 0.8em;">{{ _('(預設)') }}</span>
                 {% endif %}
             </td>
             <td>{{ admin.display_name }}</td>
@@ -63,14 +63,14 @@
                 {% elif admin.is_original_admin %}
                     <span class="text-muted">-</span>
                 {% else %}
-                    <span class="text-warning">未綁定</span>
+                    <span class="text-warning">{{ _('未綁定') }}</span>
                 {% endif %}
             </td>
             <td class="text-center">
                 {% if admin.is_active %}
-                <span class="badge badge-success">啟用</span>
+                <span class="badge badge-success">{{ _('啟用') }}</span>
                 {% else %}
-                <span class="badge badge-secondary">停用</span>
+                <span class="badge badge-secondary">{{ _('停用') }}</span>
                 {% endif %}
             </td>
             <td>{{ admin.created_at.strftime('%Y-%m-%d %H:%M') if admin.created_at else '-' }}</td>
@@ -78,22 +78,22 @@
                 {% if admin.secure_code != current_user.secure_code %}
                 <button type="button" class="btn-reset-pwd"
                         @click="openModal('{{ admin.secure_code }}', '{{ admin.display_name }}')">
-                    重設密碼
+                    {{ _('重設密碼') }}
                 </button>
                 <form method="POST" action="{{ url_for('org_admins.toggle_status', secure_code=admin.secure_code) }}" style="display: inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-reset-pwd" style="color: var(--color-primary);">
-                        {% if admin.is_active %}停用{% else %}啟用{% endif %}
+                        {% if admin.is_active %}{{ _('停用') }}{% else %}{{ _('啟用') }}{% endif %}
                     </button>
                 </form>
                 <form method="POST" action="{{ url_for('org_admins.delete_admin', secure_code=admin.secure_code) }}"
                       style="display: inline;"
-                      onsubmit="return confirm('確定要刪除管理員「{{ admin.display_name }}」嗎？')">
+                      onsubmit="return confirm('{{ _('確定要刪除管理員「%(name)s」嗎？', name=admin.display_name) }}')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn-reset-pwd" style="color: var(--color-danger);">刪除</button>
+                    <button type="submit" class="btn-reset-pwd" style="color: var(--color-danger);">{{ _('刪除') }}</button>
                 </form>
                 {% else %}
-                <span class="text-muted">（自己）</span>
+                <span class="text-muted">{{ _('（自己）') }}</span>
                 {% endif %}
             </td>
         </tr>
@@ -104,18 +104,18 @@
 <!-- 重設密碼對話框 -->
 <div class="modal-overlay" x-show="resetTarget" x-cloak>
     <div class="modal-content modal-sm">
-        <h3>重設密碼</h3>
-        <p style="margin-bottom: 16px;">為 <strong x-text="resetName"></strong> 設定新密碼</p>
+        <h3>{{ _('重設密碼') }}</h3>
+        <p style="margin-bottom: 16px;">{{ _('為') }} <strong x-text="resetName"></strong> {{ _('設定新密碼') }}</p>
         <form method="POST" :action="'{{ app_prefix }}/admin/org-admins/' + resetTarget + '/reset-password'">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label for="new_password">新密碼</label>
+            <label for="new_password">{{ _('新密碼') }}</label>
             <div class="password-field">
                 <input :type="showPassword ? 'text' : 'password'" id="new_password" name="new_password"
                        x-model="password" @input="validatePassword()"
                        required minlength="8" autocomplete="new-password">
                 <button type="button" class="btn-toggle" @click="showPassword = !showPassword"
                         x-text="showPassword ? '隱藏' : '顯示'"></button>
-                <button type="button" class="btn-generate" @click="generatePassword()">建議密碼</button>
+                <button type="button" class="btn-generate" @click="generatePassword()">{{ _('建議密碼') }}</button>
             </div>
             <p class="help-text" x-text="passwordRequirements"></p>
             <div x-show="password && passwordErrors.length > 0" style="margin-bottom: 12px;">
@@ -124,21 +124,21 @@
                 </template>
             </div>
             <div x-show="password && passwordErrors.length === 0 && passwordChecked" class="password-ok" style="margin-bottom: 12px;">
-                密碼符合要求
+                {{ _('密碼符合要求') }}
             </div>
-            <label for="confirm_password">確認密碼</label>
+            <label for="confirm_password">{{ _('確認密碼') }}</label>
             <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
                    x-model="confirmPassword" required minlength="8" autocomplete="new-password">
             <div x-show="confirmPassword && password !== confirmPassword" class="text-danger" style="font-size: 12px; margin-top: 4px; margin-bottom: 8px;">
-                密碼不一致
+                {{ _('密碼不一致') }}
             </div>
             <div x-show="confirmPassword && password === confirmPassword && passwordChecked && passwordErrors.length === 0" class="text-success" style="font-size: 12px; margin-bottom: 8px;">
-                確認密碼一致
+                {{ _('確認密碼一致') }}
             </div>
             <div class="modal-buttons">
-                <button type="button" class="btn btn-cancel" @click="closeModal()">取消</button>
+                <button type="button" class="btn btn-cancel" @click="closeModal()">{{ _('取消') }}</button>
                 <button type="submit" class="btn-submit" :disabled="!canSubmit"
-                        :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">確認重設</button>
+                        :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">{{ _('確認重設') }}</button>
             </div>
         </form>
     </div>
@@ -147,17 +147,17 @@
 
 <script src="{{ url_for('static', filename='js/org-admins.js') }}"></script>
 {% else %}
-<p class="text-muted">尚無企業管理員帳號。</p>
+<p class="text-muted">{{ _('尚無企業管理員帳號。') }}</p>
 {% endif %}
 
 <div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-    <h3 style="margin-top: 0;">說明</h3>
+    <h3 style="margin-top: 0;">{{ _('說明') }}</h3>
     <ul style="margin: 0; padding-left: 20px;" class="text-muted">
-        <li>企業管理員可以管理企業設定、用戶帳號等</li>
-        <li>必須至少保留一個啟用的管理員</li>
-        <li>預設的 admin 帳號可以停用，但需先建立其他管理員</li>
-        <li>停用的管理員無法登入系統</li>
-        <li><strong>綁定機制</strong>：新增的管理員必須綁定一個有企業成員編號的企業成員帳號，當該企業成員帳號停用或刪除時，對應的管理員帳號也無法登入</li>
+        <li>{{ _('企業管理員可以管理企業設定、用戶帳號等') }}</li>
+        <li>{{ _('必須至少保留一個啟用的管理員') }}</li>
+        <li>{{ _('預設的 admin 帳號可以停用，但需先建立其他管理員') }}</li>
+        <li>{{ _('停用的管理員無法登入系統') }}</li>
+        <li><strong>{{ _('綁定機制') }}</strong>{{ _('：新增的管理員必須綁定一個有企業成員編號的企業成員帳號，當該企業成員帳號停用或刪除時，對應的管理員帳號也無法登入') }}</li>
     </ul>
 </div>
 {% endblock %}

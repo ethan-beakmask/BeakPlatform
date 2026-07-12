@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>關於 BeakMask</title>
+    <title>{{ _('關於 BeakMask') }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -64,38 +64,38 @@
 <body>
     <div class="header">
         <h1>BeakMask</h1>
-        <p>企業級 No-Code 表單與流程管理平台</p>
+        <p>{{ _('企業級 No-Code 表單與流程管理平台') }}</p>
     </div>
 
     <div class="content">
         <div class="card">
-            <h2>平台特色</h2>
+            <h2>{{ _('平台特色') }}</h2>
             <div class="features">
                 <div class="feature">
-                    <h3>多租戶架構</h3>
-                    <p>企業資料完全隔離，安全可靠</p>
+                    <h3>{{ _('多租戶架構') }}</h3>
+                    <p>{{ _('企業資料完全隔離，安全可靠') }}</p>
                 </div>
                 <div class="feature">
-                    <h3>彈性權限</h3>
-                    <p>RBAC + ABAC 細緻權限控制</p>
+                    <h3>{{ _('彈性權限') }}</h3>
+                    <p>{{ _('RBAC + ABAC 細緻權限控制') }}</p>
                 </div>
                 <div class="feature">
-                    <h3>動態表單</h3>
-                    <p>拖拉式表單設計器</p>
+                    <h3>{{ _('動態表單') }}</h3>
+                    <p>{{ _('拖拉式表單設計器') }}</p>
                 </div>
                 <div class="feature">
-                    <h3>流程引擎</h3>
-                    <p>視覺化流程設計與自動化</p>
+                    <h3>{{ _('流程引擎') }}</h3>
+                    <p>{{ _('視覺化流程設計與自動化') }}</p>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>聯繫我們</h2>
-            <p>如有任何問題，歡迎與我們聯繫。</p>
+            <h2>{{ _('聯繫我們') }}</h2>
+            <p>{{ _('如有任何問題，歡迎與我們聯繫。') }}</p>
         </div>
 
-        <a href="{{ url_for('public.index') }}" class="back-link">&larr; 返回首頁</a>
+        <a href="{{ url_for('public.index') }}" class="back-link">{{ _('&larr; 返回首頁') }}</a>
     </div>
 </body>
 </html>

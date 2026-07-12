@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}集團資料庫總覽 - BeakPlatform{% endblock %}
+{% block title %}{{ _('集團資料庫總覽') }} - BeakPlatform{% endblock %}
 
 {% block head %}
 <style>
@@ -74,13 +74,13 @@
 {% block content %}
 <div class="cgdb-page" x-data="cgdbOverview()">
     <div class="cgdb-header">
-        <h2>集團資料庫總覽</h2>
+        <h2>{{ _('集團資料庫總覽') }}</h2>
         <span class="cgdb-summary" x-show="!loading" x-text="summaryText"></span>
     </div>
 
     {# 載入中 #}
     <template x-if="loading">
-        <div class="cgdb-loading">載入中...</div>
+        <div class="cgdb-loading">{{ _('載入中...') }}</div>
     </template>
 
     {# 載入失敗 #}
@@ -90,7 +90,7 @@
 
     {# 空狀態 #}
     <template x-if="!loading && !error && databases.length === 0">
-        <div class="cgdb-empty">尚無任何集團資料庫</div>
+        <div class="cgdb-empty">{{ _('尚無任何集團資料庫') }}</div>
     </template>
 
     {# 資料庫卡片列表 #}
@@ -109,19 +109,19 @@
                 <div class="cgdb-card-right">
                     {# 狀態標籤 #}
                     <template x-if="db.is_orphan">
-                        <span class="cgdb-badge cgdb-badge-orphan">孤兒資料庫</span>
+                        <span class="cgdb-badge cgdb-badge-orphan">{{ _('孤兒資料庫') }}</span>
                     </template>
                     <template x-if="db.is_ghost_record">
-                        <span class="cgdb-badge cgdb-badge-ghost">資料庫不存在</span>
+                        <span class="cgdb-badge cgdb-badge-ghost">{{ _('資料庫不存在') }}</span>
                     </template>
                     <template x-if="db.has_record && db.exists_in_pg && !db.is_ready">
-                        <span class="cgdb-badge cgdb-badge-not-ready">未就緒</span>
+                        <span class="cgdb-badge cgdb-badge-not-ready">{{ _('未就緒') }}</span>
                     </template>
                     <template x-if="db.has_record && db.exists_in_pg && db.is_ready">
-                        <span class="cgdb-badge cgdb-badge-ok">正常</span>
+                        <span class="cgdb-badge cgdb-badge-ok">{{ _('正常') }}</span>
                     </template>
                     <template x-if="db.has_record && db.conglomerate_active === false">
-                        <span class="cgdb-badge cgdb-badge-inactive">集團停用</span>
+                        <span class="cgdb-badge cgdb-badge-inactive">{{ _('集團停用') }}</span>
                     </template>
 
                     {# 成員數量 #}
@@ -143,16 +143,16 @@
                     <template x-if="db.is_orphan">
                         <div class="cgdb-section">
                             <p style="color:#856404;font-size:13px;margin:0;">
-                                此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。
-                                可能是舊資料殘留或手動建立的資料庫。
+                                {{ _('此資料庫存在於 PostgreSQL 但無對應的 fw_conglomerate_databases 記錄。') }}
+                                {{ _('可能是舊資料殘留或手動建立的資料庫。') }}
                             </p>
                         </div>
                     </template>
                     <template x-if="db.is_ghost_record">
                         <div class="cgdb-section">
                             <p style="color:#721c24;font-size:13px;margin:0;">
-                                fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。
-                                可能已被手動刪除。
+                                {{ _('fw_conglomerate_databases 有此記錄但 PostgreSQL 中找不到對應的資料庫。') }}
+                                {{ _('可能已被手動刪除。') }}
                             </p>
                         </div>
                     </template>
@@ -160,30 +160,30 @@
                     {# 基本資訊 #}
                     <template x-if="db.has_record">
                         <div class="cgdb-section">
-                            <div class="cgdb-section-title">基本資訊</div>
+                            <div class="cgdb-section-title">{{ _('基本資訊') }}</div>
                             <div class="cgdb-info-grid">
                                 <div class="cgdb-info-item">
-                                    <label>集團代碼:</label>
+                                    <label>{{ _('集團代碼') }}:</label>
                                     <span x-text="db.conglomerate_code"></span>
                                 </div>
                                 <div class="cgdb-info-item">
-                                    <label>集團 ID:</label>
+                                    <label>{{ _('集團 ID') }}:</label>
                                     <span x-text="db.conglomerate_id"></span>
                                 </div>
                                 <div class="cgdb-info-item">
-                                    <label>主機:</label>
+                                    <label>{{ _('主機') }}:</label>
                                     <span x-text="db.db_host + ':' + db.db_port"></span>
                                 </div>
                                 <div class="cgdb-info-item">
-                                    <label>Admin 帳號:</label>
+                                    <label>{{ _('Admin 帳號') }}:</label>
                                     <span x-text="db.admin_user" style="font-family:monospace"></span>
                                 </div>
                                 <div class="cgdb-info-item">
-                                    <label>Member 帳號:</label>
+                                    <label>{{ _('Member 帳號') }}:</label>
                                     <span x-text="db.member_user" style="font-family:monospace"></span>
                                 </div>
                                 <div class="cgdb-info-item">
-                                    <label>建立時間:</label>
+                                    <label>{{ _('建立時間') }}:</label>
                                     <span x-text="db.created_at ? BkTime.format(db.created_at, 'short') : '-'"></span>
                                 </div>
                             </div>
@@ -193,10 +193,10 @@
                     {# DB 容量 #}
                     <template x-if="db.exists_in_pg">
                         <div class="cgdb-section">
-                            <div class="cgdb-section-title">資料庫統計</div>
+                            <div class="cgdb-section-title">{{ _('資料庫統計') }}</div>
                             <div class="cgdb-info-grid">
                                 <div class="cgdb-info-item">
-                                    <label>容量:</label>
+                                    <label>{{ _('容量') }}:</label>
                                     <span x-text="db.db_size_display"></span>
                                 </div>
                             </div>
@@ -206,10 +206,10 @@
                     {# 成員企業 #}
                     <template x-if="db.has_record && db.members.length > 0">
                         <div class="cgdb-section">
-                            <div class="cgdb-section-title">目前成員企業</div>
+                            <div class="cgdb-section-title">{{ _('目前成員企業') }}</div>
                             <table class="cgdb-members-table">
                                 <thead>
-                                    <tr><th>企業名稱</th><th>代碼</th><th>狀態</th></tr>
+                                    <tr><th>{{ _('企業名稱') }}</th><th>{{ _('代碼') }}</th><th>{{ _('狀態') }}</th></tr>
                                 </thead>
                                 <tbody>
                                     <template x-for="m in db.members" :key="m.secure_code">
@@ -218,10 +218,10 @@
                                             <td style="font-family:monospace" x-text="m.code"></td>
                                             <td>
                                                 <template x-if="m.is_active">
-                                                    <span class="cgdb-badge cgdb-badge-ok">啟用</span>
+                                                    <span class="cgdb-badge cgdb-badge-ok">{{ _('啟用') }}</span>
                                                 </template>
                                                 <template x-if="!m.is_active">
-                                                    <span class="cgdb-badge cgdb-badge-inactive">停用</span>
+                                                    <span class="cgdb-badge cgdb-badge-inactive">{{ _('停用') }}</span>
                                                 </template>
                                             </td>
                                         </tr>
@@ -232,22 +232,22 @@
                     </template>
                     <template x-if="db.has_record && db.members.length === 0">
                         <div class="cgdb-section">
-                            <div class="cgdb-section-title">目前成員企業</div>
-                            <div class="cgdb-log-empty">無成員企業</div>
+                            <div class="cgdb-section-title">{{ _('目前成員企業') }}</div>
+                            <div class="cgdb-log-empty">{{ _('無成員企業') }}</div>
                         </div>
                     </template>
 
                     {# 異動歷程 #}
                     <template x-if="db.has_record && db.conglomerate_secure_code">
                         <div class="cgdb-section">
-                            <div class="cgdb-section-title">異動歷程</div>
+                            <div class="cgdb-section-title">{{ _('異動歷程') }}</div>
                             <template x-if="db._logsLoading">
-                                <div class="cgdb-log-loading">載入中...</div>
+                                <div class="cgdb-log-loading">{{ _('載入中...') }}</div>
                             </template>
                             <template x-if="db._logs && db._logs.length > 0">
                                 <table class="cgdb-log-table">
                                     <thead>
-                                        <tr><th>時間</th><th>動作</th><th>企業</th><th>操作者</th><th>說明</th></tr>
+                                        <tr><th>{{ _('時間') }}</th><th>{{ _('動作') }}</th><th>{{ _('企業') }}</th><th>{{ _('操作者') }}</th><th>{{ _('說明') }}</th></tr>
                                     </thead>
                                     <tbody>
                                         <template x-for="(log, idx) in db._logs" :key="idx">
@@ -266,7 +266,7 @@
                                 </table>
                             </template>
                             <template x-if="db._logs && db._logs.length === 0">
-                                <div class="cgdb-log-empty">無異動記錄</div>
+                                <div class="cgdb-log-empty">{{ _('無異動記錄') }}</div>
                             </template>
                         </div>
                     </template>

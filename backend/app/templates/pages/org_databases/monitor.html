@@ -1,7 +1,7 @@
 {% extends 'layouts/base.html' %}
 
 {% block title %}
-{% if is_system_view %}企業獨立資料庫管理{% else %}獨立資料庫{% endif %} - BeakMask
+{% if is_system_view %}{{ _('企業獨立資料庫管理') }}{% else %}{{ _('獨立資料庫') }}{% endif %} - BeakMask
 {% endblock %}
 
 {% block head %}
@@ -17,20 +17,20 @@
     {# 左側：企業清單 #}
     <div class="odb-sidebar">
         <div class="odb-sidebar-header">
-            <h2>企業獨立資料庫管理</h2>
+            <h2>{{ _('企業獨立資料庫管理') }}</h2>
             <div class="odb-sidebar-summary" x-text="orgs.length + ' 個企業資料庫'"></div>
             <input type="text" class="odb-search" x-model="search"
-                   placeholder="搜尋企業名稱或 domain...">
+                   placeholder="{{ _('搜尋企業名稱或 domain...') }}">
             <div class="odb-sort-bar">
-                排序:
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('id')}" @click="toggleSort('id')" x-text="'編號' + sortIcon('id')">編號</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('tables')}" @click="toggleSort('tables')" x-text="'資料表' + sortIcon('tables')">資料表</button>
-                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('size')}" @click="toggleSort('size')" x-text="'容量' + sortIcon('size')">容量</button>
+                {{ _('排序:') }}
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('id')}" @click="toggleSort('id')" x-text="'編號' + sortIcon('id')">{{ _('編號') }}</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('tables')}" @click="toggleSort('tables')" x-text="'資料表' + sortIcon('tables')">{{ _('資料表') }}</button>
+                <button class="odb-sort-btn" :class="{'active': sortBy.startsWith('size')}" @click="toggleSort('size')" x-text="'容量' + sortIcon('size')">{{ _('容量') }}</button>
             </div>
         </div>
         <div class="odb-sidebar-list">
             <template x-if="orgs.length === 0">
-                <div class="odb-sidebar-empty">尚無任何企業建立獨立資料庫</div>
+                <div class="odb-sidebar-empty">{{ _('尚無任何企業建立獨立資料庫') }}</div>
             </template>
             <template x-for="org in filteredOrgs" :key="org.secureCode">
                 <div class="odb-org-item"
@@ -40,13 +40,13 @@
                     <span class="odb-org-item-name" x-text="org.name"></span>
                     <span class="odb-org-item-domain" x-text="org.domain"></span>
                     <template x-if="!org.isActive">
-                        <span class="odb-badge odb-badge-inactive">停用</span>
+                        <span class="odb-badge odb-badge-inactive">{{ _('停用') }}</span>
                     </template>
                     <span class="odb-org-item-stats" x-text="org.dataLoading ? '...' : orgStats(org)"></span>
                 </div>
             </template>
             <template x-if="filteredOrgs.length === 0 && orgs.length > 0 && search">
-                <div class="odb-sidebar-empty">無符合條件的企業</div>
+                <div class="odb-sidebar-empty">{{ _('無符合條件的企業') }}</div>
             </template>
         </div>
     </div>
@@ -55,7 +55,7 @@
     <div class="odb-detail">
         {# 未選取 #}
         <template x-if="!currentOrg">
-            <div class="odb-detail-placeholder">請從左側選取企業</div>
+            <div class="odb-detail-placeholder">{{ _('請從左側選取企業') }}</div>
         </template>
 
         {# 已選取 #}
@@ -65,13 +65,13 @@
                     <h3 x-text="currentOrg.name"></h3>
                     <span class="odb-org-domain" x-text="currentOrg.domain"></span>
                     <template x-if="!currentOrg.isActive">
-                        <span class="odb-badge odb-badge-inactive" style="margin-left:8px">停用</span>
+                        <span class="odb-badge odb-badge-inactive" style="margin-left:8px">{{ _('停用') }}</span>
                     </template>
                 </div>
 
                 {# 載入中 #}
                 <template x-if="currentOrg.dataLoading">
-                    <div class="odb-detail-loading">載入中...</div>
+                    <div class="odb-detail-loading">{{ _('載入中...') }}</div>
                 </template>
 
                 {# 錯誤 #}
@@ -85,21 +85,21 @@
                         <div class="odb-info-row">
                             <table class="odb-info-table">
                                 <tr>
-                                    <td>資料庫</td>
+                                    <td>{{ _('資料庫') }}</td>
                                     <td><code x-text="currentOrg.data.db_name"></code></td>
-                                    <td>主機</td>
+                                    <td>{{ _('主機') }}</td>
                                     <td><code x-text="currentOrg.data.db_host + ':' + currentOrg.data.db_port"></code></td>
                                 </tr>
                                 <tr>
-                                    <td>DDL 帳號</td>
+                                    <td>{{ _('DDL 帳號') }}</td>
                                     <td><code x-text="currentOrg.data.admin_user"></code></td>
-                                    <td>DML 帳號</td>
+                                    <td>{{ _('DML 帳號') }}</td>
                                     <td><code x-text="currentOrg.data.sync_user"></code></td>
                                 </tr>
                                 <tr>
-                                    <td>總大小</td>
+                                    <td>{{ _('總大小') }}</td>
                                     <td x-text="currentOrg.data.db_size_display"></td>
-                                    <td>密碼輪換</td>
+                                    <td>{{ _('密碼輪換') }}</td>
                                     <td x-text="currentOrg.data.last_rotation || '尚未輪換'"></td>
                                 </tr>
                             </table>
@@ -116,10 +116,10 @@
                                 <thead>
                                     <tr>
                                         <th class="col-num">#</th>
-                                        <th class="col-name">資料表名稱</th>
+                                        <th class="col-name">{{ _('資料表名稱') }}</th>
                                         <th class="col-rows col-sortable" @click="toggleTableSort('rows')" x-text="'筆數' + tableSortIcon('rows')"></th>
                                         <th class="col-size col-sortable" @click="toggleTableSort('size')" x-text="'總大小' + tableSortIcon('size')"></th>
-                                        <th class="col-size">索引大小</th>
+                                        <th class="col-size">{{ _('索引大小') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -147,14 +147,14 @@
 
                         {# 無資料表 #}
                         <template x-if="currentOrg.data.stats && currentOrg.data.stats.tables && currentOrg.data.stats.tables.length === 0 && !currentOrg.data.stats.error">
-                            <div class="odb-empty-tables">資料庫中尚無資料表</div>
+                            <div class="odb-empty-tables">{{ _('資料庫中尚無資料表') }}</div>
                         </template>
                     </div>
                 </template>
 
                 {# 無 DB（邊界情況：頁面載入後 DB 被移除） #}
                 <template x-if="currentOrg.dataLoaded && !currentOrg.dataError && currentOrg.data && !currentOrg.data.has_database">
-                    <div class="odb-detail-nodb">尚未建立獨立資料庫</div>
+                    <div class="odb-detail-nodb">{{ _('尚未建立獨立資料庫') }}</div>
                 </template>
             </div>
         </template>
@@ -165,8 +165,8 @@
 {# ========== 企業級：master-detail 佈局 ========== #}
 {% if not db_info %}
 <div class="odb-page">
-    <div class="odb-header"><h2>獨立資料庫</h2></div>
-    <div class="odb-empty">您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。</div>
+    <div class="odb-header"><h2>{{ _('獨立資料庫') }}</h2></div>
+    <div class="odb-empty">{{ _('您的企業尚未建立獨立資料庫。請在表單版本管理中啟用 SQL 同步。') }}</div>
 </div>
 {% else %}
 <script>window.__ODB_ORG = { db_info: {{ db_info|tojson }}, tables: {{ tables|tojson }} };</script>
@@ -175,24 +175,24 @@
     {# 左側：DB 資訊 + 資料表清單 #}
     <div class="odb-sidebar">
         <div class="odb-sidebar-header">
-            <h2>獨立資料庫</h2>
+            <h2>{{ _('獨立資料庫') }}</h2>
             <table class="odb-info-table">
                 <tr>
-                    <td>資料庫</td>
+                    <td>{{ _('資料庫') }}</td>
                     <td><code x-text="dbInfo.db_name"></code></td>
-                    <td>主機</td>
+                    <td>{{ _('主機') }}</td>
                     <td><code x-text="dbInfo.db_host + ':' + dbInfo.db_port"></code></td>
                 </tr>
                 <tr>
-                    <td>DDL 帳號</td>
+                    <td>{{ _('DDL 帳號') }}</td>
                     <td><code x-text="dbInfo.admin_user"></code></td>
-                    <td>DML 帳號</td>
+                    <td>{{ _('DML 帳號') }}</td>
                     <td><code x-text="dbInfo.sync_user"></code></td>
                 </tr>
                 <tr>
-                    <td>總大小</td>
+                    <td>{{ _('總大小') }}</td>
                     <td x-text="dbInfo.db_size_display"></td>
-                    <td>密碼輪換</td>
+                    <td>{{ _('密碼輪換') }}</td>
                     <td x-text="dbInfo.last_rotation || '尚未輪換'"></td>
                 </tr>
             </table>
@@ -204,12 +204,12 @@
                 <input type="checkbox" :checked="isAllSelected" @change="selectAll()">
                 <span x-text="tables.length + ' 個資料表'"></span>
             </label>
-            <button class="odb-btn-invert" @click="invertSelection()">反選</button>
+            <button class="odb-btn-invert" @click="invertSelection()">{{ _('反選') }}</button>
             <button class="odb-btn-danger" :disabled="selectedCount === 0"
                     @click="startDelete()" x-text="'刪除選取 (' + selectedCount + ')'"></button>
             <span class="odb-toolbar-spacer"></span>
             <span class="odb-toolbar-sort">
-                排序:
+                {{ _('排序:') }}
                 <button class="odb-sort-btn" :class="{'active': listSortBy === 'name_asc' || listSortBy === 'name_desc'}"
                         @click="toggleListSort('name')" x-text="'表名' + listSortIcon('name')"></button>
                 <button class="odb-sort-btn" :class="{'active': listSortBy === 'rows_desc' || listSortBy === 'rows_asc'}"
@@ -222,7 +222,7 @@
         {# 資料表清單 #}
         <div class="odb-sidebar-list">
             <template x-if="tables.length === 0">
-                <div class="odb-sidebar-empty">資料庫中尚無資料表</div>
+                <div class="odb-sidebar-empty">{{ _('資料庫中尚無資料表') }}</div>
             </template>
             <template x-for="t in sortedTables" :key="t.name">
                 <div class="odb-table-item" :class="{'active': selectedTable === t.name}">
@@ -238,10 +238,10 @@
     {# 右側：上下分割面板 #}
     <div class="odb-detail" x-ref="detailPane">
         <template x-if="!selectedTable && !previewLoading">
-            <div class="odb-detail-placeholder">點擊表名預覽資料內容</div>
+            <div class="odb-detail-placeholder">{{ _('點擊表名預覽資料內容') }}</div>
         </template>
         <template x-if="previewLoading">
-            <div class="odb-detail-loading">載入中...</div>
+            <div class="odb-detail-loading">{{ _('載入中...') }}</div>
         </template>
         <template x-if="selectedTable && !previewLoading && previewError">
             <div class="odb-error" x-text="'預覽失敗: ' + previewError"></div>
@@ -279,7 +279,7 @@
                         </table>
                     </div>
                     <template x-if="preview.rows.length === 0">
-                        <div class="odb-empty-tables">表中無資料</div>
+                        <div class="odb-empty-tables">{{ _('表中無資料') }}</div>
                     </template>
                 </div>
 
@@ -291,12 +291,12 @@
                 {# 下半：單筆直式 #}
                 <div class="odb-split-bottom" :style="'height:calc(' + (100 - splitPct) + '% - 8px)'">
                     <template x-if="!detailRowData">
-                        <div class="odb-detail-placeholder">點擊列號檢視單筆明細</div>
+                        <div class="odb-detail-placeholder">{{ _('點擊列號檢視單筆明細') }}</div>
                     </template>
                     <template x-if="detailRowData">
                         <div class="odb-row-detail-wrap">
                             <div class="odb-row-detail-title">
-                                第 <span x-text="detailRow + 1"></span> 筆明細
+                                {{ _('第') }} <span x-text="detailRow + 1"></span> {{ _('筆明細') }}
                             </div>
                             <table class="odb-row-detail-table">
                                 <tbody>
@@ -325,7 +325,7 @@
                 </div>
                 <div class="odb-modal-body">
                     <template x-if="deleteChecking">
-                        <div>檢查引用中...</div>
+                        <div>{{ _('檢查引用中...') }}</div>
                     </template>
                     <template x-if="!deleteChecking">
                         <div>
@@ -339,30 +339,30 @@
                             </div>
                             <template x-if="hasReferences">
                                 <div class="odb-modal-section">
-                                    <div class="odb-modal-section-title">以下稽核記錄將被標記：</div>
+                                    <div class="odb-modal-section-title">{{ _('以下稽核記錄將被標記：') }}</div>
                                     <template x-for="name in selectedNames" :key="'ref-'+name">
                                         <div>
                                             <template x-if="deleteRefs[name] && deleteRefs[name].registry">
                                                 <div class="odb-modal-ref">
                                                     [SQL Form Registry] <code x-text="name"></code>
-                                                    -- 狀態更新為 table_dropped
+                                                    {{ _('-- 狀態更新為 table_dropped') }}
                                                 </div>
                                             </template>
                                             <template x-for="cv in (deleteRefs[name] && deleteRefs[name].crud_views) || []" :key="cv.secure_code">
                                                 <div class="odb-modal-ref">
-                                                    [CRUD View] "<span x-text="cv.name"></span>" -- 停用
+                                                    [CRUD View] "<span x-text="cv.name"></span>{{ _('" -- 停用') }}
                                                 </div>
                                             </template>
                                         </div>
                                     </template>
                                 </div>
                             </template>
-                            <div class="odb-modal-warning">此操作無法復原。</div>
+                            <div class="odb-modal-warning">{{ _('此操作無法復原。') }}</div>
                         </div>
                     </template>
                 </div>
                 <div class="odb-modal-footer">
-                    <button class="odb-btn-cancel" @click="deleteModal = false" :disabled="deleting">取消</button>
+                    <button class="odb-btn-cancel" @click="deleteModal = false" :disabled="deleting">{{ _('取消') }}</button>
                     <button class="odb-btn-danger" @click="confirmDelete()"
                             :disabled="deleteChecking || deleting"
                             x-text="deleting ? '刪除中...' : '確認刪除'"></button>

@@ -5,7 +5,7 @@
     顯示企業已授權模組清單與合約到期資訊。
 #}
 
-{% block title %}模組權限管理 - BeakMask{% endblock %}
+{% block title %}{{ _('模組權限管理') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/module-permissions.css') }}">
@@ -13,29 +13,29 @@
 
 {% block content %}
 <div>
-    <h2>模組權限管理</h2>
+    <h2>{{ _('模組權限管理') }}</h2>
 
     <div class="mp-summary">
         <div class="mp-summary-item">
             <div class="mp-summary-num">{{ authorized_count }}</div>
-            <div class="mp-summary-label">已授權模組</div>
+            <div class="mp-summary-label">{{ _('已授權模組') }}</div>
         </div>
         <div class="mp-summary-item">
             <div class="mp-summary-num">{{ total_count }}</div>
-            <div class="mp-summary-label">平台可用模組</div>
+            <div class="mp-summary-label">{{ _('平台可用模組') }}</div>
         </div>
     </div>
 
-    <h3>模組清單</h3>
+    <h3>{{ _('模組清單') }}</h3>
     <table class="mp-module-table">
         <thead>
             <tr>
                 <th style="width: 50px;">#</th>
-                <th>模組代碼</th>
-                <th>模組名稱</th>
-                <th style="width: 100px;">授權狀態</th>
-                <th style="width: 140px;">合約到期日</th>
-                <th style="width: 140px;">剩餘時間</th>
+                <th>{{ _('模組代碼') }}</th>
+                <th>{{ _('模組名稱') }}</th>
+                <th style="width: 100px;">{{ _('授權狀態') }}</th>
+                <th style="width: 140px;">{{ _('合約到期日') }}</th>
+                <th style="width: 140px;">{{ _('剩餘時間') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -46,9 +46,9 @@
                 <td>{{ mod.label }}</td>
                 <td>
                     {% if mod.authorized %}
-                    <span class="mp-badge mp-badge-ok">已授權</span>
+                    <span class="mp-badge mp-badge-ok">{{ _('已授權') }}</span>
                     {% else %}
-                    <span class="mp-badge mp-badge-no">無有效合約</span>
+                    <span class="mp-badge mp-badge-no">{{ _('無有效合約') }}</span>
                     {% endif %}
                 </td>
                 <td>

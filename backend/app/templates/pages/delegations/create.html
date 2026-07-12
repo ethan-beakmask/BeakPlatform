@@ -1,28 +1,28 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}新增代理授權 - BeakMask{% endblock %}
+{% block title %}{{ _('新增代理授權') }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('delegations.list_delegations') }}" class="btn btn-secondary btn-sm">&lt; 返回列表</a>
+    <a href="{{ url_for('delegations.list_delegations') }}" class="btn btn-secondary btn-sm">&lt; {{ _('返回列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
-    <h1 class="page-title">新增代理授權</h1>
+    <h1 class="page-title">{{ _('新增代理授權') }}</h1>
 </div>
 
 <p class="text-muted" style="font-size: 0.9em;">
-    代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住
+    {{ _('代理授權用於主管休假/出差時的職務代理，確保簽核流程不會卡住') }}
 </p>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="text-align: left; width: 150px;">授權人 *</th>
+            <th style="text-align: left; width: 150px;">{{ _('授權人') }} *</th>
             <td>
                 <select name="delegator_secure_code" required style="width: 100%;">
-                    <option value="">-- 請選擇授權人 --</option>
+                    <option value="">{{ _('-- 請選擇授權人 --') }}</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
                             {% if request.form.get('delegator_secure_code') == user.secure_code %}selected{% endif %}>
@@ -30,14 +30,14 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div class="text-muted" style="font-size: 0.8em;">原本負責簽核的人 (如: 休假的主管)</div>
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('原本負責簽核的人 (如: 休假的主管)') }}</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">被授權人 *</th>
+            <th style="text-align: left;">{{ _('被授權人') }} *</th>
             <td>
                 <select name="delegate_secure_code" required style="width: 100%;">
-                    <option value="">-- 請選擇被授權人 --</option>
+                    <option value="">{{ _('-- 請選擇被授權人 --') }}</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
                             {% if request.form.get('delegate_secure_code') == user.secure_code %}selected{% endif %}>
@@ -45,11 +45,11 @@
                     </option>
                     {% endfor %}
                 </select>
-                <div class="text-muted" style="font-size: 0.8em;">代理簽核的人 (如: 代理主管)</div>
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('代理簽核的人 (如: 代理主管)') }}</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">代理類型 *</th>
+            <th style="text-align: left;">{{ _('代理類型') }} *</th>
             <td>
                 <select name="delegation_type" required style="width: 100%;" onchange="toggleApprovalLimit(this)">
                     {% for type_val, type_desc in delegation_types %}
@@ -62,39 +62,39 @@
             </td>
         </tr>
         <tr id="approval_limit_row" style="display: none;">
-            <th style="text-align: left;">簽核金額上限</th>
+            <th style="text-align: left;">{{ _('簽核金額上限') }}</th>
             <td>
                 <input type="number" name="approval_limit" min="0" step="1000" style="width: 100%;"
                        value="{{ request.form.get('approval_limit', '') }}"
-                       placeholder="如: 100000">
-                <div class="text-muted" style="font-size: 0.8em;">超過此金額需要原授權人或更高層簽核</div>
+                       placeholder="{{ _('如: 100000') }}">
+                <div class="text-muted" style="font-size: 0.8em;">{{ _('超過此金額需要原授權人或更高層簽核') }}</div>
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">生效開始 *</th>
+            <th style="text-align: left;">{{ _('生效開始') }} *</th>
             <td>
                 <input type="date" name="effective_from" required style="width: 100%;"
                        value="{{ request.form.get('effective_from', '') }}">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left;">生效結束 *</th>
+            <th style="text-align: left;">{{ _('生效結束') }} *</th>
             <td>
                 <input type="date" name="effective_until" required style="width: 100%;"
                        value="{{ request.form.get('effective_until', '') }}">
             </td>
         </tr>
         <tr>
-            <th style="text-align: left; vertical-align: top;">授權原因</th>
+            <th style="text-align: left; vertical-align: top;">{{ _('授權原因') }}</th>
             <td>
                 <textarea name="reason" rows="3" style="width: 100%;"
-                          placeholder="如: 休假出國 12/20-12/25">{{ request.form.get('reason', '') }}</textarea>
+                          placeholder="{{ _('如: 休假出國 12/20-12/25') }}">{{ request.form.get('reason', '') }}</textarea>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit" class="btn btn-primary">建立代理授權</button>
-                <a href="{{ url_for('delegations.list_delegations') }}" style="margin-left: 20px;">取消</a>
+                <button type="submit" class="btn btn-primary">{{ _('建立代理授權') }}</button>
+                <a href="{{ url_for('delegations.list_delegations') }}" style="margin-left: 20px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>

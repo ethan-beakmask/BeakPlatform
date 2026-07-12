@@ -1,7 +1,7 @@
 <!-- ==================== SMTP 設定 ==================== -->
 <div id="section-smtp" class="settings-section" :class="{ active: activeSection === 'smtp' }">
-    <h2>SMTP 郵件設定</h2>
-    <p>系統級外部郵件伺服器設定，供流程節點發送郵件使用。</p>
+    <h2>{{ _('SMTP 郵件設定') }}</h2>
+    <p>{{ _('系統級外部郵件伺服器設定，供流程節點發送郵件使用。') }}</p>
 
     <div x-show="message.smtp" x-cloak
          :class="'message ' + (message.smtpError ? 'message-error' : 'message-success')"
@@ -10,18 +10,18 @@
 
     <div class="settings-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h4 style="margin: 0;">SMTP 設定列表</h4>
-            <button class="btn btn-primary" @click="openSmtpModal()">+ 新增設定</button>
+            <h4 style="margin: 0;">{{ _('SMTP 設定列表') }}</h4>
+            <button class="btn btn-primary" @click="openSmtpModal()">+ {{ _('新增設定') }}</button>
         </div>
 
         <template x-if="loading.smtp">
-            <div class="loading">載入中...</div>
+            <div class="loading">{{ _('載入中...') }}</div>
         </template>
 
         <template x-if="!loading.smtp && smtp.configs.length === 0">
             <div class="empty-state">
-                <p>尚無 SMTP 設定</p>
-                <p style="font-size: 13px;">點擊「新增設定」開始建立</p>
+                <p>{{ _('尚無 SMTP 設定') }}</p>
+                <p style="font-size: 13px;">{{ _('點擊「新增設定」開始建立') }}</p>
             </div>
         </template>
 
@@ -29,11 +29,11 @@
             <table class="config-table">
                 <thead>
                     <tr>
-                        <th>名稱</th>
-                        <th>伺服器</th>
-                        <th>寄件人</th>
-                        <th>狀態</th>
-                        <th>操作</th>
+                        <th>{{ _('名稱') }}</th>
+                        <th>{{ _('伺服器') }}</th>
+                        <th>{{ _('寄件人') }}</th>
+                        <th>{{ _('狀態') }}</th>
+                        <th>{{ _('操作') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,7 +41,7 @@
                         <tr>
                             <td>
                                 <span x-text="config.name"></span>
-                                <span x-show="config.is_default" class="badge badge-info">預設</span>
+                                <span x-show="config.is_default" class="badge badge-info">{{ _('預設') }}</span>
                             </td>
                             <td x-text="config.smtp_host + ':' + config.smtp_port"></td>
                             <td x-text="config.from_email"></td>
@@ -50,9 +50,9 @@
                                       x-text="config.is_active ? '啟用' : '停用'"></span>
                             </td>
                             <td class="actions">
-                                <button class="btn btn-secondary" @click="editSmtpConfig(config)">編輯</button>
-                                <button class="btn btn-success" @click="testSmtpConfig(config.id)">測試</button>
-                                <button class="btn btn-danger" @click="deleteSmtpConfig(config.id)">刪除</button>
+                                <button class="btn btn-secondary" @click="editSmtpConfig(config)">{{ _('編輯') }}</button>
+                                <button class="btn btn-success" @click="testSmtpConfig(config.id)">{{ _('測試') }}</button>
+                                <button class="btn btn-danger" @click="deleteSmtpConfig(config.id)">{{ _('刪除') }}</button>
                             </td>
                         </tr>
                     </template>

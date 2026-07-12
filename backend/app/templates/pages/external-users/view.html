@@ -1,10 +1,10 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ user.display_name }} - 外部廠商 - BeakMask{% endblock %}
+{% block title %}{{ _('%(name)s - 外部廠商', name=user.display_name) }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">&lt; 返回外部廠商列表</a>
+    <a href="{{ url_for('external_users.list_external_users') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回外部廠商列表') }}</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -20,17 +20,17 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0;">
     <h1 style="font-size: 20px; font-weight: bold; margin: 0;">
         {{ user.display_name }}
-        <span style="font-size: 14px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">外部廠商</span>
+        <span style="font-size: 14px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">{{ _('外部廠商') }}</span>
     </h1>
     <div>
         <a href="{{ url_for('external_users.edit_external_user', secure_code=user.secure_code) }}"
            class="btn btn-primary" style="margin-right: 8px;">
-            編輯
+            {{ _('編輯') }}
         </a>
         <form method="POST" action="{{ url_for('external_users.toggle_status', secure_code=user.secure_code) }}" style="display: inline;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn">
-                {% if user.is_active %}停用帳號{% else %}啟用帳號{% endif %}
+                {% if user.is_active %}{{ _('停用帳號') }}{% else %}{{ _('啟用帳號') }}{% endif %}
             </button>
         </form>
         <form method="POST" action="{{ url_for('external_users.delete_external_user', secure_code=user.secure_code) }}"
@@ -38,7 +38,7 @@
               onsubmit="return confirm('確定要刪除此外部廠商嗎？')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger" style="margin-left: 8px;">
-                刪除
+                {{ _('刪除') }}
             </button>
         </form>
     </div>
@@ -46,7 +46,7 @@
 
 <table class="info-table" style="max-width: 600px;">
     <tr>
-        <th style="width: 150px;">編號</th>
+        <th style="width: 150px;">{{ _('編號') }}</th>
         <td><code>{{ user.employee_id or '-' }}</code></td>
     </tr>
     <tr>
@@ -54,17 +54,17 @@
         <td>{{ user.email }}</td>
     </tr>
     <tr>
-        <th>狀態</th>
+        <th>{{ _('狀態') }}</th>
         <td>
             {% if user.is_active %}
-            <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px;">啟用</span>
+            <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px;">{{ _('啟用') }}</span>
             {% else %}
-            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px;">停用</span>
+            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 10px;">{{ _('停用') }}</span>
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>歸屬群組</th>
+        <th>{{ _('歸屬群組') }}</th>
         <td>
             {% if groups %}
                 {% for group in groups %}
@@ -78,16 +78,16 @@
         </td>
     </tr>
     <tr>
-        <th style="vertical-align: top;">備註</th>
+        <th style="vertical-align: top;">{{ _('備註') }}</th>
         <td style="white-space: pre-wrap;">{{ user.notes or '-' }}</td>
     </tr>
     <tr>
-        <th>建立時間</th>
+        <th>{{ _('建立時間') }}</th>
         <td>{{ user.created_at|tz_format('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
     </tr>
     <tr>
-        <th>最後登入</th>
-        <td>{{ user.last_login_at|tz_format('%Y-%m-%d %H:%M') if user.last_login_at else '從未登入' }}</td>
+        <th>{{ _('最後登入') }}</th>
+        <td>{{ user.last_login_at|tz_format('%Y-%m-%d %H:%M') if user.last_login_at else _('從未登入') }}</td>
     </tr>
 </table>
 {% endblock %}

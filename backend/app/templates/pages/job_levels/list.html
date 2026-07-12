@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}職等管理 - BeakMask{% endblock %}
+{% block title %}{{ _('職等管理') }} - BeakMask{% endblock %}
 
 {% block head %}
 <script src="{{ url_for('static', filename='js/job-levels.js') }}"></script>
@@ -47,24 +47,24 @@
 {% block content %}
 <div x-data="jobLevelsManager()">
 
-<h1>職等管理</h1>
+<h1>{{ _('職等管理') }}</h1>
 
 <p>
-    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    <a href="{{ url_for('job_levels.job_matrix') }}">{{ _('[職級職稱矩陣]') }}</a>
     |
-    <strong>[職等管理]</strong>
+    <strong>{{ _('[職等管理]') }}</strong>
     |
-    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">{{ _('[職系管理]') }}</a>
     |
-    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">{{ _('[職稱管理]') }}</a>
     |
-    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+    <a href="{{ url_for('approval_categories.list_categories') }}">{{ _('[核決權限類別]') }}</a>
 </p>
 
 <p>
-    <button type="button" class="btn btn-primary" @click="openCreateModal()">+ 新增職等</button>
+    <button type="button" class="btn btn-primary" @click="openCreateModal()">{{ _('+ 新增職等') }}</button>
     <span class="text-muted" style="font-size: 0.85em; margin-left: 12px;">
-        共 <span x-text="levels.length"></span> 個職等
+        {{ _('共') }} <span x-text="levels.length"></span> {{ _('個職等') }}
     </span>
 </p>
 
@@ -76,10 +76,10 @@
         <table class="data-table bordered">
             <thead>
                 <tr>
-                    <th>代碼</th>
-                    <th>名稱</th>
-                    <th style="text-align:right;">序號</th>
-                    <th style="text-align:center;">管理職</th>
+                    <th>{{ _('代碼') }}</th>
+                    <th>{{ _('名稱') }}</th>
+                    <th style="text-align:right;">{{ _('序號') }}</th>
+                    <th style="text-align:center;">{{ _('管理職') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,7 +90,7 @@
                         <td>
                             <strong x-text="level.name"></strong>
                             <template x-if="level.is_system_default">
-                                <span class="text-muted" style="font-size:0.8em;">(預設)</span>
+                                <span class="text-muted" style="font-size:0.8em;">{{ _('(預設)') }}</span>
                             </template>
                         </td>
                         <td style="text-align:right;" x-text="level.level_order"></td>
@@ -100,7 +100,7 @@
             </tbody>
         </table>
         <template x-if="levels.length === 0">
-            <p class="text-muted">尚無職等資料</p>
+            <p class="text-muted">{{ _('尚無職等資料') }}</p>
         </template>
     </div>
 
@@ -108,62 +108,62 @@
     <div class="detail-panel">
         <!-- 未選擇 -->
         <template x-if="!selected">
-            <div class="detail-placeholder">請從左側選擇職等</div>
+            <div class="detail-placeholder">{{ _('請從左側選擇職等') }}</div>
         </template>
 
         <!-- 已選擇 -->
         <template x-if="selected">
             <div>
                 <h3 style="margin-top:0;">
-                    編輯職等: <span x-text="selected.name"></span>
+                    {{ _('編輯職等:') }} <span x-text="selected.name"></span>
                 </h3>
 
                 <table class="detail-form">
                     <tr>
-                        <th>代碼</th>
+                        <th>{{ _('代碼') }}</th>
                         <td>
                             <code style="font-size:1.1em;" x-text="selected.code"></code>
-                            <span class="text-muted" style="font-size:0.85em;">(不可修改)</span>
+                            <span class="text-muted" style="font-size:0.85em;">{{ _('(不可修改)') }}</span>
                         </td>
                     </tr>
                     <tr>
-                        <th>名稱 *</th>
+                        <th>{{ _('名稱 *') }}</th>
                         <td><input type="text" x-model="editForm.name" maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
+                        <th>{{ _('英文名稱') }}</th>
                         <td><input type="text" x-model="editForm.name_en" maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>序號 *</th>
+                        <th>{{ _('序號 *') }}</th>
                         <td>
                             <input type="number" x-model.number="editForm.level_order" min="0" max="9999">
-                            <div class="text-muted" style="font-size:0.8em;">數字越大職等越高 (0-9999)</div>
+                            <div class="text-muted" style="font-size:0.8em;">{{ _('數字越大職等越高 (0-9999)') }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <th>管理職</th>
+                        <th>{{ _('管理職') }}</th>
                         <td>
                             <label>
                                 <input type="checkbox" x-model="editForm.is_manager_level">
-                                是管理職等 (帶人主管)
+                                {{ _('是管理職等 (帶人主管)') }}
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th>管理幅度</th>
-                        <td><input type="text" x-model="editForm.management_scope" maxlength="100" placeholder="如 單一部門、全公司"></td>
+                        <th>{{ _('管理幅度') }}</th>
+                        <td><input type="text" x-model="editForm.management_scope" maxlength="100" placeholder="{{ _('如 單一部門、全公司') }}"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
+                        <th>{{ _('描述') }}</th>
                         <td><textarea x-model="editForm.description" rows="3"></textarea></td>
                     </tr>
                     <tr>
-                        <th>狀態</th>
+                        <th>{{ _('狀態') }}</th>
                         <td>
                             <label>
                                 <input type="checkbox" x-model="editForm.is_active">
-                                啟用
+                                {{ _('啟用') }}
                             </label>
                         </td>
                     </tr>
@@ -183,12 +183,12 @@
                     </button>
                     <template x-if="!selected.is_system_default">
                         <button type="button" class="btn btn-danger" @click="submitDelete()">
-                            刪除
+                            {{ _('刪除') }}
                         </button>
                     </template>
                 </div>
                 <template x-if="selected.is_system_default">
-                    <div class="text-muted" style="margin-top:8px; font-size:0.85em;">系統預設職等不可刪除</div>
+                    <div class="text-muted" style="margin-top:8px; font-size:0.85em;">{{ _('系統預設職等不可刪除') }}</div>
                 </template>
             </div>
         </template>
@@ -200,7 +200,7 @@
     <div class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>新增職等</h3>
+                <h3>{{ _('新增職等') }}</h3>
                 <button type="button" class="modal-close" @click="closeCreateModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -211,48 +211,48 @@
                 </template>
                 <table class="form-table">
                     <tr>
-                        <th>名稱 *</th>
-                        <td><input type="text" class="form-control" x-model="createForm.name" maxlength="100" placeholder="如 職員級"></td>
+                        <th>{{ _('名稱 *') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name" maxlength="100" placeholder="{{ _('如 職員級') }}"></td>
                     </tr>
                     <tr>
-                        <th>代碼</th>
+                        <th>{{ _('代碼') }}</th>
                         <td>
-                            <input type="text" class="form-control" x-model="createForm.code" maxlength="20" placeholder="留空自動產生">
-                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">選填，建議格式: L + 序號 (如 L100)</div>
+                            <input type="text" class="form-control" x-model="createForm.code" maxlength="20" placeholder="{{ _('留空自動產生') }}">
+                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">{{ _('選填，建議格式: L + 序號 (如 L100)') }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
-                        <td><input type="text" class="form-control" x-model="createForm.name_en" maxlength="100" placeholder="如 Staff Level"></td>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name_en" maxlength="100" placeholder="{{ _('如 Staff Level') }}"></td>
                     </tr>
                     <tr>
-                        <th>序號 *</th>
+                        <th>{{ _('序號 *') }}</th>
                         <td>
-                            <input type="number" class="form-control" x-model="createForm.level_order" min="0" max="9999" placeholder="如 150">
-                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">數字越大職等越高 (0-9999)，等距跳號: 0, 100, 200...900</div>
+                            <input type="number" class="form-control" x-model="createForm.level_order" min="0" max="9999" placeholder="{{ _('如 150') }}">
+                            <div class="text-muted" style="font-size:0.8em; margin-top: 4px;">{{ _('數字越大職等越高 (0-9999)，等距跳號: 0, 100, 200...900') }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <th>管理職</th>
+                        <th>{{ _('管理職') }}</th>
                         <td>
                             <label>
                                 <input type="checkbox" x-model="createForm.is_manager_level">
-                                是管理職等 (帶人主管)
+                                {{ _('是管理職等 (帶人主管)') }}
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th>管理幅度</th>
-                        <td><input type="text" class="form-control" x-model="createForm.management_scope" maxlength="100" placeholder="如 單一部門、全公司"></td>
+                        <th>{{ _('管理幅度') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.management_scope" maxlength="100" placeholder="{{ _('如 單一部門、全公司') }}"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
+                        <th>{{ _('描述') }}</th>
                         <td><textarea class="form-control" x-model="createForm.description" rows="3"></textarea></td>
                     </tr>
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">取消</button>
+                <button type="button" class="btn btn-secondary" @click="closeCreateModal()">{{ _('取消') }}</button>
                 <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="createSaving">
                     <span x-text="createSaving ? '建立中...' : '建立職等'"></span>
                 </button>

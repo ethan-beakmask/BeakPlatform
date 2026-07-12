@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}權限中央管理 - BeakPlatform{% endblock %}
+{% block title %}{{ _('權限中央管理') }} - BeakPlatform{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/permissions-central.css') }}">
@@ -9,17 +9,17 @@
 {% block content %}
 <div x-data="permissionCentral()">
     <div class="page-header">
-        <h1 class="page-title">權限中央管理</h1>
+        <h1 class="page-title">{{ _('權限中央管理') }}</h1>
     </div>
 
     <!-- 企業過濾 -->
     <div class="perm-section" style="margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <label class="form-label" style="margin-bottom: 0; white-space: nowrap;">指定企業</label>
+            <label class="form-label" style="margin-bottom: 0; white-space: nowrap;">{{ _('指定企業') }}</label>
             <template x-if="isSystemAdmin">
                 <select class="form-control" style="max-width: 360px;"
                         x-model="selectedOrgCode" @change="onOrgChange()">
-                    <option value="">-- 請選擇企業 --</option>
+                    <option value="">{{ _('-- 請選擇企業 --') }}</option>
                     <template x-for="org in organizations" :key="org.secure_code">
                         <option :value="org.secure_code" x-text="org.name"></option>
                     </template>
@@ -36,18 +36,18 @@
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <template x-if="isSystemAdmin">
                 <button type="button" class="btn btn-secondary btn-sm"
-                        @click="showSaveFactoryModal = true">設定目前組態成出廠值</button>
+                        @click="showSaveFactoryModal = true">{{ _('設定目前組態成出廠值') }}</button>
             </template>
             <button type="button" class="btn btn-secondary btn-sm"
-                    @click="doExportRbac()">匯出 RBAC 權限</button>
+                    @click="doExportRbac()">{{ _('匯出 RBAC 權限') }}</button>
             <button type="button" class="btn btn-secondary btn-sm"
-                    @click="$refs.importFile.click()">匯入 RBAC 權限</button>
+                    @click="$refs.importFile.click()">{{ _('匯入 RBAC 權限') }}</button>
             <input type="file" accept=".json" x-ref="importFile" style="display:none;"
                    @change="doImportRbac($event)">
             <template x-if="!isSystemAdmin">
                 <button type="button" class="btn btn-secondary btn-sm"
                         style="color: #dc2626;"
-                        @click="showRestoreModal = true">恢復 RBAC 預設權限</button>
+                        @click="showRestoreModal = true">{{ _('恢復 RBAC 預設權限') }}</button>
             </template>
         </div>
     </div>
@@ -56,18 +56,18 @@
     <div x-show="showSaveFactoryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
          :style="showSaveFactoryModal && 'display:flex'">
         <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
-            <h3 style="margin-top:0;">確認設定出廠值</h3>
+            <h3 style="margin-top:0;">{{ _('確認設定出廠值') }}</h3>
             <p style="color:#ccc; line-height:1.6;">
-                此操作將把目前所選企業的系統角色 RBAC 權限配置儲存為出廠預設值。
+                {{ _('此操作將把目前所選企業的系統角色 RBAC 權限配置儲存為出廠預設值。') }}
             </p>
             <ul style="color:#ccc; line-height:1.8; margin:8px 0 16px 0; padding-left:20px;">
-                <li>生成安裝用 SQL（新安裝的用戶將自動取得這些預設值）</li>
-                <li>僅在角色完全沒有權限時才套用（升級不會覆蓋既有設定）</li>
-                <li>企業可使用「恢復 RBAC 預設權限」手動套用</li>
+                <li>{{ _('生成安裝用 SQL（新安裝的用戶將自動取得這些預設值）') }}</li>
+                <li>{{ _('僅在角色完全沒有權限時才套用（升級不會覆蓋既有設定）') }}</li>
+                <li>{{ _('企業可使用「恢復 RBAC 預設權限」手動套用') }}</li>
             </ul>
             <div style="text-align:right; margin-top:16px;">
-                <button type="button" @click="showSaveFactoryModal = false" style="margin-right:8px;">取消</button>
-                <button type="button" @click="doSaveFactoryDefaults()" style="background:#2563eb; color:white; border:1px solid #3b82f6;">確認儲存</button>
+                <button type="button" @click="showSaveFactoryModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="doSaveFactoryDefaults()" style="background:#2563eb; color:white; border:1px solid #3b82f6;">{{ _('確認儲存') }}</button>
             </div>
         </div>
     </div>
@@ -76,17 +76,17 @@
     <div x-show="showRestoreModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;"
          :style="showRestoreModal && 'display:flex'">
         <div style="background:#1e1e2e; border:1px solid #444; padding:24px; min-width:360px; max-width:520px;">
-            <h3 style="margin-top:0; color:#dc2626;">確認恢復 RBAC 預設權限</h3>
+            <h3 style="margin-top:0; color:#dc2626;">{{ _('確認恢復 RBAC 預設權限') }}</h3>
             <p style="color:#ef4444; font-weight:bold; line-height:1.6;">
-                RBAC 完全覆蓋：自行新增的權限配置不會保留，已刪除的預設權限會再出現。
-                請務必先使用「匯出 RBAC 權限」備份目前設定。
+                {{ _('RBAC 完全覆蓋：自行新增的權限配置不會保留，已刪除的預設權限會再出現。') }}
+                {{ _('請務必先使用「匯出 RBAC 權限」備份目前設定。') }}
             </p>
             <p style="color:#ccc; line-height:1.6;">
-                此操作將以系統出廠預設值覆蓋本企業所有系統角色的 RBAC 權限。
+                {{ _('此操作將以系統出廠預設值覆蓋本企業所有系統角色的 RBAC 權限。') }}
             </p>
             <div style="text-align:right; margin-top:16px;">
-                <button type="button" @click="showRestoreModal = false" style="margin-right:8px;">取消</button>
-                <button type="button" @click="doRestoreDefaults()" style="background:#991b1b; color:white; border:1px solid #dc2626;">確認恢復</button>
+                <button type="button" @click="showRestoreModal = false" style="margin-right:8px;">{{ _('取消') }}</button>
+                <button type="button" @click="doRestoreDefaults()" style="background:#991b1b; color:white; border:1px solid #dc2626;">{{ _('確認恢復') }}</button>
             </div>
         </div>
     </div>
@@ -94,19 +94,19 @@
     <!-- 未選企業提示 (系統管理員) -->
     <template x-if="isSystemAdmin && !selectedOrgCode">
         <div class="alert alert-info">
-            請先選擇企業，才能查看該企業的角色與權限配置。
+            {{ _('請先選擇企業，才能查看該企業的角色與權限配置。') }}
         </div>
     </template>
 
     <!-- Tab 切換 -->
     <div class="perm-tabs mb-16" x-show="!isSystemAdmin || selectedOrgCode">
         <button type="button" class="perm-tab" :class="{ active: activeTab === 'role' }"
-                @click="activeTab = 'role'">角色視角</button>
+                @click="activeTab = 'role'">{{ _('角色視角') }}</button>
         <button type="button" class="perm-tab" :class="{ active: activeTab === 'menu' }"
-                @click="activeTab = 'menu'">功能視角</button>
+                @click="activeTab = 'menu'">{{ _('功能視角') }}</button>
         <button type="button" class="perm-tab" :class="{ active: activeTab === 'conflicts' }"
                 @click="activeTab = 'conflicts'; loadConflicts()">
-            衝突偵測
+            {{ _('衝突偵測') }}
             <template x-if="conflictCount > 0">
                 <span class="perm-badge-warn" x-text="conflictCount"></span>
             </template>
@@ -120,10 +120,10 @@
         <div class="perm-layout">
             <!-- 左側: 角色選擇 -->
             <div class="perm-sidebar">
-                <label class="form-label">選擇角色</label>
+                <label class="form-label">{{ _('選擇角色') }}</label>
                 <select class="form-control" x-model="selectedRoleCode"
                         @change="loadRoleView()">
-                    <option value="">-- 請選擇 --</option>
+                    <option value="">{{ _('-- 請選擇 --') }}</option>
                     <template x-for="role in roles" :key="role.secure_code">
                         <option :value="role.secure_code"
                                 x-text="'[' + role.org_label + '] ' + role.name + ' (' + role.code + ')'"></option>
@@ -134,11 +134,11 @@
             <!-- 右側: 角色資訊 -->
             <div class="perm-main">
                 <template x-if="!selectedRoleCode">
-                    <p class="text-muted">請從左側選擇一個角色</p>
+                    <p class="text-muted">{{ _('請從左側選擇一個角色') }}</p>
                 </template>
 
                 <template x-if="roleLoading">
-                    <p>載入中...</p>
+                    <p>{{ _('載入中...') }}</p>
                 </template>
 
                 <template x-if="selectedRoleCode && !roleLoading && roleData">
@@ -155,18 +155,18 @@
 
                         <!-- 頁面存取 (MenuRoleRequirement) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">頁面存取需求 (MenuRoleRequirement)</h4>
-                            <p class="text-muted-sm">此角色被設為存取條件的選單頁面</p>
+                            <h4 class="perm-section-title">{{ _('頁面存取需求 (MenuRoleRequirement)') }}</h4>
+                            <p class="text-muted-sm">{{ _('此角色被設為存取條件的選單頁面') }}</p>
                             <template x-if="roleData.guarded_menus.length === 0">
-                                <p class="text-muted">無 -- 此角色未被任何選單設為存取條件</p>
+                                <p class="text-muted">{{ _('無 -- 此角色未被任何選單設為存取條件') }}</p>
                             </template>
                             <template x-if="roleData.guarded_menus.length > 0">
                                 <table class="data-table bordered">
                                     <thead>
                                         <tr>
-                                            <th>選單名稱</th>
-                                            <th>代碼</th>
-                                            <th>路徑</th>
+                                            <th>{{ _('選單名稱') }}</th>
+                                            <th>{{ _('代碼') }}</th>
+                                            <th>{{ _('路徑') }}</th>
                                             <th>required_permission</th>
                                         </tr>
                                     </thead>
@@ -194,7 +194,7 @@
                         <!-- RBAC 權限 (RolePermission) -->
                         <div class="perm-section">
                             <h4 class="perm-section-title">
-                                RBAC 權限 (RolePermission)
+                                {{ _('RBAC 權限 (RolePermission)') }}
                                 <button type="button" class="btn btn-primary btn-sm"
                                         @click="enterPermEditor()"
                                         x-text="showPermEditor ? '取消編輯' : '編輯權限'"></button>
@@ -204,19 +204,19 @@
                             <template x-if="showPermEditor">
                                 <div class="perm-editor">
                                     <div class="perm-editor-header">
-                                        <label class="form-label">勾選要授予的權限</label>
+                                        <label class="form-label">{{ _('勾選要授予的權限') }}</label>
                                         <div>
                                             <template x-if="isSystemAdmin">
                                                 <button type="button" class="btn btn-secondary btn-sm"
-                                                        @click="filterPermLevel = ''">全部</button>
+                                                        @click="filterPermLevel = ''">{{ _('全部') }}</button>
                                             </template>
                                             <button type="button" class="btn btn-secondary btn-sm"
-                                                    @click="filterPermLevel = 'ORG'">企業級</button>
+                                                    @click="filterPermLevel = 'ORG'">{{ _('企業級') }}</button>
                                             <button type="button" class="btn btn-secondary btn-sm"
-                                                    @click="filterPermLevel = 'MODULE'">模組級</button>
+                                                    @click="filterPermLevel = 'MODULE'">{{ _('模組級') }}</button>
                                             <template x-if="isSystemAdmin">
                                                 <button type="button" class="btn btn-secondary btn-sm"
-                                                        @click="filterPermLevel = 'SYSTEM'">系統級</button>
+                                                        @click="filterPermLevel = 'SYSTEM'">{{ _('系統級') }}</button>
                                             </template>
                                         </div>
                                     </div>
@@ -224,9 +224,9 @@
                                         <thead>
                                             <tr>
                                                 <th style="width:40px;"></th>
-                                                <th>權限代碼</th>
-                                                <th>名稱</th>
-                                                <th>層級</th>
+                                                <th>{{ _('權限代碼') }}</th>
+                                                <th>{{ _('名稱') }}</th>
+                                                <th>{{ _('層級') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -264,16 +264,16 @@
                             <template x-if="!showPermEditor">
                                 <div>
                                     <template x-if="roleData.rbac_permissions.length === 0 && roleData.inherited_permissions.length === 0">
-                                        <p class="text-muted">無 -- 此角色未持有任何 RBAC 權限</p>
+                                        <p class="text-muted">{{ _('無 -- 此角色未持有任何 RBAC 權限') }}</p>
                                     </template>
                                     <template x-if="roleData.rbac_permissions.length > 0 || roleData.inherited_permissions.length > 0">
                                         <table class="data-table bordered">
                                             <thead>
                                                 <tr>
-                                                    <th>權限代碼</th>
-                                                    <th>名稱</th>
-                                                    <th>層級</th>
-                                                    <th>來源</th>
+                                                    <th>{{ _('權限代碼') }}</th>
+                                                    <th>{{ _('名稱') }}</th>
+                                                    <th>{{ _('層級') }}</th>
+                                                    <th>{{ _('來源') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -286,7 +286,7 @@
                                                                   :class="'perm-level-' + p.permission_level.toLowerCase()"
                                                                   x-text="p.permission_level"></span>
                                                         </td>
-                                                        <td>直接授予</td>
+                                                        <td>{{ _('直接授予') }}</td>
                                                     </tr>
                                                 </template>
                                                 <template x-for="p in roleData.inherited_permissions" :key="p.permission_code">
@@ -298,7 +298,7 @@
                                                                   :class="'perm-level-' + p.permission_level.toLowerCase()"
                                                                   x-text="p.permission_level"></span>
                                                         </td>
-                                                        <td class="text-muted">繼承</td>
+                                                        <td class="text-muted">{{ _('繼承') }}</td>
                                                     </tr>
                                                 </template>
                                             </tbody>
@@ -320,8 +320,8 @@
         <div class="perm-layout">
             <!-- 左側: 選單樹 -->
             <div class="perm-sidebar perm-sidebar-wide">
-                <label class="form-label">選單結構</label>
-                <p class="text-muted-sm"><span class="perm-badge-rbac">R</span> = 該選單設有 required_permission (RBAC 權限門檻)</p>
+                <label class="form-label">{{ _('選單結構') }}</label>
+                <p class="text-muted-sm"><span class="perm-badge-rbac">R</span> {{ _('= 該選單設有 required_permission (RBAC 權限門檻)') }}</p>
                 <div class="perm-menu-tree">
                     <template x-for="item in menuTreeRoots" :key="item.secure_code">
                         <div>
@@ -335,7 +335,7 @@
                                 </template>
                                 <span :class="{ 'text-muted': !item.is_active }" x-text="item.title"></span>
                                 <template x-if="item.required_permission">
-                                    <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                    <span class="perm-badge-rbac" title="{{ _('需要 RBAC 權限') }}">R</span>
                                 </template>
                             </div>
                             <!-- 子選單 -->
@@ -352,7 +352,7 @@
                                             </template>
                                             <span :class="{ 'text-muted': !child.is_active }" x-text="child.title"></span>
                                             <template x-if="child.required_permission">
-                                                <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                                <span class="perm-badge-rbac" title="{{ _('需要 RBAC 權限') }}">R</span>
                                             </template>
                                         </div>
                                         <!-- 第三層 -->
@@ -364,7 +364,7 @@
                                                      @click="selectMenu(grandchild.secure_code)">
                                                     <span :class="{ 'text-muted': !grandchild.is_active }" x-text="grandchild.title"></span>
                                                     <template x-if="grandchild.required_permission">
-                                                        <span class="perm-badge-rbac" title="需要 RBAC 權限">R</span>
+                                                        <span class="perm-badge-rbac" title="{{ _('需要 RBAC 權限') }}">R</span>
                                                     </template>
                                                 </div>
                                             </template>
@@ -380,11 +380,11 @@
             <!-- 右側: 選單權限資訊 -->
             <div class="perm-main">
                 <template x-if="!selectedMenuCode">
-                    <p class="text-muted">請從左側選擇一個選單項目</p>
+                    <p class="text-muted">{{ _('請從左側選擇一個選單項目') }}</p>
                 </template>
 
                 <template x-if="menuLoading">
-                    <p>載入中...</p>
+                    <p>{{ _('載入中...') }}</p>
                 </template>
 
                 <template x-if="selectedMenuCode && !menuLoading && menuData">
@@ -397,18 +397,18 @@
                                 <span class="perm-badge-org" x-text="menuData.menu.org_label"></span>
                             </h3>
                             <template x-if="menuData.menu.link_target">
-                                <p>路徑: <code x-text="menuData.menu.link_target"></code></p>
+                                <p>{{ _('路徑:') }} <code x-text="menuData.menu.link_target"></code></p>
                             </template>
                         </div>
 
                         <!-- user_type 矩陣 (MenuPermission) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">用戶類型可見性 (MenuPermission)</h4>
+                            <h4 class="perm-section-title">{{ _('用戶類型可見性 (MenuPermission)') }}</h4>
                             <table class="data-table bordered" style="max-width: 500px;">
                                 <thead>
                                     <tr>
-                                        <th>用戶類型</th>
-                                        <th style="width: 80px;">可見</th>
+                                        <th>{{ _('用戶類型') }}</th>
+                                        <th style="width: 80px;">{{ _('可見') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -431,17 +431,17 @@
 
                         <!-- 角色需求 (MenuRoleRequirement) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">角色存取需求 (MenuRoleRequirement)</h4>
+                            <h4 class="perm-section-title">{{ _('角色存取需求 (MenuRoleRequirement)') }}</h4>
                             <template x-if="menuData.required_roles.length === 0">
-                                <p class="text-muted">無角色需求 -- 不受角色守衛控制</p>
+                                <p class="text-muted">{{ _('無角色需求 -- 不受角色守衛控制') }}</p>
                             </template>
                             <template x-if="menuData.required_roles.length > 0">
                                 <table class="data-table bordered">
                                     <thead>
                                         <tr>
-                                            <th>角色名稱</th>
-                                            <th>代碼</th>
-                                            <th>持有者</th>
+                                            <th>{{ _('角色名稱') }}</th>
+                                            <th>{{ _('代碼') }}</th>
+                                            <th>{{ _('持有者') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -462,25 +462,25 @@
 
                         <!-- required_permission (RBAC) -->
                         <div class="perm-section">
-                            <h4 class="perm-section-title">RBAC 權限門檻 (required_permission)</h4>
+                            <h4 class="perm-section-title">{{ _('RBAC 權限門檻 (required_permission)') }}</h4>
                             <template x-if="!menuData.rbac_info">
-                                <p class="text-muted">無 -- 此選單未設定 RBAC 權限門檻</p>
+                                <p class="text-muted">{{ _('無 -- 此選單未設定 RBAC 權限門檻') }}</p>
                             </template>
                             <template x-if="menuData.rbac_info">
                                 <div>
                                     <p>
-                                        需要權限: <code x-text="menuData.rbac_info.permission_code"></code>
+                                        {{ _('需要權限:') }} <code x-text="menuData.rbac_info.permission_code"></code>
                                         (<span x-text="menuData.rbac_info.permission_name"></span>)
                                         <span class="perm-level-badge"
                                               :class="'perm-level-' + menuData.rbac_info.permission_level.toLowerCase()"
                                               x-text="menuData.rbac_info.permission_level"></span>
                                     </p>
                                     <template x-if="menuData.rbac_info.holding_roles.length === 0">
-                                        <p class="text-warn">!! 沒有任何角色持有此權限 -- 此選單實際上無法被存取</p>
+                                        <p class="text-warn">{{ _('!! 沒有任何角色持有此權限 -- 此選單實際上無法被存取') }}</p>
                                     </template>
                                     <template x-if="menuData.rbac_info.holding_roles.length > 0">
                                         <div>
-                                            <p>持有此權限的角色:</p>
+                                            <p>{{ _('持有此權限的角色:') }}</p>
                                             <ul>
                                                 <template x-for="r in menuData.rbac_info.holding_roles" :key="r.secure_code">
                                                     <li>
@@ -506,63 +506,63 @@
     <!-- ============================================================ -->
     <div x-show="activeTab === 'conflicts' && (!isSystemAdmin || selectedOrgCode)" x-cloak>
         <template x-if="conflictsLoading">
-            <p>分析中...</p>
+            <p>{{ _('分析中...') }}</p>
         </template>
 
         <template x-if="!conflictsLoading && conflictsData">
             <div>
                 <!-- 過濾條件 -->
                 <div class="perm-section" style="margin-bottom: 12px;">
-                    <label class="form-label" style="margin-bottom: 8px;">顯示類型</label>
+                    <label class="form-label" style="margin-bottom: 8px;">{{ _('顯示類型') }}</label>
                     <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.MISSING_PERMISSION_DEF"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-error" style="font-size: 11px;">error</span>
-                            權限代碼不存在
+                            {{ _('權限代碼不存在') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.MENU_PERM_NO_RBAC"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                            無角色持有所需權限
+                            {{ _('無角色持有所需權限') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.ROLE_REQ_NO_HOLDER"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                            角色無人持有
+                            {{ _('角色無人持有') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.ROLE_REQ_ROLE_INACTIVE"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-error" style="font-size: 11px;">error</span>
-                            選單要求的角色已停用
+                            {{ _('選單要求的角色已停用') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.DUAL_KEY_NO_INTERSECTION"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                            雙鑰匙交集為空
+                            {{ _('雙鑰匙交集為空') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.STALE_ASSIGNMENT"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                            指派給停用帳號
+                            {{ _('指派給停用帳號') }}
                         </label>
                         <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                             <input type="checkbox" x-model="conflictFilters.ROLE_NO_PERMISSION"
                                    @change="_updateConflictCount()">
                             <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                            角色無權限
+                            {{ _('角色無權限') }}
                         </label>
                         <template x-if="isSystemAdmin">
                             <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                                 <input type="checkbox" x-model="conflictFilters.MENU_NO_ACCESS_CONTROL"
                                        @change="_updateConflictCount()">
                                 <span class="perm-badge-warn" style="font-size: 11px;">warn</span>
-                                選單無存取控制
+                                {{ _('選單無存取控制') }}
                             </label>
                         </template>
                         <template x-if="isSystemAdmin">
@@ -570,7 +570,7 @@
                                 <input type="checkbox" x-model="conflictFilters.ORPHAN_PERMISSION"
                                        @change="_updateConflictCount()">
                                 <span class="perm-badge-info" style="font-size: 11px;">info</span>
-                                孤兒權限
+                                {{ _('孤兒權限') }}
                             </label>
                         </template>
                     </div>
@@ -578,7 +578,7 @@
 
                 <div class="perm-section">
                     <h3 class="perm-section-title">
-                        偵測結果
+                        {{ _('偵測結果') }}
                         <span class="perm-badge-info" x-text="'共 ' + filteredConflictSummary.total + ' 項'"></span>
                         <template x-if="filteredConflictSummary.errors > 0">
                             <span class="perm-badge-error" x-text="filteredConflictSummary.errors + ' 錯誤'"></span>
@@ -594,7 +594,7 @@
 
                 <template x-if="filteredConflicts.length === 0">
                     <div class="perm-section">
-                        <p class="text-success">未偵測到權限衝突或缺失（或所有類型已隱藏）</p>
+                        <p class="text-success">{{ _('未偵測到權限衝突或缺失（或所有類型已隱藏）') }}</p>
                     </div>
                 </template>
 
@@ -602,11 +602,11 @@
                     <table class="data-table bordered">
                         <thead>
                             <tr>
-                                <th style="width:80px;">嚴重度</th>
-                                <th style="width:180px;">類型</th>
-                                <th>對象</th>
-                                <th>說明</th>
-                                <th style="width:100px;">操作</th>
+                                <th style="width:80px;">{{ _('嚴重度') }}</th>
+                                <th style="width:180px;">{{ _('類型') }}</th>
+                                <th>{{ _('對象') }}</th>
+                                <th>{{ _('說明') }}</th>
+                                <th style="width:100px;">{{ _('操作') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -622,16 +622,16 @@
                                         <div x-text="c.message"></div>
                                         <div x-show="c.users && c.users.length"
                                              style="margin-top: 4px; font-size: 12px; color: #666;">
-                                            相關帳號：
+                                            {{ _('相關帳號：') }}
                                             <template x-for="(u, ui) in (c.users || [])" :key="ui">
-                                                <span><span x-text="u.display_name + ' (' + u.username + (u.status ? '，' + u.status : '') + ')'"></span><span x-show="ui < c.users.length - 1">、</span></span>
+                                                <span><span x-text="u.display_name + ' (' + u.username + (u.status ? '，' + u.status : '') + ')'"></span><span x-show="ui < c.users.length - 1">{{ _('、') }}</span></span>
                                             </template>
                                         </div>
                                     </td>
                                     <td>
                                         <button type="button" class="btn btn-secondary btn-sm"
                                                 x-show="c.menu_secure_code"
-                                                @click="jumpToMenu(c.menu_secure_code)">查看</button>
+                                                @click="jumpToMenu(c.menu_secure_code)">{{ _('查看') }}</button>
                                     </td>
                                 </tr>
                             </template>

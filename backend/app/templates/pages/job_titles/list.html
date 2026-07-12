@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}職稱管理 - BeakMask{% endblock %}
+{% block title %}{{ _('職稱管理') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.css') }}">
@@ -21,27 +21,27 @@
 
 {% block content %}
 <div x-data="jobTitlesManager()" x-init="init()">
-    <h1>職稱管理</h1>
+    <h1>{{ _('職稱管理') }}</h1>
 
     <p>
-        <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+        <a href="{{ url_for('job_levels.job_matrix') }}">{{ _('[職級職稱矩陣]') }}</a>
         |
-        <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
+        <a href="{{ url_for('job_levels.list_job_levels') }}">{{ _('[職等管理]') }}</a>
         |
-        <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+        <a href="{{ url_for('job_families.list_job_families') }}">{{ _('[職系管理]') }}</a>
         |
-        <strong>[職稱管理]</strong>
+        <strong>{{ _('[職稱管理]') }}</strong>
         |
-        <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+        <a href="{{ url_for('approval_categories.list_categories') }}">{{ _('[核決權限類別]') }}</a>
     </p>
 
     <div class="jt-toolbar">
-        <button type="button" class="btn btn-primary" @click="openCreateModal()">+ 新增職稱</button>
-        <span class="text-muted" style="font-size: 0.9em;">點擊職稱列可編輯</span>
+        <button type="button" class="btn btn-primary" @click="openCreateModal()">+ {{ _('新增職稱') }}</button>
+        <span class="text-muted" style="font-size: 0.9em;">{{ _('點擊職稱列可編輯') }}</span>
     </div>
 
     <p class="text-muted" style="font-size: 0.9em; margin-bottom: 8px;">
-        說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。
+        {{ _('說明：職稱 = 職等 + 職系 的具體組合。依職系分組顯示。') }}
     </p>
 
     <div class="jt-page">
@@ -49,14 +49,14 @@
     </div>
 
     <p class="text-muted" style="margin-top: 12px;">
-        共 {{ total_count }} 個職稱
+        {{ _('共 %(count)s 個職稱', count=total_count) }}
     </p>
 
     <!-- ==================== 新增 Modal ==================== -->
     <div class="modal-overlay" x-show="showCreateModal" x-cloak>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>新增職稱</h3>
+                <h3>{{ _('新增職稱') }}</h3>
                 <button type="button" class="modal-close" @click="showCreateModal = false">&times;</button>
             </div>
             <div class="modal-body">
@@ -69,29 +69,29 @@
                 </template>
                 <table class="form-table">
                     <tr>
-                        <th>名稱 *</th>
-                        <td><input type="text" class="form-control" x-model="createForm.name" maxlength="100" placeholder="如 經理"></td>
+                        <th>{{ _('名稱 *') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name" maxlength="100" placeholder="{{ _('如 經理') }}"></td>
                     </tr>
                     <tr>
-                        <th>代碼</th>
+                        <th>{{ _('代碼') }}</th>
                         <td>
-                            <input type="text" class="form-control" x-model="createForm.code" maxlength="30" placeholder="留空自動產生">
-                            <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">選填，如 MGR, SR_ENG</div>
+                            <input type="text" class="form-control" x-model="createForm.code" maxlength="30" placeholder="{{ _('留空自動產生') }}">
+                            <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">{{ _('選填，如 MGR, SR_ENG') }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
-                        <td><input type="text" class="form-control" x-model="createForm.name_en" maxlength="100" placeholder="如 Manager"></td>
+                        <th>{{ _('英文名稱') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name_en" maxlength="100" placeholder="{{ _('如 Manager') }}"></td>
                     </tr>
                     <tr>
-                        <th>簡稱</th>
-                        <td><input type="text" class="form-control" x-model="createForm.short_name" maxlength="50" placeholder="選填"></td>
+                        <th>{{ _('簡稱') }}</th>
+                        <td><input type="text" class="form-control" x-model="createForm.short_name" maxlength="50" placeholder="{{ _('選填') }}"></td>
                     </tr>
                     <tr>
-                        <th>職等 *</th>
+                        <th>{{ _('職等 *') }}</th>
                         <td>
                             <select class="form-control" x-model="createForm.job_level_secure_code">
-                                <option value="">-- 請選擇 --</option>
+                                <option value="">{{ _('-- 請選擇 --') }}</option>
                                 <template x-for="l in levelOptions" :key="l.secure_code">
                                     <option :value="l.secure_code" x-text="l.code + ' ' + l.name"></option>
                                 </template>
@@ -99,10 +99,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>職系 *</th>
+                        <th>{{ _('職系 *') }}</th>
                         <td>
                             <select class="form-control" x-model="createForm.job_family_secure_code">
-                                <option value="">-- 請選擇 --</option>
+                                <option value="">{{ _('-- 請選擇 --') }}</option>
                                 <template x-for="f in familyOptions" :key="f.secure_code">
                                     <option :value="f.secure_code" x-text="f.name + ' (' + f.code + ')'"></option>
                                 </template>
@@ -110,24 +110,24 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>管理職</th>
+                        <th>{{ _('管理職') }}</th>
                         <td>
-                            <label><input type="checkbox" x-model="createForm.is_supervisor"> 帶人主管</label>
+                            <label><input type="checkbox" x-model="createForm.is_supervisor"> {{ _('帶人主管') }}</label>
                         </td>
                     </tr>
                     <tr>
-                        <th>排序</th>
+                        <th>{{ _('排序') }}</th>
                         <td><input type="number" class="form-control" x-model.number="createForm.sort_order" min="0"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
-                        <td><textarea class="form-control" x-model="createForm.description" rows="2" placeholder="職責說明"></textarea></td>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea class="form-control" x-model="createForm.description" rows="2" placeholder="{{ _('職責說明') }}"></textarea></td>
                     </tr>
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @click="showCreateModal = false">取消</button>
-                <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="submitting">建立職稱</button>
+                <button type="button" class="btn btn-secondary" @click="showCreateModal = false">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="submitting">{{ _('建立職稱') }}</button>
             </div>
         </div>
     </div>
@@ -136,7 +136,7 @@
     <div class="modal-overlay" x-show="showEditModal" x-cloak>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>編輯職稱</h3>
+                <h3>{{ _('編輯職稱') }}</h3>
                 <button type="button" class="modal-close" @click="showEditModal = false">&times;</button>
             </div>
             <div class="modal-body">
@@ -149,26 +149,26 @@
                 </template>
                 <table class="form-table">
                     <tr>
-                        <th>代碼</th>
-                        <td><code x-text="editForm.code"></code> <span class="text-muted">(不可修改)</span></td>
+                        <th>{{ _('代碼') }}</th>
+                        <td><code x-text="editForm.code"></code> <span class="text-muted">{{ _('(不可修改)') }}</span></td>
                     </tr>
                     <tr>
-                        <th>名稱 *</th>
+                        <th>{{ _('名稱 *') }}</th>
                         <td><input type="text" class="form-control" x-model="editForm.name" maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
+                        <th>{{ _('英文名稱') }}</th>
                         <td><input type="text" class="form-control" x-model="editForm.name_en" maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>簡稱</th>
+                        <th>{{ _('簡稱') }}</th>
                         <td><input type="text" class="form-control" x-model="editForm.short_name" maxlength="50"></td>
                     </tr>
                     <tr>
-                        <th>職等 *</th>
+                        <th>{{ _('職等 *') }}</th>
                         <td>
                             <select class="form-control" x-model="editForm.job_level_secure_code">
-                                <option value="">-- 請選擇 --</option>
+                                <option value="">{{ _('-- 請選擇 --') }}</option>
                                 <template x-for="l in levelOptions" :key="l.secure_code">
                                     <option :value="l.secure_code" x-text="l.code + ' ' + l.name"></option>
                                 </template>
@@ -176,10 +176,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>職系 *</th>
+                        <th>{{ _('職系 *') }}</th>
                         <td>
                             <select class="form-control" x-model="editForm.job_family_secure_code">
-                                <option value="">-- 請選擇 --</option>
+                                <option value="">{{ _('-- 請選擇 --') }}</option>
                                 <template x-for="f in familyOptions" :key="f.secure_code">
                                     <option :value="f.secure_code" x-text="f.name + ' (' + f.code + ')'"></option>
                                 </template>
@@ -187,33 +187,33 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>管理職</th>
+                        <th>{{ _('管理職') }}</th>
                         <td>
-                            <label><input type="checkbox" x-model="editForm.is_supervisor"> 帶人主管</label>
+                            <label><input type="checkbox" x-model="editForm.is_supervisor"> {{ _('帶人主管') }}</label>
                         </td>
                     </tr>
                     <tr>
-                        <th>排序</th>
+                        <th>{{ _('排序') }}</th>
                         <td><input type="number" class="form-control" x-model.number="editForm.sort_order" min="0"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
+                        <th>{{ _('描述') }}</th>
                         <td><textarea class="form-control" x-model="editForm.description" rows="2"></textarea></td>
                     </tr>
                     <tr>
-                        <th>狀態</th>
+                        <th>{{ _('狀態') }}</th>
                         <td>
-                            <label><input type="checkbox" x-model="editForm.is_active"> 啟用</label>
+                            <label><input type="checkbox" x-model="editForm.is_active"> {{ _('啟用') }}</label>
                         </td>
                     </tr>
                 </table>
             </div>
             <div class="modal-footer">
                 <template x-if="!editForm.is_system_default">
-                    <button type="button" class="btn btn-danger" @click="submitDelete()" :disabled="submitting">刪除</button>
+                    <button type="button" class="btn btn-danger" @click="submitDelete()" :disabled="submitting">{{ _('刪除') }}</button>
                 </template>
-                <button type="button" class="btn btn-secondary" @click="showEditModal = false">取消</button>
-                <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="submitting">儲存變更</button>
+                <button type="button" class="btn btn-secondary" @click="showEditModal = false">{{ _('取消') }}</button>
+                <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="submitting">{{ _('儲存變更') }}</button>
             </div>
         </div>
     </div>

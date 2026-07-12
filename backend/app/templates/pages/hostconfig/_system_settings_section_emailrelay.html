@@ -1,7 +1,7 @@
 <!-- ==================== E-MailRelay 設定 ==================== -->
 <div id="section-emailrelay" class="settings-section" :class="{ active: activeSection === 'emailrelay' }">
-    <h2>E-MailRelay 設定</h2>
-    <p>系統郵件中繼服務，用於發送系統通知郵件。</p>
+    <h2>{{ _('E-MailRelay 設定') }}</h2>
+    <p>{{ _('系統郵件中繼服務，用於發送系統通知郵件。') }}</p>
 
     <div x-show="message.emailrelay" x-cloak
          :class="'message ' + (message.emailrelayError ? 'message-error' : 'message-success')"
@@ -10,22 +10,22 @@
 
     <!-- 安裝路徑 -->
     <div class="settings-card">
-        <h4>安裝路徑</h4>
+        <h4>{{ _('安裝路徑') }}</h4>
         <form @submit.prevent="saveEmailrelayInstallDir()">
             <div class="form-group">
-                <label>E-MailRelay 安裝目錄</label>
+                <label>{{ _('E-MailRelay 安裝目錄') }}</label>
                 <input type="text" x-model="emailrelay.install_dir" placeholder="/opt/E-MailRelay">
-                <div class="form-hint">安裝目錄需包含 sbin/emailrelay-submit、spool/ 等子目錄</div>
+                <div class="form-hint">{{ _('安裝目錄需包含 sbin/emailrelay-submit、spool/ 等子目錄') }}</div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">儲存路徑</button>
+                <button type="submit" class="btn btn-primary">{{ _('儲存路徑') }}</button>
             </div>
         </form>
     </div>
 
     <!-- 服務狀態 -->
     <div class="settings-card">
-        <h4>服務狀態</h4>
+        <h4>{{ _('服務狀態') }}</h4>
         <div>
             <template x-if="emailrelay.service">
                 <div class="status-indicator"
@@ -37,63 +37,63 @@
                 </div>
             </template>
             <template x-if="!emailrelay.service">
-                <span class="loading">載入中...</span>
+                <span class="loading">{{ _('載入中...') }}</span>
             </template>
         </div>
         <div class="btn-group">
-            <button class="btn btn-primary" @click="controlEmailrelayService('restart')">重新啟動</button>
-            <button class="btn btn-primary" @click="controlEmailrelayService('start')">啟動</button>
-            <button class="btn btn-primary" @click="controlEmailrelayService('stop')">停止</button>
+            <button class="btn btn-primary" @click="controlEmailrelayService('restart')">{{ _('重新啟動') }}</button>
+            <button class="btn btn-primary" @click="controlEmailrelayService('start')">{{ _('啟動') }}</button>
+            <button class="btn btn-primary" @click="controlEmailrelayService('stop')">{{ _('停止') }}</button>
         </div>
     </div>
 
     <!-- SMTP 認證 -->
     <div class="settings-card">
-        <h4>SMTP 認證設定</h4>
+        <h4>{{ _('SMTP 認證設定') }}</h4>
         <form @submit.prevent="saveEmailrelayAuth()">
             <div class="form-group">
-                <label>Gmail 帳號</label>
+                <label>{{ _('Gmail 帳號') }}</label>
                 <input type="email" x-model="emailrelay.auth.email" placeholder="your.email@gmail.com">
             </div>
             <div class="form-group">
-                <label>應用程式密碼</label>
+                <label>{{ _('應用程式密碼') }}</label>
                 <input type="password" x-model="emailrelay.auth.password" placeholder="xxxx xxxx xxxx xxxx">
-                <div class="form-hint">Gmail 應用程式密碼格式如 "xxxx xxxx xxxx xxxx"</div>
+                <div class="form-hint">{{ _('Gmail 應用程式密碼格式如 "xxxx xxxx xxxx xxxx"') }}</div>
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">儲存認證</button>
+                <button type="submit" class="btn btn-primary">{{ _('儲存認證') }}</button>
             </div>
         </form>
     </div>
 
     <!-- 發件人設定 -->
     <div class="settings-card">
-        <h4>發件人設定</h4>
+        <h4>{{ _('發件人設定') }}</h4>
         <form @submit.prevent="saveEmailrelaySender()">
             <div class="form-group">
-                <label>發件人 Email</label>
+                <label>{{ _('發件人 Email') }}</label>
                 <input type="text" x-model="emailrelay.from_email" placeholder="system@beakmask.local">
             </div>
             <div class="form-group">
-                <label>發件人名稱</label>
+                <label>{{ _('發件人名稱') }}</label>
                 <input type="text" x-model="emailrelay.from_name" placeholder="BeakMask System">
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-primary">儲存設定</button>
+                <button type="submit" class="btn btn-primary">{{ _('儲存設定') }}</button>
             </div>
         </form>
     </div>
 
     <!-- 測試發送 -->
     <div class="settings-card">
-        <h4>測試發送</h4>
+        <h4>{{ _('測試發送') }}</h4>
         <form @submit.prevent="testEmailrelay()">
             <div class="form-group">
-                <label>收件人（留空使用認證 Email）</label>
+                <label>{{ _('收件人（留空使用認證 Email）') }}</label>
                 <input type="email" x-model="emailrelay.testRecipient" placeholder="">
             </div>
             <div class="btn-group">
-                <button type="submit" class="btn btn-success">發送測試郵件</button>
+                <button type="submit" class="btn btn-success">{{ _('發送測試郵件') }}</button>
             </div>
         </form>
     </div>

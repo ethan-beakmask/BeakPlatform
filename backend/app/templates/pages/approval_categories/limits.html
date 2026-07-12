@@ -1,32 +1,32 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}設定核決上限 - {{ category.name }} - BeakMask{% endblock %}
+{% block title %}{{ _('設定核決上限') }} - {{ category.name }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ app_prefix }}/static/css/approval-limits.css">
 {% endblock %}
 
 {% block content %}
-<h1>設定核決上限: {{ category.name }}</h1>
+<h1>{{ _('設定核決上限') }}: {{ category.name }}</h1>
 
 <p>
-    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
     |
-    <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
     |
-    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
     |
-    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
     |
-    <a href="{{ url_for('approval_categories.list_categories') }}">[核決權限類別]</a>
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('核決權限類別') }}]</a>
 </p>
 <p>
-    <a href="{{ url_for('approval_categories.list_categories') }}">[返回列表]</a>
-    <a href="{{ url_for('approval_categories.edit_category', secure_code=category.secure_code) }}">[編輯類別]</a>
+    <a href="{{ url_for('approval_categories.list_categories') }}">[{{ _('返回列表') }}]</a>
+    <a href="{{ url_for('approval_categories.edit_category', secure_code=category.secure_code) }}">[{{ _('編輯類別') }}]</a>
 </p>
 
 <p style="color: #666; font-size: 0.9em;">
-    說明：設定各職等對於「{{ category.name }}」的核決金額上限。0 表示無核決權限。
+    {{ _('說明：設定各職等對於「%(name)s」的核決金額上限。0 表示無核決權限。', name=category.name) }}
 </p>
 
 {% if job_levels and job_families %}
@@ -34,8 +34,8 @@
     <table class="matrix-table">
         <thead>
             <tr>
-                <th>職等</th>
-                <th>核決上限<br><small>({{ category.currency }})</small></th>
+                <th>{{ _('職等') }}</th>
+                <th>{{ _('核決上限') }}<br><small>({{ category.currency }})</small></th>
                 {% for family in job_families %}
                 <th>{{ family.name }}</th>
                 {% endfor %}
@@ -48,7 +48,7 @@
                     <span class="level-code">{{ level.code }}</span>
                     {{ level.name }}
                     {% if level.is_manager_level %}
-                    <span class="manager-badge">管理</span>
+                    <span class="manager-badge">{{ _('管理') }}</span>
                     {% endif %}
                 </td>
                 <td class="limit-cell">
@@ -79,7 +79,7 @@
     </table>
 
     <div class="save-bar">
-        <button class="btn-save" id="btn-save" onclick="saveLimits()">儲存變更</button>
+        <button class="btn-save" id="btn-save" onclick="saveLimits()">{{ _('儲存變更') }}</button>
         <span id="save-message"></span>
     </div>
 </div>
@@ -94,9 +94,9 @@ window.__LIMITS_CONFIG = {
 
 {% else %}
 <p style="color: #6b7280;">
-    尚無職等或職系資料。請先建立
-    <a href="{{ url_for('job_levels.create_job_level') }}">職等</a> 和
-    <a href="{{ url_for('job_families.create_job_family') }}">職系</a>。
+    {{ _('尚無職等或職系資料。請先建立') }}
+    <a href="{{ url_for('job_levels.create_job_level') }}">{{ _('職等') }}</a> {{ _('和') }}
+    <a href="{{ url_for('job_families.create_job_family') }}">{{ _('職系') }}</a>。
 </p>
 {% endif %}
 {% endblock %}

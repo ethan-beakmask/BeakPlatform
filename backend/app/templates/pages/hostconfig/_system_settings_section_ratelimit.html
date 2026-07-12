@@ -1,8 +1,8 @@
 <!-- ==================== 速率限制 ==================== -->
 <div id="section-ratelimit" class="settings-section" :class="{ active: activeSection === 'ratelimit' }">
-    <h2>認證速率限制</h2>
-    <p>控制登入與密碼重設的 POST 嘗試頻率上限，防止暴力破解攻擊。GET 請求不計數。</p>
-    <p>限制以「帳號 + IP」為單位，各企業獨立計算。</p>
+    <h2>{{ _('認證速率限制') }}</h2>
+    <p>{{ _('控制登入與密碼重設的 POST 嘗試頻率上限，防止暴力破解攻擊。GET 請求不計數。') }}</p>
+    <p>{{ _('限制以「帳號 + IP」為單位，各企業獨立計算。') }}</p>
 
     <div x-show="message.ratelimit" class="message"
          :class="message.ratelimitError ? 'message-error' : 'message-success'"
@@ -20,40 +20,40 @@
                                placeholder="20 per 10 minutes">
                         <template x-if="cat.source !== 'db'">
                             <span style="font-size: 12px; color: #0369a1;">
-                                (目前使用<span x-text="cat.source === 'env' ? '環境變數' : '預設值'"></span>)
+                                ({{ _('目前使用') }}<span x-text="cat.source === 'env' ? '環境變數' : '預設值'"></span>)
                             </span>
                         </template>
                         <template x-if="cat.source === 'db'">
-                            <span style="font-size: 12px; color: #059669;">(DB 設定)</span>
+                            <span style="font-size: 12px; color: #059669;">({{ _('DB 設定') }})</span>
                         </template>
                     </div>
                 </div>
             </template>
 
             <div style="margin-top: 16px;">
-                <button class="btn btn-primary" @click="saveRateLimitSettings()">儲存速率限制</button>
+                <button class="btn btn-primary" @click="saveRateLimitSettings()">{{ _('儲存速率限制') }}</button>
             </div>
         </div>
     </template>
 
     <div class="settings-card" style="margin-top: 24px; background: #f0f9ff; border-color: #bae6fd;">
-        <h4 style="margin-top: 0;">格式說明</h4>
+        <h4 style="margin-top: 0;">{{ _('格式說明') }}</h4>
         <table class="config-table">
             <thead>
                 <tr>
-                    <th>格式</th>
-                    <th>說明</th>
+                    <th>{{ _('格式') }}</th>
+                    <th>{{ _('說明') }}</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td><code>20 per 10 minutes</code></td><td>每 10 分鐘最多 20 次</td></tr>
-                <tr><td><code>5 per minute</code></td><td>每分鐘最多 5 次</td></tr>
-                <tr><td><code>3 per hour</code></td><td>每小時最多 3 次</td></tr>
-                <tr><td><code>100 per day</code></td><td>每天最多 100 次</td></tr>
+                <tr><td><code>20 per 10 minutes</code></td><td>{{ _('每 10 分鐘最多 20 次') }}</td></tr>
+                <tr><td><code>5 per minute</code></td><td>{{ _('每分鐘最多 5 次') }}</td></tr>
+                <tr><td><code>3 per hour</code></td><td>{{ _('每小時最多 3 次') }}</td></tr>
+                <tr><td><code>100 per day</code></td><td>{{ _('每天最多 100 次') }}</td></tr>
             </tbody>
         </table>
         <p style="margin-top: 8px; font-size: 13px; color: #6b7280;">
-            修改後即時生效，不需重啟服務。限制以「帳號 + 來源 IP」為計數單位，同企業不同帳號互不影響。
+            {{ _('修改後即時生效，不需重啟服務。限制以「帳號 + 來源 IP」為計數單位，同企業不同帳號互不影響。') }}
         </p>
     </div>
 </div>

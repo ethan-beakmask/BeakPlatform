@@ -13,7 +13,7 @@
 #}
 <div class="code-suggestions" x-show="_ci_generatedCode" x-cloak>
     <span style="font-size: 0.85em; color: #555;">
-        建議:
+        {{ _('建議:') }}
         <template x-for="s in _ci_suggestions" :key="s">
             <button type="button"
                     style="margin: 0 2px; padding: 1px 6px; font-size: 0.85em; cursor: pointer; border: 1px solid #999; background: #f5f5f5;"
@@ -24,5 +24,5 @@
 </div>
 <div x-show="_ci_codeError" style="font-size: 0.85em; color: #c00;" x-text="_ci_codeError" x-cloak></div>
 <div x-show="_ci_codeValid && !_ci_codeError" style="font-size: 0.85em; color: #060;" x-cloak>
-    代碼可用
+    {{ _('代碼可用') }}
 </div>

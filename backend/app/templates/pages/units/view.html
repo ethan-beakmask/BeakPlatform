@@ -1,80 +1,80 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ unit.name }} - 組織單位詳情 - BeakMask{% endblock %}
+{% block title %}{{ _('%(name)s - 組織單位詳情', name=unit.name) }} - BeakMask{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:12px;">
-    <a href="{{ url_for('units.list_units') }}" class="btn btn-secondary btn-sm">&lt; 返回組織單位列表</a>
+    <a href="{{ url_for('units.list_units') }}" class="btn btn-secondary btn-sm">{{ _('&lt; 返回組織單位列表') }}</a>
 </div>
 
 <div class="page-header" style="margin-top:30px;">
     <h1 class="page-title">{{ unit.name }}</h1>
 </div>
 
-<p><a href="{{ url_for('units.edit_unit', secure_code=unit.secure_code) }}">[編輯]</a></p>
+<p><a href="{{ url_for('units.edit_unit', secure_code=unit.secure_code) }}">{{ _('[編輯]') }}</a></p>
 
 <table class="info-table">
     <tr>
-        <th>單位代碼</th>
+        <th>{{ _('單位代碼') }}</th>
         <td><code>{{ unit.code }}</code></td>
     </tr>
     <tr>
-        <th>單位名稱</th>
+        <th>{{ _('單位名稱') }}</th>
         <td>{{ unit.name }}</td>
     </tr>
     <tr>
-        <th>單位類型</th>
-        <td>{% if unit.unit_type == 'DEPARTMENT' %}部門{% else %}群組{% endif %}</td>
+        <th>{{ _('單位類型') }}</th>
+        <td>{% if unit.unit_type == 'DEPARTMENT' %}{{ _('部門') }}{% else %}{{ _('群組') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>完整路徑</th>
+        <th>{{ _('完整路徑') }}</th>
         <td>{{ unit.full_path or '/' }}</td>
     </tr>
     <tr>
-        <th>上層單位</th>
+        <th>{{ _('上層單位') }}</th>
         <td>
             {% if unit.parent %}
             <a href="{{ url_for('units.view_unit', secure_code=unit.parent.secure_code) }}">{{ unit.parent.name }}</a>
             {% else %}
-            (根層級)
+            {{ _('(根層級)') }}
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>層級</th>
-        <td>第 {{ unit.level }} 層</td>
+        <th>{{ _('層級') }}</th>
+        <td>{{ _('第 %(level)s 層', level=unit.level) }}</td>
     </tr>
     <tr>
-        <th>狀態</th>
-        <td>{% if unit.is_active %}啟用{% else %}停用{% endif %}</td>
+        <th>{{ _('狀態') }}</th>
+        <td>{% if unit.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>排序順序</th>
+        <th>{{ _('排序順序') }}</th>
         <td>{{ unit.sort_order }}</td>
     </tr>
     <tr>
-        <th>描述</th>
+        <th>{{ _('描述') }}</th>
         <td>{{ unit.description or '-' }}</td>
     </tr>
     <tr>
-        <th>建立時間</th>
+        <th>{{ _('建立時間') }}</th>
         <td>{{ unit.created_at|tz_format('%Y-%m-%d %H:%M') if unit.created_at else '-' }}</td>
     </tr>
     <tr>
-        <th>更新時間</th>
+        <th>{{ _('更新時間') }}</th>
         <td>{{ unit.updated_at|tz_format('%Y-%m-%d %H:%M') if unit.updated_at else '-' }}</td>
     </tr>
 </table>
 
 {% if unit.children %}
-<h2>子單位</h2>
+<h2>{{ _('子單位') }}</h2>
 <ul>
     {% for child in unit.children if not child.is_deleted %}
     <li>
         <a href="{{ url_for('units.view_unit', secure_code=child.secure_code) }}">
             <code>{{ child.code }}</code> {{ child.name }}
         </a>
-        ({% if child.unit_type == 'DEPARTMENT' %}部門{% else %}群組{% endif %})
+        ({% if child.unit_type == 'DEPARTMENT' %}{{ _('部門') }}{% else %}{{ _('群組') }}{% endif %})
     </li>
     {% endfor %}
 </ul>

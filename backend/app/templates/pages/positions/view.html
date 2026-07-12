@@ -1,18 +1,18 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}職位詳情 - BeakMask{% endblock %}
+{% block title %}{{ _('職位詳情') }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>職位詳情</h1>
+<h1>{{ _('職位詳情') }}</h1>
 
 <p>
-    <a href="{{ url_for('positions.list_positions') }}">[返回列表]</a>
-    <a href="{{ url_for('positions.edit_position', secure_code=position.secure_code) }}">[編輯]</a>
+    <a href="{{ url_for('positions.list_positions') }}">{{ _('[返回列表]') }}</a>
+    <a href="{{ url_for('positions.edit_position', secure_code=position.secure_code) }}">{{ _('[編輯]') }}</a>
 </p>
 
 <table class="info-table">
     <tr>
-        <th style="width: 150px;">企業成員</th>
+        <th style="width: 150px;">{{ _('企業成員') }}</th>
         <td>
             {% if position.user %}
             <a href="{{ url_for('users.view_user', secure_code=position.user.secure_code) }}">
@@ -24,7 +24,7 @@
         </td>
     </tr>
     <tr>
-        <th>職稱</th>
+        <th>{{ _('職稱') }}</th>
         <td>
             {% if position.job_title %}
             <a href="{{ url_for('job_titles.view_job_title', secure_code=position.job_title.secure_code) }}">
@@ -32,7 +32,7 @@
             </a>
             {% if position.job_title.job_level %}
             <br><span class="text-muted" style="font-size: 0.9em;">
-                職等: {{ position.job_title.job_level.name }}
+                {{ _('職等: %(name)s', name=position.job_title.job_level.name) }}
             </span>
             {% endif %}
             {% else %}
@@ -41,7 +41,7 @@
         </td>
     </tr>
     <tr>
-        <th>部門</th>
+        <th>{{ _('部門') }}</th>
         <td>
             {% if position.unit %}
             <a href="{{ url_for('units.view_unit', secure_code=position.unit.secure_code) }}">
@@ -53,55 +53,55 @@
         </td>
     </tr>
     <tr>
-        <th>職位類型</th>
+        <th>{{ _('職位類型') }}</th>
         <td>
-            {% if position.position_type == 'PRIMARY' %}主要職位
-            {% elif position.position_type == 'CONCURRENT' %}兼任
-            {% elif position.position_type == 'ACTING' %}代理
-            {% elif position.position_type == 'TEMPORARY' %}臨時
+            {% if position.position_type == 'PRIMARY' %}{{ _('主要職位') }}
+            {% elif position.position_type == 'CONCURRENT' %}{{ _('兼任') }}
+            {% elif position.position_type == 'ACTING' %}{{ _('代理') }}
+            {% elif position.position_type == 'TEMPORARY' %}{{ _('臨時') }}
             {% else %}{{ position.position_type }}
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>部門主管</th>
-        <td>{% if position.is_unit_head %}是 (此企業成員為該部門主管){% else %}否{% endif %}</td>
+        <th>{{ _('部門主管') }}</th>
+        <td>{% if position.is_unit_head %}{{ _('是 (此企業成員為該部門主管)') }}{% else %}{{ _('否') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>直屬主管</th>
+        <th>{{ _('直屬主管') }}</th>
         <td>
             {% if position.direct_manager %}
             <a href="{{ url_for('users.view_user', secure_code=position.direct_manager.secure_code) }}">
                 {{ position.direct_manager.display_name }}
             </a>
-            <br><span class="text-muted" style="font-size: 0.9em;">(簽核流程會送到此主管)</span>
+            <br><span class="text-muted" style="font-size: 0.9em;">{{ _('(簽核流程會送到此主管)') }}</span>
             {% else %}
-            <span class="text-muted">未指定</span>
+            <span class="text-muted">{{ _('未指定') }}</span>
             {% endif %}
         </td>
     </tr>
     <tr>
-        <th>生效日期</th>
+        <th>{{ _('生效日期') }}</th>
         <td>{{ position.effective_from.strftime('%Y-%m-%d') if position.effective_from else '-' }}</td>
     </tr>
     <tr>
-        <th>失效日期</th>
-        <td>{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else '無 (長期有效)' }}</td>
+        <th>{{ _('失效日期') }}</th>
+        <td>{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else _('無 (長期有效)') }}</td>
     </tr>
     <tr>
-        <th>備註</th>
+        <th>{{ _('備註') }}</th>
         <td>{{ position.remarks or '-' }}</td>
     </tr>
     <tr>
-        <th>狀態</th>
-        <td>{% if position.is_active %}啟用{% else %}停用{% endif %}</td>
+        <th>{{ _('狀態') }}</th>
+        <td>{% if position.is_active %}{{ _('啟用') }}{% else %}{{ _('停用') }}{% endif %}</td>
     </tr>
     <tr>
-        <th>指派者</th>
+        <th>{{ _('指派者') }}</th>
         <td>{{ position.assigned_by or '-' }}</td>
     </tr>
     <tr>
-        <th>建立時間</th>
+        <th>{{ _('建立時間') }}</th>
         <td>{{ position.created_at|tz_format('%Y-%m-%d %H:%M') if position.created_at else '-' }}</td>
     </tr>
 </table>

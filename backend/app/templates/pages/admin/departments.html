@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}部門設定 - BeakMask{% endblock %}
+{% block title %}{{ _('部門設定') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-tree.css') }}">
@@ -227,7 +227,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 style="font-size:16px;margin-bottom:4px;">部門設定</h1>
+<h1 style="font-size:16px;margin-bottom:4px;">{{ _('部門設定') }}</h1>
 
 <script>
 window.__DEPT_CONFIG = {
@@ -243,20 +243,20 @@ window.__DEPT_CONFIG = {
      @keyup.window="if($event.key==='Control') ctrlHeld=false">
     <!-- Ctrl 跨部門模式浮動提示 -->
     <div class="ctrl-mode-banner" x-show="isCtrlCrossMode" x-cloak>
-        [跨] 跨部門模式 -- 放開後以跨部門身份加入，不離開原部門
+        {{ _('[跨] 跨部門模式 -- 放開後以跨部門身份加入，不離開原部門') }}
     </div>
 
     <!-- 左側：Tree -->
     <div class="dept-tree-panel">
         <div class="tree-header">
             <div class="tree-header-left">
-                組織架構
+                {{ _('組織架構') }}
             </div>
             <div class="tree-header-right">
-                <button class="btn" :class="!showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDeptMode()">部門</button>
-                <button class="btn" :class="showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDetailMode()">企業成員</button>
-                <button class="btn btn-success" @click="startCreate()">新增部門</button>
-                <button class="btn btn-primary" @click="startCreateEmployee()">新增企業成員</button>
+                <button class="btn" :class="!showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDeptMode()">{{ _('部門') }}</button>
+                <button class="btn" :class="showPeopleInTree ? 'btn-primary' : 'btn-secondary'" @click="switchToDetailMode()">{{ _('企業成員') }}</button>
+                <button class="btn btn-success" @click="startCreate()">{{ _('新增部門') }}</button>
+                <button class="btn btn-primary" @click="startCreateEmployee()">{{ _('新增企業成員') }}</button>
             </div>
         </div>
         <div class="tree-body" id="dept-tree"></div>
@@ -267,7 +267,7 @@ window.__DEPT_CONFIG = {
         <div class="panel-header-bar" x-text="isCreatingEmployee ? '新增企業成員' : (isCreating ? '新增部門' : (selectedDept ? selectedDept.name : '部門詳情'))"></div>
         <div class="panel-body">
             <template x-if="!selectedDept && !isCreating && !isCreatingEmployee">
-                <div class="empty-message">請從左側選擇部門</div>
+                <div class="empty-message">{{ _('請從左側選擇部門') }}</div>
             </template>
 
             <!-- 新增企業成員表單 -->
@@ -285,24 +285,24 @@ window.__DEPT_CONFIG = {
                             <div class="section-title" x-text="isCreating ? '新增部門' : '編輯部門'"></div>
                             <form @submit.prevent="isCreating ? createDepartment() : updateDepartment()">
                                 <div class="form-row">
-                                    <label>部門名稱 *</label>
+                                    <label>{{ _('部門名稱') }} *</label>
                                     <input type="text" x-model="formData.name" required maxlength="255"
                                            @input.debounce.500ms="isCreating && ciGenerateCode(formData.name)">
-                                    <div class="field-hint">最多 255 字元</div>
+                                    <div class="field-hint">{{ _('最多 255 字元') }}</div>
                                 </div>
                                 <div class="form-row">
-                                    <label>部門代碼</label>
+                                    <label>{{ _('部門代碼') }}</label>
                                     <input type="text" x-model="formData.code" :disabled="!isCreating"
                                            maxlength="50" pattern="[A-Za-z0-9_\-]+"
-                                           :placeholder="_ci_generatedCode || '留空自動產生'"
+                                           :placeholder="{{ _('_ci_generatedCode || \'留空自動產生\'') }}"
                                            @input.debounce.500ms="ciValidateCode(formData.code)">
-                                    <div class="field-hint">選填，留空自動產生</div>
+                                    <div class="field-hint">{{ _('選填，留空自動產生') }}</div>
                                     {% include "partials/_code_input.html" %}
                                 </div>
                                 <div class="form-row">
-                                    <label>父部門</label>
+                                    <label>{{ _('父部門') }}</label>
                                     <select x-model="formData.parent_id">
-                                        <option value="">（根層級）</option>
+                                        <option value="">{{ _('（根層級）') }}</option>
                                         <template x-for="d in availableParents" :key="d.id">
                                             <option :value="d.id" x-text="'\u2500'.repeat(d.level) + ' ' + d.name"></option>
                                         </template>
@@ -310,14 +310,14 @@ window.__DEPT_CONFIG = {
                                 </div>
                                 <div class="btn-group">
                                     <button type="submit" class="btn btn-primary" x-text="isCreating ? '建立' : '儲存'"></button>
-                                    <button type="button" class="btn btn-secondary" @click="cancelEdit()">取消</button>
-                                    <button type="button" class="btn btn-danger" x-show="!isCreating && selectedDept" @click="deleteDepartment()">刪除</button>
+                                    <button type="button" class="btn btn-secondary" @click="cancelEdit()">{{ _('取消') }}</button>
+                                    <button type="button" class="btn btn-danger" x-show="!isCreating && selectedDept" @click="deleteDepartment()">{{ _('刪除') }}</button>
                                 </div>
                             </form>
                         </div>
                         <div class="cross-section" x-show="selectedDept">
                             <div class="section-title">
-                                跨部門人員
+                                {{ _('跨部門人員') }}
                                 <span style="font-weight:normal;color:#888;font-size:11px;" x-text="'('+crossMembers.length+')'"></span>
                             </div>
                             <div class="cross-member-list" x-show="crossMembers.length > 0">
@@ -333,13 +333,13 @@ window.__DEPT_CONFIG = {
                                 </template>
                             </div>
                             <div class="cross-ctrl-hint">
-                                <div class="hint-title">Ctrl + 拖曳 = 跨部門</div>
+                                <div class="hint-title">{{ _('Ctrl + 拖曳 = 跨部門') }}</div>
                                 <div>
-                                    從左側組織樹按住 Ctrl 拖曳人員至下方區域：<br>
-                                    拖入主管欄 → 跨部門主管<br>
-                                    拖入副主管欄 → 跨部門副主管<br>
-                                    拖入企業成員欄 → 跨部門成員<br>
-                                    人員不會離開原部門。
+                                    {{ _('從左側組織樹按住 Ctrl 拖曳人員至下方區域：') }}<br>
+                                    {{ _('拖入主管欄 → 跨部門主管') }}<br>
+                                    {{ _('拖入副主管欄 → 跨部門副主管') }}<br>
+                                    {{ _('拖入企業成員欄 → 跨部門成員') }}<br>
+                                    {{ _('人員不會離開原部門。') }}
                                 </div>
                             </div>
                         </div>
@@ -348,7 +348,7 @@ window.__DEPT_CONFIG = {
                     <!-- 下半：成員 -->
                     <div x-show="selectedDept">
                         <div class="staff-section-header">
-                            <span>部門成員</span>
+                            <span>{{ _('部門成員') }}</span>
                             <span style="font-weight:normal;color:#888;font-size:11px;" x-text="'共 '+totalCount+' 人'"></span>
                         </div>
                         <div class="staff-layout-new">
@@ -360,7 +360,7 @@ window.__DEPT_CONFIG = {
                                      @dragover.prevent="onZoneDragOver($event,'manager')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToLeadership($event,'manager')">
-                                    <div class="column-label">主管</div>
+                                    <div class="column-label">{{ _('主管') }}</div>
                                     <template x-if="leadership.manager">
                                         <div class="staff-person" draggable="true" @dragstart="dragStartLeader($event, leadership.manager, 'manager')" @dragend="clearDrag()">
                                             <span class="emp-id" x-text="leadership.manager.employee_id||'-'"></span>
@@ -377,16 +377,16 @@ window.__DEPT_CONFIG = {
                                          @dragover.prevent.stop="onZoneDragOver($event,'proxy1')"
                                          @dragleave="dragOverZone=null"
                                          @drop.stop="dropToLeadership($event,'proxy1')">
-                                        <div class="proxy-label">代理人(一)</div>
+                                        <div class="proxy-label">{{ _('代理人(一)') }}</div>
                                         <template x-if="leadership.proxy1">
                                             <div class="staff-person" :draggable="!leadership.proxy1._isCross" @dragstart="leadership.proxy1._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy1, 'proxy1')" @dragend="clearDrag()" :style="leadership.proxy1._isCross ? 'cursor:default;opacity:0.85' : ''">
-                                                <span x-show="leadership.proxy1._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
+                                                <span x-show="leadership.proxy1._isCross" class="role-tag leader" style="font-size:10px;">{{ _('[跨]') }}</span>
                                                 <span class="emp-id" x-text="leadership.proxy1.employee_id||'-'"></span>
                                                 <span class="emp-native" x-text="leadership.proxy1.native_name||leadership.proxy1.display_name"></span>
                                             </div>
                                         </template>
                                         <template x-if="!leadership.proxy1">
-                                            <div class="staff-empty">拖入設定</div>
+                                            <div class="staff-empty">{{ _('拖入設定') }}</div>
                                         </template>
                                     </div>
                                 </div>
@@ -396,7 +396,7 @@ window.__DEPT_CONFIG = {
                                      @dragover.prevent="onZoneDragOver($event,'deputy')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToLeadership($event,'deputy')">
-                                    <div class="column-label">副主管</div>
+                                    <div class="column-label">{{ _('副主管') }}</div>
                                     <template x-if="leadership.deputy">
                                         <div class="staff-person" draggable="true" @dragstart="dragStartLeader($event, leadership.deputy, 'deputy')" @dragend="clearDrag()">
                                             <span class="emp-id" x-text="leadership.deputy.employee_id||'-'"></span>
@@ -413,16 +413,16 @@ window.__DEPT_CONFIG = {
                                          @dragover.prevent.stop="onZoneDragOver($event,'proxy2')"
                                          @dragleave="dragOverZone=null"
                                          @drop.stop="dropToLeadership($event,'proxy2')">
-                                        <div class="proxy-label">代理人(二)</div>
+                                        <div class="proxy-label">{{ _('代理人(二)') }}</div>
                                         <template x-if="leadership.proxy2">
                                             <div class="staff-person" :draggable="!leadership.proxy2._isCross" @dragstart="leadership.proxy2._isCross ? $event.preventDefault() : dragStartLeader($event, leadership.proxy2, 'proxy2')" @dragend="clearDrag()" :style="leadership.proxy2._isCross ? 'cursor:default;opacity:0.85' : ''">
-                                                <span x-show="leadership.proxy2._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
+                                                <span x-show="leadership.proxy2._isCross" class="role-tag leader" style="font-size:10px;">{{ _('[跨]') }}</span>
                                                 <span class="emp-id" x-text="leadership.proxy2.employee_id||'-'"></span>
                                                 <span class="emp-native" x-text="leadership.proxy2.native_name||leadership.proxy2.display_name"></span>
                                             </div>
                                         </template>
                                         <template x-if="!leadership.proxy2">
-                                            <div class="staff-empty">拖入設定</div>
+                                            <div class="staff-empty">{{ _('拖入設定') }}</div>
                                         </template>
                                     </div>
                                 </div>
@@ -434,12 +434,12 @@ window.__DEPT_CONFIG = {
                                      @dragover.prevent="onZoneDragOver($event,'employee')"
                                      @dragleave="dragOverZone=null"
                                      @drop="dropToEmployee($event)">
-                                    <div class="column-label">企業成員</div>
+                                    <div class="column-label">{{ _('企業成員') }}</div>
                                     <template x-if="regularMembers.length > 0">
                                         <div>
                                             <template x-for="m in regularMembers" :key="m.id">
                                                 <div class="staff-person" :draggable="!m._isCross" @dragstart="m._isCross ? $event.preventDefault() : dragStartMember($event, m)" @dragend="clearDrag()" :style="m._isCross ? 'cursor:default;opacity:0.85' : ''">
-                                                    <span x-show="m._isCross" class="role-tag leader" style="font-size:10px;">[跨]</span>
+                                                    <span x-show="m._isCross" class="role-tag leader" style="font-size:10px;">{{ _('[跨]') }}</span>
                                                     <span class="emp-id" x-text="m.employee_id||'-'"></span>
                                                     <span class="emp-native" x-text="m.native_name||m.display_name"></span>
                                                     <span class="emp-english" x-text="m.english_name||''"></span>
@@ -466,12 +466,12 @@ window.__DEPT_CONFIG = {
          @dragleave="dragOverZone=null"
          @drop="dropToUnassigned($event)">
         <div class="unassigned-header">
-            未分配企業成員
+            {{ _('未分配企業成員') }}
             <span style="font-weight:normal;font-size:11px;" x-text="'('+unassignedUsers.length+')'"></span>
         </div>
         <div class="unassigned-body">
             <template x-if="draggedMember || draggedLeader">
-                <div class="unassigned-drop-hint">拖到此處移出部門</div>
+                <div class="unassigned-drop-hint">{{ _('拖到此處移出部門') }}</div>
             </template>
             <template x-for="u in unassignedUsers" :key="u.id">
                 <div class="employee-item" draggable="true" @dragstart="dragStartUnassigned($event, u)" @dragend="clearDrag()">
@@ -481,7 +481,7 @@ window.__DEPT_CONFIG = {
                 </div>
             </template>
             <template x-if="unassignedUsers.length===0 && !draggedMember && !draggedLeader">
-                <div class="empty-message">所有企業成員皆已分配</div>
+                <div class="empty-message">{{ _('所有企業成員皆已分配') }}</div>
             </template>
         </div>
     </div>

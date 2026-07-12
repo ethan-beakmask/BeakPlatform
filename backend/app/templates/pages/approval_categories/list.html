@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}核決權限類別 - BeakMask{% endblock %}
+{% block title %}{{ _('核決權限類別') }} - BeakMask{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/beak-trellis/beak-trellis.css') }}">
@@ -55,22 +55,22 @@
 {% block content %}
 <div x-data="approvalCategoriesManager()" x-init="init()">
 
-<h1>核決權限類別</h1>
+<h1>{{ _('核決權限類別') }}</h1>
 
 <p>
-    <a href="{{ url_for('job_levels.job_matrix') }}">[職級職稱矩陣]</a>
+    <a href="{{ url_for('job_levels.job_matrix') }}">[{{ _('職級職稱矩陣') }}]</a>
     |
-    <a href="{{ url_for('job_levels.list_job_levels') }}">[職等管理]</a>
+    <a href="{{ url_for('job_levels.list_job_levels') }}">[{{ _('職等管理') }}]</a>
     |
-    <a href="{{ url_for('job_families.list_job_families') }}">[職系管理]</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('職系管理') }}]</a>
     |
-    <a href="{{ url_for('job_titles.list_job_titles') }}">[職稱管理]</a>
+    <a href="{{ url_for('job_titles.list_job_titles') }}">[{{ _('職稱管理') }}]</a>
     |
-    <strong>[核決權限類別]</strong>
+    <strong>[{{ _('核決權限類別') }}]</strong>
 </p>
 
 <p class="text-muted" style="font-size: 0.9em;">
-    管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。
+    {{ _('管理各種費用的核決權限類別，並針對每個職等設定不同的核決上限。') }}
 </p>
 
 <!-- Master-Detail 布局 -->
@@ -78,22 +78,22 @@
     <!-- 左面板：類別表格 -->
     <div class="master-panel">
         <div style="margin-bottom: 10px;">
-            <button type="button" class="btn btn-primary" @click="openCreateModal()">+ 新增類別</button>
+            <button type="button" class="btn btn-primary" @click="openCreateModal()">+ {{ _('新增類別') }}</button>
         </div>
 
         <div class="master-panel-scroll">
             <template x-if="categories.length === 0">
-                <p style="color: #999; font-size: 0.9em;">尚無類別資料</p>
+                <p style="color: #999; font-size: 0.9em;">{{ _('尚無類別資料') }}</p>
             </template>
 
             <template x-if="categories.length > 0">
                 <table class="cat-table">
                     <thead>
                         <tr>
-                            <th>代碼</th>
-                            <th>名稱</th>
-                            <th>幣別</th>
-                            <th>狀態</th>
+                            <th>{{ _('代碼') }}</th>
+                            <th>{{ _('名稱') }}</th>
+                            <th>{{ _('幣別') }}</th>
+                            <th>{{ _('狀態') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,7 +107,7 @@
                                 <td>
                                     <span x-text="cat.name"></span>
                                     <template x-if="cat.is_system_default">
-                                        <span class="text-muted" style="font-size: 0.8em;">(預設)</span>
+                                        <span class="text-muted" style="font-size: 0.8em;">({{ _('預設') }})</span>
                                     </template>
                                 </td>
                                 <td x-text="cat.currency"></td>
@@ -123,13 +123,13 @@
     <!-- 右面板：編輯表單 -->
     <div class="detail-panel">
         <template x-if="!selected">
-            <div class="detail-placeholder">請從左側選擇類別進行編輯</div>
+            <div class="detail-placeholder">{{ _('請從左側選擇類別進行編輯') }}</div>
         </template>
 
         <template x-if="selected">
             <div>
                 <h3 style="margin: 0 0 12px 0; font-size: 1em;">
-                    編輯類別: <span x-text="selected.name"></span>
+                    {{ _('編輯類別') }}: <span x-text="selected.name"></span>
                 </h3>
 
                 <template x-if="editErrors.length > 0">
@@ -145,22 +145,22 @@
 
                 <table class="edit-table">
                     <tr>
-                        <th>類別代碼</th>
+                        <th>{{ _('類別代碼') }}</th>
                         <td>
                             <code style="font-size: 1.1em;" x-text="selected.code"></code>
-                            <span class="text-muted" style="font-size: 0.85em;">(不可修改)</span>
+                            <span class="text-muted" style="font-size: 0.85em;">({{ _('不可修改') }})</span>
                         </td>
                     </tr>
                     <tr>
-                        <th>名稱 *</th>
+                        <th>{{ _('名稱') }} *</th>
                         <td><input type="text" x-model="editForm.name" required maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
+                        <th>{{ _('英文名稱') }}</th>
                         <td><input type="text" x-model="editForm.name_en" maxlength="100"></td>
                     </tr>
                     <tr>
-                        <th>幣別</th>
+                        <th>{{ _('幣別') }}</th>
                         <td>
                             <select x-model="editForm.currency">
                                 <option value="TWD">TWD</option>
@@ -171,29 +171,29 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>排序</th>
+                        <th>{{ _('排序') }}</th>
                         <td><input type="number" x-model.number="editForm.sort_order" min="0"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
+                        <th>{{ _('描述') }}</th>
                         <td><textarea rows="3" x-model="editForm.description"></textarea></td>
                     </tr>
                     <tr>
-                        <th>狀態</th>
+                        <th>{{ _('狀態') }}</th>
                         <td>
                             <label>
                                 <input type="checkbox" x-model="editForm.is_active">
-                                啟用
+                                {{ _('啟用') }}
                             </label>
                         </td>
                     </tr>
                 </table>
 
                 <div class="btn-row">
-                    <a :href="getLimitsUrl()" class="btn btn-primary">設定上限</a>
+                    <a :href="getLimitsUrl()" class="btn btn-primary">{{ _('設定上限') }}</a>
                     <button type="button" class="btn btn-primary" @click="submitEdit()" :disabled="editSubmitting">
-                        <span x-show="!editSubmitting">儲存變更</span>
-                        <span x-show="editSubmitting">儲存中...</span>
+                        <span x-show="!editSubmitting">{{ _('儲存變更') }}</span>
+                        <span x-show="editSubmitting">{{ _('儲存中...') }}</span>
                     </button>
                 </div>
 
@@ -201,22 +201,22 @@
                 <template x-if="!selected.is_system_default">
                     <div class="danger-zone">
                         <template x-if="!deleteConfirm">
-                            <button type="button" class="btn btn-danger btn-sm" @click="deleteConfirm = true">刪除此類別</button>
+                            <button type="button" class="btn btn-danger btn-sm" @click="deleteConfirm = true">{{ _('刪除此類別') }}</button>
                         </template>
                         <template x-if="deleteConfirm">
                             <div>
                                 <span style="color: var(--color-danger); font-size: 0.9em;">
-                                    確定要刪除「<span x-text="selected.name"></span>」嗎？
+                                    {{ _('確定要刪除「') }}<span x-text="selected.name"></span>{{ _('」嗎？') }}
                                 </span>
-                                <button type="button" class="btn btn-danger btn-sm" @click="submitDelete()" style="margin-left: 10px;">確定刪除</button>
-                                <button type="button" class="btn btn-secondary btn-sm" @click="deleteConfirm = false" style="margin-left: 6px;">取消</button>
+                                <button type="button" class="btn btn-danger btn-sm" @click="submitDelete()" style="margin-left: 10px;">{{ _('確定刪除') }}</button>
+                                <button type="button" class="btn btn-secondary btn-sm" @click="deleteConfirm = false" style="margin-left: 6px;">{{ _('取消') }}</button>
                             </div>
                         </template>
                     </div>
                 </template>
                 <template x-if="selected.is_system_default">
                     <div class="danger-zone">
-                        <span class="text-muted" style="font-size: 0.85em;">此為系統預設類別，不可刪除。</span>
+                        <span class="text-muted" style="font-size: 0.85em;">{{ _('此為系統預設類別，不可刪除。') }}</span>
                     </div>
                 </template>
             </div>
@@ -229,7 +229,7 @@
     <div class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>新增核決權限類別</h3>
+                <h3>{{ _('新增核決權限類別') }}</h3>
                 <button type="button" class="modal-close" @click="showCreateModal = false">&times;</button>
             </div>
             <div class="modal-body">
@@ -243,26 +243,26 @@
 
                 <table class="form-table">
                     <tr>
-                        <th>名稱 *</th>
-                        <td><input type="text" class="form-control" x-model="createForm.name" required maxlength="100" placeholder="如: 零用金"></td>
+                        <th>{{ _('名稱') }} *</th>
+                        <td><input type="text" class="form-control" x-model="createForm.name" required maxlength="100" placeholder="{{ _('如: 零用金') }}"></td>
                     </tr>
                     <tr>
-                        <th>英文名稱</th>
+                        <th>{{ _('英文名稱') }}</th>
                         <td>
                             <input type="text" class="form-control" x-model="createForm.name_en" maxlength="100"
-                                   placeholder="如: Petty Cash"
+                                   placeholder="{{ _('如: Petty Cash') }}"
                                    @input="autoGenerateCode()">
                         </td>
                     </tr>
                     <tr>
-                        <th>代碼 *</th>
+                        <th>{{ _('代碼') }} *</th>
                         <td>
-                            <input type="text" class="form-control" x-model="createForm.code" required maxlength="50" placeholder="如: PETTY_CASH">
-                            <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">自動從英文名稱產生，可手動修改</div>
+                            <input type="text" class="form-control" x-model="createForm.code" required maxlength="50" placeholder="{{ _('如: PETTY_CASH') }}">
+                            <div class="text-muted" style="font-size: 0.8em; margin-top: 4px;">{{ _('自動從英文名稱產生，可手動修改') }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <th>幣別</th>
+                        <th>{{ _('幣別') }}</th>
                         <td>
                             <select class="form-control" x-model="createForm.currency">
                                 <option value="TWD">TWD</option>
@@ -273,20 +273,20 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>排序</th>
+                        <th>{{ _('排序') }}</th>
                         <td><input type="number" class="form-control" x-model.number="createForm.sort_order" min="0" placeholder="0"></td>
                     </tr>
                     <tr>
-                        <th>描述</th>
-                        <td><textarea class="form-control" rows="3" x-model="createForm.description" placeholder="類別的詳細說明"></textarea></td>
+                        <th>{{ _('描述') }}</th>
+                        <td><textarea class="form-control" rows="3" x-model="createForm.description" placeholder="{{ _('類別的詳細說明') }}"></textarea></td>
                     </tr>
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @click="showCreateModal = false">取消</button>
+                <button type="button" class="btn btn-secondary" @click="showCreateModal = false">{{ _('取消') }}</button>
                 <button type="button" class="btn btn-primary" @click="submitCreate()" :disabled="createSubmitting">
-                    <span x-show="!createSubmitting">建立類別</span>
-                    <span x-show="createSubmitting">建立中...</span>
+                    <span x-show="!createSubmitting">{{ _('建立類別') }}</span>
+                    <span x-show="createSubmitting">{{ _('建立中...') }}</span>
                 </button>
             </div>
         </div>
@@ -296,8 +296,8 @@
 </div><!-- end x-data -->
 
 <!-- 核決金額矩陣 (BeakTrellis) -->
-<h2 style="margin-top: 40px;">核決金額矩陣</h2>
-<p class="text-muted" style="font-size: 0.85em;">僅顯示啟用中的類別。左側職等固定，右側類別可水平捲動。</p>
+<h2 style="margin-top: 40px;">{{ _('核決金額矩陣') }}</h2>
+<p class="text-muted" style="font-size: 0.85em;">{{ _('僅顯示啟用中的類別。左側職等固定，右側類別可水平捲動。') }}</p>
 <div id="matrix-container"></div>
 
 <!-- Window Bridge -->

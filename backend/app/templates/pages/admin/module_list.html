@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}模組清單 - BeakMask{% endblock %}
+{% block title %}{{ _('模組清單') }} - BeakMask{% endblock %}
 
 {% block head %}
 <style>
@@ -71,19 +71,19 @@
 {% endblock %}
 
 {% block content %}
-<h2>模組清單（系統管理員）</h2>
+<h2>{{ _('模組清單（系統管理員）') }}</h2>
 <p style="color: #666; margin-bottom: 16px;">
-    已安裝 {{ modules|length }} 個模組。展開可查看各企業授權狀態。
+    {{ _('已安裝 %(modules)s 個模組。展開可查看各企業授權狀態。', modules=modules|length) }}
 </p>
 
 <table class="ml-table">
     <thead>
         <tr>
             <th style="width: 40px;">#</th>
-            <th>模組代碼</th>
-            <th>模組名稱</th>
-            <th style="width: 100px;">授權企業數</th>
-            <th style="width: 80px;">操作</th>
+            <th>{{ _('模組代碼') }}</th>
+            <th>{{ _('模組名稱') }}</th>
+            <th style="width: 100px;">{{ _('授權企業數') }}</th>
+            <th style="width: 80px;">{{ _('操作') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -96,10 +96,10 @@
             <td>
                 {% if mod.orgs %}
                 <button class="ml-expand-btn" onclick="toggleDetail('mod-{{ loop.index }}')">
-                    展開
+                    {{ _('展開') }}
                 </button>
                 {% else %}
-                <span style="color: #999; font-size: 12px;">無</span>
+                <span style="color: #999; font-size: 12px;">{{ _('無') }}</span>
                 {% endif %}
             </td>
         </tr>
@@ -109,10 +109,10 @@
                 <table class="ml-sub-table">
                     <thead>
                         <tr>
-                            <th>企業名稱</th>
-                            <th>合約編號</th>
-                            <th>到期日</th>
-                            <th>狀態</th>
+                            <th>{{ _('企業名稱') }}</th>
+                            <th>{{ _('合約編號') }}</th>
+                            <th>{{ _('到期日') }}</th>
+                            <th>{{ _('狀態') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,15 +123,15 @@
                             <td>{{ org.end_date }}</td>
                             <td>
                                 {% if org.is_expired %}
-                                <span class="ml-badge ml-badge-expired">已過期</span>
+                                <span class="ml-badge ml-badge-expired">{{ _('已過期') }}</span>
                                 {% elif org.days_remaining is not none and org.days_remaining <= 30 %}
-                                <span class="ml-badge ml-badge-warn">剩餘 {{ org.days_remaining }} 天</span>
+                                <span class="ml-badge ml-badge-warn">{{ _('剩餘 %(days_remaining)s 天', days_remaining=org.days_remaining) }}</span>
                                 {% else %}
                                 <span class="ml-badge ml-badge-ok">
                                     {% if org.days_remaining is not none %}
-                                    剩餘 {{ org.days_remaining }} 天
+                                    {{ _('剩餘') }} {{ org.days_remaining }} {{ _('天') }}
                                     {% else %}
-                                    有效
+                                    {{ _('有效') }}
                                     {% endif %}
                                 </span>
                                 {% endif %}

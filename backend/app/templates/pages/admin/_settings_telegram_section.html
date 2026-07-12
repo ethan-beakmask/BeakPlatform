@@ -1,23 +1,23 @@
         <!-- Telegram 設定 -->
         <section id="telegram" class="settings-section" x-show="activeSection === 'telegram'" x-data="telegramManager()" x-init="init()">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="margin: 0; border: none; padding: 0;">Telegram 通知設定</h2>
+                <h2 style="margin: 0; border: none; padding: 0;">{{ _('Telegram 通知設定') }}</h2>
                 <button @click="openCreateModal()"
                         style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
-                    + 新增設定
+                    {{ _('+ 新增設定') }}
                 </button>
             </div>
             <p style="color: #666; font-size: 13px; margin-bottom: 16px;">
-                設定 Telegram Bot 用於發送即時通知
+                {{ _('設定 Telegram Bot 用於發送即時通知') }}
             </p>
 
             <!-- 載入中 -->
-            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">載入中...</div>
+            <div x-show="loading" style="text-align: center; padding: 48px; color: #666;">{{ _('載入中...') }}</div>
 
             <!-- 空狀態 -->
             <div x-show="!loading && configs.length === 0" style="background: #f9f9f9; padding: 48px; text-align: center; border: 1px solid #ddd;">
-                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">尚無 Telegram 設定</p>
-                <p style="color: #999;">點擊「新增設定」開始建立</p>
+                <p style="font-size: 16px; color: #999; margin-bottom: 8px;">{{ _('尚無 Telegram 設定') }}</p>
+                <p style="color: #999;">{{ _('點擊「新增設定」開始建立') }}</p>
             </div>
 
             <!-- 設定列表 -->
@@ -25,11 +25,11 @@
                 <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
                     <thead style="background: #f5f5f5;">
                         <tr>
-                            <th style="padding: 10px; text-align: left;">名稱</th>
+                            <th style="padding: 10px; text-align: left;">{{ _('名稱') }}</th>
                             <th style="padding: 10px; text-align: left;">Bot Token</th>
-                            <th style="padding: 10px; text-align: left;">頻道數</th>
-                            <th style="padding: 10px; text-align: center; width: 60px;">狀態</th>
-                            <th style="padding: 10px; text-align: center; width: 120px;">操作</th>
+                            <th style="padding: 10px; text-align: left;">{{ _('頻道數') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 60px;">{{ _('狀態') }}</th>
+                            <th style="padding: 10px; text-align: center; width: 120px;">{{ _('操作') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -38,27 +38,27 @@
                                 <td style="padding: 10px;" x-text="config.name"></td>
                                 <td style="padding: 10px; font-family: monospace; font-size: 12px;" x-text="config.bot_token"></td>
                                 <td style="padding: 10px;">
-                                    <span x-text="Object.keys(config.channels || {}).length"></span> 個頻道
+                                    <span x-text="Object.keys(config.channels || {}).length"></span> {{ _('個頻道') }}
                                     <span x-show="config.default_channel" style="color: #666; font-size: 11px;">
-                                        (預設: <span x-text="config.default_channel"></span>)
+                                        {{ _('(預設:') }} <span x-text="config.default_channel"></span>)
                                     </span>
                                 </td>
                                 <td style="padding: 10px; text-align: center;">
-                                    <span x-show="config.is_active" style="color: #059669;">啟用</span>
-                                    <span x-show="!config.is_active" style="color: #dc2626;">停用</span>
+                                    <span x-show="config.is_active" style="color: #059669;">{{ _('啟用') }}</span>
+                                    <span x-show="!config.is_active" style="color: #dc2626;">{{ _('停用') }}</span>
                                 </td>
                                 <td style="padding: 10px; text-align: center;">
-                                    <button @click="testConfig(config)" title="測試"
+                                    <button @click="testConfig(config)" title="{{ _('測試') }}"
                                             style="padding: 4px 8px; background: #d1fae5; color: #065f46; border: none; cursor: pointer; margin-right: 4px;">
-                                        測試
+                                        {{ _('測試') }}
                                     </button>
-                                    <button @click="openEditModal(config)" title="編輯"
+                                    <button @click="openEditModal(config)" title="{{ _('編輯') }}"
                                             style="padding: 4px 8px; background: #e0e0e0; border: none; cursor: pointer; margin-right: 4px;">
-                                        編輯
+                                        {{ _('編輯') }}
                                     </button>
-                                    <button @click="confirmDelete(config)" title="刪除"
+                                    <button @click="confirmDelete(config)" title="{{ _('刪除') }}"
                                             style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer;">
-                                        刪除
+                                        {{ _('刪除') }}
                                     </button>
                                 </td>
                             </tr>
@@ -79,15 +79,15 @@
                     <form @submit.prevent="saveConfig()">
                         <!-- 名稱 -->
                         <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">設定名稱 *</label>
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('設定名稱 *') }}</label>
                             <input type="text" x-model="formData.name" required
                                    style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;"
-                                   placeholder="例如: 告警通知群組">
+                                   placeholder="{{ _('例如: 告警通知群組') }}">
                         </div>
 
                         <!-- 描述 -->
                         <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">描述</label>
+                            <label style="display: block; font-size: 13px; margin-bottom: 4px;">{{ _('描述') }}</label>
                             <input type="text" x-model="formData.description"
                                    style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box;">
                         </div>
@@ -99,35 +99,35 @@
                                    style="width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; font-family: monospace;"
                                    placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
                             <p style="margin: 4px 0 0; font-size: 11px; color: #666;">
-                                從 @BotFather 取得的 Token
+                                {{ _('從 @BotFather 取得的 Token') }}
                             </p>
                         </div>
 
                         <!-- 頻道設定 -->
                         <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <label style="font-size: 13px; font-weight: 500;">頻道設定</label>
+                                <label style="font-size: 13px; font-weight: 500;">{{ _('頻道設定') }}</label>
                                 <button type="button" @click="addChannel()"
                                         style="padding: 4px 12px; background: #e0e0e0; border: none; cursor: pointer; font-size: 12px;">
-                                    + 新增頻道
+                                    {{ _('+ 新增頻道') }}
                                 </button>
                             </div>
 
                             <template x-if="formData.channels.length === 0">
                                 <p style="color: #999; font-size: 12px; text-align: center; padding: 16px;">
-                                    尚無頻道，點擊「新增頻道」開始設定
+                                    {{ _('尚無頻道，點擊「新增頻道」開始設定') }}
                                 </p>
                             </template>
 
                             <template x-for="(channel, index) in formData.channels" :key="index">
                                 <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-                                    <input type="text" x-model="channel.name" placeholder="頻道名稱"
+                                    <input type="text" x-model="channel.name" placeholder="{{ _('頻道名稱') }}"
                                            style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px;">
                                     <input type="text" x-model="channel.chat_id" placeholder="Chat ID"
                                            style="flex: 1; padding: 6px; border: 1px solid #ccc; font-size: 12px; font-family: monospace;">
                                     <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap;">
                                         <input type="radio" name="default_channel" :value="channel.name"
-                                               x-model="formData.default_channel"> 預設
+                                               x-model="formData.default_channel"> {{ _('預設') }}
                                     </label>
                                     <button type="button" @click="removeChannel(index)"
                                             style="padding: 4px 8px; background: #fee2e2; color: #991b1b; border: none; cursor: pointer; font-size: 12px;">
@@ -140,14 +140,14 @@
                         <!-- 狀態 -->
                         <div style="margin-bottom: 16px;">
                             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                <input type="checkbox" x-model="formData.is_active"> 啟用
+                                <input type="checkbox" x-model="formData.is_active"> {{ _('啟用') }}
                             </label>
                         </div>
 
                         <!-- 按鈕 -->
                         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
                             <button type="button" @click="closeModal()"
-                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                                    style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
                             <button type="submit"
                                     style="padding: 8px 16px; background: #0066cc; color: white; border: none; cursor: pointer;">
                                 <span x-text="isEditing ? '儲存' : '建立'"></span>
@@ -161,13 +161,13 @@
             <div x-show="showDeleteModal" x-cloak
                  style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
                 <div style="background: white; padding: 24px; width: 400px; max-width: 90%;">
-                    <h3 style="margin: 0 0 16px; font-size: 18px;">確認刪除</h3>
-                    <p style="margin: 0 0 16px;">確定要刪除 Telegram 設定「<span style="font-weight: 600;" x-text="configToDelete?.name"></span>」嗎？</p>
+                    <h3 style="margin: 0 0 16px; font-size: 18px;">{{ _('確認刪除') }}</h3>
+                    <p style="margin: 0 0 16px;">{{ _('確定要刪除 Telegram 設定「') }}<span style="font-weight: 600;" x-text="configToDelete?.name"></span>{{ _('」嗎？') }}</p>
                     <div style="display: flex; justify-content: flex-end; gap: 8px;">
                         <button @click="showDeleteModal = false"
-                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">取消</button>
+                                style="padding: 8px 16px; background: #e0e0e0; border: none; cursor: pointer;">{{ _('取消') }}</button>
                         <button @click="deleteConfig()"
-                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">確認刪除</button>
+                                style="padding: 8px 16px; background: #dc2626; color: white; border: none; cursor: pointer;">{{ _('確認刪除') }}</button>
                     </div>
                 </div>
             </div>

@@ -1,34 +1,34 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯職位 - BeakMask{% endblock %}
+{% block title %}{{ _('編輯職位') }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>編輯職位</h1>
+<h1>{{ _('編輯職位') }}</h1>
 
 <p>
-    <a href="{{ url_for('positions.list_positions') }}">[返回列表]</a>
-    <a href="{{ url_for('positions.view_position', secure_code=position.secure_code) }}">[查看詳情]</a>
+    <a href="{{ url_for('positions.list_positions') }}">{{ _('[返回列表]') }}</a>
+    <a href="{{ url_for('positions.view_position', secure_code=position.secure_code) }}">{{ _('[查看詳情]') }}</a>
 </p>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="width: 150px;">企業成員</th>
+            <th style="width: 150px;">{{ _('企業成員') }}</th>
             <td>
                 {% if position.user %}
                 <strong>{{ position.user.display_name }}</strong>
-                <span class="text-muted">(不可修改)</span>
+                <span class="text-muted">{{ _('(不可修改)') }}</span>
                 {% else %}
                 <span class="text-muted">-</span>
                 {% endif %}
             </td>
         </tr>
         <tr>
-            <th>職稱 *</th>
+            <th>{{ _('職稱 *') }}</th>
             <td>
                 <select name="job_title_secure_code" required style="width: 100%;">
-                    <option value="">-- 請選擇職稱 --</option>
+                    <option value="">{{ _('-- 請選擇職稱 --') }}</option>
                     {% for title in job_titles %}
                     <option value="{{ title.secure_code }}"
                             {% if position.job_title_secure_code == title.secure_code %}selected{% endif %}>
@@ -40,10 +40,10 @@
             </td>
         </tr>
         <tr>
-            <th>部門 *</th>
+            <th>{{ _('部門 *') }}</th>
             <td>
                 <select name="unit_secure_code" required style="width: 100%;">
-                    <option value="">-- 請選擇部門 --</option>
+                    <option value="">{{ _('-- 請選擇部門 --') }}</option>
                     {% for unit in units %}
                     <option value="{{ unit.secure_code }}"
                             {% if position.unit_secure_code == unit.secure_code %}selected{% endif %}>
@@ -54,7 +54,7 @@
             </td>
         </tr>
         <tr>
-            <th>職位類型 *</th>
+            <th>{{ _('職位類型 *') }}</th>
             <td>
                 <select name="position_type" required style="width: 100%;">
                     {% for type_val, type_name in position_types %}
@@ -67,20 +67,20 @@
             </td>
         </tr>
         <tr>
-            <th>部門主管</th>
+            <th>{{ _('部門主管') }}</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_unit_head" value="true"
                            {% if position.is_unit_head %}checked{% endif %}>
-                    此企業成員為該部門主管
+                    {{ _('此企業成員為該部門主管') }}
                 </label>
             </td>
         </tr>
         <tr>
-            <th>直屬主管</th>
+            <th>{{ _('直屬主管') }}</th>
             <td>
                 <select name="direct_manager_secure_code" style="width: 100%;">
-                    <option value="">-- 無直屬主管 --</option>
+                    <option value="">{{ _('-- 無直屬主管 --') }}</option>
                     {% for user in users %}
                     <option value="{{ user.secure_code }}"
                             {% if position.direct_manager_secure_code == user.secure_code %}selected{% endif %}>
@@ -91,52 +91,52 @@
             </td>
         </tr>
         <tr>
-            <th>生效日期</th>
+            <th>{{ _('生效日期') }}</th>
             <td>
                 <input type="date" name="effective_from" style="width: 100%;"
                        value="{{ position.effective_from.strftime('%Y-%m-%d') if position.effective_from else '' }}">
             </td>
         </tr>
         <tr>
-            <th>失效日期</th>
+            <th>{{ _('失效日期') }}</th>
             <td>
                 <input type="date" name="effective_until" style="width: 100%;"
                        value="{{ position.effective_until.strftime('%Y-%m-%d') if position.effective_until else '' }}">
             </td>
         </tr>
         <tr>
-            <th style="vertical-align: top;">備註</th>
+            <th style="vertical-align: top;">{{ _('備註') }}</th>
             <td>
                 <textarea name="remarks" rows="3" style="width: 100%;">{{ position.remarks or '' }}</textarea>
             </td>
         </tr>
         <tr>
-            <th>狀態</th>
+            <th>{{ _('狀態') }}</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_active" value="true"
                            {% if position.is_active %}checked{% endif %}>
-                    啟用
+                    {{ _('啟用') }}
                 </label>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">儲存變更</button>
+                <button type="submit">{{ _('儲存變更') }}</button>
                 <a href="{{ url_for('positions.view_position', secure_code=position.secure_code) }}"
-                   style="margin-left: 20px;">取消</a>
+                   style="margin-left: 20px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
 </form>
 
 <hr style="margin-top: 40px;">
-<h3 class="text-danger">危險區域</h3>
+<h3 class="text-danger">{{ _('危險區域') }}</h3>
 <form method="POST" action="{{ url_for('positions.delete_position', secure_code=position.secure_code) }}"
       onsubmit="return confirm('確定要刪除此職位指派嗎？');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">
-        刪除此職位
+        {{ _('刪除此職位') }}
     </button>
 </form>
 {% endblock %}

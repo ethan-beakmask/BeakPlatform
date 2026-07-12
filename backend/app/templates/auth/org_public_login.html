@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <title>外部廠商登入 - {{ org.name }}</title>
+    <title>{{ _('外部廠商登入') }} - {{ org.name }}</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -101,13 +101,13 @@
 <body>
     {% if logo_url and show_logo|default(true) %}
     <div class="logo-container">
-        <img src="{{ logo_url }}" alt="外部廠商登入">
+        <img src="{{ logo_url }}" alt="{{ _('外部廠商登入') }}">
     </div>
     {% endif %}
     {% if show_org_name|default(true) %}
-    <h1>{{ org.name }}<br>外部廠商登入</h1>
+    <h1>{{ org.name }}<br>{{ _('外部廠商登入') }}</h1>
     {% else %}
-    <h1>外部廠商登入</h1>
+    <h1>{{ _('外部廠商登入') }}</h1>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -134,12 +134,12 @@
                 <td>
                     <input type="text" id="f_account" name="email"
                            autocomplete="off" placeholder="your@email.com">
-                    <div class="help-text">請輸入您的完整 Email 地址</div>
+                    <div class="help-text">{{ _('請輸入您的完整 Email 地址') }}</div>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="f_sv_1">驗證碼 1</label>
+                    <label for="f_sv_1">{{ _('驗證碼') }} 1</label>
                 </td>
             </tr>
             <tr>
@@ -149,7 +149,7 @@
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="f_sv_2">驗證碼 2</label>
+                    <label for="f_sv_2">{{ _('驗證碼') }} 2</label>
                 </td>
             </tr>
             <tr>
@@ -159,7 +159,7 @@
             </tr>
             <tr>
                 <td style="padding-top: 15px;">
-                    <label for="f_sv_3">驗證碼 3</label>
+                    <label for="f_sv_3">{{ _('驗證碼') }} 3</label>
                 </td>
             </tr>
             <tr>
@@ -169,7 +169,7 @@
             </tr>
             <tr>
                 <td style="padding-top: 20px;">
-                    <button type="submit">登入</button>
+                    <button type="submit">{{ _('登入') }}</button>
                 </td>
             </tr>
         </table>

@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}{{ doc.title if doc else menu_code }} 說明 - BeakPlatform{% endblock %}
+{% block title %}{{ _('%(title)s 說明', title=(doc.title if doc else menu_code)) }} - BeakPlatform{% endblock %}
 
 {% block head %}
 <style>
@@ -45,14 +45,14 @@
         {% for sec in doc.sections %}
         <div class="help-section">
             {% if sec.audience and sec.audience != '*' %}
-            <div class="help-audience-tag">適用：{{ sec.audience }}</div>
+            <div class="help-audience-tag">{{ _('適用：%(audience)s', audience=sec.audience) }}</div>
             {% endif %}
             {{ sec.html|safe }}
         </div>
         {% endfor %}
     {% else %}
         <div class="help-empty">
-            <p>此頁面（{{ menu_code }}）尚未提供說明文件。</p>
+            <p>{{ _('此頁面（%(menu_code)s）尚未提供說明文件。', menu_code=menu_code) }}</p>
         </div>
     {% endif %}
 </div>

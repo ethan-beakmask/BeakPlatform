@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>企業初始設定 - {{ org.name }}</title>
+    <title>{{ _('企業初始設定') }} - {{ org.name }}</title>
     <script>window.__BP = '{{ app_prefix }}';</script>
     <!-- Alpine.js -->
     <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
@@ -119,16 +119,16 @@
     </style>
 </head>
 <body>
-    <h1>企業初始設定</h1>
+    <h1>{{ _('企業初始設定') }}</h1>
     <p style="color: #6b7280; margin-bottom: 16px;">{{ org.name }} ({{ org.domain_name }})</p>
 
     <div class="setup-banner">
-        <strong>安全設定步驟</strong><br>
-        預設管理員帳號 ({{ current_user.username }}@{{ org.domain_name }}) 名稱易被猜測，必須完成以下設定後才能使用系統：<br>
-        1. 建立您的企業成員帳號<br>
-        2. 系統自動產生對應的管理員帳號 (admin-帳號名稱) 並綁定<br>
-        3. 預設管理員帳號自動停用<br>
-        4. 請使用新的管理員帳號重新登入
+        <strong>{{ _('安全設定步驟') }}</strong><br>
+        {{ _('預設管理員帳號 (%(account)s) 名稱易被猜測，必須完成以下設定後才能使用系統：', account=current_user.username ~ '@' ~ org.domain_name) }}<br>
+        {{ _('1. 建立您的企業成員帳號') }}<br>
+        {{ _('2. 系統自動產生對應的管理員帳號 (admin-帳號名稱) 並綁定') }}<br>
+        {{ _('3. 預設管理員帳號自動停用') }}<br>
+        {{ _('4. 請使用新的管理員帳號重新登入') }}
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -144,17 +144,17 @@
     <form method="POST" id="setup-form" x-data="setupForm()">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="section-title">企業成員帳號資料</div>
+        <div class="section-title">{{ _('企業成員帳號資料') }}</div>
         <table class="form-table">
             <tr>
-                <td><label for="native_name" class="required">本國姓名</label></td>
+                <td><label for="native_name" class="required">{{ _('本國姓名') }}</label></td>
                 <td>
                     <input type="text" id="native_name" name="native_name" required
                            x-model="nativeName" @input="onNativeNameChange()">
                 </td>
             </tr>
             <tr>
-                <td><label for="english_name" class="required">英文姓名</label></td>
+                <td><label for="english_name" class="required">{{ _('英文姓名') }}</label></td>
                 <td>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="text" id="english_name" name="english_name" required
@@ -163,15 +163,15 @@
                         <button type="button" class="btn-translate"
                                 @click="transliterateName()"
                                 :disabled="!nativeName || transliterating">
-                            <span x-show="!transliterating">自動翻譯</span>
-                            <span x-show="transliterating">翻譯中...</span>
+                            <span x-show="!transliterating">{{ _('自動翻譯') }}</span>
+                            <span x-show="transliterating">{{ _('翻譯中...') }}</span>
                         </button>
                     </div>
-                    <div class="help-text">帳號與 Email 名稱來源</div>
+                    <div class="help-text">{{ _('帳號與 Email 名稱來源') }}</div>
                 </td>
             </tr>
             <tr>
-                <td><label for="username" class="required">帳號</label></td>
+                <td><label for="username" class="required">{{ _('帳號') }}</label></td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 4px;">
                         <input type="text" id="username" name="username" required
@@ -180,30 +180,30 @@
                         <span>@{{ org.domain_name }}</span>
                     </div>
                     <div class="help-text" x-show="usernameRaw && usernameRaw !== normalizedUsername">
-                        儲存時將轉換為: <code x-text="normalizedUsername"></code>
+                        {{ _('儲存時將轉換為:') }} <code x-text="normalizedUsername"></code>
                     </div>
                     <div style="font-size: 12px; margin-top: 4px;">
-                        <span x-show="usernameChecking" style="color: #888;">檢查帳號中...</span>
-                        <span x-show="usernameChecked && usernameAvailable && normalizedUsername" style="color: #16a34a;">帳號可用</span>
-                        <span x-show="usernameChecked && !usernameAvailable && normalizedUsername" class="text-danger">帳號已存在</span>
+                        <span x-show="usernameChecking" style="color: #888;">{{ _('檢查帳號中...') }}</span>
+                        <span x-show="usernameChecked && usernameAvailable && normalizedUsername" style="color: #16a34a;">{{ _('帳號可用') }}</span>
+                        <span x-show="usernameChecked && !usernameAvailable && normalizedUsername" class="text-danger">{{ _('帳號已存在') }}</span>
                     </div>
                 </td>
             </tr>
             <tr>
-                <td><label for="employee_id">用戶編號</label></td>
+                <td><label for="employee_id">{{ _('用戶編號') }}</label></td>
                 <td>
                     <input type="text" id="employee_id" name="employee_id"
                            x-model="employeeId"
                            placeholder="{{ suggested_employee_id or '' }}">
                     {% if suggested_employee_id %}
-                    <div class="help-text">留空將自動使用 {{ suggested_employee_id }}</div>
+                    <div class="help-text">{{ _('留空將自動使用 %(employee_id)s', employee_id=suggested_employee_id) }}</div>
                     {% else %}
-                    <div class="help-text">手動輸入編號</div>
+                    <div class="help-text">{{ _('手動輸入編號') }}</div>
                     {% endif %}
                 </td>
             </tr>
             <tr>
-                <td style="vertical-align: top;"><label for="password" class="required">密碼</label></td>
+                <td style="vertical-align: top;"><label for="password" class="required">{{ _('密碼') }}</label></td>
                 <td>
                     <div style="display: flex; gap: 8px; align-items: start;">
                         <div style="flex: 1;">
@@ -215,10 +215,10 @@
                                 @click="showPassword = !showPassword"
                                 x-text="showPassword ? '隱藏' : '顯示'"></button>
                         <button type="button" class="btn-password"
-                                @click="useSuggestedPassword()">使用建議密碼</button>
+                                @click="useSuggestedPassword()">{{ _('使用建議密碼') }}</button>
                     </div>
                     <div class="help-text" x-text="passwordRequirements"></div>
-                    <div class="help-text">此密碼同時用於企業成員帳號和管理員帳號</div>
+                    <div class="help-text">{{ _('此密碼同時用於企業成員帳號和管理員帳號') }}</div>
                     <div x-show="passwordErrors.length > 0" style="margin-top: 6px;">
                         <template x-for="err in passwordErrors" :key="err">
                             <div class="text-danger" style="font-size: 12px;" x-text="err"></div>
@@ -226,45 +226,45 @@
                     </div>
                     <div x-show="password && passwordErrors.length === 0 && passwordChecked"
                          style="margin-top: 6px; color: #16a34a; font-size: 12px;">
-                        密碼符合要求
+                        {{ _('密碼符合要求') }}
                     </div>
                 </td>
             </tr>
             <tr>
-                <td style="vertical-align: top;"><label for="confirm_password" class="required">確認密碼</label></td>
+                <td style="vertical-align: top;"><label for="confirm_password" class="required">{{ _('確認密碼') }}</label></td>
                 <td>
                     <input :type="showPassword ? 'text' : 'password'" id="confirm_password" name="confirm_password"
-                           required x-model="confirmPassword" placeholder="請再次輸入密碼">
+                           required x-model="confirmPassword" placeholder="{{ _('請再次輸入密碼') }}">
                     <div x-show="confirmPassword && password !== confirmPassword"
                          class="text-danger" style="font-size: 12px; margin-top: 4px;">
-                        密碼不一致
+                        {{ _('密碼不一致') }}
                     </div>
                     <div x-show="confirmPassword && password === confirmPassword && passwordChecked && passwordErrors.length === 0"
                          style="color: #16a34a; font-size: 12px; margin-top: 4px;">
-                        確認密碼一致
+                        {{ _('確認密碼一致') }}
                     </div>
                 </td>
             </tr>
         </table>
 
-        <div class="section-title">選填欄位</div>
+        <div class="section-title">{{ _('選填欄位') }}</div>
         <table class="form-table">
             <tr>
-                <td><label for="nickname">暱稱</label></td>
+                <td><label for="nickname">{{ _('暱稱') }}</label></td>
                 <td>
                     <input type="text" id="nickname" name="nickname"
-                           x-model="nickname" placeholder="留空自動遮罩處理">
+                           x-model="nickname" placeholder="{{ _('留空自動遮罩處理') }}">
                 </td>
             </tr>
             <tr>
-                <td><label for="backup_email_1">通知 Email</label></td>
+                <td><label for="backup_email_1">{{ _('通知 Email') }}</label></td>
                 <td>
                     <input type="email" id="backup_email_1" name="backup_email_1"
-                           x-model="backupEmail1" placeholder="留空使用帳號 Email">
+                           x-model="backupEmail1" placeholder="{{ _('留空使用帳號 Email') }}">
                 </td>
             </tr>
             <tr>
-                <td><label for="mobile_phone_1">手機號碼</label></td>
+                <td><label for="mobile_phone_1">{{ _('手機號碼') }}</label></td>
                 <td>
                     <input type="tel" id="mobile_phone_1" name="mobile_phone_1"
                            x-model="mobilePhone1" placeholder="+886-912-345-678">
@@ -274,28 +274,28 @@
 
         <!-- 即時預覽 -->
         <div class="result-preview" x-show="normalizedUsername">
-            <strong>建立預覽</strong><br>
-            <span class="label">企業成員帳號:</span>
+            <strong>{{ _('建立預覽') }}</strong><br>
+            <span class="label">{{ _('企業成員帳號:') }}</span>
             <span class="value" x-text="normalizedUsername + '@{{ org.domain_name }}'"></span><br>
-            <span class="label">管理員帳號:</span>
+            <span class="label">{{ _('管理員帳號:') }}</span>
             <span class="value" x-text="'admin-' + normalizedUsername + '@{{ org.domain_name }}'"></span><br>
-            <span class="label">用戶編號:</span>
+            <span class="label">{{ _('用戶編號:') }}</span>
             <span class="value" x-text="employeeId || '{{ suggested_employee_id or "(未設定)" }}'"></span>
-            <span x-show="!employeeId && '{{ suggested_employee_id }}'" style="color: #888; font-size: 12px;">(自動產生)</span>
+            <span x-show="!employeeId && '{{ suggested_employee_id }}'" style="color: #888; font-size: 12px;">{{ _('(自動產生)') }}</span>
         </div>
 
         <div style="margin-top: 20px;">
             <button type="submit" :disabled="!canSubmit"
-                    :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">建立帳號並完成設定</button>
+                    :style="!canSubmit ? 'opacity: 0.5; cursor: not-allowed;' : ''">{{ _('建立帳號並完成設定') }}</button>
         </div>
     </form>
 
     <div class="footer-note">
-        此頁面為企業初始化精靈，完成後預設管理員帳號 ({{ current_user.username }}) 將自動停用。<br>
-        如需協助，請聯繫系統管理員。
+        {{ _('此頁面為企業初始化精靈，完成後預設管理員帳號 (%(username)s) 將自動停用。', username=current_user.username) }}<br>
+        {{ _('如需協助，請聯繫系統管理員。') }}
         <form action="{{ url_for('auth.logout') }}" method="POST" style="display: inline; margin-left: 12px;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" style="background: none; border: none; color: #6b7280; cursor: pointer; text-decoration: underline; font-size: 12px;">登出</button>
+            <button type="submit" style="background: none; border: none; color: #6b7280; cursor: pointer; text-decoration: underline; font-size: 12px;">{{ _('登出') }}</button>
         </form>
     </div>
 

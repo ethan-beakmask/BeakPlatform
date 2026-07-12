@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     {% if org %}
-    <title>驗證密碼重設 - {{ org.name }}</title>
+    <title>{{ _('驗證密碼重設') }} - {{ org.name }}</title>
     {% else %}
-    <title>驗證密碼重設 - BeakMask</title>
+    <title>{{ _('驗證密碼重設') }} - BeakMask</title>
     {% endif %}
 </head>
 <body>
-    <h1>{% if org %}{{ org.name }} - {% endif %}驗證密碼重設</h1>
+    <h1>{% if org %}{{ org.name }} - {% endif %}{{ _('驗證密碼重設') }}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -26,13 +26,13 @@
     {% endif %}
     {% endwith %}
 
-    <p>請輸入您收到的 6 碼驗證碼</p>
-    <p>信箱：{{ email }}</p>
+    <p>{{ _('請輸入您收到的 6 碼驗證碼') }}</p>
+    <p>{{ _('信箱：') }}{{ email }}</p>
 
     <form method="POST" action="{{ url_for('auth.verify_reset', token=token) }}">
         <table border="0" cellpadding="4" cellspacing="0">
             <tr>
-                <td><label for="code">驗證碼</label></td>
+                <td><label for="code">{{ _('驗證碼') }}</label></td>
                 <td>
                     <input type="text" id="code" name="code" size="10" maxlength="6" required
                            pattern="[0-9]{6}" placeholder="000000"
@@ -42,14 +42,14 @@
             <tr>
                 <td colspan="2">
                     <br>
-                    <button type="submit">驗證並取得暫時密碼</button>
+                    <button type="submit">{{ _('驗證並取得暫時密碼') }}</button>
                 </td>
             </tr>
         </table>
     </form>
 
     <p>
-        <small>驗證碼將於申請後 10 分鐘內失效。</small>
+        <small>{{ _('驗證碼將於申請後 10 分鐘內失效。') }}</small>
     </p>
 
     <hr>

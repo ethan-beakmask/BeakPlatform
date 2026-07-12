@@ -97,10 +97,12 @@ JSON 字典範例 (`en.json`):
 - [x] `pybabel extract` + `update` + 翻譯 en/messages.po（832 條全數翻譯，含修正 75 條錯誤 fuzzy 配對）+ `compile`
 - 刻意跳過（包裹會壞邏輯或屬資料值）：`_ss_packages.py` 版本狀態字串（有字面比較）、`security_center.py`「未知用戶」（與 DB audit details 成對比較）、audit log、email 主旨/內文、DB seed 資料、模組層級 label dicts（留待後續 Phase 以 `_l()` 統一處理）
 
-### Phase 2 - Platform HTML 模板
+### Phase 2 - Platform HTML 模板 ✅ (2026-07-12 完成)
 
-- [ ] 115 個未覆蓋模板逐一包裹 `_()`
-- [ ] 再次 extract + 翻譯 .po + compile
+- [x] 137 個模板逐一包裹 `_()`（跳過 dev/ 與 test 頁；`_methods.html` 純 JS partial 屬 Phase 3）
+- [x] extract 後 msgid 832 → 2,529，新增 1,698 條翻譯（含修正 475 條錯誤 fuzzy 配對）+ compile
+- [x] 冒煙測試：en 用戶模板渲染英文、zh-TW 不受影響
+- 註：頁面上殘留中文有兩類且皆屬預期 — (1) Alpine x-text JS 表達式（Phase 3）、(2) 選單標題來自 DB title_i18n 動態資料（不在程式 i18n 範圍）
 
 ### Phase 3 - Platform JS
 

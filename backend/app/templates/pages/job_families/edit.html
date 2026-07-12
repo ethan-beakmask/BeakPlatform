@@ -1,27 +1,27 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}編輯職系 - {{ job_family.name }} - BeakMask{% endblock %}
+{% block title %}{{ _('編輯職系') }} - {{ job_family.name }} - BeakMask{% endblock %}
 
 {% block content %}
-<h1>編輯職系: {{ job_family.name }}</h1>
+<h1>{{ _('編輯職系: %(name)s', name=job_family.name) }}</h1>
 
 <p>
-    <a href="{{ url_for('job_families.list_job_families') }}">[返回列表]</a>
-    <a href="{{ url_for('job_families.view_job_family', secure_code=job_family.secure_code) }}">[查看詳情]</a>
+    <a href="{{ url_for('job_families.list_job_families') }}">[{{ _('返回列表') }}]</a>
+    <a href="{{ url_for('job_families.view_job_family', secure_code=job_family.secure_code) }}">[{{ _('查看詳情') }}]</a>
 </p>
 
 <form method="POST" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <table class="info-table">
         <tr>
-            <th style="width: 150px;">職系代碼</th>
+            <th style="width: 150px;">{{ _('職系代碼') }}</th>
             <td>
                 <code style="font-size: 1.2em;">{{ job_family.code }}</code>
-                <span class="text-muted" style="font-size: 0.9em;">(不可修改)</span>
+                <span class="text-muted" style="font-size: 0.9em;">({{ _('不可修改') }})</span>
             </td>
         </tr>
         <tr>
-            <th>職系名稱 *</th>
+            <th>{{ _('職系名稱') }} *</th>
             <td>
                 <input type="text" name="name" required maxlength="100"
                        style="width: 100%;"
@@ -29,7 +29,7 @@
             </td>
         </tr>
         <tr>
-            <th>英文名稱</th>
+            <th>{{ _('英文名稱') }}</th>
             <td>
                 <input type="text" name="name_en" maxlength="100"
                        style="width: 100%;"
@@ -37,7 +37,7 @@
             </td>
         </tr>
         <tr>
-            <th>職系類型 *</th>
+            <th>{{ _('職系類型') }} *</th>
             <td>
                 {% for type_value, type_label in family_types %}
                 <label style="display: block; margin-bottom: 5px;">
@@ -49,10 +49,10 @@
             </td>
         </tr>
         <tr>
-            <th>上層職系</th>
+            <th>{{ _('上層職系') }}</th>
             <td>
                 <select name="parent_secure_code" style="width: 100%;">
-                    <option value="">-- 無 (根職系) --</option>
+                    <option value="">{{ _('-- 無 (根職系) --') }}</option>
                     {% for parent in parent_options %}
                     <option value="{{ parent.secure_code }}"
                             {% if job_family.parent_secure_code == parent.secure_code %}selected{% endif %}>
@@ -63,13 +63,13 @@
             </td>
         </tr>
         <tr>
-            <th style="vertical-align: top;">描述</th>
+            <th style="vertical-align: top;">{{ _('描述') }}</th>
             <td>
                 <textarea name="description" rows="3" style="width: 100%;">{{ request.form.get('description', job_family.description or '') }}</textarea>
             </td>
         </tr>
         <tr>
-            <th>排序順序</th>
+            <th>{{ _('排序順序') }}</th>
             <td>
                 <input type="number" name="sort_order" min="0"
                        style="width: 100%;"
@@ -77,20 +77,20 @@
             </td>
         </tr>
         <tr>
-            <th>狀態</th>
+            <th>{{ _('狀態') }}</th>
             <td>
                 <label>
                     <input type="checkbox" name="is_active" value="true"
                            {% if job_family.is_active %}checked{% endif %}>
-                    啟用
+                    {{ _('啟用') }}
                 </label>
             </td>
         </tr>
         <tr>
             <td colspan="2" style="text-align: center; padding-top: 20px;">
-                <button type="submit">儲存變更</button>
+                <button type="submit">{{ _('儲存變更') }}</button>
                 <a href="{{ url_for('job_families.view_job_family', secure_code=job_family.secure_code) }}"
-                   style="margin-left: 20px;">取消</a>
+                   style="margin-left: 20px;">{{ _('取消') }}</a>
             </td>
         </tr>
     </table>
@@ -98,32 +98,32 @@
 
 {% if not job_family.is_system_default %}
 <hr style="margin-top: 40px;">
-<h3 class="text-danger">危險區域</h3>
+<h3 class="text-danger">{{ _('危險區域') }}</h3>
 
 {% set confirm_cascade = request.args.get('confirm_cascade', '') | int %}
 {% if confirm_cascade %}
 <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
-    <strong>注意：</strong>此職系有 {{ confirm_cascade }} 個職稱使用中。
-    <br>請選擇：連同職稱一併刪除，或取消並先處理職稱。
+    <strong>{{ _('注意：') }}</strong>{{ _('此職系有 %(count)s 個職稱使用中。', count=confirm_cascade) }}
+    <br>{{ _('請選擇：連同職稱一併刪除，或取消並先處理職稱。') }}
 </div>
 <form method="POST" action="{{ url_for('job_families.delete_job_family', secure_code=job_family.secure_code) }}" style="display: inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="cascade_delete" value="true">
     <button type="submit" class="btn btn-danger"
-            onclick="return confirm('確定要刪除職系「{{ job_family.name }}」及其 {{ confirm_cascade }} 個職稱嗎？');">
-        確認刪除職系及職稱
+            onclick="return confirm('{{ _('確定要刪除職系「%(name)s」及其 %(count)s 個職稱嗎？', name=job_family.name, count=confirm_cascade) }}');">
+        {{ _('確認刪除職系及職稱') }}
     </button>
 </form>
 <a href="{{ url_for('job_families.edit_job_family', secure_code=job_family.secure_code) }}"
    style="margin-left: 12px; padding: 8px 16px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px;">
-    取消
+    {{ _('取消') }}
 </a>
 {% else %}
 <form method="POST" action="{{ url_for('job_families.delete_job_family', secure_code=job_family.secure_code) }}"
-      onsubmit="return confirm('確定要刪除職系「{{ job_family.name }}」嗎？');">
+      onsubmit="return confirm('{{ _('確定要刪除職系「%(name)s」嗎？', name=job_family.name) }}');">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="btn btn-danger">
-        刪除此職系
+        {{ _('刪除此職系') }}
     </button>
 </form>
 {% endif %}

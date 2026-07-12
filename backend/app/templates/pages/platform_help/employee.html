@@ -1,13 +1,13 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}平台說明 - 企業成員 - BeakPlatform{% endblock %}
+{% block title %}{{ _('平台說明 - 企業成員') }} - BeakPlatform{% endblock %}
 
 {% block content %}
 <div style="max-width:880px; margin:24px auto; padding:0 24px;">
-    <h2>平台說明 - 企業成員</h2>
+    <h2>{{ _('平台說明 - 企業成員') }}</h2>
     <p style="color: var(--color-text-secondary);">
-        以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的
-        <i class="ri-question-line"></i> 按鈕，取得當前頁面的快速說明。
+        {{ _('以下是各功能頁的操作說明。也可以直接在任何頁面點擊右下角的') }}
+        <i class="ri-question-line"></i> {{ _('按鈕，取得當前頁面的快速說明。') }}
     </p>
 
     {% set my_docs = help_docs|selectattr('audiences', 'contains', 'EMPLOYEE')|list %}
@@ -18,7 +18,7 @@
         {% endfor %}
     </ul>
     {% else %}
-    <p style="color:#888;">說明文件正在準備中。</p>
+    <p style="color:#888;">{{ _('說明文件正在準備中。') }}</p>
     {% endif %}
 </div>
 {% endblock %}
