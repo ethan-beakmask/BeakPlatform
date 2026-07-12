@@ -107,7 +107,7 @@ document.getElementById('btn-preview').addEventListener('click', async () => {
         previewFormInstance = await Formio.createForm(previewFormContainer, schema, {
             readOnly: false,  // 允許輸入以便測試表單
             noAlerts: false,  // 顯示驗證訊息
-            language: 'zh-TW',
+            language: (typeof BkI18n !== 'undefined' && BkI18n._locale) || 'zh-TW',
             i18n: { 'zh-TW': formioI18n }
         });
         console.log('預覽表單建立成功');
@@ -215,7 +215,7 @@ document.getElementById('btn-print-preview').addEventListener('click', async () 
     try {
         printPreviewFormInstance = await Formio.createForm(formContainer, schema, {
             readOnly: true,  // 列印預覽使用唯讀模式
-            language: 'zh-TW',
+            language: (typeof BkI18n !== 'undefined' && BkI18n._locale) || 'zh-TW',
             i18n: { 'zh-TW': formioI18n }
         });
         console.log('列印預覽表單建立成功');

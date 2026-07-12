@@ -63,9 +63,13 @@ async function loadCategories() {
 // 頁面載入時載入分類
 loadCategories();
 
-// 載入 Form.io 中文翻譯
+// 載入 Form.io 中文翻譯（僅 zh-TW 介面需要；其他語系用 Form.io 原生英文）
 let formioI18n = {};
+function formioUiLocale() {
+    return (typeof BkI18n !== 'undefined' && BkI18n._locale) || 'zh-TW';
+}
 async function loadFormioTranslations() {
+    if (formioUiLocale() !== 'zh-TW') return;
     try {
         const response = await fetch(window.__BP + '/static/vendor/formio-i18n-zh-TW.json');
         if (response.ok) {
@@ -328,7 +332,7 @@ Promise.all([loadFormioTranslations(), loadFormThemes()]).then(() => {
 }).then(initialSchema => {
     // loadFormData 已設定 currentFormTheme，此時建構 builder options 才能正確注入主題預設屬性
     builderOptions = {
-        language: 'zh-TW',
+        language: formioUiLocale(),
         noDefaultSubmitButton: true,
         i18n: { 'zh-TW': formioI18n },
         builder: buildBuilderGroups()
