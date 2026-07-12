@@ -488,12 +488,17 @@ function pageManager() {
 **翻譯流程**（新增字串後）：
 ```bash
 cd /opt/BeakPlatform-dev/backend
-../venv/bin/pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+../venv/bin/pybabel extract -F babel.cfg -k _l -o translations/messages.pot . \
+  ../modules/open_defense ../modules/vuln_lifecycle ../modules/spec_formulate \
+  ../modules/nocode_builder ../modules/form_workflow
 ../venv/bin/pybabel update -i translations/messages.pot -d translations -l en
 # 補翻 translations/en/LC_MESSAGES/messages.po 後
 ../venv/bin/pybabel compile -d translations   # 改完重啟服務生效
 ```
-- JS 字典：`backend/app/static/i18n/en.json`（zh 原文 → en），由 `/i18n/<locale>.js` 路由阻塞式載入
+- **extract 必須帶齊上列全部已包裹模組目錄**——少帶任何一個，該模組的 msgid 會被 update 打成 obsolete 並喪失翻譯（已發生過一次事故）。新模組包裹後要加進此清單
+- JS 字典：`backend/app/static/i18n/en.json`（zh 原文 → en，flat dict / indent=1 / sort_keys），由 `/i18n/<locale>.js` 路由阻塞式載入
+- 獨立模板（不繼承 base.html，如 studio.html、workflow_designer.html、form_designer.html）需自行載入 i18n.js + 語系字典區塊；`BkI18n` 是 top-level const 不掛 window，JS 判斷用 `typeof BkI18n !== 'undefined'`
+- FormIO 設計器/渲染的 `language` 選項必須跟隨用戶 locale，非 zh-TW 不可載入 formio-i18n-zh-TW.json（會把英文反向翻回中文）
 - 選單標題屬 DB 資料（menu_items.title_i18n JSONB），不走 gettext
 - 詳細計畫與進度：`docs/I18N_PLAN.md`
 
