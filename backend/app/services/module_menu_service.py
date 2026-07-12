@@ -156,6 +156,11 @@ class ModuleMenuService:
                 if existing.title != name:
                     existing.title = name
                     changed = True
+                # 模組定義未提供 title_i18n 時保留 DB 現值（翻譯可能只回填在 DB）
+                new_title_i18n = menu_def.get('title_i18n') or {}
+                if new_title_i18n and (existing.title_i18n or {}) != new_title_i18n:
+                    existing.title_i18n = new_title_i18n
+                    changed = True
                 if existing.icon != icon:
                     existing.icon = icon
                     changed = True
@@ -205,6 +210,7 @@ class ModuleMenuService:
                 org_secure_code=SYSTEM_ORG_CODE,
                 code=code,
                 title=name,
+                title_i18n=menu_def.get('title_i18n') or {},
                 icon=icon,
                 link_type=link_type,
                 link_target=link_target,

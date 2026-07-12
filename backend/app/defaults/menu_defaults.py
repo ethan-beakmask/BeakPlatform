@@ -46,6 +46,7 @@ CORE_MENUS = [
     {
         'code': 'dashboard',
         'title': '儀表板',
+        'title_i18n': {'en': 'Dashboard'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'main.dashboard',
@@ -57,6 +58,7 @@ CORE_MENUS = [
     {
         'code': 'personal_settings',
         'title': '個人設定',
+        'title_i18n': {'en': 'Personal Settings'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'main.personal_settings',
@@ -68,6 +70,7 @@ CORE_MENUS = [
     {
         'code': 'form_workflow.center',
         'title': '表單中心',
+        'title_i18n': {'en': 'Form Center'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'form_workflow_web.center',
@@ -82,6 +85,7 @@ CORE_MENUS = [
     {
         'code': 'security_localsystem',
         'title': '本機安全',
+        'title_i18n': {'en': 'Local Security'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -93,6 +97,7 @@ CORE_MENUS = [
     {
         'code': 'org_management',
         'title': '企業管理',
+        'title_i18n': {'en': 'Organization Management'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -105,6 +110,7 @@ CORE_MENUS = [
     {
         'code': 'server_settings',
         'title': '主機設定',
+        'title_i18n': {'en': 'Server Settings'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'hostconfig.server_settings',
@@ -116,6 +122,7 @@ CORE_MENUS = [
     {
         'code': 'servsr_manage',
         'title': '主機管理',
+        'title_i18n': {'en': 'Server Management'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -127,6 +134,7 @@ CORE_MENUS = [
     {
         'code': 'perm_mgmt',
         'title': '權限管理',
+        'title_i18n': {'en': 'Permission Management'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -139,6 +147,7 @@ CORE_MENUS = [
     {
         'code': 'org_config_mgr',
         'title': '系統管理',
+        'title_i18n': {'en': 'System Administration'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -151,6 +160,7 @@ CORE_MENUS = [
     {
         'code': 'org_account',
         'title': '帳號管理',
+        'title_i18n': {'en': 'Account Management'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -162,6 +172,7 @@ CORE_MENUS = [
     {
         'code': 'jobs_config',
         'title': '職級職稱',
+        'title_i18n': {'en': 'Job Levels & Titles'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -173,6 +184,7 @@ CORE_MENUS = [
     {
         'code': 'departments',
         'title': '部門設定',
+        'title_i18n': {'en': 'Department Settings'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'departments.department_settings',
@@ -184,6 +196,7 @@ CORE_MENUS = [
     {
         'code': 'groups',
         'title': '社群設定',
+        'title_i18n': {'en': 'Group Settings'},
         'icon': None,
         'link_type': 'route',
         'link_target': 'groups.group_settings',
@@ -195,6 +208,7 @@ CORE_MENUS = [
     {
         'code': 'roles_control',
         'title': '角色管控',
+        'title_i18n': {'en': 'Role Control'},
         'icon': 'ri-user-star-line',
         'link_type': 'header',
         'link_target': None,
@@ -206,6 +220,7 @@ CORE_MENUS = [
     {
         'code': 'org_security',
         'title': '系統安全',
+        'title_i18n': {'en': 'System Security'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -217,6 +232,7 @@ CORE_MENUS = [
     {
         'code': 'platform_help',
         'title': '說明',
+        'title_i18n': {'en': 'Help'},
         'icon': None,
         'link_type': 'header',
         'link_target': None,
@@ -232,6 +248,7 @@ CORE_MENUS = [
     {
         'code': 'login_fail_monitor',
         'title': '登入錯誤監看',
+        'title_i18n': {'en': 'Login Failure Monitor'},
         'parent_code': 'security_localsystem',
         'link_type': 'url',
         'link_target': '/security/login-failures/',
@@ -245,6 +262,7 @@ CORE_MENUS = [
     {
         'code': 'organizations_contracts',
         'title': '企業與合約管理',
+        'title_i18n': {'en': 'Organizations & Contracts'},
         'parent_code': 'org_management',
         'link_type': 'route',
         'link_target': 'organizations.list_orgs',
@@ -256,6 +274,7 @@ CORE_MENUS = [
     {
         'code': 'org_databases_system',
         'title': '企業獨立資料庫管理',
+        'title_i18n': {'en': 'Org Dedicated Database Management'},
         'parent_code': 'org_management',
         'link_type': 'route',
         'link_target': 'org_databases.system_view',
@@ -267,6 +286,7 @@ CORE_MENUS = [
     {
         'code': 'cg_databases_overview',
         'title': '集團資料庫總覽',
+        'title_i18n': {'en': 'Conglomerate Database Overview'},
         'parent_code': 'org_management',
         'link_type': 'route',
         'link_target': 'cg_databases.overview',
@@ -280,6 +300,7 @@ CORE_MENUS = [
     {
         'code': 'redis_monitor',
         'title': 'Redis 監看',
+        'title_i18n': {'en': 'Redis Monitor'},
         'parent_code': 'servsr_manage',
         'icon': 'ri-database-2-line',
         'link_type': 'url',
@@ -292,6 +313,7 @@ CORE_MENUS = [
     {
         'code': 'data_maintenance',
         'title': '資料維護',
+        'title_i18n': {'en': 'Data Maintenance'},
         'parent_code': 'servsr_manage',
         'link_type': 'route',
         'link_target': 'hostconfig.data_maintenance',
@@ -304,6 +326,7 @@ CORE_MENUS = [
     {
         'code': 'menu_manage',
         'title': '選單管理',
+        'title_i18n': {'en': 'Menu Management'},
         'parent_code': 'perm_mgmt',
         'link_type': 'route',
         'link_target': 'menu.list_menu',
@@ -315,6 +338,7 @@ CORE_MENUS = [
     {
         'code': 'sys_accounts',
         'title': '系統管理員帳號',
+        'title_i18n': {'en': 'System Administrator Accounts'},
         'parent_code': 'perm_mgmt',
         'link_type': 'route',
         'link_target': 'sys_accounts.list_accounts',
@@ -326,6 +350,7 @@ CORE_MENUS = [
     {
         'code': 'permission_central',
         'title': '權限中央管理',
+        'title_i18n': {'en': 'Permission Central'},
         'parent_code': 'perm_mgmt',
         'link_type': 'url',
         'link_target': '/permissions/',
@@ -337,6 +362,7 @@ CORE_MENUS = [
     {
         'code': 'modules',
         'title': '模組管理',
+        'title_i18n': {'en': 'Module Management'},
         'parent_code': 'perm_mgmt',
         'link_type': 'route',
         'link_target': 'modules.list_modules',
@@ -350,6 +376,7 @@ CORE_MENUS = [
     {
         'code': 'system_settings',
         'title': '系統設定',
+        'title_i18n': {'en': 'System Settings'},
         'parent_code': 'org_config_mgr',
         'link_type': 'route',
         'link_target': 'admin.settings',
@@ -361,6 +388,7 @@ CORE_MENUS = [
     {
         'code': 'org_admins',
         'title': '企業管理員',
+        'title_i18n': {'en': 'Organization Admins'},
         'parent_code': 'org_config_mgr',
         'link_type': 'route',
         'link_target': 'org_admins.list_admins',
@@ -372,6 +400,7 @@ CORE_MENUS = [
     {
         'code': 'org_databases_org',
         'title': '獨立資料庫',
+        'title_i18n': {'en': 'Dedicated Database'},
         'parent_code': 'org_config_mgr',
         'link_type': 'route',
         'link_target': 'org_databases.org_view',
@@ -385,6 +414,7 @@ CORE_MENUS = [
     {
         'code': 'numbering',
         'title': '編號設定',
+        'title_i18n': {'en': 'Numbering Settings'},
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'numbering.list_rules',
@@ -396,6 +426,7 @@ CORE_MENUS = [
     {
         'code': 'roles',
         'title': '角色管理',
+        'title_i18n': {'en': 'Role Management'},
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'roles.list_roles',
@@ -407,6 +438,7 @@ CORE_MENUS = [
     {
         'code': 'users',
         'title': '企業成員帳號',
+        'title_i18n': {'en': 'Employee Accounts'},
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'users.list_users',
@@ -418,6 +450,7 @@ CORE_MENUS = [
     {
         'code': 'work_schedules',
         'title': '基本班表',
+        'title_i18n': {'en': 'Base Schedules'},
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'work_schedules.list_schedules',
@@ -429,6 +462,7 @@ CORE_MENUS = [
     {
         'code': 'external_users',
         'title': '外部廠商',
+        'title_i18n': {'en': 'External Vendors'},
         'parent_code': 'org_account',
         'link_type': 'route',
         'link_target': 'external_users.list_external_users',
@@ -442,6 +476,7 @@ CORE_MENUS = [
     {
         'code': 'job_matrix',
         'title': '職級職稱矩陣',
+        'title_i18n': {'en': 'Job Level/Title Matrix'},
         'parent_code': 'jobs_config',
         'link_type': 'route',
         'link_target': 'job_levels.job_matrix',
@@ -453,6 +488,7 @@ CORE_MENUS = [
     {
         'code': 'job_levels',
         'title': '職等設定',
+        'title_i18n': {'en': 'Job Level Settings'},
         'parent_code': 'jobs_config',
         'link_type': 'route',
         'link_target': 'job_levels.list_job_levels',
@@ -464,6 +500,7 @@ CORE_MENUS = [
     {
         'code': 'job_families',
         'title': '職系設定',
+        'title_i18n': {'en': 'Job Family Settings'},
         'parent_code': 'jobs_config',
         'link_type': 'route',
         'link_target': 'job_families.list_job_families',
@@ -475,6 +512,7 @@ CORE_MENUS = [
     {
         'code': 'job_titles',
         'title': '職稱設定',
+        'title_i18n': {'en': 'Job Title Settings'},
         'parent_code': 'jobs_config',
         'link_type': 'route',
         'link_target': 'job_titles.list_job_titles',
@@ -486,6 +524,7 @@ CORE_MENUS = [
     {
         'code': 'job_approval_categories',
         'title': '核決權限',
+        'title_i18n': {'en': 'Approval Authority'},
         'parent_code': 'jobs_config',
         'link_type': 'route',
         'link_target': 'approval_categories.list_categories',
@@ -499,6 +538,7 @@ CORE_MENUS = [
     {
         'code': 'permission_central_org',
         'title': '權限中央管理',
+        'title_i18n': {'en': 'Permission Central'},
         'parent_code': 'roles_control',
         'link_type': 'url',
         'link_target': '/permissions/',
@@ -510,6 +550,7 @@ CORE_MENUS = [
     {
         'code': 'module_perm_mgmt',
         'title': '模組權限管理',
+        'title_i18n': {'en': 'Module Permissions'},
         'parent_code': 'roles_control',
         'link_type': 'route',
         'link_target': 'admin.module_permissions',
@@ -522,6 +563,7 @@ CORE_MENUS = [
     {
         'code': 'account_roles',
         'title': '帳號角色權限表',
+        'title_i18n': {'en': 'Account Role Permissions'},
         'parent_code': 'roles_control',
         'link_type': 'route',
         'link_target': 'account_roles.index',
@@ -535,6 +577,7 @@ CORE_MENUS = [
     {
         'code': 'login_fail_monitor_org',
         'title': '登入錯誤監看',
+        'title_i18n': {'en': 'Login Failure Monitor'},
         'parent_code': 'org_security',
         'link_type': 'url',
         'link_target': '/security/login-failures/',
@@ -546,6 +589,7 @@ CORE_MENUS = [
     {
         'code': 'org_rate_limits',
         'title': '速率限制',
+        'title_i18n': {'en': 'Rate Limits'},
         'parent_code': 'org_security',
         'link_type': 'url',
         'link_target': '/security/rate-limits/',
@@ -557,6 +601,7 @@ CORE_MENUS = [
     {
         'code': 'alert_broadcasts_org',
         'title': '緊急廣播管理',
+        'title_i18n': {'en': 'Alert Broadcast Management'},
         'parent_code': 'org_security',
         'link_type': 'url',
         'link_target': '/security/alert-broadcasts/',
@@ -568,6 +613,7 @@ CORE_MENUS = [
     {
         'code': 'api_key_manage',
         'title': 'API Key 管理',
+        'title_i18n': {'en': 'API Key Management'},
         'parent_code': 'org_security',
         'link_type': 'url',
         'link_target': '/security/api-keys/',
@@ -581,6 +627,7 @@ CORE_MENUS = [
     {
         'code': 'platform_help.system_admin',
         'title': '系統管理員說明',
+        'title_i18n': {'en': 'System Administrator Guide'},
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',
@@ -593,6 +640,7 @@ CORE_MENUS = [
     {
         'code': 'platform_help.org_admin',
         'title': '企業管理員說明',
+        'title_i18n': {'en': 'Organization Admin Guide'},
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',
@@ -605,6 +653,7 @@ CORE_MENUS = [
     {
         'code': 'platform_help.employee',
         'title': '企業成員說明',
+        'title_i18n': {'en': 'Employee Guide'},
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',
@@ -617,6 +666,7 @@ CORE_MENUS = [
     {
         'code': 'platform_help.external',
         'title': '外部廠商說明',
+        'title_i18n': {'en': 'External Vendor Guide'},
         'parent_code': 'platform_help',
         'link_type': 'route',
         'link_target': 'platform_help.index',
@@ -737,6 +787,7 @@ def build_defaults_map(module_loader=None):
             'parent_code': menu_def.get('parent_code'),
             'depth': menu_def.get('depth', 0),
             'title': menu_def['title'],
+            'title_i18n': menu_def.get('title_i18n') or {},
             'icon': menu_def.get('icon'),
             'link_type': menu_def['link_type'],
             'link_target': menu_def.get('link_target'),
@@ -781,6 +832,7 @@ def _flatten_module_menus(defaults, menu_items, parent_code, parent_user_types):
             'parent_code': parent_code,
             'depth': depth,
             'title': menu_def.get('name', ''),
+            'title_i18n': menu_def.get('title_i18n') or {},
             'icon': menu_def.get('icon'),
             'link_type': link_type,
             'link_target': link_target,

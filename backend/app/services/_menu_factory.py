@@ -160,6 +160,9 @@ class MenuFactoryMixin:
 
             # 內容欄位
             item.title = default['title']
+            # 預設值未定義 title_i18n 時保留 DB 現值（模組選單的翻譯可能只存在 DB）
+            if default.get('title_i18n'):
+                item.title_i18n = default['title_i18n']
             item.icon = default.get('icon')
             item.link_type = default['link_type']
             item.link_target = default.get('link_target')
